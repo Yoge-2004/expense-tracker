@@ -35,15 +35,15 @@ public class ExpenseServiceImpl implements ExpenseService {
         expense.setUser(user);
 
         if (expense.getCategory() != null) {
-            Category category = categoryRepository.findById(
-                    expense.getCategory().getId()
-            ).orElseThrow(() ->
-                    new IllegalArgumentException("Invalid category")
-            );
+            Category category = categoryRepository.findById(expense.getCategory().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid category ID"));
 
+            // ✅ SECURITY CHECK: Ensure category belongs to user or is global
+            if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
+                throw new IllegalArgumentException("Access Denied: You do not own this category.");
+            }
             expense.setCategory(category);
         }
-
         return expenseRepository.save(expense);
     }
 

@@ -2,57 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Expense Tracker – Register</title>
+    <title>Register | Expense Tracker</title>
     <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 
-<div class="page">
+<div class="split-screen">
 
-    <!-- HERO -->
-    <section class="hero">
+    <section class="hero-section">
         <div class="hero-content">
-            <h1>Create your account</h1>
+            <h1>Start your journey.</h1>
             <p>
-                Start tracking expenses with precision and confidence.
-                Your data stays private. Always.
+                Create an account to gain full control over your financial data.
+                Private. Secure. Simple.
             </p>
         </div>
     </section>
 
-    <!-- AUTH -->
-    <section class="auth">
+    <section class="auth-section">
         <div class="auth-card">
-            <h2>Get started</h2>
-            <p class="muted">Create a new account</p>
+            <h2>Create account</h2>
+            <p class="muted">Get started for free</p>
 
-            <form>
+            <form id="registerForm">
                 <div class="field">
-                    <input type="text" required>
-                    <label>Full name</label>
+                    <input type="text" required placeholder=" ">
+                    <label>Full Name</label>
                 </div>
 
                 <div class="field">
-                    <input type="email" required>
-                    <label>Email</label>
+                    <input type="email" id="reg-email" required placeholder=" ">
+                    <label>Email Address</label>
                 </div>
 
                 <div class="field">
-                    <input type="password" required>
-                    <label>Password</label>
+                    <input type="password" id="reg-password" required placeholder=" ">
+                    <label>Password (Min 6 chars)</label>
                 </div>
 
-                <button type="submit">Create account</button>
+                <button type="submit">Create Account</button>
             </form>
 
-            <p class="muted" style="margin-top:24px;font-size:13px;">
-                Already have an account?
-                <a href="index.html">Click here</a>
+            <p class="muted" style="margin-top:24px; text-align:center;">
+                Already have an account? 
+                <a href="index.html" style="color: #FF9F6E;">Login</a>
             </p>
         </div>
     </section>
 
 </div>
 
+<script src="js/api.js"></script>
+<script src="js/register.js"></script>
 </body>
 </html>

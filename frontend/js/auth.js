@@ -11,6 +11,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
         });
 
         localStorage.setItem("token", response.token);
+        localStorage.setItem("userId", response.userId); // Stores User ID for Dashboard
         window.location.href = "dashboard.html";
 
     } catch (error) {
