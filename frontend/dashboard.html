@@ -79,11 +79,29 @@
 
                 <div class="form-group">
                     <label>Category</label>
-                    <div style="display: flex; gap: 8px;">
-                        <select id="categorySelect" required style="flex:1;">
+                    <div style="display: flex; gap: 10px; align-items: stretch;">
+                        
+                        <select id="categorySelect" required style="flex: 1;">
                             <option value="" disabled selected>Select a category</option>
                         </select>
-                        <button type="button" id="addCategoryBtn" style="width: 50px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: #fff; cursor: pointer; font-size: 20px;">+</button>
+
+                        <button type="button" id="addCategoryBtn" 
+                            style="
+                                width: 50px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                background: rgba(255,255,255,0.05);
+                                border: 1px solid rgba(255,255,255,0.1);
+                                border-radius: 12px;
+                                color: #fff;
+                                cursor: pointer;
+                                font-size: 24px;
+                                line-height: 1;
+                                padding: 0;
+                            ">
+                            <span style="margin-top: -2px;">+</span>
+                        </button>
                     </div>
                 </div>
 
