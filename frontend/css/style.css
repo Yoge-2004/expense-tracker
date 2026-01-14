@@ -446,6 +446,56 @@ select option {
     color: #FF9F6E;
 }
 
+/* ✅ Filter Toolbar */
+.filter-toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.filter-input, .filter-select {
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: #AAB0BC;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.filter-input:focus, .filter-select:focus {
+    border-color: #FF9F6E;
+    color: #fff;
+    background: rgba(0,0,0,0.5);
+}
+
+.filter-input {
+    flex: 1; /* Search bar takes remaining space */
+    min-width: 150px;
+}
+
+/* Dropdown Options Color Fix */
+.filter-select option {
+    background: #121624;
+    color: #E6E8EC;
+}
+
+/* Responsive Filters */
+@media (max-width: 768px) {
+    .filter-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .filter-input, .filter-select {
+        width: 100%;
+    }
+}
+
 /* ================== ANIMATIONS ================== */
 @keyframes heroReveal {
     to {
