@@ -24,4 +24,6 @@ public interface ExpenseService {
             LocalDate startDate,
             LocalDate endDate
     );
+
+    void deleteExpense(Long expenseId, User user);
 }

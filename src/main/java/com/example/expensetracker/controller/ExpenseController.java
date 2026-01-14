@@ -70,4 +70,17 @@ public class ExpenseController {
 
         return ResponseEntity.ok(expenses);
     }
+
+    @DeleteMapping("/{expenseId}/user/{userId}") // ✅ Add this endpoint
+    public ResponseEntity<Void> deleteExpense(
+            @PathVariable Long userId,
+            @PathVariable Long expenseId) {
+
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        expenseService.deleteExpense(expenseId, user);
+
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -5,6 +5,7 @@
     <title>Dashboard | Expense Tracker</title>
     <link rel="stylesheet" href="css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -15,25 +16,38 @@
         <header class="top-bar">
             <div>
                 <h2>Dashboard</h2>
-                <p style="color:#AAB0BC; font-size:14px;">Welcome back</p>
+                <p style="color:#AAB0BC; font-size:14px;">Overview of your finances</p>
             </div>
-            <div class="user-profile">
+            
+            <div class="user-profile" id="profileTrigger">
+                <span style="font-size:13px; color:#AAB0BC; margin-right:8px;">My Account</span>
                 <div class="avatar">U</div>
-                <a href="#" id="logoutBtn" class="btn-logout">Logout</a>
+                
+                <div class="profile-menu" id="profileMenu">
+                    <a href="#" id="logoutBtn">Logout</a>
+                    <a href="#" id="deleteAccountBtn" style="color: #FF6B50;">Delete Account</a>
+                </div>
             </div>
         </header>
 
         <section class="grid-stats">
-            <div class="card">
-                <span class="card-label">Total Spent</span>
-                <span class="card-value" id="totalAmount">₹0.00</span>
+            <div style="display:flex; flex-direction:column; gap:24px;">
+                <div class="card">
+                    <span class="card-label">Total Spent</span>
+                    <span class="card-value" id="totalAmount">₹0.00</span>
+                </div>
+                <div class="card">
+                    <span class="card-label">Expenses Count</span>
+                    <span class="card-value" id="expenseCount">0</span>
+                </div>
+                <button class="btn-primary" id="openModalBtn" style="height:100%;">+ Add New Expense</button>
             </div>
-            <div class="card">
-                <span class="card-label">Expenses Count</span>
-                <span class="card-value" id="expenseCount">0</span>
-            </div>
-            <div class="card" style="align-items: center; text-align: center;">
-                <button class="btn-primary" id="openModalBtn">+ Add New Expense</button>
+
+            <div class="card" style="align-items:center; justify-content:center; position:relative;">
+                <span class="card-label" style="position:absolute; top:20px; left:24px;">Spend by Category</span>
+                <div style="height:200px; width:100%;">
+                    <canvas id="expenseChart"></canvas>
+                </div>
             </div>
         </section>
 
@@ -61,11 +75,15 @@
                     <input type="number" id="amount" required placeholder="0.00">
                 </div>
                 <div class="form-group">
+                    <label>Category</label>
+                    <select id="categorySelect" required>
+                        <option value="" disabled selected>Select a category</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Date</label>
                     <input type="date" id="date" required>
                 </div>
-                <input type="hidden" id="catId" value="1"> 
-
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" id="closeModalBtn">Cancel</button>
                     <button type="submit" class="btn-primary" style="flex:1;">Save Expense</button>
