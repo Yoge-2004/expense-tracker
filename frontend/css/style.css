@@ -424,6 +424,28 @@ select option {
     color: #fff;
 }
 
+/* Password Toggle Icon */
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #9AA0AE;
+    transition: 0.3s;
+    user-select: none; /* Prevent highlighting */
+}
+
+.password-toggle:hover {
+    color: #FF9F6E;
+}
+
 /* ================== ANIMATIONS ================== */
 @keyframes heroReveal {
     to {

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Dashboard | Expense Tracker</title>
@@ -8,21 +7,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
 
     <div class="hero-bg"></div>
 
     <div class="dashboard-container">
+        
         <header class="top-bar">
             <div>
                 <h2>Dashboard</h2>
-                <p style="color:#AAB0BC; font-size:14px;">Overview of your finances</p>
+                <p style="color:#AAB0BC; font-size:14px;">Welcome back</p>
             </div>
-
+            
             <div class="user-profile" id="profileTrigger">
                 <span style="font-size:13px; color:#AAB0BC; margin-right:8px;">My Account</span>
                 <div class="avatar">U</div>
+                
                 <div class="profile-menu" id="profileMenu">
                     <a href="#" id="logoutBtn">Logout</a>
                     <a href="#" id="deleteAccountBtn" style="color: #FF6B50;">Delete Account</a>
@@ -66,10 +66,12 @@
         <div class="modal">
             <h3 style="margin-bottom:24px;">Add Expense</h3>
             <form id="addExpenseForm">
+                
                 <div class="form-group">
                     <label>Description</label>
                     <input type="text" id="desc" required placeholder="e.g. Dinner">
                 </div>
+                
                 <div class="form-group">
                     <label>Amount (₹)</label>
                     <input type="number" id="amount" required placeholder="0.00">
@@ -81,8 +83,7 @@
                         <select id="categorySelect" required style="flex:1;">
                             <option value="" disabled selected>Select a category</option>
                         </select>
-                        <button type="button" id="addCategoryBtn"
-                            style="width: 50px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: #fff; cursor: pointer; font-size: 20px;">+</button>
+                        <button type="button" id="addCategoryBtn" style="width: 50px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; color: #fff; cursor: pointer; font-size: 20px;">+</button>
                     </div>
                 </div>
 
@@ -102,11 +103,9 @@
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>
     <script>
-        // Get today's date in YYYY-MM-DD format
+        // Restrict Date Picker to Today (No future dates)
         const today = new Date().toISOString().split('T')[0];
-        // Set the max attribute to today
         document.getElementById('date').setAttribute('max', today);
     </script>
 </body>
-
 </html>

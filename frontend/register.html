@@ -1,62 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Register | Expense Tracker</title>
     <link rel="stylesheet" href="css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-
 <body>
 
-    <div class="split-screen">
+<div class="split-screen">
 
-        <section class="hero-section">
-            <div class="hero-content">
-                <h1>Start your journey.</h1>
-                <p>
-                    Create an account to gain full control over your financial data.
-                    Private. Secure. Simple.
-                </p>
-            </div>
-        </section>
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>Start your journey.</h1>
+            <p>
+                Create an account to gain full control over your financial data.
+                Private. Secure. Simple.
+            </p>
+        </div>
+    </section>
 
-        <section class="auth-section">
-            <div class="auth-card">
-                <h2>Create account</h2>
-                <p class="muted">Get started for free</p>
+    <section class="auth-section">
+        <div class="auth-card">
+            <h2>Create account</h2>
+            <p class="muted">Get started for free</p>
 
-                <form id="registerForm">
-                    <div class="field">
-                        <input type="text" id="reg-name" required placeholder=" ">
-                        <label>Full Name</label>
+            <form id="registerForm">
+                <div class="field">
+                    <input type="text" id="reg-name" required placeholder=" ">
+                    <label>Full Name</label>
+                </div>
+
+                <div class="field">
+                    <input type="email" id="reg-email" required placeholder=" ">
+                    <label>Email Address</label>
+                </div>
+
+                <div class="field">
+                    <div class="password-wrapper">
+                        <input type="password" id="reg-password" required placeholder=" " style="padding-right: 40px;">
+                        <span class="password-toggle" onclick="togglePassword('reg-password', this)">👁</span>
                     </div>
+                    <label>Password (Min 6 chars)</label>
+                </div>
 
-                    <div class="field">
-                        <input type="email" id="reg-email" required placeholder=" ">
-                        <label>Email Address</label>
-                    </div>
+                <button type="submit">Create Account</button>
+            </form>
 
-                    <div class="field">
-                        <input type="password" id="reg-password" required placeholder=" ">
-                        <label>Password (Min 6 chars)</label>
-                    </div>
+            <p class="muted" style="margin-top:24px; text-align:center;">
+                Already have an account? 
+                <a href="index.html" style="color: #FF9F6E;">Login</a>
+            </p>
+        </div>
+    </section>
 
-                    <button type="submit">Create Account</button>
-                </form>
+</div>
 
-                <p class="muted" style="margin-top:24px; text-align:center;">
-                    Already have an account?
-                    <a href="index.html" style="color: #FF9F6E;">Login</a>
-                </p>
-            </div>
-        </section>
-
-    </div>
-
-    <script src="js/api.js"></script>
-    <script src="js/register.js"></script>
+<script src="js/api.js"></script>
+<script src="js/register.js"></script>
+<script>
+    // Password Toggle Script
+    function togglePassword(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.textContent = "🙈";
+        } else {
+            input.type = "password";
+            icon.textContent = "👁";
+        }
+    }
+</script>
 </body>
-
 </html>
