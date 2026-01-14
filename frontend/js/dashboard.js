@@ -1,11 +1,11 @@
 // Auth Check
 const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
-const userName = localStorage.getItem("userName") || "User"; // ✅ Get Name
+const userName = localStorage.getItem("userName") || "User";
 
 if (!token || !userId) window.location.href = "index.html";
 
-// ✅ UPDATE UI WITH NAME
+// Update UI Name
 document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
 document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
 
@@ -16,88 +16,130 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', options);
 };
 
-// State
+// Global Data Store (To hold raw data)
+let allExpenses = []; 
 let chartInstance = null;
+
 const elements = {
     totalAmount: document.getElementById("totalAmount"),
     expenseCount: document.getElementById("expenseCount"),
     expenseList: document.getElementById("expenseList"),
+    
+    // Filters
+    filterSearch: document.getElementById("filterSearch"),
+    filterSort: document.getElementById("filterSort"),
+    filterMonth: document.getElementById("filterMonth"),
+    filterYear: document.getElementById("filterYear"),
+    filterCategory: document.getElementById("filterCategory"),
+
+    // Modal & Forms
     modal: document.getElementById("expenseModal"),
     categorySelect: document.getElementById("categorySelect"),
-    addCategoryBtn: document.getElementById("addCategoryBtn"), // ✅ New Button
-    profileMenu: document.getElementById("profileMenu"),
-    addForm: document.getElementById("addExpenseForm")
+    addCategoryBtn: document.getElementById("addCategoryBtn"),
+    addForm: document.getElementById("addExpenseForm"),
+    profileMenu: document.getElementById("profileMenu")
 };
 
 // 1. Load Data
 async function loadDashboard() {
     try {
-        // Fetch User Expenses + User Categories + Global Categories
-        // We fetch "User Categories" (custom) and "Global" separately
         const [expenses, globalCats, userCats] = await Promise.all([
             apiRequest(`/expenses/user/${userId}`),
             apiRequest(`/categories/global`),
-            apiRequest(`/categories/user/${userId}`) // ✅ Fetch custom categories
+            apiRequest(`/categories/user/${userId}`)
         ]);
 
-        // Merge categories
+        // Save raw data globally
+        allExpenses = expenses; 
         const allCategories = [...globalCats, ...userCats];
 
+        // Setup UI
         populateCategoryDropdown(allCategories);
-        updateStats(expenses);
-        renderChart(expenses);
-        renderList(expenses);
+        populateFilterDropdowns(allCategories, expenses); // New: Setup filters
+        
+        applyFilters(); // Initial Render
 
     } catch (error) {
         console.error(error);
     }
 }
 
-// 2. Dropdown Logic
+// 2. Populate Dropdowns
 function populateCategoryDropdown(categories) {
-    // Save current selection if re-rendering
-    const currentVal = elements.categorySelect.value;
-
-    elements.categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>';
-    categories.forEach(cat => {
-        elements.categorySelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-    });
-
-    if (currentVal) elements.categorySelect.value = currentVal;
+    const opts = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    elements.categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>' + opts;
 }
 
-// ✅ 3. Add New Category Logic
-elements.addCategoryBtn.addEventListener("click", async () => {
-    const name = prompt("Enter new category name:");
-    if (!name) return;
+function populateFilterDropdowns(categories, expenses) {
+    // 1. Filter Category Dropdown
+    const catOpts = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    elements.filterCategory.innerHTML = '<option value="all">All Categories</option>' + catOpts;
 
-    try {
-        // Call Backend to Create Category
-        const newCat = await apiRequest(`/categories/user/${userId}`, {
-            method: "POST",
-            body: JSON.stringify({ name: name })
-        });
+    // 2. Filter Year Dropdown (Extract unique years from expenses)
+    const years = [...new Set(expenses.map(e => new Date(e.expenseDate).getFullYear()))].sort((a,b) => b-a);
+    const yearOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    elements.filterYear.innerHTML = '<option value="all">All Years</option>' + yearOpts;
+}
 
-        // Add to dropdown immediately and select it
-        const option = document.createElement("option");
-        option.value = newCat.id;
-        option.textContent = newCat.name;
-        option.selected = true;
-        elements.categorySelect.appendChild(option);
+// 3. The Core Filtering Logic 🧠
+function applyFilters() {
+    let filtered = [...allExpenses];
 
-    } catch (error) {
-        alert("Failed to add category: " + error.message);
+    // A. Text Search
+    const search = elements.filterSearch.value.toLowerCase();
+    if (search) {
+        filtered = filtered.filter(e => 
+            e.description.toLowerCase().includes(search) || 
+            (e.categoryName && e.categoryName.toLowerCase().includes(search))
+        );
     }
-});
 
-// 4. Update Stats
+    // B. Category Filter
+    const cat = elements.filterCategory.value;
+    if (cat !== 'all') {
+        filtered = filtered.filter(e => e.categoryName === cat);
+    }
+
+    // C. Month Filter
+    const month = elements.filterMonth.value;
+    if (month !== 'all') {
+        filtered = filtered.filter(e => new Date(e.expenseDate).getMonth() === parseInt(month));
+    }
+
+    // D. Year Filter
+    const year = elements.filterYear.value;
+    if (year !== 'all') {
+        filtered = filtered.filter(e => new Date(e.expenseDate).getFullYear() === parseInt(year));
+    }
+
+    // E. Sorting
+    const sort = elements.filterSort.value;
+    filtered.sort((a, b) => {
+        if (sort === 'date-desc') return new Date(b.expenseDate) - new Date(a.expenseDate);
+        if (sort === 'date-asc') return new Date(a.expenseDate) - new Date(b.expenseDate);
+        if (sort === 'amount-desc') return b.amount - a.amount;
+        if (sort === 'amount-asc') return a.amount - b.amount;
+        return 0;
+    });
+
+    // Update UI
+    updateStats(filtered);
+    renderChart(filtered);
+    renderList(filtered);
+}
+
+// 4. Attach Event Listeners to Filters
+[elements.filterSearch, elements.filterSort, elements.filterMonth, elements.filterYear, elements.filterCategory]
+    .forEach(el => el.addEventListener('input', applyFilters));
+
+
+// 5. Render Functions
 function updateStats(expenses) {
     const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     elements.totalAmount.textContent = formatCurrency(total);
     elements.expenseCount.textContent = expenses.length;
 }
 
-// 5. Chart
 function renderChart(expenses) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     const categoryTotals = {};
@@ -126,7 +168,6 @@ function renderChart(expenses) {
     });
 }
 
-// 6. List with Delete
 function renderList(expenses) {
     if (expenses.length === 0) {
         elements.expenseList.innerHTML = `<p style="text-align:center; color:#555; margin-top:20px;">No expenses found.</p>`;
@@ -148,18 +189,18 @@ function renderList(expenses) {
     `).join("");
 }
 
-// 7. Actions
+// 6. Actions (Add, Delete, etc.)
 window.deleteExpense = async (id) => {
-    if (!confirm("Delete this expense?")) return;
+    if(!confirm("Delete this expense?")) return;
     try {
         await apiRequest(`/expenses/${id}/user/${userId}`, { method: 'DELETE' });
-        loadDashboard(); // Refresh list
+        loadDashboard(); 
     } catch (err) { alert(err.message); }
 };
 
 document.getElementById("deleteAccountBtn").addEventListener("click", async (e) => {
     e.preventDefault();
-    if (!confirm("Permanently delete account?")) return;
+    if(!confirm("Permanently delete account?")) return;
     try {
         await apiRequest(`/users/${userId}`, { method: 'DELETE' });
         localStorage.clear();
@@ -167,11 +208,27 @@ document.getElementById("deleteAccountBtn").addEventListener("click", async (e) 
     } catch (err) { alert(err.message); }
 });
 
-// Event Listeners
-document.getElementById("profileTrigger").addEventListener("click", () => elements.profileMenu.classList.toggle("active"));
-document.addEventListener("click", (e) => {
-    if (!e.target.closest(".user-profile")) elements.profileMenu.classList.remove("active");
+elements.addCategoryBtn.addEventListener("click", async () => {
+    const name = prompt("Enter new category name:");
+    if (!name) return;
+    try {
+        const newCat = await apiRequest(`/categories/user/${userId}`, {
+            method: "POST",
+            body: JSON.stringify({ name: name })
+        });
+        const option = document.createElement("option");
+        option.value = newCat.id;
+        option.textContent = newCat.name;
+        option.selected = true;
+        elements.categorySelect.appendChild(option);
+        
+        // Refresh global data to include new category in filters
+        loadDashboard();
+    } catch (error) {
+        alert("Failed to add category: " + error.message);
+    }
 });
+
 elements.addForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
@@ -188,6 +245,12 @@ elements.addForm.addEventListener("submit", async (e) => {
         elements.addForm.reset();
         loadDashboard();
     } catch (err) { alert(err.message); }
+});
+
+// Global Toggles
+document.getElementById("profileTrigger").addEventListener("click", () => elements.profileMenu.classList.toggle("active"));
+document.addEventListener("click", (e) => {
+    if (!e.target.closest(".user-profile")) elements.profileMenu.classList.remove("active");
 });
 document.getElementById("openModalBtn").addEventListener("click", () => elements.modal.classList.add("active"));
 document.getElementById("closeModalBtn").addEventListener("click", () => elements.modal.classList.remove("active"));
