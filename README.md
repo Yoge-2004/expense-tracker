@@ -70,7 +70,6 @@ A modern, secure, and cinematic **Expense Tracker Application** built with **Spr
 |:---:|:---:|
 | ![Dashboard](screenshots/dashboard.png) | ![Add Expense](screenshots/add_expense.png) |
 
-*(Note: Replace `screenshots/*.png` with your actual file paths)*
 
 ---
 
