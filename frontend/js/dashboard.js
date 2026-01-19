@@ -94,34 +94,45 @@ function renderList(expenses) {
 function renderChart(expenses) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     const categoryTotals = {};
-
-    expenses.forEach(exp => {
-        const cat = exp.categoryName || 'Uncategorized';
-        categoryTotals[cat] = (categoryTotals[cat] || 0) + exp.amount;
+    
+    // Calculate totals
+    expenses.forEach(exp => { 
+        const cat = exp.categoryName || 'Uncategorized'; 
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + exp.amount; 
     });
 
     if (chartInstance) chartInstance.destroy();
 
-    // Chart Options for responsiveness
+    // Chart Configuration
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
-        data: {
-            labels: Object.keys(categoryTotals),
-            datasets: [{
-                data: Object.values(categoryTotals),
-                backgroundColor: ['#FF9F6E', '#FF7A3D', '#64D2FF', '#A084FF', '#34C759', '#FFD60A'],
-                borderWidth: 0
-            }]
+        data: { 
+            labels: Object.keys(categoryTotals), 
+            datasets: [{ 
+                data: Object.values(categoryTotals), 
+                backgroundColor: ['#FF9F6E', '#FF7A3D', '#64D2FF', '#A084FF', '#34C759', '#FFD60A'], 
+                borderWidth: 0 
+            }] 
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false, // Important for chart wrapper
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { color: '#9AA0AE', font: { size: 10 }, boxWidth: 10 }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { 
+                    position: 'right', 
+                    labels: { 
+                        color: '#9AA0AE', 
+                        // ✅ UPDATED: Bigger font and box for better readability
+                        font: { size: 13, family: "'Plus Jakarta Sans', sans-serif" }, 
+                        boxWidth: 14,
+                        padding: 15
+                    } 
+                },
+                tooltip: {
+                    bodyFont: { size: 14 },
+                    titleFont: { size: 14 }
                 }
-            }
+            } 
         }
     });
 }
