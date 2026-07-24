@@ -1,0 +1,81 @@
+package com.example.expensetracker.controller;
+
+import com.example.expensetracker.security.CustomUserDetailsService;
+import com.example.expensetracker.security.JwtService;
+import com.example.expensetracker.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.example.expensetracker.security.JwtAuthenticationFilter;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+/**
+ * Unit tests for {@link UserController}.
+ *
+ * <p>Endpoints covered:</p>
+ * <ul>
+ *   <li>DELETE /api/users/{userId}</li>
+ * </ul>
+ *
+ * @author Yogeshwaran
+ */
+@WebMvcTest(UserController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@DisplayName("UserController Tests")
+class UserControllerTest {
+
+    @Autowired MockMvc mockMvc;
+
+    @MockitoBean UserService userService;
+    @MockitoBean JwtService jwtService;
+    @MockitoBean CustomUserDetailsService customUserDetailsService;
+    @MockitoBean JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        // Ensure the mocked JWT filter continues the filter chain
+        doAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletRequest request = invocation.getArgument(0);
+            jakarta.servlet.http.HttpServletResponse response = invocation.getArgument(1);
+            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
+
+    // ─────────────── DELETE /api/users/{userId} ───────────────
+
+    @Test
+    @WithMockUser
+    @DisplayName("DELETE /api/users/{userId} → 204 No Content on successful deletion")
+    void deleteAccount_existingUser_returns204() throws Exception {
+        doNothing().when(userService).deleteUser(1L);
+
+        mockMvc.perform(delete("/api/users/1"))
+                .andExpect(status().isNoContent());
+
+        verify(userService, times(1)).deleteUser(1L);
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("DELETE /api/users/{userId} → 400 Bad Request when user not found")
+    void deleteAccount_userNotFound_returns400() throws Exception {
+        doThrow(new IllegalArgumentException("User not found"))
+                .when(userService).deleteUser(99L);
+
+        mockMvc.perform(delete("/api/users/99"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("User not found"));
+    }
+}

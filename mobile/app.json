@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Expense Tracker",
+    "slug": "expense-tracker-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yoge.expensetracker"
+    },
+    "android": {
+      "package": "com.yoge.expensetracker"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "expensetracker"
+  }
+}

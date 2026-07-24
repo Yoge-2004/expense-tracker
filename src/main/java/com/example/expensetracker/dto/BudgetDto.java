@@ -1,0 +1,55 @@
+package com.example.expensetracker.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Schema(description = "Sets a spending limit for a specific category and period")
+public class BudgetDto {
+
+    private Long id;
+
+    @Schema(description = "ID of the category for which the budget applies", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long categoryId;
+
+    @Schema(description = "Maximum spend allowed for this category", example = "300.00", requiredMode = Schema.RequiredMode.REQUIRED)
+    private BigDecimal limitAmount;
+
+    @Schema(description = "Budget period: MONTHLY, WEEKLY, YEARLY, CUSTOM", example = "MONTHLY")
+    private String period = "MONTHLY";
+
+    @Schema(description = "Start date for CUSTOM period", example = "2026-07-01")
+    private LocalDate startDate;
+
+    @Schema(description = "End date for CUSTOM period", example = "2026-07-31")
+    private LocalDate endDate;
+
+    public BudgetDto() {}
+
+    public BudgetDto(Long categoryId, BigDecimal limitAmount) {
+        this.categoryId  = categoryId;
+        this.limitAmount = limitAmount;
+    }
+
+    public BudgetDto(Long id, Long categoryId, BigDecimal limitAmount, String period, LocalDate startDate, LocalDate endDate) {
+        this.id = id;
+        this.categoryId = categoryId;
+        this.limitAmount = limitAmount;
+        this.period = period;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getCategoryId() { return categoryId; }
+    public void setCategoryId(Long id) { this.categoryId = id; }
+    public BigDecimal getLimitAmount() { return limitAmount; }
+    public void setLimitAmount(BigDecimal limit) { this.limitAmount = limit; }
+    public String getPeriod() { return period; }
+    public void setPeriod(String period) { this.period = period; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+}
