@@ -383,10 +383,32 @@ function applyFilters() {
     .forEach(el => el.addEventListener('input', applyFilters));
 
 
-// --- 5. UI RENDERING HELPERS ---
+// --- 5. UI RENDERING HELPERS & NUMBER COUNT ANIMATION ---
+function animateNumber(el, target, isCurrency = false) {
+    if (!el) return;
+    const duration = 850;
+    const startTime = performance.now();
+    const startVal = parseFloat(el.getAttribute('data-val') || 0);
+    el.setAttribute('data-val', target);
+
+    function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const easeOutBack = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
+        const current = startVal + (target - startVal) * Math.min(Math.max(easeOutBack, 0), 1);
+        el.textContent = isCurrency ? formatCurrency(current) : Math.round(current);
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        } else {
+            el.textContent = isCurrency ? formatCurrency(target) : target;
+        }
+    }
+    requestAnimationFrame(step);
+}
+
 function updateStats(expenses) {
-    elements.totalAmount.textContent = formatCurrency(expenses.reduce((sum, exp) => sum + exp.amount, 0));
-    elements.expenseCount.textContent = expenses.length;
+    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    animateNumber(elements.totalAmount, total, true);
+    animateNumber(elements.expenseCount, expenses.length, false);
 }
 
 function renderList(expenses) {

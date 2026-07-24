@@ -1313,55 +1313,59 @@ button[type="submit"]:active {
     transition: opacity 0.3s var(--ease), transform 0.35s var(--ease);
 }
 
-/* ================== RICH ANIMATIONS & TRANSITIONS ================== */
+/* ================== HIGH-IMPACT PROMINENT ANIMATIONS ================== */
 
-@keyframes pageFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes modalBounceIn {
+@keyframes staggeredSlideIn {
     0% {
         opacity: 0;
-        transform: scale(0.92) translateY(20px);
+        transform: perspective(1000px) rotateX(12deg) translateY(45px) scale(0.94);
     }
-    60% {
-        opacity: 1;
-        transform: scale(1.02) translateY(-4px);
+    70% {
+        opacity: 0.9;
+        transform: perspective(1000px) rotateX(-2deg) translateY(-4px) scale(1.01);
     }
     100% {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1);
     }
 }
 
-@keyframes pulseGlow {
-    0%, 100% {
-        box-shadow: 0 0 15px rgba(99, 102, 241, 0.2), 0 0 30px rgba(139, 92, 246, 0.1);
+@keyframes modalElasticIn {
+    0% {
+        opacity: 0;
+        transform: perspective(1000px) scale(0.8) translateY(30px);
     }
     50% {
-        box-shadow: 0 0 25px rgba(99, 102, 241, 0.4), 0 0 50px rgba(139, 92, 246, 0.25);
+        opacity: 1;
+        transform: perspective(1000px) scale(1.06) translateY(-8px);
+    }
+    75% {
+        transform: perspective(1000px) scale(0.98) translateY(2px);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(1000px) scale(1) translateY(0);
     }
 }
 
-@keyframes floatCard {
+@keyframes pulseGlowRing {
+    0% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4), 0 10px 25px -5px rgba(99, 102, 241, 0.3);
+    }
+    70% {
+        box-shadow: 0 0 0 16px rgba(99, 102, 241, 0), 0 20px 40px -5px rgba(99, 102, 241, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0), 0 10px 25px -5px rgba(99, 102, 241, 0.3);
+    }
+}
+
+@keyframes floatElement {
     0%, 100% {
-        transform: translateY(0);
+        transform: translateY(0) rotate(0deg);
     }
     50% {
-        transform: translateY(-5px);
-    }
-}
-
-@keyframes fillProgress {
-    from {
-        width: 0%;
+        transform: translateY(-8px) rotate(0.5deg);
     }
 }
 
@@ -1374,42 +1378,74 @@ button[type="submit"]:active {
     }
 }
 
-/* Animated Entrance Helpers */
-.animate-fade-in {
-    animation: pageFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+@keyframes pulseBadge {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.85;
+    }
 }
 
+/* Staggered Card Entrance Cascades */
+.grid > *:nth-child(1), .card-grid > *:nth-child(1) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.grid > *:nth-child(2), .card-grid > *:nth-child(2) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s both;
+}
+
+.grid > *:nth-child(3), .card-grid > *:nth-child(3) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.3s both;
+}
+
+.grid > *:nth-child(4), .card-grid > *:nth-child(4) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.45s both;
+}
+
+/* Prominent Stat Card Hover Scaling & Lift */
 .stat-card {
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.35s ease !important;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease !important;
 }
 
 .stat-card:hover {
-    transform: translateY(-6px) scale(1.015) !important;
-    box-shadow: 0 16px 36px -10px rgba(99, 102, 241, 0.35), 0 0 0 1px rgba(99, 102, 241, 0.4) !important;
+    transform: translateY(-10px) scale(1.025) rotate(0.5deg) !important;
+    box-shadow: 0 20px 45px -10px rgba(99, 102, 241, 0.45), 0 0 25px rgba(139, 92, 246, 0.3) !important;
+    border-color: rgba(99, 102, 241, 0.6) !important;
 }
 
+.stat-card.active, .stat-card.hero {
+    animation: pulseGlowRing 3s ease-in-out infinite;
+}
+
+/* Prominent Card & Panel Styles */
 .card {
-    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.35s ease !important;
 }
 
 .card:hover {
-    border-color: rgba(99, 102, 241, 0.3) !important;
-    box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.4) !important;
+    transform: translateY(-6px) scale(1.01) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+    box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.25) !important;
 }
 
+/* Interactive Buttons */
 .btn-primary, .btn-submit {
     position: relative;
     overflow: hidden;
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.3s ease !important;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background 0.3s ease !important;
 }
 
 .btn-primary:hover, .btn-submit:hover {
-    transform: translateY(-2px) scale(1.02) !important;
-    box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.5) !important;
+    transform: translateY(-3px) scale(1.03) !important;
+    box-shadow: 0 12px 30px -4px rgba(99, 102, 241, 0.6) !important;
 }
 
 .btn-primary:active, .btn-submit:active {
-    transform: translateY(0) scale(0.98) !important;
+    transform: translateY(1px) scale(0.97) !important;
 }
 
 .btn-primary::after {
@@ -1419,34 +1455,37 @@ button[type="submit"]:active {
     left: -100%;
     width: 200%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     transform: skewX(-20deg);
 }
 
 .btn-primary:hover::after {
-    animation: shimmerSweep 0.8s ease-in-out;
+    animation: shimmerSweep 0.9s ease-in-out;
 }
 
+/* Modals & Dialogs Elastic Overshoot */
 .modal.active .modal-content {
-    animation: modalBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+    animation: modalElasticIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
 }
 
-.toast {
-    animation: pageFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important;
-    transition: opacity 0.3s ease, transform 0.3s ease !important;
+/* Table Row Highlights & Slide */
+.expense-row, tbody tr {
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.25s ease, box-shadow 0.25s ease !important;
 }
 
-.progress-bar-fill, .progress-fill {
-    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+tbody tr:hover {
+    background: rgba(99, 102, 241, 0.09) !important;
+    transform: translateX(8px) scale(1.005) !important;
+    box-shadow: -4px 0 0 0 var(--primary) !important;
 }
 
-.expense-row {
-    transition: background 0.2s ease, transform 0.2s ease !important;
+/* Status Badges Pulsing */
+.badge, .status-badge {
+    transition: transform 0.25s ease !important;
 }
 
-.expense-row:hover {
-    background: rgba(99, 102, 241, 0.07) !important;
-    transform: translateX(4px) !important;
+.badge:hover, .status-badge:hover {
+    animation: pulseBadge 1.2s ease-in-out infinite;
 }
 
 /* --- Reduce motion for accessibility --- */

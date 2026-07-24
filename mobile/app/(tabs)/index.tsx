@@ -522,9 +522,25 @@ export default function DashboardScreen() {
               <Text style={[styles.emptyText, { color: c.textMuted }]}>No matches found</Text>
             </View>
           ) : (
-            filteredExpenses.map((item) => (
-              <View key={item.id} style={[styles.transactionCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                <View style={[styles.txIconCircle, { backgroundColor: getCategoryColor(item.categoryName) + '15' }]}>
+            filteredExpenses.map((item, index) => (
+              <Animated.View 
+                key={item.id} 
+                style={[
+                  styles.transactionCard, 
+                  { 
+                    backgroundColor: c.card, 
+                    borderColor: c.border,
+                    opacity: fadeAnim,
+                    transform: [{
+                      translateY: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20 + (index * 6), 0]
+                      })
+                    }]
+                  }
+                ]}
+              >
+                <View style={[styles.txIconCircle, { backgroundColor: getCategoryColor(item.categoryName) + '18' }]}>
                   <Ionicons name={getCategoryIconName(item.categoryName)} size={20} color={getCategoryColor(item.categoryName)} />
                 </View>
                 <View style={styles.txMain}>
@@ -532,7 +548,7 @@ export default function DashboardScreen() {
                   <Text style={[styles.txMeta, { color: c.textMuted }]}>{item.categoryName} • {item.expenseDate}</Text>
                 </View>
                 <Text style={styles.txAmount}>-₹{Number(item.amount).toFixed(2)}</Text>
-              </View>
+              </Animated.View>
             ))
           )}
         </View>
