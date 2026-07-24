@@ -98,7 +98,7 @@ export default function ProfileScreen() {
               placeholderTextColor={c.textMuted}
             />
             <TouchableOpacity style={styles.saveNickBtn} onPress={handleSaveNickname}>
-              <Ionicons name="checkmark" size={20} color="#05070D" />
+              <Ionicons name="checkmark" size={20} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelNickBtn} onPress={() => { setNickname(userName || ''); setIsEditing(false); }}>
               <Ionicons name="close" size={20} color={c.text} />
@@ -122,7 +122,7 @@ export default function ProfileScreen() {
         {/* Light Theme switch */}
         <View style={[styles.optionRow, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={styles.optionLeft}>
-            <View style={[styles.iconBox, { backgroundColor: isLight ? '#FF9F6E15' : 'rgba(255,255,255,0.03)' }]}>
+            <View style={[styles.iconBox, { backgroundColor: 'rgba(99, 102, 241, 0.12)' }]}>
               <Ionicons name={isLight ? "sunny" : "moon"} size={20} color={c.accent} />
             </View>
             <Text style={[styles.optionText, { color: c.text }]}>Light Mode Theme</Text>
@@ -130,8 +130,8 @@ export default function ProfileScreen() {
           <Switch
             value={isLight}
             onValueChange={toggleTheme}
-            trackColor={{ false: '#2d2d34', true: '#FF9F6E' }}
-            thumbColor={isLight ? '#FF9F6E' : '#4b5563'}
+            trackColor={{ false: '#1E293B', true: '#6366F1' }}
+            thumbColor={isLight ? '#FFFFFF' : '#94A3B8'}
           />
         </View>
       </View>
