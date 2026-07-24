@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,25 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const isLight = theme === 'light';
+
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(24)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const getThemeColors = () => {
     if (theme === 'light') {
@@ -69,64 +88,66 @@ export default function RegisterScreen() {
       style={[styles.container, { backgroundColor: c.bg }]}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
-          <Text style={[styles.subtitle, { color: c.textMuted }]}>Sign up to start tracking expenses</Text>
-        </View>
-
-        <View style={styles.form}>
-          <Text style={[styles.label, { color: c.textMuted }]}>Full Name</Text>
-          <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-            <Ionicons name="person-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { color: c.text }]}
-              placeholder="John Doe"
-              placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
-              autoCapitalize="words"
-              value={name}
-              onChangeText={setName}
-            />
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
+            <Text style={[styles.subtitle, { color: c.textMuted }]}>Sign up to start tracking expenses</Text>
           </View>
 
-          <Text style={[styles.label, { color: c.textMuted }]}>Email Address</Text>
-          <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-            <Ionicons name="mail-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { color: c.text }]}
-              placeholder="name@example.com"
-              placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
+          <View style={styles.form}>
+            <Text style={[styles.label, { color: c.textMuted }]}>Full Name</Text>
+            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+              <Ionicons name="person-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: c.text }]}
+                placeholder="John Doe"
+                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                autoCapitalize="words"
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
 
-          <Text style={[styles.label, { color: c.textMuted }]}>Password (minimum 6 characters)</Text>
-          <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-            <Ionicons name="lock-closed-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { color: c.text }]}
-              placeholder="••••••••"
-              placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={c.textMuted} />
+            <Text style={[styles.label, { color: c.textMuted }]}>Email Address</Text>
+            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+              <Ionicons name="mail-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: c.text }]}
+                placeholder="name@example.com"
+                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+
+            <Text style={[styles.label, { color: c.textMuted }]}>Password (minimum 6 characters)</Text>
+            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+              <Ionicons name="lock-closed-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: c.text }]}
+                placeholder="••••••••"
+                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={c.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={[styles.button, { backgroundColor: c.accent }]} onPress={handleRegister} disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.buttonText}>Register</Text>
+              )}
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={[styles.button, { backgroundColor: c.accent }]} onPress={handleRegister} disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator color="#05070D" />
-            ) : (
-              <Text style={styles.buttonText}>Register</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: c.textMuted }]}>Already have an account? </Text>

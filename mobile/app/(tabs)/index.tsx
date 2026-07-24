@@ -436,10 +436,10 @@ export default function DashboardScreen() {
             <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Expenses</Text>
             <View style={styles.listActions}>
               <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={[styles.iconAction, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                <Ionicons name="filter" size={18} color="#FF9F6E" />
+                <Ionicons name="filter" size={18} color={c.accent} />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleExportCSV} style={[styles.iconAction, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                <Ionicons name="download-outline" size={18} color="#FF9F6E" />
+                <Ionicons name="download-outline" size={18} color={c.accent} />
               </TouchableOpacity>
             </View>
           </View>
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   emptyLink: {
-    color: '#FF9F6E',
+    color: '#6366F1',
     fontSize: 13,
     fontWeight: 'bold',
   },
@@ -749,14 +749,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   filterBtnActive: {
-    backgroundColor: 'rgba(255, 159, 110, 0.1)',
-    borderColor: '#FF9F6E',
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    borderColor: '#6366F1',
   },
   filterBtnText: {
     fontSize: 11,
   },
   filterBtnTextActive: {
-    color: '#FF9F6E',
+    color: '#6366F1',
     fontWeight: '600',
   },
   transactionCard: {
