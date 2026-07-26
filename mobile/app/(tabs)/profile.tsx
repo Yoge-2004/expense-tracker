@@ -1,47 +1,61 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Switch, TextInput } from 'react-native';
+import {
+  StyleSheet, Text, View, TouchableOpacity, ScrollView,
+  Alert, Switch, TextInput, Animated,
+} from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { AnimatedCard } from '../../components/AnimatedCard';
+
+const MENU_ITEMS = [
+  {
+    icon: 'repeat',
+    label: 'Manage Subscriptions',
+    sub: 'View recurring expenses',
+    color: '#3B82F6',
+    route: '/(tabs)/subscriptions' as const,
+    danger: false,
+  },
+];
+
+const DANGER_ITEMS = [
+  {
+    icon: 'log-out-outline',
+    label: 'Sign Out',
+    sub: 'Log out of your account',
+    color: '#FF4757',
+    action: 'logout' as const,
+  },
+  {
+    icon: 'trash-outline',
+    label: 'Delete Account',
+    sub: 'Permanently remove all data',
+    color: '#FF4757',
+    action: 'delete' as const,
+  },
+];
 
 export default function ProfileScreen() {
   const { userId, userName, logout, theme, toggleTheme, updateUserName } = useAuth();
   const router = useRouter();
 
   const isLight = theme === 'light';
-
-  // Display Name editing state
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState(userName || '');
 
-  // Get active colors based on theme
-  const getThemeColors = () => {
-    if (theme === 'light') {
-      return {
-        bg: '#F5F7FA',
-        card: '#FFFFFF',
-        border: '#E2E8F0',
-        text: '#0F172A',
-        textMuted: '#64748B',
-        inputBg: '#FFFFFF',
-        inputBorder: '#E2E8F0',
-        accent: '#FF9F6E',
-      };
-    }
-    return {
-      bg: '#05070D',
-      card: '#121624',
-      border: 'rgba(255, 255, 255, 0.08)',
-      text: '#E6E8EC',
-      textMuted: '#9AA0AE',
-      inputBg: 'rgba(255, 255, 255, 0.03)',
-      inputBorder: 'rgba(255, 255, 255, 0.08)',
-      accent: '#FF9F6E',
-    };
+  const c = {
+    bg: isLight ? '#F0F4F8' : '#080B12',
+    card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
+    card2: isLight ? '#F8FBFF' : 'rgba(18,26,44,0.7)',
+    border: isLight ? '#D8E2F0' : 'rgba(255,255,255,0.07)',
+    text: isLight ? '#0A1628' : '#F0F4FF',
+    textMuted: isLight ? '#5B6880' : '#8B97B0',
+    inputBg: isLight ? '#EAF0F8' : 'rgba(10,16,30,0.8)',
+    accent: '#00D4AA',
+    orange: '#FF6B35',
   };
-
-  const c = getThemeColors();
 
   const handleSaveNickname = async () => {
     if (!nickname.trim()) {
@@ -51,249 +65,384 @@ export default function ProfileScreen() {
     try {
       await updateUserName(nickname.trim());
       setIsEditing(false);
-      Alert.alert('Success', 'Display name updated successfully.');
-    } catch (e) {
+      Alert.alert('✅ Saved', 'Display name updated.');
+    } catch {
       Alert.alert('Error', 'Could not save display name.');
     }
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This action is permanent and will delete all your expenses, budgets, and subscriptions. Are you sure?',
+      '⚠️ Delete Account',
+      'This will permanently delete all your expenses, budgets, and subscriptions. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete Permanently',
+          text: 'Delete Everything',
           style: 'destructive',
           onPress: async () => {
             try {
               await apiRequest(`/users/${userId}`, { method: 'DELETE' });
-              Alert.alert('Deleted', 'Your account has been deleted.');
               logout();
             } catch (err: any) {
               Alert.alert('Error', err.message || 'Could not delete account.');
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
+  const initial = (userName || 'U').charAt(0).toUpperCase();
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.bg }]}>
-      {/* Profile Details section */}
-      <View style={[styles.profileCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <View style={[styles.avatar, { backgroundColor: c.accent }]}>
-          <Text style={styles.avatarText}>{userName ? userName.charAt(0).toUpperCase() : 'U'}</Text>
+    <ScrollView
+      style={[styles.container, { backgroundColor: c.bg }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── HERO PROFILE CARD ── */}
+      <View style={[styles.heroCard, { backgroundColor: c.card, borderColor: c.accent + '35' }]}>
+        {/* Glow blobs */}
+        <View style={[styles.blob1, { backgroundColor: c.accent + '15' }]} />
+        <View style={[styles.blob2, { backgroundColor: c.orange + '10' }]} />
+
+        <View style={styles.avatarSection}>
+          <View style={[styles.avatarRing, { borderColor: c.accent + '50' }]}>
+            <View style={[styles.avatar, { backgroundColor: c.accent }]}>
+              <Text style={styles.avatarInitial}>{initial}</Text>
+            </View>
+          </View>
+          <View style={[styles.onlineDot, { borderColor: c.card }]} />
         </View>
-        
+
         {isEditing ? (
-          <View style={styles.editRow}>
-            <TextInput
-              style={[styles.nicknameInput, { color: c.text, borderColor: c.inputBorder, backgroundColor: c.inputBg }]}
-              value={nickname}
-              onChangeText={setNickname}
-              placeholder="Enter name"
-              placeholderTextColor={c.textMuted}
-            />
-            <TouchableOpacity style={styles.saveNickBtn} onPress={handleSaveNickname}>
-              <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+          <View style={styles.editNameRow}>
+            <View style={[styles.nameInput, { backgroundColor: c.inputBg, borderColor: c.accent }]}>
+              <TextInput
+                style={[styles.nameInputText, { color: c.text }]}
+                value={nickname}
+                onChangeText={setNickname}
+                placeholder="Enter display name"
+                placeholderTextColor={c.textMuted}
+                autoFocus
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.editActionBtn, { backgroundColor: c.accent }]}
+              onPress={handleSaveNickname}
+            >
+              <Ionicons name="checkmark" size={18} color="#080B12" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelNickBtn} onPress={() => { setNickname(userName || ''); setIsEditing(false); }}>
-              <Ionicons name="close" size={20} color={c.text} />
+            <TouchableOpacity
+              style={[styles.editActionBtn, { backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border }]}
+              onPress={() => { setNickname(userName || ''); setIsEditing(false); }}
+            >
+              <Ionicons name="close" size={18} color={c.textMuted} />
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.nameRow}>
-            <Text style={[styles.userName, { color: c.text }]}>{userName || 'Tracker User'}</Text>
-            <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editIconBtn}>
-              <Ionicons name="pencil-outline" size={16} color={c.accent} />
+            <Text style={[styles.displayName, { color: c.text }]}>{userName || 'Tracker User'}</Text>
+            <TouchableOpacity
+              style={[styles.pencilBtn, { backgroundColor: c.accent + '18', borderColor: c.accent + '40' }]}
+              onPress={() => setIsEditing(true)}
+            >
+              <Ionicons name="pencil" size={12} color={c.accent} />
             </TouchableOpacity>
           </View>
         )}
-        <Text style={[styles.userMeta, { color: c.textMuted }]}>ID: {userId}</Text>
+        <Text style={[styles.userIdText, { color: c.textMuted }]}>User ID #{userId}</Text>
+
+        {/* Stat pills */}
+        <View style={styles.statRow}>
+          <View style={[styles.statPill, { backgroundColor: c.accent + '12', borderColor: c.accent + '30' }]}>
+            <Ionicons name="wallet-outline" size={13} color={c.accent} />
+            <Text style={[styles.statLabel, { color: c.accent }]}>Expense Tracker</Text>
+          </View>
+          <View style={[styles.statPill, { backgroundColor: c.orange + '12', borderColor: c.orange + '30' }]}>
+            <Ionicons name="star-outline" size={13} color={c.orange} />
+            <Text style={[styles.statLabel, { color: c.orange }]}>Pro Member</Text>
+          </View>
+        </View>
       </View>
 
-      {/* Settings Options List */}
+      {/* ── PREFERENCES ── */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: c.text }]}>Preferences</Text>
-        
-        {/* Light Theme switch */}
-        <View style={[styles.optionRow, { backgroundColor: c.card, borderColor: c.border }]}>
-          <View style={styles.optionLeft}>
-            <View style={[styles.iconBox, { backgroundColor: 'rgba(99, 102, 241, 0.12)' }]}>
-              <Ionicons name={isLight ? "sunny" : "moon"} size={20} color={c.accent} />
-            </View>
-            <Text style={[styles.optionText, { color: c.text }]}>Light Mode Theme</Text>
+        <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Preferences</Text>
+
+        <View style={[styles.settingRow, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.settingIconBox, { backgroundColor: (isLight ? '#FBBF24' : '#3B82F6') + '18' }]}>
+            <Ionicons name={isLight ? 'sunny' : 'moon'} size={18} color={isLight ? '#FBBF24' : '#3B82F6'} />
+          </View>
+          <View style={styles.settingTextGroup}>
+            <Text style={[styles.settingTitle, { color: c.text }]}>
+              {isLight ? 'Light Mode' : 'Dark Mode'}
+            </Text>
+            <Text style={[styles.settingSub, { color: c.textMuted }]}>
+              {isLight ? 'Switch to dark theme' : 'Switch to light theme'}
+            </Text>
           </View>
           <Switch
             value={isLight}
             onValueChange={toggleTheme}
-            trackColor={{ false: '#1E293B', true: '#6366F1' }}
-            thumbColor={isLight ? '#FFFFFF' : '#94A3B8'}
+            trackColor={{ false: '#1E2A3A', true: '#00D4AA' }}
+            thumbColor="#FFFFFF"
           />
         </View>
       </View>
 
+      {/* ── ACCOUNT ── */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: c.text }]}>Account</Text>
+        <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Account</Text>
 
-        {/* Manage subscriptions option */}
-        <TouchableOpacity 
-          style={[styles.optionRow, { backgroundColor: c.card, borderColor: c.border }]}
-          onPress={() => router.push('/(tabs)/subscriptions')}
-        >
-          <View style={styles.optionLeft}>
-            <View style={[styles.iconBox, { backgroundColor: 'rgba(255,255,255,0.03)' }]}>
-              <Ionicons name="repeat" size={20} color={c.accent} />
+        {MENU_ITEMS.map((item, i) => (
+          <AnimatedCard
+            key={i}
+            style={[styles.settingRow, { backgroundColor: c.card, borderColor: c.border }]}
+            onPress={() => router.push(item.route as any)}
+          >
+            <View style={[styles.settingIconBox, { backgroundColor: item.color + '18' }]}>
+              <Ionicons name={item.icon as any} size={18} color={item.color} />
             </View>
-            <Text style={[styles.optionText, { color: c.text }]}>Manage Subscriptions</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
-        </TouchableOpacity>
+            <View style={styles.settingTextGroup}>
+              <Text style={[styles.settingTitle, { color: c.text }]}>{item.label}</Text>
+              <Text style={[styles.settingSub, { color: c.textMuted }]}>{item.sub}</Text>
+            </View>
+            <View style={[styles.chevronBox, { backgroundColor: c.inputBg }]}>
+              <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
+            </View>
+          </AnimatedCard>
+        ))}
+      </View>
 
-        {/* Logout option */}
-        <TouchableOpacity 
-          style={[styles.optionRow, { backgroundColor: c.card, borderColor: c.border }]}
-          onPress={logout}
-        >
-          <View style={styles.optionLeft}>
-            <View style={[styles.iconBox, { backgroundColor: 'rgba(255,255,255,0.03)' }]}>
-              <Ionicons name="log-out-outline" size={20} color="#FF6B50" />
-            </View>
-            <Text style={[styles.optionText, { color: '#FF6B50' }]}>Sign Out</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
-        </TouchableOpacity>
+      {/* ── DANGER ZONE ── */}
+      <View style={[styles.section, styles.dangerSection]}>
+        <Text style={[styles.sectionLabel, { color: '#FF4757' }]}>Danger Zone</Text>
 
-        {/* Delete account option */}
-        <TouchableOpacity 
-          style={[styles.optionRow, { backgroundColor: c.card, borderColor: c.border }]}
-          onPress={handleDeleteAccount}
-        >
-          <View style={styles.optionLeft}>
-            <View style={[styles.iconBox, { backgroundColor: 'rgba(255,107,80,0.1)' }]}>
-              <Ionicons name="trash-outline" size={20} color="#FF6B50" />
+        {DANGER_ITEMS.map((item, i) => (
+          <AnimatedCard
+            key={i}
+            style={[styles.settingRow, styles.dangerRow, { backgroundColor: 'rgba(255,71,87,0.05)', borderColor: 'rgba(255,71,87,0.2)' }]}
+            onPress={item.action === 'logout' ? logout : handleDeleteAccount}
+          >
+            <View style={[styles.settingIconBox, { backgroundColor: 'rgba(255,71,87,0.12)' }]}>
+              <Ionicons name={item.icon as any} size={18} color="#FF4757" />
             </View>
-            <Text style={[styles.optionText, { color: '#FF6B50' }]}>Delete Account Permanently</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
-        </TouchableOpacity>
+            <View style={styles.settingTextGroup}>
+              <Text style={[styles.settingTitle, { color: '#FF4757' }]}>{item.label}</Text>
+              <Text style={[styles.settingSub, { color: '#FF475780' }]}>{item.sub}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#FF475760" />
+          </AnimatedCard>
+        ))}
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: c.textMuted }]}>ExpenseTracker v1.0 · Made with ♥</Text>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  profileCard: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    borderRadius: 20,
+  container: { flex: 1 },
+
+  /* HERO */
+  heroCard: {
+    margin: 20,
+    borderRadius: 24,
     borderWidth: 1,
-    marginBottom: 24,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: 'center',
+    padding: 24,
     alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  blob1: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    top: -60,
+    right: -40,
+  },
+  blob2: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    bottom: -20,
+    left: -20,
+  },
+  avatarSection: {
+    position: 'relative',
     marginBottom: 16,
   },
-  avatarText: {
-    color: '#05070D',
-    fontSize: 32,
-    fontWeight: 'bold',
+  avatarRing: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  avatarInitial: {
+    fontSize: 34,
+    fontWeight: '900',
+    color: '#080B12',
+  },
+  onlineDot: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#00D4AA',
+    borderWidth: 3,
+    bottom: 2,
+    right: 2,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     marginBottom: 4,
   },
-  userName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  displayName: {
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
-  editIconBtn: {
-    padding: 4,
+  pencilBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  editRow: {
+  editNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 4,
-    paddingHorizontal: 20,
+    width: '100%',
+    paddingHorizontal: 8,
   },
-  nicknameInput: {
+  nameInput: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 6,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    height: 42,
     paddingHorizontal: 12,
-    fontSize: 16,
-    height: 38,
   },
-  saveNickBtn: {
-    backgroundColor: '#FF9F6E',
-    width: 38,
-    height: 38,
-    borderRadius: 8,
+  nameInputText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  editActionBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cancelNickBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+  userIdText: {
+    fontSize: 12,
+    marginBottom: 14,
   },
-  userMeta: {
-    fontSize: 13,
+  statRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  optionRow: {
+  statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 14,
+    gap: 5,
     borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  /* SECTIONS */
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  dangerSection: {
+    marginBottom: 0,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     marginBottom: 10,
   },
-  optionLeft: {
+  settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 10,
+    gap: 14,
   },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  dangerRow: {},
+  settingIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  settingTextGroup: {
+    flex: 1,
+  },
+  settingTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  settingSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  chevronBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  optionText: {
-    fontSize: 15,
-    fontWeight: '500',
+
+  /* FOOTER */
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  footerText: {
+    fontSize: 12,
   },
 });

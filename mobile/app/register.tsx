@@ -1,8 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
+import {
+  StyleSheet, Text, TextInput, View, TouchableOpacity,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
+  ScrollView, Animated,
+} from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+
+const STEPS = ['Name', 'Email', 'Password'];
+
+const PERKS = [
+  { icon: 'shield-checkmark', text: 'Bank-grade security', color: '#00D4AA' },
+  { icon: 'analytics', text: 'Smart spending insights', color: '#FF6B35' },
+  { icon: 'notifications', text: 'Budget alerts', color: '#3B82F6' },
+  { icon: 'repeat', text: 'Subscription tracking', color: '#FBBF24' },
+];
 
 export default function RegisterScreen() {
   const { register, theme } = useAuth();
@@ -12,68 +25,47 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const isLight = theme === 'light';
 
-  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(24)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const scaleAnim = useRef(new Animated.Value(0.93)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      })
+      Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 50, useNativeDriver: true }),
     ]).start();
   }, []);
 
-  const getThemeColors = () => {
-    if (theme === 'light') {
-      return {
-        bg: '#F8FAFC',
-        card: '#FFFFFF',
-        border: '#E2E8F0',
-        text: '#0F172A',
-        textMuted: '#64748B',
-        inputBg: '#F1F5F9',
-        accent: '#6366F1',
-      };
-    }
-    return {
-      bg: '#090D16',
-      card: 'rgba(17, 24, 39, 0.85)',
-      border: 'rgba(255, 255, 255, 0.08)',
-      text: '#F8FAFC',
-      textMuted: '#94A3B8',
-      inputBg: 'rgba(15, 23, 42, 0.6)',
-      accent: '#6366F1',
-    };
+  const c = {
+    bg: isLight ? '#F0F4F8' : '#080B12',
+    card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
+    border: isLight ? '#D8E2F0' : 'rgba(255,255,255,0.08)',
+    text: isLight ? '#0A1628' : '#F0F4FF',
+    textMuted: isLight ? '#5B6880' : '#8B97B0',
+    inputBg: isLight ? '#EAF0F8' : 'rgba(10,16,30,0.8)',
+    accent: '#00D4AA',
+    orange: '#FF6B35',
   };
-
-  const c = getThemeColors();
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      Alert.alert('Missing Info', 'Please fill in all fields.');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters.');
+      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
       return;
     }
-
     setIsLoading(true);
     try {
       await register(name.trim(), email.trim(), password);
-      Alert.alert('Success', 'Account created successfully! Please sign in.', [
-        { text: 'OK', onPress: () => router.replace('/login') }
+      Alert.alert('🎉 Welcome!', 'Account created! Please sign in.', [
+        { text: 'Sign In', onPress: () => router.replace('/login') }
       ]);
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Something went wrong.');
@@ -82,159 +74,388 @@ export default function RegisterScreen() {
     }
   };
 
+  const inputBorder = (field: string) =>
+    focusedField === field ? c.accent : c.border;
+
+  const completedCount = [name, email, password].filter(Boolean).length;
+  const progressPct = (completedCount / 3) * 100;
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: c.bg }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
-            <Text style={[styles.subtitle, { color: c.textMuted }]}>Sign up to start tracking expenses</Text>
-          </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* HEADER */}
+        <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <TouchableOpacity
+            style={[styles.backBtn, { borderColor: c.border, backgroundColor: c.inputBg }]}
+            onPress={() => router.replace('/login')}
+          >
+            <Ionicons name="arrow-back" size={18} color={c.textMuted} />
+          </TouchableOpacity>
 
-          <View style={styles.form}>
-            <Text style={[styles.label, { color: c.textMuted }]}>Full Name</Text>
-            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <Ionicons name="person-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
+          <View style={styles.headerTitle}>
+            <Text style={[styles.headerLabel, { color: c.textMuted }]}>Step {completedCount + 1 > 3 ? 3 : completedCount + 1} of 3</Text>
+            <Text style={[styles.pageTitle, { color: c.text }]}>Create your account</Text>
+
+            {/* Progress bar */}
+            <View style={[styles.progressBg, { backgroundColor: c.border }]}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  { backgroundColor: c.accent, width: `${progressPct}%` },
+                ]}
+              />
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* FORM CARD */}
+        <Animated.View
+          style={[
+            styles.formCard,
+            {
+              backgroundColor: c.card,
+              borderColor: c.border,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            },
+          ]}
+        >
+          {/* Full Name */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabelRow}>
+              <View style={[styles.stepDot, { backgroundColor: name ? c.accent : c.border }]}>
+                {name
+                  ? <Ionicons name="checkmark" size={10} color="#080B12" />
+                  : <Text style={styles.stepDotText}>1</Text>
+                }
+              </View>
+              <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Full Name</Text>
+            </View>
+            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('name') }]}>
+              <Ionicons name="person-outline" size={18} color={focusedField === 'name' ? c.accent : c.textMuted} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="John Doe"
-                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
                 autoCapitalize="words"
                 value={name}
                 onChangeText={setName}
+                onFocus={() => setFocusedField('name')}
+                onBlur={() => setFocusedField(null)}
               />
+              {name.length > 0 && (
+                <Ionicons name="checkmark-circle" size={18} color={c.accent} />
+              )}
             </View>
+          </View>
 
-            <Text style={[styles.label, { color: c.textMuted }]}>Email Address</Text>
-            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <Ionicons name="mail-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
+          {/* Email */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabelRow}>
+              <View style={[styles.stepDot, { backgroundColor: email ? c.accent : c.border }]}>
+                {email
+                  ? <Ionicons name="checkmark" size={10} color="#080B12" />
+                  : <Text style={styles.stepDotText}>2</Text>
+                }
+              </View>
+              <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Email Address</Text>
+            </View>
+            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('email') }]}>
+              <Ionicons name="mail-outline" size={18} color={focusedField === 'email' ? c.accent : c.textMuted} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="name@example.com"
-                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
               />
+              {email.includes('@') && (
+                <Ionicons name="checkmark-circle" size={18} color={c.accent} />
+              )}
             </View>
+          </View>
 
-            <Text style={[styles.label, { color: c.textMuted }]}>Password (minimum 6 characters)</Text>
-            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <Ionicons name="lock-closed-outline" size={20} color={c.textMuted} style={styles.inputIcon} />
+          {/* Password */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.fieldLabelRow}>
+              <View style={[styles.stepDot, { backgroundColor: password.length >= 6 ? c.accent : c.border }]}>
+                {password.length >= 6
+                  ? <Ionicons name="checkmark" size={10} color="#080B12" />
+                  : <Text style={styles.stepDotText}>3</Text>
+                }
+              </View>
+              <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Password <Text style={{ color: c.textMuted, fontWeight: '400' }}>(min. 6 chars)</Text></Text>
+            </View>
+            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('password') }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={focusedField === 'password' ? c.accent : c.textMuted} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="••••••••"
-                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 value={password}
                 onChangeText={setPassword}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={c.textMuted} />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={18} color={c.textMuted} />
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity style={[styles.button, { backgroundColor: c.accent }]} onPress={handleRegister} disabled={isLoading}>
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.buttonText}>Register</Text>
-              )}
-            </TouchableOpacity>
+            {/* Strength indicator */}
+            {password.length > 0 && (
+              <View style={styles.strengthRow}>
+                {[1, 2, 3, 4].map(i => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.strengthSegment,
+                      {
+                        backgroundColor:
+                          password.length >= i * 3
+                            ? i <= 1 ? '#FF4757' : i <= 2 ? '#FBBF24' : i <= 3 ? '#00B8D9' : '#00D4AA'
+                            : c.border,
+                      },
+                    ]}
+                  />
+                ))}
+                <Text style={[styles.strengthLabel, { color: c.textMuted }]}>
+                  {password.length < 4 ? 'Weak' : password.length < 7 ? 'Fair' : password.length < 10 ? 'Good' : 'Strong'}
+                </Text>
+              </View>
+            )}
           </View>
+
+          {/* SUBMIT */}
+          <TouchableOpacity
+            style={[styles.submitBtn, { opacity: isLoading ? 0.7 : 1 }]}
+            onPress={handleRegister}
+            disabled={isLoading}
+            activeOpacity={0.85}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#080B12" size="small" />
+            ) : (
+              <View style={styles.submitBtnInner}>
+                <Text style={styles.submitBtnText}>Create Account</Text>
+                <Ionicons name="rocket" size={18} color="#080B12" />
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.signInLink} onPress={() => router.replace('/login')}>
+            <Text style={[styles.signInLinkText, { color: c.textMuted }]}>
+              Already have an account?{' '}
+              <Text style={{ color: c.accent, fontWeight: '800' }}>Sign In</Text>
+            </Text>
+          </TouchableOpacity>
         </Animated.View>
 
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: c.textMuted }]}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.replace('/login')}>
-            <Text style={[styles.linkText, { color: c.accent }]}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
+        {/* PERKS SECTION */}
+        <Animated.View style={[styles.perksSection, { opacity: fadeAnim }]}>
+          <Text style={[styles.perksTitle, { color: c.textMuted }]}>Everything you get for free</Text>
+          <View style={styles.perksGrid}>
+            {PERKS.map((perk, i) => (
+              <View key={i} style={[styles.perkItem, { backgroundColor: perk.color + '12', borderColor: perk.color + '30' }]}>
+                <Ionicons name={perk.icon as any} size={16} color={perk.color} />
+                <Text style={[styles.perkText, { color: perk.color }]}>{perk.text}</Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContainer: {
+  container: { flex: 1 },
+  scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
+
+  /* HEADER */
   header: {
-    alignItems: 'center',
-    marginBottom: 36,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-  },
-  form: {
     marginBottom: 24,
   },
-  label: {
-    fontSize: 14,
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  backBtn: {
+    width: 38,
+    height: 38,
     borderRadius: 12,
-    marginBottom: 20,
-    paddingHorizontal: 12,
-    height: 52,
     borderWidth: 1,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-  },
-  eyeIcon: {
-    padding: 4,
-  },
-  button: {
-    borderRadius: 12,
-    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    shadowColor: '#FF9F6E',
-    shadowOffset: { width: 0, height: 4 },
+    marginBottom: 20,
+  },
+  headerTitle: {},
+  headerLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  pageTitle: {
+    fontSize: 30,
+    fontWeight: '900',
+    letterSpacing: -1,
+    marginBottom: 16,
+  },
+  progressBg: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+
+  /* FORM CARD */
+  formCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 24,
+    elevation: 10,
   },
-  buttonText: {
-    color: '#05070D',
-    fontSize: 16,
-    fontWeight: 'bold',
+  fieldGroup: {
+    marginBottom: 20,
   },
-  footer: {
+  fieldLabelRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  stepDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  footerText: {
+  stepDotText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#8B97B0',
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    height: 52,
+    paddingHorizontal: 14,
+  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 15 },
+  eyeBtn: { padding: 4 },
+
+  /* STRENGTH */
+  strengthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  strengthSegment: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+  },
+  strengthLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    width: 42,
+    textAlign: 'right',
+  },
+
+  /* SUBMIT */
+  submitBtn: {
+    marginTop: 8,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: '#00D4AA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  submitBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  submitBtnText: {
+    color: '#080B12',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  signInLink: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  signInLinkText: {
     fontSize: 14,
   },
-  linkText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+
+  /* PERKS */
+  perksSection: {},
+  perksTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  perksGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  perkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  perkText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

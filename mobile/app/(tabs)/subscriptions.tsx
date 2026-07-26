@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import {
+  StyleSheet, Text, View, ScrollView, TouchableOpacity,
+  ActivityIndicator, Alert, RefreshControl, Animated,
+} from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +17,43 @@ interface Subscription {
   categoryName: string;
 }
 
+const FREQUENCY_COLORS: Record<string, string> = {
+  DAILY: '#FF6B35',
+  WEEKLY: '#FBBF24',
+  MONTHLY: '#00D4AA',
+  YEARLY: '#3B82F6',
+  CUSTOM: '#A855F7',
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  food: '#EF4444',
+  transport: '#3B82F6',
+  utilities: '#F59E0B',
+  entertainment: '#EC4899',
+  health: '#10B981',
+};
+
+function getCategoryColor(name: string) {
+  return CATEGORY_COLORS[name.toLowerCase()] || '#8B5CF6';
+}
+
+function getCategoryIcon(name: string): any {
+  const n = name.toLowerCase();
+  if (n.includes('food') || n.includes('dining')) return 'fast-food';
+  if (n.includes('transport') || n.includes('travel')) return 'car';
+  if (n.includes('utilities') || n.includes('bill')) return 'flash';
+  if (n.includes('entertainment') || n.includes('movie')) return 'game-controller';
+  if (n.includes('health') || n.includes('medical')) return 'medical';
+  return 'repeat';
+}
+
+function getDaysUntil(dateStr: string): number {
+  const target = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
 export default function SubscriptionsScreen() {
   const { userId, theme } = useAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -22,29 +62,16 @@ export default function SubscriptionsScreen() {
 
   const isLight = theme === 'light';
 
-  // Dynamic Theme Colors configuration
-  const getThemeColors = () => {
-    if (theme === 'light') {
-      return {
-        bg: '#F8FAFC',
-        card: '#FFFFFF',
-        border: '#E2E8F0',
-        text: '#0F172A',
-        textMuted: '#64748B',
-        accent: '#6366F1',
-      };
-    }
-    return {
-      bg: '#090D16',
-      card: 'rgba(17, 24, 39, 0.85)',
-      border: 'rgba(255, 255, 255, 0.08)',
-      text: '#F8FAFC',
-      textMuted: '#94A3B8',
-      accent: '#6366F1',
-    };
+  const c = {
+    bg: isLight ? '#F0F4F8' : '#080B12',
+    card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
+    border: isLight ? '#D8E2F0' : 'rgba(255,255,255,0.07)',
+    text: isLight ? '#0A1628' : '#F0F4FF',
+    textMuted: isLight ? '#5B6880' : '#8B97B0',
+    inputBg: isLight ? '#EAF0F8' : 'rgba(10,16,30,0.7)',
+    accent: '#00D4AA',
+    orange: '#FF6B35',
   };
-
-  const c = getThemeColors();
 
   const fetchSubscriptions = async () => {
     if (!userId) return;
@@ -70,223 +97,375 @@ export default function SubscriptionsScreen() {
     fetchSubscriptions();
   };
 
-  const handleCancelSubscription = (subId: number, name: string) => {
+  const handleCancel = (subId: number, name: string) => {
     Alert.alert(
       'Cancel Subscription',
-      `Are you sure you want to cancel the recurring subscription for "${name}"?`,
+      `Cancel the recurring payment for "${name}"? This cannot be undone.`,
       [
         { text: 'Keep Active', style: 'cancel' },
-        { 
-          text: 'Cancel Repeat', 
+        {
+          text: 'Cancel It',
           style: 'destructive',
           onPress: async () => {
             try {
-              await apiRequest(`/expenses/recurring/${subId}`, {
-                method: 'DELETE',
-              });
-              Alert.alert('Success', 'Subscription cancelled successfully.');
+              await apiRequest(`/expenses/recurring/${subId}`, { method: 'DELETE' });
+              Alert.alert('Done', 'Subscription cancelled.');
               fetchSubscriptions();
             } catch (error: any) {
-              Alert.alert('Failed', error.message || 'Could not cancel the subscription.');
+              Alert.alert('Failed', error.message || 'Could not cancel.');
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
-  const categoryColors: { [key: string]: string } = {
-    food: '#ef4444',
-    transport: '#3b82f6',
-    utilities: '#f59e0b',
-    entertainment: '#ec4899',
-    health: '#10b981',
-  };
-
-  const getCategoryColor = (name: string) => categoryColors[name.toLowerCase()] || '#8b5cf6';
-
-  const getCategoryIconName = (name: string): any => {
-    const norm = name.toLowerCase();
-    if (norm.includes('food') || norm.includes('dining')) return 'fast-food';
-    if (norm.includes('transport') || norm.includes('travel') || norm.includes('fuel')) return 'car';
-    if (norm.includes('utilities') || norm.includes('electricity') || norm.includes('water') || norm.includes('bill')) return 'flash';
-    if (norm.includes('entertainment') || norm.includes('movie') || norm.includes('game') || norm.includes('fun')) return 'game-controller';
-    if (norm.includes('health') || norm.includes('medical') || norm.includes('fitness')) return 'medical';
-    return 'repeat';
-  };
+  const totalMonthly = subscriptions.reduce((sum, s) => {
+    const multipliers: Record<string, number> = {
+      DAILY: 30, WEEKLY: 4.33, MONTHLY: 1, YEARLY: 1 / 12,
+    };
+    return sum + Number(s.amount) * (multipliers[s.frequency] ?? 1);
+  }, 0);
 
   if (isLoading && !refreshing) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color="#FF9F6E" />
+        <ActivityIndicator size="large" color={c.accent} />
+        <Text style={[styles.loadingText, { color: c.textMuted }]}>Loading subscriptions...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       style={[styles.container, { backgroundColor: c.bg }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF9F6E" />}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />}
     >
+      {/* ── HEADER ── */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: c.text }]}>Active Subscriptions</Text>
-        <Text style={[styles.subtitle, { color: c.textMuted }]}>Configured monthly or repeating outgoings</Text>
+        <View>
+          <Text style={[styles.pageTitle, { color: c.text }]}>Subscriptions</Text>
+          <Text style={[styles.pageSub, { color: c.textMuted }]}>Your recurring payments</Text>
+        </View>
+        <View style={[styles.countBadge, { backgroundColor: c.accent + '18', borderColor: c.accent + '40' }]}>
+          <Text style={[styles.countBadgeText, { color: c.accent }]}>{subscriptions.length} active</Text>
+        </View>
       </View>
 
+      {/* ── MONTHLY TOTAL CARD ── */}
+      {subscriptions.length > 0 && (
+        <View style={[styles.totalCard, { backgroundColor: c.card, borderColor: c.accent + '35' }]}>
+          <View style={[styles.totalCardGlow, { backgroundColor: c.accent + '12' }]} />
+          <View style={styles.totalCardContent}>
+            <View>
+              <Text style={[styles.totalCardLabel, { color: c.textMuted }]}>Monthly total</Text>
+              <Text style={[styles.totalCardAmount, { color: c.text }]}>
+                ₹{totalMonthly.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </Text>
+              <Text style={[styles.totalCardSub, { color: c.textMuted }]}>
+                across {subscriptions.length} subscription{subscriptions.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            <View style={[styles.totalCardIcon, { backgroundColor: c.accent + '20', borderColor: c.accent + '50' }]}>
+              <Ionicons name="repeat" size={22} color={c.accent} />
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* ── LIST ── */}
       {subscriptions.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="repeat-outline" size={60} color={c.textMuted} />
-          <Text style={[styles.emptyText, { color: c.text }]}>No active subscriptions found</Text>
-          <Text style={[styles.emptySubtext, { color: c.textMuted }]}>
-            Turn on "Repeat this expense repeatedly" when recording expenses to set them up.
+          <View style={[styles.emptyIconBox, { backgroundColor: c.accent + '12' }]}>
+            <Ionicons name="repeat-outline" size={40} color={c.accent} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: c.text }]}>No subscriptions yet</Text>
+          <Text style={[styles.emptyBody, { color: c.textMuted }]}>
+            When adding an expense, toggle "Repeat this expense" to create a recurring subscription here.
           </Text>
         </View>
       ) : (
         <View style={styles.list}>
-          {subscriptions.map((item) => (
-            <View key={item.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.cardHeader}>
-                <View style={styles.leftCol}>
-                  <View style={[styles.iconCircle, { backgroundColor: getCategoryColor(item.categoryName) + '15' }]}>
-                    <Ionicons name={getCategoryIconName(item.categoryName)} size={20} color={getCategoryColor(item.categoryName)} />
+          {subscriptions.map((item, index) => {
+            const col = getCategoryColor(item.categoryName);
+            const freqColor = FREQUENCY_COLORS[item.frequency] || '#8B5CF6';
+            const daysUntil = getDaysUntil(item.nextDueDate);
+            const isDueSoon = daysUntil <= 3 && daysUntil >= 0;
+            return (
+              <View
+                key={item.id}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: c.card,
+                    borderColor: c.border,
+                    borderLeftColor: col,
+                    borderLeftWidth: 3,
+                  },
+                ]}
+              >
+                {/* Card Header */}
+                <View style={styles.cardHeader}>
+                  <View style={[styles.catIcon, { backgroundColor: col + '20' }]}>
+                    <Ionicons name={getCategoryIcon(item.categoryName)} size={20} color={col} />
                   </View>
-                  <View>
+                  <View style={styles.cardInfo}>
                     <Text style={[styles.cardTitle, { color: c.text }]}>{item.description}</Text>
-                    <Text style={[styles.cardMeta, { color: c.textMuted }]}>{item.categoryName} • {item.frequency}</Text>
+                    <View style={styles.cardMetaRow}>
+                      <Text style={[styles.cardMeta, { color: c.textMuted }]}>{item.categoryName}</Text>
+                      <View style={[styles.freqBadge, { backgroundColor: freqColor + '18', borderColor: freqColor + '40' }]}>
+                        <Text style={[styles.freqBadgeText, { color: freqColor }]}>
+                          {item.frequency}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
+                  <Text style={[styles.cardAmount, { color: c.text }]}>₹{Number(item.amount).toFixed(0)}</Text>
                 </View>
-                <Text style={[styles.cardAmount, { color: c.text }]}>₹{Number(item.amount).toFixed(2)}</Text>
-              </View>
 
-              <View style={[styles.cardDivider, { backgroundColor: c.border }]} />
+                {/* Divider */}
+                <View style={[styles.divider, { backgroundColor: c.border }]} />
 
-              <View style={styles.cardFooter}>
-                <View style={styles.footerInfo}>
-                  <Ionicons name="calendar-outline" size={14} color={c.textMuted} />
-                  <Text style={[styles.footerInfoText, { color: c.textMuted }]}>Next bill: {item.nextDueDate}</Text>
+                {/* Card Footer */}
+                <View style={styles.cardFooter}>
+                  <View style={styles.dueDateRow}>
+                    <Ionicons
+                      name={isDueSoon ? 'alert-circle' : 'calendar-outline'}
+                      size={13}
+                      color={isDueSoon ? '#FF4757' : c.textMuted}
+                    />
+                    <Text style={[styles.dueDateText, { color: isDueSoon ? '#FF4757' : c.textMuted }]}>
+                      {isDueSoon
+                        ? daysUntil === 0 ? 'Due today!' : `Due in ${daysUntil}d`
+                        : `Next: ${item.nextDueDate}`}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.cancelBtn}
+                    onPress={() => handleCancel(item.id, item.description)}
+                  >
+                    <Ionicons name="close-circle-outline" size={13} color="#FF4757" />
+                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity 
-                  style={styles.cancelButton}
-                  onPress={() => handleCancelSubscription(item.id, item.description)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel Repeat</Text>
-                </TouchableOpacity>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12,
   },
+  loadingText: { fontSize: 14, fontWeight: '500' },
+
+  /* HEADER */
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  list: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
-  leftCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.8,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
+  pageSub: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  countBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  countBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  /* TOTAL CARD */
+  totalCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
     borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  totalCardGlow: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    top: -50,
+    right: -30,
+  },
+  totalCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+  },
+  totalCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  totalCardAmount: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+  totalCardSub: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  totalCardIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+  },
+
+  /* LIST */
+  list: {
+    paddingHorizontal: 20,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  catIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  cardInfo: {
+    flex: 1,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  cardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   cardMeta: {
     fontSize: 12,
-    marginTop: 2,
+  },
+  freqBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  freqBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   cardAmount: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
-  cardDivider: {
+  divider: {
     height: 1,
-    marginVertical: 14,
+    marginVertical: 12,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  footerInfo: {
+  dueDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
-  footerInfoText: {
+  dueDateText: {
     fontSize: 12,
-  },
-  cancelButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 107, 80, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 107, 80, 0.2)',
-  },
-  cancelButtonText: {
-    fontSize: 12,
-    color: '#FF6B50',
     fontWeight: '600',
   },
+  cancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,71,87,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,71,87,0.2)',
+  },
+  cancelBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FF4757',
+  },
+
+  /* EMPTY */
   emptyContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
     paddingHorizontal: 40,
+    paddingTop: 60,
+    gap: 14,
   },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 16,
+  emptyIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  emptySubtext: {
-    fontSize: 13,
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  emptyBody: {
+    fontSize: 14,
     textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });

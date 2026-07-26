@@ -3,12 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard | Expense Tracker</title>
+    <title>Financial Workspace | Expense Tracker Pro</title>
     <link rel="stylesheet" href="css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#05070D">
+    <meta name="theme-color" content="#090D16">
     <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -16,16 +16,37 @@
     <div class="hero-bg"></div>
 
     <div class="dashboard-container">
+        <!-- TOP COMMAND HEADER -->
         <header class="top-bar">
             <div class="dashboard-heading">
-                <h2>Dashboard</h2>
-                <p class="text-muted">Welcome back</p>
+                <div class="brand-badge">
+                    <span class="live-pulse"></span>
+                    <span class="brand-title">ExpenseTracker <span class="pro-tag">PRO</span></span>
+                </div>
+                <p class="text-muted" id="userWelcomeText">Welcome back</p>
             </div>
 
             <div class="top-bar-actions">
+                <!-- Search Command Input -->
+                <div class="command-search-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="filterSearch" placeholder="Search transactions (Press /)..." class="command-search-input">
+                    <span class="command-kbd">⌘K</span>
+                </div>
+
+                <button class="btn-primary add-expense-button" id="openModalBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Record Expense</span>
+                </button>
+
                 <button id="themeToggle" class="btn-icon" title="Switch Theme">
-                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="5"></circle>
                         <line x1="12" y1="1" x2="12" y2="3"></line>
                         <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -36,8 +57,7 @@
                         <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                         <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                     </svg>
-                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
@@ -45,72 +65,141 @@
                 <div class="user-profile" id="profileTrigger">
                     <div class="avatar">U</div>
                     <div class="profile-menu" id="profileMenu">
-                        <a href="#" id="manageSubsBtn">Subscriptions</a> <a href="#" id="logoutBtn">Logout</a>
-                        <a href="#" id="deleteAccountBtn" style="color: #FF6B50;">Delete Account</a>
+                        <a href="#" id="manageSubsBtn">🔄 Subscriptions</a>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                        <a href="#" id="deleteAccountBtn" style="color: #EF4444;">⚠️ Delete Account</a>
                     </div>
                 </div>
             </div>
         </header>
 
-        <section class="grid-stats">
-            <div class="summary-stack">
-                <div class="card summary-card summary-card-primary">
-                    <span class="card-label">Total Spent</span>
-                    <span class="card-value" id="totalAmount">₹0.00</span>
+        <!-- 4-COLUMN FINANCIAL METRICS MATRIX -->
+        <section class="grid-4-metrics">
+            <!-- Metric 1: Total Spent -->
+            <div class="metric-card metric-card-glow">
+                <div class="metric-header">
+                    <span class="card-label">Total Outflow</span>
+                    <span class="status-badge badge-primary" id="budgetUsageBadge">0% Used</span>
                 </div>
-                <div class="card summary-card">
-                    <span class="card-label">Expenses Count</span>
-                    <span class="card-value" id="expenseCount">0</span>
+                <div class="metric-value-row">
+                    <span class="metric-value" id="totalAmount">₹0.00</span>
                 </div>
-                <button class="btn-primary add-expense-button" id="openModalBtn">
-                    + Add New Expense
-                </button>
+                <div class="metric-footer">
+                    <span class="text-muted" id="expenseCountText">0 transactions recorded</span>
+                </div>
             </div>
 
-            <div class="card chart-card insight-card">
-                <div class="section-heading"><span class="card-label">Spend by Category</span><span class="section-meta">Current view</span></div>
+            <!-- Metric 2: Daily Burn Rate & Month End Forecast -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="card-label">Daily Burn Rate</span>
+                    <span class="status-badge badge-warning" id="burnRateBadge">Daily Average</span>
+                </div>
+                <div class="metric-value-row">
+                    <span class="metric-value" id="dailyBurnRate">₹0.00 / day</span>
+                </div>
+                <div class="metric-footer">
+                    <span class="text-muted" id="monthForecast">Projected: ₹0.00</span>
+                </div>
+            </div>
+
+            <!-- Metric 3: Top Spending Category -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="card-label">Highest Category</span>
+                    <span class="status-badge badge-success" id="topCatBadge">Top Outflow</span>
+                </div>
+                <div class="metric-value-row">
+                    <span class="metric-value" id="topCategoryName">—</span>
+                </div>
+                <div class="metric-footer">
+                    <span class="text-muted" id="topCategoryAmount">₹0.00 spent</span>
+                </div>
+            </div>
+
+            <!-- Metric 4: Recurring Subscriptions -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="card-label">Subscriptions</span>
+                    <span class="status-badge badge-accent" id="subsCountBadge">0 Active</span>
+                </div>
+                <div class="metric-value-row">
+                    <span class="metric-value" id="subsMonthlyTotal">₹0.00 / mo</span>
+                </div>
+                <div class="metric-footer">
+                    <a href="#" id="manageSubsLink" class="link-action">Manage Subscriptions &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALYTICS & INSIGHTS GRID (2 COLUMNS) -->
+        <section class="grid-analytics">
+            <!-- Donut Chart: Spend by Category -->
+            <div class="card insight-card">
+                <div class="section-heading">
+                    <div>
+                        <span class="card-label">Category Breakdown</span>
+                        <h4 class="section-title">Outflow Distribution</h4>
+                    </div>
+                    <span class="section-meta">All Time</span>
+                </div>
                 <div class="chart-wrapper">
                     <canvas id="expenseChart"></canvas>
                 </div>
             </div>
+
+            <!-- Area Chart: Cashflow Trend -->
+            <div class="card trend-card">
+                <div class="section-heading">
+                    <div>
+                        <span class="card-label">Cashflow Velocity</span>
+                        <h4 class="section-title">Spending History & Trend</h4>
+                    </div>
+                    <span class="section-meta">Up to 90 days</span>
+                </div>
+                <div class="trend-chart-wrapper">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
         </section>
 
-        <section class="card">
+        <!-- CATEGORY BUDGETS MATRIX -->
+        <section class="card budget-section">
             <div class="card-header">
-                <span class="card-label">Monthly Budgets</span>
-                <button id="addBudgetBtn" class="btn-icon btn-small" title="Set Budget">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                <div>
+                    <span class="card-label">Budget Governance</span>
+                    <h4 class="section-title">Monthly Category Limits</h4>
+                </div>
+                <button id="addBudgetBtn" class="btn-primary btn-small" title="Configure Budget">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
+                    <span>New Budget</span>
                 </button>
             </div>
-            <div id="budgetList">
+            <div id="budgetList" class="budget-grid-matrix">
                 <p class="text-muted" style="font-size:13px;">Loading budgets...</p>
             </div>
         </section>
 
-        <section class="card trend-card">
-            <div class="section-heading"><span class="card-label">Spending Trend</span><span class="section-meta">Up to 90 days</span></div>
-            <div class="trend-chart-wrapper">
-                <canvas id="trendChart"></canvas>
-            </div>
-        </section>
-
+        <!-- TRANSACTIONS TABLE & QUICK FILTERS -->
         <section class="card recent-transactions">
             <div class="list-header">
-                <h3>Recent Expenses</h3>
+                <div>
+                    <span class="card-label">Audit Trail</span>
+                    <h3 class="section-title">Transactions & Expenses</h3>
+                </div>
+                
                 <div class="list-header-actions">
-                    <input type="text" id="filterSearch" placeholder="Search expenses..." class="search-bar">
                     <input type="file" id="importFileInput" accept=".csv,.json" style="display:none">
                     <button id="importBtn" class="btn-icon" title="Import Expenses (CSV / JSON)">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     </button>
-                    <button id="exportCsvBtn" class="btn-icon" title="Export CSV">CSV</button>
-                    <button id="exportJsonBtn" class="btn-icon" title="Export JSON">JSON</button>
-                    <button id="exportPdfBtn" class="btn-icon" title="Export PDF Report">PDF</button>
-                    <button id="toggleFiltersBtn" class="btn-icon" title="Show Filters">
+                    <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export CSV">CSV</button>
+                    <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export JSON">JSON</button>
+                    <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export PDF Report">PDF</button>
+                    <button id="toggleFiltersBtn" class="btn-icon" title="Show Advanced Filters">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
@@ -119,6 +208,17 @@
                 </div>
             </div>
 
+            <!-- Category Pills Quick Bar -->
+            <div class="category-pills-bar" id="categoryPillsBar">
+                <button class="pill-chip active" data-category="all">All Transactions</button>
+                <button class="pill-chip" data-category="food">Food & Dining</button>
+                <button class="pill-chip" data-category="utilities">Utilities & Bills</button>
+                <button class="pill-chip" data-category="shopping">Shopping</button>
+                <button class="pill-chip" data-category="entertainment">Entertainment</button>
+                <button class="pill-chip" data-category="travel">Travel</button>
+            </div>
+
+            <!-- Filter Toolbar Drawer -->
             <div class="filter-toolbar" id="filterPanel">
                 <input type="text" id="filterStartDate" class="filter-select dark-date" placeholder="Start Date"
                     onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
@@ -155,20 +255,25 @@
                 </select>
             </div>
 
+            <!-- Expense List Table -->
             <div class="scroll-area" id="expenseList">
-                <p style="text-align:center; color:#555; margin-top:20px;">Loading expenses...</p>
+                <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading expenses...</p>
             </div>
         </section>
     </div>
 
+    <!-- MODAL DIALOG: RECORD EXPENSE -->
     <div class="modal-overlay" id="expenseModal">
         <div class="modal">
-            <h3 style="margin-bottom:24px; color:var(--text-main);">Add Expense</h3>
+            <div class="modal-header">
+                <h3>Record Expense</h3>
+                <button class="modal-close" id="closeExpenseModalBtn">&times;</button>
+            </div>
             <form id="addExpenseForm">
                 <input type="hidden" id="expenseId">
                 <div class="form-group">
                     <label>Description</label>
-                    <input type="text" id="desc" required placeholder="e.g. Dinner">
+                    <input type="text" id="desc" required placeholder="e.g. AWS Cloud Services">
                 </div>
                 <div class="form-group">
                     <label>Amount (₹)</label>
@@ -178,166 +283,87 @@
                 <div class="form-group">
                     <label>Category</label>
                     <div class="input-group">
-                        <select id="categorySelect" required>
-                            <option value="" disabled selected>Select a category</option>
+                        <select id="categorySelect" required></select>
+                        <button type="button" id="addCategoryBtn" class="btn-icon" title="Add Custom Category">+</button>
+                    </div>
+                </div>
+
+                <div class="form-group flex-row">
+                    <label class="switch-label">
+                        <input type="checkbox" id="isRecurring">
+                        <span class="switch-text">Make Recurring Subscription</span>
+                    </label>
+                </div>
+
+                <div id="recurringOptions" style="display:none;" class="form-group-box">
+                    <div class="form-group">
+                        <label>Billing Frequency</label>
+                        <select id="recurringFrequency">
+                            <option value="MONTHLY">Monthly</option>
+                            <option value="WEEKLY">Weekly</option>
+                            <option value="DAILY">Daily</option>
+                            <option value="YEARLY">Yearly</option>
+                            <option value="CUSTOM">Custom Interval (Days)</option>
                         </select>
-                        <button type="button" id="addCategoryBtn" class="btn-icon" title="Add New Category">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                        </button>
+                    </div>
+                    <div class="form-group" id="customIntervalWrap" style="display:none;">
+                        <label>Interval (Days)</label>
+                        <input type="number" id="recurringIntervalDays" min="1" value="1">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Date</label>
-                    <input type="date" id="date" required class="dark-date">
-                </div>
-
-                <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom: 20px;">
-                    <input type="checkbox" id="isRecurring" style="width:auto; margin:0; cursor:pointer;">
-                    <label for="isRecurring"
-                        style="margin:0; cursor:pointer; font-size:14px; color:var(--text-main);">Repeat this expense
-                        repeatedly</label>
-                </div>
-
-                <div class="form-group recurring-options" id="recurringOptions" hidden>
-                    <label for="recurringFrequency">Repeat frequency</label>
-                    <select id="recurringFrequency">
-                        <option value="DAILY">Daily</option>
-                        <option value="WEEKLY">Weekly</option>
-                        <option value="MONTHLY" selected>Monthly</option>
-                        <option value="YEARLY">Yearly</option>
-                        <option value="CUSTOM">Custom interval</option>
-                    </select>
-                    <div id="customIntervalWrap" hidden>
-                        <label for="recurringIntervalDays">Repeat every (days)</label>
-                        <input type="number" id="recurringIntervalDays" min="1" value="1" inputmode="numeric">
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" id="closeModalBtn">Cancel</button>
-                    <button type="submit" class="btn-primary" style="flex:1;">Save Expense</button>
-                </div>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Save Expense</button>
             </form>
         </div>
     </div>
 
-    <div class="modal-overlay" id="subsModal">
-        <div class="modal" style="max-width: 500px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 style="margin:0; color:var(--text-main);">Active Subscriptions</h3>
-                <button id="closeSubsBtn" class="btn-icon" style="width:30px; height:30px;">✕</button>
-            </div>
-
-            <div id="subsList" style="max-height:300px; overflow-y:auto;">
-                <p class="text-muted">Loading...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Set Budget Modal -->
-    <div class="modal-overlay" id="setBudgetModal">
+    <!-- MODAL DIALOG: SET BUDGET -->
+    <div class="modal-overlay" id="budgetModal">
         <div class="modal">
-            <h3 style="margin-bottom:24px; color:var(--text-main);">Set Budget Limit</h3>
-            <form id="setBudgetForm">
+            <div class="modal-header">
+                <h3>Configure Monthly Budget</h3>
+                <button class="modal-close" id="closeBudgetModalBtn">&times;</button>
+            </div>
+            <form id="addBudgetForm">
                 <div class="form-group">
                     <label>Category</label>
                     <select id="budgetCategorySelect" required></select>
                 </div>
-
                 <div class="form-group">
-                    <label>Limit Amount (₹)</label>
-                    <input type="number" id="budgetLimitAmount" required placeholder="0.00" step="0.01">
+                    <label>Monthly Limit Amount (₹)</label>
+                    <input type="number" id="budgetLimit" required placeholder="e.g. 10000" step="0.01">
                 </div>
-
-                <div class="form-group">
-                    <label>Budget Period</label>
-                    <select id="budgetPeriod">
-                        <option value="MONTHLY" selected>Monthly</option>
-                        <option value="WEEKLY">Weekly</option>
-                        <option value="YEARLY">Yearly</option>
-                        <option value="CUSTOM">Custom Date Range</option>
-                    </select>
-                </div>
-
-                <div id="customBudgetDates" hidden>
-                    <div class="form-group">
-                        <label>Start Date</label>
-                        <input type="date" id="budgetStartDate" class="dark-date">
-                    </div>
-                    <div class="form-group">
-                        <label>End Date</label>
-                        <input type="date" id="budgetEndDate" class="dark-date">
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" id="closeBudgetModalBtn">Cancel</button>
-                    <button type="submit" class="btn-primary" style="flex:1;">Save Limit</button>
-                </div>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Set Budget Limit</button>
             </form>
         </div>
     </div>
 
-    <!-- Edit Subscription Modal -->
-    <div class="modal-overlay" id="editSubModal">
-        <div class="modal">
-            <h3 style="margin-bottom:24px; color:var(--text-main);">Edit Subscription</h3>
-            <form id="editSubForm">
-                <input type="hidden" id="editSubId">
-                <div class="form-group">
-                    <label>Description</label>
-                    <input type="text" id="editSubDesc" required>
-                </div>
-                <div class="form-group">
-                    <label>Amount (₹)</label>
-                    <input type="number" id="editSubAmount" required step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Next Due Date</label>
-                    <input type="date" id="editSubNextDate" required class="dark-date">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" id="closeEditSubModalBtn">Cancel</button>
-                    <button type="submit" class="btn-primary" style="flex:1;">Save Subscription</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Delete Account Confirmation Modal -->
-    <div class="modal-overlay" id="deleteAccountModal">
-        <div class="modal" style="max-width: 420px; text-align: center;">
-            <div style="margin-bottom: 20px;">
-                <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 107, 80, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF6B50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                </div>
-                <h3 style="margin: 0 0 10px; color: var(--text-main); font-size: 20px;">Delete Account</h3>
-                <p style="margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.6;">
-                    This will <strong style="color: #FF6B50;">permanently delete</strong> your account and all associated expenses, budgets, and categories.<br><br>
-                    This action <strong style="color: var(--text-main);">cannot be undone.</strong>
-                </p>
+    <!-- MODAL DIALOG: MANAGED SUBSCRIPTIONS -->
+    <div class="modal-overlay" id="subsModal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3>Active Recurring Subscriptions</h3>
+                <button class="modal-close" id="closeSubsBtn">&times;</button>
             </div>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Type <strong style="color: var(--text-main);">DELETE</strong> to confirm:</p>
-            <input
-                type="text"
-                id="deleteConfirmInput"
-                placeholder="Type DELETE here"
-                autocomplete="off"
-                style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg, rgba(255,255,255,0.06)); color: var(--text-main); font-size: 14px; margin-bottom: 20px; outline: none; font-family: inherit; text-align: center; letter-spacing: 2px;"
-            />
-            <div style="display: flex; gap: 12px;">
-                <button id="cancelDeleteAccountBtn" class="btn-secondary" style="flex: 1; padding: 11px;">Cancel</button>
-                <button id="confirmDeleteAccountBtn" style="flex: 1; padding: 11px; border-radius: 8px; border: none; background: #FF6B50; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; opacity: 0.5; pointer-events: none; font-family: inherit; transition: opacity 0.2s;">
-                    Delete Forever
-                </button>
+            <div id="subsList" class="scroll-area-modal">
+                <p style="text-align:center; color:var(--text-muted);">Loading subscriptions...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: DELETE ACCOUNT CONFIRMATION -->
+    <div class="modal-overlay" id="deleteAccountModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 style="color:#EF4444;">Delete Account Permanently</h3>
+            </div>
+            <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">
+                This action is destructive and permanent. Type <strong>DELETE</strong> below to confirm.
+            </p>
+            <input type="text" id="deleteConfirmInput" class="field-input" placeholder="Type DELETE to confirm">
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button type="button" id="cancelDeleteAccountBtn" class="btn-secondary" style="flex:1;">Cancel</button>
+                <button type="button" id="confirmDeleteAccountBtn" class="btn-danger" style="flex:1;">Delete Account</button>
             </div>
         </div>
     </div>
@@ -345,5 +371,4 @@
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
-
 </html>

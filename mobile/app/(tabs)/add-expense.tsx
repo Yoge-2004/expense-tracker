@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { AnimatedButton } from '../../components/AnimatedButton';
+import { AnimatedCard } from '../../components/AnimatedCard';
 
 interface Category {
   id: number;
@@ -24,27 +26,29 @@ export default function AddExpenseScreen() {
   const getThemeColors = () => {
     if (theme === 'light') {
       return {
-        bg: '#F8FAFC',
+        bg: '#F0F4F8',
         card: '#FFFFFF',
-        border: '#E2E8F0',
-        text: '#0F172A',
-        textMuted: '#64748B',
-        inputBg: '#F1F5F9',
-        inputBorder: '#CBD5E1',
-        tabBg: '#FFFFFF',
-        accent: '#6366F1',
+        border: '#D8E2F0',
+        text: '#0A1628',
+        textMuted: '#5B6880',
+        inputBg: '#EAF0F8',
+        inputBorder: '#C8D5E8',
+        tabBg: '#EAF0F8',
+        accent: '#00D4AA',
+        orange: '#FF6B35',
       };
     }
     return {
-      bg: '#090D16',
-      card: 'rgba(17, 24, 39, 0.85)',
+      bg: '#080B12',
+      card: 'rgba(13, 18, 30, 0.9)',
       border: 'rgba(255, 255, 255, 0.08)',
-      text: '#F8FAFC',
-      textMuted: '#94A3B8',
-      inputBg: 'rgba(15, 23, 42, 0.6)',
-      inputBorder: 'rgba(255, 255, 255, 0.1)',
-      tabBg: 'rgba(15, 23, 42, 0.8)',
-      accent: '#6366F1',
+      text: '#F0F4FF',
+      textMuted: '#8B97B0',
+      inputBg: 'rgba(10, 16, 30, 0.8)',
+      inputBorder: 'rgba(255, 255, 255, 0.08)',
+      tabBg: 'rgba(10, 16, 30, 0.8)',
+      accent: '#00D4AA',
+      orange: '#FF6B35',
     };
   };
 
@@ -263,226 +267,307 @@ export default function AddExpenseScreen() {
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color="#FF9F6E" />
+        <ActivityIndicator size="large" color={c.accent} />
+        <Text style={[styles.loadingText, { color: c.textMuted }]}>Setting up form...</Text>
       </View>
     );
   }
 
   return (
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Switch Form Toggle */}
-        <View style={[styles.tabContainer, { backgroundColor: c.tabBg, borderColor: c.border }]}>
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'expense' && styles.activeTabButton]}
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+        {/* ── PAGE HEADER ── */}
+        <View style={styles.pageHeader}>
+          <Text style={[styles.pageTitle, { color: c.text }]}>Add Record</Text>
+          <Text style={[styles.pageSub, { color: c.textMuted }]}>Log an expense or set a budget</Text>
+        </View>
+
+        {/* ── TAB SWITCHER ── */}
+        <View style={[styles.tabContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'expense' && [styles.activeTabExpense]]}
             onPress={() => setActiveTab('expense')}
           >
-            <Text style={[styles.tabButtonText, { color: c.textMuted }, activeTab === 'expense' && styles.activeTabButtonText]}>Record Expense</Text>
+            <Ionicons name="receipt-outline" size={15} color={activeTab === 'expense' ? '#080B12' : c.textMuted} />
+            <Text style={[styles.tabButtonText, { color: activeTab === 'expense' ? '#080B12' : c.textMuted }]}>Expense</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'budget' && styles.activeTabButton]}
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'budget' && [styles.activeTabBudget]]}
             onPress={() => setActiveTab('budget')}
           >
-            <Text style={[styles.tabButtonText, { color: c.textMuted }, activeTab === 'budget' && styles.activeTabButtonText]}>Configure Budget</Text>
+            <Ionicons name="pie-chart-outline" size={15} color={activeTab === 'budget' ? '#080B12' : c.textMuted} />
+            <Text style={[styles.tabButtonText, { color: activeTab === 'budget' ? '#080B12' : c.textMuted }]}>Budget</Text>
           </TouchableOpacity>
         </View>
 
         {activeTab === 'expense' ? (
           /* EXPENSE FORM */
           <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
-            <Text style={[styles.label, { color: c.textMuted }]}>Description</Text>
-            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+
+            {/* Description */}
+            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.formSectionHeader}>
+                <View style={[styles.formSectionIcon, { backgroundColor: '#00D4AA18' }]}>
+                  <Ionicons name="pencil-outline" size={14} color="#00D4AA" />
+                </View>
+                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Description</Text>
+              </View>
               <TextInput
-                style={[styles.input, { color: c.text }]}
-                placeholder="e.g. Netflix Subscription, Grocery shopping"
-                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                style={[styles.bigInput, { color: c.text, borderBottomColor: c.border }]}
+                placeholder="e.g. Netflix, Grocery run, Fuel top-up"
+                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
                 value={description}
                 onChangeText={setDescription}
               />
             </View>
 
-            <Text style={[styles.label, { color: c.textMuted }]}>Amount (₹)</Text>
-            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <TextInput
-                style={[styles.input, { color: c.text }]}
-                placeholder="0.00"
-                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
-                keyboardType="decimal-pad"
-                value={amount}
-                onChangeText={setAmount}
-              />
+            {/* Amount */}
+            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.formSectionHeader}>
+                <View style={[styles.formSectionIcon, { backgroundColor: '#FF6B3518' }]}>
+                  <Ionicons name="cash-outline" size={14} color="#FF6B35" />
+                </View>
+                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Amount</Text>
+              </View>
+              <View style={styles.amountRow}>
+                <Text style={[styles.currencySymbol, { color: c.accent }]}>₹</Text>
+                <TextInput
+                  style={[styles.amountInput, { color: c.text }]}
+                  placeholder="0.00"
+                  placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                  keyboardType="decimal-pad"
+                  value={amount}
+                  onChangeText={setAmount}
+                />
+              </View>
             </View>
 
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.label, { color: c.textMuted }]}>Category</Text>
-              <TouchableOpacity onPress={() => setShowNewCategoryModal(true)}>
-                <Text style={styles.addCategoryLink}>+ Add Custom</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.selectorContainer}>
-              {categories.map((cat) => (
+            {/* Category */}
+            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.formSectionHeader}>
+                <View style={[styles.formSectionIcon, { backgroundColor: '#3B82F618' }]}>
+                  <Ionicons name="grid-outline" size={14} color="#3B82F6" />
+                </View>
+                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Category</Text>
                 <TouchableOpacity
-                  key={cat.id}
-                  style={[styles.selectorItem, { backgroundColor: c.inputBg, borderColor: c.border }, categoryId === cat.id && styles.selectorItemActive]}
-                  onPress={() => setCategoryId(cat.id)}
+                  onPress={() => setShowNewCategoryModal(true)}
+                  style={[styles.addCatBtn, { backgroundColor: c.accent + '18', borderColor: c.accent + '40' }]}
                 >
-                  <Text style={[styles.selectorText, { color: c.textMuted }, categoryId === cat.id && styles.selectorTextActive]}>
-                    {cat.name}
-                  </Text>
+                  <Ionicons name="add" size={12} color={c.accent} />
+                  <Text style={[styles.addCatText, { color: c.accent }]}>New</Text>
                 </TouchableOpacity>
-              ))}
+              </View>
+              <View style={styles.categoryChips}>
+                {categories.map((cat) => {
+                  const isActive = categoryId === cat.id;
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.categoryChip,
+                        { backgroundColor: isActive ? c.accent : c.inputBg, borderColor: isActive ? c.accent : c.border },
+                      ]}
+                      onPress={() => setCategoryId(cat.id)}
+                    >
+                      <Text style={[styles.categoryChipText, { color: isActive ? '#080B12' : c.textMuted }]}>
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
-            {/* Subscription Mode Switch */}
-            <View style={[styles.switchRow, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <View>
-                <Text style={[styles.switchTitle, { color: c.text }]}>Repeat this expense repeatedly</Text>
-                <Text style={[styles.switchSubtitle, { color: c.textMuted }]}>Creates a recurring subscription</Text>
+            {/* Recurring Toggle */}
+            <View style={[styles.recurringRow, { backgroundColor: isRecurring ? c.accent + '12' : c.card, borderColor: isRecurring ? c.accent + '50' : c.border }]}>
+              <View style={[styles.recurringIcon, { backgroundColor: c.accent + '18' }]}>
+                <Ionicons name="repeat" size={18} color={c.accent} />
+              </View>
+              <View style={styles.recurringText}>
+                <Text style={[styles.recurringTitle, { color: c.text }]}>Make Recurring</Text>
+                <Text style={[styles.recurringSub, { color: c.textMuted }]}>Creates a tracked subscription</Text>
               </View>
               <Switch
                 value={isRecurring}
                 onValueChange={setIsRecurring}
-                trackColor={{ false: '#2d2d34', true: '#FF9F6E' }}
-                thumbColor={isRecurring ? '#FF9F6E' : '#4b5563'}
+                trackColor={{ false: '#1E2A3A', true: '#00D4AA' }}
+                thumbColor="#FFFFFF"
               />
             </View>
 
-            {/* Slideable Sub Form for Recurring */}
+            {/* Frequency selector (if recurring) */}
             {isRecurring && (
-              <Animated.View style={[
-                styles.subForm,
-                {
-                  opacity: subFormAnim,
-                  transform: [{
-                    translateY: subFormAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-10, 0]
-                    })
-                  }]
-                }
-              ]}>
-                <Text style={[styles.label, { color: c.textMuted }]}>Billing Frequency</Text>
-                <View style={styles.selectorContainer}>
-                  {['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'].map((freq) => (
-                    <TouchableOpacity
-                      key={freq}
-                      style={[styles.selectorItem, { backgroundColor: c.inputBg, borderColor: c.border }, frequency === freq && styles.selectorItemActive]}
-                      onPress={() => setFrequency(freq)}
-                    >
-                      <Text style={[styles.selectorText, { color: c.textMuted }, frequency === freq && styles.selectorTextActive]}>
-                        {freq === 'CUSTOM' ? 'Custom interval' : freq}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              <Animated.View style={[styles.subForm, { opacity: subFormAnim, transform: [{ translateY: subFormAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }] }]}>
+                <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
+                  <Text style={[styles.formSectionLabel, { color: c.textMuted, marginBottom: 12 }]}>Billing Frequency</Text>
+                  <View style={styles.frequencyChips}>
+                    {['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'].map((freq) => {
+                      const isActive = frequency === freq;
+                      const freqColor = { DAILY: '#FF6B35', WEEKLY: '#FBBF24', MONTHLY: '#00D4AA', YEARLY: '#3B82F6', CUSTOM: '#A855F7' }[freq] || '#00D4AA';
+                      return (
+                        <TouchableOpacity
+                          key={freq}
+                          style={[
+                            styles.freqChip,
+                            { backgroundColor: isActive ? freqColor + '20' : c.inputBg, borderColor: isActive ? freqColor : c.border },
+                          ]}
+                          onPress={() => setFrequency(freq)}
+                        >
+                          <Text style={[styles.freqChipText, { color: isActive ? freqColor : c.textMuted }]}>
+                            {freq === 'CUSTOM' ? 'Custom' : freq}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {frequency === 'CUSTOM' && (
+                    <Animated.View style={{ opacity: customIntervalAnim }}>
+                      <Text style={[styles.formSectionLabel, { color: c.textMuted, marginTop: 12, marginBottom: 8 }]}>Repeat every (days)</Text>
+                      <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                        <TextInput
+                          style={[styles.inputField, { color: c.text }]}
+                          placeholder="e.g. 14"
+                          placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                          keyboardType="number-pad"
+                          value={intervalDays}
+                          onChangeText={setIntervalDays}
+                        />
+                        <Text style={[styles.inputSuffix, { color: c.textMuted }]}>days</Text>
+                      </View>
+                    </Animated.View>
+                  )}
                 </View>
-
-                {/* Custom days interval field */}
-                {frequency === 'CUSTOM' && (
-                  <Animated.View style={{
-                    opacity: customIntervalAnim,
-                    transform: [{
-                      translateY: customIntervalAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-8, 0]
-                      })
-                    }]
-                  }}>
-                    <Text style={[styles.label, { color: c.textMuted }]}>Repeat every (days)</Text>
-                    <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                      <TextInput
-                        style={[styles.input, { color: c.text }]}
-                        placeholder="1"
-                        placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
-                        keyboardType="number-pad"
-                        value={intervalDays}
-                        onChangeText={setIntervalDays}
-                      />
-                    </View>
-                  </Animated.View>
-                )}
               </Animated.View>
             )}
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleAddExpense} disabled={isSubmitting}>
+            {/* Submit */}
+            <TouchableOpacity
+              style={[styles.submitBtn, { backgroundColor: c.accent, opacity: isSubmitting ? 0.7 : 1 }]}
+              onPress={handleAddExpense}
+              disabled={isSubmitting}
+              activeOpacity={0.85}
+            >
               {isSubmitting ? (
-                <ActivityIndicator color="#05070D" />
+                <ActivityIndicator color="#080B12" size="small" />
               ) : (
-                <Text style={styles.submitButtonText}>
-                  {isRecurring ? 'Save Subscription' : 'Record Expense'}
-                </Text>
+                <View style={styles.submitBtnInner}>
+                  <Ionicons name={isRecurring ? 'repeat' : 'add-circle'} size={20} color="#080B12" />
+                  <Text style={styles.submitBtnText}>
+                    {isRecurring ? 'Save Subscription' : 'Record Expense'}
+                  </Text>
+                </View>
               )}
             </TouchableOpacity>
           </Animated.View>
         ) : (
           /* BUDGET FORM */
           <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.label, { color: c.textMuted }]}>Target Category</Text>
-              <TouchableOpacity onPress={() => setShowNewCategoryModal(true)}>
-                <Text style={styles.addCategoryLink}>+ Add Custom</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.selectorContainer}>
-              {categories.map((cat) => (
+            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.formSectionHeader}>
+                <View style={[styles.formSectionIcon, { backgroundColor: '#3B82F618' }]}>
+                  <Ionicons name="grid-outline" size={14} color="#3B82F6" />
+                </View>
+                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Target Category</Text>
                 <TouchableOpacity
-                  key={cat.id}
-                  style={[styles.selectorItem, { backgroundColor: c.inputBg, borderColor: c.border }, budgetCategoryId === cat.id && styles.selectorItemActive]}
-                  onPress={() => setBudgetCategoryId(cat.id)}
+                  onPress={() => setShowNewCategoryModal(true)}
+                  style={[styles.addCatBtn, { backgroundColor: c.accent + '18', borderColor: c.accent + '40' }]}
                 >
-                  <Text style={[styles.selectorText, { color: c.textMuted }, budgetCategoryId === cat.id && styles.selectorTextActive]}>
-                    {cat.name}
-                  </Text>
+                  <Ionicons name="add" size={12} color={c.accent} />
+                  <Text style={[styles.addCatText, { color: c.accent }]}>New</Text>
                 </TouchableOpacity>
-              ))}
+              </View>
+              <View style={styles.categoryChips}>
+                {categories.map((cat) => {
+                  const isActive = budgetCategoryId === cat.id;
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.categoryChip,
+                        { backgroundColor: isActive ? c.orange : c.inputBg, borderColor: isActive ? c.orange : c.border },
+                      ]}
+                      onPress={() => setBudgetCategoryId(cat.id)}
+                    >
+                      <Text style={[styles.categoryChipText, { color: isActive ? '#080B12' : c.textMuted }]}>
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
-            <Text style={[styles.label, { color: c.textMuted }]}>Monthly Limit Amount (₹)</Text>
-            <View style={[styles.inputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <TextInput
-                style={[styles.input, { color: c.text }]}
-                placeholder="e.g. 5000"
-                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
-                keyboardType="decimal-pad"
-                value={budgetLimit}
-                onChangeText={setBudgetLimit}
-              />
+            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.formSectionHeader}>
+                <View style={[styles.formSectionIcon, { backgroundColor: '#FBBF2418' }]}>
+                  <Ionicons name="speedometer-outline" size={14} color="#FBBF24" />
+                </View>
+                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Monthly Limit</Text>
+              </View>
+              <View style={styles.amountRow}>
+                <Text style={[styles.currencySymbol, { color: c.orange }]}>₹</Text>
+                <TextInput
+                  style={[styles.amountInput, { color: c.text }]}
+                  placeholder="0"
+                  placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                  keyboardType="decimal-pad"
+                  value={budgetLimit}
+                  onChangeText={setBudgetLimit}
+                />
+                <Text style={[styles.inputSuffix, { color: c.textMuted }]}>/month</Text>
+              </View>
             </View>
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSetBudget} disabled={isSubmitting}>
+            <TouchableOpacity
+              style={[styles.submitBtn, { backgroundColor: c.orange, opacity: isSubmitting ? 0.7 : 1 }]}
+              onPress={handleSetBudget}
+              disabled={isSubmitting}
+              activeOpacity={0.85}
+            >
               {isSubmitting ? (
-                <ActivityIndicator color="#05070D" />
+                <ActivityIndicator color="#080B12" size="small" />
               ) : (
-                <Text style={styles.submitButtonText}>Configure Budget</Text>
+                <View style={styles.submitBtnInner}>
+                  <Ionicons name="pie-chart" size={20} color="#080B12" />
+                  <Text style={styles.submitBtnText}>Set Budget Limit</Text>
+                </View>
               )}
             </TouchableOpacity>
           </Animated.View>
         )}
       </ScrollView>
 
-      {/* Add Custom Category Modal Dialog */}
+      {/* ── NEW CATEGORY MODAL ── */}
       <Modal
         visible={showNewCategoryModal}
         transparent={true}
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setShowNewCategoryModal(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.modalBackdrop}
           activeOpacity={1}
           onPress={() => setShowNewCategoryModal(false)}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.modalContent, { backgroundColor: c.card, borderColor: c.border }]}
             activeOpacity={1}
           >
-            <Text style={[styles.modalTitle, { color: c.text }]}>Add Category</Text>
-            
-            <Text style={[styles.modalLabel, { color: c.textMuted }]}>Category Name</Text>
-            <View style={[styles.modalInputContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <View style={[styles.modalIconBox, { backgroundColor: c.accent + '15' }]}>
+                <Ionicons name="grid-outline" size={20} color={c.accent} />
+              </View>
+              <Text style={[styles.modalTitle, { color: c.text }]}>New Category</Text>
+            </View>
+
+            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+              <Ionicons name="bag-handle-outline" size={16} color={c.textMuted} style={{ marginRight: 8 }} />
               <TextInput
-                style={[styles.modalInput, { color: c.text }]}
+                style={[styles.inputField, { color: c.text, flex: 1 }]}
                 placeholder="e.g. Subscriptions, Gifts"
-                placeholderTextColor={isLight ? '#9ca3af' : '#4b5563'}
+                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
                 value={newCategoryName}
                 onChangeText={setNewCategoryName}
                 autoFocus={true}
@@ -490,20 +575,17 @@ export default function AddExpenseScreen() {
             </View>
 
             <View style={styles.modalActions}>
-              <TouchableOpacity 
-                style={[styles.cancelBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
-                onPress={() => {
-                  setNewCategoryName('');
-                  setShowNewCategoryModal(false);
-                }}
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, { borderColor: c.border, backgroundColor: c.inputBg }]}
+                onPress={() => { setNewCategoryName(''); setShowNewCategoryModal(false); }}
               >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: c.textMuted }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.saveBtn}
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, { backgroundColor: c.accent }]}
                 onPress={handleCreateCategory}
               >
-                <Text style={styles.saveBtnText}>Save</Text>
+                <Text style={styles.modalSaveText}>Create</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -514,189 +596,302 @@ export default function AddExpenseScreen() {
 }
 
 const styles = StyleSheet.create({
-  screenWrapper: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
+  screenWrapper: { flex: 1 },
+  container: { flex: 1 },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12,
   },
+  loadingText: { fontSize: 14, fontWeight: '500' },
+
+  /* PAGE HEADER */
+  pageHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 8,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.8,
+  },
+  pageSub: {
+    fontSize: 13,
+    marginTop: 3,
+  },
+
+  /* TAB SWITCHER */
   tabContainer: {
     flexDirection: 'row',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 24,
+    marginTop: 16,
+    marginBottom: 20,
     padding: 4,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 12,
+    flexDirection: 'row',
+    paddingVertical: 11,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 12,
+    gap: 6,
   },
-  activeTabButton: {
-    backgroundColor: '#FF9F6E',
+  activeTabExpense: {
+    backgroundColor: '#00D4AA',
+  },
+  activeTabBudget: {
+    backgroundColor: '#FF6B35',
   },
   tabButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
-  activeTabButtonText: {
-    color: '#05070D',
-  },
+
+  /* FORM CONTAINER */
   formContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+    gap: 12,
   },
-  label: {
-    fontSize: 14,
-    marginBottom: 8,
-    fontWeight: '500',
+
+  /* FORM SECTION CARD */
+  formSection: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
   },
-  sectionHeaderRow: {
+  formSectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 12,
   },
-  addCategoryLink: {
-    color: '#FF9F6E',
-    fontSize: 13,
+  formSectionIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formSectionLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    flex: 1,
+  },
+  addCatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  addCatText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  /* BIG TEXT INPUT */
+  bigInput: {
+    fontSize: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+
+  /* AMOUNT ROW */
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  currencySymbol: {
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 36,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+  inputSuffix: {
+    fontSize: 14,
     fontWeight: '600',
   },
-  inputContainer: {
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 20,
-    paddingHorizontal: 12,
-    height: 52,
-    justifyContent: 'center',
-  },
-  input: {
-    fontSize: 16,
-  },
-  selectorContainer: {
+
+  /* CATEGORY CHIPS */
+  categoryChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 24,
   },
-  selectorItem: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  categoryChip: {
+    borderWidth: 1.5,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
   },
-  selectorItemActive: {
-    backgroundColor: 'rgba(255, 159, 110, 0.1)',
-    borderColor: '#FF9F6E',
+  categoryChipText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
-  selectorText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  selectorTextActive: {
-    color: '#FF9F6E',
-  },
-  switchRow: {
+
+  /* RECURRING TOGGLE */
+  recurringRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
+    borderRadius: 18,
+    padding: 16,
   },
-  switchTitle: {
+  recurringIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recurringText: { flex: 1 },
+  recurringTitle: {
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '700',
   },
-  switchSubtitle: {
+  recurringSub: {
     fontSize: 12,
     marginTop: 2,
   },
-  subForm: {
-    marginTop: 4,
-    marginBottom: 16,
+
+  /* FREQUENCY */
+  subForm: { gap: 0 },
+  frequencyChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  submitButton: {
-    backgroundColor: '#FF9F6E',
+  freqChip: {
+    borderWidth: 1.5,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  freqChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
     borderRadius: 12,
-    height: 52,
+    height: 48,
+    paddingHorizontal: 14,
+    marginTop: 4,
+  },
+  inputField: {
+    flex: 1,
+    fontSize: 15,
+  },
+
+  /* SUBMIT */
+  submitBtn: {
+    height: 56,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  submitButtonText: {
-    color: '#05070D',
+  submitBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  submitBtnText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    color: '#080B12',
+    letterSpacing: 0.3,
   },
+
+  /* MODAL */
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     borderWidth: 1,
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 320,
-    padding: 20,
+    padding: 24,
+    paddingBottom: 40,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  modalLabel: {
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  modalInputContainer: {
-    borderWidth: 1,
-    borderRadius: 10,
-    height: 48,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'center',
     marginBottom: 20,
   },
-  modalInput: {
-    fontSize: 15,
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  modalIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
   },
   modalActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 12,
+    marginTop: 16,
   },
-  cancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  modalCancelBtn: {
+    flex: 1,
+    height: 50,
     borderWidth: 1,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  cancelBtnText: {
-    fontSize: 13,
-    fontWeight: '500',
+  modalCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
-  saveBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#FF9F6E',
+  modalSaveBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#00D4AA',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  saveBtnText: {
-    color: '#05070D',
-    fontSize: 13,
-    fontWeight: 'bold',
+  modalSaveText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#080B12',
   },
 });

@@ -82,6 +82,7 @@ async function loadDashboard() {
         applyFilters();
         renderTrendChart(expenses);
         loadBudgets();
+        updateProMetrics(expenses);
 
     } catch (error) {
         console.error("Critical Error:", error);
@@ -91,6 +92,100 @@ async function loadDashboard() {
         }
     }
 }
+
+// --- PRO METRICS CALCULATION ---
+async function updateProMetrics(expenses) {
+    if (!Array.isArray(expenses)) return;
+
+    // Total Spent & Count
+    const totalSpent = expenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const count = expenses.length;
+    
+    if (elements.totalAmount) elements.totalAmount.textContent = formatCurrency(totalSpent);
+    const countEl = document.getElementById("expenseCountText");
+    if (countEl) countEl.textContent = `${count} transaction${count === 1 ? '' : 's'} recorded`;
+
+    // Daily Burn Rate & Month End Forecast
+    const now = new Date();
+    const currentDay = Math.max(now.getDate(), 1);
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    
+    // Filter expenses for current month
+    const currentMonthExpenses = expenses.filter(e => {
+        const d = new Date(e.expenseDate);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const dailyBurn = currentMonthSpent / currentDay;
+    const projectedSpent = dailyBurn * daysInMonth;
+
+    const dailyBurnEl = document.getElementById("dailyBurnRate");
+    if (dailyBurnEl) dailyBurnEl.textContent = `${formatCurrency(dailyBurn)} / day`;
+    const forecastEl = document.getElementById("monthForecast");
+    if (forecastEl) forecastEl.textContent = `Projected: ${formatCurrency(projectedSpent)}`;
+
+    // Top Category
+    const catMap = {};
+    expenses.forEach(e => {
+        const cat = e.categoryName || 'Other';
+        catMap[cat] = (catMap[cat] || 0) + Number(e.amount || 0);
+    });
+
+    let topCat = 'None';
+    let maxAmt = 0;
+    Object.entries(catMap).forEach(([cat, amt]) => {
+        if (amt > maxAmt) {
+            maxAmt = amt;
+            topCat = cat;
+        }
+    });
+
+    const topCatNameEl = document.getElementById("topCategoryName");
+    if (topCatNameEl) topCatNameEl.textContent = topCat;
+    const topCatAmtEl = document.getElementById("topCategoryAmount");
+    if (topCatAmtEl) topCatAmtEl.textContent = `${formatCurrency(maxAmt)} spent`;
+
+    // Subscriptions Fetch
+    try {
+        const subs = await apiRequest(`/expenses/recurring/user/${userId}`);
+        const safeSubs = Array.isArray(subs) ? subs : [];
+        const activeSubs = safeSubs.filter(s => s.status === 'ACTIVE');
+        const monthlyTotal = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
+
+        const subsBadge = document.getElementById("subsCountBadge");
+        if (subsBadge) subsBadge.textContent = `${activeSubs.length} Active`;
+        const subsTotal = document.getElementById("subsMonthlyTotal");
+        if (subsTotal) subsTotal.textContent = `${formatCurrency(monthlyTotal)} / mo`;
+    } catch (err) {
+        console.error("Subs fetch error", err);
+    }
+}
+
+// Keyboard Shortcuts & Category Pill Bar Handlers
+document.addEventListener("keydown", (e) => {
+    if ((e.key === '/' || (e.metaKey && e.key === 'k') || (e.ctrlKey && e.key === 'k')) && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        elements.filterSearch?.focus();
+    }
+});
+
+document.querySelectorAll(".pill-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+        document.querySelectorAll(".pill-chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        const category = chip.getAttribute("data-category");
+        if (elements.filterCategory) {
+            if (category === "all") {
+                elements.filterCategory.value = "all";
+            } else {
+                const options = Array.from(elements.filterCategory.options);
+                const matchedOption = options.find(opt => opt.text.toLowerCase().includes(category));
+                elements.filterCategory.value = matchedOption ? matchedOption.value : "all";
+            }
+            applyFilters();
+        }
+    });
+});
 
 // --- 2. BUDGET LOGIC ---
 async function loadBudgets() {
@@ -114,7 +209,7 @@ async function loadBudgets() {
                 <div class="budget-info" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <div>
                         <strong style="color:var(--text-main); font-size:14px;">${b.categoryName}</strong>
-                        <span class="badge" style="font-size:10px; padding:2px 6px; border-radius:6px; background:rgba(255,159,110,0.2); color:var(--accent); margin-left:6px;">${periodLabel}</span>
+                        <span class="badge" style="font-size:10px; padding:2px 6px; border-radius:6px; background:rgba(0,212,170,0.15); color:#00D4AA; margin-left:6px;">${periodLabel}</span>
                         <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} / ${formatCurrency(b.limit)} (${b.percentage.toFixed(1)}%)</div>
                     </div>
                     <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0})" class="btn-delete" title="Delete Budget Limit" style="height:30px; width:30px; padding:0;">
@@ -212,7 +307,7 @@ function renderPieChart(expenses) {
             labels: Object.keys(categoryTotals),
             datasets: [{
                 data: Object.values(categoryTotals),
-                backgroundColor: ['#6366F1', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'],
+                backgroundColor: ['#00D4AA', '#FF6B35', '#3B82F6', '#FBBF24', '#10D9A0', '#A855F7'],
                 borderWidth: 2,
                 borderColor: document.body.getAttribute("data-theme") === "light" ? '#FFFFFF' : '#090D16'
             }]
@@ -257,7 +352,7 @@ function renderTrendChart(expenses) {
             datasets: [{
                 label: 'Daily Spending',
                 data: values,
-                borderColor: '#6366F1',
+                borderColor: '#00D4AA',
                 backgroundColor: (context) => getTrendGradient(context.chart),
                 fill: 'origin',
                 tension: 0.35,
@@ -265,8 +360,8 @@ function renderTrendChart(expenses) {
                 borderWidth: 3,
                 pointRadius: dates.length > 31 ? 0 : 3,
                 pointHoverRadius: 6,
-                pointBackgroundColor: isLight ? '#FFFFFF' : '#6366F1',
-                pointBorderColor: '#8B5CF6',
+                pointBackgroundColor: isLight ? '#FFFFFF' : '#00D4AA',
+                pointBorderColor: '#00B8D9',
                 pointBorderWidth: 2
             }]
         },
@@ -323,11 +418,11 @@ function formatCompactCurrency(value) {
 
 function getTrendGradient(chart) {
     const { ctx, chartArea } = chart;
-    if (!chartArea) return 'rgba(255, 159, 110, 0.22)';
+    if (!chartArea) return 'rgba(0, 212, 170, 0.22)';
     const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-    gradient.addColorStop(0, 'rgba(255, 159, 110, 0.42)');
-    gradient.addColorStop(0.72, 'rgba(255, 159, 110, 0.10)');
-    gradient.addColorStop(1, 'rgba(255, 159, 110, 0.01)');
+    gradient.addColorStop(0, 'rgba(0, 212, 170, 0.35)');
+    gradient.addColorStop(0.72, 'rgba(0, 212, 170, 0.08)');
+    gradient.addColorStop(1, 'rgba(0, 212, 170, 0.01)');
     return gradient;
 }
 
@@ -417,7 +512,7 @@ function renderList(expenses) {
         <div class="expense-item">
             <div class="expense-info">
                 <h4>${exp.description}</h4>
-                <div class="expense-meta">${formatDate(exp.expenseDate)} • <span style="color:var(--accent)">${exp.categoryName || 'General'}</span></div>
+                <div class="expense-meta">${formatDate(exp.expenseDate)} • <span style="color:var(--primary)">${exp.categoryName || 'General'}</span></div>
             </div>
             <div style="display:flex; align-items:center; gap: 8px;">
                 <div class="expense-amount" style="margin-right:8px;">${formatCurrency(exp.amount)}</div>

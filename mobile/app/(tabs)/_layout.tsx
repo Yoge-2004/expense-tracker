@@ -1,86 +1,175 @@
 import React from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
+const ACCENT = '#00D4AA';
+const ORANGE = '#FF6B35';
+const BLUE = '#3B82F6';
+
+interface TabIconProps {
+  name: string;
+  focused: boolean;
+  color: string;
+  label: string;
+  activeColor?: string;
+}
+
+function TabIcon({ name, focused, color, label, activeColor = ACCENT }: TabIconProps) {
+  return (
+    <View style={[styles.tabItem, focused && { ...styles.tabItemActive, backgroundColor: activeColor + '18' }]}>
+      <Ionicons
+        name={name as any}
+        size={focused ? 22 : 20}
+        color={focused ? activeColor : color}
+      />
+      {focused && (
+        <Text style={[styles.tabLabel, { color: activeColor }]}>{label}</Text>
+      )}
+    </View>
+  );
+}
+
 export default function TabLayout() {
   const { theme } = useAuth();
-  
   const isLight = theme === 'light';
 
-  // Dynamic colors based on theme
-  const tabActiveColor = '#FF9F6E';
-  const tabInactiveColor = isLight ? '#6B7280' : '#9AA0AE';
-  const tabBg = isLight ? '#FFFFFF' : '#0E1220';
-  const tabBorder = isLight ? '#E5E7EB' : 'rgba(255, 255, 255, 0.08)';
-  const headerBg = isLight ? '#F0F2F5' : '#05070D';
-  const headerBorder = isLight ? '#E5E7EB' : 'rgba(255, 255, 255, 0.08)';
-  const headerTint = isLight ? '#111827' : '#E6E8EC';
+  const tabBg = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(10,14,26,0.96)';
+  const tabBorder = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
+  const inactiveColor = isLight ? '#9BA8BA' : '#4A5568';
+  const headerBg = isLight ? '#F0F4F8' : '#080B12';
+  const headerTint = isLight ? '#0A1628' : '#F0F4FF';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: tabActiveColor,
-        tabBarInactiveTintColor: tabInactiveColor,
+        tabBarActiveTintColor: ACCENT,
+        tabBarInactiveTintColor: inactiveColor,
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: tabBg,
           borderTopColor: tabBorder,
-          height: 60,
-          paddingBottom: 8,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 80 : 68,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
           paddingTop: 8,
+          paddingHorizontal: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.2,
+          shadowRadius: 20,
+          elevation: 16,
         },
         headerStyle: {
           backgroundColor: headerBg,
           shadowColor: 'transparent',
-          borderBottomWidth: 1,
-          borderBottomColor: headerBorder,
+          elevation: 0,
+          borderBottomWidth: 0,
         },
         headerTintColor: headerTint,
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: '800',
+          fontSize: 18,
+          letterSpacing: -0.3,
         },
+        headerShown: false, // each screen has its own header
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Dashboard',
-          tabBarLabel: 'Dashboard',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? 'grid' : 'grid-outline'}
+              focused={focused}
+              color={color}
+              label="Home"
+              activeColor={ACCENT}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
         name="add-expense"
         options={{
           title: 'Add New',
-          tabBarLabel: 'Add New',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[
+              styles.fabBtn,
+              { backgroundColor: focused ? ACCENT : ORANGE },
+            ]}>
+              <Ionicons name="add" size={26} color="#080B12" />
+            </View>
           ),
         }}
       />
+
       <Tabs.Screen
         name="subscriptions"
         options={{
           title: 'Subscriptions',
-          tabBarLabel: 'Subscriptions',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="repeat-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? 'repeat' : 'repeat-outline'}
+              focused={focused}
+              color={color}
+              label="Subs"
+              activeColor={BLUE}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? 'person' : 'person-outline'}
+              focused={focused}
+              color={color}
+              label="Profile"
+              activeColor={ORANGE}
+            />
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  tabItemActive: {
+    paddingHorizontal: 12,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  fabBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: ACCENT,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    elevation: 10,
+    marginBottom: 8,
+  },
+});
