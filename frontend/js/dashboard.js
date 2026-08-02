@@ -9,7 +9,7 @@ document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
 document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
 
 // Helpers
-const formatCurrency = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt);
+const formatCurrency = (amt) => (typeof formatGlobalCurrency === "function" ? formatGlobalCurrency(amt) : `${typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "$"} ${Number(amt || 0).toFixed(2)}`);
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
 // Global State
@@ -58,8 +58,45 @@ const elements = {
     cancelDeleteAccountBtn: document.getElementById("cancelDeleteAccountBtn")
 };
 
+// ── Category palette (consistent colors per category name) ──
+const CATEGORY_PALETTE = [
+    { bg: 'rgba(0,212,170,0.12)', color: '#00D4AA' },
+    { bg: 'rgba(59,130,246,0.12)', color: '#3B82F6' },
+    { bg: 'rgba(255,107,53,0.12)', color: '#FF6B35' },
+    { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' },
+    { bg: 'rgba(168,85,247,0.12)', color: '#A855F7' },
+    { bg: 'rgba(236,72,153,0.12)', color: '#EC4899' },
+    { bg: 'rgba(16,217,160,0.12)', color: '#10D9A0' },
+    { bg: 'rgba(14,165,233,0.12)', color: '#0EA5E9' },
+];
+function getCategoryColor(name) {
+    const idx = name ? name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % CATEGORY_PALETTE.length : 0;
+    return CATEGORY_PALETTE[idx];
+}
+
+function showSkeletonLoading() {
+    // Metric card skeletons
+    document.querySelectorAll('.metric-value').forEach(el => {
+        el.dataset.realContent = el.textContent;
+        el.innerHTML = '<span class="skeleton skeleton-value"></span>';
+    });
+    // Expense list skeleton
+    if (elements.expenseList) {
+        elements.expenseList.innerHTML = Array.from({ length: 5 }, () =>
+            `<div class="skeleton skeleton-row"></div>`
+        ).join('');
+    }
+    // Budget list skeleton
+    if (elements.budgetList) {
+        elements.budgetList.innerHTML = Array.from({ length: 3 }, () =>
+            `<div class="skeleton skeleton-row" style="height:80px; margin-bottom:12px;"></div>`
+        ).join('');
+    }
+}
+
 // --- 1. INITIALIZATION ---
 async function loadDashboard() {
+    showSkeletonLoading();
     try {
         console.log("Loading Dashboard Data...");
 
@@ -198,26 +235,33 @@ async function loadBudgets() {
         }
 
         elements.budgetList.innerHTML = budgets.map(b => {
-            let colorClass = "";
-            if (b.percentage > 100) colorClass = "danger";
-            else if (b.percentage > 80) colorClass = "warning";
+            const pct = Math.min(b.percentage || 0, 100);
+            let barColor, badgeClass;
+            if (b.percentage > 100) { barColor = 'var(--danger)'; badgeClass = 'badge-danger'; }
+            else if (b.percentage > 80) { barColor = 'var(--warning)'; badgeClass = 'badge-warning'; }
+            else { barColor = 'var(--primary)'; badgeClass = 'badge-primary'; }
 
-            const periodLabel = b.period ? b.period.toUpperCase() : "MONTHLY";
-
+            const catColor = getCategoryColor(b.categoryName);
+            const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
             return `
-            <div class="budget-item" style="margin-bottom:16px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--input-bg);">
-                <div class="budget-info" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div>
-                        <strong style="color:var(--text-main); font-size:14px;">${b.categoryName}</strong>
-                        <span class="badge" style="font-size:10px; padding:2px 6px; border-radius:6px; background:rgba(0,212,170,0.15); color:#00D4AA; margin-left:6px;">${periodLabel}</span>
-                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} / ${formatCurrency(b.limit)} (${b.percentage.toFixed(1)}%)</div>
+            <div class="budget-item">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
+                        <div>
+                            <div style="font-size:14px; font-weight:700; color:var(--text-main);">${b.categoryName}</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} of ${formatCurrency(b.limit)} <span class="status-badge ${badgeClass}" style="margin-left:4px;">${periodLabel}</span></div>
+                        </div>
                     </div>
-                    <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0})" class="btn-delete" title="Delete Budget Limit" style="height:30px; width:30px; padding:0;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:13px; font-weight:800; color:${barColor};">${(b.percentage || 0).toFixed(0)}%</span>
+                        <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0})" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
                 </div>
-                <div class="progress-track">
-                    <div class="progress-fill ${colorClass}" style="width: ${Math.min(b.percentage, 100)}%"></div>
+                <div class="budget-bar-track">
+                    <div class="budget-bar-fill" style="width:${pct}%; background:${barColor};"></div>
                 </div>
             </div>`;
         }).join("");
@@ -241,8 +285,8 @@ window.deleteBudgetLimit = async (budgetId, categoryId) => {
     }
 };
 
-const setBudgetModal = document.getElementById("setBudgetModal");
-const setBudgetForm = document.getElementById("setBudgetForm");
+const setBudgetModal = document.getElementById("budgetModal");
+const setBudgetForm = document.getElementById("addBudgetForm");
 const budgetCategorySelect = document.getElementById("budgetCategorySelect");
 const budgetPeriod = document.getElementById("budgetPeriod");
 const customBudgetDates = document.getElementById("customBudgetDates");
@@ -413,7 +457,7 @@ function formatTrendDate(value) {
 }
 
 function formatCompactCurrency(value) {
-    return new Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+    return typeof formatGlobalCompactCurrency === "function" ? formatGlobalCompactCurrency(value) : `${typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "$"}${Number(value || 0).toFixed(0)}`;
 }
 
 function getTrendGradient(chart) {
@@ -507,20 +551,57 @@ function updateStats(expenses) {
 }
 
 function renderList(expenses) {
-    if (expenses.length === 0) { elements.expenseList.innerHTML = `<p style="text-align:center; color:#555; margin-top:20px;">No expenses found.</p>`; return; }
-    elements.expenseList.innerHTML = expenses.map(exp => `
+    if (expenses.length === 0) {
+        elements.expenseList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">💸</div>
+                <div class="empty-state-title">No transactions yet</div>
+                <div class="empty-state-sub">Click <strong>Record Expense</strong> to add your first transaction and start tracking your finances.</div>
+            </div>`;
+        return;
+    }
+    elements.expenseList.innerHTML = expenses.map(exp => {
+        const catColor = getCategoryColor(exp.categoryName);
+        const catName = exp.categoryName || 'General';
+        const isRecurring = exp.recurring || exp.isRecurring;
+        return `
         <div class="expense-item">
-            <div class="expense-info">
-                <h4>${exp.description}</h4>
-                <div class="expense-meta">${formatDate(exp.expenseDate)} • <span style="color:var(--primary)">${exp.categoryName || 'General'}</span></div>
+            <div style="width:42px; height:42px; border-radius:12px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-size:18px;">${getCategoryEmoji(catName)}</span>
             </div>
-            <div style="display:flex; align-items:center; gap: 8px;">
-                <div class="expense-amount" style="margin-right:8px;">${formatCurrency(exp.amount)}</div>
-                <button class="btn-edit" onclick="editExpense(${exp.id})" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                <button class="btn-delete" onclick="deleteExpense(${exp.id})" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+            <div class="expense-info" style="flex:1; min-width:0;">
+                <h4 style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${exp.description}</h4>
+                <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:3px;">
+                    <span>${formatDate(exp.expenseDate)}</span>
+                    <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${catName}</span>
+                    ${isRecurring ? '<span style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(255,107,53,0.1); padding:2px 7px; border-radius:100px; border:1px solid rgba(255,107,53,0.25);">🔄 RECURRING</span>' : ''}
+                </div>
             </div>
-        </div>
-    `).join("");
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <div class="expense-amount" style="color:${catColor.color}; font-size:15px; font-weight:800;">${formatCurrency(exp.amount)}</div>
+                <button class="btn-edit" onclick="editExpense(${exp.id})" title="Edit">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button class="btn-delete" onclick="deleteExpense(${exp.id})" title="Delete">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+function getCategoryEmoji(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('food') || n.includes('dining') || n.includes('restaurant')) return '🍔';
+    if (n.includes('transport') || n.includes('travel') || n.includes('uber')) return '🚗';
+    if (n.includes('shop') || n.includes('cloth') || n.includes('amazon')) return '🛍️';
+    if (n.includes('util') || n.includes('electric') || n.includes('water') || n.includes('bill')) return '⚡';
+    if (n.includes('entertain') || n.includes('movie') || n.includes('netflix')) return '🎬';
+    if (n.includes('health') || n.includes('medical') || n.includes('gym')) return '💊';
+    if (n.includes('edu') || n.includes('course') || n.includes('book')) return '📚';
+    if (n.includes('subscribe') || n.includes('saas') || n.includes('software')) return '💻';
+    if (n.includes('grocer') || n.includes('market') || n.includes('super')) return '🛒';
+    return '💳';
 }
 
 function populateCategoryDropdown(categories) {
@@ -632,7 +713,21 @@ document.getElementById("openModalBtn").addEventListener("click", () => {
     elements.modal.classList.add("active");
 });
 
-document.getElementById("closeModalBtn").addEventListener("click", () => elements.modal.classList.remove("active"));
+document.getElementById("closeExpenseModalBtn")?.addEventListener("click", () => elements.modal.classList.remove("active"));
+
+// Close expense modal when clicking the backdrop (outside the modal card)
+elements.modal?.addEventListener("click", (e) => {
+    if (e.target === elements.modal) elements.modal.classList.remove("active");
+});
+
+// Close any open modal on Escape key
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        elements.modal?.classList.remove("active");
+        setBudgetModal?.classList.remove("active");
+    }
+});
+
 
 elements.isRecurring.addEventListener("change", () => {
     elements.recurringOptions.hidden = !elements.isRecurring.checked;
@@ -657,43 +752,120 @@ elements.toggleFiltersBtn.addEventListener("click", () => { elements.filterPanel
 // Theme Logic
 const savedTheme = localStorage.getItem("theme") || "dark";
 document.body.setAttribute("data-theme", savedTheme);
-updateThemeIcons(savedTheme);
+if (typeof updateAllThemeIcons === "function") updateAllThemeIcons(savedTheme);
 
-elements.themeToggle.addEventListener("click", () => {
-    const newTheme = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    document.body.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
-    updateThemeIcons(newTheme);
-    applyFilters();
-});
-
-function updateThemeIcons(theme) {
-    const sun = document.querySelector(".sun-icon");
-    const moon = document.querySelector(".moon-icon");
-    if (theme === "dark") { sun.style.display = "block"; moon.style.display = "none"; }
-    else { sun.style.display = "none"; moon.style.display = "block"; }
+if (elements.themeToggle) {
+    elements.themeToggle.addEventListener("click", () => {
+        if (typeof applyFilters === "function") applyFilters();
+    });
 }
 
-// Profile & Export
+// Profile, Dynamic 50-Currency Custom Select & Export
+const dashCurrWrapper = document.getElementById("dashCurrencyWrapper");
+const dashCurrTrigger = document.getElementById("dashCurrencyTrigger");
+const dashCurrLabel = document.getElementById("dashCurrencyLabel");
+const currencySelector = document.getElementById("currencySelector");
+
+if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined") {
+    const optionsContainer = dashCurrWrapper.querySelector(".custom-select-options");
+    const activeCurr = typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "USD";
+    if (currencySelector) currencySelector.value = activeCurr;
+
+    optionsContainer.innerHTML = `
+        <input type="text" class="custom-select-search" placeholder="Search 50+ currencies...">
+        <div class="custom-options-list">
+            ${WORLD_CURRENCIES.map(item => `
+                <div class="custom-option ${item.code === activeCurr ? 'selected' : ''}" data-value="${item.code}" data-name="${item.name.toLowerCase()}" data-symbol="${item.symbol.toLowerCase()}">
+                    <span><span class="custom-option-flag">${item.flag}</span> ${item.code} (${item.symbol}) — ${item.name}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    const searchInput = optionsContainer.querySelector(".custom-select-search");
+    const optionsList = optionsContainer.querySelectorAll(".custom-option");
+
+    const initialItem = WORLD_CURRENCIES.find(c => c.code === activeCurr) || WORLD_CURRENCIES[0];
+    if (dashCurrLabel && initialItem) {
+        dashCurrLabel.textContent = `${initialItem.flag} ${initialItem.code} (${initialItem.symbol})`;
+    }
+
+    dashCurrTrigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dashCurrWrapper.classList.toggle("open");
+        if (dashCurrWrapper.classList.contains("open") && searchInput) {
+            searchInput.focus();
+        }
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            const q = searchInput.value.toLowerCase().trim();
+            optionsList.forEach(opt => {
+                const code = opt.getAttribute("data-value").toLowerCase();
+                const name = opt.getAttribute("data-name");
+                const symbol = opt.getAttribute("data-symbol");
+                const match = code.includes(q) || name.includes(q) || symbol.includes(q);
+                opt.style.display = match ? "flex" : "none";
+            });
+        });
+        searchInput.addEventListener("click", e => e.stopPropagation());
+    }
+
+    optionsList.forEach(opt => {
+        opt.addEventListener("click", (e) => {
+            e.stopPropagation();
+            optionsList.forEach(o => o.classList.remove("selected"));
+            opt.classList.add("selected");
+            const newCurr = opt.getAttribute("data-value");
+            const item = WORLD_CURRENCIES.find(c => c.code === newCurr);
+            if (currencySelector) currencySelector.value = newCurr;
+            if (dashCurrLabel && item) dashCurrLabel.textContent = `${item.flag} ${item.code} (${item.symbol})`;
+            dashCurrWrapper.classList.remove("open");
+
+            localStorage.setItem("userCurrency", newCurr);
+            showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
+            updateModalLabels();
+            applyFilters();
+        });
+    });
+
+    document.addEventListener("click", () => {
+        dashCurrWrapper.classList.remove("open");
+    });
+}
+
+function updateModalLabels() {
+    const sym = typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "$";
+    document.querySelectorAll("label").forEach(lbl => {
+        if (lbl.textContent.includes("Amount")) {
+            lbl.textContent = `Amount (${sym})`;
+        } else if (lbl.textContent.includes("Monthly Limit")) {
+            lbl.textContent = `Monthly Limit Amount (${sym})`;
+        }
+    });
+}
+updateModalLabels();
+
 elements.profileTrigger.addEventListener("click", (e) => { e.stopPropagation(); elements.profileMenu.classList.toggle("active"); });
 document.addEventListener("click", (e) => { if (!elements.profileTrigger.contains(e.target) && !elements.profileMenu.contains(e.target)) elements.profileMenu.classList.remove("active"); });
 document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "index.html"; });
 
 // --- EXPORT & IMPORT CONTROLS ---
-const token = localStorage.getItem("token");
+const authToken = localStorage.getItem("token");
 
 document.getElementById("exportCsvBtn")?.addEventListener("click", () => {
-    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/csv?token=${token}`);
+    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/csv?token=${authToken}`);
     showToast("Exporting CSV...", "info");
 });
 
 document.getElementById("exportJsonBtn")?.addEventListener("click", () => {
-    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/json?token=${token}`);
+    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/json?token=${authToken}`);
     showToast("Exporting JSON...", "info");
 });
 
 document.getElementById("exportPdfBtn")?.addEventListener("click", () => {
-    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/pdf?token=${token}`);
+    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/pdf?token=${authToken}`);
     showToast("Generating PDF report...", "info");
 });
 

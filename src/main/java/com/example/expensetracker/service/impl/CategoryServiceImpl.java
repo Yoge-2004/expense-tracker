@@ -4,6 +4,9 @@ import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.service.CategoryService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -53,12 +56,19 @@ public class CategoryServiceImpl implements CategoryService {
      * If a duplicate is found, an {@link IllegalArgumentException} is thrown
      * to enforce per-user uniqueness of category names.</p>
      *
+     * <p>After a successful save, both the per-user cache and the global categories
+     * cache are evicted to ensure freshness on the next fetch.</p>
+     *
      * @param name the name of the new category; must not be blank
      * @param user the owner of the new category; must not be {@code null}
      * @return the saved {@link Category} entity with a generated ID
      * @throws IllegalArgumentException if a category with this name already exists for the user
      */
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "userCategories", key = "#user.id"),
+        @CacheEvict(value = "globalCategories", allEntries = true)
+    })
     public Category createCategory(String name, User user) {
         if (categoryRepository.existsByNameAndUser(name, user)) {
             throw new IllegalArgumentException(
@@ -76,14 +86,14 @@ public class CategoryServiceImpl implements CategoryService {
     /**
      * {@inheritDoc}
      *
-     * <p>Delegates directly to {@link CategoryRepository#findByUser(User)}
-     * to retrieve all categories owned by the given user. Global categories
-     * (with a {@code null} user) are not included in the result.</p>
+     * <p>Result is cached in {@code userCategories} by {@code user.id}.
+     * Cache is evicted whenever a category is created for this user.</p>
      *
      * @param user the {@link User} whose categories are to be retrieved
      * @return a list of user-owned {@link Category} entities; empty list if none exist
      */
     @Override
+    @Cacheable(value = "userCategories", key = "#user.id")
     public List<Category> getUserCategories(User user) {
         return categoryRepository.findByUser(user);
     }
@@ -91,12 +101,14 @@ public class CategoryServiceImpl implements CategoryService {
     /**
      * {@inheritDoc}
      *
-     * <p>Delegates directly to {@link CategoryRepository#findByUserIsNull()}
-     * to retrieve all system-level categories that have no associated user.</p>
+     * <p>Global categories change infrequently; this result is cached in
+     * {@code globalCategories}. The cache is evicted when any new category
+     * is created (since global categories can only be seeded at startup).</p>
      *
      * @return a list of global {@link Category} entities; empty list if none are defined
      */
     @Override
+    @Cacheable(value = "globalCategories")
     public List<Category> getGlobalCategories() {
         return categoryRepository.findByUserIsNull();
     }

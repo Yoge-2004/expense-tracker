@@ -188,23 +188,39 @@ export default function DashboardScreen() {
     percentage: totalSpent > 0 ? (categorySummary[cat] / totalSpent) * 100 : 0,
   })).sort((a, b) => b.amount - a.amount);
 
-  const categoryColors: { [key: string]: string } = {
-    food: '#ef4444',
-    transport: '#3b82f6',
-    utilities: '#f59e0b',
-    entertainment: '#ec4899',
-    health: '#10b981',
+  const CATEGORY_COLORS: Record<string, string> = {
+    food: '#ef4444', dining: '#ef4444', restaurant: '#ef4444',
+    transport: '#3b82f6', travel: '#3b82f6', uber: '#3b82f6',
+    utilities: '#f59e0b', electricity: '#f59e0b', water: '#f59e0b', bills: '#f59e0b',
+    entertainment: '#ec4899', movie: '#ec4899', netflix: '#ec4899',
+    health: '#10b981', medical: '#10b981', gym: '#10b981',
+    shopping: '#8b5cf6', clothes: '#8b5cf6', amazon: '#8b5cf6',
+    education: '#06b6d4', books: '#06b6d4', course: '#06b6d4',
+    groceries: '#f97316', supermarket: '#f97316', market: '#f97316',
   };
 
-  const getCategoryColor = (name: string) => categoryColors[name.toLowerCase()] || '#8b5cf6';
+  const getCategoryColor = (name: string) => {
+    const n = (name || '').toLowerCase();
+    for (const [key, col] of Object.entries(CATEGORY_COLORS)) {
+      if (n.includes(key)) return col;
+    }
+    // Consistent hash-based color for unknown categories
+    const palette = ['#00D4AA', '#3B82F6', '#FF6B35', '#FBBF24', '#A855F7', '#EC4899', '#10D9A0', '#0EA5E9'];
+    const idx = n.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % palette.length;
+    return palette[idx];
+  };
 
   const getCategoryIconName = (name: string): any => {
     const norm = name.toLowerCase();
-    if (norm.includes('food') || norm.includes('dining')) return 'fast-food';
-    if (norm.includes('transport') || norm.includes('travel') || norm.includes('fuel')) return 'car';
-    if (norm.includes('utilities') || norm.includes('electricity') || norm.includes('water') || norm.includes('bill')) return 'flash';
-    if (norm.includes('entertainment') || norm.includes('movie') || norm.includes('game') || norm.includes('fun')) return 'game-controller';
-    if (norm.includes('health') || norm.includes('medical') || norm.includes('fitness')) return 'medical';
+    if (norm.includes('food') || norm.includes('dining') || norm.includes('restaurant')) return 'fast-food';
+    if (norm.includes('transport') || norm.includes('travel') || norm.includes('uber') || norm.includes('fuel')) return 'car';
+    if (norm.includes('util') || norm.includes('electric') || norm.includes('water') || norm.includes('bill')) return 'flash';
+    if (norm.includes('entertain') || norm.includes('movie') || norm.includes('netflix') || norm.includes('game')) return 'game-controller';
+    if (norm.includes('health') || norm.includes('medical') || norm.includes('gym') || norm.includes('fitness')) return 'medical';
+    if (norm.includes('shop') || norm.includes('cloth') || norm.includes('amazon')) return 'bag-handle';
+    if (norm.includes('edu') || norm.includes('book') || norm.includes('course')) return 'book';
+    if (norm.includes('grocer') || norm.includes('market') || norm.includes('super')) return 'cart';
+    if (norm.includes('subscri') || norm.includes('saas') || norm.includes('software')) return 'laptop';
     return 'wallet';
   };
 
@@ -595,11 +611,13 @@ export default function DashboardScreen() {
           {/* ── EXPENSES LIST ── */}
           {filteredExpenses.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <View style={[styles.emptyIconBox, { backgroundColor: c.inputBg }]}>
-                <Ionicons name="receipt-outline" size={36} color={c.textMuted} />
+              <View style={[styles.emptyIconBox, { backgroundColor: c.accent + '15', borderWidth: 1, borderColor: c.accent + '30' }]}>
+                <Ionicons name="receipt-outline" size={36} color={c.accent} />
               </View>
               <Text style={[styles.emptyTitle, { color: c.text }]}>No expenses found</Text>
-              <Text style={[styles.emptyText, { color: c.textMuted }]}>Add your first expense to get started</Text>
+              <Text style={[styles.emptyText, { color: c.textMuted }]}>
+                {searchQuery ? `No results for "${searchQuery}"` : 'Add your first expense to get started'}
+              </Text>
             </View>
           ) : (
             filteredExpenses.map((item, index) => {
@@ -624,14 +642,17 @@ export default function DashboardScreen() {
                   }
                 ]}
               >
-                <View style={[styles.txIconCircle, { backgroundColor: col + '22' }]}>
+                <View style={[styles.txIconCircle, { backgroundColor: col + '22', borderWidth: 1, borderColor: col + '40' }]}>
                   <Ionicons name={getCategoryIconName(item.categoryName)} size={20} color={col} />
                 </View>
                 <View style={styles.txMain}>
-                  <Text style={[styles.txTitle, { color: c.text }]}>{item.description}</Text>
-                  <Text style={[styles.txMeta, { color: c.textMuted }]}>{item.categoryName} • {item.expenseDate}</Text>
+                  <Text style={[styles.txTitle, { color: c.text }]} numberOfLines={1}>{item.description}</Text>
+                  <Text style={[styles.txMeta, { color: c.textMuted }]}>
+                    <Text style={{ color: col, fontWeight: '600' }}>{item.categoryName}</Text>
+                    {' • '}{new Date(item.expenseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </Text>
                 </View>
-                <Text style={[styles.txAmount, { color: '#FF4757' }]}>-₹{Number(item.amount).toFixed(2)}</Text>
+                <Text style={[styles.txAmount, { color: col, fontWeight: '800' }]}>-₹{Number(item.amount).toFixed(2)}</Text>
               </Animated.View>
               );
             })

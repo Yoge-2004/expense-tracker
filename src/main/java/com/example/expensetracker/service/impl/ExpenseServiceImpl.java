@@ -6,6 +6,8 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.service.ExpenseService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -54,6 +56,9 @@ public class ExpenseServiceImpl implements ExpenseService {
      * is checked — the category must either be global (no user) or owned by the
      * requesting user. The user is then linked to the expense before saving.</p>
      *
+     * <p>After saving, the expense list cache for this user is evicted to ensure
+     * the next read returns fresh data from the database.</p>
+     *
      * @param expense the expense to create; category ID must reference an existing category
      * @param user    the owner of the expense
      * @return the persisted {@link Expense} entity with generated ID and audit timestamps
@@ -61,6 +66,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      *                                  a different user
      */
     @Override
+    @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense createExpense(Expense expense, User user) {
         if (expense.getCategory() != null && expense.getCategory().getId() != null) {
             Category category = categoryRepository
@@ -85,12 +91,15 @@ public class ExpenseServiceImpl implements ExpenseService {
     /**
      * {@inheritDoc}
      *
-     * <p>Delegates directly to {@link ExpenseRepository#findByUser(User)}.</p>
+     * <p>Result is cached in {@code userExpenses} keyed by {@code user.id}.
+     * This avoids repeated SQL round-trips to Neon on every dashboard reload.
+     * Cache is evicted on any write (create, update, delete) for this user.</p>
      *
      * @param user the owner of the expenses to retrieve
      * @return a list of all {@link Expense} records owned by the user
      */
     @Override
+    @Cacheable(value = "userExpenses", key = "#user.id")
     public List<Expense> getUserExpenses(User user) {
         return expenseRepository.findByUser(user);
     }
@@ -102,12 +111,15 @@ public class ExpenseServiceImpl implements ExpenseService {
      * and deletes it. Throws an {@link IllegalArgumentException} if the expense
      * is not found or ownership does not match.</p>
      *
+     * <p>Evicts the user's cached expense list on successful deletion.</p>
+     *
      * @param expenseId the ID of the expense to delete
      * @param user      the user requesting deletion; must own the expense
      * @throws IllegalArgumentException if the expense is not found or does not
      *                                  belong to the given user
      */
     @Override
+    @CacheEvict(value = "userExpenses", key = "#user.id")
     public void deleteExpense(Long expenseId, User user) {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() ->
@@ -128,6 +140,8 @@ public class ExpenseServiceImpl implements ExpenseService {
      * Applies updates only to non-null fields provided in {@code expenseUpdates}:
      * description, amount, expense date, and category. Updated entity is then saved.</p>
      *
+     * <p>Evicts the user's cached expense list so the next fetch reflects the update.</p>
+     *
      * @param expenseId      the ID of the expense to update
      * @param expenseUpdates contains the new field values to apply
      * @param user           the user requesting the update; must own the expense
@@ -135,6 +149,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      * @throws RuntimeException if the expense is not found or does not belong to the user
      */
     @Override
+    @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense updateExpense(Long expenseId, Expense expenseUpdates, User user) {
         Expense existing = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new RuntimeException("Expense not found"));

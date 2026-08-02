@@ -193,10 +193,24 @@
 			<version>5.0.6</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- ── Selenium WebDriver & HtmlUnit ──────────────────────── -->
 		<dependency>
-			<groupId>org.apache.groovy</groupId>
-			<artifactId>groovy-xml</artifactId>
-			<version>5.0.6</version>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>4.29.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>htmlunit3-driver</artifactId>
+			<version>4.28.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.github.bonigarcia</groupId>
+			<artifactId>webdrivermanager</artifactId>
+			<version>5.9.3</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
