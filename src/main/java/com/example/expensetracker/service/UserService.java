@@ -65,18 +65,6 @@ public interface UserService {
     Optional<User> findById(Long id);
 
     /**
-     * Updates the password for the user identified by the given email address.
-     *
-     * <p>The provided plain-text password is BCrypt-encoded before it is saved.
-     * The account must already exist; if not, an exception is thrown.</p>
-     *
-     * @param email       the email address of the user whose password is to be changed
-     * @param newPassword the new plain-text password to encode and store
-     * @throws IllegalArgumentException if no user is found with the given email
-     */
-    void updatePassword(String email, String newPassword);
-
-    /**
      * Deletes the user account identified by the given ID, along with all
      * associated data.
      *

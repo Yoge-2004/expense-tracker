@@ -3,6 +3,7 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.JwtService;
+import com.example.expensetracker.service.PasswordResetService;
 import com.example.expensetracker.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +38,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <ul>
  *   <li>POST  /api/auth/login</li>
  *   <li>POST  /api/auth/register</li>
+ *   <li>POST  /api/auth/forgot-password</li>
  *   <li>PUT   /api/auth/reset-password</li>
+ *   <li>POST  /api/auth/oauth/google</li>
  * </ul>
  *
  * @author Yogeshwaran
@@ -54,6 +57,7 @@ class AuthControllerTest {
     @MockitoBean JwtService jwtService;
     @MockitoBean UserService userService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
+    @MockitoBean PasswordResetService passwordResetService;
 
     private User sampleUser;
 
@@ -190,21 +194,50 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ─────────────────────────── POST /api/auth/forgot-password ───────────────────────────
+
+    @Test
+    @DisplayName("POST /api/auth/forgot-password → 200 OK and issues a code")
+    void forgotPassword_validEmail_returns200() throws Exception {
+        doNothing().when(passwordResetService).requestReset(anyString());
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "yoge@example.com"))))
+                .andExpect(status().isOk());
+
+        verify(passwordResetService).requestReset("yoge@example.com");
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/forgot-password → 200 OK even for an unknown email (no enumeration)")
+    void forgotPassword_unknownEmail_stillReturns200() throws Exception {
+        doNothing().when(passwordResetService).requestReset(anyString());
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "ghost@example.com"))))
+                .andExpect(status().isOk());
+    }
+
     // ─────────────────────────── PUT /api/auth/reset-password ───────────────────────────
 
     @Test
-    @DisplayName("PUT /api/auth/reset-password → 200 OK on valid request")
-    void resetPassword_validRequest_returns200() throws Exception {
-        doNothing().when(userService).updatePassword(anyString(), anyString());
+    @DisplayName("PUT /api/auth/reset-password → 200 OK on a valid, correctly-verified code")
+    void resetPassword_validOtp_returns200() throws Exception {
+        doNothing().when(passwordResetService).resetPassword(anyString(), anyString(), anyString());
 
         mockMvc.perform(put("/api/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("email", "yoge@example.com",
+                                        "otp", "482913",
                                         "newPassword", "newSecret456"))))
                 .andExpect(status().isOk());
 
-        verify(userService).updatePassword("yoge@example.com", "newSecret456");
+        verify(passwordResetService).resetPassword("yoge@example.com", "482913", "newSecret456");
     }
 
     @Test
@@ -213,7 +246,17 @@ class AuthControllerTest {
         mockMvc.perform(put("/api/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("newPassword", "newSecret456"))))
+                                Map.of("otp", "482913", "newPassword", "newSecret456"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("PUT /api/auth/reset-password → 400 Bad Request when otp is missing")
+    void resetPassword_missingOtp_returns400() throws Exception {
+        mockMvc.perform(put("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "yoge@example.com", "newPassword", "newSecret456"))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -223,23 +266,24 @@ class AuthControllerTest {
         mockMvc.perform(put("/api/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "yoge@example.com"))))
+                                Map.of("email", "yoge@example.com", "otp", "482913"))))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("PUT /api/auth/reset-password → 400 Bad Request when user not found")
-    void resetPassword_userNotFound_returns400() throws Exception {
-        doThrow(new IllegalArgumentException("User not found"))
-                .when(userService).updatePassword(anyString(), anyString());
+    @DisplayName("PUT /api/auth/reset-password → 401 when the code is wrong, expired, or reused")
+    void resetPassword_invalidOtp_returns401() throws Exception {
+        doThrow(new BadCredentialsException("Invalid or expired code."))
+                .when(passwordResetService).resetPassword(anyString(), anyString(), anyString());
 
         mockMvc.perform(put("/api/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "ghost@example.com",
+                                Map.of("email", "yoge@example.com",
+                                        "otp", "000000",
                                         "newPassword", "newSecret456"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("User not found"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid or expired code."));
     }
 
     // ─────────────────────────── POST /api/auth/oauth/google ───────────────────────────

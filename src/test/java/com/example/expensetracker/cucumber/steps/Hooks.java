@@ -30,6 +30,7 @@ public class Hooks {
 
     private void cleanupDatabase() {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+        jdbcTemplate.execute("TRUNCATE TABLE password_reset_otp RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE budget RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE recurring_expense RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE expenses RESTART IDENTITY");

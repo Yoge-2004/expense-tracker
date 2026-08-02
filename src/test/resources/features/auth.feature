@@ -93,29 +93,41 @@ Feature: Authentication API
   # ─── Password Reset ───────────────────────────────────────────────────────
 
   Scenario: Reset password successfully
-    Resets the password of an existing account and verifies the change takes
-    effect by immediately logging in with the new password. The old password
-    is no longer valid after the reset. The new password is BCrypt-encoded
-    before being stored.
+    Requests a one-time code for a registered account, then uses that exact
+    code to set a new password, and verifies the change takes effect by
+    immediately logging in with the new password. The old password is no
+    longer valid after the reset. The new password is BCrypt-encoded before
+    being stored, and the OTP itself is never stored or transmitted in
+    plaintext except in the original email.
 
     Given a user is registered with email "reset.me@example.com" and password "oldPass123"
-    When I reset the password for "reset.me@example.com" to "newPass456"
+    When I request a password reset code for "reset.me@example.com"
+    And I reset the password for "reset.me@example.com" to "newPass456" using the issued code
     Then the response status code should be 200
     And I can login with email "reset.me@example.com" and new password "newPass456"
 
-  Scenario: Reset password fails when email does not exist
-    Attempts to reset the password for an email that has never been registered.
-    UserServiceImpl.updatePassword throws IllegalArgumentException("User not found")
-    which GlobalExceptionHandler maps to HTTP 400 Bad Request (not 404, because
-    the controller uses IllegalArgumentException rather than NoSuchElementException).
+  Scenario: Reset password fails with an incorrect code
+    Even for a registered account with a code genuinely in flight, submitting
+    the wrong 6-digit value is rejected — proving the endpoint no longer
+    trusts an email address alone, unlike before this fix.
 
-    When I reset the password for "ghost@example.com" to "newPass456"
-    Then the response status code should be 400
+    Given a user is registered with email "wrongcode@example.com" and password "oldPass123"
+    When I request a password reset code for "wrongcode@example.com"
+    And I submit reset password for "wrongcode@example.com" with code "000000" and new password "newPass456"
+    Then the response status code should be 401
+
+  Scenario: Requesting a reset code for an unknown email still returns 200
+    The forgot-password endpoint must not reveal which emails are registered,
+    so an email with no account behind it gets the same response as one that
+    exists.
+
+    When I request a password reset code for "ghost@example.com"
+    Then the response status code should be 200
 
   Scenario: Reset password fails when email field is missing
-    Submits a reset-password request with a null email field. The controller
-    explicitly checks for null email/newPassword and returns HTTP 400 before
-    calling the service layer.
+    Submits a reset-password request with a null email field. Bean validation
+    (@NotBlank on ResetPasswordRequest.email) rejects it with HTTP 400 before
+    the service layer is ever reached.
 
     When I send a reset password request without an email
     Then the response status code should be 400

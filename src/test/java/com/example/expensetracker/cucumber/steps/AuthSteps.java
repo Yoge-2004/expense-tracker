@@ -1,6 +1,7 @@
 package com.example.expensetracker.cucumber.steps;
 
 import com.example.expensetracker.cucumber.context.ScenarioContext;
+import com.example.expensetracker.cucumber.support.TestOtpCapture;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -26,6 +27,9 @@ public class AuthSteps {
 
     @Autowired
     private ScenarioContext ctx;
+
+    @Autowired
+    private TestOtpCapture otpCapture;
 
     // ─── Shared Background step (used by all other features) ───────────────
 
@@ -163,10 +167,36 @@ public class AuthSteps {
 
     // ─── Password Reset steps ─────────────────────────────────────────────
 
-    @When("I reset the password for {string} to {string}")
-    public void iResetPassword(String email, String newPassword) {
+    @When("I request a password reset code for {string}")
+    public void iRequestPasswordResetCode(String email) {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/forgot-password")
+        );
+    }
+
+    @When("I reset the password for {string} to {string} using the issued code")
+    public void iResetPasswordUsingIssuedCode(String email, String newPassword) {
+        String otp = otpCapture.getLatestOtp(email);
+        assertThat(otp).as("Expected an OTP to have been issued for " + email).isNotBlank();
+        submitResetPassword(email, otp, newPassword);
+    }
+
+    @When("I submit reset password for {string} with code {string} and new password {string}")
+    public void iSubmitResetPasswordWithCode(String email, String otp, String newPassword) {
+        submitResetPassword(email, otp, newPassword);
+    }
+
+    private void submitResetPassword(String email, String otp, String newPassword) {
         Map<String, String> body = new HashMap<>();
         body.put("email",       email);
+        body.put("otp",         otp);
         body.put("newPassword", newPassword);
 
         ctx.setLastResponse(
@@ -181,6 +211,7 @@ public class AuthSteps {
     @When("I send a reset password request without an email")
     public void iSendResetWithoutEmail() {
         Map<String, String> body = new HashMap<>();
+        body.put("otp",         "482913");
         body.put("newPassword", "somePassword");
         // email field intentionally omitted
 

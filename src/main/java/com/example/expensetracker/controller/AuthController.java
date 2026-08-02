@@ -4,6 +4,7 @@ import com.example.expensetracker.dto.*;
 import com.example.expensetracker.mapper.UserMapper;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.JwtService;
+import com.example.expensetracker.service.PasswordResetService;
 import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,13 +46,16 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserService userService;
+    private final PasswordResetService passwordResetService;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtService jwtService,
-                          UserService userService) {
+                          UserService userService,
+                          PasswordResetService passwordResetService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userService = userService;
+        this.passwordResetService = passwordResetService;
     }
 
     // ─── POST /api/auth/login ─────────────────────────────────────────────
@@ -180,24 +184,40 @@ public class AuthController {
     // ─── PUT /api/auth/reset-password ─────────────────────────────────────
 
     @Operation(
+        summary = "Request password reset code",
+        description = """
+            Sends a 6-digit one-time code to the account's email address, valid for 10 minutes.
+
+            **Always responds 200**, whether or not an account exists for the given email —
+            this prevents the endpoint being used to check which emails are registered.
+            Call `PUT /api/auth/reset-password` with the code to actually change the password.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "If an account exists for this email, a code has been sent")
+    })
+    @SecurityRequirements
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
         summary = "Reset password",
         description = """
-            Resets the password of an existing account identified by email address.
+            Resets the password of an existing account, given a valid one-time code.
 
             **How it works:**
-            1. Looks up the user by `email`. If no account is found, returns `400`.
-            2. BCrypt-encodes the `newPassword` and overwrites the stored hash.
-            3. Returns `200` with no body on success.
+            1. Call `POST /api/auth/forgot-password` first to receive a 6-digit code by email.
+            2. Submit that code here along with `newPassword` within 10 minutes of it being issued.
+            3. The code is single-use and locks out after 5 incorrect attempts — request a new
+               one if it expires or is exhausted.
 
             **After reset:**
             The old password is immediately invalidated. Any existing JWT tokens
             issued before the reset remain valid until they expire (tokens are
-            stateless and not revoked server-side). To force logout, the user
-            must wait for their current token to expire or the secret must be rotated.
-
-            **Security note:**
-            This endpoint does not require the old password or an OTP. In a production
-            system it should be protected by an email-verification flow before use.
+            stateless and not revoked server-side).
             """
     )
     @RequestBody(required = true, content = @Content(
@@ -206,26 +226,23 @@ public class AuthController {
         examples = @ExampleObject(
             name = "auth-reset-request",
             summary = "Password reset payload",
-            value = "{ \"email\": \"john.doe@example.com\", \"newPassword\": \"newSecret456\" }"
+            value = "{ \"email\": \"john.doe@example.com\", \"otp\": \"482913\", \"newPassword\": \"newSecret456\" }"
         )
     ))
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Password reset successfully — no body returned"),
-        @ApiResponse(responseCode = "400", description = "Missing fields or no account found for the given email",
+        @ApiResponse(responseCode = "401", description = "Missing, incorrect, expired, or already-used code",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(name = "auth-reset-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"User not found\", \"path\": \"/api/auth/reset-password\" }"
+                examples = @ExampleObject(name = "auth-reset-401",
+                    value = "{ \"status\": 401, \"error\": \"Authentication Failed\", \"message\": \"Invalid or expired code.\", \"path\": \"/api/auth/reset-password\" }"
                 ))
         )
     })
     @SecurityRequirements
     @PutMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
-        if (request.getEmail() == null || request.getNewPassword() == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        userService.updatePassword(request.getEmail(), request.getNewPassword());
+    public ResponseEntity<Void> resetPassword(@Valid @org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 

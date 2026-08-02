@@ -130,25 +130,6 @@ public class UserServiceImpl implements UserService {
     /**
      * {@inheritDoc}
      *
-     * <p>Looks up the user by email, encodes the new password using BCrypt,
-     * updates the {@code password} field, and saves the modified entity.
-     * Throws {@link IllegalArgumentException} if no user is found.</p>
-     *
-     * @param email       the email of the account to update
-     * @param newPassword the new plain-text password to encode and store
-     * @throws IllegalArgumentException if no user exists with the given email
-     */
-    @Override
-    public void updatePassword(String email, String newPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
      * <p>Performs a three-step cascading deletion:</p>
      * <ol>
      *   <li>Loads and deletes all {@link Expense} records owned by the user.</li>
