@@ -2,6 +2,7 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.CustomUserDetailsService;
+import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,6 +55,7 @@ class AuthControllerTest {
     @MockitoBean JwtService jwtService;
     @MockitoBean UserService userService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
+    @MockitoBean GoogleIdTokenVerifier googleIdTokenVerifier;
 
     private User sampleUser;
 
@@ -245,20 +247,33 @@ class AuthControllerTest {
     // ─────────────────────────── POST /api/auth/oauth/google ───────────────────────────
 
     @Test
-    @DisplayName("POST /api/auth/oauth/google → 200 OK on valid OAuth payload")
-    void oauthLogin_validPayload_returns200() throws Exception {
+    @DisplayName("POST /api/auth/oauth/google → 200 OK when Google verifies the ID token")
+    void oauthLogin_verifiedToken_returns200() throws Exception {
+        when(googleIdTokenVerifier.verify(anyString()))
+                .thenReturn(new GoogleIdTokenVerifier.VerifiedIdentity("yoge@example.com", "Yogeshwaran"));
         when(userService.findByEmail(anyString())).thenReturn(Optional.of(sampleUser));
         when(jwtService.generateToken(anyString())).thenReturn("mock-oauth-jwt-token");
 
         mockMvc.perform(post("/api/auth/oauth/google")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("idToken", "google-id-token-123",
-                                        "email", "yoge@example.com",
-                                        "name", "Yogeshwaran"))))
+                                Map.of("idToken", "a-real-google-signed-token"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("mock-oauth-jwt-token"))
                 .andExpect(jsonPath("$.name").value("Yogeshwaran"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/oauth/google → 401 when the ID token cannot be verified (forged/expired/wrong audience)")
+    void oauthLogin_unverifiableToken_returns401() throws Exception {
+        when(googleIdTokenVerifier.verify(anyString()))
+                .thenThrow(new BadCredentialsException("Google sign-in failed: token was not issued for this application."));
+
+        mockMvc.perform(post("/api/auth/oauth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("idToken", "a-token-claiming-to-be-someone-else"))))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

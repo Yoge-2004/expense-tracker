@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OAuthRequest {
-    @NotBlank(message = "Token or code is required")
+    @NotBlank(message = "Google ID token is required")
     private String idToken;
-    private String email;
-    private String name;
 }

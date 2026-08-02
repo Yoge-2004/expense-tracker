@@ -3,6 +3,7 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.dto.*;
 import com.example.expensetracker.mapper.UserMapper;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,13 +46,16 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserService userService;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     public AuthController(AuthenticationManager authenticationManager,
                           JwtService jwtService,
-                          UserService userService) {
+                          UserService userService,
+                          GoogleIdTokenVerifier googleIdTokenVerifier) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userService = userService;
+        this.googleIdTokenVerifier = googleIdTokenVerifier;
     }
 
     // ─── POST /api/auth/login ─────────────────────────────────────────────
@@ -233,22 +237,32 @@ public class AuthController {
 
     @Operation(
         summary = "OAuth Login / Signup",
-        description = "Authenticates or registers a user via OAuth provider (Google). Generates standard JWT token."
+        description = """
+            Authenticates or registers a user via Google Sign-In.
+
+            **How it works:**
+            1. The client obtains a Google-signed ID token via Google Identity Services
+               (never a plain email string).
+            2. The server sends that token to Google's `tokeninfo` endpoint, which validates
+               its signature, issuer and expiry.
+            3. The server additionally checks the token's `aud` claim matches this app's
+               configured `google.oauth.client-id`, and that `email_verified` is true.
+            4. Only the email/name Google returns for a verified token are used — a client
+               can no longer claim to be any email address it likes.
+
+            If `google.oauth.client-id` is not configured, this endpoint fails closed
+            (401) rather than accepting unverifiable tokens.
+            """
     )
     @SecurityRequirements
     @PostMapping("/oauth/google")
     public ResponseEntity<AuthResponse> oauthLogin(@Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request) {
-        String email = request.getEmail();
-        if (email == null || email.isBlank()) {
-            email = "oauth_" + Math.abs(request.getIdToken().hashCode()) + "@oauth.user";
-        }
-        String name = (request.getName() != null && !request.getName().isBlank()) ? request.getName() : "Google User";
+        GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.getIdToken());
 
-        String finalEmail = email;
-        User user = userService.findByEmail(finalEmail).orElseGet(() -> {
+        User user = userService.findByEmail(identity.email()).orElseGet(() -> {
             User newUser = new User();
-            newUser.setName(name);
-            newUser.setEmail(finalEmail);
+            newUser.setName(identity.name());
+            newUser.setEmail(identity.email());
             newUser.setPassword(java.util.UUID.randomUUID().toString());
             return userService.registerUser(newUser);
         });
