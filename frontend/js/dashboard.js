@@ -58,16 +58,16 @@ const elements = {
     cancelDeleteAccountBtn: document.getElementById("cancelDeleteAccountBtn")
 };
 
-// ── Category palette (consistent colors per category name) ──
+// ── Category palette (consistent colors per category name) — muted ink/stamp tones ──
 const CATEGORY_PALETTE = [
-    { bg: 'rgba(0,212,170,0.12)', color: '#00D4AA' },
-    { bg: 'rgba(59,130,246,0.12)', color: '#3B82F6' },
-    { bg: 'rgba(255,107,53,0.12)', color: '#FF6B35' },
-    { bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' },
-    { bg: 'rgba(168,85,247,0.12)', color: '#A855F7' },
-    { bg: 'rgba(236,72,153,0.12)', color: '#EC4899' },
-    { bg: 'rgba(16,217,160,0.12)', color: '#10D9A0' },
-    { bg: 'rgba(14,165,233,0.12)', color: '#0EA5E9' },
+    { bg: 'rgba(199,154,62,0.12)', color: '#C79A3E' },  // gold
+    { bg: 'rgba(162,62,50,0.12)',  color: '#A23E32' },  // oxblood
+    { bg: 'rgba(76,122,120,0.12)', color: '#4C7A78' },  // teal
+    { bg: 'rgba(91,140,90,0.12)',  color: '#5B8C5A' },  // sage
+    { bg: 'rgba(139,94,52,0.12)',  color: '#8B5E34' },  // umber
+    { bg: 'rgba(176,107,92,0.12)', color: '#B06B5C' },  // terracotta
+    { bg: 'rgba(201,147,46,0.12)', color: '#C9932E' },  // mustard
+    { bg: 'rgba(107,114,128,0.12)',color: '#6B7280' },  // slate
 ];
 function getCategoryColor(name) {
     const idx = name ? name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % CATEGORY_PALETTE.length : 0;
@@ -351,9 +351,9 @@ function renderPieChart(expenses) {
             labels: Object.keys(categoryTotals),
             datasets: [{
                 data: Object.values(categoryTotals),
-                backgroundColor: ['#00D4AA', '#FF6B35', '#3B82F6', '#FBBF24', '#10D9A0', '#A855F7'],
+                backgroundColor: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C'],
                 borderWidth: 2,
-                borderColor: document.body.getAttribute("data-theme") === "light" ? '#FFFFFF' : '#090D16'
+                borderColor: document.body.getAttribute("data-theme") === "light" ? '#FCFBF6' : '#10120E'
             }]
         },
         options: {
@@ -396,7 +396,7 @@ function renderTrendChart(expenses) {
             datasets: [{
                 label: 'Daily Spending',
                 data: values,
-                borderColor: '#00D4AA',
+                borderColor: '#C79A3E',
                 backgroundColor: (context) => getTrendGradient(context.chart),
                 fill: 'origin',
                 tension: 0.35,
@@ -404,8 +404,8 @@ function renderTrendChart(expenses) {
                 borderWidth: 3,
                 pointRadius: dates.length > 31 ? 0 : 3,
                 pointHoverRadius: 6,
-                pointBackgroundColor: isLight ? '#FFFFFF' : '#00D4AA',
-                pointBorderColor: '#00B8D9',
+                pointBackgroundColor: isLight ? '#FCFBF6' : '#C79A3E',
+                pointBorderColor: '#A97F2E',
                 pointBorderWidth: 2
             }]
         },
@@ -462,11 +462,11 @@ function formatCompactCurrency(value) {
 
 function getTrendGradient(chart) {
     const { ctx, chartArea } = chart;
-    if (!chartArea) return 'rgba(0, 212, 170, 0.22)';
+    if (!chartArea) return 'rgba(199, 154, 62, 0.22)';
     const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-    gradient.addColorStop(0, 'rgba(0, 212, 170, 0.35)');
-    gradient.addColorStop(0.72, 'rgba(0, 212, 170, 0.08)');
-    gradient.addColorStop(1, 'rgba(0, 212, 170, 0.01)');
+    gradient.addColorStop(0, 'rgba(199, 154, 62, 0.35)');
+    gradient.addColorStop(0.72, 'rgba(199, 154, 62, 0.08)');
+    gradient.addColorStop(1, 'rgba(199, 154, 62, 0.01)');
     return gradient;
 }
 
@@ -574,11 +574,11 @@ function renderList(expenses) {
                 <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:3px;">
                     <span>${formatDate(exp.expenseDate)}</span>
                     <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${catName}</span>
-                    ${isRecurring ? '<span style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(255,107,53,0.1); padding:2px 7px; border-radius:100px; border:1px solid rgba(255,107,53,0.25);">🔄 RECURRING</span>' : ''}
+                    ${isRecurring ? '<span style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; font-weight:600; color:var(--accent); background:rgba(162,62,50,0.08); padding:2px 8px; border-radius:3px; border:1px solid rgba(162,62,50,0.35);">⟳ RECURRING</span>' : ''}
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                <div class="expense-amount" style="color:${catColor.color}; font-size:15px; font-weight:800;">${formatCurrency(exp.amount)}</div>
+                <div class="expense-amount" style="font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--text-main); font-size:15px; font-weight:600;">${formatCurrency(exp.amount)}</div>
                 <button class="btn-edit" onclick="editExpense(${exp.id})" title="Edit">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
