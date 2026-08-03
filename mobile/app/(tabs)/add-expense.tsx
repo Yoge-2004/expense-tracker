@@ -26,29 +26,29 @@ export default function AddExpenseScreen() {
   const getThemeColors = () => {
     if (theme === 'light') {
       return {
-        bg: '#F0F4F8',
+        bg: '#EDEAE0',
         card: '#FFFFFF',
-        border: '#D8E2F0',
-        text: '#0A1628',
-        textMuted: '#5B6880',
-        inputBg: '#EAF0F8',
-        inputBorder: '#C8D5E8',
-        tabBg: '#EAF0F8',
-        accent: '#00D4AA',
-        orange: '#FF6B35',
+        border: '#DAD4C1',
+        text: '#171A14',
+        textMuted: '#A8A395',
+        inputBg: '#FCFBF6',
+        inputBorder: '#DAD4C1',
+        tabBg: '#FCFBF6',
+        accent: '#C79A3E',
+        orange: '#A23E32',
       };
     }
     return {
-      bg: '#080B12',
+      bg: '#10120E',
       card: 'rgba(13, 18, 30, 0.9)',
       border: 'rgba(255, 255, 255, 0.08)',
-      text: '#F0F4FF',
-      textMuted: '#8B97B0',
+      text: '#ECE7D8',
+      textMuted: '#A8A395',
       inputBg: 'rgba(10, 16, 30, 0.8)',
       inputBorder: 'rgba(255, 255, 255, 0.08)',
       tabBg: 'rgba(10, 16, 30, 0.8)',
-      accent: '#00D4AA',
-      orange: '#FF6B35',
+      accent: '#C79A3E',
+      orange: '#A23E32',
     };
   };
 
@@ -289,15 +289,15 @@ export default function AddExpenseScreen() {
             style={[styles.tabButton, activeTab === 'expense' && [styles.activeTabExpense]]}
             onPress={() => setActiveTab('expense')}
           >
-            <Ionicons name="receipt-outline" size={15} color={activeTab === 'expense' ? '#080B12' : c.textMuted} />
-            <Text style={[styles.tabButtonText, { color: activeTab === 'expense' ? '#080B12' : c.textMuted }]}>Expense</Text>
+            <Ionicons name="receipt-outline" size={15} color={activeTab === 'expense' ? '#10120E' : c.textMuted} />
+            <Text style={[styles.tabButtonText, { color: activeTab === 'expense' ? '#10120E' : c.textMuted }]}>Expense</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'budget' && [styles.activeTabBudget]]}
             onPress={() => setActiveTab('budget')}
           >
-            <Ionicons name="pie-chart-outline" size={15} color={activeTab === 'budget' ? '#080B12' : c.textMuted} />
-            <Text style={[styles.tabButtonText, { color: activeTab === 'budget' ? '#080B12' : c.textMuted }]}>Budget</Text>
+            <Ionicons name="pie-chart-outline" size={15} color={activeTab === 'budget' ? '#10120E' : c.textMuted} />
+            <Text style={[styles.tabButtonText, { color: activeTab === 'budget' ? '#10120E' : c.textMuted }]}>Budget</Text>
           </TouchableOpacity>
         </View>
 
@@ -308,15 +308,15 @@ export default function AddExpenseScreen() {
             {/* Description */}
             <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#00D4AA18' }]}>
-                  <Ionicons name="pencil-outline" size={14} color="#00D4AA" />
+                <View style={[styles.formSectionIcon, { backgroundColor: '#C79A3E18' }]}>
+                  <Ionicons name="pencil-outline" size={14} color="#C79A3E" />
                 </View>
                 <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Description</Text>
               </View>
               <TextInput
                 style={[styles.bigInput, { color: c.text, borderBottomColor: c.border }]}
                 placeholder="e.g. Netflix, Grocery run, Fuel top-up"
-                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                 value={description}
                 onChangeText={setDescription}
               />
@@ -325,8 +325,8 @@ export default function AddExpenseScreen() {
             {/* Amount */}
             <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#FF6B3518' }]}>
-                  <Ionicons name="cash-outline" size={14} color="#FF6B35" />
+                <View style={[styles.formSectionIcon, { backgroundColor: '#A23E3218' }]}>
+                  <Ionicons name="cash-outline" size={14} color="#A23E32" />
                 </View>
                 <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Amount</Text>
               </View>
@@ -335,7 +335,7 @@ export default function AddExpenseScreen() {
                 <TextInput
                   style={[styles.amountInput, { color: c.text }]}
                   placeholder="0.00"
-                  placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                  placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                   keyboardType="decimal-pad"
                   value={amount}
                   onChangeText={setAmount}
@@ -346,8 +346,8 @@ export default function AddExpenseScreen() {
             {/* Category */}
             <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#3B82F618' }]}>
-                  <Ionicons name="grid-outline" size={14} color="#3B82F6" />
+                <View style={[styles.formSectionIcon, { backgroundColor: '#4C7A7818' }]}>
+                  <Ionicons name="grid-outline" size={14} color="#4C7A78" />
                 </View>
                 <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Category</Text>
                 <TouchableOpacity
@@ -370,7 +370,7 @@ export default function AddExpenseScreen() {
                       ]}
                       onPress={() => setCategoryId(cat.id)}
                     >
-                      <Text style={[styles.categoryChipText, { color: isActive ? '#080B12' : c.textMuted }]}>
+                      <Text style={[styles.categoryChipText, { color: isActive ? '#10120E' : c.textMuted }]}>
                         {cat.name}
                       </Text>
                     </TouchableOpacity>
@@ -391,7 +391,7 @@ export default function AddExpenseScreen() {
               <Switch
                 value={isRecurring}
                 onValueChange={setIsRecurring}
-                trackColor={{ false: '#1E2A3A', true: '#00D4AA' }}
+                trackColor={{ false: '#1D2117', true: '#C79A3E' }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -404,7 +404,7 @@ export default function AddExpenseScreen() {
                   <View style={styles.frequencyChips}>
                     {['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'].map((freq) => {
                       const isActive = frequency === freq;
-                      const freqColor = { DAILY: '#FF6B35', WEEKLY: '#FBBF24', MONTHLY: '#00D4AA', YEARLY: '#3B82F6', CUSTOM: '#A855F7' }[freq] || '#00D4AA';
+                      const freqColor = { DAILY: '#A23E32', WEEKLY: '#C9932E', MONTHLY: '#C79A3E', YEARLY: '#4C7A78', CUSTOM: '#C79A3E' }[freq] || '#C79A3E';
                       return (
                         <TouchableOpacity
                           key={freq}
@@ -428,7 +428,7 @@ export default function AddExpenseScreen() {
                         <TextInput
                           style={[styles.inputField, { color: c.text }]}
                           placeholder="e.g. 14"
-                          placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                          placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                           keyboardType="number-pad"
                           value={intervalDays}
                           onChangeText={setIntervalDays}
@@ -449,10 +449,10 @@ export default function AddExpenseScreen() {
               activeOpacity={0.85}
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#080B12" size="small" />
+                <ActivityIndicator color="#10120E" size="small" />
               ) : (
                 <View style={styles.submitBtnInner}>
-                  <Ionicons name={isRecurring ? 'repeat' : 'add-circle'} size={20} color="#080B12" />
+                  <Ionicons name={isRecurring ? 'repeat' : 'add-circle'} size={20} color="#10120E" />
                   <Text style={styles.submitBtnText}>
                     {isRecurring ? 'Save Subscription' : 'Record Expense'}
                   </Text>
@@ -465,8 +465,8 @@ export default function AddExpenseScreen() {
           <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
             <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#3B82F618' }]}>
-                  <Ionicons name="grid-outline" size={14} color="#3B82F6" />
+                <View style={[styles.formSectionIcon, { backgroundColor: '#4C7A7818' }]}>
+                  <Ionicons name="grid-outline" size={14} color="#4C7A78" />
                 </View>
                 <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Target Category</Text>
                 <TouchableOpacity
@@ -489,7 +489,7 @@ export default function AddExpenseScreen() {
                       ]}
                       onPress={() => setBudgetCategoryId(cat.id)}
                     >
-                      <Text style={[styles.categoryChipText, { color: isActive ? '#080B12' : c.textMuted }]}>
+                      <Text style={[styles.categoryChipText, { color: isActive ? '#10120E' : c.textMuted }]}>
                         {cat.name}
                       </Text>
                     </TouchableOpacity>
@@ -500,8 +500,8 @@ export default function AddExpenseScreen() {
 
             <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#FBBF2418' }]}>
-                  <Ionicons name="speedometer-outline" size={14} color="#FBBF24" />
+                <View style={[styles.formSectionIcon, { backgroundColor: '#C9932E18' }]}>
+                  <Ionicons name="speedometer-outline" size={14} color="#C9932E" />
                 </View>
                 <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Monthly Limit</Text>
               </View>
@@ -510,7 +510,7 @@ export default function AddExpenseScreen() {
                 <TextInput
                   style={[styles.amountInput, { color: c.text }]}
                   placeholder="0"
-                  placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                  placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                   keyboardType="decimal-pad"
                   value={budgetLimit}
                   onChangeText={setBudgetLimit}
@@ -526,10 +526,10 @@ export default function AddExpenseScreen() {
               activeOpacity={0.85}
             >
               {isSubmitting ? (
-                <ActivityIndicator color="#080B12" size="small" />
+                <ActivityIndicator color="#10120E" size="small" />
               ) : (
                 <View style={styles.submitBtnInner}>
-                  <Ionicons name="pie-chart" size={20} color="#080B12" />
+                  <Ionicons name="pie-chart" size={20} color="#10120E" />
                   <Text style={styles.submitBtnText}>Set Budget Limit</Text>
                 </View>
               )}
@@ -567,7 +567,7 @@ export default function AddExpenseScreen() {
               <TextInput
                 style={[styles.inputField, { color: c.text, flex: 1 }]}
                 placeholder="e.g. Subscriptions, Gifts"
-                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                 value={newCategoryName}
                 onChangeText={setNewCategoryName}
                 autoFocus={true}
@@ -639,10 +639,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activeTabExpense: {
-    backgroundColor: '#00D4AA',
+    backgroundColor: '#C79A3E',
   },
   activeTabBudget: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#A23E32',
   },
   tabButtonText: {
     fontSize: 13,
@@ -818,7 +818,7 @@ const styles = StyleSheet.create({
   submitBtnText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#080B12',
+    color: '#10120E',
     letterSpacing: 0.3,
   },
 
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00D4AA',
+    shadowColor: '#C79A3E',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 10,
@@ -892,6 +892,6 @@ const styles = StyleSheet.create({
   modalSaveText: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#080B12',
+    color: '#10120E',
   },
 });

@@ -41,17 +41,17 @@ export default function DashboardScreen() {
   const getThemeColors = () => {
     if (theme === 'light') {
       return {
-        bg: '#F0F4F8',
+        bg: '#EDEAE0',
         card: '#FFFFFF',
-        border: '#D8E2F0',
-        text: '#0A1628',
-        textMuted: '#5B6880',
-        inputBg: '#EAF0F8',
-        inputBorder: '#C8D5E8',
-        trackBg: '#D8E2F0',
-        accent: '#00D4AA',
-        accentDark: '#00B8D9',
-        accentOrange: '#FF6B35',
+        border: '#DAD4C1',
+        text: '#171A14',
+        textMuted: '#A8A395',
+        inputBg: '#FCFBF6',
+        inputBorder: '#DAD4C1',
+        trackBg: '#DAD4C1',
+        accent: '#C79A3E',
+        accentDark: '#A97F2E',
+        accentOrange: '#A23E32',
         cardTotalBg: 'rgba(0, 212, 170, 0.08)',
         cardTotalBorder: 'rgba(0, 212, 170, 0.25)',
         cardCountBg: 'rgba(255, 107, 53, 0.08)',
@@ -59,17 +59,17 @@ export default function DashboardScreen() {
       };
     }
     return {
-      bg: '#080B12',
+      bg: '#10120E',
       card: 'rgba(13, 18, 30, 0.85)',
       border: 'rgba(255, 255, 255, 0.07)',
-      text: '#F0F4FF',
-      textMuted: '#8B97B0',
+      text: '#ECE7D8',
+      textMuted: '#A8A395',
       inputBg: 'rgba(10, 16, 30, 0.7)',
       inputBorder: 'rgba(255, 255, 255, 0.08)',
-      trackBg: '#0D1220',
-      accent: '#00D4AA',
-      accentDark: '#0EA5E9',
-      accentOrange: '#FF6B35',
+      trackBg: '#171A14',
+      accent: '#C79A3E',
+      accentDark: '#A97F2E',
+      accentOrange: '#A23E32',
       cardTotalBg: 'rgba(0, 212, 170, 0.12)',
       cardTotalBorder: 'rgba(0, 212, 170, 0.3)',
       cardCountBg: 'rgba(255, 107, 53, 0.12)',
@@ -189,14 +189,14 @@ export default function DashboardScreen() {
   })).sort((a, b) => b.amount - a.amount);
 
   const CATEGORY_COLORS: Record<string, string> = {
-    food: '#ef4444', dining: '#ef4444', restaurant: '#ef4444',
-    transport: '#3b82f6', travel: '#3b82f6', uber: '#3b82f6',
-    utilities: '#f59e0b', electricity: '#f59e0b', water: '#f59e0b', bills: '#f59e0b',
-    entertainment: '#ec4899', movie: '#ec4899', netflix: '#ec4899',
-    health: '#10b981', medical: '#10b981', gym: '#10b981',
-    shopping: '#8b5cf6', clothes: '#8b5cf6', amazon: '#8b5cf6',
-    education: '#06b6d4', books: '#06b6d4', course: '#06b6d4',
-    groceries: '#f97316', supermarket: '#f97316', market: '#f97316',
+    food: '#A23E32', dining: '#A23E32', restaurant: '#A23E32',
+    transport: '#4C7A78', travel: '#4C7A78', uber: '#4C7A78',
+    utilities: '#C9932E', electricity: '#C9932E', water: '#C9932E', bills: '#C9932E',
+    entertainment: '#B06B5C', movie: '#B06B5C', netflix: '#B06B5C',
+    health: '#5B8C5A', medical: '#5B8C5A', gym: '#5B8C5A',
+    shopping: '#C79A3E', clothes: '#C79A3E', amazon: '#C79A3E',
+    education: '#8B5E34', books: '#8B5E34', course: '#8B5E34',
+    groceries: '#6B7280', supermarket: '#6B7280', market: '#6B7280',
   };
 
   const getCategoryColor = (name: string) => {
@@ -205,7 +205,7 @@ export default function DashboardScreen() {
       if (n.includes(key)) return col;
     }
     // Consistent hash-based color for unknown categories
-    const palette = ['#00D4AA', '#3B82F6', '#FF6B35', '#FBBF24', '#A855F7', '#EC4899', '#10D9A0', '#0EA5E9'];
+    const palette = ['#C79A3E', '#4C7A78', '#A23E32', '#C9932E', '#5B8C5A', '#B06B5C', '#8B5E34', '#6B7280'];
     const idx = n.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % palette.length;
     return palette[idx];
   };
@@ -352,9 +352,9 @@ export default function DashboardScreen() {
                 <Text style={[styles.heroStatValue, { color: c.accentOrange }]}>₹{avgDaily.toFixed(0)}/day avg</Text>
               </View>
               {topCategory && (
-                <View style={[styles.heroStatPill, { backgroundColor: '#3B82F615', borderColor: '#3B82F630' }]}>
-                  <Ionicons name="star-outline" size={13} color="#3B82F6" />
-                  <Text style={[styles.heroStatValue, { color: '#3B82F6' }]}>{topCategory.name}</Text>
+                <View style={[styles.heroStatPill, { backgroundColor: '#4C7A7815', borderColor: '#4C7A7830' }]}>
+                  <Ionicons name="star-outline" size={13} color="#4C7A78" />
+                  <Text style={[styles.heroStatValue, { color: '#4C7A78' }]}>{topCategory.name}</Text>
                 </View>
               )}
             </View>
@@ -438,7 +438,7 @@ export default function DashboardScreen() {
               budgets.map((item, index) => {
                 const isOver = item.spentAmount > item.limitAmount;
                 const pct = Math.min(item.percentageUsed, 100);
-                const barColor = isOver ? '#FF4757' : pct > 80 ? '#FBBF24' : '#10D9A0';
+                const barColor = isOver ? '#A23E32' : pct > 80 ? '#C9932E' : '#5B8C5A';
                 return (
                   <View key={index} style={[styles.budgetRow, index < budgets.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + '60' }]}>
                     <View style={styles.categoryHeader}>
@@ -488,8 +488,8 @@ export default function DashboardScreen() {
                 <Svg width="100%" height={trendData.height} viewBox={`0 0 ${trendData.width} ${trendData.height}`}>
                   <Defs>
                     <LinearGradient id="trendAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="#00D4AA" stopOpacity={0.35} />
-                      <Stop offset="100%" stopColor="#00D4AA" stopOpacity={0.0} />
+                      <Stop offset="0%" stopColor="#C79A3E" stopOpacity={0.35} />
+                      <Stop offset="100%" stopColor="#C79A3E" stopOpacity={0.0} />
                     </LinearGradient>
                   </Defs>
                   
@@ -502,7 +502,7 @@ export default function DashboardScreen() {
                   <Path d={trendData.fillPathData} fill="url(#trendAreaGrad)" />
                   
                   {/* Line path */}
-                  <Path d={trendData.pathData} fill="none" stroke="#00D4AA" strokeWidth="2.5" />
+                  <Path d={trendData.pathData} fill="none" stroke="#C79A3E" strokeWidth="2.5" />
                   
                   {/* Detailed Labels */}
                   <SvgText x={5} y={20} fill={c.textMuted} fontSize={10} fontWeight="bold">₹{trendData.maxVal.toFixed(0)}</SvgText>
@@ -515,7 +515,7 @@ export default function DashboardScreen() {
                   
                   {/* Dots (only shown if date points are sparse) */}
                   {trendData.points.length <= 15 && trendData.points.map((p, idx) => (
-                    <Circle key={idx} cx={p.x} cy={p.y} r={4} fill="#00D4AA" />
+                    <Circle key={idx} cx={p.x} cy={p.y} r={4} fill="#C79A3E" />
                   ))}
                 </Svg>
               </View>
@@ -543,7 +543,7 @@ export default function DashboardScreen() {
             <TextInput
               style={[styles.searchInput, { color: c.text }]}
               placeholder="Search expenses..."
-              placeholderTextColor={isLight ? '#9ca3af' : '#64748B'}
+              placeholderTextColor={isLight ? '#A8A395' : '#6B6558'}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#080B12',
+    color: '#10120E',
   },
   greeting: {
     fontSize: 17,
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 5,
   },
-  alertText: { color: '#FF4757' },
+  alertText: { color: '#A23E32' },
 
   /* BUDGET ADD BUTTON */
   addBudgetBtn: {
@@ -993,10 +993,10 @@ const styles = StyleSheet.create({
   },
   filterBtnActive: {
     backgroundColor: 'rgba(0,212,170,0.12)',
-    borderColor: '#00D4AA',
+    borderColor: '#C79A3E',
   },
   filterBtnText: { fontSize: 12 },
-  filterBtnTextActive: { color: '#00D4AA', fontWeight: '700' },
+  filterBtnTextActive: { color: '#C79A3E', fontWeight: '700' },
 
   /* TRANSACTION CARDS */
   transactionCard: {

@@ -11,10 +11,10 @@ import { Ionicons } from '@expo/vector-icons';
 const STEPS = ['Name', 'Email', 'Password'];
 
 const PERKS = [
-  { icon: 'shield-checkmark', text: 'Bank-grade security', color: '#00D4AA' },
-  { icon: 'analytics', text: 'Smart spending insights', color: '#FF6B35' },
-  { icon: 'notifications', text: 'Budget alerts', color: '#3B82F6' },
-  { icon: 'repeat', text: 'Subscription tracking', color: '#FBBF24' },
+  { icon: 'shield-checkmark', text: 'Bank-grade security', color: '#C79A3E' },
+  { icon: 'analytics', text: 'Smart spending insights', color: '#A23E32' },
+  { icon: 'notifications', text: 'Budget alerts', color: '#4C7A78' },
+  { icon: 'repeat', text: 'Subscription tracking', color: '#C9932E' },
 ];
 
 export default function RegisterScreen() {
@@ -42,14 +42,14 @@ export default function RegisterScreen() {
   }, []);
 
   const c = {
-    bg: isLight ? '#F0F4F8' : '#080B12',
+    bg: isLight ? '#EDEAE0' : '#10120E',
     card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
-    border: isLight ? '#D8E2F0' : 'rgba(255,255,255,0.08)',
-    text: isLight ? '#0A1628' : '#F0F4FF',
-    textMuted: isLight ? '#5B6880' : '#8B97B0',
-    inputBg: isLight ? '#EAF0F8' : 'rgba(10,16,30,0.8)',
-    accent: '#00D4AA',
-    orange: '#FF6B35',
+    border: isLight ? '#DAD4C1' : 'rgba(255,255,255,0.08)',
+    text: isLight ? '#171A14' : '#ECE7D8',
+    textMuted: isLight ? '#A8A395' : '#A8A395',
+    inputBg: isLight ? '#FCFBF6' : 'rgba(10,16,30,0.8)',
+    accent: '#C79A3E',
+    orange: '#A23E32',
   };
 
   const handleRegister = async () => {
@@ -132,7 +132,7 @@ export default function RegisterScreen() {
             <View style={styles.fieldLabelRow}>
               <View style={[styles.stepDot, { backgroundColor: name ? c.accent : c.border }]}>
                 {name
-                  ? <Ionicons name="checkmark" size={10} color="#080B12" />
+                  ? <Ionicons name="checkmark" size={10} color="#10120E" />
                   : <Text style={styles.stepDotText}>1</Text>
                 }
               </View>
@@ -143,7 +143,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="John Doe"
-                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                 autoCapitalize="words"
                 value={name}
                 onChangeText={setName}
@@ -161,7 +161,7 @@ export default function RegisterScreen() {
             <View style={styles.fieldLabelRow}>
               <View style={[styles.stepDot, { backgroundColor: email ? c.accent : c.border }]}>
                 {email
-                  ? <Ionicons name="checkmark" size={10} color="#080B12" />
+                  ? <Ionicons name="checkmark" size={10} color="#10120E" />
                   : <Text style={styles.stepDotText}>2</Text>
                 }
               </View>
@@ -172,7 +172,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="name@example.com"
-                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -191,7 +191,7 @@ export default function RegisterScreen() {
             <View style={styles.fieldLabelRow}>
               <View style={[styles.stepDot, { backgroundColor: password.length >= 6 ? c.accent : c.border }]}>
                 {password.length >= 6
-                  ? <Ionicons name="checkmark" size={10} color="#080B12" />
+                  ? <Ionicons name="checkmark" size={10} color="#10120E" />
                   : <Text style={styles.stepDotText}>3</Text>
                 }
               </View>
@@ -202,7 +202,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="••••••••"
-                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 value={password}
@@ -225,7 +225,7 @@ export default function RegisterScreen() {
                       {
                         backgroundColor:
                           password.length >= i * 3
-                            ? i <= 1 ? '#FF4757' : i <= 2 ? '#FBBF24' : i <= 3 ? '#00B8D9' : '#00D4AA'
+                            ? i <= 1 ? '#A23E32' : i <= 2 ? '#C9932E' : i <= 3 ? '#A97F2E' : '#C79A3E'
                             : c.border,
                       },
                     ]}
@@ -246,11 +246,11 @@ export default function RegisterScreen() {
             activeOpacity={0.85}
           >
             {isLoading ? (
-              <ActivityIndicator color="#080B12" size="small" />
+              <ActivityIndicator color="#10120E" size="small" />
             ) : (
               <View style={styles.submitBtnInner}>
                 <Text style={styles.submitBtnText}>Create Account</Text>
-                <Ionicons name="rocket" size={18} color="#080B12" />
+                <Ionicons name="rocket" size={18} color="#10120E" />
               </View>
             )}
           </TouchableOpacity>
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   stepDotText: {
     fontSize: 10,
     fontWeight: '900',
-    color: '#8B97B0',
+    color: '#A8A395',
   },
   fieldLabel: {
     fontSize: 12,
@@ -401,10 +401,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     height: 54,
     borderRadius: 16,
-    backgroundColor: '#00D4AA',
+    backgroundColor: '#C79A3E',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00D4AA',
+    shadowColor: '#C79A3E',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitBtnText: {
-    color: '#080B12',
+    color: '#10120E',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.3,

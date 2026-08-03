@@ -30,9 +30,9 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
 
   const getDynamicColor = () => {
     if (fillColor) return fillColor;
-    if (clampedProgress >= 100) return '#EF4444'; // Red alert
-    if (clampedProgress >= 80) return '#F59E0B'; // Warning amber
-    return '#10B981'; // Healthy green
+    if (clampedProgress >= 100) return '#A23E32'; // Over budget — oxblood
+    if (clampedProgress >= 80) return '#C9932E'; // Approaching limit — amber
+    return '#5B8C5A'; // Healthy — sage
   };
 
   const widthInterpolated = animatedWidth.interpolate({

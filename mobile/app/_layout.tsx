@@ -2,6 +2,20 @@ import React, { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { ActivityIndicator, View, Text, Animated, StyleSheet, StatusBar } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Fraunces_500Medium, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
+import {
+  HankenGrotesk_400Regular,
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold,
+  HankenGrotesk_700Bold,
+} from '@expo-google-fonts/hanken-grotesk';
+import {
+  IBMPlexMono_400Regular,
+  IBMPlexMono_500Medium,
+  IBMPlexMono_600SemiBold,
+} from '@expo-google-fonts/ibm-plex-mono';
+import { Colors } from '../constants/theme';
 
 function SplashLoader() {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
@@ -24,15 +38,15 @@ function SplashLoader() {
 
   return (
     <Animated.View style={[splashStyles.container, { opacity: fadeAnim }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#080B12" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.dark.bg} />
       <View style={splashStyles.iconWrapper}>
         <View style={splashStyles.iconGlow} />
-        <Text style={splashStyles.icon}>💎</Text>
+        <Text style={splashStyles.icon}>📒</Text>
       </View>
       <Text style={splashStyles.brand}>ExpenseTracker</Text>
       <Text style={splashStyles.pro}>PRO</Text>
       <Animated.View style={[splashStyles.loadingBar, { opacity: pulseAnim }]}>
-        <ActivityIndicator size="small" color="#00D4AA" />
+        <ActivityIndicator size="small" color={Colors.dark.gold} />
       </Animated.View>
     </Animated.View>
   );
@@ -43,7 +57,7 @@ const splashStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#080B12',
+    backgroundColor: Colors.dark.bg,
     gap: 8,
   },
   iconWrapper: {
@@ -55,7 +69,7 @@ const splashStyles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(0,212,170,0.15)',
+    backgroundColor: 'rgba(199,154,62,0.15)',
     top: -10,
     left: -10,
   },
@@ -64,14 +78,14 @@ const splashStyles = StyleSheet.create({
   },
   brand: {
     fontSize: 26,
-    fontWeight: '900',
-    color: '#F0F4FF',
+    fontWeight: '600',
+    color: Colors.dark.ink,
     letterSpacing: -0.5,
   },
   pro: {
     fontSize: 11,
-    fontWeight: '900',
-    color: '#00D4AA',
+    fontWeight: '700',
+    color: Colors.dark.gold,
     letterSpacing: 2,
     marginTop: -2,
   },
@@ -105,7 +119,7 @@ function RootLayoutNav() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#080B12' },
+        contentStyle: { backgroundColor: Colors.dark.bg },
         animation: 'fade_from_bottom',
         animationDuration: 250,
       }}
@@ -127,6 +141,24 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Fraunces_500Medium,
+    Fraunces_600SemiBold,
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
+    IBMPlexMono_400Regular,
+    IBMPlexMono_500Medium,
+    IBMPlexMono_600SemiBold,
+  });
+
+  // Hold the splash screen until the type system is ready — screens further
+  // down assume these font families exist and don't fall back gracefully.
+  if (!fontsLoaded) {
+    return <SplashLoader />;
+  }
+
   return (
     <AuthProvider>
       <RootLayoutNav />
