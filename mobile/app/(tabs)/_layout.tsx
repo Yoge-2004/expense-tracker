@@ -4,9 +4,9 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
-const ACCENT = '#00D4AA';
-const ORANGE = '#FF6B35';
-const BLUE = '#3B82F6';
+const ACCENT = '#C79A3E';
+const ORANGE = '#A23E32';
+const BLUE = '#4C7A78';
 
 interface TabIconProps {
   name: string;
@@ -37,9 +37,9 @@ export default function TabLayout() {
 
   const tabBg = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(10,14,26,0.96)';
   const tabBorder = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
-  const inactiveColor = isLight ? '#9BA8BA' : '#4A5568';
-  const headerBg = isLight ? '#F0F4F8' : '#080B12';
-  const headerTint = isLight ? '#0A1628' : '#F0F4FF';
+  const inactiveColor = isLight ? '#A8A395' : '#6B6558';
+  const headerBg = isLight ? '#EDEAE0' : '#10120E';
+  const headerTint = isLight ? '#171A14' : '#ECE7D8';
 
   return (
     <Tabs
@@ -101,7 +101,7 @@ export default function TabLayout() {
               styles.fabBtn,
               { backgroundColor: focused ? ACCENT : ORANGE },
             ]}>
-              <Ionicons name="add" size={26} color="#080B12" />
+              <Ionicons name="add" size={26} color="#10120E" />
             </View>
           ),
         }}

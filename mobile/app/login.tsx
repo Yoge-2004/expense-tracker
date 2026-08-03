@@ -11,9 +11,9 @@ import { Ionicons } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 
 const FEATURES = [
-  { icon: 'trending-up', label: 'Track Spending', color: '#00D4AA' },
-  { icon: 'pie-chart', label: 'Smart Budget', color: '#FF6B35' },
-  { icon: 'repeat', label: 'Subscriptions', color: '#3B82F6' },
+  { icon: 'trending-up', label: 'Track Spending', color: '#C79A3E' },
+  { icon: 'pie-chart', label: 'Smart Budget', color: '#A23E32' },
+  { icon: 'repeat', label: 'Subscriptions', color: '#4C7A78' },
 ];
 
 export default function LoginScreen() {
@@ -41,15 +41,15 @@ export default function LoginScreen() {
   }, []);
 
   const c = {
-    bg: isLight ? '#F0F4F8' : '#080B12',
+    bg: isLight ? '#EDEAE0' : '#10120E',
     card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
-    border: isLight ? '#D8E2F0' : 'rgba(255,255,255,0.08)',
-    text: isLight ? '#0A1628' : '#F0F4FF',
-    textMuted: isLight ? '#5B6880' : '#8B97B0',
-    inputBg: isLight ? '#EAF0F8' : 'rgba(10,16,30,0.8)',
-    accent: '#00D4AA',
-    orange: '#FF6B35',
-    blue: '#3B82F6',
+    border: isLight ? '#DAD4C1' : 'rgba(255,255,255,0.08)',
+    text: isLight ? '#171A14' : '#ECE7D8',
+    textMuted: isLight ? '#A8A395' : '#A8A395',
+    inputBg: isLight ? '#FCFBF6' : 'rgba(10,16,30,0.8)',
+    accent: '#C79A3E',
+    orange: '#A23E32',
+    blue: '#4C7A78',
   };
 
   const handleLogin = async () => {
@@ -91,7 +91,7 @@ export default function LoginScreen() {
 
           <View style={styles.logoRow}>
             <View style={[styles.logoBox, { backgroundColor: c.accent }]}>
-              <Ionicons name="wallet" size={28} color="#080B12" />
+              <Ionicons name="wallet" size={28} color="#10120E" />
             </View>
             <View style={styles.logoTextGroup}>
               <Text style={[styles.logoTitle, { color: c.text }]}>ExpenseTracker</Text>
@@ -139,7 +139,7 @@ export default function LoginScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="name@example.com"
-                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -158,7 +158,7 @@ export default function LoginScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="••••••••"
-                placeholderTextColor={isLight ? '#9aaabb' : '#3d4d62'}
+                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 value={password}
@@ -180,11 +180,11 @@ export default function LoginScreen() {
             activeOpacity={0.85}
           >
             {isLoading ? (
-              <ActivityIndicator color="#080B12" size="small" />
+              <ActivityIndicator color="#10120E" size="small" />
             ) : (
               <View style={styles.signInBtnInner}>
                 <Text style={styles.signInBtnText}>Sign In</Text>
-                <Ionicons name="arrow-forward" size={18} color="#080B12" />
+                <Ionicons name="arrow-forward" size={18} color="#10120E" />
               </View>
             )}
           </TouchableOpacity>
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00D4AA',
+    shadowColor: '#C79A3E',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   proBadge: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#A23E32',
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -347,10 +347,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     height: 54,
     borderRadius: 16,
-    backgroundColor: '#00D4AA',
+    backgroundColor: '#C79A3E',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00D4AA',
+    shadowColor: '#C79A3E',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   signInBtnText: {
-    color: '#080B12',
+    color: '#10120E',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.3,

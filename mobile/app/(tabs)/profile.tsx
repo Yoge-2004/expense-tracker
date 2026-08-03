@@ -14,7 +14,7 @@ const MENU_ITEMS = [
     icon: 'repeat',
     label: 'Manage Subscriptions',
     sub: 'View recurring expenses',
-    color: '#3B82F6',
+    color: '#4C7A78',
     route: '/(tabs)/subscriptions' as const,
     danger: false,
   },
@@ -25,14 +25,14 @@ const DANGER_ITEMS = [
     icon: 'log-out-outline',
     label: 'Sign Out',
     sub: 'Log out of your account',
-    color: '#FF4757',
+    color: '#A23E32',
     action: 'logout' as const,
   },
   {
     icon: 'trash-outline',
     label: 'Delete Account',
     sub: 'Permanently remove all data',
-    color: '#FF4757',
+    color: '#A23E32',
     action: 'delete' as const,
   },
 ];
@@ -46,15 +46,15 @@ export default function ProfileScreen() {
   const [nickname, setNickname] = useState(userName || '');
 
   const c = {
-    bg: isLight ? '#F0F4F8' : '#080B12',
+    bg: isLight ? '#EDEAE0' : '#10120E',
     card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
-    card2: isLight ? '#F8FBFF' : 'rgba(18,26,44,0.7)',
-    border: isLight ? '#D8E2F0' : 'rgba(255,255,255,0.07)',
-    text: isLight ? '#0A1628' : '#F0F4FF',
-    textMuted: isLight ? '#5B6880' : '#8B97B0',
-    inputBg: isLight ? '#EAF0F8' : 'rgba(10,16,30,0.8)',
-    accent: '#00D4AA',
-    orange: '#FF6B35',
+    card2: isLight ? '#FCFBF6' : 'rgba(18,26,44,0.7)',
+    border: isLight ? '#DAD4C1' : 'rgba(255,255,255,0.07)',
+    text: isLight ? '#171A14' : '#ECE7D8',
+    textMuted: isLight ? '#A8A395' : '#A8A395',
+    inputBg: isLight ? '#FCFBF6' : 'rgba(10,16,30,0.8)',
+    accent: '#C79A3E',
+    orange: '#A23E32',
   };
 
   const handleSaveNickname = async () => {
@@ -131,7 +131,7 @@ export default function ProfileScreen() {
               style={[styles.editActionBtn, { backgroundColor: c.accent }]}
               onPress={handleSaveNickname}
             >
-              <Ionicons name="checkmark" size={18} color="#080B12" />
+              <Ionicons name="checkmark" size={18} color="#10120E" />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.editActionBtn, { backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border }]}
@@ -171,8 +171,8 @@ export default function ProfileScreen() {
         <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Preferences</Text>
 
         <View style={[styles.settingRow, { backgroundColor: c.card, borderColor: c.border }]}>
-          <View style={[styles.settingIconBox, { backgroundColor: (isLight ? '#FBBF24' : '#3B82F6') + '18' }]}>
-            <Ionicons name={isLight ? 'sunny' : 'moon'} size={18} color={isLight ? '#FBBF24' : '#3B82F6'} />
+          <View style={[styles.settingIconBox, { backgroundColor: (isLight ? '#C9932E' : '#4C7A78') + '18' }]}>
+            <Ionicons name={isLight ? 'sunny' : 'moon'} size={18} color={isLight ? '#C9932E' : '#4C7A78'} />
           </View>
           <View style={styles.settingTextGroup}>
             <Text style={[styles.settingTitle, { color: c.text }]}>
@@ -185,7 +185,7 @@ export default function ProfileScreen() {
           <Switch
             value={isLight}
             onValueChange={toggleTheme}
-            trackColor={{ false: '#1E2A3A', true: '#00D4AA' }}
+            trackColor={{ false: '#1D2117', true: '#C79A3E' }}
             thumbColor="#FFFFFF"
           />
         </View>
@@ -217,7 +217,7 @@ export default function ProfileScreen() {
 
       {/* ── DANGER ZONE ── */}
       <View style={[styles.section, styles.dangerSection]}>
-        <Text style={[styles.sectionLabel, { color: '#FF4757' }]}>Danger Zone</Text>
+        <Text style={[styles.sectionLabel, { color: '#A23E32' }]}>Danger Zone</Text>
 
         {DANGER_ITEMS.map((item, i) => (
           <AnimatedCard
@@ -226,13 +226,13 @@ export default function ProfileScreen() {
             onPress={item.action === 'logout' ? logout : handleDeleteAccount}
           >
             <View style={[styles.settingIconBox, { backgroundColor: 'rgba(255,71,87,0.12)' }]}>
-              <Ionicons name={item.icon as any} size={18} color="#FF4757" />
+              <Ionicons name={item.icon as any} size={18} color="#A23E32" />
             </View>
             <View style={styles.settingTextGroup}>
-              <Text style={[styles.settingTitle, { color: '#FF4757' }]}>{item.label}</Text>
-              <Text style={[styles.settingSub, { color: '#FF475780' }]}>{item.sub}</Text>
+              <Text style={[styles.settingTitle, { color: '#A23E32' }]}>{item.label}</Text>
+              <Text style={[styles.settingSub, { color: '#A23E3280' }]}>{item.sub}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#FF475760" />
+            <Ionicons name="chevron-forward" size={16} color="#A23E3260" />
           </AnimatedCard>
         ))}
       </View>
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     borderRadius: 39,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00D4AA',
+    shadowColor: '#C79A3E',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
@@ -306,14 +306,14 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontSize: 34,
     fontWeight: '900',
-    color: '#080B12',
+    color: '#10120E',
   },
   onlineDot: {
     position: 'absolute',
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#00D4AA',
+    backgroundColor: '#C79A3E',
     borderWidth: 3,
     bottom: 2,
     right: 2,

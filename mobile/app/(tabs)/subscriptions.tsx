@@ -18,23 +18,23 @@ interface Subscription {
 }
 
 const FREQUENCY_COLORS: Record<string, string> = {
-  DAILY: '#FF6B35',
-  WEEKLY: '#FBBF24',
-  MONTHLY: '#00D4AA',
-  YEARLY: '#3B82F6',
-  CUSTOM: '#A855F7',
+  DAILY: '#A23E32',
+  WEEKLY: '#C9932E',
+  MONTHLY: '#C79A3E',
+  YEARLY: '#4C7A78',
+  CUSTOM: '#8B5E34',
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  food: '#EF4444',
-  transport: '#3B82F6',
-  utilities: '#F59E0B',
-  entertainment: '#EC4899',
-  health: '#10B981',
+  food: '#A23E32',
+  transport: '#4C7A78',
+  utilities: '#C9932E',
+  entertainment: '#B06B5C',
+  health: '#5B8C5A',
 };
 
 function getCategoryColor(name: string) {
-  return CATEGORY_COLORS[name.toLowerCase()] || '#8B5CF6';
+  return CATEGORY_COLORS[name.toLowerCase()] || '#6B7280';
 }
 
 function getCategoryIcon(name: string): any {
@@ -63,14 +63,14 @@ export default function SubscriptionsScreen() {
   const isLight = theme === 'light';
 
   const c = {
-    bg: isLight ? '#F0F4F8' : '#080B12',
+    bg: isLight ? '#EDEAE0' : '#10120E',
     card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
-    border: isLight ? '#D8E2F0' : 'rgba(255,255,255,0.07)',
-    text: isLight ? '#0A1628' : '#F0F4FF',
-    textMuted: isLight ? '#5B6880' : '#8B97B0',
-    inputBg: isLight ? '#EAF0F8' : 'rgba(10,16,30,0.7)',
-    accent: '#00D4AA',
-    orange: '#FF6B35',
+    border: isLight ? '#DAD4C1' : 'rgba(255,255,255,0.07)',
+    text: isLight ? '#171A14' : '#ECE7D8',
+    textMuted: isLight ? '#A8A395' : '#A8A395',
+    inputBg: isLight ? '#FCFBF6' : 'rgba(10,16,30,0.7)',
+    accent: '#C79A3E',
+    orange: '#A23E32',
   };
 
   const fetchSubscriptions = async () => {
@@ -189,7 +189,7 @@ export default function SubscriptionsScreen() {
         <View style={styles.list}>
           {subscriptions.map((item, index) => {
             const col = getCategoryColor(item.categoryName);
-            const freqColor = FREQUENCY_COLORS[item.frequency] || '#8B5CF6';
+            const freqColor = FREQUENCY_COLORS[item.frequency] || '#6B7280';
             const daysUntil = getDaysUntil(item.nextDueDate);
             const isDueSoon = daysUntil <= 3 && daysUntil >= 0;
             return (
@@ -233,9 +233,9 @@ export default function SubscriptionsScreen() {
                     <Ionicons
                       name={isDueSoon ? 'alert-circle' : 'calendar-outline'}
                       size={13}
-                      color={isDueSoon ? '#FF4757' : c.textMuted}
+                      color={isDueSoon ? '#A23E32' : c.textMuted}
                     />
-                    <Text style={[styles.dueDateText, { color: isDueSoon ? '#FF4757' : c.textMuted }]}>
+                    <Text style={[styles.dueDateText, { color: isDueSoon ? '#A23E32' : c.textMuted }]}>
                       {isDueSoon
                         ? daysUntil === 0 ? 'Due today!' : `Due in ${daysUntil}d`
                         : `Next: ${item.nextDueDate}`}
@@ -245,7 +245,7 @@ export default function SubscriptionsScreen() {
                     style={styles.cancelBtn}
                     onPress={() => handleCancel(item.id, item.description)}
                   >
-                    <Ionicons name="close-circle-outline" size={13} color="#FF4757" />
+                    <Ionicons name="close-circle-outline" size={13} color="#A23E32" />
                     <Text style={styles.cancelBtnText}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FF4757',
+    color: '#A23E32',
   },
 
   /* EMPTY */

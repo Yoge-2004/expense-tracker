@@ -10,6 +10,9 @@
     "ts:check": "tsc"
   },
   "dependencies": {
+    "@expo-google-fonts/fraunces": "^0.4.1",
+    "@expo-google-fonts/hanken-grotesk": "^0.4.3",
+    "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
     "@react-navigation/native": "^7.1.8",
     "expo": "^54.0.36",
     "expo-constants": "~18.0.13",

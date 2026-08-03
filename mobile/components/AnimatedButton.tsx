@@ -59,22 +59,22 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       case 'secondary':
         return {
           container: { backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' },
-          text: { color: '#E2E8F0' },
+          text: { color: '#DAD4C1' },
         };
       case 'danger':
         return {
-          container: { backgroundColor: '#EF4444' },
+          container: { backgroundColor: '#A23E32' },
           text: { color: '#FFFFFF' },
         };
       case 'outline':
         return {
-          container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#00D4AA' },
-          text: { color: '#00D4AA' },
+          container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#C79A3E' },
+          text: { color: '#C79A3E' },
         };
       case 'primary':
       default:
         return {
-          container: { backgroundColor: '#00D4AA' },
+          container: { backgroundColor: '#C79A3E' },
           text: { color: '#FFFFFF' },
         };
     }
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    shadowColor: '#00D4AA',
+    shadowColor: '#C79A3E',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
