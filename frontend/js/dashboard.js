@@ -706,6 +706,7 @@ window.deleteExpense = async (id) => {
 document.getElementById("openModalBtn").addEventListener("click", () => {
     elements.addForm.reset();
     document.getElementById("expenseId").value = "";
+    document.getElementById("date").value = new Date().toISOString().split("T")[0];
     elements.isRecurring.parentElement.style.display = "flex";
     elements.recurringOptions.hidden = !elements.isRecurring.checked;
     document.querySelector(".modal h3").textContent = "Add Expense";
