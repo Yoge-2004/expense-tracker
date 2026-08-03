@@ -551,7 +551,7 @@ button[type="submit"]:active {
     height: 40px;
     border-radius: 50%;
     background: var(--primary-gradient);
-    color: #080B12;
+    color: #10120E;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -568,7 +568,7 @@ button[type="submit"]:active {
     border: 1px solid var(--border);
     border-radius: 16px;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     z-index: 2000;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
@@ -587,6 +587,11 @@ button[type="submit"]:active {
 
 .profile-menu a:hover {
     background: var(--input-bg);
+}
+
+.profile-menu a:last-child {
+    border-radius: 0 0 15px 15px;
+    border-bottom: none;
 }
 
 .grid-stats {
@@ -2046,7 +2051,7 @@ tbody tr:hover {
     align-items: center;
     justify-content: center;
     padding: 60px 70px;
-    background: #080B12;
+    background: #10120E;
 }
 
 .auth-hero-bg {
@@ -2564,6 +2569,28 @@ tbody tr:hover {
     transform: translateY(0);
 }
 
+.custom-select-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-select-options::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+.custom-select-options {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
 .custom-option {
     padding: 9px 12px;
     border-radius: 10px;
@@ -2585,7 +2612,7 @@ tbody tr:hover {
 
 .custom-option.selected {
     background: var(--primary-gradient);
-    color: #080B12;
+    color: #10120E;
     font-weight: 800;
 }
 
@@ -2596,7 +2623,7 @@ tbody tr:hover {
     font-size: 15px;
     font-weight: 800;
     letter-spacing: -0.2px;
-    color: #080B12 !important;
+    color: #10120E !important;
     background: var(--primary-gradient) !important;
     border: none;
     border-radius: 14px;
@@ -2665,7 +2692,7 @@ tbody tr:hover {
 }
 .step-dot-done {
     background: var(--primary) !important;
-    color: #080B12 !important;
+    color: #10120E !important;
     box-shadow: 0 0 10px rgba(199, 154, 62,0.4);
 }
 
@@ -2745,7 +2772,7 @@ tbody tr:hover {
     font-weight: 900;
     font-size: 16px;
     background: var(--primary-gradient);
-    color: #080B12;
+    color: #10120E;
     box-shadow: 0 0 0 2px rgba(199, 154, 62,0.4), 0 4px 12px rgba(199, 154, 62,0.3);
     transition: box-shadow 0.3s;
 }
@@ -2808,7 +2835,7 @@ tbody tr:hover {
 
 .suggestion-chip:hover {
     background: var(--primary);
-    color: #080B12;
+    color: #10120E;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(199, 154, 62, 0.3);
 }
@@ -3125,8 +3152,8 @@ tbody tr:hover {
     -webkit-backdrop-filter: none !important;
 }
 .modal {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(13, 18, 30, 0.96) !important;
+    border: 1px solid rgba(236, 231, 216, 0.08);
+    background: rgba(23, 26, 20, 0.96);
     box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
                 0 0 0 1px rgba(199, 154, 62, 0.08);
     border-radius: 24px;
@@ -3186,10 +3213,10 @@ tbody tr:hover {
 
 /* ── Top bar glassmorphism ── */
 .top-bar {
-    background: rgba(8, 11, 18, 0.7) !important;
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: rgba(16, 18, 14, 0.7) !important;
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
+    border-bottom: 1px solid rgba(236, 231, 216, 0.06) !important;
     transition: background 0.3s;
 }
 [data-theme="light"] .top-bar {
@@ -3233,11 +3260,11 @@ tbody tr:hover {
 /* NOTE: opacity/pointer-events/transform show-hide lives in original rules.
    Only add visual surface enhancements here. */
 .profile-menu {
-    background: rgba(13, 18, 30, 0.95) !important;
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7) !important;
+    background: rgba(23, 26, 20, 0.95);
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
+    border: 1px solid rgba(236, 231, 216, 0.08);
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
     /* NO unconditional animation — it would override opacity:0 on hidden state */
 }
 /* Animate only when becoming active */
@@ -3249,9 +3276,9 @@ tbody tr:hover {
     to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 [data-theme="light"] .profile-menu {
-    background: rgba(255, 255, 255, 0.97) !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.12) !important;
+    background: #FCFBF6 !important;
+    border-color: #DAD4C1 !important;
+    box-shadow: 0 20px 50px -10px rgba(30, 27, 21, 0.1) !important;
 }
 
 /* ── Avatar with gradient ring ── */
