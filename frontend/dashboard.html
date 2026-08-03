@@ -305,13 +305,16 @@
                 </div>
 
                 <div class="form-group flex-row">
-                    <label class="switch-label">
-                        <input type="checkbox" id="isRecurring">
-                        <span class="switch-text">Make Recurring Subscription</span>
+                    <label class="switch-label" for="isRecurring">
+                        <span class="switch-text" style="display:flex; align-items:center; gap:8px;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--primary);"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            Make Recurring Subscription
+                        </span>
+                        <input type="checkbox" id="isRecurring" style="margin-left:auto;">
                     </label>
                 </div>
 
-                <div id="recurringOptions" style="display:none;" class="form-group-box">
+                <div id="recurringOptions" hidden class="form-group-box">
                     <div class="form-group">
                         <label>Billing Frequency</label>
                         <select id="recurringFrequency">
@@ -322,7 +325,7 @@
                             <option value="CUSTOM">Custom Interval (Days)</option>
                         </select>
                     </div>
-                    <div class="form-group" id="customIntervalWrap" style="display:none;">
+                    <div class="form-group" id="customIntervalWrap" hidden>
                         <label>Interval (Days)</label>
                         <input type="number" id="recurringIntervalDays" min="1" value="1">
                     </div>
@@ -337,7 +340,7 @@
     <div class="modal-overlay" id="budgetModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Configure Monthly Budget</h3>
+                <h3>Configure Budget</h3>
                 <button class="modal-close" id="closeBudgetModalBtn">&times;</button>
             </div>
             <form id="addBudgetForm">
@@ -346,8 +349,29 @@
                     <select id="budgetCategorySelect" required></select>
                 </div>
                 <div class="form-group">
-                    <label>Monthly Limit Amount (₹)</label>
-                    <input type="number" id="budgetLimit" required placeholder="e.g. 10000" step="0.01">
+                    <label>Period</label>
+                    <select id="budgetPeriod">
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="WEEKLY">Weekly</option>
+                        <option value="YEARLY">Yearly</option>
+                        <option value="CUSTOM">Custom Date Range</option>
+                    </select>
+                </div>
+                <div class="form-group" id="customBudgetDates" hidden>
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1;">
+                            <label>Start Date</label>
+                            <input type="date" id="budgetStartDate" class="dark-date">
+                        </div>
+                        <div style="flex:1;">
+                            <label>End Date</label>
+                            <input type="date" id="budgetEndDate" class="dark-date">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Limit Amount (₹)</label>
+                    <input type="number" id="budgetLimitAmount" required placeholder="e.g. 10000" step="0.01">
                 </div>
                 <button type="submit" class="btn-primary" style="margin-top:16px;">Set Budget Limit</button>
             </form>
@@ -366,6 +390,47 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL DIALOG: EDIT SUBSCRIPTION -->
+    <div class="modal-overlay" id="editSubModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Subscription</h3>
+                <button class="modal-close" id="closeEditSubModalBtn">&times;</button>
+            </div>
+            <form id="editSubForm">
+                <input type="hidden" id="editSubId">
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editSubDesc" required placeholder="Subscription name">
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="editSubAmount" required placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Next Due Date</label>
+                    <input type="date" id="editSubNextDate" required class="dark-date">
+                </div>
+                <div class="form-group">
+                    <label>Billing Frequency</label>
+                    <select id="editSubFrequency">
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="WEEKLY">Weekly</option>
+                        <option value="DAILY">Daily</option>
+                        <option value="YEARLY">Yearly</option>
+                        <option value="CUSTOM">Custom Interval (Days)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="editSubIntervalWrap" hidden>
+                    <label>Interval (Days)</label>
+                    <input type="number" id="editSubIntervalDays" min="1" value="1" placeholder="e.g. 14">
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Update Subscription</button>
+            </form>
+        </div>
+    </div>
+
 
     <!-- MODAL DIALOG: DELETE ACCOUNT CONFIRMATION -->
     <div class="modal-overlay" id="deleteAccountModal">

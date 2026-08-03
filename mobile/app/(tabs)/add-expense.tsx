@@ -391,8 +391,9 @@ export default function AddExpenseScreen() {
               <Switch
                 value={isRecurring}
                 onValueChange={setIsRecurring}
-                trackColor={{ false: '#1D2117', true: '#C79A3E' }}
-                thumbColor="#FFFFFF"
+                trackColor={{ false: isLight ? '#DAD4C1' : '#1D2117', true: '#C79A3E' }}
+                thumbColor={isRecurring ? '#FFFFFF' : isLight ? '#FFFFFF' : '#A8A395'}
+                ios_backgroundColor={isLight ? '#DAD4C1' : '#1D2117'}
               />
             </View>
 

@@ -3704,3 +3704,165 @@ tbody tr:hover {
     margin: 0 auto;
 }
 
+/* ================== RESPONSIVE ENHANCEMENTS (DASHBOARD) ================== */
+
+/* ── Dashboard top-bar: prevent export buttons from overflowing ── */
+@media (max-width: 768px) {
+    .list-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
+
+    .list-header > div:first-child {
+        width: 100%;
+    }
+
+    .list-header-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    .btn-text-icon {
+        font-size: 11px !important;
+        padding: 0 10px !important;
+        height: 34px !important;
+    }
+
+    /* Budget grid single column */
+    .budget-grid-matrix {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Modal: full-width on small screens */
+    .modal {
+        width: 95% !important;
+        padding: 24px 18px !important;
+        border-radius: 20px !important;
+    }
+
+    .modal-large {
+        width: 95% !important;
+        max-height: 85vh !important;
+    }
+
+    /* Switch label: always show text before toggle, with space between */
+    .switch-label {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Section heading meta hide */
+    .section-meta {
+        display: none !important;
+    }
+
+    /* Reduce card padding */
+    .card {
+        padding: 16px !important;
+    }
+
+    /* Chart heights */
+    .chart-wrapper {
+        height: 180px !important;
+    }
+
+    .trend-chart-wrapper {
+        height: 180px !important;
+    }
+
+    /* Expense items: wrap gracefully */
+    .expense-item {
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+
+    .expense-info {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+}
+
+/* ── Extra small screens (phones < 480px) ── */
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 16px 12px 32px !important;
+        gap: 14px !important;
+    }
+
+    .top-bar-actions {
+        gap: 8px !important;
+    }
+
+    .metric-value {
+        font-size: 20px !important;
+    }
+
+    .category-pills-bar {
+        gap: 8px !important;
+    }
+
+    .pill-chip {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+    }
+
+    .modal {
+        padding: 20px 14px !important;
+        width: 98% !important;
+    }
+
+    .section-title {
+        font-size: 15px !important;
+    }
+
+    .card-label {
+        font-size: 10px !important;
+    }
+
+    .btn-text-icon {
+        min-width: 36px !important;
+        padding: 0 8px !important;
+    }
+}
+
+/* ── Auth pages: collapse hero on very small screens ── */
+@media (max-width: 400px) {
+    .hero-float-cards {
+        display: none !important;
+    }
+
+    .hero-features {
+        display: none !important;
+    }
+
+    .auth-hero {
+        padding: 32px 12px 14px !important;
+    }
+
+    .hero-headline {
+        font-size: 20px !important;
+    }
+}
+
+/* ── Tablet layout (901–1200px): tighter dashboard spacing ── */
+@media (min-width: 901px) and (max-width: 1200px) {
+    .dashboard-container {
+        max-width: 100% !important;
+        padding: 24px 20px !important;
+    }
+
+    .grid-4-metrics {
+        gap: 14px !important;
+    }
+
+    .metric-card {
+        padding: 18px !important;
+    }
+
+    .metric-value {
+        font-size: 22px !important;
+    }
+}

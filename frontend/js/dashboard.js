@@ -296,6 +296,14 @@ async function loadBudgets() {
 
             const catColor = getCategoryColor(b.categoryName);
             const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
+            const periodBadgeColor = periodLabel === 'MONTHLY' ? 'badge-primary'
+                : periodLabel === 'WEEKLY' ? 'badge-success'
+                : periodLabel === 'YEARLY' ? 'badge-warning'
+                : periodLabel === 'CUSTOM' ? 'badge-accent'
+                : 'badge-primary';
+            // Store current values for the edit pre-fill
+            const startStr = b.startDate || '';
+            const endStr   = b.endDate   || '';
             return `
             <div class="budget-item">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
@@ -303,11 +311,14 @@ async function loadBudgets() {
                         <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
                         <div>
                             <div style="font-size:14px; font-weight:700; color:var(--text-main);">${b.categoryName}</div>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} of ${formatCurrency(b.limit)} <span class="status-badge ${badgeClass}" style="margin-left:4px;">${periodLabel}</span></div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} of ${formatCurrency(b.limit)} <span class="status-badge ${periodBadgeColor}" style="margin-left:4px;">${periodLabel}</span></div>
                         </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
                         <span style="font-size:13px; font-weight:800; color:${barColor};">${(b.percentage || 0).toFixed(0)}%</span>
+                        <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}')" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
                         <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0})" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
@@ -338,6 +349,7 @@ window.deleteBudgetLimit = async (budgetId, categoryId) => {
     }
 };
 
+
 const setBudgetModal = document.getElementById("budgetModal");
 const setBudgetForm = document.getElementById("addBudgetForm");
 const budgetCategorySelect = document.getElementById("budgetCategorySelect");
@@ -347,16 +359,39 @@ const customBudgetDates = document.getElementById("customBudgetDates");
 elements.addBudgetBtn.addEventListener("click", () => {
     budgetCategorySelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
     setBudgetForm.reset();
-    customBudgetDates.hidden = true;
+    if (customBudgetDates) customBudgetDates.hidden = true;
     setBudgetModal.classList.add("active");
 });
+
+// Edit Budget — pre-fill the budget modal with existing values and re-open it
+window.openEditBudget = (budgetId, categoryId, categoryName, limit, period, startDate, endDate) => {
+    // Rebuild category list with the target selected
+    budgetCategorySelect.innerHTML = allCategories.map(c =>
+        `<option value="${c.id}"${c.id === categoryId ? ' selected' : ''}>${c.name}</option>`
+    ).join("");
+
+    // Pre-fill limit, period and dates
+    const limitInput = document.getElementById("budgetLimitAmount");
+    if (limitInput) limitInput.value = limit;
+    if (budgetPeriod) {
+        budgetPeriod.value = period || "MONTHLY";
+        if (customBudgetDates) customBudgetDates.hidden = budgetPeriod.value !== "CUSTOM";
+    }
+    const startEl = document.getElementById("budgetStartDate");
+    const endEl   = document.getElementById("budgetEndDate");
+    if (startEl) startEl.value = startDate || "";
+    if (endEl)   endEl.value   = endDate   || "";
+
+    setBudgetModal.classList.add("active");
+};
+
 
 document.getElementById("closeBudgetModalBtn")?.addEventListener("click", () => {
     setBudgetModal.classList.remove("active");
 });
 
 budgetPeriod?.addEventListener("change", () => {
-    customBudgetDates.hidden = budgetPeriod.value !== "CUSTOM";
+    if (customBudgetDates) customBudgetDates.hidden = budgetPeriod.value !== "CUSTOM";
 });
 
 setBudgetForm?.addEventListener("submit", async (e) => {
@@ -905,6 +940,36 @@ elements.profileTrigger.addEventListener("click", (e) => { e.stopPropagation(); 
 document.addEventListener("click", (e) => { if (!elements.profileTrigger.contains(e.target) && !elements.profileMenu.contains(e.target)) elements.profileMenu.classList.remove("active"); });
 document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "index.html"; });
 
+// Fetch and display server-side user profile (name + email)
+(async () => {
+    try {
+        const profile = await apiRequest(`/users/${userId}`);
+        if (profile) {
+            // Update name in localStorage and display if different
+            if (profile.name) {
+                localStorage.setItem("userName", profile.name);
+            }
+            // Inject email under the user name in the profile menu
+            const profileMenu = elements.profileMenu;
+            if (profileMenu && profile.email) {
+                const emailEl = document.getElementById("profileEmail");
+                if (emailEl) {
+                    emailEl.textContent = profile.email;
+                } else {
+                    // Dynamically insert email badge at top of profile menu
+                    const emailDiv = document.createElement("div");
+                    emailDiv.id = "profileEmail";
+                    emailDiv.style.cssText = "padding:12px 20px 8px; font-size:12px; color:var(--text-muted); border-bottom:1px solid var(--border); word-break:break-all;";
+                    emailDiv.textContent = profile.email;
+                    profileMenu.insertBefore(emailDiv, profileMenu.firstChild);
+                }
+            }
+        }
+    } catch (err) {
+        console.warn("Could not load user profile:", err);
+    }
+})();
+
 // --- EXPORT & IMPORT CONTROLS ---
 const authToken = localStorage.getItem("token");
 
@@ -974,6 +1039,13 @@ elements.manageSubsBtn.addEventListener("click", async (e) => {
     loadSubscriptions();
 });
 
+// Also handle the "Manage Subscriptions →" link in the metrics card
+document.getElementById("manageSubsLink")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    elements.subsModal.classList.add("active");
+    loadSubscriptions();
+});
+
 // Close Modal
 elements.closeSubsBtn.addEventListener("click", () => {
     elements.subsModal.classList.remove("active");
@@ -991,26 +1063,36 @@ async function loadSubscriptions() {
             return;
         }
 
-        elements.subsList.innerHTML = subs.map(sub => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border); margin-bottom:8px;">
-                <div>
-                    <div style="font-weight:600; color:var(--text-main);">${sub.description}</div>
-                    <div style="font-size:12px; color:var(--text-muted);">
-                        Next Due: <span style="color:var(--accent);">${formatDate(sub.nextDueDate)}</span> • ${formatCurrency(sub.amount)}
-                        <br>
-                        <span style="opacity:0.7; font-size:11px;">${sub.categoryName} • ${formatFrequency(sub)}</span>
+        elements.subsList.innerHTML = subs.map(sub => {
+            const freqLabel = formatFrequency(sub);
+            const freqColor = sub.frequency === 'CUSTOM' ? 'var(--accent)'
+                : sub.frequency === 'DAILY' ? '#5B8C5A'
+                : sub.frequency === 'WEEKLY' ? '#4C7A78'
+                : sub.frequency === 'YEARLY' ? '#8B5E34'
+                : 'var(--primary)'; // MONTHLY
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sub.description}</div>
+                    <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <span>Next: <span style="color:var(--accent); font-weight:600;">${formatDate(sub.nextDueDate)}</span></span>
+                        <span style="opacity:0.4;">•</span>
+                        <span style="font-weight:600; color:var(--text-main);">${formatCurrency(sub.amount)}</span>
+                        <span style="opacity:0.4;">•</span>
+                        <span style="background:rgba(199,154,62,0.12); color:${freqColor}; border:1px solid ${freqColor}30; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">${freqLabel}</span>
+                        <span style="opacity:0.7; font-size:11px; color:var(--text-muted);">${sub.categoryName}</span>
                     </div>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <button onclick="openEditSubscription(${sub.id}, '${sub.description.replace(/'/g, "\\'")}', '${sub.amount}', '${sub.nextDueDate}')" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
+                <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
+                    <button onclick="openEditSubscription(${sub.id}, '${sub.description.replace(/'/g, "\\'")}',' ${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
                     <button onclick="cancelSubscription(${sub.id})" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
-            </div>
-        `).join("");
+            </div>`;
+        }).join("");
 
     } catch (error) {
         elements.subsList.innerHTML = `<p style="color:var(--danger)">Error: ${error.message}</p>`;
@@ -1020,13 +1102,25 @@ async function loadSubscriptions() {
 const editSubModal = document.getElementById("editSubModal");
 const editSubForm = document.getElementById("editSubForm");
 
-window.openEditSubscription = (id, desc, amount, nextDueDate) => {
+window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTHLY', intervalDays = 1) => {
     document.getElementById("editSubId").value = id;
-    document.getElementById("editSubDesc").value = desc;
+    document.getElementById("editSubDesc").value = desc.trim();
     document.getElementById("editSubAmount").value = amount;
     document.getElementById("editSubNextDate").value = nextDueDate;
+    const freqSelect = document.getElementById("editSubFrequency");
+    if (freqSelect) freqSelect.value = frequency;
+    const intervalInput = document.getElementById("editSubIntervalDays");
+    if (intervalInput) intervalInput.value = intervalDays || 1;
+    const intervalWrap = document.getElementById("editSubIntervalWrap");
+    if (intervalWrap) intervalWrap.hidden = frequency !== "CUSTOM";
     editSubModal.classList.add("active");
 };
+
+// Toggle custom interval field inside edit subscription form
+document.getElementById("editSubFrequency")?.addEventListener("change", (e) => {
+    const wrap = document.getElementById("editSubIntervalWrap");
+    if (wrap) wrap.hidden = e.target.value !== "CUSTOM";
+});
 
 document.getElementById("closeEditSubModalBtn")?.addEventListener("click", () => {
     editSubModal.classList.remove("active");
@@ -1038,17 +1132,21 @@ editSubForm?.addEventListener("submit", async (e) => {
     const desc = document.getElementById("editSubDesc").value;
     const amount = parseFloat(document.getElementById("editSubAmount").value);
     const nextDueDate = document.getElementById("editSubNextDate").value;
+    const frequency = document.getElementById("editSubFrequency")?.value || "MONTHLY";
+    const intervalDaysRaw = parseInt(document.getElementById("editSubIntervalDays")?.value || "1");
 
     if (isNaN(amount) || amount <= 0) return showToast("Amount must be greater than 0", "error");
+    if (frequency === "CUSTOM" && (isNaN(intervalDaysRaw) || intervalDaysRaw < 1)) {
+        return showToast("Custom interval must be at least 1 day", "error");
+    }
+
+    const body = { description: desc, amount, nextDueDate, frequency };
+    if (frequency === "CUSTOM") body.intervalDays = intervalDaysRaw;
 
     try {
         await apiRequest(`/expenses/recurring/${id}`, {
             method: "PUT",
-            body: JSON.stringify({
-                description: desc,
-                amount: amount,
-                nextDueDate: nextDueDate
-            })
+            body: JSON.stringify(body)
         });
         showToast("Subscription updated successfully.", "success");
         editSubModal.classList.remove("active");
