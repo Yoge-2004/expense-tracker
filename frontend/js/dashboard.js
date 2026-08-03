@@ -377,7 +377,7 @@ function renderTrendChart(expenses) {
     const ctx = document.getElementById('trendChart').getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
     const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
-    const textColor = isLight ? '#64748B' : '#94A3B8';
+    const textColor = isLight ? '#6B6558' : '#A8A395';
 
     const dailyTotals = {};
     expenses.forEach(exp => {

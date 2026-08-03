@@ -1660,7 +1660,7 @@ tbody tr:hover {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #10B981;
+    background: #5B8C5A;
     box-shadow: 0 0 0 0 rgba(91, 140, 90, 0.7);
     animation: livePulseAnim 1.6s infinite;
 }
