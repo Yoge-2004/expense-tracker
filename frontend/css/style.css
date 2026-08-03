@@ -100,9 +100,7 @@
 [data-theme="light"] .auth-card,
 [data-theme="light"] .float-card,
 [data-theme="light"] .perk-item,
-[data-theme="light"] .summary-card,
 [data-theme="light"] .recent-transactions,
-[data-theme="light"] .modal-content,
 [data-theme="light"] .profile-menu {
     background: #FCFBF6 !important;
     border-color: #DAD4C1 !important;
@@ -354,23 +352,9 @@ button[type="submit"]:active {
 }
 
 /* ================== 4. UI CONTROLS ================== */
-.search-bar {
-    width: 200px;
-    padding: 10px 16px;
-    background: var(--input-bg) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 12px;
-    color: var(--text-main) !important;
-    font-size: 13px;
-    outline: none;
-    transition: 0.3s;
-    appearance: none;
-}
-
-.search-bar:focus {
-    border-color: var(--accent) !important;
-    width: 240px;
-}
+/* (.search-bar removed — never matched real markup. The actual search
+   input is .command-search-input inside .command-search-wrapper, which
+   already has working focus-glow via :focus-within above.) */
 
 .btn-icon {
     width: 36px;
@@ -637,36 +621,20 @@ button[type="submit"]:active {
 .grid-stats { grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); gap: 20px; }
 .summary-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .summary-stack .add-expense-button { grid-column: 1 / -1; min-height: 58px; }
-.summary-card {
-    padding: 20px;
-    gap: 8px;
-    min-height: 130px;
-    border-radius: 20px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    backdrop-filter: var(--glass);
-    transition: all 0.3s var(--ease);
-}
-
-.summary-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--border-accent);
-    box-shadow: var(--shadow-premium);
-}
-
 .summary-card-primary {
     background: linear-gradient(135deg, rgba(199, 154, 62, 0.18) 0%, rgba(178, 138, 50, 0.1) 100%);
     border: 1px solid var(--border-accent);
     box-shadow: 0 10px 30px -10px var(--primary-glow);
 }
 
-.summary-card .card-value {
+/* The primary/hero metric (Total Outflow) gets the display serif treatment
+   its number deserves; the other three stay in the mono data face. */
+.metric-card-glow .metric-value {
     font-family: var(--font-display);
     font-optical-sizing: auto;
-    font-size: clamp(24px, 3vw, 32px);
+    font-size: clamp(26px, 3vw, 34px);
     font-weight: 500;
     letter-spacing: -0.01em;
-    color: var(--text-main);
 }
 .add-expense-button { width: 100%; padding: 15px 20px; font-size: 15px; }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -686,7 +654,7 @@ button[type="submit"]:active {
     .top-bar-actions { gap: 8px; }
     .grid-stats { display: grid; }
     .summary-stack { grid-template-columns: 1fr 1fr; }
-    .summary-card { min-height: 110px; padding: 16px; }
+    .metric-card { min-height: 110px; padding: 16px; }
     .chart-card, .trend-card { min-height: 280px; }
     .chart-wrapper, .trend-chart-wrapper { height: 220px; }
     .card { border-radius: 16px; padding: 18px; }
@@ -695,7 +663,7 @@ button[type="submit"]:active {
 @media (max-width: 480px) {
     .dashboard-heading h2 { font-size: 26px; }
     .top-bar-actions .btn-icon { width: 34px; height: 34px; }
-    .summary-card .card-value { font-size: 23px; }
+    .metric-card-glow .metric-value { font-size: 22px; }
     .section-meta { display: none; }
     .expense-item { align-items: flex-start; gap: 12px; }
     .expense-item > div:last-child { gap: 5px !important; }
@@ -1005,20 +973,8 @@ select option {
     overflow: hidden;
 }
 
-.progress-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 4px;
-    transition: width 0.5s ease;
-}
-
-.progress-fill.warning {
-    background: #FFD60A;
-}
-
-.progress-fill.danger {
-    background: #FF6B50;
-}
+/* (.progress-fill removed — merged into .budget-bar-fill, the real class
+   used by the rendered budget bars.) */
 
 /* ================== 8. MOBILE RESPONSIVE ================== */
 @media (max-width: 900px) {
@@ -1091,8 +1047,9 @@ select option {
         gap: 10px;
     }
 
-    .search-bar {
+    .command-search-wrapper {
         flex: 1;
+        min-width: 0;
         width: auto !important;
     }
 
@@ -1351,11 +1308,7 @@ button[type="submit"]:active {
 .expense-item:nth-child(9)  { animation-delay: 0.36s; }
 .expense-item:nth-child(10) { animation-delay: 0.40s; }
 
-/* --- Progress bars --- */
-.progress-fill {
-    transform-origin: left;
-    animation: progressGrow 0.9s var(--ease) both;
-}
+/* (Progress bar entrance — merged into .budget-bar-fill above.) */
 
 /* --- Modals --- */
 .modal-overlay {
@@ -1424,9 +1377,7 @@ button[type="submit"]:active {
     transition: border-color 0.2s var(--ease), box-shadow 0.25s var(--ease);
 }
 
-.search-bar:focus {
-    box-shadow: 0 0 0 3px rgba(199, 154, 62, 0.12);
-}
+/* (Duplicate focus glow removed — see .command-search-wrapper:focus-within above.) */
 
 /* --- Filter panel slide-down --- */
 .filter-toolbar {
@@ -1558,34 +1509,34 @@ button[type="submit"]:active {
 }
 
 /* Staggered Card Entrance Cascades */
-.grid > *:nth-child(1), .card-grid > *:nth-child(1) {
+.grid > *:nth-child(1), .grid-4-metrics > *:nth-child(1), .grid-analytics > *:nth-child(1) {
     animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-.grid > *:nth-child(2), .card-grid > *:nth-child(2) {
+.grid > *:nth-child(2), .grid-4-metrics > *:nth-child(2), .grid-analytics > *:nth-child(2) {
     animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s both;
 }
 
-.grid > *:nth-child(3), .card-grid > *:nth-child(3) {
+.grid > *:nth-child(3), .grid-4-metrics > *:nth-child(3), .grid-analytics > *:nth-child(3) {
     animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.3s both;
 }
 
-.grid > *:nth-child(4), .card-grid > *:nth-child(4) {
+.grid > *:nth-child(4), .grid-4-metrics > *:nth-child(4), .grid-analytics > *:nth-child(4) {
     animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.45s both;
 }
 
 /* Prominent Stat Card Hover Scaling & Lift */
-.stat-card {
+.stat-card, .metric-card {
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease !important;
 }
 
-.stat-card:hover {
+.stat-card:hover, .metric-card:hover {
     transform: translateY(-10px) scale(1.025) rotate(0.5deg) !important;
     box-shadow: 0 20px 45px -10px rgba(199, 154, 62, 0.45), 0 0 25px rgba(178, 138, 50, 0.3) !important;
     border-color: rgba(199, 154, 62, 0.6) !important;
 }
 
-.stat-card.active, .stat-card.hero {
+.stat-card.active, .stat-card.hero, .metric-card-glow {
     animation: pulseGlowRing 3s ease-in-out infinite;
 }
 
@@ -1631,21 +1582,12 @@ button[type="submit"]:active {
     animation: shimmerSweep 0.9s ease-in-out;
 }
 
-/* Modals & Dialogs Elastic Overshoot */
-.modal.active .modal-content {
-    animation: modalElasticIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
-}
+/* (Elastic modal entrance removed: .modal.active .modal-content never
+   matched real markup. .modal-overlay.active .modal already animates
+   in via modalIn — see keyframes above.) */
 
-/* Table Row Highlights & Slide */
-.expense-row, tbody tr {
-    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.25s ease, box-shadow 0.25s ease !important;
-}
-
-tbody tr:hover {
-    background: rgba(199, 154, 62, 0.09) !important;
-    transform: translateX(8px) scale(1.005) !important;
-    box-shadow: -4px 0 0 0 var(--primary) !important;
-}
+/* (Table Row Highlights & Slide — removed: .expense-row/tbody tr never matched
+   real markup; .expense-item already has working hover treatment elsewhere.) */
 
 /* Status Badges Pulsing */
 .badge, .status-badge {
@@ -1997,11 +1939,11 @@ tbody tr:hover {
 }
 
 /* Card Elevation & Glowing Hover Interactions */
-.card, .metric-card, .summary-card, .float-card, .perk-item {
+.card, .float-card, .perk-item {
     transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease) !important;
 }
 
-.card:hover, .metric-card:hover, .summary-card:hover, .float-card:hover {
+.card:hover, .float-card:hover {
     transform: translateY(-3px) scale(1.01) !important;
     border-color: rgba(199, 154, 62, 0.45) !important;
     box-shadow: 0 14px 36px -10px rgba(199, 154, 62, 0.22), 0 0 18px rgba(162, 62, 50, 0.12) !important;
@@ -2734,20 +2676,10 @@ tbody tr:hover {
     color: var(--text-main);
 }
 
-/* Transaction row hover */
-.expense-row {
-    transition: background 0.2s, transform 0.2s, border-color 0.2s;
-}
-.expense-row:hover {
-    background: var(--card-bg-hover) !important;
-    transform: translateX(3px);
-    border-left-color: var(--primary) !important;
-}
+/* (Transaction row hover — removed: .expense-row duplicate, superseded by
+   the working .expense-item:hover rules elsewhere.) */
 
-/* Budget progress bars animated fill */
-.progress-fill {
-    transition: width 1s var(--ease) !important;
-}
+/* (Budget bar width transition — already on .budget-bar-fill above.) */
 
 /* Command search glow */
 .command-search-input:focus {
@@ -3242,7 +3174,17 @@ tbody tr:hover {
     height: 100%;
     border-radius: 100px;
     transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left;
+    animation: progressGrow 0.9s var(--ease) both;
     position: relative;
+}
+
+.budget-bar-fill.warning {
+    background: #C9932E !important;
+}
+
+.budget-bar-fill.danger {
+    background: #A23E32 !important;
 }
 .budget-bar-fill::after {
     content: '';

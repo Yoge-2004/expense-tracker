@@ -319,7 +319,7 @@ async function loadBudgets() {
                         <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}')" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
-                        <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0})" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                        <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0}, event)" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
@@ -334,7 +334,7 @@ async function loadBudgets() {
     }
 }
 
-window.deleteBudgetLimit = async (budgetId, categoryId) => {
+window.deleteBudgetLimit = async (budgetId, categoryId, event) => {
     if (!confirm("Are you sure you want to delete this budget limit?")) return;
     try {
         if (budgetId && budgetId > 0) {
@@ -346,6 +346,11 @@ window.deleteBudgetLimit = async (budgetId, categoryId) => {
         loadBudgets();
     } catch (e) {
         showToast(e.message, "error");
+        const btn = event?.target?.closest(".btn-delete");
+        if (btn) {
+            btn.classList.add("shake");
+            setTimeout(() => btn.classList.remove("shake"), 400);
+        }
     }
 };
 
@@ -670,7 +675,7 @@ function renderList(expenses) {
                 <button class="btn-edit" onclick="editExpense(${exp.id})" title="Edit">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
-                <button class="btn-delete" onclick="deleteExpense(${exp.id})" title="Delete">
+                <button class="btn-delete" onclick="deleteExpense(${exp.id}, event)" title="Delete">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
             </div>
@@ -781,13 +786,20 @@ window.editExpense = (id) => {
     elements.modal.classList.add("active");
 };
 
-window.deleteExpense = async (id) => {
+window.deleteExpense = async (id, event) => {
     if (!confirm("Delete this expense?")) return;
     try {
         await apiRequest(`/expenses/${id}/user/${userId}`, { method: 'DELETE' });
         showToast("Expense deleted.", "success");
         loadDashboard();
-    } catch (err) { showToast(err.message, "error"); }
+    } catch (err) {
+        showToast(err.message, "error");
+        const btn = event?.target?.closest(".btn-delete");
+        if (btn) {
+            btn.classList.add("shake");
+            setTimeout(() => btn.classList.remove("shake"), 400);
+        }
+    }
 };
 
 // Modal Controls
@@ -1071,7 +1083,7 @@ async function loadSubscriptions() {
                 : sub.frequency === 'YEARLY' ? '#8B5E34'
                 : 'var(--primary)'; // MONTHLY
             return `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
+            <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
                 <div style="flex:1; min-width:0;">
                     <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sub.description}</div>
                     <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
@@ -1087,7 +1099,7 @@ async function loadSubscriptions() {
                     <button onclick="openEditSubscription(${sub.id}, '${sub.description.replace(/'/g, "\\'")}',' ${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
-                    <button onclick="cancelSubscription(${sub.id})" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
+                    <button onclick="cancelSubscription(${sub.id}, event)" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
@@ -1157,7 +1169,7 @@ editSubForm?.addEventListener("submit", async (e) => {
 });
 
 // Cancel Logic
-window.cancelSubscription = async (id) => {
+window.cancelSubscription = async (id, event) => {
     if (!confirm("Are you sure you want to cancel this recurring subscription? Future auto-payments will stop.")) return;
 
     try {
@@ -1166,6 +1178,11 @@ window.cancelSubscription = async (id) => {
         loadSubscriptions();
     } catch (err) {
         showToast(err.message, "error");
+        const btn = event?.target?.closest(".btn-delete");
+        if (btn) {
+            btn.classList.add("shake");
+            setTimeout(() => btn.classList.remove("shake"), 400);
+        }
     }
 };
 
