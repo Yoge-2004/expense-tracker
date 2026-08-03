@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl, Alert, Share, Animated } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -97,7 +98,30 @@ export default function DashboardScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const filterAnim = useRef(new Animated.Value(0)).current;
 
-  const fetchData = async () => {
+  const CACHE_VERSION = 1;
+  const cacheKey = `expenseCache_${userId}`;
+
+  const saveCache = async (data: { expenses: Expense[]; budgets: BudgetStatus[]; categories: Category[] }) => {
+    try {
+      await AsyncStorage.setItem(cacheKey, JSON.stringify({ v: CACHE_VERSION, savedAt: Date.now(), ...data }));
+    } catch (e) {
+      console.warn('Could not save local expense cache', e);
+    }
+  };
+
+  const loadCache = async () => {
+    try {
+      const raw = await AsyncStorage.getItem(cacheKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed.v !== CACHE_VERSION || !Array.isArray(parsed.expenses)) return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const fetchData = async (usedCache: boolean = false) => {
     if (!userId) return;
     try {
       const [expensesData, budgetsData, categoriesData] = await Promise.all([
@@ -108,6 +132,7 @@ export default function DashboardScreen() {
       setExpenses(expensesData || []);
       setBudgets(budgetsData || []);
       setCategories(categoriesData || []);
+      saveCache({ expenses: expensesData || [], budgets: budgetsData || [], categories: categoriesData || [] });
 
       // Trigger animations on data fetch
       Animated.parallel([
@@ -124,16 +149,38 @@ export default function DashboardScreen() {
       ]).start();
     } catch (e) {
       console.error('Failed to load metrics', e);
+      if (usedCache) {
+        // Already showing last-known data from cache — just let the person know
+        // it might not be current, rather than clearing the screen.
+        Alert.alert('Offline', "Couldn't reach the server — showing your last saved data.");
+      } else {
+        Alert.alert('Connection Error', "Couldn't load your data. Check your connection and try again.");
+      }
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
   };
 
+  const loadWithCache = async () => {
+    const cached = await loadCache();
+    if (cached) {
+      setExpenses(cached.expenses || []);
+      setBudgets(cached.budgets || []);
+      setCategories(cached.categories || []);
+      setIsLoading(false);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(progressAnim, { toValue: 1, duration: 700, useNativeDriver: false }),
+      ]).start();
+    }
+    fetchData(!!cached);
+  };
+
   useFocusEffect(
     useCallback(() => {
       progressAnim.setValue(0);
-      fetchData();
+      loadWithCache();
     }, [userId])
   );
 

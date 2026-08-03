@@ -95,8 +95,62 @@ function showSkeletonLoading() {
 }
 
 // --- 1. INITIALIZATION ---
+// ── Local cache (stale-while-revalidate) ──────────────────────────────────
+// Shows the last-known dashboard state instantly on load, refreshes from
+// the server in the background, and falls back to this cache if the
+// server is briefly unreachable (e.g. a cold-starting Neon connection)
+// instead of leaving the UI stuck on skeletons or silently failing.
+const CACHE_VERSION = 1;
+function getCacheKey() { return `expenseCache_${userId}`; }
+
+function saveExpenseCache(expenses, categories) {
+    try {
+        localStorage.setItem(getCacheKey(), JSON.stringify({
+            v: CACHE_VERSION,
+            savedAt: Date.now(),
+            expenses,
+            categories,
+        }));
+    } catch (e) {
+        console.warn("Could not save expense cache:", e);
+    }
+}
+
+function loadExpenseCache() {
+    try {
+        const raw = localStorage.getItem(getCacheKey());
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (parsed.v !== CACHE_VERSION || !Array.isArray(parsed.expenses)) return null;
+        return parsed;
+    } catch (e) {
+        return null;
+    }
+}
+
+function renderDashboardData(expenses, categories) {
+    allCategories = categories;
+    allExpenses = expenses;
+
+    populateCategoryDropdown(allCategories);
+    populateFilterDropdowns(allCategories, expenses);
+
+    applyFilters();
+    renderTrendChart(expenses);
+    loadBudgets();
+    updateProMetrics(expenses);
+}
+
 async function loadDashboard() {
-    showSkeletonLoading();
+    const cached = loadExpenseCache();
+    const renderedFromCache = !!cached;
+
+    if (cached) {
+        renderDashboardData(cached.expenses, cached.categories);
+    } else {
+        showSkeletonLoading();
+    }
+
     try {
         console.log("Loading Dashboard Data...");
 
@@ -109,23 +163,22 @@ async function loadDashboard() {
         // Merge Categories safely
         const safeGlobal = Array.isArray(globalCats) ? globalCats : [];
         const safeUser = Array.isArray(userCats) ? userCats : [];
-        allCategories = [...safeGlobal, ...safeUser];
-        allExpenses = expenses;
+        const categories = [...safeGlobal, ...safeUser];
 
-        // Populate UI
-        populateCategoryDropdown(allCategories);
-        populateFilterDropdowns(allCategories, expenses);
-
-        applyFilters();
-        renderTrendChart(expenses);
-        loadBudgets();
-        updateProMetrics(expenses);
+        renderDashboardData(expenses, categories);
+        saveExpenseCache(expenses, categories);
 
     } catch (error) {
         console.error("Critical Error:", error);
         if (error.message.includes("User not found")) {
             localStorage.clear();
             window.location.href = "index.html";
+            return;
+        }
+        if (renderedFromCache) {
+            showToast("Couldn't reach the server — showing your last saved data.", "error");
+        } else {
+            showToast("Couldn't load your data. Check your connection and try again.", "error");
         }
     }
 }
