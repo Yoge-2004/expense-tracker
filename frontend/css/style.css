@@ -815,6 +815,9 @@ select option {
     pointer-events: none;
     transition: 0.3s;
     z-index: 999;
+    padding: 20px 16px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .modal-overlay.active {
@@ -824,11 +827,26 @@ select option {
 
 .modal {
     background: var(--bg-dark);
-    padding: 32px;
-    border-radius: 24px;
-    width: 90%;
-    max-width: 400px;
+    padding: 28px 24px;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 460px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
     border: 1px solid var(--border);
+    box-sizing: border-box;
+    margin: auto;
+}
+
+.modal::-webkit-scrollbar {
+    width: 6px;
+}
+.modal::-webkit-scrollbar-track {
+    background: transparent;
+}
+.modal::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
 }
 
 .modal h3 {

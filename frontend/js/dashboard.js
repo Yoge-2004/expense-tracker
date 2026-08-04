@@ -179,6 +179,7 @@ async function loadDashboard() {
             showToast("Couldn't reach the server — showing your last saved data.", "error");
         } else {
             showToast("Couldn't load your data. Check your connection and try again.", "error");
+            renderDashboardData([], []);
         }
     }
 }
@@ -814,13 +815,21 @@ window.deleteExpense = async (id, event) => {
     }
 };
 
+function syncRecurringIntervalVisibility() {
+    if (elements.customIntervalWrap && elements.recurringFrequency) {
+        elements.customIntervalWrap.hidden = (elements.recurringFrequency.value !== "CUSTOM");
+    }
+}
+
 // Modal Controls
 document.getElementById("openModalBtn").addEventListener("click", () => {
     elements.addForm.reset();
     document.getElementById("expenseId").value = "";
     document.getElementById("date").value = new Date().toISOString().split("T")[0];
+    elements.isRecurring.checked = false;
     elements.isRecurring.parentElement.style.display = "flex";
-    elements.recurringOptions.hidden = !elements.isRecurring.checked;
+    elements.recurringOptions.hidden = true;
+    syncRecurringIntervalVisibility();
     document.querySelector(".modal h3").textContent = "Add Expense";
     document.querySelector(".modal button[type='submit']").textContent = "Save Expense";
     elements.modal.classList.add("active");
@@ -838,15 +847,17 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
         elements.modal?.classList.remove("active");
         setBudgetModal?.classList.remove("active");
+        document.getElementById("editSubModal")?.classList.remove("active");
     }
 });
 
 
 elements.isRecurring.addEventListener("change", () => {
     elements.recurringOptions.hidden = !elements.isRecurring.checked;
+    syncRecurringIntervalVisibility();
 });
 elements.recurringFrequency.addEventListener("change", () => {
-    elements.customIntervalWrap.hidden = elements.recurringFrequency.value !== "CUSTOM";
+    syncRecurringIntervalVisibility();
 });
 
 // Add Category
