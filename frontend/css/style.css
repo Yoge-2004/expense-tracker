@@ -239,6 +239,11 @@ input[type="number"]::-webkit-inner-spin-button {
     color: var(--text-main);
 }
 
+html {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
 body {
     background: var(--bg-dark);
     color: var(--text-main);
@@ -247,6 +252,8 @@ body {
     min-height: 100vh;
     height: auto;
     overflow-y: auto;
+    overflow-x: hidden;
+    max-width: 100vw;
 
     transition: background 0.3s, color 0.3s;
 }
@@ -1007,32 +1014,9 @@ select option {
         background: var(--bg-dark);
     }
 
-    .split-screen {
-        display: flex;
-        flex-direction: column;
-        height: auto;
-        min-height: 100vh;
-    }
-
-    .hero-section {
-        min-height: 200px;
-        padding: 30px;
-        flex: none;
-        align-items: center;
-    }
-
-    .hero-content h1 {
-        font-size: 28px;
-    }
-
-    .hero-content p {
-        display: none;
-    }
-
-    .auth-section {
-        padding: 40px 20px;
-        flex: 1;
-    }
+    /* (.split-screen, .hero-section, .hero-content, .auth-section, .grid-stats
+       removed — confirmed unused in every HTML file, leftover from an old
+       page structure that predates the current dashboard layout.) */
 
     .dashboard-container {
         height: auto;
@@ -1040,12 +1024,6 @@ select option {
         flex-direction: column;
         gap: 20px;
         padding: 20px;
-    }
-
-    .grid-stats {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
     }
 
     .card {
@@ -3175,8 +3153,8 @@ button[type="submit"]:active {
     transition: background 0.3s;
 }
 [data-theme="light"] .top-bar {
-    background: rgba(255, 255, 255, 0.8) !important;
-    border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+    background: rgba(252, 251, 246, 0.85) !important;
+    border-bottom-color: rgba(30, 27, 21, 0.06) !important;
 }
 
 /* ── Command search glow on focus ── */
