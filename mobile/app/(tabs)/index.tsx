@@ -53,10 +53,10 @@ export default function DashboardScreen() {
         accent: '#C79A3E',
         accentDark: '#A97F2E',
         accentOrange: '#A23E32',
-        cardTotalBg: 'rgba(0, 212, 170, 0.08)',
-        cardTotalBorder: 'rgba(0, 212, 170, 0.25)',
-        cardCountBg: 'rgba(255, 107, 53, 0.08)',
-        cardCountBorder: 'rgba(255, 107, 53, 0.25)',
+        cardTotalBg: 'rgba(199, 154, 62, 0.08)',
+        cardTotalBorder: 'rgba(199, 154, 62, 0.25)',
+        cardCountBg: 'rgba(162, 62, 50, 0.08)',
+        cardCountBorder: 'rgba(162, 62, 50, 0.25)',
       };
     }
     return {
@@ -71,10 +71,10 @@ export default function DashboardScreen() {
       accent: '#C79A3E',
       accentDark: '#A97F2E',
       accentOrange: '#A23E32',
-      cardTotalBg: 'rgba(0, 212, 170, 0.12)',
-      cardTotalBorder: 'rgba(0, 212, 170, 0.3)',
-      cardCountBg: 'rgba(255, 107, 53, 0.12)',
-      cardCountBorder: 'rgba(255, 107, 53, 0.3)',
+      cardTotalBg: 'rgba(199, 154, 62, 0.12)',
+      cardTotalBorder: 'rgba(199, 154, 62, 0.3)',
+      cardCountBg: 'rgba(162, 62, 50, 0.12)',
+      cardCountBorder: 'rgba(162, 62, 50, 0.3)',
     };
   };
 
@@ -1039,7 +1039,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   filterBtnActive: {
-    backgroundColor: 'rgba(0,212,170,0.12)',
+    backgroundColor: 'rgba(199, 154, 62,0.12)',
     borderColor: '#C79A3E',
   },
   filterBtnText: { fontSize: 12 },

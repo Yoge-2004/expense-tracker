@@ -48,7 +48,7 @@ export default function ProfileScreen() {
   const c = {
     bg: isLight ? '#EDEAE0' : '#10120E',
     card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
-    card2: isLight ? '#FCFBF6' : 'rgba(18,26,44,0.7)',
+    card2: isLight ? '#FCFBF6' : 'rgba(23, 26, 20,0.7)',
     border: isLight ? '#DAD4C1' : 'rgba(255,255,255,0.07)',
     text: isLight ? '#171A14' : '#ECE7D8',
     textMuted: isLight ? '#A8A395' : '#A8A395',
@@ -222,10 +222,10 @@ export default function ProfileScreen() {
         {DANGER_ITEMS.map((item, i) => (
           <AnimatedCard
             key={i}
-            style={[styles.settingRow, styles.dangerRow, { backgroundColor: 'rgba(255,71,87,0.05)', borderColor: 'rgba(255,71,87,0.2)' }]}
+            style={[styles.settingRow, styles.dangerRow, { backgroundColor: 'rgba(162, 62, 50,0.05)', borderColor: 'rgba(162, 62, 50,0.2)' }]}
             onPress={item.action === 'logout' ? logout : handleDeleteAccount}
           >
-            <View style={[styles.settingIconBox, { backgroundColor: 'rgba(255,71,87,0.12)' }]}>
+            <View style={[styles.settingIconBox, { backgroundColor: 'rgba(162, 62, 50,0.12)' }]}>
               <Ionicons name={item.icon as any} size={18} color="#A23E32" />
             </View>
             <View style={styles.settingTextGroup}>

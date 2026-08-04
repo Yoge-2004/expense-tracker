@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, RefreshControl, Animated,
+  ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { StaggeredView } from '../../components/StaggeredView';
 
 interface Subscription {
   id: number;
@@ -193,8 +194,8 @@ export default function SubscriptionsScreen() {
             const daysUntil = getDaysUntil(item.nextDueDate);
             const isDueSoon = daysUntil <= 3 && daysUntil >= 0;
             return (
+              <StaggeredView key={item.id} delay={Math.min(index * 70, 490)} direction="up">
               <View
-                key={item.id}
                 style={[
                   styles.card,
                   {
@@ -250,6 +251,7 @@ export default function SubscriptionsScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
+              </StaggeredView>
             );
           })}
         </View>
@@ -435,9 +437,9 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,71,87,0.08)',
+    backgroundColor: 'rgba(162, 62, 50,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,71,87,0.2)',
+    borderColor: 'rgba(162, 62, 50,0.2)',
   },
   cancelBtnText: {
     fontSize: 12,

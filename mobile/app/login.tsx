@@ -85,9 +85,9 @@ export default function LoginScreen() {
           style={[styles.heroSection, { opacity: fadeAnim, transform: [{ translateY: heroSlide }] }]}
         >
           {/* Decorative circles */}
-          <View style={[styles.heroBubble, styles.heroBubble1, { backgroundColor: 'rgba(0,212,170,0.12)' }]} />
-          <View style={[styles.heroBubble, styles.heroBubble2, { backgroundColor: 'rgba(255,107,53,0.1)' }]} />
-          <View style={[styles.heroBubble, styles.heroBubble3, { backgroundColor: 'rgba(59,130,246,0.1)' }]} />
+          <View style={[styles.heroBubble, styles.heroBubble1, { backgroundColor: 'rgba(199, 154, 62,0.12)' }]} />
+          <View style={[styles.heroBubble, styles.heroBubble2, { backgroundColor: 'rgba(162, 62, 50,0.1)' }]} />
+          <View style={[styles.heroBubble, styles.heroBubble3, { backgroundColor: 'rgba(76, 122, 120,0.1)' }]} />
 
           <View style={styles.logoRow}>
             <View style={[styles.logoBox, { backgroundColor: c.accent }]}>
