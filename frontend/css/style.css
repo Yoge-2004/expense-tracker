@@ -3484,6 +3484,11 @@ button[type="submit"]:active {
     color: var(--danger);
     border: 1px solid rgba(var(--accent-rgb), 0.25);
 }
+.badge-neutral {
+    background: rgba(var(--ink-rgb), 0.06);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
 
 /* ── Form controls in modal ── */
 #addExpenseForm .form-group input,

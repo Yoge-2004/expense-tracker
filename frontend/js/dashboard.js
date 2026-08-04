@@ -281,26 +281,38 @@ document.querySelectorAll(".pill-chip").forEach(chip => {
 async function loadBudgets() {
     try {
         const budgets = await apiRequest(`/expenses/budget/status/user/${userId}`);
+        const usageBadge = document.getElementById("budgetUsageBadge");
 
         if (!budgets || budgets.length === 0) {
             elements.budgetList.innerHTML = `<p class="text-muted" style="font-size:13px; text-align:center;">No budgets set.</p>`;
+            if (usageBadge) {
+                usageBadge.textContent = "No Budget Set";
+                usageBadge.className = "status-badge badge-neutral";
+            }
             return;
+        }
+
+        // Overall usage across every budgeted category — only earns a color
+        // when it's actually worth flagging, same thresholds as each row below.
+        const totalLimit = budgets.reduce((acc, b) => acc + Number(b.limit || 0), 0);
+        const totalSpent = budgets.reduce((acc, b) => acc + Number(b.spent || 0), 0);
+        const overallPct = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0;
+
+        if (usageBadge) {
+            usageBadge.textContent = `${overallPct.toFixed(0)}% Used`;
+            usageBadge.className = "status-badge " +
+                (overallPct > 100 ? "badge-danger" : overallPct > 80 ? "badge-warning" : "badge-neutral");
         }
 
         elements.budgetList.innerHTML = budgets.map(b => {
             const pct = Math.min(b.percentage || 0, 100);
-            let barColor, badgeClass;
-            if (b.percentage > 100) { barColor = 'var(--danger)'; badgeClass = 'badge-danger'; }
-            else if (b.percentage > 80) { barColor = 'var(--warning)'; badgeClass = 'badge-warning'; }
-            else { barColor = 'var(--primary)'; badgeClass = 'badge-primary'; }
+            let barColor;
+            if (b.percentage > 100) { barColor = 'var(--danger)'; }
+            else if (b.percentage > 80) { barColor = 'var(--warning)'; }
+            else { barColor = 'var(--primary)'; }
 
             const catColor = getCategoryColor(b.categoryName);
             const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
-            const periodBadgeColor = periodLabel === 'MONTHLY' ? 'badge-primary'
-                : periodLabel === 'WEEKLY' ? 'badge-success'
-                : periodLabel === 'YEARLY' ? 'badge-warning'
-                : periodLabel === 'CUSTOM' ? 'badge-accent'
-                : 'badge-primary';
             // Store current values for the edit pre-fill
             const startStr = b.startDate || '';
             const endStr   = b.endDate   || '';
@@ -311,7 +323,7 @@ async function loadBudgets() {
                         <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
                         <div>
                             <div style="font-size:14px; font-weight:700; color:var(--text-main);">${b.categoryName}</div>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} of ${formatCurrency(b.limit)} <span class="status-badge ${periodBadgeColor}" style="margin-left:4px;">${periodLabel}</span></div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} of ${formatCurrency(b.limit)} <span class="status-badge badge-neutral" style="margin-left:4px;">${periodLabel}</span></div>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px;">
@@ -1077,11 +1089,7 @@ async function loadSubscriptions() {
 
         elements.subsList.innerHTML = subs.map(sub => {
             const freqLabel = formatFrequency(sub);
-            const freqColor = sub.frequency === 'CUSTOM' ? 'var(--accent)'
-                : sub.frequency === 'DAILY' ? '#5B8C5A'
-                : sub.frequency === 'WEEKLY' ? '#4C7A78'
-                : sub.frequency === 'YEARLY' ? '#8B5E34'
-                : 'var(--primary)'; // MONTHLY
+            const freqColor = 'var(--text-muted)';
             return `
             <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
                 <div style="flex:1; min-width:0;">
@@ -1091,7 +1099,7 @@ async function loadSubscriptions() {
                         <span style="opacity:0.4;">•</span>
                         <span style="font-weight:600; color:var(--text-main);">${formatCurrency(sub.amount)}</span>
                         <span style="opacity:0.4;">•</span>
-                        <span style="background:rgba(199,154,62,0.12); color:${freqColor}; border:1px solid ${freqColor}30; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">${freqLabel}</span>
+                        <span style="background:rgba(var(--ink-rgb),0.06); color:${freqColor}; border:1px solid var(--border); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">${freqLabel}</span>
                         <span style="opacity:0.7; font-size:11px; color:var(--text-muted);">${sub.categoryName}</span>
                     </div>
                 </div>
