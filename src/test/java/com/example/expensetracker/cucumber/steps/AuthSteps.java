@@ -120,6 +120,66 @@ public class AuthSteps {
         iRegister(name, email, password);
     }
 
+    @When("I register without a name field, with email {string} and password {string}")
+    public void iRegisterWithoutNameField(String email, String password) {
+        Map<String, String> body = new HashMap<>();
+        body.put("email",    email);
+        body.put("password", password);
+        // name key intentionally omitted — Jackson deserializes this as null,
+        // exercising a different code path than an explicit empty string.
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/register")
+        );
+    }
+
+    @When("I register with name {string}, without an email field, and password {string}")
+    public void iRegisterWithoutEmailField(String name, String password) {
+        Map<String, String> body = new HashMap<>();
+        body.put("name",     name);
+        body.put("password", password);
+        // email key intentionally omitted.
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/register")
+        );
+    }
+
+    @When("I register with name {string}, email {string}, and without a password field")
+    public void iRegisterWithoutPasswordField(String name, String email) {
+        Map<String, String> body = new HashMap<>();
+        body.put("name",  name);
+        body.put("email", email);
+        // password key intentionally omitted.
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/register")
+        );
+    }
+
+    @When("I send a registration request with malformed JSON")
+    public void iSendMalformedRegistrationJson() {
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body("{ \"name\": \"Broken\", \"email\": ") // truncated/invalid JSON on purpose
+                        .when()
+                        .post("/api/auth/register")
+        );
+    }
+
     // ─── Login steps ──────────────────────────────────────────────────────
 
     @When("I login with email {string} and password {string}")
@@ -262,6 +322,12 @@ public class AuthSteps {
     public void theResponseShouldContainId() {
         Object id = ctx.getLastResponse().jsonPath().get("id");
         assertThat(id).as("Response should contain an 'id' field").isNotNull();
+    }
+
+    @And("the response should not contain field {string}")
+    public void theResponseShouldNotContainField(String field) {
+        Object val = ctx.getLastResponse().jsonPath().get(field);
+        assertThat(val).as("Field '%s' should NOT be present in the response body", field).isNull();
     }
 
     @And("the response should contain message {string}")
