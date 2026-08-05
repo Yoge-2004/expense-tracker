@@ -225,6 +225,47 @@ public class AuthSteps {
         iLogin(email, password);
     }
 
+    @When("I login without an email field, with password {string}")
+    public void iLoginWithoutEmailField(String password) {
+        Map<String, String> body = new HashMap<>();
+        body.put("password", password);
+        // email key intentionally omitted.
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/login")
+        );
+    }
+
+    @When("I login with email {string}, without a password field")
+    public void iLoginWithoutPasswordField(String email) {
+        Map<String, String> body = new HashMap<>();
+        body.put("email", email);
+        // password key intentionally omitted.
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/login")
+        );
+    }
+
+    @When("I send a login request with malformed JSON")
+    public void iSendMalformedLoginJson() {
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body("{ \"email\": \"broken@example.com\", \"password\": ")
+                        .when()
+                        .post("/api/auth/login")
+        );
+    }
+
     // ─── Password Reset steps ─────────────────────────────────────────────
 
     @When("I request a password reset code for {string}")

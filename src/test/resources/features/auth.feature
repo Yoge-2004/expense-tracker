@@ -240,6 +240,12 @@ Feature: Authentication API
     And the response should contain a userId
     And the response should contain a name
 
+  Scenario: Login response never echoes the password back
+    Given a user is registered with email "login.privacy@example.com" and password "pass1234"
+    When I login with email "login.privacy@example.com" and password "pass1234"
+    Then the response status code should be 200
+    And the response should not contain field "password"
+
   Scenario: Login fails with wrong password
     Attempts to login with a registered email but an incorrect password.
     Spring Security throws BadCredentialsException which the handler maps
@@ -258,12 +264,48 @@ Feature: Authentication API
     When I login with email "nobody@example.com" and password "pass123"
     Then the response status code should be 401
 
+  Scenario: Login fails when email is different case from how it was registered
+    Documents the same case-sensitivity as registration, from the other
+    direction: UserRepository's email lookup is case-sensitive, so logging
+    in with different capitalization than what was actually stored fails
+    as if the account didn't exist — not as a "wrong password."
+
+    Given a user is registered with email "casesensitive@example.com" and password "pass1234"
+    When I login with email "CaseSensitive@example.com" and password "pass1234"
+    Then the response status code should be 401
+
   Scenario: Login fails when email field is blank
     Submits a login request with an empty email string. The "@NotBlank"
     constraint on LoginRequest.email triggers bean validation failure and
     returns HTTP 400 before authentication is attempted.
 
     When I login with email "" and password "pass123"
+    Then the response status code should be 400
+
+  Scenario: Login fails when the email field is entirely missing
+    When I login without an email field, with password "pass123"
+    Then the response status code should be 400
+
+  Scenario: Login fails when email format is invalid
+    LoginRequest.email also carries "@Email", not just "@NotBlank" — a
+    syntactically invalid address is rejected by bean validation before
+    any authentication attempt, the same as registration.
+
+    When I login with email "not-an-email" and password "pass123"
+    Then the response status code should be 400
+
+  Scenario: Login fails when password is blank
+    Given a user is registered with email "blankpwtest@example.com" and password "pass1234"
+    When I login with email "blankpwtest@example.com" and password ""
+    Then the response status code should be 400
+
+  Scenario: Login fails when the password field is entirely missing
+    Given a user is registered with email "nopwfieldtest@example.com" and password "pass1234"
+    When I login with email "nopwfieldtest@example.com", without a password field
+    Then the response status code should be 400
+
+  Scenario: Login fails on malformed JSON
+    When I send a login request with malformed JSON
     Then the response status code should be 400
 
   # ─── Password Reset ───────────────────────────────────────────────────────
