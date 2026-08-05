@@ -1,5 +1,5 @@
 // Automatically detect local development or the deployed API.
-const API_BASE_URL = ["localhost", "127.0.0.1", ""].includes(window.location.hostname)
+const API_BASE_URL = (["localhost", "127.0.0.1", ""].includes(window.location.hostname) || window.location.protocol === "file:")
     ? "http://localhost:8080/api"
     : "https://yoge-2004-expense-tracker-backend.hf.space/api";
 

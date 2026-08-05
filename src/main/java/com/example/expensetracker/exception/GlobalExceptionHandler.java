@@ -146,7 +146,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Authentication Failed",
-                "Invalid email or password",
+                (ex.getMessage() != null && !ex.getMessage().isBlank() && !"Bad credentials".equalsIgnoreCase(ex.getMessage())) ? ex.getMessage() : "Invalid email or password",
                 request.getRequestURI()
         );
 

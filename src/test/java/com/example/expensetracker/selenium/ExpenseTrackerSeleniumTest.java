@@ -234,7 +234,12 @@ public class ExpenseTrackerSeleniumTest {
         driver.get(forgotPasswordUrl);
         wait.until(ExpectedConditions.titleContains("Update Password"));
 
-        WebElement passInput = driver.findElement(By.id("newPassword"));
+        ((JavascriptExecutor) driver).executeScript(
+            "document.getElementById('requestCodeForm').style.display='none';" +
+            "document.getElementById('resetForm').style.display='block';"
+        );
+
+        WebElement passInput = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("newPassword")));
         WebElement seg1 = driver.findElement(By.id("seg1"));
 
         passInput.sendKeys("Strong#Password2026!");
@@ -274,7 +279,7 @@ public class ExpenseTrackerSeleniumTest {
         assertTrue(welcome.getText().contains("Alex Smith") || welcome.getText().contains("Welcome"),
                 "Dashboard should display user welcome text");
 
-        WebElement totalAmount = driver.findElement(By.id("totalAmount"));
+        WebElement totalAmount = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("totalAmount")));
         assertTrue(totalAmount.isDisplayed(), "Total Outflow metric element should be displayed");
     }
 

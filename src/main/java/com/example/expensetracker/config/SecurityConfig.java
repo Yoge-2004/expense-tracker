@@ -80,6 +80,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
+                                "/*.html",
+                                "/frontend/**",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/favicon.ico",
                                 "/api/auth/**",
                                 "/api/health/**",
                                 "/api/sync/**",
