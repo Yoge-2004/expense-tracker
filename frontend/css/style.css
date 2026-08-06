@@ -2012,7 +2012,7 @@ button[type="submit"]:active {
     align-items: center;
     justify-content: center;
     padding: 60px 70px;
-    background: var(--on-primary);
+    background: var(--bg-dark);
 }
 
 .auth-hero-bg {
