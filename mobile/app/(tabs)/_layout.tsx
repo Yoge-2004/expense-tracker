@@ -35,11 +35,11 @@ export default function TabLayout() {
   const { theme } = useAuth();
   const isLight = theme === 'light';
 
-  const tabBg = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(10,14,26,0.96)';
+  const tabBg = isLight ? 'rgba(252,251,246,0.96)' : 'rgba(23,26,20,0.96)';
   const tabBorder = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
   const inactiveColor = isLight ? '#A8A395' : '#6B6558';
   const headerBg = isLight ? '#EDEAE0' : '#10120E';
-  const headerTint = isLight ? '#171A14' : '#ECE7D8';
+  const headerTint = isLight ? '#1E1B15' : '#ECE7D8';
 
   return (
     <Tabs

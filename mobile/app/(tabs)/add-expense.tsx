@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Activi
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AnimatedButton } from '../../components/AnimatedButton';
 import { AnimatedCard } from '../../components/AnimatedCard';
 
@@ -27,26 +27,26 @@ export default function AddExpenseScreen() {
     if (theme === 'light') {
       return {
         bg: '#EDEAE0',
-        card: '#FFFFFF',
+        card: '#FCFBF6',
         border: '#DAD4C1',
-        text: '#171A14',
-        textMuted: '#A8A395',
-        inputBg: '#FCFBF6',
+        text: '#1E1B15',
+        textMuted: '#6B6558',
+        inputBg: '#F5F2E9',
         inputBorder: '#DAD4C1',
         tabBg: '#FCFBF6',
-        accent: '#C79A3E',
-        orange: '#A23E32',
+        accent: '#9C7623',
+        orange: '#8F3327',
       };
     }
     return {
       bg: '#10120E',
-      card: 'rgba(13, 18, 30, 0.9)',
-      border: 'rgba(255, 255, 255, 0.08)',
+      card: 'rgba(23, 26, 20, 0.9)',
+      border: 'rgba(236, 231, 216, 0.08)',
       text: '#ECE7D8',
       textMuted: '#A8A395',
-      inputBg: 'rgba(10, 16, 30, 0.8)',
-      inputBorder: 'rgba(255, 255, 255, 0.08)',
-      tabBg: 'rgba(10, 16, 30, 0.8)',
+      inputBg: 'rgba(23, 26, 20, 0.7)',
+      inputBorder: 'rgba(236, 231, 216, 0.08)',
+      tabBg: 'rgba(23, 26, 20, 0.7)',
       accent: '#C79A3E',
       orange: '#A23E32',
     };

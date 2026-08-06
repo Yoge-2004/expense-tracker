@@ -43,11 +43,11 @@ export default function RegisterScreen() {
 
   const c = {
     bg: isLight ? '#EDEAE0' : '#10120E',
-    card: isLight ? '#FFFFFF' : 'rgba(13,18,30,0.9)',
-    border: isLight ? '#DAD4C1' : 'rgba(255,255,255,0.08)',
-    text: isLight ? '#171A14' : '#ECE7D8',
-    textMuted: isLight ? '#A8A395' : '#A8A395',
-    inputBg: isLight ? '#FCFBF6' : 'rgba(10,16,30,0.8)',
+    card: isLight ? '#FCFBF6' : 'rgba(23,26,20,0.9)',
+    border: isLight ? '#DAD4C1' : 'rgba(236,231,216,0.08)',
+    text: isLight ? '#1E1B15' : '#ECE7D8',
+    textMuted: isLight ? '#6B6558' : '#A8A395',
+    inputBg: isLight ? '#F5F2E9' : 'rgba(23,26,20,0.7)',
     accent: '#C79A3E',
     orange: '#A23E32',
   };
@@ -143,7 +143,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="John Doe"
-                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
+                placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
                 autoCapitalize="words"
                 value={name}
                 onChangeText={setName}
@@ -172,7 +172,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="name@example.com"
-                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
+                placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -202,7 +202,7 @@ export default function RegisterScreen() {
               <TextInput
                 style={[styles.input, { color: c.text }]}
                 placeholder="••••••••"
-                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
+                placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 value={password}

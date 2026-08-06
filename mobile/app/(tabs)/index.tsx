@@ -16,6 +16,7 @@ interface Expense {
   description: string;
   amount: number;
   expenseDate: string;
+  categoryId: number;
   categoryName: string;
 }
 
@@ -36,6 +37,49 @@ export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme } = useAuth();
   const router = useRouter();
 
+  const handleDeleteExpense = async (expenseId: number) => {
+    try {
+      await apiRequest(`/expenses/${expenseId}/user/${userId}`, { method: 'DELETE' });
+      setExpenses(prev => prev.filter(e => e.id !== expenseId));
+      fetchData();
+    } catch (e: any) {
+      Alert.alert('Delete Failed', e.message || 'Could not delete this expense.');
+    }
+  };
+
+  const handleExpenseLongPress = (item: Expense) => {
+    Alert.alert(
+      item.description,
+      `₹${Number(item.amount).toFixed(2)} · ${item.categoryName}`,
+      [
+        {
+          text: 'Edit',
+          onPress: () => router.push({
+            pathname: '/(tabs)/add-expense',
+            params: {
+              editId: String(item.id),
+              editDescription: item.description,
+              editAmount: String(item.amount),
+              editCategoryId: String(item.categoryId),
+              editDate: item.expenseDate,
+            },
+          }),
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Delete Expense?', 'This cannot be undone.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => handleDeleteExpense(item.id) },
+            ]);
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
   const isLight = theme === 'light';
 
   // Dynamic Theme Colors configuration
@@ -43,30 +87,30 @@ export default function DashboardScreen() {
     if (theme === 'light') {
       return {
         bg: '#EDEAE0',
-        card: '#FFFFFF',
+        card: '#FCFBF6',
         border: '#DAD4C1',
-        text: '#171A14',
-        textMuted: '#A8A395',
-        inputBg: '#FCFBF6',
+        text: '#1E1B15',
+        textMuted: '#6B6558',
+        inputBg: '#F5F2E9',
         inputBorder: '#DAD4C1',
         trackBg: '#DAD4C1',
-        accent: '#C79A3E',
-        accentDark: '#A97F2E',
-        accentOrange: '#A23E32',
-        cardTotalBg: 'rgba(199, 154, 62, 0.08)',
-        cardTotalBorder: 'rgba(199, 154, 62, 0.25)',
-        cardCountBg: 'rgba(162, 62, 50, 0.08)',
-        cardCountBorder: 'rgba(162, 62, 50, 0.25)',
+        accent: '#9C7623',
+        accentDark: '#7C5E1B',
+        accentOrange: '#8F3327',
+        cardTotalBg: 'rgba(156, 118, 35, 0.08)',
+        cardTotalBorder: 'rgba(156, 118, 35, 0.25)',
+        cardCountBg: 'rgba(143, 51, 39, 0.08)',
+        cardCountBorder: 'rgba(143, 51, 39, 0.25)',
       };
     }
     return {
       bg: '#10120E',
-      card: 'rgba(13, 18, 30, 0.85)',
-      border: 'rgba(255, 255, 255, 0.07)',
+      card: 'rgba(23, 26, 20, 0.85)',
+      border: 'rgba(236, 231, 216, 0.07)',
       text: '#ECE7D8',
       textMuted: '#A8A395',
-      inputBg: 'rgba(10, 16, 30, 0.7)',
-      inputBorder: 'rgba(255, 255, 255, 0.08)',
+      inputBg: 'rgba(23, 26, 20, 0.7)',
+      inputBorder: 'rgba(236, 231, 216, 0.08)',
       trackBg: '#171A14',
       accent: '#C79A3E',
       accentDark: '#A97F2E',
@@ -573,7 +617,10 @@ export default function DashboardScreen() {
         {/* Recent Expense Entries */}
         <StaggeredView delay={700} direction="up" style={{ marginBottom: 40 }}>
           <View style={styles.listHeader}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Expenses</Text>
+            <View>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Expenses</Text>
+              <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 2 }}>Hold an entry to edit or delete</Text>
+            </View>
             <View style={styles.listActions}>
               <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={[styles.iconAction, { backgroundColor: c.inputBg, borderColor: c.border }]}>
                 <Ionicons name="filter" size={18} color={c.accent} />
@@ -670,8 +717,13 @@ export default function DashboardScreen() {
             filteredExpenses.map((item, index) => {
               const col = getCategoryColor(item.categoryName);
               return (
-              <Animated.View
+              <TouchableOpacity
                 key={item.id}
+                activeOpacity={0.7}
+                onLongPress={() => handleExpenseLongPress(item)}
+                delayLongPress={350}
+              >
+              <Animated.View
                 style={[
                   styles.transactionCard,
                   {
@@ -701,6 +753,7 @@ export default function DashboardScreen() {
                 </View>
                 <Text style={[styles.txAmount, { color: col, fontWeight: '800' }]}>-₹{Number(item.amount).toFixed(2)}</Text>
               </Animated.View>
+              </TouchableOpacity>
               );
             })
           )}
