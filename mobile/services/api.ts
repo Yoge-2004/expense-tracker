@@ -2,30 +2,44 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
 // ─── API Base URL ──────────────────────────────────────────────────────────────
-// In __DEV__ mode, Expo already knows your machine's LAN IP — it's embedded in
-// Constants.manifest2.debuggerHost (format: "192.168.x.x:19000").
-// We extract just the host part and point it at port 8080 (Spring Boot).
-// This means you NEVER have to manually update the IP when you switch networks.
+// In __DEV__ mode, automatically detect your machine's LAN IP from Expo Constants
+// or use EXPO_PUBLIC_API_URL / local machine IP.
 const REMOTE_API_URL = 'https://yoge-2004-expense-tracker-backend.hf.space/api';
 
 function getLocalApiUrl(): string {
   try {
-    // Expo SDK 46+ uses manifest2; older SDKs use manifest
-    const debuggerHost =
+    // 1. Explicit env var override (e.g. EXPO_PUBLIC_API_URL in .env)
+    if (process.env.EXPO_PUBLIC_API_URL) {
+      return process.env.EXPO_PUBLIC_API_URL;
+    }
+
+    // 2. Expo hostUri (Expo SDK 49+ / SDK 54)
+    const hostUri =
+      Constants.expoConfig?.hostUri ??
       Constants.manifest2?.extra?.expoClient?.hostUri ??
       (Constants as any).manifest2?.debuggerHost ??
       (Constants as any).manifest?.debuggerHost;
 
-    if (debuggerHost) {
-      // debuggerHost is "192.168.x.x:19000" — grab just the IP
-      const host = debuggerHost.split(':')[0];
-      return `http://${host}:8080/api`;
+    if (hostUri) {
+      const host = hostUri.split(':')[0];
+      if (host && host !== 'localhost' && host !== '127.0.0.1') {
+        return `http://${host}:8080/api`;
+      }
+    }
+
+    // 3. Fallback to linkingUri
+    const linkingUri = Constants.linkingUri || (Constants as any).experienceUrl;
+    if (linkingUri && typeof linkingUri === 'string' && linkingUri.includes('://')) {
+      const match = linkingUri.match(/\/\/(.*?):/);
+      if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+        return `http://${match[1]}:8080/api`;
+      }
     }
   } catch (e) {
-    // ignore — fall through to remote
+    // ignore — fall through
   }
-  // Fallback: remote production server
-  return REMOTE_API_URL;
+  // Default to machine local LAN IP for local dev if auto-detection is unavailable
+  return 'http://192.168.29.88:8080/api';
 }
 
 const API_BASE_URL = __DEV__ ? getLocalApiUrl() : REMOTE_API_URL;

@@ -10,7 +10,8 @@
       "bundleIdentifier": "com.yoge.expensetracker"
     },
     "android": {
-      "package": "com.yoge.expensetracker"
+      "package": "com.yoge.expensetracker",
+      "usesCleartextTraffic": true
     },
     "plugins": [
       "expo-router"

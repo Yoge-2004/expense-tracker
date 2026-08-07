@@ -1,3 +1,13 @@
+---
+title: Expense Tracker Backend
+emoji: 💰
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 💰 Expense Tracker System
 
 A RESTful personal finance management API built with **Spring Boot 4**, **Spring Security (JWT)**, and **H2/JPA**. Track daily expenses, manage category budgets, and configure recurring monthly subscriptions — with a clean dark-themed frontend and Expo React Native mobile app.
