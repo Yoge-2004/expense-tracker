@@ -1,12 +1,14 @@
-# Multi-stage Dockerfile for Hugging Face Spaces
-FROM maven:3.9-eclipse-temurin-21 AS build
+# Multi-stage Dockerfile for Hugging Face Spaces (Java 26)
+FROM eclipse-temurin:26-jdk AS build
 WORKDIR /app
 
 COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN ./mvnw clean package -DskipTests
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:26-jre
 WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
