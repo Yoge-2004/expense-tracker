@@ -1054,7 +1054,12 @@ importFileInput?.addEventListener("change", async (e) => {
         }
 
         const data = await res.json();
-        showToast(data.message || "Expenses imported successfully!", "success");
+        if (data.failedRows > 0) {
+            showToast(`${data.imported} imported, ${data.failedRows} row(s) skipped — see console for details.`, data.imported > 0 ? "info" : "error");
+            console.warn("Import row errors:", data.errors);
+        } else {
+            showToast(data.message || "Expenses imported successfully!", "success");
+        }
         loadDashboard();
     } catch (err) {
         showToast(err.message, "error");

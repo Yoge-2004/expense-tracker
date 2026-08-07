@@ -884,46 +884,112 @@ public class ExpenseController {
         }
     }
 
-    @Operation(summary = "Import expenses from CSV file")
+    @Operation(
+        summary = "Import expenses from CSV file",
+        description = """
+            Columns are matched by header name, not fixed position — so this accepts any
+            reasonable column order/subset, not just this app's own export format. Required
+            headers (case-insensitive): Date, Category, Amount. Description is optional.
+
+            Each row is parsed independently: a problem in one row (bad date, non-numeric
+            amount, etc.) is recorded and skipped rather than aborting the entire import.
+            The response reports how many rows imported successfully and lists any that
+            didn't, with a reason, so a partially-malformed file still gets you most of the
+            way there instead of an all-or-nothing failure.
+            """
+    )
     @PostMapping(value = "/user/{userId}/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importCsv(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         int count = 0;
+        List<String> rowErrors = new ArrayList<>();
+
         try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(file.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+            String headerLine = reader.readLine();
+            if (headerLine == null || headerLine.isBlank()) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "CSV file is empty."));
+            }
+
+            String[] headerParts = headerLine.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+            Map<String, Integer> col = new HashMap<>();
+            for (int i = 0; i < headerParts.length; i++) {
+                col.put(headerParts[i].replace("\"", "").trim().toLowerCase(), i);
+            }
+
+            List<String> missing = new ArrayList<>();
+            for (String required : List.of("date", "category", "amount")) {
+                if (!col.containsKey(required)) missing.add(required);
+            }
+            if (!missing.isEmpty()) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error",
+                        "CSV is missing required column(s): " + String.join(", ", missing) +
+                        ". Columns found: " + String.join(", ", headerParts)));
+            }
+
+            int dateIdx = col.get("date");
+            int catIdx = col.get("category");
+            int amtIdx = col.get("amount");
+            Integer descIdx = col.get("description"); // optional — null if absent
+
             String line;
-            boolean header = true;
+            int rowNum = 1; // header is row 1
             while ((line = reader.readLine()) != null) {
-                if (header) { header = false; continue; }
+                rowNum++;
                 if (line.trim().isEmpty()) continue;
-                String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                if (parts.length < 4) continue;
 
-                String dateStr = parts[1].replace("\"", "").trim();
-                String catName = parts[2].replace("\"", "").trim();
-                String amtStr = parts[3].replace("\"", "").trim();
-                String desc = parts.length > 4 ? parts[4].replace("\"", "").trim() : "";
+                try {
+                    String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                    int maxNeeded = Math.max(dateIdx, Math.max(catIdx, amtIdx));
+                    if (parts.length <= maxNeeded) {
+                        rowErrors.add("Row " + rowNum + ": expected at least " + (maxNeeded + 1) + " columns, found " + parts.length + ".");
+                        continue;
+                    }
 
-                Expense expense = new Expense();
-                expense.setExpenseDate(LocalDate.parse(dateStr));
-                expense.setAmount(new BigDecimal(amtStr));
-                expense.setDescription(desc);
+                    String dateStr = parts[dateIdx].replace("\"", "").trim();
+                    String catName = parts[catIdx].replace("\"", "").trim();
+                    String amtStr = parts[amtIdx].replace("\"", "").trim().replaceAll("[^0-9.\\-]", "");
+                    String desc = (descIdx != null && descIdx < parts.length) ? parts[descIdx].replace("\"", "").trim() : "";
 
-                Category category = categoryRepository.findByNameIgnoreCase(catName).orElseGet(() -> {
-                    Category newCat = new Category();
-                    newCat.setName(catName);
-                    newCat.setUser(user);
-                    return categoryRepository.save(newCat);
-                });
-                expense.setCategory(category);
-                expenseService.createExpense(expense, user);
-                count++;
+                    if (dateStr.isEmpty() || catName.isEmpty() || amtStr.isEmpty()) {
+                        rowErrors.add("Row " + rowNum + ": date, category, or amount is empty.");
+                        continue;
+                    }
+
+                    Expense expense = new Expense();
+                    expense.setExpenseDate(LocalDate.parse(dateStr));
+                    expense.setAmount(new BigDecimal(amtStr));
+                    expense.setDescription(desc.isEmpty() ? catName : desc);
+
+                    Category category = categoryRepository.findByNameIgnoreCase(catName).orElseGet(() -> {
+                        Category newCat = new Category();
+                        newCat.setName(catName);
+                        newCat.setUser(user);
+                        return categoryRepository.save(newCat);
+                    });
+                    expense.setCategory(category);
+                    expenseService.createExpense(expense, user);
+                    count++;
+
+                } catch (Exception rowEx) {
+                    rowErrors.add("Row " + rowNum + ": " + rowEx.getMessage());
+                }
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Failed to parse CSV file: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Failed to read CSV file: " + e.getMessage()));
         }
-        return ResponseEntity.ok(Collections.singletonMap("message", "Imported " + count + " expenses successfully"));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("imported", count);
+        result.put("failedRows", rowErrors.size());
+        if (!rowErrors.isEmpty()) {
+            result.put("errors", rowErrors);
+        }
+        result.put("message", count > 0
+                ? "Imported " + count + " expense" + (count == 1 ? "" : "s") + " successfully" + (rowErrors.isEmpty() ? "." : ", " + rowErrors.size() + " row(s) skipped.")
+                : "No rows could be imported.");
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Import expenses from JSON file")
