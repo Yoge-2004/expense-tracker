@@ -15,6 +15,14 @@ interface Category {
 export default function AddExpenseScreen() {
   const { userId, theme } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    editId?: string;
+    editDescription?: string;
+    editAmount?: string;
+    editCategoryId?: string;
+    editDate?: string;
+  }>();
+  const isEditMode = !!params.editId;
   const [activeTab, setActiveTab] = useState<'expense' | 'budget'>('expense');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,6 +125,19 @@ export default function AddExpenseScreen() {
     loadCategories();
   }, [userId]);
 
+  // Pre-fill the form when opened in edit mode — runs after categories load
+  // so it overrides the default "select first category" behavior above.
+  useEffect(() => {
+    if (isEditMode && !isLoading) {
+      if (params.editDescription) setDescription(params.editDescription);
+      if (params.editAmount) setAmount(params.editAmount);
+      if (params.editCategoryId) setCategoryId(Number(params.editCategoryId));
+      // Recurring options don't apply when editing an existing expense —
+      // PUT /expenses/{id} only ever updates the expense itself.
+      setIsRecurring(false);
+    }
+  }, [isEditMode, isLoading]);
+
   // Animate sub-form display on recurring toggle
   useEffect(() => {
     Animated.timing(subFormAnim, {
@@ -188,7 +209,24 @@ export default function AddExpenseScreen() {
     setIsSubmitting(true);
     try {
       const todayString = new Date().toISOString().split('T')[0];
-      
+
+      if (isEditMode) {
+        // Update an existing expense — preserve its original date rather
+        // than silently bumping it to today just because it was edited.
+        await apiRequest(`/expenses/${params.editId}/user/${userId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            amount: parseFloat(amount),
+            description: description.trim(),
+            expenseDate: params.editDate || todayString,
+            categoryId: categoryId,
+          }),
+        });
+        Alert.alert('Success', 'Expense updated successfully!');
+        router.push('/(tabs)');
+        return;
+      }
+
       if (isRecurring) {
         // Create a subscription
         const bodyData: any = {
@@ -279,11 +317,14 @@ export default function AddExpenseScreen() {
 
         {/* ── PAGE HEADER ── */}
         <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, { color: c.text }]}>Add Record</Text>
-          <Text style={[styles.pageSub, { color: c.textMuted }]}>Log an expense or set a budget</Text>
+          <Text style={[styles.pageTitle, { color: c.text }]}>{isEditMode ? 'Edit Expense' : 'Add Record'}</Text>
+          <Text style={[styles.pageSub, { color: c.textMuted }]}>
+            {isEditMode ? 'Update the details below' : 'Log an expense or set a budget'}
+          </Text>
         </View>
 
-        {/* ── TAB SWITCHER ── */}
+        {/* ── TAB SWITCHER (hidden while editing — editing is expense-only) ── */}
+        {!isEditMode && (
         <View style={[styles.tabContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'expense' && [styles.activeTabExpense]]}
@@ -300,6 +341,7 @@ export default function AddExpenseScreen() {
             <Text style={[styles.tabButtonText, { color: activeTab === 'budget' ? '#10120E' : c.textMuted }]}>Budget</Text>
           </TouchableOpacity>
         </View>
+        )}
 
         {activeTab === 'expense' ? (
           /* EXPENSE FORM */
@@ -379,7 +421,8 @@ export default function AddExpenseScreen() {
               </View>
             </View>
 
-            {/* Recurring Toggle */}
+            {/* Recurring Toggle (hidden while editing an existing expense) */}
+            {!isEditMode && (
             <View style={[styles.recurringRow, { backgroundColor: isRecurring ? c.accent + '12' : c.card, borderColor: isRecurring ? c.accent + '50' : c.border }]}>
               <View style={[styles.recurringIcon, { backgroundColor: c.accent + '18' }]}>
                 <Ionicons name="repeat" size={18} color={c.accent} />
@@ -396,6 +439,7 @@ export default function AddExpenseScreen() {
                 ios_backgroundColor={isLight ? '#DAD4C1' : '#1D2117'}
               />
             </View>
+            )}
 
             {/* Frequency selector (if recurring) */}
             {isRecurring && (
@@ -453,9 +497,9 @@ export default function AddExpenseScreen() {
                 <ActivityIndicator color="#10120E" size="small" />
               ) : (
                 <View style={styles.submitBtnInner}>
-                  <Ionicons name={isRecurring ? 'repeat' : 'add-circle'} size={20} color="#10120E" />
+                  <Ionicons name={isEditMode ? 'checkmark-circle' : isRecurring ? 'repeat' : 'add-circle'} size={20} color="#10120E" />
                   <Text style={styles.submitBtnText}>
-                    {isRecurring ? 'Save Subscription' : 'Record Expense'}
+                    {isEditMode ? 'Update Expense' : isRecurring ? 'Save Subscription' : 'Record Expense'}
                   </Text>
                 </View>
               )}

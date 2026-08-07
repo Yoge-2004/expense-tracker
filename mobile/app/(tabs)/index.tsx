@@ -21,10 +21,12 @@ interface Expense {
 }
 
 interface BudgetStatus {
+  budgetId: number;
+  categoryId: number;
   categoryName: string;
-  limitAmount: number;
-  spentAmount: number;
-  percentageUsed: number;
+  limit: number;
+  spent: number;
+  percentage: number;
   status: string;
 }
 
@@ -505,7 +507,12 @@ export default function DashboardScreen() {
         {/* ── MONTHLY BUDGETS ── */}
         <StaggeredView delay={400} direction="up">
           <View style={styles.listHeader}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Monthly Budgets</Text>
+            <View>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Monthly Budgets</Text>
+              {budgets.length > 0 && (
+                <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 2 }}>Hold a budget to delete it</Text>
+              )}
+            </View>
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/add-expense')}
               style={[styles.addBudgetBtn, { backgroundColor: c.accentOrange + '18', borderColor: c.accentOrange + '40' }]}
@@ -527,11 +534,41 @@ export default function DashboardScreen() {
               </View>
             ) : (
               budgets.map((item, index) => {
-                const isOver = item.spentAmount > item.limitAmount;
-                const pct = Math.min(item.percentageUsed, 100);
+                const isOver = item.spent > item.limit;
+                const pct = Math.min(item.percentage, 100);
                 const barColor = isOver ? '#A23E32' : pct > 80 ? '#C9932E' : '#5B8C5A';
                 return (
-                  <View key={index} style={[styles.budgetRow, index < budgets.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + '60' }]}>
+                  <TouchableOpacity
+                    key={index}
+                    activeOpacity={0.7}
+                    delayLongPress={350}
+                    onLongPress={() => {
+                      Alert.alert(
+                        `Delete "${item.categoryName}" budget?`,
+                        'This removes the limit — it does not delete any expenses already recorded against it.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Delete',
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                const endpoint = item.budgetId
+                                  ? `/expenses/budget/${item.budgetId}`
+                                  : `/expenses/budget/user/${userId}/category/${item.categoryId}`;
+                                await apiRequest(endpoint, { method: 'DELETE' });
+                                setBudgets(prev => prev.filter((_, i) => i !== index));
+                                fetchData();
+                              } catch (e: any) {
+                                Alert.alert('Delete Failed', e.message || 'Could not delete this budget.');
+                              }
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                  >
+                  <View style={[styles.budgetRow, index < budgets.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + '60' }]}>
                     <View style={styles.categoryHeader}>
                       <View style={styles.categoryNameCol}>
                         <View style={[styles.catIconBox, { backgroundColor: barColor + '20' }]}>
@@ -540,7 +577,7 @@ export default function DashboardScreen() {
                         <Text style={[styles.categoryName, { color: c.text }]}>{item.categoryName}</Text>
                       </View>
                       <View style={styles.categoryRightCol}>
-                        <Text style={[styles.categoryAmount, { color: c.text }]}>₹{item.spentAmount.toFixed(0)}</Text>
+                        <Text style={[styles.categoryAmount, { color: c.text }]}>₹{item.spent.toFixed(0)}</Text>
                         <Text style={[styles.categoryPct, { color: barColor }]}>{pct.toFixed(0)}%</Text>
                       </View>
                     </View>
@@ -561,8 +598,9 @@ export default function DashboardScreen() {
                         }
                       ]} />
                     </View>
-                    <Text style={[styles.budgetSubline, { color: c.textMuted }]}>₹{item.spentAmount.toFixed(0)} of ₹{item.limitAmount.toFixed(0)} limit</Text>
+                    <Text style={[styles.budgetSubline, { color: c.textMuted }]}>₹{item.spent.toFixed(0)} of ₹{item.limit.toFixed(0)} limit</Text>
                   </View>
+                  </TouchableOpacity>
                 );
               })
             )}
