@@ -210,6 +210,11 @@ function toggleGlobalTheme() {
     document.body.setAttribute("data-theme", nextTheme);
     localStorage.setItem("theme", nextTheme);
     updateAllThemeIcons(nextTheme);
+    // Let anything that needs to re-render with the new theme's colors
+    // (e.g. canvas-drawn charts, which don't pick up CSS variables on
+    // their own) react AFTER the theme has actually been applied, rather
+    // than racing a click listener attached directly to the toggle button.
+    document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: nextTheme } }));
 }
 
 // Global Multi-Currency System (50 World Currencies)

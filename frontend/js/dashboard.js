@@ -894,11 +894,13 @@ const savedTheme = localStorage.getItem("theme") || "dark";
 document.body.setAttribute("data-theme", savedTheme);
 if (typeof updateAllThemeIcons === "function") updateAllThemeIcons(savedTheme);
 
-if (elements.themeToggle) {
-    elements.themeToggle.addEventListener("click", () => {
-        if (typeof applyFilters === "function") applyFilters();
-    });
-}
+// Charts are canvas-drawn and don't pick up CSS variable changes on their
+// own — re-render them once the theme has actually changed, not on the
+// raw click (which could fire before the theme-toggle listener in api.js
+// depending on event order, leaving charts one click behind).
+document.addEventListener("themechange", () => {
+    if (typeof applyFilters === "function") applyFilters();
+});
 
 // Profile, Dynamic 50-Currency Custom Select & Export
 const dashCurrWrapper = document.getElementById("dashCurrencyWrapper");
