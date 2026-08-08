@@ -414,6 +414,9 @@ budgetPeriod?.addEventListener("change", () => {
 
 setBudgetForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const submitBtn = setBudgetForm.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return; // a submission is already in flight
+
     const catId = parseInt(budgetCategorySelect.value);
     const limit = parseFloat(document.getElementById("budgetLimitAmount").value);
     const period = budgetPeriod.value;
@@ -422,6 +425,7 @@ setBudgetForm?.addEventListener("submit", async (e) => {
 
     if (isNaN(limit) || limit <= 0) return showToast("Limit amount must be greater than 0", "error");
 
+    submitBtn.disabled = true;
     try {
         await apiRequest(`/expenses/budget/user/${userId}`, {
             method: "POST",
@@ -436,7 +440,11 @@ setBudgetForm?.addEventListener("submit", async (e) => {
         showToast("Budget limit saved.", "success");
         setBudgetModal.classList.remove("active");
         loadBudgets();
-    } catch (err) { showToast(err.message, "error"); }
+    } catch (err) {
+        showToast(err.message, "error");
+    } finally {
+        submitBtn.disabled = false;
+    }
 });
 
 
@@ -738,6 +746,9 @@ function populateFilterDropdowns(categories, expenses) {
 // Handle Add/Edit Form Submit
 elements.addForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const submitBtn = elements.addForm.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return; // a submission is already in flight
+
     const id = document.getElementById("expenseId").value;
     const isRecurring = elements.isRecurring.checked;
 
@@ -764,6 +775,7 @@ elements.addForm.addEventListener("submit", async (e) => {
         }
     }
 
+    submitBtn.disabled = true;
     try {
         if (id) {
             await apiRequest(`/expenses/${id}/user/${userId}`, { method: "PUT", body: JSON.stringify(expenseData) });
@@ -779,7 +791,11 @@ elements.addForm.addEventListener("submit", async (e) => {
         elements.modal.classList.remove("active");
         elements.addForm.reset();
         loadDashboard();
-    } catch (err) { showToast(err.message, "error"); }
+    } catch (err) {
+        showToast(err.message, "error");
+    } finally {
+        submitBtn.disabled = false;
+    }
 });
 
 window.editExpense = (id) => {
@@ -1164,6 +1180,9 @@ document.getElementById("closeEditSubModalBtn")?.addEventListener("click", () =>
 
 editSubForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const submitBtn = editSubForm.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return; // a submission is already in flight
+
     const id = document.getElementById("editSubId").value;
     const desc = document.getElementById("editSubDesc").value;
     const amount = parseFloat(document.getElementById("editSubAmount").value);
@@ -1179,6 +1198,7 @@ editSubForm?.addEventListener("submit", async (e) => {
     const body = { description: desc, amount, nextDueDate, frequency };
     if (frequency === "CUSTOM") body.intervalDays = intervalDaysRaw;
 
+    submitBtn.disabled = true;
     try {
         await apiRequest(`/expenses/recurring/${id}`, {
             method: "PUT",
@@ -1189,6 +1209,8 @@ editSubForm?.addEventListener("submit", async (e) => {
         loadSubscriptions();
     } catch (e) {
         showToast(e.message, "error");
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 

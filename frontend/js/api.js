@@ -144,7 +144,6 @@ async function apiRequest(endpoint, options = {}) {
             const err = JSON.parse(text);
             if (err.message) msg = err.message;
         } catch (e) {}
-        showToast(msg, "error");
         throw new Error(msg);
     }
 
@@ -304,8 +303,6 @@ initGlobalTheme();
 // Attach listeners on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
     initGlobalTheme();
-    checkHealth();
-    setInterval(checkHealth, 30000);
 
     document.addEventListener("click", (e) => {
         const toggleBtn = e.target.closest(".theme-toggle-btn, #themeToggle");

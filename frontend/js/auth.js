@@ -1,9 +1,12 @@
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn?.disabled) return; // a submission is already in flight
 
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
+    if (submitBtn) submitBtn.disabled = true;
     try {
         const response = await apiRequest("/auth/login", {
             method: "POST",
@@ -19,9 +22,11 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
         localStorage.setItem("userName", response.name || "User");
         showToast("Signed in successfully!", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
+        // Intentionally leave the button disabled here — we're navigating away.
 
     } catch (error) {
         showToast(error.message, "error");
+        if (submitBtn) submitBtn.disabled = false;
     }
 });
 

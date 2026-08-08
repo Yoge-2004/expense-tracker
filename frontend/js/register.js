@@ -1,5 +1,7 @@
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn?.disabled) return; // a submission is already in flight
 
     const name = document.getElementById("reg-name").value.trim();
     const username = document.getElementById("reg-username")?.value.trim() || "";
@@ -32,6 +34,7 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
 
     const currency = document.getElementById("reg-currency")?.value || "USD";
 
+    if (submitBtn) submitBtn.disabled = true;
     try {
         await apiRequest("/auth/register", {
             method: "POST",
@@ -43,9 +46,11 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
         setTimeout(() => {
             window.location.href = "index.html";
         }, 800);
+        // Intentionally leave the button disabled here — we're navigating away.
 
     } catch (error) {
         showToast(error.message, "error");
+        if (submitBtn) submitBtn.disabled = false;
         if (error.message.toLowerCase().includes("email") || error.message.toLowerCase().includes("user") || error.message.toLowerCase().includes("taken") || error.message.toLowerCase().includes("exist")) {
             if (typeof generateUsernameSuggestions === "function") {
                 generateUsernameSuggestions();
