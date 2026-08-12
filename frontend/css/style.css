@@ -412,28 +412,7 @@ button[type="submit"]:active {
     width: 36px;
     height: 36px;
     background: rgba(var(--accent-rgb), 0.1) !important;
-    border: 1px solid rgba(var(--accent-rgb), 0.2) !important;
-    border-radius: 8px;
-    color: var(--danger) !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    padding: 0;
-}
-
-.btn-delete:hover {
-    background: var(--danger) !important;
-    color: white !important;
-    transform: scale(1.05);
-}
-
-.btn-edit {
-    width: 36px;
-    height: 36px;
-    background: rgba(180, 80, 65, 0.1) !important;
-    border: 1px solid rgba(180, 80, 65, 0.2) !important;
+    border: 1px solid rgba(var(--accent-rgb), 0.3) !important;
     border-radius: 8px;
     color: var(--accent) !important;
     display: flex;
@@ -444,9 +423,30 @@ button[type="submit"]:active {
     padding: 0;
 }
 
-.btn-edit:hover {
+.btn-delete:hover {
     background: var(--accent) !important;
-    color: #000 !important;
+    color: var(--on-primary) !important;
+    transform: scale(1.05);
+}
+
+.btn-edit {
+    width: 36px;
+    height: 36px;
+    background: rgba(var(--primary-rgb), 0.1) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.3) !important;
+    border-radius: 8px;
+    color: var(--primary) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.btn-edit:hover {
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
     transform: scale(1.05);
 }
 
@@ -644,9 +644,22 @@ button[type="submit"]:active {
 
 /* Dashboard visual hierarchy */
 .dashboard-container { max-width: 1280px; padding: 40px 28px 56px; gap: 24px; }
+
+/* Large monitors / 4K — the container was hard-capped at 1280px regardless
+   of viewport, leaving huge unused margins on wide screens. Scale up in
+   tiers rather than stretching to the full physical width, which would
+   make text lines uncomfortably long to read. */
+@media (min-width: 1920px) {
+    .dashboard-container { max-width: 1600px; }
+}
+@media (min-width: 2560px) {
+    .dashboard-container { max-width: 1900px; }
+    .grid-4-metrics { gap: 28px; }
+    .grid-analytics { gap: 28px; }
+}
 .top-bar { padding: 4px 0 12px; }
 .dashboard-heading h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -1px; }
-.dashboard-heading p { margin-top: 5px; }
+.dashboard-heading p { margin-top: 10px; }
 .top-bar-actions { display: flex; gap: 12px; align-items: center; }
 .grid-stats { grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); gap: 20px; }
 .summary-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -1270,7 +1283,8 @@ button[type="submit"]:active {
     transition-duration: 0.08s !important;
 }
 
-/* --- Edit / Delete buttons --- */
+/* --- Edit / Delete buttons: hover-lift + active-press motion
+   (base colors are set where these classes are first defined, above) --- */
 .btn-edit,
 .btn-delete {
     transition: background 0.2s var(--ease), color 0.2s var(--ease),
@@ -1412,7 +1426,7 @@ button[type="submit"]:active {
 .filter-toolbar.active {
     opacity: 1;
     pointer-events: all;
-    max-height: 300px;
+    max-height: 700px;
 }
 
 /* --- Budget items entrance --- */
@@ -1669,7 +1683,7 @@ button[type="submit"]:active {
 .brand-badge {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 16px;
 }
 
 .brand-title {
@@ -3263,19 +3277,6 @@ button[type="submit"]:active {
     display: inline-block;
     flex-shrink: 0;
 }
-.live-pulse::before {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    background: var(--success);
-    opacity: 0.3;
-    animation: livePing 1.8s ease-in-out infinite;
-}
-@keyframes livePing {
-    0%, 100% { transform: scale(1); opacity: 0.3; }
-    50% { transform: scale(1.8); opacity: 0; }
-}
 
 /* ── Category pills improved ── */
 .pill-chip {
@@ -3578,12 +3579,14 @@ button[type="submit"]:active {
     background: var(--card-bg);
     border: 1px solid var(--border);
     padding: 16px;
-    animation: filterSlide 0.25s var(--ease) both;
     overflow: hidden;
+}
+.filter-toolbar.active {
+    animation: filterSlide 0.25s var(--ease) both;
 }
 @keyframes filterSlide {
     from { opacity: 0; transform: translateY(-8px); max-height: 0; }
-    to   { opacity: 1; transform: translateY(0); max-height: 200px; }
+    to   { opacity: 1; transform: translateY(0); max-height: 700px; }
 }
 
 /* ── Analytics card gradient headers ── */

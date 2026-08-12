@@ -141,8 +141,8 @@ function renderDashboardData(expenses, categories) {
     updateProMetrics(expenses);
 }
 
-async function loadDashboard() {
-    const cached = loadExpenseCache();
+async function loadDashboard(skipCache = false) {
+    const cached = skipCache ? null : loadExpenseCache();
     const renderedFromCache = !!cached;
 
     if (cached) {
@@ -790,7 +790,7 @@ elements.addForm.addEventListener("submit", async (e) => {
 
         elements.modal.classList.remove("active");
         elements.addForm.reset();
-        loadDashboard();
+        loadDashboard(true);
     } catch (err) {
         showToast(err.message, "error");
     } finally {
@@ -820,7 +820,7 @@ window.deleteExpense = async (id, event) => {
     try {
         await apiRequest(`/expenses/${id}/user/${userId}`, { method: 'DELETE' });
         showToast("Expense deleted.", "success");
-        loadDashboard();
+        loadDashboard(true);
     } catch (err) {
         showToast(err.message, "error");
         const btn = event?.target?.closest(".btn-delete");
@@ -1078,7 +1078,7 @@ importFileInput?.addEventListener("change", async (e) => {
         } else {
             showToast(data.message || "Expenses imported successfully!", "success");
         }
-        loadDashboard();
+        loadDashboard(true);
     } catch (err) {
         showToast(err.message, "error");
     } finally {
