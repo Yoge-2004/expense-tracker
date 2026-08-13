@@ -2857,6 +2857,7 @@ button[type="submit"]:active {
 
     .hero-float-cards {
         display: flex !important;
+        flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 10px !important;
         justify-content: center !important;
