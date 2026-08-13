@@ -37,6 +37,7 @@ class UserControllerTest {
     @Autowired MockMvc mockMvc;
 
     @MockitoBean UserService userService;
+    @MockitoBean com.example.expensetracker.service.MonthlyReportService monthlyReportService;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
     @MockitoBean JwtAuthenticationFilter jwtAuthenticationFilter;
