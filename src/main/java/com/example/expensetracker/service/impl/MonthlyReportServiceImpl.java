@@ -5,9 +5,11 @@ import com.example.expensetracker.dto.MonthlyReportDto;
 import com.example.expensetracker.mapper.ExpenseMapper;
 import com.example.expensetracker.model.Budget;
 import com.example.expensetracker.model.Expense;
+import com.example.expensetracker.model.MonthlyReportLog;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.BudgetRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
+import com.example.expensetracker.repository.MonthlyReportLogRepository;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.MonthlyReportService;
 import jakarta.mail.internet.MimeMessage;
@@ -15,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,11 +26,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.format.TextStyle;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     private final UserRepository userRepository;
     private final ExpenseRepository expenseRepository;
     private final BudgetRepository budgetRepository;
+    private final MonthlyReportLogRepository reportLogRepository;
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
 
     @Value("${spring.mail.host:}")
@@ -46,10 +50,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     public MonthlyReportServiceImpl(UserRepository userRepository,
                                     ExpenseRepository expenseRepository,
                                     BudgetRepository budgetRepository,
+                                    MonthlyReportLogRepository reportLogRepository,
                                     ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.userRepository = userRepository;
         this.expenseRepository = expenseRepository;
         this.budgetRepository = budgetRepository;
+        this.reportLogRepository = reportLogRepository;
         this.mailSenderProvider = mailSenderProvider;
     }
 
@@ -132,22 +138,32 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public void sendMonthlyReportEmail(Long userId, int year, int month) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        // Database Check: Prevent Duplicate Report Emails
+        boolean alreadySent = reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(user, year, month);
+        if (alreadySent) {
+            log.info("Monthly report for {} ({}/{}) was already sent. Skipping duplicate dispatch.",
+                    user.getEmail(), month, year);
+            return;
+        }
 
         MonthlyReportDto report = generateMonthlyReport(userId, year, month);
 
         if (configuredMailHost == null || configuredMailHost.isBlank()) {
             log.warn("[DEV ONLY - email not configured] Monthly report generated for {}: Spent {} {}",
                     user.getEmail(), report.getCurrency(), report.getTotalOutflow());
+            saveReportLog(user, year, month, true, "Dev mode - simulated dispatch");
             return;
         }
 
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
             log.error("spring.mail.host is configured but JavaMailSender bean is unavailable.");
+            saveReportLog(user, year, month, false, "JavaMailSender bean unavailable");
             return;
         }
 
@@ -162,30 +178,55 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             helper.setText(html, true);
 
             mailSender.send(message);
+            saveReportLog(user, year, month, true, null);
             log.info("Sent monthly report email for {} to {}", report.getPeriod(), user.getEmail());
         } catch (Exception e) {
             log.error("Failed to send monthly report email to {}", user.getEmail(), e);
+            saveReportLog(user, year, month, false, e.getMessage());
         }
     }
 
+    private void saveReportLog(User user, int year, int month, boolean success, String errorMsg) {
+        Optional<MonthlyReportLog> existing = reportLogRepository.findByUserAndReportYearAndReportMonth(user, year, month);
+        MonthlyReportLog logEntry = existing.orElseGet(() -> new MonthlyReportLog());
+        logEntry.setUser(user);
+        logEntry.setReportYear(year);
+        logEntry.setReportMonth(month);
+        logEntry.setSentAt(LocalDateTime.now());
+        logEntry.setSentSuccessfully(success);
+        logEntry.setErrorMessage(errorMsg);
+        reportLogRepository.save(logEntry);
+    }
+
+    /**
+     * Automated Dispatch: Runs on application startup (server wake-up from sleep)
+     * and on an hourly schedule to catch any missed monthly reports due to server sleep.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Scheduled(cron = "0 0 * * * ?") // Runs hourly to check for unsent reports
+    @Transactional
     @Override
-    @Scheduled(cron = "0 0 8 1 * ?") // 1st day of every month at 8:00 AM
-    @Transactional(readOnly = true)
     public void sendAutomatedMonthlyReports() {
-        log.info("Starting automated monthly report generation for all users...");
+        log.info("Checking database for unsent monthly financial reports...");
         LocalDate lastMonth = LocalDate.now().minusMonths(1);
         int year = lastMonth.getYear();
         int month = lastMonth.getMonthValue();
 
         List<User> users = userRepository.findAll();
+        int sentCount = 0;
+
         for (User u : users) {
             try {
-                sendMonthlyReportEmail(u.getId(), year, month);
+                boolean alreadySent = reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
+                if (!alreadySent) {
+                    sendMonthlyReportEmail(u.getId(), year, month);
+                    sentCount++;
+                }
             } catch (Exception e) {
-                log.error("Error sending automated monthly report to user {}", u.getId(), e);
+                log.error("Error processing automated monthly report catch-up for user {}", u.getId(), e);
             }
         }
-        log.info("Finished sending automated monthly reports.");
+        log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.", sentCount, month, year);
     }
 
     private String buildMonthlyReportHtml(String userName, MonthlyReportDto report) {

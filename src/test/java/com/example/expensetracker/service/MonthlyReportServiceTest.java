@@ -6,6 +6,7 @@ import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.BudgetRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
+import com.example.expensetracker.repository.MonthlyReportLogRepository;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.impl.MonthlyReportServiceImpl;
 import jakarta.mail.internet.MimeMessage;
@@ -27,7 +28,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -37,6 +37,7 @@ class MonthlyReportServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ExpenseRepository expenseRepository;
     @Mock private BudgetRepository budgetRepository;
+    @Mock private MonthlyReportLogRepository reportLogRepository;
     @Mock private ObjectProvider<JavaMailSender> mailSenderProvider;
     @Mock private JavaMailSender mailSender;
     @Mock private MimeMessage mimeMessage;
@@ -46,7 +47,7 @@ class MonthlyReportServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new MonthlyReportServiceImpl(userRepository, expenseRepository, budgetRepository, mailSenderProvider);
+        service = new MonthlyReportServiceImpl(userRepository, expenseRepository, budgetRepository, reportLogRepository, mailSenderProvider);
 
         testUser = new User();
         testUser.setId(1L);
@@ -81,11 +82,12 @@ class MonthlyReportServiceTest {
     }
 
     @Test
-    @DisplayName("sendMonthlyReportEmail → Triggers HTML email delivery when mail host configured")
-    void sendMonthlyReportEmail_sendsMimeMessage() {
+    @DisplayName("sendMonthlyReportEmail → Triggers HTML email delivery and saves log when mail host configured")
+    void sendMonthlyReportEmail_sendsMimeMessageAndSavesLog() {
         ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.gmail.com");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(testUser, 2026, 8)).thenReturn(false);
         when(expenseRepository.findByUserAndExpenseDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Collections.emptyList());
         when(budgetRepository.findByUser(testUser)).thenReturn(Collections.emptyList());
@@ -96,5 +98,18 @@ class MonthlyReportServiceTest {
 
         verify(mailSender).createMimeMessage();
         verify(mailSender).send(mimeMessage);
+        verify(reportLogRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("sendMonthlyReportEmail → Skips dispatch if report already sent in database")
+    void sendMonthlyReportEmail_skipsIfAlreadySent() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(testUser, 2026, 8)).thenReturn(true);
+
+        service.sendMonthlyReportEmail(1L, 2026, 8);
+
+        verify(mailSenderProvider, never()).getIfAvailable();
+        verify(expenseRepository, never()).findByUserAndExpenseDateBetween(any(), any(), any());
     }
 }

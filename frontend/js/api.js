@@ -74,19 +74,14 @@ async function checkHealth() {
                 isServerOnline = true;
                 updateServerStatus(true, "Connected");
                 return true;
-            } else {
-                isServerOnline = false;
-                updateServerStatus(false, "Database Down");
-                return false;
             }
-        } else {
-            isServerOnline = false;
-            updateServerStatus(false, "Service Unavailable");
-            return false;
         }
+        isServerOnline = false;
+        updateServerStatus(false, "Waking up server...");
+        return false;
     } catch (e) {
         isServerOnline = false;
-        updateServerStatus(false, "Server Offline");
+        updateServerStatus(false, "Waking up server...");
         return false;
     }
 }
@@ -98,10 +93,10 @@ if (typeof document !== "undefined") {
     } else {
         checkHealth();
     }
-    setInterval(checkHealth, 30000);
+    setInterval(checkHealth, 15000);
 }
 
-async function apiRequest(endpoint, options = {}) {
+async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
     const method = (options.method || "GET").toUpperCase();
 
     if (method !== "GET") {
@@ -123,29 +118,35 @@ async function apiRequest(endpoint, options = {}) {
     };
 
     activeRequests += 1;
-    setLoading(true);
+    setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
     let response;
     try {
         response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
-        updateServerStatus(true, "Connected");
     } catch (error) {
-        updateServerStatus(false, "Server Offline");
-        throw new Error("We couldn't reach the server. Please check your connection or server status.");
+        if (retriesLeft > 0) {
+            updateServerStatus(false, "Waking up server...");
+            await new Promise(r => setTimeout(r, 3000));
+            activeRequests -= 1;
+            return apiRequest(endpoint, options, retriesLeft - 1);
+        }
+        updateServerStatus(false, "Server Waking Up...");
+        throw new Error("Server is currently waking up from cold-start. Please try again in 5 seconds.");
     } finally {
         activeRequests -= 1;
         if (activeRequests === 0) setLoading(false);
     }
 
     if (response.status === 503) {
-        updateServerStatus(false, "Database Unavailable");
-        const text = await response.text();
-        let msg = "Database service is unavailable. Please try again later.";
-        try {
-            const err = JSON.parse(text);
-            if (err.message) msg = err.message;
-        } catch (e) {}
-        throw new Error(msg);
+        if (retriesLeft > 0) {
+            updateServerStatus(false, "Waking up server...");
+            await new Promise(r => setTimeout(r, 3000));
+            return apiRequest(endpoint, options, retriesLeft - 1);
+        }
+        updateServerStatus(false, "Server Waking Up...");
+        throw new Error("Server is currently starting up. Please try clicking again in a few seconds.");
     }
+
+    updateServerStatus(true, "Connected");
 
     if (response.status === 401 && !endpoint.includes("/auth/login")) {
         localStorage.clear();
