@@ -61,8 +61,8 @@ public class FileDbSyncService {
     private static final String SYNC_FILE_PATH = "expenses_sync.json";
     private static final String DB_FILE_PATH = "expense_tracker.db";
 
-    /** HF Hub upload endpoint pattern: PUT /api/repos/{repoType}/{repoId}/upload/{branch}/{filePath} */
-    private static final String HF_UPLOAD_URL = "https://huggingface.co/api/repos/dataset/%s/upload/main/%s";
+    /** HF Hub Commit API endpoint pattern: POST /api/spaces/{repoId}/commit/main */
+    private static final String HF_UPLOAD_URL = "https://huggingface.co/api/spaces/%s/commit/main";
 
     @Value("${hf.token:}")
     private String hfToken;
@@ -280,8 +280,13 @@ public class FileDbSyncService {
 
         try {
             byte[] dbBytes = Files.readAllBytes(dbFile.toPath());
+            String base64Content = Base64.getEncoder().encodeToString(dbBytes);
 
-            String uploadUrl = String.format(HF_UPLOAD_URL, hfSpaceRepo, DB_FILE_PATH);
+            String uploadUrl = String.format(HF_UPLOAD_URL, hfSpaceRepo);
+            String jsonPayload = String.format(
+                "{\"summary\":\"Automated SQLite DB backup\",\"operations\":[{\"operation\":\"uploadOrUpdate\",\"path\":\"%s\",\"content\":\"%s\"}]}",
+                DB_FILE_PATH, base64Content
+            );
 
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(30))
@@ -290,8 +295,8 @@ public class FileDbSyncService {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(uploadUrl))
                     .header("Authorization", "Bearer " + hfToken)
-                    .header("Content-Type", "application/octet-stream")
-                    .PUT(HttpRequest.BodyPublishers.ofByteArray(dbBytes))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .timeout(Duration.ofSeconds(120))
                     .build();
 

@@ -891,7 +891,7 @@ class ExpenseControllerTest {
 
             mockMvc.perform(multipart("/api/expenses/user/1/import/csv").file(file))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.message").value("Imported 1 expenses successfully"));
+                    .andExpect(jsonPath("$.message").value("Imported 1 expense successfully."));
         }
     }
 }
