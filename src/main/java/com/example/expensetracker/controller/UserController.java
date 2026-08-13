@@ -54,19 +54,19 @@ public class UserController {
 
         // 1. Hardcoded suffix '_26'
         String s1 = prefix + "_26";
-        while (userRepository.existsByNameIgnoreCase(s1)) {
+        while (userRepository.existsByNameIgnoreCase(s1) || userRepository.existsByEmail(s1)) {
             s1 = prefix + "_26" + rnd.nextInt(90 + 10);
         }
 
         // 2. Hardcoded suffix '.pro'
         String s2 = prefix + ".pro";
-        while (userRepository.existsByNameIgnoreCase(s2)) {
+        while (userRepository.existsByNameIgnoreCase(s2) || userRepository.existsByEmail(s2)) {
             s2 = prefix + ".pro" + rnd.nextInt(90 + 10);
         }
 
         // 3. Random suffix
         String s3 = prefix + "_" + (10 + rnd.nextInt(89));
-        while (userRepository.existsByNameIgnoreCase(s3)) {
+        while (userRepository.existsByNameIgnoreCase(s3) || userRepository.existsByEmail(s3)) {
             s3 = prefix + "_" + (100 + rnd.nextInt(899));
         }
 
