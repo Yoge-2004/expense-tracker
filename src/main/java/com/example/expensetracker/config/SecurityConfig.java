@@ -87,6 +87,7 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/favicon.ico",
                                 "/api/auth/**",
+                                "/api/users/suggest-usernames",
                                 "/api/health/**",
                                 "/api/sync/**",
                                 "/h2-console/**",

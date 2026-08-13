@@ -319,17 +319,29 @@
             }
         }
 
-        // Username Suggestions Generator
-        function generateUsernameSuggestions() {
+        // Username Suggestions Generator (DB Checked)
+        async function generateUsernameSuggestions() {
             const baseName = nameInput.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
             const userTyped = userInput.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
             const prefix = baseName || userTyped || 'user';
 
             if (prefix.length >= 2) {
-                const s1 = `${prefix}_26`;
-                const s2 = `${prefix}.pro`;
-                const s3 = `${prefix}_${Math.floor(10 + Math.random() * 89)}`;
+                let suggestions = [`${prefix}_26`, `${prefix}.pro`, `${prefix}_${Math.floor(10 + Math.random() * 89)}`];
 
+                try {
+                    const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8080';
+                    const res = await fetch(`${apiUrl}/api/users/suggest-usernames?base=${encodeURIComponent(prefix)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.suggestions && data.suggestions.length >= 3) {
+                            suggestions = data.suggestions;
+                        }
+                    }
+                } catch (e) {
+                    console.log('Using local username suggestions fallback');
+                }
+
+                const [s1, s2, s3] = suggestions;
                 suggestionsBox.innerHTML = `
                     <div class="suggestion-title">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>

@@ -115,6 +115,71 @@
     color: var(--text-main) !important;
 }
 
+/* ── Global Ambient Background Micro-Animations (All Pages & Themes) ── */
+body {
+    position: relative;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: -120px;
+    left: -100px;
+    width: 550px;
+    height: 550px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.18) 0%, transparent 70%);
+    filter: blur(70px);
+    z-index: 0;
+    pointer-events: none;
+    animation: globalAmbientOrbFloat1 18s ease-in-out infinite alternate;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px;
+    right: -100px;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.14) 0%, transparent 70%);
+    filter: blur(80px);
+    z-index: 0;
+    pointer-events: none;
+    animation: globalAmbientOrbFloat2 22s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] body::before {
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.16) 0%, transparent 70%);
+    filter: blur(65px);
+}
+
+[data-theme="light"] body::after {
+    background: radial-gradient(circle, rgba(var(--highlight-rgb), 0.14) 0%, transparent 70%);
+    filter: blur(75px);
+}
+
+@keyframes globalAmbientOrbFloat1 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(60px, 40px) scale(1.12); }
+    100% { transform: translate(-30px, 50px) scale(0.95); }
+}
+
+@keyframes globalAmbientOrbFloat2 {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-50px, -45px) scale(1.15); }
+    100% { transform: translate(40px, -20px) scale(0.92); }
+}
+
+.auth-page, .dashboard-container, .main-layout, .auth-card {
+    position: relative;
+    z-index: 1;
+}
+
 [data-theme="light"] .auth-hero {
     background: linear-gradient(135deg, #E4E0D2 0%, var(--bg-dark) 100%) !important;
 }
@@ -2066,8 +2131,8 @@ button[type="submit"]:active {
     overflow: hidden;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 60px 70px;
+    justify-content: flex-start;
+    padding: 60px 60px 60px 80px;
     background: var(--bg-dark);
 }
 
@@ -2118,7 +2183,8 @@ button[type="submit"]:active {
 .auth-hero-content {
     position: relative;
     z-index: 2;
-    max-width: 480px;
+    max-width: 580px;
+    width: 100%;
     animation: slideUpFade 0.8s var(--ease) both;
 }
 
@@ -2699,18 +2765,23 @@ button[type="submit"]:active {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px; height: 18px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: var(--border);
-    font-size: 9px;
-    font-weight: 900;
-    color: var(--text-muted);
+    background: rgba(var(--primary-rgb), 0.15);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-right: 8px;
+    flex-shrink: 0;
     transition: all 0.3s var(--ease);
 }
 .step-dot-done {
     background: var(--primary) !important;
     color: var(--on-primary) !important;
-    box-shadow: 0 0 10px rgba(var(--primary-rgb),0.4);
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 12px rgba(var(--primary-rgb),0.5);
 }
 
 /* Password strength meter */

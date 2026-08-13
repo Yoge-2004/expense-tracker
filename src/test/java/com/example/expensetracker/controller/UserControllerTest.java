@@ -37,6 +37,7 @@ class UserControllerTest {
     @Autowired MockMvc mockMvc;
 
     @MockitoBean UserService userService;
+    @MockitoBean com.example.expensetracker.repository.UserRepository userRepository;
     @MockitoBean com.example.expensetracker.service.MonthlyReportService monthlyReportService;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
@@ -114,5 +115,16 @@ class UserControllerTest {
                         .content("{\"currency\":\"USD\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.currency").value("USD"));
+    }
+
+    @Test
+    @DisplayName("GET /api/users/suggest-usernames → 200 OK with DB checked suggestions (_26, .pro, random)")
+    void suggestUsernames_checksDb_returns200() throws Exception {
+        when(userRepository.existsByNameIgnoreCase(anyString())).thenReturn(false);
+
+        mockMvc.perform(get("/api/users/suggest-usernames?base=john"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.suggestions[0]").value("john_26"))
+                .andExpect(jsonPath("$.suggestions[1]").value("john.pro"));
     }
 }

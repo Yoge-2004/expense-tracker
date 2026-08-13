@@ -35,9 +35,44 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final com.example.expensetracker.repository.UserRepository userRepository;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, com.example.expensetracker.repository.UserRepository userRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
+    }
+
+    @io.swagger.v3.oas.annotations.security.SecurityRequirements
+    @GetMapping("/suggest-usernames")
+    public ResponseEntity<java.util.Map<String, Object>> suggestUsernames(
+            @RequestParam(defaultValue = "user") String base) {
+
+        String prefix = base.trim().toLowerCase().replaceAll("[^a-z0-9]", "");
+        if (prefix.isBlank()) prefix = "user";
+
+        java.util.Random rnd = new java.util.Random();
+
+        // 1. Hardcoded suffix '_26'
+        String s1 = prefix + "_26";
+        while (userRepository.existsByNameIgnoreCase(s1)) {
+            s1 = prefix + "_26" + rnd.nextInt(90 + 10);
+        }
+
+        // 2. Hardcoded suffix '.pro'
+        String s2 = prefix + ".pro";
+        while (userRepository.existsByNameIgnoreCase(s2)) {
+            s2 = prefix + ".pro" + rnd.nextInt(90 + 10);
+        }
+
+        // 3. Random suffix
+        String s3 = prefix + "_" + (10 + rnd.nextInt(89));
+        while (userRepository.existsByNameIgnoreCase(s3)) {
+            s3 = prefix + "_" + (100 + rnd.nextInt(899));
+        }
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("suggestions", java.util.List.of(s1, s2, s3));
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{userId}")

@@ -52,4 +52,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      *         {@code false} otherwise
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Checks whether a user with the given name/username exists in the database (case-insensitive).
+     *
+     * @param name the username to check
+     * @return {@code true} if an entry exists; {@code false} otherwise
+     */
+    boolean existsByNameIgnoreCase(String name);
 }
