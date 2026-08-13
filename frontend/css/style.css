@@ -1797,7 +1797,7 @@ button[type="submit"]:active {
 }
 
 .metric-card-glow {
-    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.15) 0%, rgba(23, 26, 20, 0.8) 100%);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.15) 0%, var(--bg-card) 100%);
     border-color: rgba(var(--primary-rgb), 0.3);
 }
 

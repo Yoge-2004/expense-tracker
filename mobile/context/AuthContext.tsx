@@ -7,11 +7,14 @@ interface AuthContextType {
   token: string | null;
   userId: string | null;
   userName: string | null;
+  currency: string;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   updateUserName: (name: string) => Promise<void>;
+  updateCurrency: (currency: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  sendSignupOtp: (email: string, name: string) => Promise<void>;
+  register: (name: string, email: string, password: string, otp: string, currency?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -22,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [currency, setCurrency] = useState<string>('INR');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
@@ -36,6 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const savedTheme = await SecureStore.getItemAsync('app_theme');
         if (savedTheme === 'light' || savedTheme === 'dark') {
           setTheme(savedTheme);
+        }
+        const savedCurrency = await SecureStore.getItemAsync('user_currency');
+        if (savedCurrency) {
+          setCurrency(savedCurrency);
         }
       } catch (e) {
         console.error('Failed to load auth session', e);
@@ -58,6 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(data.token);
         setUserId(data.userId.toString());
         setUserName(data.name);
+        if (data.currency) {
+          setCurrency(data.currency);
+          await SecureStore.setItemAsync('user_currency', data.currency);
+        }
       } else {
         throw new Error('Invalid login response from server.');
       }
@@ -66,13 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const sendSignupOtp = async (email: string, name: string) => {
+    await apiRequest('/auth/signup/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, name }),
+    });
+  };
+
+  const register = async (name: string, email: string, password: string, otp: string, userCurrency: string = 'INR') => {
     setIsLoading(true);
     try {
       await apiRequest('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, otp, currency: userCurrency }),
       });
+      setCurrency(userCurrency);
+      await SecureStore.setItemAsync('user_currency', userCurrency);
     } finally {
       setIsLoading(false);
     }
@@ -101,8 +122,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserName(newName);
   };
 
+  const updateCurrency = async (newCurrency: string) => {
+    const code = newCurrency.toUpperCase();
+    setCurrency(code);
+    await SecureStore.setItemAsync('user_currency', code);
+    if (userId) {
+      try {
+        await apiRequest(`/users/${userId}/currency`, {
+          method: 'PUT',
+          body: JSON.stringify({ currency: code }),
+        });
+      } catch (e) {
+        console.warn('Could not persist currency change to server', e);
+      }
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ isLoading, token, userId, userName, theme, toggleTheme, updateUserName, login, register, logout }}>
+    <AuthContext.Provider value={{ isLoading, token, userId, userName, currency, theme, toggleTheme, updateUserName, updateCurrency, login, sendSignupOtp, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

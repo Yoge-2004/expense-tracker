@@ -60,8 +60,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         // Deliberately silent for unknown emails — this endpoint must not reveal
         // whether an address has an account, or it becomes an enumeration tool.
         userRepository.findByEmail(email).ifPresent(user -> {
-            // Invalidate any still-open code before issuing a new one.
-            otpRepository.findFirstByEmailAndUsedFalseOrderByCreatedAtDesc(email)
+            // Invalidate any still-open PASSWORD_RESET code before issuing a new one.
+            otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "PASSWORD_RESET")
                     .ifPresent(existing -> {
                         existing.setUsed(true);
                         otpRepository.save(existing);
@@ -71,11 +71,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
             PasswordResetOtp record = new PasswordResetOtp();
             record.setEmail(email);
+            record.setPurpose("PASSWORD_RESET");
             record.setOtpHash(passwordEncoder.encode(otp));
             record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
             otpRepository.save(record);
 
-            sendOtpEmail(user, otp);
+            sendOtpEmail(user, otp, "PASSWORD_RESET");
         });
     }
 
@@ -86,7 +87,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new BadCredentialsException("Invalid or expired code.");
         }
 
-        PasswordResetOtp record = otpRepository.findFirstByEmailAndUsedFalseOrderByCreatedAtDesc(email)
+        PasswordResetOtp record = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "PASSWORD_RESET")
                 .orElseThrow(() -> new BadCredentialsException("Invalid or expired code."));
 
         if (record.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -116,23 +117,87 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         userRepository.save(user);
     }
 
+    @Override
+    @Transactional
+    public boolean sendSignupOtp(String email, String name) {
+        if (email == null || email.isBlank()) return false;
+
+        // Fail fast if the email is already registered — unlike password reset,
+        // revealing this is expected and useful for the signup flow.
+        if (userRepository.existsByEmail(email)) {
+            return false;
+        }
+
+        // Invalidate any still-open SIGNUP OTP for this email before issuing a new one.
+        otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
+                .ifPresent(existing -> {
+                    existing.setUsed(true);
+                    otpRepository.save(existing);
+                });
+
+        String otp = generateOtp();
+
+        PasswordResetOtp record = new PasswordResetOtp();
+        record.setEmail(email);
+        record.setPurpose("SIGNUP");
+        record.setOtpHash(passwordEncoder.encode(otp));
+        record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
+        otpRepository.save(record);
+
+        // Build a temporary User object just to reuse the email helper
+        User tempUser = new User();
+        tempUser.setName(name != null && !name.isBlank() ? name : email);
+        tempUser.setEmail(email);
+        sendOtpEmail(tempUser, otp, "SIGNUP");
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public void verifySignupOtp(String email, String otp) {
+        if (email == null || otp == null || otp.isBlank()) {
+            throw new BadCredentialsException("Invalid or expired code.");
+        }
+
+        PasswordResetOtp record = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
+                .orElseThrow(() -> new BadCredentialsException("Invalid or expired verification code."));
+
+        if (record.getExpiresAt().isBefore(LocalDateTime.now())) {
+            record.setUsed(true);
+            otpRepository.save(record);
+            throw new BadCredentialsException("Verification code has expired. Please request a new one.");
+        }
+
+        if (record.getAttempts() >= MAX_ATTEMPTS) {
+            record.setUsed(true);
+            otpRepository.save(record);
+            throw new BadCredentialsException("Too many incorrect attempts. Please request a new verification code.");
+        }
+
+        if (!passwordEncoder.matches(otp, record.getOtpHash())) {
+            record.setAttempts(record.getAttempts() + 1);
+            otpRepository.save(record);
+            throw new BadCredentialsException("Invalid verification code.");
+        }
+
+        // Mark as used — the register endpoint completes the account creation.
+        record.setUsed(true);
+        otpRepository.save(record);
+    }
+
     private String generateOtp() {
         int code = 100000 + random.nextInt(900000); // always 6 digits
         return String.valueOf(code);
     }
 
-    private void sendOtpEmail(User user, String otp) {
+    private void sendOtpEmail(User user, String otp, String purpose) {
         OtpDeliveryListener listener = otpDeliveryListenerProvider.getIfAvailable();
         if (listener != null) {
             listener.onOtpIssued(user.getEmail(), otp);
         }
 
         if (configuredMailHost == null || configuredMailHost.isBlank()) {
-            // Dev-only fallback: no SMTP configured (SMTP_HOST unset), so there's
-            // nowhere to actually send this. Logging it locally lets you finish
-            // testing the flow before wiring up real SMTP credentials.
-            // This only ever reaches your own server console, never the requester.
-            log.warn("[DEV ONLY - email not configured] Password reset code for {}: {}", user.getEmail(), otp);
+            log.warn("[DEV ONLY - email not configured] {} OTP for {}: {}", purpose, user.getEmail(), otp);
             return;
         }
 
@@ -145,18 +210,27 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(user.getEmail());
-            message.setSubject("Your ExpenseTracker password reset code");
-            message.setText(
-                    "Hi " + user.getName() + ",\n\n" +
-                    "Your password reset code is: " + otp + "\n\n" +
-                    "This code expires in " + OTP_TTL_MINUTES + " minutes. " +
-                    "If you didn't request this, you can safely ignore this email.\n"
-            );
+            if ("SIGNUP".equals(purpose)) {
+                message.setSubject("Verify your ExpenseTracker account");
+                message.setText(
+                        "Hi " + user.getName() + ",\n\n" +
+                        "Your email verification code is: " + otp + "\n\n" +
+                        "This code expires in " + OTP_TTL_MINUTES + " minutes. " +
+                        "Enter it on the sign-up page to activate your account.\n\n" +
+                        "If you didn't sign up for ExpenseTracker, you can safely ignore this email.\n"
+                );
+            } else {
+                message.setSubject("Your ExpenseTracker password reset code");
+                message.setText(
+                        "Hi " + user.getName() + ",\n\n" +
+                        "Your password reset code is: " + otp + "\n\n" +
+                        "This code expires in " + OTP_TTL_MINUTES + " minutes. " +
+                        "If you didn't request this, you can safely ignore this email.\n"
+                );
+            }
             mailSender.send(message);
         } catch (MailException e) {
-            log.error("Failed to send password reset email to {}", user.getEmail(), e);
-            // Don't throw here: the OTP row already exists, and revealing send
-            // failures to the caller could leak whether the address is registered.
+            log.error("Failed to send {} email to {}", purpose, user.getEmail(), e);
         }
     }
 }

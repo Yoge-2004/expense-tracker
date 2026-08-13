@@ -71,6 +71,7 @@ class AuthControllerTest {
         sampleUser.setEmail("yoge@example.com");
         sampleUser.setPassword("$2a$10$encodedpassword");
         sampleUser.setEnabled(true);
+        sampleUser.setCurrency("INR");
     }
 
     // ─────────────────────────── POST /api/auth/login ───────────────────────────
@@ -92,7 +93,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("mocked.jwt.token"))
                 .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.name").value("Yogeshwaran"));
+                .andExpect(jsonPath("$.name").value("Yogeshwaran"))
+                .andExpect(jsonPath("$.currency").value("INR"));
     }
 
     @Test
@@ -141,8 +143,9 @@ class AuthControllerTest {
     // ─────────────────────────── POST /api/auth/register ───────────────────────────
 
     @Test
-    @DisplayName("POST /api/auth/register → 201 Created on successful registration")
+    @DisplayName("POST /api/auth/register → 201 Created on successful registration with valid OTP")
     void register_validRequest_returns201() throws Exception {
+        doNothing().when(passwordResetService).verifySignupOtp(anyString(), anyString());
         when(userService.registerUser(any(User.class))).thenReturn(sampleUser);
 
         mockMvc.perform(post("/api/auth/register")
@@ -150,15 +153,36 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "Yogeshwaran",
                                         "email", "yoge@example.com",
-                                        "password", "secret123"))))
+                                        "password", "secret123",
+                                        "otp", "482913",
+                                        "currency", "INR"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.email").value("yoge@example.com"));
+                .andExpect(jsonPath("$.email").value("yoge@example.com"))
+                .andExpect(jsonPath("$.currency").value("INR"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register → 401 Unauthorized when OTP is invalid or expired")
+    void register_invalidOtp_returns401() throws Exception {
+        doThrow(new org.springframework.security.authentication.BadCredentialsException("Invalid verification code."))
+                .when(passwordResetService).verifySignupOtp(anyString(), anyString());
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("name", "Yogeshwaran",
+                                        "email", "yoge@example.com",
+                                        "password", "secret123",
+                                        "otp", "000000"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid verification code."));
     }
 
     @Test
     @DisplayName("POST /api/auth/register → 400 Bad Request when email already exists")
     void register_duplicateEmail_returns400() throws Exception {
+        doNothing().when(passwordResetService).verifySignupOtp(anyString(), anyString());
         when(userService.registerUser(any(User.class)))
                 .thenThrow(new IllegalArgumentException("Email already registered"));
 
@@ -167,7 +191,8 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "Yogeshwaran",
                                         "email", "yoge@example.com",
-                                        "password", "secret123"))))
+                                        "password", "secret123",
+                                        "otp", "482913"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Email already registered"));
     }
@@ -180,7 +205,8 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "Yogeshwaran",
                                         "email", "yoge@example.com",
-                                        "password", "abc"))))
+                                        "password", "abc",
+                                        "otp", "482913"))))
                 .andExpect(status().isBadRequest());
     }
 
@@ -192,7 +218,46 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "",
                                         "email", "yoge@example.com",
-                                        "password", "secret123"))))
+                                        "password", "secret123",
+                                        "otp", "482913"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ─────────────────────────── POST /api/auth/signup/send-otp ─────────────────────────
+
+    @Test
+    @DisplayName("POST /api/auth/signup/send-otp → 200 OK for a new email")
+    void sendSignupOtp_newEmail_returns200() throws Exception {
+        when(passwordResetService.sendSignupOtp(anyString(), anyString())).thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/signup/send-otp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "new@example.com", "name", "New User"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Verification code sent to new@example.com"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/signup/send-otp → 400 Bad Request when email is already registered")
+    void sendSignupOtp_existingEmail_returns400() throws Exception {
+        when(passwordResetService.sendSignupOtp(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/api/auth/signup/send-otp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "yoge@example.com", "name", "Yogeshwaran"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("This email address is already registered."));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/signup/send-otp → 400 Bad Request when email is invalid")
+    void sendSignupOtp_invalidEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/signup/send-otp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "not-an-email", "name", "Someone"))))
                 .andExpect(status().isBadRequest());
     }
 

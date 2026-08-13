@@ -13,13 +13,12 @@ import java.util.Optional;
 public interface PasswordResetOtpRepository extends JpaRepository<PasswordResetOtp, Long> {
 
     /**
-     * Retrieves the most recently issued, still-unused OTP for an email address.
+     * Retrieves the most recently issued, still-unused OTP for an email address
+     * and a specific purpose (e.g. {@code "PASSWORD_RESET"} or {@code "SIGNUP"}).
      *
-     * <p>Used both to verify a submitted code during reset and to invalidate
-     * any still-open code when a new one is requested.</p>
-     *
-     * @param email the account email the OTP was issued for
-     * @return the newest unused {@link PasswordResetOtp} row for this email, if any
+     * @param email   the account email the OTP was issued for
+     * @param purpose the OTP purpose to filter by
+     * @return the newest unused {@link PasswordResetOtp} row for this email + purpose, if any
      */
-    Optional<PasswordResetOtp> findFirstByEmailAndUsedFalseOrderByCreatedAtDesc(String email);
+    Optional<PasswordResetOtp> findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(String email, String purpose);
 }

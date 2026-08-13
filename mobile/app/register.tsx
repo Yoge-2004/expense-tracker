@@ -18,13 +18,15 @@ const PERKS = [
 ];
 
 export default function RegisterScreen() {
-  const { register, theme } = useAuth();
+  const { register, sendSignupOtp, theme } = useAuth();
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const isLight = theme === 'light';
@@ -52,8 +54,8 @@ export default function RegisterScreen() {
     orange: '#A23E32',
   };
 
-  const handleRegister = async () => {
-    if (!name || !email || !password) {
+  const handleSendOtp = async () => {
+    if (!name.trim() || !email.trim() || !password) {
       Alert.alert('Missing Info', 'Please fill in all fields.');
       return;
     }
@@ -63,7 +65,24 @@ export default function RegisterScreen() {
     }
     setIsLoading(true);
     try {
-      await register(name.trim(), email.trim(), password);
+      await sendSignupOtp(email.trim(), name.trim());
+      setOtpSent(true);
+      Alert.alert('Code Sent', `A 6-digit verification code was sent to ${email.trim()}.`);
+    } catch (error: any) {
+      Alert.alert('Failed to send code', error.message || 'Could not send verification email.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!otp || otp.trim().length !== 6) {
+      Alert.alert('Invalid Code', 'Please enter the 6-digit code from your email.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await register(name.trim(), email.trim(), password, otp.trim());
       Alert.alert('🎉 Welcome!', 'Account created! Please sign in.', [
         { text: 'Sign In', onPress: () => router.replace('/login') }
       ]);
@@ -77,8 +96,8 @@ export default function RegisterScreen() {
   const inputBorder = (field: string) =>
     focusedField === field ? c.accent : c.border;
 
-  const completedCount = [name, email, password].filter(Boolean).length;
-  const progressPct = (completedCount / 3) * 100;
+  const completedCount = [name, email, password, otpSent ? otp : null].filter(Boolean).length;
+  const progressPct = (completedCount / 4) * 100;
 
   return (
     <KeyboardAvoidingView
@@ -100,7 +119,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <View style={styles.headerTitle}>
-            <Text style={[styles.headerLabel, { color: c.textMuted }]}>Step {completedCount + 1 > 3 ? 3 : completedCount + 1} of 3</Text>
+            <Text style={[styles.headerLabel, { color: c.textMuted }]}>{otpSent ? 'Step 2 of 2: Verification' : 'Step 1 of 2: Details'}</Text>
             <Text style={[styles.pageTitle, { color: c.text }]}>Create your account</Text>
 
             {/* Progress bar */}
@@ -147,6 +166,7 @@ export default function RegisterScreen() {
                 autoCapitalize="words"
                 value={name}
                 onChangeText={setName}
+                editable={!otpSent}
                 onFocus={() => setFocusedField('name')}
                 onBlur={() => setFocusedField(null)}
               />
@@ -177,6 +197,7 @@ export default function RegisterScreen() {
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
+                editable={!otpSent}
                 onFocus={() => setFocusedField('email')}
                 onBlur={() => setFocusedField(null)}
               />
@@ -207,6 +228,7 @@ export default function RegisterScreen() {
                 autoCapitalize="none"
                 value={password}
                 onChangeText={setPassword}
+                editable={!otpSent}
                 onFocus={() => setFocusedField('password')}
                 onBlur={() => setFocusedField(null)}
               />
@@ -238,22 +260,72 @@ export default function RegisterScreen() {
             )}
           </View>
 
-          {/* SUBMIT */}
-          <TouchableOpacity
-            style={[styles.submitBtn, { opacity: isLoading ? 0.7 : 1 }]}
-            onPress={handleRegister}
-            disabled={isLoading}
-            activeOpacity={0.85}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#10120E" size="small" />
-            ) : (
-              <View style={styles.submitBtnInner}>
-                <Text style={styles.submitBtnText}>Create Account</Text>
-                <Ionicons name="rocket" size={18} color="#10120E" />
+          {/* Verification Code (OTP) Field */}
+          {otpSent && (
+            <View style={styles.fieldGroup}>
+              <View style={styles.fieldLabelRow}>
+                <View style={[styles.stepDot, { backgroundColor: otp.length === 6 ? c.accent : c.border }]}>
+                  {otp.length === 6
+                    ? <Ionicons name="checkmark" size={10} color="#10120E" />
+                    : <Text style={styles.stepDotText}>4</Text>
+                  }
+                </View>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Verification Code</Text>
               </View>
-            )}
-          </TouchableOpacity>
+              <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('otp') }]}>
+                <Ionicons name="key-outline" size={18} color={focusedField === 'otp' ? c.accent : c.textMuted} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: c.text, letterSpacing: 3, fontWeight: '700' }]}
+                  placeholder="6-digit code"
+                  placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  value={otp}
+                  onChangeText={setOtp}
+                  onFocus={() => setFocusedField('otp')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </View>
+              <TouchableOpacity onPress={handleSendOtp} style={{ marginTop: 6 }}>
+                <Text style={{ fontSize: 12, color: c.accent, fontWeight: '600' }}>Resend verification code</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ACTION BUTTON */}
+          {!otpSent ? (
+            <TouchableOpacity
+              style={[styles.submitBtn, { opacity: isLoading ? 0.7 : 1 }]}
+              onPress={handleSendOtp}
+              disabled={isLoading}
+              activeOpacity={0.85}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#10120E" size="small" />
+              ) : (
+                <View style={styles.submitBtnInner}>
+                  <Text style={styles.submitBtnText}>Send Verification Code</Text>
+                  <Ionicons name="paper-plane" size={18} color="#10120E" />
+                </View>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.submitBtn, { opacity: isLoading ? 0.7 : 1 }]}
+              onPress={handleRegister}
+              disabled={isLoading}
+              activeOpacity={0.85}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#10120E" size="small" />
+              ) : (
+                <View style={styles.submitBtnInner}>
+                  <Text style={styles.submitBtnText}>Create Account</Text>
+                  <Ionicons name="rocket" size={18} color="#10120E" />
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={styles.signInLink} onPress={() => router.replace('/login')}>
             <Text style={[styles.signInLinkText, { color: c.textMuted }]}>

@@ -48,6 +48,7 @@ public class UserController {
         map.put("id", user.getId());
         map.put("name", user.getName());
         map.put("email", user.getEmail());
+        map.put("currency", user.getCurrency());
         return ResponseEntity.ok(map);
     }
 
@@ -99,11 +100,36 @@ public class UserController {
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteAccount(
             @Parameter(
-                description = "Database ID of the user account to permanently delete. Obtained from `POST /api/auth/register` or `POST /api/auth/login`.",
+                description = "Database ID of the user account to permanently delete.",
                 required = true, example = "1"
             )
             @PathVariable Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    // ─── PUT /api/users/{userId}/currency ─────────────────────────────────
+
+    @Operation(
+        summary = "Update currency preference",
+        description = "Updates the preferred display currency for the given user account. Accepts any ISO 4217 3-letter code."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Currency preference updated"),
+        @ApiResponse(responseCode = "400", description = "User not found or invalid currency code",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PutMapping("/{userId}/currency")
+    public ResponseEntity<java.util.Map<String, String>> updateCurrency(
+            @PathVariable Long userId,
+            @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> body) {
+        String currency = body.get("currency");
+        if (currency == null || currency.isBlank() || currency.length() != 3) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("message", "currency must be a 3-letter ISO 4217 code"));
+        }
+        userService.updateCurrency(userId, currency.toUpperCase());
+        return ResponseEntity.ok(java.util.Map.of("currency", currency.toUpperCase()));
     }
 }

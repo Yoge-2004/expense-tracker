@@ -195,7 +195,30 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary btn-full" id="registerBtn">
+                    <button type="button" class="btn-secondary btn-full" id="sendOtpBtn" style="margin-bottom:12px;">
+                        <span>Send Verification Code</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </button>
+
+                    <!-- OTP Step (hidden until Send OTP is clicked) -->
+                    <div class="form-group" id="otpGroup" style="display:none;">
+                        <div class="form-label-row">
+                            <label class="form-label" for="reg-otp">
+                                <span class="step-dot" style="background:#4C7A78;">✓</span>
+                                Verification Code
+                            </label>
+                            <span id="otpTimer" style="font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;"></span>
+                        </div>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <input type="text" id="reg-otp" class="form-input" placeholder="6-digit code from your email" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
+                        </div>
+                        <div style="margin-top:6px;">
+                            <button type="button" id="resendOtpBtn" class="auth-footer-link" style="font-size:12px;background:none;border:none;cursor:pointer;padding:0;">Resend code</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-full" id="registerBtn" style="display:none;">
                         <span>Create Account</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                     </button>

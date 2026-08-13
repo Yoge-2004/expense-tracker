@@ -48,7 +48,8 @@ public final class UserMapper {
         return new UserDto(
                 user.getId(),
                 user.getEmail(),
-                user.isEnabled()
+                user.isEnabled(),
+                user.getCurrency()
         );
     }
 }

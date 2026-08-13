@@ -15,12 +15,16 @@ public class UserDto {
     @Schema(description = "Whether the account is active and permitted to authenticate", example = "true")
     private boolean enabled;
 
+    @Schema(description = "Preferred display currency (ISO 4217 3-letter code)", example = "INR")
+    private String currency;
+
     public UserDto() {}
 
-    public UserDto(Long id, String email, boolean enabled) {
-        this.id      = id;
-        this.email   = email;
-        this.enabled = enabled;
+    public UserDto(Long id, String email, boolean enabled, String currency) {
+        this.id       = id;
+        this.email    = email;
+        this.enabled  = enabled;
+        this.currency = currency;
     }
 
     public Long    getId()                  { return id; }
@@ -29,4 +33,7 @@ public class UserDto {
     public void    setEmail(String email)   { this.email = email; }
     public boolean isEnabled()              { return enabled; }
     public void    setEnabled(boolean e)    { this.enabled = e; }
+    public String  getCurrency()            { return currency; }
+    public void    setCurrency(String c)    { this.currency = c; }
 }
+

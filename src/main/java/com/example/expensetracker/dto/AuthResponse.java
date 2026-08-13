@@ -15,13 +15,19 @@ public class AuthResponse {
     @Schema(description = "Display name of the authenticated user", example = "John Doe")
     private String name;
 
-    public AuthResponse(String token, Long userId, String name) {
-        this.token  = token;
-        this.userId = userId;
-        this.name   = name;
+    @Schema(description = "Preferred display currency of the authenticated user (ISO 4217)", example = "INR")
+    private String currency;
+
+    public AuthResponse(String token, Long userId, String name, String currency) {
+        this.token    = token;
+        this.userId   = userId;
+        this.name     = name;
+        this.currency = currency;
     }
 
-    public String getToken()  { return token; }
-    public Long   getUserId() { return userId; }
-    public String getName()   { return name; }
+    public String getToken()    { return token; }
+    public Long   getUserId()   { return userId; }
+    public String getName()     { return name; }
+    public String getCurrency() { return currency; }
 }
+

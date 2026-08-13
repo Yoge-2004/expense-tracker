@@ -10,7 +10,8 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
- * A one-time password (OTP) issued for the "forgot password" flow.
+ * A one-time password (OTP) issued for auth flows such as "forgot password"
+ * and email-verified signup.
  *
  * <p>The plaintext OTP is never stored — only a BCrypt hash of it, the same
  * way user passwords are stored. A row here proves that a code was issued for
@@ -18,7 +19,8 @@ import java.time.LocalDateTime;
  *
  * <p>Each row is single-use ({@code used}) and time-limited ({@code expiresAt}).
  * {@code attempts} tracks failed verification tries so a 6-digit code can't be
- * brute-forced by hammering {@code /api/auth/reset-password}.</p>
+ * brute-forced. The {@code purpose} field distinguishes between flows:
+ * {@code "PASSWORD_RESET"} and {@code "SIGNUP"}.</p>
  */
 @Entity
 @Table(name = "password_reset_otp")
@@ -43,6 +45,10 @@ public class PasswordResetOtp extends BaseEntity {
     @Column(nullable = false)
     private int attempts = 0;
 
+    /** Identifies what this OTP is for: {@code "PASSWORD_RESET"} or {@code "SIGNUP"}. */
+    @Column(nullable = false, length = 20)
+    private String purpose = "PASSWORD_RESET";
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -60,4 +66,7 @@ public class PasswordResetOtp extends BaseEntity {
 
     public int getAttempts() { return attempts; }
     public void setAttempts(int attempts) { this.attempts = attempts; }
+
+    public String getPurpose() { return purpose; }
+    public void setPurpose(String purpose) { this.purpose = purpose; }
 }

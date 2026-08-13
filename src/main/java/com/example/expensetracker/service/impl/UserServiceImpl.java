@@ -162,4 +162,21 @@ public class UserServiceImpl implements UserService {
         // Step 5: Delete the user itself
         userRepository.delete(user);
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Updates the {@code currency} field on the user entity.</p>
+     *
+     * @param userId   the primary key of the user to update
+     * @param currency the ISO 4217 3-letter currency code
+     * @throws IllegalArgumentException if no user exists with the given ID
+     */
+    @Override
+    public void updateCurrency(Long userId, String currency) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setCurrency(currency != null ? currency.toUpperCase() : "INR");
+        userRepository.save(user);
+    }
 }

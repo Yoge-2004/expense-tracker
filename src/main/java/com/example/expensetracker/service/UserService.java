@@ -79,4 +79,13 @@ public interface UserService {
      * @throws IllegalArgumentException if no user is found with the given ID
      */
     void deleteUser(Long userId);
+
+    /**
+     * Updates the preferred display currency of a user account.
+     *
+     * @param userId   the primary key of the user to update
+     * @param currency the ISO 4217 3-letter currency code (e.g. {@code "INR"}, {@code "USD"})
+     * @throws IllegalArgumentException if no user exists with the given ID
+     */
+    void updateCurrency(Long userId, String currency);
 }

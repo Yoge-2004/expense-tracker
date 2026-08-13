@@ -74,6 +74,15 @@ public class User {
     private boolean accountLocked;
 
     /**
+     * The ISO 4217 3-letter currency code representing the user's preferred
+     * display currency (e.g. {@code "INR"}, {@code "USD"}, {@code "EUR"}).
+     * Defaults to {@code "INR"}. Stored and returned in every auth response
+     * so clients can format monetary values consistently across devices.
+     */
+    @Column(nullable = false, length = 3)
+    private String currency = "INR";
+
+    /**
      * The list of all expense records owned by this user.
      * Mapped via the {@code user} field on {@link Expense}.
      * Fetched lazily to avoid unintended bulk loading.
@@ -215,5 +224,23 @@ public class User {
      */
     public void setExpenses(List<Expense> expenses) {
         this.expenses = expenses;
+    }
+
+    /**
+     * Returns the ISO 4217 currency code of the user's preferred display currency.
+     *
+     * @return the currency code (e.g. {@code "INR"}, {@code "USD"})
+     */
+    public String getCurrency() {
+        return currency;
+    }
+
+    /**
+     * Sets the ISO 4217 currency code of the user's preferred display currency.
+     *
+     * @param currency the 3-letter ISO code to set (e.g. {@code "INR"})
+     */
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 }

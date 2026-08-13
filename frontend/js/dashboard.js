@@ -966,6 +966,7 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
             dashCurrWrapper.classList.remove("open");
 
             localStorage.setItem("userCurrency", newCurr);
+            apiRequest(`/users/${userId}/currency`, { method: "PUT", body: JSON.stringify({ currency: newCurr }) }).catch(err => console.warn("Failed to persist currency preference:", err));
             showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
             updateModalLabels();
             applyFilters();
@@ -1001,6 +1002,12 @@ document.getElementById("logoutBtn").addEventListener("click", () => { localStor
             // Update name in localStorage and display if different
             if (profile.name) {
                 localStorage.setItem("userName", profile.name);
+            }
+            if (profile.currency) {
+                localStorage.setItem("userCurrency", profile.currency);
+                if (typeof setCurrencySymbol === "function") {
+                    setCurrencySymbol(profile.currency);
+                }
             }
             // Inject email under the user name in the profile menu
             const profileMenu = elements.profileMenu;

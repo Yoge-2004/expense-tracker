@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
+import { getCurrencySymbol } from '../../services/currency';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
@@ -36,8 +37,9 @@ interface Category {
 }
 
 export default function DashboardScreen() {
-  const { userId, userName, theme, toggleTheme } = useAuth();
+  const { userId, userName, theme, toggleTheme, currency } = useAuth();
   const router = useRouter();
+  const currSymbol = getCurrencySymbol(currency);
 
   const handleDeleteExpense = async (expenseId: number) => {
     try {
@@ -427,7 +429,7 @@ export default function DashboardScreen() {
             <View style={styles.heroCardTop}>
               <View>
                 <Text style={[styles.heroCardLabel, { color: c.textMuted }]}>Total Spent This Month</Text>
-                <Text style={[styles.heroCardAmount, { color: c.text }]}>₹{totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
+                <Text style={[styles.heroCardAmount, { color: c.text }]}>{currSymbol}{totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
               </View>
               <View style={[styles.heroBadge, { backgroundColor: c.accent + '20', borderColor: c.accent + '50' }]}>
                 <Ionicons name="analytics" size={20} color={c.accent} />
@@ -442,7 +444,7 @@ export default function DashboardScreen() {
               </View>
               <View style={[styles.heroStatPill, { backgroundColor: c.accentOrange + '15', borderColor: c.accentOrange + '30' }]}>
                 <Ionicons name="flame-outline" size={13} color={c.accentOrange} />
-                <Text style={[styles.heroStatValue, { color: c.accentOrange }]}>₹{avgDaily.toFixed(0)}/day avg</Text>
+                <Text style={[styles.heroStatValue, { color: c.accentOrange }]}>{currSymbol}{avgDaily.toFixed(0)}/day avg</Text>
               </View>
               {topCategory && (
                 <View style={[styles.heroStatPill, { backgroundColor: '#4C7A7815', borderColor: '#4C7A7830' }]}>
@@ -476,7 +478,7 @@ export default function DashboardScreen() {
                         <Text style={[styles.categoryName, { color: c.text }]}>{item.name}</Text>
                       </View>
                       <View style={styles.categoryRightCol}>
-                        <Text style={[styles.categoryAmount, { color: c.text }]}>₹{item.amount.toFixed(0)}</Text>
+                        <Text style={[styles.categoryAmount, { color: c.text }]}>{currSymbol}{item.amount.toFixed(0)}</Text>
                         <Text style={[styles.categoryPct, { color: col }]}>{item.percentage.toFixed(0)}%</Text>
                       </View>
                     </View>
@@ -577,7 +579,7 @@ export default function DashboardScreen() {
                         <Text style={[styles.categoryName, { color: c.text }]}>{item.categoryName}</Text>
                       </View>
                       <View style={styles.categoryRightCol}>
-                        <Text style={[styles.categoryAmount, { color: c.text }]}>₹{item.spent.toFixed(0)}</Text>
+                        <Text style={[styles.categoryAmount, { color: c.text }]}>{currSymbol}{item.spent.toFixed(0)}</Text>
                         <Text style={[styles.categoryPct, { color: barColor }]}>{pct.toFixed(0)}%</Text>
                       </View>
                     </View>
@@ -598,7 +600,7 @@ export default function DashboardScreen() {
                         }
                       ]} />
                     </View>
-                    <Text style={[styles.budgetSubline, { color: c.textMuted }]}>₹{item.spent.toFixed(0)} of ₹{item.limit.toFixed(0)} limit</Text>
+                    <Text style={[styles.budgetSubline, { color: c.textMuted }]}>{currSymbol}{item.spent.toFixed(0)} of {currSymbol}{item.limit.toFixed(0)} limit</Text>
                   </View>
                   </TouchableOpacity>
                 );
@@ -634,9 +636,9 @@ export default function DashboardScreen() {
                   <Path d={trendData.pathData} fill="none" stroke="#C79A3E" strokeWidth="2.5" />
                   
                   {/* Detailed Labels */}
-                  <SvgText x={5} y={20} fill={c.textMuted} fontSize={10} fontWeight="bold">₹{trendData.maxVal.toFixed(0)}</SvgText>
-                  <SvgText x={5} y={65} fill={c.textMuted} fontSize={10}>₹{(trendData.maxVal / 2).toFixed(0)}</SvgText>
-                  <SvgText x={5} y={118} fill={c.textMuted} fontSize={10}>₹0</SvgText>
+                  <SvgText x={5} y={20} fill={c.textMuted} fontSize={10} fontWeight="bold">{currSymbol}{trendData.maxVal.toFixed(0)}</SvgText>
+                  <SvgText x={5} y={65} fill={c.textMuted} fontSize={10}>{currSymbol}{(trendData.maxVal / 2).toFixed(0)}</SvgText>
+                  <SvgText x={5} y={118} fill={c.textMuted} fontSize={10}>{currSymbol}0</SvgText>
 
                   {/* Timeline labels at the bottom */}
                   <SvgText x={trendData.paddingLeft} y={135} fill={c.textMuted} fontSize={10}>{trendData.minDateStr}</SvgText>
@@ -789,7 +791,7 @@ export default function DashboardScreen() {
                     {' • '}{new Date(item.expenseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </Text>
                 </View>
-                <Text style={[styles.txAmount, { color: col, fontWeight: '800' }]}>-₹{Number(item.amount).toFixed(2)}</Text>
+                <Text style={[styles.txAmount, { color: col, fontWeight: '800' }]}>-{currSymbol}{Number(item.amount).toFixed(2)}</Text>
               </Animated.View>
               </TouchableOpacity>
               );
@@ -1154,7 +1156,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 14,
   },
-  txMain: { flex: 1 },
+  txMain: { flex: 1, paddingRight: 8 },
   txTitle: { fontSize: 15, fontWeight: '600', marginBottom: 3 },
   txMeta: { fontSize: 12 },
   txAmount: {

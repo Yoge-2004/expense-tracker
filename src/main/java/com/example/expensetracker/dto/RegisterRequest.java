@@ -23,12 +23,24 @@ public class RegisterRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
+    @Schema(description = "6-digit email verification OTP issued by POST /api/auth/signup/send-otp", example = "482913", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "Verification code is required")
+    private String otp;
+
+    @Schema(description = "Preferred display currency (ISO 4217 3-letter code). Defaults to INR if omitted.", example = "INR")
+    private String currency = "INR";
+
     public RegisterRequest() {}
 
-    public String getName()                { return name; }
-    public void   setName(String name)     { this.name = name; }
-    public String getEmail()               { return email; }
-    public void   setEmail(String email)   { this.email = email; }
-    public String getPassword()            { return password; }
-    public void   setPassword(String p)    { this.password = p; }
+    public String getName()                 { return name; }
+    public void   setName(String name)      { this.name = name; }
+    public String getEmail()                { return email; }
+    public void   setEmail(String email)    { this.email = email; }
+    public String getPassword()             { return password; }
+    public void   setPassword(String p)     { this.password = p; }
+    public String getOtp()                  { return otp; }
+    public void   setOtp(String otp)        { this.otp = otp; }
+    public String getCurrency()             { return currency != null ? currency : "INR"; }
+    public void   setCurrency(String c)     { this.currency = c; }
 }
+

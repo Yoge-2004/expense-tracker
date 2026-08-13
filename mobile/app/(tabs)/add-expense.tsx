@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Switch, Modal, Animated } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
+import { getCurrencySymbol } from '../../services/currency';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AnimatedButton } from '../../components/AnimatedButton';
@@ -13,7 +14,7 @@ interface Category {
 }
 
 export default function AddExpenseScreen() {
-  const { userId, theme } = useAuth();
+  const { userId, theme, currency } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{
     editId?: string;
@@ -23,6 +24,7 @@ export default function AddExpenseScreen() {
     editDate?: string;
   }>();
   const isEditMode = !!params.editId;
+  const currSymbol = getCurrencySymbol(currency);
   const [activeTab, setActiveTab] = useState<'expense' | 'budget'>('expense');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -373,7 +375,7 @@ export default function AddExpenseScreen() {
                 <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Amount</Text>
               </View>
               <View style={styles.amountRow}>
-                <Text style={[styles.currencySymbol, { color: c.accent }]}>₹</Text>
+                <Text style={[styles.currencySymbol, { color: c.accent }]}>{currSymbol}</Text>
                 <TextInput
                   style={[styles.amountInput, { color: c.text }]}
                   placeholder="0.00"
@@ -423,22 +425,29 @@ export default function AddExpenseScreen() {
 
             {/* Recurring Toggle (hidden while editing an existing expense) */}
             {!isEditMode && (
-            <View style={[styles.recurringRow, { backgroundColor: isRecurring ? c.accent + '12' : c.card, borderColor: isRecurring ? c.accent + '50' : c.border }]}>
-              <View style={[styles.recurringIcon, { backgroundColor: c.accent + '18' }]}>
-                <Ionicons name="repeat" size={18} color={c.accent} />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setIsRecurring(!isRecurring)}
+              style={[
+                styles.recurringRow,
+                { backgroundColor: isRecurring ? c.accent + '18' : c.card, borderColor: isRecurring ? c.accent : c.border }
+              ]}
+            >
+              <View style={[styles.recurringIcon, { backgroundColor: isRecurring ? c.accent : c.accent + '18' }]}>
+                <Ionicons name="repeat" size={18} color={isRecurring ? '#10120E' : c.accent} />
               </View>
               <View style={styles.recurringText}>
                 <Text style={[styles.recurringTitle, { color: c.text }]}>Make Recurring</Text>
-                <Text style={[styles.recurringSub, { color: c.textMuted }]}>Creates a tracked subscription</Text>
+                <Text style={[styles.recurringSub, { color: c.textMuted }]}>
+                  {isRecurring ? 'Tracked as subscription' : 'One-time expense record'}
+                </Text>
               </View>
-              <Switch
-                value={isRecurring}
-                onValueChange={setIsRecurring}
-                trackColor={{ false: isLight ? '#DAD4C1' : '#1D2117', true: '#C79A3E' }}
-                thumbColor={isRecurring ? '#FFFFFF' : isLight ? '#FFFFFF' : '#A8A395'}
-                ios_backgroundColor={isLight ? '#DAD4C1' : '#1D2117'}
-              />
-            </View>
+              <View style={[styles.statusPill, { backgroundColor: isRecurring ? c.accent : c.inputBg, borderColor: isRecurring ? c.accent : c.border }]}>
+                <Text style={[styles.statusPillText, { color: isRecurring ? '#10120E' : c.textMuted }]}>
+                  {isRecurring ? 'ON' : 'OFF'}
+                </Text>
+              </View>
+            </TouchableOpacity>
             )}
 
             {/* Frequency selector (if recurring) */}
@@ -551,7 +560,7 @@ export default function AddExpenseScreen() {
                 <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Monthly Limit</Text>
               </View>
               <View style={styles.amountRow}>
-                <Text style={[styles.currencySymbol, { color: c.orange }]}>₹</Text>
+                <Text style={[styles.currencySymbol, { color: c.orange }]}>{currSymbol}</Text>
                 <TextInput
                   style={[styles.amountInput, { color: c.text }]}
                   placeholder="0"
@@ -810,6 +819,17 @@ const styles = StyleSheet.create({
   recurringSub: {
     fontSize: 12,
     marginTop: 2,
+  },
+  statusPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 
   /* FREQUENCY */

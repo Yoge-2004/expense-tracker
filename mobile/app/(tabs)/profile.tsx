@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, TouchableOpacity, ScrollView,
-  Alert, Switch, TextInput, Animated,
+  Alert, Switch, TextInput, Modal, FlatList,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../services/api';
+import { WORLD_CURRENCIES } from '../../services/currency';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { AnimatedCard } from '../../components/AnimatedCard';
@@ -38,12 +38,15 @@ const DANGER_ITEMS = [
 ];
 
 export default function ProfileScreen() {
-  const { userId, userName, logout, theme, toggleTheme, updateUserName } = useAuth();
+  const { userId, userName, currency, updateCurrency, logout, theme, toggleTheme, updateUserName } = useAuth();
   const router = useRouter();
 
   const isLight = theme === 'light';
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState(userName || '');
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+
+  const currItem = WORLD_CURRENCIES.find(c => c.code === currency);
 
   const c = {
     bg: isLight ? '#EDEAE0' : '#10120E',
@@ -189,6 +192,25 @@ export default function ProfileScreen() {
             thumbColor="#FFFFFF"
           />
         </View>
+
+        {/* Currency Setting Row */}
+        <TouchableOpacity
+          style={[styles.settingRow, { backgroundColor: c.card, borderColor: c.border, marginTop: 10 }]}
+          onPress={() => setShowCurrencyModal(true)}
+        >
+          <View style={[styles.settingIconBox, { backgroundColor: c.accent + '18' }]}>
+            <Ionicons name="cash-outline" size={18} color={c.accent} />
+          </View>
+          <View style={styles.settingTextGroup}>
+            <Text style={[styles.settingTitle, { color: c.text }]}>Preferred Currency</Text>
+            <Text style={[styles.settingSub, { color: c.textMuted }]}>
+              {currItem ? `${currItem.flag} ${currItem.code} (${currItem.symbol})` : currency}
+            </Text>
+          </View>
+          <View style={[styles.chevronBox, { backgroundColor: c.inputBg }]}>
+            <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* ── ACCOUNT ── */}
@@ -240,6 +262,58 @@ export default function ProfileScreen() {
       <View style={styles.footer}>
         <Text style={[styles.footerText, { color: c.textMuted }]}>ExpenseTracker v1.0 · Made with ♥</Text>
       </View>
+
+      {/* ── CURRENCY SELECTION MODAL ── */}
+      <Modal
+        visible={showCurrencyModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCurrencyModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setShowCurrencyModal(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: c.text }]}>Preferred Currency</Text>
+              <TouchableOpacity onPress={() => setShowCurrencyModal(false)}>
+                <Ionicons name="close" size={22} color={c.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={WORLD_CURRENCIES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => {
+                const isSelected = item.code === currency;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.currencyItem,
+                      { backgroundColor: isSelected ? c.accent + '20' : c.inputBg, borderColor: isSelected ? c.accent : c.border }
+                    ]}
+                    onPress={async () => {
+                      await updateCurrency(item.code);
+                      setShowCurrencyModal(false);
+                    }}
+                  >
+                    <Text style={{ fontSize: 20, marginRight: 10 }}>{item.flag}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.currencyCode, { color: c.text }]}>{item.code} ({item.symbol})</Text>
+                      <Text style={[styles.currencyName, { color: c.textMuted }]}>{item.name}</Text>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={c.accent} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              style={{ maxHeight: 380 }}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 }
@@ -438,11 +512,44 @@ const styles = StyleSheet.create({
   },
 
   /* FOOTER */
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 32,
+  footer: { paddingVertical: 24, alignItems: 'center' },
+  footerText: { fontSize: 12 },
+
+  /* MODAL */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
   },
-  footerText: {
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  currencyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  currencyCode: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  currencyName: {
     fontSize: 12,
   },
 });
