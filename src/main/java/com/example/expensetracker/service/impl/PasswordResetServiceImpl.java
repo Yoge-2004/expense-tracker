@@ -211,22 +211,23 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            if (mimeMessage != null) {
+                try {
+                    MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+                    helper.setTo(user.getEmail());
+                    String subject = "SIGNUP".equals(purpose)
+                            ? "Verify your ExpenseTracker PRO account"
+                            : "Reset your ExpenseTracker PRO password";
+                    helper.setSubject(subject);
 
-            helper.setTo(user.getEmail());
-            String subject = "SIGNUP".equals(purpose)
-                    ? "Verify your ExpenseTracker PRO account"
-                    : "Reset your ExpenseTracker PRO password";
-            helper.setSubject(subject);
-
-            String htmlBody = buildHtmlEmailContent(user.getName(), otp, purpose);
-            String textBody = "SIGNUP".equals(purpose)
-                    ? "Hi " + user.getName() + ",\n\nYour verification code is: " + otp + "\nExpires in " + OTP_TTL_MINUTES + " minutes."
-                    : "Hi " + user.getName() + ",\n\nYour password reset code is: " + otp + "\nExpires in " + OTP_TTL_MINUTES + " minutes.";
-
-            helper.setText(textBody, htmlBody);
-            mailSender.send(mimeMessage);
-            log.info("Sent {} HTML OTP email to {}", purpose, user.getEmail());
+                    String htmlBody = buildHtmlEmailContent(user.getName(), otp, purpose);
+                    helper.setText(htmlBody, true);
+                } catch (Exception helperEx) {
+                    log.warn("Could not set full HTML headers on MimeMessage: {}", helperEx.getMessage());
+                }
+                mailSender.send(mimeMessage);
+                log.info("Sent {} HTML OTP email to {}", purpose, user.getEmail());
+            }
         } catch (Exception e) {
             log.error("Failed to send {} HTML email to {}", purpose, user.getEmail(), e);
         }
@@ -248,7 +249,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             <style>
               body { margin: 0; padding: 0; background-color: #0d0f0b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ece7d8; }
               .email-container { max-width: 560px; margin: 30px auto; background: #171a14; border: 1px solid rgba(236, 231, 216, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-              .email-header { padding: 32px 32px 20px; text-align: center; border-bottom: 1px solid rgba(236, 231, 216, 0.08); background: linear-gradient(180deg, rgba(199, 154, 62, 0.1) 0%, rgba(23, 26, 20, 0) 100%); }
+              .email-header { padding: 32px 32px 20px; text-align: center; border-bottom: 1px solid rgba(236, 231, 216, 0.08); background: linear-gradient(180deg, rgba(199, 154, 62, 0.1) 0%%, rgba(23, 26, 20, 0) 100%%); }
               .brand-badge { display: inline-block; background: rgba(199, 154, 62, 0.15); border: 1px solid rgba(199, 154, 62, 0.3); border-radius: 999px; padding: 6px 18px; font-size: 13px; font-weight: 800; color: #c79a3e; letter-spacing: 0.5px; }
               .email-body { padding: 32px; }
               .greeting { font-size: 20px; font-weight: 700; color: #ece7d8; margin-bottom: 10px; }
