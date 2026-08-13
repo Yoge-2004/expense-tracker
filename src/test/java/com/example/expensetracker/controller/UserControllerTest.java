@@ -78,4 +78,40 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("User not found"));
     }
+
+    // ─────────────── GET /api/users/{userId} ───────────────
+
+    @Test
+    @WithMockUser
+    @DisplayName("GET /api/users/{userId} → 200 OK with User profile including currency")
+    void getUserProfile_returns200WithCurrency() throws Exception {
+        com.example.expensetracker.model.User user = new com.example.expensetracker.model.User();
+        user.setId(1L);
+        user.setName("Yogeshwaran");
+        user.setEmail("yoge@example.com");
+        user.setCurrency("EUR");
+
+        when(userService.findById(1L)).thenReturn(java.util.Optional.of(user));
+
+        mockMvc.perform(get("/api/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Yogeshwaran"))
+                .andExpect(jsonPath("$.currency").value("EUR"));
+    }
+
+    // ─────────────── PUT /api/users/{userId}/currency ───────────────
+
+    @Test
+    @WithMockUser
+    @DisplayName("PUT /api/users/{userId}/currency → 200 OK on successful currency update")
+    void updateCurrency_validRequest_returns200() throws Exception {
+        doNothing().when(userService).updateCurrency(1L, "USD");
+
+        mockMvc.perform(put("/api/users/1/currency")
+                        .contentType("application/json")
+                        .content("{\"currency\":\"USD\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currency").value("USD"));
+    }
 }
