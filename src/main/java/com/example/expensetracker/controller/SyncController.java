@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@Tag(name = "Sync", description = "File to Database Auto-Sync Endpoints")
+@Tag(name = "Sync", description = "File to Database Auto-Sync & HF Spaces Backup Endpoints")
 @RestController
 @RequestMapping("/api/sync")
 public class SyncController {
@@ -33,4 +33,26 @@ public class SyncController {
     public ResponseEntity<Map<String, Object>> syncDbToFile() {
         return ResponseEntity.ok(syncService.syncDbToFile());
     }
+
+    @Operation(summary = "Push JSON backup to Hugging Face Spaces",
+               description = "Exports the current database to expenses_sync.json and uploads it to the HF Space git repository.")
+    @SecurityRequirements
+    @PostMapping("/push-to-hf")
+    public ResponseEntity<Map<String, Object>> pushToHuggingFace() {
+        syncService.syncDbToFile();
+        return ResponseEntity.ok(syncService.pushJsonBackupToHuggingFace());
+    }
+
+    @Operation(summary = "Pull JSON backup from Hugging Face Spaces",
+               description = "Downloads expenses_sync.json from HF Space and imports any missing records into the database.")
+    @SecurityRequirements
+    @PostMapping("/pull-from-hf")
+    public ResponseEntity<Map<String, Object>> pullFromHuggingFace() {
+        Map<String, Object> downloadResult = syncService.downloadJsonBackupFromHuggingFace();
+        if ("success".equals(downloadResult.get("status"))) {
+            syncService.syncFileToDb();
+        }
+        return ResponseEntity.ok(downloadResult);
+    }
 }
+

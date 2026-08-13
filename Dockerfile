@@ -3,7 +3,6 @@ FROM eclipse-temurin:26-jre
 WORKDIR /app
 
 COPY app.jar app.jar
-COPY expense_tracker.db /app/expense_tracker.db
 COPY expenses_sync.json /app/expenses_sync.json
 
 RUN chown -R 1000:1000 /app
