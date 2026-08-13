@@ -95,11 +95,15 @@ public class FileDbSyncService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onStartup() {
-        logger.info("Application ready — initialising File ↔ DB auto-sync…");
-        syncFileToDb();
-        syncDbToFile();
-        if (hfSyncEnabled) {
-            pushSqliteToHuggingFace();
+        try {
+            logger.info("Application ready — initialising File ↔ DB auto-sync…");
+            syncFileToDb();
+            syncDbToFile();
+            if (hfSyncEnabled) {
+                pushSqliteToHuggingFace();
+            }
+        } catch (Exception e) {
+            logger.error("Error during startup sync: {}, continuing application boot.", e.getMessage(), e);
         }
     }
 

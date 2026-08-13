@@ -107,8 +107,12 @@ public class RecurringExpenseScheduler {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        log.info("Application is ready. Checking for any missed recurring expenses...");
-        processRecurringExpenses();
+        try {
+            log.info("Application is ready. Checking for any missed recurring expenses...");
+            processRecurringExpenses();
+        } catch (Exception e) {
+            log.error("Error checking missed recurring expenses on startup: {}, continuing application boot.", e.getMessage(), e);
+        }
     }
 
     private LocalDate nextOccurrence(RecurringExpense recurringExpense) {
