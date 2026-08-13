@@ -994,6 +994,21 @@ elements.profileTrigger.addEventListener("click", (e) => { e.stopPropagation(); 
 document.addEventListener("click", (e) => { if (!elements.profileTrigger.contains(e.target) && !elements.profileMenu.contains(e.target)) elements.profileMenu.classList.remove("active"); });
 document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "index.html"; });
 
+const sendMonthlyReportBtn = document.getElementById("sendMonthlyReportBtn");
+if (sendMonthlyReportBtn) {
+    sendMonthlyReportBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        elements.profileMenu.classList.remove("active");
+        try {
+            showToast("Sending monthly report to your email...", "info");
+            await apiRequest(`/reports/monthly/user/${userId}/send-email`, { method: "POST" });
+            showToast("Monthly financial report email sent successfully!", "success");
+        } catch (err) {
+            showToast(err.message || "Failed to send monthly report email", "error");
+        }
+    });
+}
+
 // Fetch and display server-side user profile (name + email)
 (async () => {
     try {
