@@ -110,7 +110,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.SERVICE_UNAVAILABLE.value(),
                 HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
-                "Database service is unavailable. Please try again later.",
+                "Unable to connect to the server. Please try again in a few moments.",
                 request.getRequestURI()
         );
 

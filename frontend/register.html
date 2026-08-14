@@ -326,7 +326,17 @@
             const prefix = baseName || userTyped || 'user';
 
             if (prefix.length >= 2) {
-                let suggestions = [`${prefix}_26`, `${prefix}.pro`, `${prefix}_${Math.floor(10 + Math.random() * 89)}`];
+                const tags = ['pro', 'hq', 'dev', 'app', 'hub', 'zone', 'prime', 'lab', 'max', 'core', 'flow', 'star', 'vault'];
+                const adjs = ['cool', 'swift', 'hyper', 'super', 'smart', 'ultra', 'epic', 'bright', 'elite', 'nova', 'apex'];
+                const randomTag = tags[Math.floor(Math.random() * tags.length)];
+                const randomAdj = adjs[Math.floor(Math.random() * adjs.length)];
+                const randomNum = Math.floor(100 + Math.random() * 900);
+
+                let suggestions = [
+                    `${prefix}_${randomNum}`,
+                    `${prefix}.${randomTag}`,
+                    `${randomAdj}_${prefix}`
+                ];
 
                 try {
                     const apiUrl = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:8080';
@@ -338,7 +348,7 @@
                         }
                     }
                 } catch (e) {
-                    console.log('Using local username suggestions fallback');
+                    console.log('Using dynamic local username suggestions');
                 }
 
                 const [s1, s2, s3] = suggestions;

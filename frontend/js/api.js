@@ -124,13 +124,13 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
     } catch (error) {
         if (retriesLeft > 0) {
-            updateServerStatus(false, "Waking up server...");
-            await new Promise(r => setTimeout(r, 3000));
+            updateServerStatus(false, "Connecting to server...");
+            await new Promise(r => setTimeout(r, 2500));
             activeRequests -= 1;
             return apiRequest(endpoint, options, retriesLeft - 1);
         }
-        updateServerStatus(false, "Server Waking Up...");
-        throw new Error("Server is currently waking up from cold-start. Please try again in 5 seconds.");
+        updateServerStatus(false, "Connecting...");
+        throw new Error("Unable to connect to the server. Please check your connection and try again.");
     } finally {
         activeRequests -= 1;
         if (activeRequests === 0) setLoading(false);
@@ -138,12 +138,12 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
 
     if (response.status === 503) {
         if (retriesLeft > 0) {
-            updateServerStatus(false, "Waking up server...");
-            await new Promise(r => setTimeout(r, 3000));
+            updateServerStatus(false, "Connecting to server...");
+            await new Promise(r => setTimeout(r, 2500));
             return apiRequest(endpoint, options, retriesLeft - 1);
         }
-        updateServerStatus(false, "Server Waking Up...");
-        throw new Error("Server is currently starting up. Please try clicking again in a few seconds.");
+        updateServerStatus(false, "Connecting...");
+        throw new Error("The server is currently connecting. Please try again in a few moments.");
     }
 
     updateServerStatus(true, "Connected");
@@ -160,10 +160,14 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
     if (!response.ok) {
         try {
             const error = JSON.parse(text);
-            throw new Error(error.message || error.error || "Request failed.");
+            let msg = error.message || error.error || "Request failed.";
+            if (msg.toLowerCase().includes("database")) {
+                msg = "Unable to connect to the server. Please try again in a moment.";
+            }
+            throw new Error(msg);
         } catch (error) {
             if (error.message && !error.message.includes("JSON")) throw error;
-            throw new Error("The server is temporarily unavailable. Please try again in a moment.");
+            throw new Error("Unable to connect to the server. Please try again in a moment.");
         }
     }
 

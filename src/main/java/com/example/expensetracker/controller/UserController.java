@@ -42,6 +42,14 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
+    private static final java.util.List<String> RANDOM_TAGS = java.util.List.of(
+            "pro", "hq", "dev", "app", "hub", "zone", "box", "net", "lab", "zen", "prime", "max", "core", "flow", "star", "link", "fin", "tech", "vault"
+    );
+
+    private static final java.util.List<String> RANDOM_ADJECTIVES = java.util.List.of(
+            "cool", "swift", "hyper", "super", "smart", "ultra", "epic", "bright", "fast", "elite", "prime", "neo", "pure", "nova", "apex", "grand", "star"
+    );
+
     @io.swagger.v3.oas.annotations.security.SecurityRequirements
     @GetMapping("/suggest-usernames")
     public ResponseEntity<java.util.Map<String, Object>> suggestUsernames(
@@ -51,27 +59,40 @@ public class UserController {
         if (prefix.isBlank()) prefix = "user";
 
         java.util.Random rnd = new java.util.Random();
+        java.util.Set<String> uniqueSuggestions = new java.util.LinkedHashSet<>();
 
-        // 1. Hardcoded suffix '_26'
-        String s1 = prefix + "_26";
-        while (userRepository.existsByNameIgnoreCase(s1) || userRepository.existsByEmail(s1)) {
-            s1 = prefix + "_26" + rnd.nextInt(90 + 10);
+        int attempts = 0;
+        while (uniqueSuggestions.size() < 3 && attempts < 25) {
+            attempts++;
+            String candidate;
+            int type = (uniqueSuggestions.size() + attempts) % 3;
+
+            if (type == 0) {
+                // Random numeric suffix (e.g. alex_842, alex95)
+                candidate = prefix + "_" + (100 + rnd.nextInt(900));
+            } else if (type == 1) {
+                // Random tag suffix (e.g. alex.zone, alex_hub)
+                String tag = RANDOM_TAGS.get(rnd.nextInt(RANDOM_TAGS.size()));
+                candidate = (rnd.nextBoolean() ? prefix + "." + tag : prefix + "_" + tag);
+            } else {
+                // Random adjective prefix (e.g. swift_alex, nova_alex)
+                String adj = RANDOM_ADJECTIVES.get(rnd.nextInt(RANDOM_ADJECTIVES.size()));
+                candidate = adj + "_" + prefix;
+            }
+
+            // Verify non-existence in DB
+            if (!userRepository.existsByNameIgnoreCase(candidate) && !userRepository.existsByEmail(candidate)) {
+                uniqueSuggestions.add(candidate);
+            }
         }
 
-        // 2. Hardcoded suffix '.pro'
-        String s2 = prefix + ".pro";
-        while (userRepository.existsByNameIgnoreCase(s2) || userRepository.existsByEmail(s2)) {
-            s2 = prefix + ".pro" + rnd.nextInt(90 + 10);
-        }
-
-        // 3. Random suffix
-        String s3 = prefix + "_" + (10 + rnd.nextInt(89));
-        while (userRepository.existsByNameIgnoreCase(s3) || userRepository.existsByEmail(s3)) {
-            s3 = prefix + "_" + (100 + rnd.nextInt(899));
+        // Guaranteed fallback if DB had collisions
+        while (uniqueSuggestions.size() < 3) {
+            uniqueSuggestions.add(prefix + "_" + (1000 + rnd.nextInt(9000)));
         }
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
-        response.put("suggestions", java.util.List.of(s1, s2, s3));
+        response.put("suggestions", new java.util.ArrayList<>(uniqueSuggestions));
         return ResponseEntity.ok(response);
     }
 

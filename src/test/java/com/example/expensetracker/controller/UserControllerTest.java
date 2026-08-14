@@ -118,13 +118,16 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/users/suggest-usernames → 200 OK with DB checked suggestions (_26, .pro, random)")
+    @DisplayName("GET /api/users/suggest-usernames → 200 OK with truly random DB-checked suggestions")
     void suggestUsernames_checksDb_returns200() throws Exception {
         when(userRepository.existsByNameIgnoreCase(anyString())).thenReturn(false);
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
 
         mockMvc.perform(get("/api/users/suggest-usernames?base=john"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.suggestions[0]").value("john_26"))
-                .andExpect(jsonPath("$.suggestions[1]").value("john.pro"));
+                .andExpect(jsonPath("$.suggestions.length()").value(3))
+                .andExpect(jsonPath("$.suggestions[0]").isNotEmpty())
+                .andExpect(jsonPath("$.suggestions[1]").isNotEmpty())
+                .andExpect(jsonPath("$.suggestions[2]").isNotEmpty());
     }
 }

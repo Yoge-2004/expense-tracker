@@ -46,6 +46,7 @@ public class ResilientFallbackDataSourceConfig {
         primaryConfig.setUsername(primaryUsername);
         primaryConfig.setPassword(primaryPassword);
         primaryConfig.setConnectionTimeout(5000); // 5s fast fail to trigger fallback
+        primaryConfig.setInitializationFailTimeout(-1); // Do not crash startup if remote DB is asleep
         primaryConfig.setMaximumPoolSize(10);
         primaryConfig.setMinimumIdle(0);
         primaryConfig.setPoolName("PrimaryHikariPool");
