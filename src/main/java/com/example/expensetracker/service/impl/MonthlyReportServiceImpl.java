@@ -212,19 +212,22 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         int year = lastMonth.getYear();
         int month = lastMonth.getMonthValue();
 
-        List<User> users = userRepository.findAll();
         int sentCount = 0;
-
-        for (User u : users) {
-            try {
-                boolean alreadySent = reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
-                if (!alreadySent) {
-                    sendMonthlyReportEmail(u.getId(), year, month);
-                    sentCount++;
+        try {
+            List<User> users = userRepository.findAll();
+            for (User u : users) {
+                try {
+                    boolean alreadySent = reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
+                    if (!alreadySent) {
+                        sendMonthlyReportEmail(u.getId(), year, month);
+                        sentCount++;
+                    }
+                } catch (Exception e) {
+                    log.error("Error processing automated monthly report catch-up for user {}", u.getId(), e);
                 }
-            } catch (Exception e) {
-                log.error("Error processing automated monthly report catch-up for user {}", u.getId(), e);
             }
+        } catch (Exception e) {
+            log.warn("Could not query users for automated monthly reports: {}", e.getMessage());
         }
         log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.", sentCount, month, year);
     }
