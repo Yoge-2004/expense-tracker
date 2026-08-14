@@ -1904,8 +1904,8 @@ button[type="submit"]:active {
 }
 
 .metric-card-glow {
-    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.15) 0%, var(--bg-card) 100%);
-    border-color: rgba(var(--primary-rgb), 0.3);
+    background: var(--card-bg) !important;
+    border-color: rgba(var(--primary-rgb), 0.35) !important;
 }
 
 .metric-header {
@@ -3164,18 +3164,12 @@ button[type="submit"]:active {
     box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-accent);
 }
 .metric-card-glow {
-    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.2),
-                0 20px 40px -10px rgba(var(--primary-rgb), 0.12);
+    background: var(--card-bg) !important;
+    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.25),
+                0 16px 36px -10px rgba(0, 0, 0, 0.15) !important;
 }
 .metric-card-glow::after {
-    content: '';
-    position: absolute;
-    top: -60px;
-    right: -60px;
-    width: 180px;
-    height: 180px;
-    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.12) 0%, transparent 70%);
-    pointer-events: none;
+    display: none !important;
 }
 
 /* ── Transaction row improvements ── */
@@ -3426,13 +3420,19 @@ button[type="submit"]:active {
 
 /* ── Export / import buttons ── */
 .btn-text-icon {
-    font-size: 11px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.04em;
-    min-width: 44px;
-    height: 36px;
-    padding: 0 12px !important;
+    letter-spacing: 0.02em;
+    min-width: fit-content !important;
+    height: 36px !important;
+    padding: 0 14px !important;
     width: auto !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
 }
 
 /* ── Section heading dividers ── */
@@ -3847,14 +3847,19 @@ button[type="submit"]:active {
     .list-header-actions {
         display: flex !important;
         flex-wrap: wrap !important;
+        align-items: center !important;
         gap: 8px !important;
         width: 100% !important;
     }
 
     .btn-text-icon {
         font-size: 11px !important;
-        padding: 0 10px !important;
+        padding: 0 12px !important;
         height: 34px !important;
+        width: auto !important;
+        min-width: fit-content !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
     }
 
     /* Budget grid single column */
@@ -3899,15 +3904,62 @@ button[type="submit"]:active {
         height: 180px !important;
     }
 
-    /* Expense items: wrap gracefully */
+    /* Expense items: wrap gracefully without truncating full expense name */
     .expense-item {
-        flex-wrap: wrap !important;
-        gap: 10px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 14px 12px !important;
+    }
+
+    .expense-emoji-box {
+        width: 38px !important;
+        height: 38px !important;
+        flex-shrink: 0 !important;
     }
 
     .expense-info {
-        min-width: 0;
-        flex: 1 1 auto;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .expense-title {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.35 !important;
+        margin: 0 0 4px 0 !important;
+    }
+
+    .expense-meta {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        font-size: 11px !important;
+    }
+
+    .expense-actions-col {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+        margin-left: 6px !important;
+    }
+
+    .expense-amount {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+    }
+
+    .expense-actions-col .btn-edit,
+    .expense-actions-col .btn-delete {
+        width: 28px !important;
+        height: 28px !important;
+        padding: 0 !important;
     }
 }
 
@@ -3949,8 +4001,10 @@ button[type="submit"]:active {
     }
 
     .btn-text-icon {
-        min-width: 36px !important;
-        padding: 0 8px !important;
+        min-width: fit-content !important;
+        width: auto !important;
+        padding: 0 10px !important;
+        white-space: nowrap !important;
     }
 }
 

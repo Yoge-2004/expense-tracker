@@ -319,16 +319,21 @@ async function loadBudgets() {
             const endStr   = b.endDate   || '';
             return `
             <div class="budget-item">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
                         <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
-                        <div>
-                            <div style="font-size:14px; font-weight:700; color:var(--text-main);">${b.categoryName}</div>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${formatCurrency(b.spent)} of ${formatCurrency(b.limit)} <span class="status-badge badge-neutral" style="margin-left:4px;">${periodLabel}</span></div>
+                        <div style="min-width:0; flex:1;">
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <span style="font-size:14px; font-weight:700; color:var(--text-main); line-height:1.2;">${b.categoryName}</span>
+                                <span class="status-badge badge-neutral" style="font-size:9px; padding:2px 7px; font-weight:700; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase;">${periodLabel}</span>
+                            </div>
+                            <div style="font-size:12px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; line-height:1.3;">
+                                ${formatCurrency(b.spent)} <span style="opacity:0.7;">of</span> ${formatCurrency(b.limit)}
+                            </div>
                         </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:13px; font-weight:800; color:${barColor};">${(b.percentage || 0).toFixed(0)}%</span>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                        <span style="font-size:13px; font-weight:800; color:${barColor}; margin-right:2px;">${(b.percentage || 0).toFixed(0)}%</span>
                         <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}')" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
@@ -680,18 +685,18 @@ function renderList(expenses) {
         const isRecurring = exp.recurring || exp.isRecurring;
         return `
         <div class="expense-item">
-            <div style="width:42px; height:42px; border-radius:12px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <div class="expense-emoji-box" style="width:40px; height:40px; border-radius:12px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                 <span style="font-size:18px;">${getCategoryEmoji(catName)}</span>
             </div>
             <div class="expense-info" style="flex:1; min-width:0;">
-                <h4 style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${exp.description}</h4>
-                <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:3px;">
+                <h4 class="expense-title">${exp.description}</h4>
+                <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
                     <span>${formatDate(exp.expenseDate)}</span>
                     <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${catName}</span>
                     ${isRecurring ? '<span style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; font-weight:600; color:var(--accent); background:rgba(162,62,50,0.08); padding:2px 8px; border-radius:3px; border:1px solid rgba(162,62,50,0.35);">⟳ RECURRING</span>' : ''}
                 </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <div class="expense-actions-col" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                 <div class="expense-amount" style="font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--text-main); font-size:15px; font-weight:600;">${formatCurrency(exp.amount)}</div>
                 <button class="btn-edit" onclick="editExpense(${exp.id})" title="Edit">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
