@@ -397,6 +397,6 @@ class AuthControllerTest {
                                 Map.of("email", "yoge@example.com", "password", "secret123"))))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.status").value(503))
-                .andExpect(jsonPath("$.message").value("Database service is unavailable. Please try again later."));
+                .andExpect(jsonPath("$.message").value("Unable to connect to the server. Please try again in a few moments."));
     }
 }
