@@ -5,8 +5,5 @@
   from = "/api/*"
   to = "https://yoge-2004-expense-tracker-backend.hf.space/api/:splat"
   status = 200
+  force = true
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
