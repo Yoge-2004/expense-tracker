@@ -41,6 +41,14 @@ public interface UserService {
     User registerUser(User user);
 
     /**
+     * Looks up a user by their email address or username (case-insensitive).
+     *
+     * @param identifier the email or username to search for
+     * @return an {@link Optional} containing the matched {@link User}
+     */
+    Optional<User> findByIdentifier(String identifier);
+
+    /**
      * Looks up a user by their email address.
      *
      * <p>Used in authentication flows (post-login user detail retrieval) and

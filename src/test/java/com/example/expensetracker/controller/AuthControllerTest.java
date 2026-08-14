@@ -85,6 +85,7 @@ class AuthControllerTest {
                 .thenReturn(auth);
         when(jwtService.generateToken("yoge@example.com")).thenReturn("mocked.jwt.token");
         when(userService.findByEmail("yoge@example.com")).thenReturn(Optional.of(sampleUser));
+        when(userService.findByIdentifier("yoge@example.com")).thenReturn(Optional.of(sampleUser));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

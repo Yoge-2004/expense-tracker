@@ -101,6 +101,16 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    @Override
+    public Optional<User> findByIdentifier(String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            return Optional.empty();
+        }
+        String q = identifier.trim();
+        return userRepository.findByEmailIgnoreCase(q)
+                .or(() -> userRepository.findByNameIgnoreCase(q));
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -111,7 +121,9 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        if (email == null || email.isBlank()) return Optional.empty();
+        return userRepository.findByEmailIgnoreCase(email.trim())
+                .or(() -> userRepository.findByEmail(email));
     }
 
     /**

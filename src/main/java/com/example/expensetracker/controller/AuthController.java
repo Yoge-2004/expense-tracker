@@ -82,11 +82,15 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
             @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
+        String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-        String token = jwtService.generateToken(auth.getName());
-        User user = userService.findByEmail(request.getEmail())
+                new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
+        User user = userService.findByIdentifier(identifier)
+                .or(() -> userService.findByEmail(identifier))
+                .or(() -> userService.findByIdentifier(auth.getName()))
+                .or(() -> userService.findByEmail(auth.getName()))
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        String token = jwtService.generateToken(user.getEmail());
         return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency()));
     }
 

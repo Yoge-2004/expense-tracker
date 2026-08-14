@@ -54,6 +54,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     /**
+     * Retrieves a user by their email address (case-insensitive).
+     */
+    Optional<User> findByEmailIgnoreCase(String email);
+
+    /**
+     * Retrieves a user by their username/name (case-insensitive).
+     */
+    Optional<User> findByNameIgnoreCase(String name);
+
+    /**
+     * Checks whether a user with the given email address already exists (case-insensitive).
+     */
+    boolean existsByEmailIgnoreCase(String email);
+
+    /**
      * Checks whether a user with the given name/username exists in the database (case-insensitive).
      *
      * @param name the username to check
