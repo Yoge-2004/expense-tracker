@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +50,9 @@ public class AuthController {
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     private final PasswordResetService passwordResetService;
 
+    @Value("${app.auth.email-verification-enabled:false}")
+    private boolean emailVerificationEnabled;
+
     public AuthController(AuthenticationManager authenticationManager,
                           JwtService jwtService,
                           UserService userService,
@@ -59,6 +63,18 @@ public class AuthController {
         this.userService = userService;
         this.googleIdTokenVerifier = googleIdTokenVerifier;
         this.passwordResetService = passwordResetService;
+    }
+
+    // ─── GET /api/auth/config ─────────────────────────────────────────────
+
+    @Operation(summary = "Get auth configuration",
+        description = "Returns public configuration flags like whether email OTP verification is required.")
+    @SecurityRequirements
+    @GetMapping("/config")
+    public ResponseEntity<Map<String, Object>> getAuthConfig() {
+        return ResponseEntity.ok(Map.of(
+            "emailVerificationEnabled", emailVerificationEnabled
+        ));
     }
 
     // ─── POST /api/auth/login ─────────────────────────────────────────────
@@ -117,17 +133,20 @@ public class AuthController {
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "This email address is already registered."));
         }
-        return ResponseEntity.ok(Map.of("message", "Verification code sent to " + request.getEmail()));
+        return ResponseEntity.ok(Map.of(
+            "message", "Verification code sent to " + request.getEmail(),
+            "emailVerificationEnabled", String.valueOf(emailVerificationEnabled)
+        ));
     }
 
     // ─── POST /api/auth/register ──────────────────────────────────────────
 
     @Operation(summary = "Register",
         description = """
-            Creates a new user account after verifying the email OTP issued by
-            `POST /api/auth/signup/send-otp`.
+            Creates a new user account. If email verification is enabled, verifies the OTP
+            issued by `POST /api/auth/signup/send-otp`.
 
-            Fields: name, email, password (min 6 chars), otp (6-digit code), currency (optional, default INR).
+            Fields: name, email, password (min 6 chars), otp (optional if verification disabled), currency (optional, default INR).
             """)
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Account created successfully",
@@ -144,8 +163,10 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(
             @Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
-        // Verify the signup OTP before creating the account.
-        passwordResetService.verifySignupOtp(request.getEmail(), request.getOtp());
+        // Verify OTP if email verification is enabled or if an explicit OTP was submitted
+        if (emailVerificationEnabled || (request.getOtp() != null && !request.getOtp().isBlank() && !"BYPASS".equalsIgnoreCase(request.getOtp()))) {
+            passwordResetService.verifySignupOtp(request.getEmail(), request.getOtp());
+        }
 
         User user = new User();
         user.setName(request.getName());

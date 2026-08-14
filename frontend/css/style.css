@@ -1786,18 +1786,28 @@ button[type="submit"]:active {
     border-radius: 10px;
 }
 
-/* ================== 10. PRO FINTECH STYLING ================== */
-.brand-badge {
+.dashboard-heading {
     display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-start;
+}
+
+.brand-badge {
+    display: inline-flex;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
 }
 
 .brand-title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
     letter-spacing: -0.5px;
     color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.2;
 }
 
 .pro-tag {

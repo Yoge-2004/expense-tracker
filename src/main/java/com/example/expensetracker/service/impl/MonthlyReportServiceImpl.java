@@ -47,6 +47,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Value("${spring.mail.host:}")
     private String configuredMailHost;
 
+    @Value("${app.mail.enabled:false}")
+    private boolean mailEnabled;
+
     public MonthlyReportServiceImpl(UserRepository userRepository,
                                     ExpenseRepository expenseRepository,
                                     BudgetRepository budgetRepository,
@@ -153,10 +156,10 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
         MonthlyReportDto report = generateMonthlyReport(userId, year, month);
 
-        if (configuredMailHost == null || configuredMailHost.isBlank()) {
-            log.warn("[DEV ONLY - email not configured] Monthly report generated for {}: Spent {} {}",
+        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()) {
+            log.info("[Email Delivery Disabled] Monthly report generated for {}: Spent {} {}",
                     user.getEmail(), report.getCurrency(), report.getTotalOutflow());
-            saveReportLog(user, year, month, true, "Dev mode - simulated dispatch");
+            saveReportLog(user, year, month, true, "Email delivery disabled on this environment - report saved");
             return;
         }
 

@@ -1,6 +1,37 @@
-// ─── Two-phase signup: send OTP → verify OTP → create account ───────────────
+// ─── Two-phase signup: send OTP (when enabled) → verify OTP → create account ───
 
 let otpTimerInterval = null;
+let emailVerificationRequired = false; // Default false (for HF spaces / dev), updated dynamically via /auth/config
+
+async function initAuthConfig() {
+    try {
+        const config = await apiRequest('/auth/config', { method: 'GET' });
+        if (config && typeof config.emailVerificationEnabled === 'boolean') {
+            emailVerificationRequired = config.emailVerificationEnabled;
+        }
+    } catch (e) {
+        console.warn('Could not fetch auth config, defaulting to direct registration:', e);
+        emailVerificationRequired = false;
+    }
+
+    const sendBtn = document.getElementById('sendOtpBtn');
+    const regBtn  = document.getElementById('registerBtn');
+    const otpGrp  = document.getElementById('otpGroup');
+
+    if (!emailVerificationRequired) {
+        // Direct registration mode
+        if (sendBtn) sendBtn.style.display = 'none';
+        if (otpGrp)  otpGrp.style.display  = 'none';
+        if (regBtn)  regBtn.style.display  = '';
+    } else {
+        // OTP verification required
+        if (sendBtn) sendBtn.style.display = '';
+        if (otpGrp)  otpGrp.style.display  = 'none';
+        if (regBtn)  regBtn.style.display  = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initAuthConfig);
 
 function startOtpTimer(seconds) {
     const timerEl = document.getElementById('otpTimer');
@@ -50,10 +81,20 @@ async function doSendOtp() {
     sendBtn.disabled = true;
     sendBtn.querySelector('span').textContent = 'Sending…';
     try {
-        await apiRequest('/auth/signup/send-otp', {
+        const res = await apiRequest('/auth/signup/send-otp', {
             method: 'POST',
             body: JSON.stringify({ email, name }),
         });
+
+        if (res && res.emailVerificationEnabled === 'false') {
+            emailVerificationRequired = false;
+            showToast('Email verification is not required. Click Create Account to finish.', 'info');
+            document.getElementById('otpGroup').style.display = 'none';
+            document.getElementById('registerBtn').style.display = '';
+            sendBtn.style.display = 'none';
+            return;
+        }
+
         showToast(`Verification code sent to ${email}`, 'success');
 
         // Reveal OTP field + submit button, hide Send OTP button
@@ -102,10 +143,10 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const name     = document.getElementById('reg-name').value.trim();
     const email    = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
-    const otp      = (document.getElementById('reg-otp').value || '').trim();
+    const otp      = (document.getElementById('reg-otp')?.value || '').trim();
     const currency = document.getElementById('reg-currency')?.value || 'INR';
 
-    if (!otp || otp.length !== 6) {
+    if (emailVerificationRequired && (!otp || otp.length !== 6)) {
         showToast('Please enter the 6-digit verification code from your email.', 'error');
         document.getElementById('reg-otp').classList.add('is-invalid');
         return;
@@ -115,7 +156,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     try {
         await apiRequest('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ name, email, password, otp, currency }),
+            body: JSON.stringify({ name, email, password, otp: otp || 'BYPASS', currency }),
         });
 
         clearInterval(otpTimerInterval);
@@ -123,7 +164,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         setTimeout(() => { window.location.href = 'index.html'; }, 800);
 
     } catch (error) {
-        showToast(error.message || 'Registration failed.', 'error');
+        showToast(error.message || 'Registration failed. Please try again.', 'error');
         if (submitBtn) submitBtn.disabled = false;
         if (error.message?.toLowerCase().includes('email') ||
             error.message?.toLowerCase().includes('user') ||

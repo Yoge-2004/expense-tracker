@@ -23,8 +23,7 @@ public class RegisterRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @Schema(description = "6-digit email verification OTP issued by POST /api/auth/signup/send-otp", example = "482913", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "Verification code is required")
+    @Schema(description = "6-digit email verification OTP (required when email verification is enabled)", example = "482913")
     private String otp;
 
     @Schema(description = "Preferred display currency (ISO 4217 3-letter code). Defaults to INR if omitted.", example = "INR")

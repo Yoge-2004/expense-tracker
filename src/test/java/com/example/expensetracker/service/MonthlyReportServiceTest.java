@@ -85,6 +85,7 @@ class MonthlyReportServiceTest {
     @DisplayName("sendMonthlyReportEmail → Triggers HTML email delivery and saves log when mail host configured")
     void sendMonthlyReportEmail_sendsMimeMessageAndSavesLog() {
         ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.gmail.com");
+        ReflectionTestUtils.setField(service, "mailEnabled", true);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(testUser, 2026, 8)).thenReturn(false);

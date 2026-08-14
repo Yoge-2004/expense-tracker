@@ -150,6 +150,7 @@ class PasswordResetServiceTest {
     @DisplayName("requestReset & sendOtpEmail → Triggers HTML email delivery when mail host configured")
     void requestReset_withMailConfigured_sendsHtmlMimeMessage() {
         ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.example.com");
+        ReflectionTestUtils.setField(service, "mailEnabled", true);
         when(userRepository.findByEmail("yoge@example.com")).thenReturn(Optional.of(testUser));
         when(mailSenderProvider.getIfAvailable()).thenReturn(mailSender);
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);

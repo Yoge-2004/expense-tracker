@@ -42,6 +42,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Value("${spring.mail.host:}")
     private String configuredMailHost;
 
+    @Value("${app.mail.enabled:false}")
+    private boolean mailEnabled;
+
     public PasswordResetServiceImpl(UserRepository userRepository,
                                      PasswordResetOtpRepository otpRepository,
                                      PasswordEncoder passwordEncoder,
@@ -198,8 +201,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             listener.onOtpIssued(user.getEmail(), otp);
         }
 
-        if (configuredMailHost == null || configuredMailHost.isBlank()) {
-            log.warn("[DEV ONLY - email not configured] {} OTP for {}: {}", purpose, user.getEmail(), otp);
+        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()) {
+            log.info("[Email Delivery Disabled] {} OTP for {}: {}", purpose, user.getEmail(), otp);
             return;
         }
 
