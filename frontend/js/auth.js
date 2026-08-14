@@ -3,7 +3,7 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     const submitBtn = e.target.querySelector('button[type="submit"]');
     if (submitBtn?.disabled) return; // a submission is already in flight
 
-    const email = document.getElementById("email").value;
+    const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
     if (submitBtn) submitBtn.disabled = true;
