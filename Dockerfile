@@ -1,8 +1,9 @@
-# Multi-stage Dockerfile: builds latest source from GitHub (eliminates large JAR git LFS limits on HF Spaces)
-FROM maven:3.9-eclipse-temurin-21 AS builder
+# Multi-stage Dockerfile: builds with Temurin JDK 26
+FROM eclipse-temurin:26-jdk AS builder
 WORKDIR /src
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 https://github.com/Yoge-2004/expense-tracker.git .
-RUN ./mvnw clean package -DskipTests -q
+RUN chmod +x ./mvnw && ./mvnw clean package -DskipTests -q
 
 # Runtime container
 FROM eclipse-temurin:26-jre
