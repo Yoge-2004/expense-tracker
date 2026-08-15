@@ -130,31 +130,27 @@ public class GlobalExceptionHandler {
             AuthenticationException ex,
             HttpServletRequest request) {
 
-        if (ex instanceof org.springframework.security.authentication.BadCredentialsException
-                || "Bad credentials".equalsIgnoreCase(ex.getMessage())) {
-            ErrorResponse response = new ErrorResponse(
-                    LocalDateTime.now(),
-                    HttpStatus.UNAUTHORIZED.value(),
-                    "Authentication Failed",
-                    "Invalid email/username or password",
-                    request.getRequestURI()
-            );
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        }
-
         Throwable rootCause = ex.getCause();
         while (rootCause != null) {
-            if (rootCause instanceof DatabaseUnavailableException) {
+            if (rootCause instanceof org.springframework.dao.DataAccessException
+                    || rootCause instanceof org.springframework.transaction.CannotCreateTransactionException
+                    || rootCause instanceof org.hibernate.exception.JDBCConnectionException
+                    || rootCause instanceof java.sql.SQLException
+                    || rootCause instanceof DatabaseUnavailableException) {
                 return handleDatabaseUnavailable((Exception) rootCause, request);
             }
             rootCause = rootCause.getCause();
         }
 
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank() && !"Bad credentials".equalsIgnoreCase(ex.getMessage()))
+                ? ex.getMessage()
+                : "Invalid email/username or password";
+
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Authentication Failed",
-                (ex.getMessage() != null && !ex.getMessage().isBlank() && !"Bad credentials".equalsIgnoreCase(ex.getMessage())) ? ex.getMessage() : "Invalid email/username or password",
+                message,
                 request.getRequestURI()
         );
 

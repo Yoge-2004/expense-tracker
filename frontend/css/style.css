@@ -185,6 +185,7 @@ body::after {
 }
 
 [data-theme="light"] .card,
+[data-theme="light"] .metric-card,
 [data-theme="light"] .auth-card,
 [data-theme="light"] .float-card,
 [data-theme="light"] .perk-item,
@@ -2148,9 +2149,9 @@ button[type="submit"]:active {
     position: relative;
     overflow-y: auto;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 48px 48px 48px 64px;
+    padding: 60px 48px 60px 80px;
     background: var(--bg-dark);
 }
 
@@ -2395,7 +2396,7 @@ button[type="submit"]:active {
 /* ── Right Form Panel ── */
 .auth-form-section {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     background: var(--bg-dark);
     padding: 60px 48px;
@@ -3042,6 +3043,10 @@ button[type="submit"]:active {
         gap: 6px;
     }
 
+    .dashboard-container {
+        padding: 24px 18px 48px !important;
+    }
+
     .auth-form-section {
         width: 100% !important;
         padding: 32px 16px 48px !important;
@@ -3172,15 +3177,9 @@ button[type="submit"]:active {
 .metric-card {
     position: relative;
     overflow: hidden;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border) !important;
     transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
-}
-.metric-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 60%);
-    pointer-events: none;
 }
 .metric-card:hover {
     transform: translateY(-4px);
@@ -3188,8 +3187,7 @@ button[type="submit"]:active {
 }
 .metric-card-glow {
     background: var(--card-bg) !important;
-    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.25),
-                0 16px 36px -10px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid var(--border) !important;
 }
 .metric-card-glow::after {
     display: none !important;
@@ -3341,8 +3339,9 @@ button[type="submit"]:active {
     height: 6px;
     border-radius: 100px;
     background: var(--input-bg);
-    overflow: visible;
+    overflow: hidden;
     position: relative;
+    margin-top: 10px;
 }
 .budget-bar-fill {
     height: 100%;
@@ -3359,17 +3358,6 @@ button[type="submit"]:active {
 
 .budget-bar-fill.danger {
     background: var(--accent) !important;
-}
-.budget-bar-fill::after {
-    content: '';
-    position: absolute;
-    right: -1px;
-    top: -3px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: inherit;
-    box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.5);
 }
 
 /* ── Profile menu glassmorphism ── */
@@ -3517,9 +3505,9 @@ button[type="submit"]:active {
     position: relative;
     overflow-y: auto;
     display: flex !important;
-    align-items: center !important;
+    align-items: flex-start !important;
     justify-content: center !important;
-    padding: 48px 48px 48px 64px !important;
+    padding: 60px 48px 60px 80px !important;
 }
 .auth-hero::before {
     content: '';

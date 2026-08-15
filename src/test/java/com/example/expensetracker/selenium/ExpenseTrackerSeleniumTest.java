@@ -276,6 +276,7 @@ public class ExpenseTrackerSeleniumTest {
         loginSessionAndGoToDashboard();
 
         WebElement welcome = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("userWelcomeText")));
+        wait.until(d -> !welcome.getText().trim().isEmpty());
         assertTrue(welcome.getText().contains("Alex Smith") || welcome.getText().contains("Welcome"),
                 "Dashboard should display user welcome text");
 
