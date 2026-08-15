@@ -750,21 +750,21 @@ button[type="submit"]:active {
 }
 
 /* Dashboard visual hierarchy */
-.dashboard-container { max-width: 1280px; padding: 40px 28px 56px; gap: 24px; }
+.dashboard-container { max-width: 1280px; margin: 0 auto; padding: 40px 36px 56px; gap: 24px; }
 
 /* Large monitors / 4K — the container was hard-capped at 1280px regardless
    of viewport, leaving huge unused margins on wide screens. Scale up in
    tiers rather than stretching to the full physical width, which would
    make text lines uncomfortably long to read. */
 @media (min-width: 1920px) {
-    .dashboard-container { max-width: 1600px; }
+    .dashboard-container { max-width: 1600px; padding: 48px 48px 64px; }
 }
 @media (min-width: 2560px) {
-    .dashboard-container { max-width: 1900px; }
+    .dashboard-container { max-width: 1900px; padding: 56px 56px 72px; }
     .grid-4-metrics { gap: 28px; }
     .grid-analytics { gap: 28px; }
 }
-.top-bar { padding: 4px 0 12px; }
+.top-bar { padding: 4px 0 16px; margin-bottom: 4px; }
 .dashboard-heading h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -1px; }
 .dashboard-heading p { margin-top: 10px; }
 .top-bar-actions { display: flex; gap: 12px; align-items: center; }
@@ -1789,20 +1789,21 @@ button[type="submit"]:active {
 .dashboard-heading {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
     align-items: flex-start;
+    padding-left: 2px;
 }
 
 .brand-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .brand-title {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.6px;
     color: var(--text-main);
     display: inline-flex;
     align-items: center;
@@ -1819,6 +1820,13 @@ button[type="submit"]:active {
     color: #FFF;
     letter-spacing: 0.5px;
     vertical-align: middle;
+}
+
+#userWelcomeText {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 2px 0 0 0;
+    line-height: 1.4;
 }
 
 .live-pulse {
@@ -2138,11 +2146,11 @@ button[type="submit"]:active {
 /* ── Left Hero Panel ── */
 .auth-hero {
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    padding: 60px 60px 60px 80px;
+    justify-content: center;
+    padding: 48px 48px 48px 64px;
     background: var(--bg-dark);
 }
 
@@ -2193,8 +2201,11 @@ button[type="submit"]:active {
 .auth-hero-content {
     position: relative;
     z-index: 2;
-    max-width: 580px;
+    max-width: 520px;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     animation: slideUpFade 0.8s var(--ease) both;
 }
 
@@ -2232,12 +2243,13 @@ button[type="submit"]:active {
 }
 
 .hero-headline {
-    font-size: 52px;
-    font-weight: 900;
-    line-height: 1.05;
-    letter-spacing: -2px;
+    font-size: clamp(28px, 3.2vw, 38px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.8px;
     color: var(--text-main);
-    margin-bottom: 16px;
+    margin-top: 18px;
+    margin-bottom: 12px;
 }
 
 .hero-headline-accent {
@@ -2248,11 +2260,11 @@ button[type="submit"]:active {
 }
 
 .hero-subline {
-    font-size: 15px;
+    font-size: 14px;
     color: var(--text-muted);
-    line-height: 1.65;
-    max-width: 380px;
-    margin-bottom: 40px;
+    line-height: 1.55;
+    max-width: 440px;
+    margin-bottom: 24px;
 }
 
 /* Floating stat cards */
@@ -2330,6 +2342,7 @@ button[type="submit"]:active {
     color: var(--text-muted);
     text-decoration: none;
     transition: color 0.2s;
+    width: fit-content;
 }
 
 .hero-back-link:hover { color: var(--text-main); }
@@ -2338,15 +2351,15 @@ button[type="submit"]:active {
 .perks-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-top: 40px;
+    gap: 12px;
+    margin-top: 20px;
 }
 
 .perk-item {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 16px;
+    padding: 14px 16px;
     background: rgba(23, 26, 20,0.6);
     border: 1px solid var(--border);
     border-radius: 14px;

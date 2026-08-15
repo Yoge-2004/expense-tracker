@@ -8,9 +8,8 @@ import jakarta.validation.constraints.NotBlank;
 @Schema(description = "Credentials required to authenticate a user")
 public class LoginRequest {
 
-    @Schema(description = "Registered email address of the user", example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email")
+    @Schema(description = "Registered email address or username of the user", example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "Email or username is required")
     private String email;
 
     @Schema(description = "Account password (compared against BCrypt hash)", example = "secret123", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -1001,15 +1001,48 @@ document.getElementById("logoutBtn").addEventListener("click", () => { localStor
 
 const sendMonthlyReportBtn = document.getElementById("sendMonthlyReportBtn");
 if (sendMonthlyReportBtn) {
+    // Adapt menu item based on server email availability
+    (async () => {
+        try {
+            const authConfig = await apiRequest("/auth/config", { method: "GET" });
+            if (authConfig && authConfig.emailVerificationEnabled === false) {
+                sendMonthlyReportBtn.innerHTML = "📊 Export Monthly Summary";
+                sendMonthlyReportBtn.setAttribute("title", "Export your current monthly financial breakdown");
+            }
+        } catch (e) {
+            // Ignore config lookup errors on legacy servers
+        }
+    })();
+
     sendMonthlyReportBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         elements.profileMenu.classList.remove("active");
         try {
+            const authConfig = await apiRequest("/auth/config", { method: "GET" }).catch(() => ({ emailVerificationEnabled: false }));
+            if (authConfig && authConfig.emailVerificationEnabled === false) {
+                // Email service disabled: generate & download monthly report directly
+                showToast("Email delivery is disabled on this server. Downloading monthly summary...", "info");
+                const report = await apiRequest(`/reports/monthly/user/${userId}`);
+                if (report) {
+                    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `monthly-report-${report.period || 'summary'}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast("Monthly financial summary downloaded.", "success");
+                }
+                return;
+            }
+
             showToast("Sending monthly report to your email...", "info");
             await apiRequest(`/reports/monthly/user/${userId}/send-email`, { method: "POST" });
             showToast("Monthly financial report email sent successfully!", "success");
         } catch (err) {
-            showToast(err.message || "Failed to send monthly report email", "error");
+            showToast(err.message || "Failed to process monthly report", "error");
         }
     });
 }

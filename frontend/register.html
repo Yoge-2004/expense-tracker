@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Create Account | ExpenseTracker Pro</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2.2">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
@@ -48,7 +48,7 @@
                     Back to Sign In
                 </a>
 
-                <h1 class="hero-headline" style="margin-top: 32px;">Start your<br><span class="hero-headline-accent">financial journey.</span></h1>
+                <h1 class="hero-headline">Start your<br><span class="hero-headline-accent">financial journey.</span></h1>
                 <p class="hero-subline">Join thousands of users who already track smarter, budget better, and save more every month.</p>
 
                 <!-- Perk grid -->
@@ -195,7 +195,7 @@
                         </div>
                     </div>
 
-                    <button type="button" class="btn-secondary btn-full" id="sendOtpBtn" style="margin-bottom:12px;">
+                    <button type="button" class="btn-secondary btn-full" id="sendOtpBtn" style="display:none;margin-bottom:12px;">
                         <span>Send Verification Code</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </button>
@@ -218,7 +218,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary btn-full" id="registerBtn" style="display:none;">
+                    <button type="submit" class="btn-primary btn-full" id="registerBtn">
                         <span>Create Account</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                     </button>
@@ -240,11 +240,11 @@
     </div>
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="js/config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/register.js"></script>
-    <script src="js/password-toggle.js"></script>
+    <script src="js/config.js?v=2.2"></script>
+    <script src="js/api.js?v=2.2"></script>
+    <script src="js/auth.js?v=2.2"></script>
+    <script src="js/register.js?v=2.2"></script>
+    <script src="js/password-toggle.js?v=2.2"></script>
     <script>
         // Form Validation, Step Progress, Password Strength & Username Suggestions
         const nameInput = document.getElementById('reg-name');

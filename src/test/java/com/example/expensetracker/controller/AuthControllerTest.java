@@ -122,6 +122,16 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("POST /api/auth/login → 400 Bad Request when email or username is blank")
+    void login_blankEmailOrUsername_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "", "password", "password123"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("POST /api/auth/login → 400 Bad Request when password is blank")
     void login_blankPassword_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/login")
@@ -132,13 +142,21 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/auth/login → 400 Bad Request when email format is invalid")
-    void login_invalidEmailFormat_returns400() throws Exception {
+    @DisplayName("POST /api/auth/login → 200 OK when logging in with username instead of email")
+    void login_withUsername_returns200() throws Exception {
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn("johndoe_26");
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(auth);
+        when(userService.findByIdentifier("johndoe_26")).thenReturn(Optional.of(sampleUser));
+        when(jwtService.generateToken(sampleUser.getEmail())).thenReturn("mock.jwt.token");
+
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "not-an-email", "password", "password123"))))
-                .andExpect(status().isBadRequest());
+                                Map.of("email", "johndoe_26", "password", "password123"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("mock.jwt.token"));
     }
 
     // ─────────────────────────── POST /api/auth/register ───────────────────────────
