@@ -3,6 +3,7 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.dto.*;
 import com.example.expensetracker.mapper.UserMapper;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.security.CustomUserDetails;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.service.PasswordResetService;
@@ -101,11 +102,17 @@ public class AuthController {
         String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
-        User user = userService.findByIdentifier(identifier)
-                .or(() -> userService.findByEmail(identifier))
-                .or(() -> userService.findByIdentifier(auth.getName()))
-                .or(() -> userService.findByEmail(auth.getName()))
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = null;
+        if (auth.getPrincipal() instanceof CustomUserDetails cud) {
+            user = cud.getUser();
+        }
+        if (user == null) {
+            user = userService.findByIdentifier(identifier)
+                    .or(() -> userService.findByEmail(identifier))
+                    .or(() -> userService.findByIdentifier(auth.getName()))
+                    .or(() -> userService.findByEmail(auth.getName()))
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        }
         String token = jwtService.generateToken(user.getEmail());
         return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency()));
     }

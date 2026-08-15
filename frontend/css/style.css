@@ -3506,7 +3506,6 @@ button[type="submit"]:active {
     color: var(--danger) !important;
 }
 
-/* ── Auth page hero section improvements ── */
 .auth-hero {
     background: linear-gradient(
         160deg,
@@ -3516,7 +3515,11 @@ button[type="submit"]:active {
         transparent 100%
     ) !important;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 48px 48px 48px 64px !important;
 }
 .auth-hero::before {
     content: '';
