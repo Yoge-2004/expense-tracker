@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /index.html
+Allow: /register.html
+Allow: /css/
+Allow: /js/
+Disallow: /dashboard.html
+
+Sitemap: https://cozy-narwhal-3099ad.netlify.app/sitemap.xml

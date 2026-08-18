@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="css/style.css?v=2.2">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
+    <meta name="description" content="Your private ExpenseTracker Pro dashboard — track spending, manage budgets, and monitor recurring subscriptions.">
+    <meta name="robots" content="noindex, nofollow">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -208,7 +210,7 @@
                     <input type="file" id="importFileInput" accept=".csv,.json" style="display:none">
                     <button id="importBtn" class="btn-icon btn-text-icon" title="Import expenses from a .csv or .json file" style="gap:6px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import
+                        Import <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.json)</span>
                     </button>
                     <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export CSV">CSV</button>
                     <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export JSON">JSON</button>
@@ -235,9 +237,9 @@
             <!-- Filter Toolbar Drawer -->
             <div class="filter-toolbar" id="filterPanel">
                 <input type="text" id="filterStartDate" class="filter-select dark-date" placeholder="Start Date"
-                    onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
+                    onfocus="this.type='date'; if (this.showPicker) { try { this.showPicker(); } catch(e) {} }" onblur="if(!this.value)this.type='text'">
                 <input type="text" id="filterEndDate" class="filter-select dark-date" placeholder="End Date"
-                    onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
+                    onfocus="this.type='date'; if (this.showPicker) { try { this.showPicker(); } catch(e) {} }" onblur="if(!this.value)this.type='text'">
 
                 <select id="filterMonth" class="filter-select">
                     <option value="all">All Months</option>
@@ -267,6 +269,11 @@
                     <option value="amount-desc">High to Low</option>
                     <option value="amount-asc">Low to High</option>
                 </select>
+
+                <button type="button" id="resetFiltersBtn" class="btn-icon btn-text-icon" title="Clear all filters">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+                    Reset
+                </button>
             </div>
 
             <!-- Expense List Table -->
@@ -303,7 +310,12 @@
                     <label>Category</label>
                     <div class="input-group">
                         <select id="categorySelect" required></select>
-                        <button type="button" id="addCategoryBtn" class="btn-icon" title="Add Custom Category">+</button>
+                        <button type="button" id="addCategoryBtn" class="btn-icon" title="Add Custom Category">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                        <button type="button" id="manageCategoriesBtn" class="btn-icon" title="Manage Categories">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </button>
                     </div>
                 </div>
 
@@ -395,6 +407,22 @@
     </div>
 
     <!-- MODAL DIALOG: EDIT SUBSCRIPTION -->
+    <div class="modal-overlay" id="manageCategoriesModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Manage Categories</h3>
+                <button class="modal-close" id="closeManageCategoriesModalBtn">&times;</button>
+            </div>
+            <div id="manageCategoriesList" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto;">
+                <!-- populated by JS -->
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:14px;">
+                Only categories that aren't used by any expense or subscription can be deleted.
+                Global categories (Food, Transport, Utilities, Entertainment, Health) can't be removed.
+            </p>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="editSubModal">
         <div class="modal">
             <div class="modal-header">

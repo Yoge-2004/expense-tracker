@@ -57,7 +57,15 @@ function showToast(message, type = "info") {
     setTimeout(() => {
         if (toast.parentElement) {
             toast.classList.add("leaving");
-            toast.addEventListener("transitionend", () => toast.remove(), { once: true });
+            // The "leaving" state is driven by a CSS animation (toastOut), not a
+            // transition, so this must listen for animationend. A setTimeout
+            // fallback is kept as a safety net in case CSS changes again and
+            // neither event fires — without it, toasts silently pile up in the
+            // DOM forever and end up blocking clicks on real UI underneath them.
+            const remove = () => toast.remove();
+            toast.addEventListener("animationend", remove, { once: true });
+            toast.addEventListener("transitionend", remove, { once: true });
+            setTimeout(remove, 500);
         }
     }, 5000);
 }
@@ -126,7 +134,11 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
             await new Promise(r => setTimeout(r, 2500));
-            activeRequests -= 1;
+            // Do not decrement activeRequests here — the `finally` block
+            // below always runs exactly once per call (including this one),
+            // so decrementing here too was double-counting on every retry
+            // and could hide the loading overlay while another concurrent
+            // request was still genuinely in flight.
             return apiRequest(endpoint, options, retriesLeft - 1);
         }
         updateServerStatus(false, "Connecting...");
@@ -158,17 +170,43 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
 
     const text = await response.text();
     if (!response.ok) {
+        // Previously this parsed the JSON body inside a try block and threw
+        // from there, relying on that throw being caught by the very next
+        // catch clause as an ad-hoc control-flow trick. It happened to work
+        // when the backend returned valid JSON, but any non-JSON or empty
+        // body (which is exactly what Spring Security's filter chain used to
+        // return for 401/403s before it reached our own error handler) made
+        // JSON.parse's own "Unexpected end of JSON input" message match the
+        // `.includes("JSON")` check, so it silently fell back to "Unable to
+        // connect to the server" — a misleading message for what was often a
+        // permissions or validation error, not a connectivity problem.
+        let msg = null;
         try {
-            const error = JSON.parse(text);
-            let msg = error.message || error.error || "Request failed.";
-            if (msg.toLowerCase().includes("database")) {
-                msg = "Unable to connect to the server. Please try again in a moment.";
-            }
-            throw new Error(msg);
-        } catch (error) {
-            if (error.message && !error.message.includes("JSON")) throw error;
-            throw new Error("Unable to connect to the server. Please try again in a moment.");
+            const parsed = JSON.parse(text);
+            msg = parsed.message || parsed.error || null;
+        } catch (_) {
+            // Body wasn't JSON; fall through to a status-based message below.
         }
+
+        if (msg && msg.toLowerCase().includes("database")) {
+            msg = "Unable to connect to the server. Please try again in a moment.";
+        }
+
+        if (!msg) {
+            const statusMessages = {
+                400: "That request wasn't valid. Please check your input and try again.",
+                403: "You don't have permission to do that.",
+                404: "The requested resource couldn't be found.",
+                409: "This conflicts with existing data.",
+                422: "That request wasn't valid. Please check your input and try again.",
+                500: "Something went wrong on the server. Please try again.",
+                502: "The server is temporarily unavailable. Please try again shortly.",
+                503: "The server is temporarily unavailable. Please try again shortly.",
+            };
+            msg = statusMessages[response.status] || `Request failed (${response.status}).`;
+        }
+
+        throw new Error(msg);
     }
 
     const data = text ? JSON.parse(text) : null;
@@ -273,8 +311,89 @@ const WORLD_CURRENCIES = [
     { code: 'GHS', symbol: 'GH₵', name: 'Ghanaian Cedi', flag: '🇬🇭', locale: 'en-GH' },
     { code: 'CZK', symbol: 'Kč', name: 'Czech Koruna', flag: '🇨🇿', locale: 'cs-CZ' },
     { code: 'HUF', symbol: 'Ft', name: 'Hungarian Forint', flag: '🇭🇺', locale: 'hu-HU' },
-    { code: 'RON', symbol: 'lei', name: 'Romanian Leu', flag: '🇷🇴', locale: 'ro-RO' }
+    { code: 'RON', symbol: 'lei', name: 'Romanian Leu', flag: '🇷🇴', locale: 'ro-RO' },
+    { code: 'UAH', symbol: '₴', name: 'Ukrainian Hryvnia', flag: '🇺🇦', locale: 'uk-UA' },
+    { code: 'BGN', symbol: 'лв', name: 'Bulgarian Lev', flag: '🇧🇬', locale: 'bg-BG' },
+    { code: 'ISK', symbol: 'kr', name: 'Icelandic Krona', flag: '🇮🇸', locale: 'is-IS' },
+    { code: 'RSD', symbol: 'дин', name: 'Serbian Dinar', flag: '🇷🇸', locale: 'sr-RS' },
+    { code: 'HRK', symbol: 'kn', name: 'Croatian Kuna', flag: '🇭🇷', locale: 'hr-HR' },
+    { code: 'BAM', symbol: 'KM', name: 'Bosnia-Herzegovina Mark', flag: '🇧🇦', locale: 'bs-BA' },
+    { code: 'ALL', symbol: 'L', name: 'Albanian Lek', flag: '🇦🇱', locale: 'sq-AL' },
+    { code: 'MKD', symbol: 'ден', name: 'Macedonian Denar', flag: '🇲🇰', locale: 'mk-MK' },
+    { code: 'MDL', symbol: 'L', name: 'Moldovan Leu', flag: '🇲🇩', locale: 'ro-MD' },
+    { code: 'BYN', symbol: 'Br', name: 'Belarusian Ruble', flag: '🇧🇾', locale: 'be-BY' },
+    { code: 'GEL', symbol: '₾', name: 'Georgian Lari', flag: '🇬🇪', locale: 'ka-GE' },
+    { code: 'AMD', symbol: '֏', name: 'Armenian Dram', flag: '🇦🇲', locale: 'hy-AM' },
+    { code: 'AZN', symbol: '₼', name: 'Azerbaijani Manat', flag: '🇦🇿', locale: 'az-AZ' },
+    { code: 'KZT', symbol: '₸', name: 'Kazakhstani Tenge', flag: '🇰🇿', locale: 'kk-KZ' },
+    { code: 'UZS', symbol: "so'm", name: 'Uzbekistani Som', flag: '🇺🇿', locale: 'uz-UZ' },
+    { code: 'MNT', symbol: '₮', name: 'Mongolian Tugrik', flag: '🇲🇳', locale: 'mn-MN' },
+    { code: 'JOD', symbol: 'JD', name: 'Jordanian Dinar', flag: '🇯🇴', locale: 'ar-JO' },
+    { code: 'LBP', symbol: 'L£', name: 'Lebanese Pound', flag: '🇱🇧', locale: 'ar-LB' },
+    { code: 'IQD', symbol: 'ID', name: 'Iraqi Dinar', flag: '🇮🇶', locale: 'ar-IQ' },
+    { code: 'MAD', symbol: 'DH', name: 'Moroccan Dirham', flag: '🇲🇦', locale: 'ar-MA' },
+    { code: 'DZD', symbol: 'DA', name: 'Algerian Dinar', flag: '🇩🇿', locale: 'ar-DZ' },
+    { code: 'TND', symbol: 'DT', name: 'Tunisian Dinar', flag: '🇹🇳', locale: 'ar-TN' },
+    { code: 'AFN', symbol: '؋', name: 'Afghan Afghani', flag: '🇦🇫', locale: 'fa-AF' },
+    { code: 'MMK', symbol: 'K', name: 'Myanmar Kyat', flag: '🇲🇲', locale: 'my-MM' },
+    { code: 'KHR', symbol: '៛', name: 'Cambodian Riel', flag: '🇰🇭', locale: 'km-KH' },
+    { code: 'LAK', symbol: '₭', name: 'Lao Kip', flag: '🇱🇦', locale: 'lo-LA' },
+    { code: 'FJD', symbol: 'FJ$', name: 'Fijian Dollar', flag: '🇫🇯', locale: 'en-FJ' },
+    { code: 'XOF', symbol: 'CFA', name: 'West African CFA Franc', flag: '🇸🇳', locale: 'fr-SN' },
+    { code: 'XAF', symbol: 'FCFA', name: 'Central African CFA Franc', flag: '🇨🇲', locale: 'fr-CM' },
+    { code: 'ETB', symbol: 'Br', name: 'Ethiopian Birr', flag: '🇪🇹', locale: 'am-ET' },
+    { code: 'TZS', symbol: 'TSh', name: 'Tanzanian Shilling', flag: '🇹🇿', locale: 'sw-TZ' },
+    { code: 'UGX', symbol: 'USh', name: 'Ugandan Shilling', flag: '🇺🇬', locale: 'en-UG' },
+    { code: 'RWF', symbol: 'FRw', name: 'Rwandan Franc', flag: '🇷🇼', locale: 'rw-RW' },
+    { code: 'ZMW', symbol: 'ZK', name: 'Zambian Kwacha', flag: '🇿🇲', locale: 'en-ZM' },
+    { code: 'MZN', symbol: 'MT', name: 'Mozambican Metical', flag: '🇲🇿', locale: 'pt-MZ' },
+    { code: 'BWP', symbol: 'P', name: 'Botswana Pula', flag: '🇧🇼', locale: 'en-BW' },
+    { code: 'NAD', symbol: 'N$', name: 'Namibian Dollar', flag: '🇳🇦', locale: 'en-NA' },
+    { code: 'MUR', symbol: '₨', name: 'Mauritian Rupee', flag: '🇲🇺', locale: 'en-MU' },
+    { code: 'DOP', symbol: 'RD$', name: 'Dominican Peso', flag: '🇩🇴', locale: 'es-DO' },
+    { code: 'GTQ', symbol: 'Q', name: 'Guatemalan Quetzal', flag: '🇬🇹', locale: 'es-GT' },
+    { code: 'HNL', symbol: 'L', name: 'Honduran Lempira', flag: '🇭🇳', locale: 'es-HN' },
+    { code: 'NIO', symbol: 'C$', name: 'Nicaraguan Cordoba', flag: '🇳🇮', locale: 'es-NI' },
+    { code: 'CRC', symbol: '₡', name: 'Costa Rican Colon', flag: '🇨🇷', locale: 'es-CR' },
+    { code: 'PAB', symbol: 'B/.', name: 'Panamanian Balboa', flag: '🇵🇦', locale: 'es-PA' },
+    { code: 'BOB', symbol: 'Bs', name: 'Bolivian Boliviano', flag: '🇧🇴', locale: 'es-BO' },
+    { code: 'PYG', symbol: '₲', name: 'Paraguayan Guarani', flag: '🇵🇾', locale: 'es-PY' },
+    { code: 'UYU', symbol: '$U', name: 'Uruguayan Peso', flag: '🇺🇾', locale: 'es-UY' },
+    { code: 'JMD', symbol: 'J$', name: 'Jamaican Dollar', flag: '🇯🇲', locale: 'en-JM' },
+    { code: 'TTD', symbol: 'TT$', name: 'Trinidad & Tobago Dollar', flag: '🇹🇹', locale: 'en-TT' },
+    { code: 'BSD', symbol: 'B$', name: 'Bahamian Dollar', flag: '🇧🇸', locale: 'en-BS' }
 ];
+
+/**
+ * Guesses the user's likely currency from their browser locale (e.g. "en-IN"
+ * -> the currency whose `locale` field shares the same region, "IN" -> INR).
+ * No network/geolocation call and no permission prompt required. Returns null
+ * if nothing matches, so callers can fall back to a fixed default.
+ */
+function detectLikelyCurrencyCode() {
+    try {
+        const browserLocale = (navigator.languages && navigator.languages[0]) || navigator.language || Intl.NumberFormat().resolvedOptions().locale;
+        const region = browserLocale.split(/[-_]/)[1]?.toUpperCase();
+        if (!region) return null;
+        const match = WORLD_CURRENCIES.find(c => c.locale.split('-')[1]?.toUpperCase() === region);
+        return match ? match.code : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Returns WORLD_CURRENCIES reordered so the user's likely currency (per
+ * detectLikelyCurrencyCode) appears first in currency pickers, without
+ * changing the underlying data or any other consumer of WORLD_CURRENCIES.
+ */
+function getCurrenciesSortedByLikelihood() {
+    const detected = detectLikelyCurrencyCode();
+    if (!detected) return WORLD_CURRENCIES;
+    const detectedItem = WORLD_CURRENCIES.find(c => c.code === detected);
+    if (!detectedItem) return WORLD_CURRENCIES;
+    return [detectedItem, ...WORLD_CURRENCIES.filter(c => c.code !== detected)];
+}
 
 function getSelectedCurrency() {
     return localStorage.getItem("userCurrency") || "USD";

@@ -9,6 +9,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
     <meta name="description" content="Create your free ExpenseTracker Pro account and take control of your finances today.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://cozy-narwhal-3099ad.netlify.app/register.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ExpenseTracker Pro">
+    <meta property="og:title" content="Create Account | ExpenseTracker Pro">
+    <meta property="og:description" content="Create your free ExpenseTracker Pro account and take control of your finances today.">
+    <meta property="og:url" content="https://cozy-narwhal-3099ad.netlify.app/register.html">
+    <meta property="og:image" content="https://cozy-narwhal-3099ad.netlify.app/images/og-cover.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Create Account | ExpenseTracker Pro">
+    <meta name="twitter:description" content="Create your free ExpenseTracker Pro account and take control of your finances today.">
+    <meta name="twitter:image" content="https://cozy-narwhal-3099ad.netlify.app/images/og-cover.png">
 </head>
 
 <body>
@@ -250,9 +264,10 @@
         const nameInput = document.getElementById('reg-name');
         const userInput = document.getElementById('reg-username');
         const emailInput = document.getElementById('reg-email');
+        const currencyInput = document.getElementById('reg-currency');
         const passInput = document.getElementById('reg-password');
         const bar = document.getElementById('stepBar');
-        const dots = [document.getElementById('dot1'), document.getElementById('dot2'), document.getElementById('dot3'), document.getElementById('dot4')];
+        const dots = [document.getElementById('dot1'), document.getElementById('dot2'), document.getElementById('dot3'), document.getElementById('dot4'), document.getElementById('dot5')];
         const suggestionsBox = document.getElementById('usernameSuggestions');
 
         function isNameValid(val) { return val.trim().length >= 2; }
@@ -289,9 +304,10 @@
             setFieldState(passInput, pVal);
 
             // Progress bar based STRICTLY on valid fields
-            const validFields = [nVal, uVal, eVal, pVal];
+            const cVal = !!(currencyInput && currencyInput.value);
+            const validFields = [nVal, uVal, eVal, cVal, pVal];
             const validCount = validFields.filter(Boolean).length;
-            bar.style.width = `${(validCount / 4) * 100}%`;
+            bar.style.width = `${(validCount / 5) * 100}%`;
 
             dots.forEach((dot, idx) => {
                 if (dot) dot.classList.toggle('step-dot-done', validFields[idx]);
@@ -388,12 +404,16 @@
 
         if (currTrigger && currWrapper && typeof WORLD_CURRENCIES !== "undefined") {
             const optionsContainer = currWrapper.querySelector(".custom-select-options");
-            const activeCode = localStorage.getItem("userCurrency") || "USD";
+            // For a brand-new signup there's no stored preference yet, so guess
+            // from the browser's locale instead of always defaulting to USD.
+            const activeCode = localStorage.getItem("userCurrency")
+                || (typeof detectLikelyCurrencyCode === "function" && detectLikelyCurrencyCode())
+                || "USD";
 
             optionsContainer.innerHTML = `
-                <input type="text" class="custom-select-search" placeholder="Search 50+ currencies (USD, EUR, ₹, Yen)...">
+                <input type="text" class="custom-select-search" placeholder="Search 100+ currencies (USD, EUR, ₹, Yen)...">
                 <div class="custom-options-list">
-                    ${WORLD_CURRENCIES.map(item => `
+                    ${(typeof getCurrenciesSortedByLikelihood === "function" ? getCurrenciesSortedByLikelihood() : WORLD_CURRENCIES).map(item => `
                         <div class="custom-option ${item.code === activeCode ? 'selected' : ''}" data-value="${item.code}" data-name="${item.name.toLowerCase()}" data-symbol="${item.symbol.toLowerCase()}">
                             <span><span class="custom-option-flag">${item.flag}</span> ${item.code} (${item.symbol}) — ${item.name}</span>
                         </div>

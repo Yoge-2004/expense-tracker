@@ -15,6 +15,7 @@ const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-U
 // Global State
 let allExpenses = [];
 let allCategories = [];
+let userOnlyCategories = []; // subset of allCategories actually deletable (excludes global/seeded ones)
 let pieChart = null;
 let trendChart = null;
 
@@ -164,6 +165,7 @@ async function loadDashboard(skipCache = false) {
         const safeGlobal = Array.isArray(globalCats) ? globalCats : [];
         const safeUser = Array.isArray(userCats) ? userCats : [];
         const categories = [...safeGlobal, ...safeUser];
+        userOnlyCategories = safeUser;
 
         renderDashboardData(expenses, categories);
         saveExpenseCache(expenses, categories);
@@ -640,6 +642,19 @@ function applyFilters() {
 [elements.filterSearch, elements.filterSort, elements.filterCategory, elements.filterStartDate, elements.filterEndDate, elements.filterMonth, elements.filterYear]
     .forEach(el => el.addEventListener('input', applyFilters));
 
+document.getElementById("resetFiltersBtn")?.addEventListener("click", () => {
+    elements.filterSearch.value = "";
+    elements.filterStartDate.value = "";
+    elements.filterStartDate.type = "text";
+    elements.filterEndDate.value = "";
+    elements.filterEndDate.type = "text";
+    elements.filterMonth.value = "all";
+    elements.filterYear.value = "all";
+    elements.filterCategory.value = "all";
+    elements.filterSort.value = "date-desc";
+    applyFilters();
+});
+
 
 // --- 5. UI RENDERING HELPERS & NUMBER COUNT ANIMATION ---
 function animateNumber(el, target, isCurrency = false) {
@@ -888,8 +903,83 @@ elements.addCategoryBtn.addEventListener("click", async () => {
     try {
         const newCat = await apiRequest(`/categories/user/${userId}`, { method: "POST", body: JSON.stringify({ name: name }) });
         allCategories.push(newCat);
+        userOnlyCategories.push(newCat);
         const option = document.createElement("option"); option.value = newCat.id; option.textContent = newCat.name; option.selected = true; elements.categorySelect.appendChild(option);
     } catch (error) { showToast(error.message, "error"); }
+});
+
+// --- MANAGE / DELETE CATEGORIES ---
+const manageCategoriesModal = document.getElementById("manageCategoriesModal");
+
+async function renderManageCategoriesList() {
+    const listEl = document.getElementById("manageCategoriesList");
+    if (!listEl) return;
+
+    if (userOnlyCategories.length === 0) {
+        listEl.innerHTML = `<p style="font-size:13px; color:var(--text-muted); padding:8px 0;">You haven't created any custom categories yet.</p>`;
+        return;
+    }
+
+    listEl.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">Checking usage...</p>`;
+
+    // Determine usage: one-off expenses are already loaded client-side
+    // (allExpenses); recurring subscriptions need a fresh fetch since they
+    // aren't cached globally. The backend re-validates this on delete
+    // regardless — this is purely to disable buttons proactively in the UI.
+    let recurring = [];
+    try {
+        recurring = await apiRequest(`/expenses/recurring/user/${userId}`) || [];
+    } catch (e) {
+        // If this fails, fall back to allowing the click and letting the
+        // backend's authoritative check catch it.
+    }
+
+    const usedCategoryIds = new Set([
+        ...allExpenses.map(e => e.categoryId),
+        ...recurring.map(r => r.categoryId),
+    ]);
+
+    listEl.innerHTML = userOnlyCategories.map(cat => {
+        const inUse = usedCategoryIds.has(cat.id);
+        return `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px;">
+                <span style="font-size:14px; color:var(--text-main);">${cat.name}</span>
+                <button type="button" class="btn-icon" data-delete-category="${cat.id}" data-category-name="${cat.name}"
+                    ${inUse ? 'disabled title="This category is used by one or more expenses and can\'t be deleted"' : 'title="Delete category"'}
+                    style="${inUse ? 'opacity:0.4; cursor:not-allowed;' : 'color:var(--danger, #C0392B);'}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </div>`;
+    }).join("");
+
+    listEl.querySelectorAll("[data-delete-category]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const catId = btn.getAttribute("data-delete-category");
+            const catName = btn.getAttribute("data-category-name");
+            if (!confirm(`Delete category "${catName}"? This can't be undone.`)) return;
+            try {
+                await apiRequest(`/categories/${catId}/user/${userId}`, { method: "DELETE" });
+                allCategories = allCategories.filter(c => String(c.id) !== String(catId));
+                userOnlyCategories = userOnlyCategories.filter(c => String(c.id) !== String(catId));
+                populateCategoryDropdown(allCategories);
+                showToast(`Category "${catName}" deleted.`, "success");
+                renderManageCategoriesList();
+            } catch (error) {
+                showToast(error.message, "error");
+            }
+        });
+    });
+}
+
+document.getElementById("manageCategoriesBtn")?.addEventListener("click", () => {
+    manageCategoriesModal.classList.add("active");
+    renderManageCategoriesList();
+});
+document.getElementById("closeManageCategoriesModalBtn")?.addEventListener("click", () => {
+    manageCategoriesModal.classList.remove("active");
+});
+manageCategoriesModal?.addEventListener("click", (e) => {
+    if (e.target === manageCategoriesModal) manageCategoriesModal.classList.remove("active");
 });
 
 elements.toggleFiltersBtn.addEventListener("click", () => { elements.filterPanel.classList.toggle("active"); });
@@ -919,9 +1009,9 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
     if (currencySelector) currencySelector.value = activeCurr;
 
     optionsContainer.innerHTML = `
-        <input type="text" class="custom-select-search" placeholder="Search 50+ currencies...">
+        <input type="text" class="custom-select-search" placeholder="Search 100+ currencies...">
         <div class="custom-options-list">
-            ${WORLD_CURRENCIES.map(item => `
+            ${getCurrenciesSortedByLikelihood().map(item => `
                 <div class="custom-option ${item.code === activeCurr ? 'selected' : ''}" data-value="${item.code}" data-name="${item.name.toLowerCase()}" data-symbol="${item.symbol.toLowerCase()}">
                     <span><span class="custom-option-flag">${item.flag}</span> ${item.code} (${item.symbol}) — ${item.name}</span>
                 </div>
@@ -975,6 +1065,12 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
             showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
             updateModalLabels();
             applyFilters();
+            // applyFilters() -> updateStats() re-renders Total Outflow, but Daily
+            // Burn Rate and the month-end forecast only live inside
+            // updateProMetrics(), which otherwise only runs once on initial load —
+            // without this they'd keep showing the old currency's symbol until a
+            // full page reload.
+            updateProMetrics(allExpenses);
         });
     });
 
@@ -1020,21 +1116,25 @@ if (sendMonthlyReportBtn) {
         try {
             const authConfig = await apiRequest("/auth/config", { method: "GET" }).catch(() => ({ emailVerificationEnabled: false }));
             if (authConfig && authConfig.emailVerificationEnabled === false) {
-                // Email service disabled: generate & download monthly report directly
-                showToast("Email delivery is disabled on this server. Downloading monthly summary...", "info");
-                const report = await apiRequest(`/reports/monthly/user/${userId}`);
-                if (report) {
-                    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `monthly-report-${report.period || 'summary'}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    showToast("Monthly financial summary downloaded.", "success");
+                // Email service disabled: download the same HTML template used for the email
+                showToast("Email delivery is disabled on this server. Downloading monthly report...", "info");
+                const res = await fetch(`${API_BASE_URL}/reports/monthly/user/${userId}/html`, {
+                    headers: { "Authorization": `Bearer ${authToken}` }
+                });
+                if (!res.ok) {
+                    throw new Error(`Failed to generate report (${res.status})`);
                 }
+                const html = await res.text();
+                const blob = new Blob([html], { type: "text/html" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `monthly-report-${new Date().toISOString().slice(0, 7)}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("Monthly financial report downloaded.", "success");
                 return;
             }
 
@@ -1086,19 +1186,49 @@ if (sendMonthlyReportBtn) {
 // --- EXPORT & IMPORT CONTROLS ---
 const authToken = localStorage.getItem("token");
 
+// Exports must carry the JWT as an Authorization header, not a URL query
+// param — the backend's JwtAuthenticationFilter only ever reads the header,
+// so a plain window.open(url?token=...) request always comes back 401.
+// Fetching as a blob also keeps the token out of the browser's history and
+// server access logs entirely.
+async function downloadAuthenticated(url, fallbackFilename, loadingMessage) {
+    showToast(loadingMessage, "info");
+    try {
+        const res = await fetch(url, {
+            headers: { "Authorization": `Bearer ${authToken}` }
+        });
+        if (!res.ok) {
+            throw new Error(`Export failed (${res.status})`);
+        }
+        const disposition = res.headers.get("Content-Disposition") || "";
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        const filename = match ? match[1] : fallbackFilename;
+
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(objectUrl);
+        showToast(`${filename} downloaded.`, "success");
+    } catch (err) {
+        showToast(err.message || "Export failed", "error");
+    }
+}
+
 document.getElementById("exportCsvBtn")?.addEventListener("click", () => {
-    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/csv?token=${authToken}`);
-    showToast("Exporting CSV...", "info");
+    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/csv`, "expenses.csv", "Exporting CSV...");
 });
 
 document.getElementById("exportJsonBtn")?.addEventListener("click", () => {
-    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/json?token=${authToken}`);
-    showToast("Exporting JSON...", "info");
+    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/json`, "expenses.json", "Exporting JSON...");
 });
 
 document.getElementById("exportPdfBtn")?.addEventListener("click", () => {
-    window.open(`${API_BASE_URL}/expenses/user/${userId}/export/pdf?token=${authToken}`);
-    showToast("Generating PDF report...", "info");
+    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/pdf`, "expenses.pdf", "Generating PDF report...");
 });
 
 const importBtn = document.getElementById("importBtn");
@@ -1138,7 +1268,11 @@ importFileInput?.addEventListener("change", async (e) => {
         } else {
             showToast(data.message || "Expenses imported successfully!", "success");
         }
-        loadDashboard(true);
+        // Must be awaited: loadDashboard is async, and without awaiting it here
+        // the `finally` block below runs setLoading(false) immediately — hiding
+        // the loading indicator before the actual refetch/re-render finishes,
+        // which looked like the UI hadn't refreshed at all.
+        await loadDashboard(true);
     } catch (err) {
         showToast(err.message, "error");
     } finally {

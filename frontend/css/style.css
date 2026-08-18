@@ -230,6 +230,13 @@ body::after {
     padding: 0;
     box-sizing: border-box;
     font-family: var(--font-body);
+    /* Smooths the dark/light theme toggle across every page — previously
+       every background/text/border color snapped instantly since nothing
+       transitioned the CSS custom properties that drive them. Elements that
+       already define their own `transition` (buttons, cards, etc.) keep
+       using that instead, since a more specific rule's shorthand fully
+       replaces this one rather than combining with it. */
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 input::-ms-reveal,
@@ -276,8 +283,8 @@ input[type="number"]::-webkit-inner-spin-button {
 .switch-label input[type="checkbox"]::before {
     content: '';
     position: absolute;
-    top: 2px;
-    left: 2px;
+    top: 3px;
+    left: 3px;
     width: 18px;
     height: 18px;
     border-radius: 50%;
@@ -308,6 +315,20 @@ input[type="number"]::-webkit-inner-spin-button {
 html {
     overflow-x: hidden;
     max-width: 100vw;
+    /* Tells the browser to render EVERY native form control (date picker
+       popups, <select> dropdown lists, scrollbars, etc.) using a dark native
+       theme by default, instead of relying on the OS's own light/dark
+       preference. Previously this was only ever applied via a manually-added
+       .dark-date class on individual date inputs — <select> elements (like
+       the category dropdown) had no coverage at all, and any date input
+       where someone forgot to add the class would silently fall back to
+       default colors. Setting it once here covers every native control on
+       every page automatically. */
+    color-scheme: dark;
+}
+
+html[data-theme="light"] {
+    color-scheme: light;
 }
 
 body {
@@ -986,7 +1007,7 @@ select option {
     margin-bottom: 8px;
 }
 
-.form-group input,
+.form-group input:not([type="checkbox"]),
 .form-group select {
     width: 100%;
     padding: 14px;
@@ -2151,7 +2172,7 @@ button[type="submit"]:active {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 60px 48px 60px 80px;
+    padding: 36px 48px 36px 80px;
     background: var(--bg-dark);
 }
 
@@ -2159,6 +2180,9 @@ button[type="submit"]:active {
     position: absolute;
     inset: 0;
     pointer-events: none;
+    overflow: hidden; /* Prevent decorative orbs (positioned outside this box on
+                          purpose, to bleed softly off the edges) from being
+                          counted as real scrollable content on .auth-hero. */
 }
 
 .hero-orb {
@@ -2214,7 +2238,7 @@ button[type="submit"]:active {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 40px;
+    margin-bottom: 24px;
 }
 
 .hero-brand-icon {
@@ -2249,8 +2273,8 @@ button[type="submit"]:active {
     line-height: 1.15;
     letter-spacing: -0.8px;
     color: var(--text-main);
-    margin-top: 18px;
-    margin-bottom: 12px;
+    margin-top: 10px;
+    margin-bottom: 8px;
 }
 
 .hero-headline-accent {
@@ -2265,7 +2289,7 @@ button[type="submit"]:active {
     color: var(--text-muted);
     line-height: 1.55;
     max-width: 440px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 }
 
 /* Floating stat cards */
@@ -2273,7 +2297,7 @@ button[type="submit"]:active {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-bottom: 36px;
+    margin-bottom: 20px;
 }
 
 .float-card {
@@ -2353,7 +2377,7 @@ button[type="submit"]:active {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 12px;
 }
 
 .perk-item {
@@ -3467,6 +3491,9 @@ button[type="submit"]:active {
 }
 .toast.leaving {
     animation: toastOut 0.3s var(--ease) both !important;
+    /* Defense in depth: even if a toast is never removed from the DOM for any
+       reason, it must not be able to intercept clicks on real UI beneath it. */
+    pointer-events: none !important;
 }
 @keyframes toastOut {
     from { opacity: 1; transform: translateX(0); }
@@ -3507,7 +3534,7 @@ button[type="submit"]:active {
     display: flex !important;
     align-items: flex-start !important;
     justify-content: center !important;
-    padding: 60px 48px 60px 80px !important;
+    padding: 36px 48px 36px 80px !important;
 }
 .auth-hero::before {
     content: '';
@@ -3516,8 +3543,8 @@ button[type="submit"]:active {
     height: 400px;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(var(--primary-rgb), 0.08) 0%, transparent 70%);
-    top: -100px;
-    right: -80px;
+    top: 0;
+    right: 0;
     pointer-events: none;
 }
 .auth-hero::after {
@@ -3527,8 +3554,8 @@ button[type="submit"]:active {
     height: 300px;
     border-radius: 50%;
     background: radial-gradient(circle, rgba(var(--highlight-rgb), 0.06) 0%, transparent 70%);
-    bottom: -60px;
-    left: -60px;
+    bottom: 0;
+    left: 0;
     pointer-events: none;
 }
 
@@ -3667,24 +3694,6 @@ button[type="submit"]:active {
     align-items: center;
     margin-bottom: 28px;
 }
-.step-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border);
-    transition: all 0.3s var(--ease);
-}
-.step-dot.active {
-    width: 24px;
-    border-radius: 100px;
-    background: var(--primary-gradient);
-    box-shadow: 0 0 8px var(--primary-glow);
-}
-.step-dot.done {
-    background: var(--success);
-    box-shadow: 0 0 6px var(--success-glow);
-}
-
 /* ── Smooth scroll area ── */
 .scroll-area, .scroll-area-modal {
     scroll-behavior: smooth;
