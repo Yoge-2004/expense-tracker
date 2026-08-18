@@ -45,6 +45,14 @@ function initGoogleSignIn() {
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCredentialResponse
     });
+
+    // Render Google's real button into the hidden container (see index.html)
+    // so the click-forwarding trick in handleGoogleOAuth() has something
+    // reliable to click, instead of depending on the unreliable prompt().
+    const realBtnContainer = document.getElementById("googleRealButton");
+    if (realBtnContainer) {
+        google.accounts.id.renderButton(realBtnContainer, { type: "standard", width: 300 });
+    }
 }
 
 async function handleGoogleCredentialResponse(credentialResponse) {
@@ -78,6 +86,17 @@ function handleGoogleOAuth() {
         showToast("Google Sign-In is still loading — please try again in a moment.", "error");
         return;
     }
+    // Forward the click to Google's own rendered button (see initGoogleSignIn)
+    // instead of calling google.accounts.id.prompt() directly — prompt() is
+    // the "One Tap" API, which has silent-suppression rules (cooldowns after
+    // a previous dismissal, FedCM eligibility, etc.) and commonly shows
+    // nothing at all when triggered from a button click.
+    const realBtn = document.querySelector("#googleRealButton div[role='button']");
+    if (realBtn) {
+        realBtn.click();
+        return;
+    }
+    // Fallback if Google's button hasn't finished rendering yet for some reason.
     google.accounts.id.prompt();
 }
 

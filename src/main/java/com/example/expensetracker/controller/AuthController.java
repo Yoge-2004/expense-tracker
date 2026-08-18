@@ -177,6 +177,7 @@ public class AuthController {
 
         User user = new User();
         user.setName(request.getName());
+        user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
         user.setCurrency(request.getCurrency());

@@ -42,6 +42,15 @@ public class User {
     private String name;
 
     /**
+     * The user's unique login handle (e.g., "yoge_26"), distinct from
+     * {@link #name}. Nullable at the DB level so existing accounts created
+     * before this field existed aren't broken by the schema update; new
+     * registrations require and validate it at the DTO layer instead.
+     */
+    @Column(unique = true)
+    private String username;
+
+    /**
      * The user's unique email address, used as their login identifier.
      * Must not be null. Uniqueness is enforced at the database level.
      */
@@ -130,6 +139,25 @@ public class User {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    /**
+     * Returns this user's unique login handle, distinct from their display name.
+     *
+     * @return the user's username, or {@code null} for accounts created before
+     *         this field existed
+     */
+    public String getUsername() {
+        return username;
+    }
+
+    /**
+     * Sets this user's unique login handle.
+     *
+     * @param username the username to set
+     */
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     /**

@@ -13,6 +13,13 @@ public class RegisterRequest {
     @NotBlank(message = "Name is required")
     private String name;
 
+    @Schema(description = "Unique login handle, distinct from the display name", example = "johndoe_26", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank(message = "Username is required")
+    @jakarta.validation.constraints.Pattern(
+            regexp = "^[a-zA-Z0-9._]{3,30}$",
+            message = "Username must be 3-30 characters and contain only letters, numbers, dots, or underscores")
+    private String username;
+
     @Schema(description = "Email address — used as the unique login identifier", example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
@@ -33,6 +40,8 @@ public class RegisterRequest {
 
     public String getName()                 { return name; }
     public void   setName(String name)      { this.name = name; }
+    public String getUsername()             { return username; }
+    public void   setUsername(String u)     { this.username = u; }
     public String getEmail()                { return email; }
     public void   setEmail(String email)    { this.email = email; }
     public String getPassword()             { return password; }

@@ -81,7 +81,7 @@ public class UserController {
             }
 
             // Verify non-existence in DB
-            if (!userRepository.existsByNameIgnoreCase(candidate) && !userRepository.existsByEmail(candidate)) {
+            if (!userRepository.existsByUsernameIgnoreCase(candidate) && !userRepository.existsByEmail(candidate)) {
                 uniqueSuggestions.add(candidate);
             }
         }

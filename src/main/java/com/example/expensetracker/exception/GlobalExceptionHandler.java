@@ -64,6 +64,31 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles {@link IllegalStateException}, used for operations that are valid
+     * requests but conflict with the resource's current state — e.g. attempting
+     * to delete a category that's still referenced by existing expenses.
+     *
+     * @param ex      the thrown {@link IllegalStateException}
+     * @param request the current HTTP request (used to populate the {@code path} field)
+     * @return a {@code 409 Conflict} response with an {@link ErrorResponse} body
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(
+            IllegalStateException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    /**
      * Handles {@link NoSuchElementException} thrown when a requested resource is not found.
      *
      * <p>Typically occurs when an optional value is unwrapped without a fallback.</p>

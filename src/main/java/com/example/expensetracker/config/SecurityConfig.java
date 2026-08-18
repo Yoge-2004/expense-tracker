@@ -1,6 +1,8 @@
 package com.example.expensetracker.config;
 
 import com.example.expensetracker.security.JwtAuthenticationFilter;
+import com.example.expensetracker.security.RestAccessDeniedHandler;
+import com.example.expensetracker.security.RestAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -37,15 +39,22 @@ public class SecurityConfig {
 
     /** The JWT authentication filter injected into the security filter chain. */
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     /**
-     * Constructs a {@code SecurityConfig} with the required JWT authentication filter.
+     * Constructs a {@code SecurityConfig} with the required JWT authentication filter
+     * and the JSON-based handlers for filter-chain-level auth failures.
      *
      * @param jwtAuthenticationFilter the custom filter responsible for JWT validation
      *                                on each incoming HTTP request
      */
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                           RestAuthenticationEntryPoint restAuthenticationEntryPoint,
+                           RestAccessDeniedHandler restAccessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
+        this.restAccessDeniedHandler = restAccessDeniedHandler;
     }
 
     /**
@@ -101,7 +110,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                .httpBasic(Customizer.withDefaults())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
+                )
+
                 .formLogin(form -> form.disable());
 
         http.headers(headers -> headers.frameOptions(frame -> frame.disable()));

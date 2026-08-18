@@ -75,4 +75,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return {@code true} if an entry exists; {@code false} otherwise
      */
     boolean existsByNameIgnoreCase(String name);
+
+    /**
+     * Retrieves a user by their unique login handle (case-insensitive). Distinct
+     * from {@link #findByNameIgnoreCase}, which matches the display name field.
+     */
+    Optional<User> findByUsernameIgnoreCase(String username);
+
+    /**
+     * Checks whether a user with the given username already exists (case-insensitive).
+     */
+    boolean existsByUsernameIgnoreCase(String username);
 }

@@ -59,7 +59,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
         String query = usernameOrEmail.trim();
         User user = userRepository.findByEmailIgnoreCase(query)
-                .or(() -> userRepository.findByNameIgnoreCase(query))
+                .or(() -> userRepository.findByUsernameIgnoreCase(query))
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with email or username: " + query));
         return new CustomUserDetails(user);

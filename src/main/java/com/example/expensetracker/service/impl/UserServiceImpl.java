@@ -93,6 +93,9 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email already registered");
         }
+        if (user.getUsername() != null && userRepository.existsByUsernameIgnoreCase(user.getUsername())) {
+            throw new IllegalArgumentException("Username already taken");
+        }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(true);
@@ -108,7 +111,7 @@ public class UserServiceImpl implements UserService {
         }
         String q = identifier.trim();
         return userRepository.findByEmailIgnoreCase(q)
-                .or(() -> userRepository.findByNameIgnoreCase(q));
+                .or(() -> userRepository.findByUsernameIgnoreCase(q));
     }
 
     /**
