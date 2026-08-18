@@ -20,6 +20,7 @@ public class ScenarioContext {
     private String   authToken;
     private Long     userId;
     private String   userEmail;
+    private String   userUsername;
     private String   userPassword;
     private Long     expenseId;
     private Long     categoryId;
@@ -36,6 +37,9 @@ public class ScenarioContext {
 
     public String   getUserEmail()                   { return userEmail; }
     public void     setUserEmail(String e)           { this.userEmail = e; }
+
+    public String   getUserUsername()                { return userUsername; }
+    public void     setUserUsername(String u)        { this.userUsername = u; }
 
     public String   getUserPassword()                { return userPassword; }
     public void     setUserPassword(String p)        { this.userPassword = p; }
@@ -54,6 +58,7 @@ public class ScenarioContext {
         this.authToken = null;
         this.userId = null;
         this.userEmail = null;
+        this.userUsername = null;
         this.userPassword = null;
         this.expenseId = null;
         this.categoryId = null;

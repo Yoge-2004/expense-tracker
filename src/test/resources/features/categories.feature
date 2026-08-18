@@ -98,3 +98,44 @@ Feature: Category Management API
     When I get all global categories
     Then the response status code should be 200
     And the response should not be empty
+
+  # ─── Delete Category ─────────────────────────────────────────────────────
+  # This feature was built during the same session that found the test suite
+  # gap in the first place — added here so it never ships without coverage,
+  # unlike the original username field.
+
+  Scenario: An unused category can be deleted
+    A category with no expenses or subscriptions referencing it should be
+    deletable, and should then genuinely disappear from the user's list.
+
+    Given I have created a category named "Temporary Category"
+    When I delete the category I just created
+    Then the response status code should be 204
+    And the category I created should no longer exist for my user
+
+  Scenario: A category still referenced by an expense cannot be deleted
+    Deleting a category that's in use must fail with 409 Conflict, and the
+    error message should be specific enough to explain why — not the generic
+    "Unable to connect to the server" message a real bug in the frontend's
+    error handling used to produce for exactly this kind of non-JSON-shaped
+    or unexpected error response.
+
+    Given I have created a category named "Category In Use"
+    And I have created an expense of 45.00 for "Something" on "2026-06-01" under the category I just created
+    When I delete the category I just created
+    Then the response status code should be 409
+    And the response body should contain "still used"
+
+    When I delete the created expense
+    Then the response status code should be 204
+    When I delete the category I just created
+    Then the response status code should be 204
+    And the category I created should no longer exist for my user
+
+  Scenario: A global (system-seeded) category cannot be deleted
+    Global categories like "Food" and "Transport" are shared across every
+    user and must never be removable through the user-scoped delete endpoint,
+    regardless of whether any expense currently uses them.
+
+    When I delete global category "Food"
+    Then the response status code should be 400

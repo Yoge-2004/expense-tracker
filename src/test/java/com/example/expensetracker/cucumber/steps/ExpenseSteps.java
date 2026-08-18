@@ -116,6 +116,18 @@ public class ExpenseSteps {
         ctx.setExpenseId(r.jsonPath().getLong("id"));
     }
 
+    /**
+     * Same as {@link #iHaveCreatedAnExpense}, but references whichever
+     * category was most recently created via
+     * {@code "I have created a category named ..."} instead of a hardcoded
+     * ID — used by category-deletion scenarios where the category's ID is
+     * assigned dynamically and can't be known in advance.
+     */
+    @Given("I have created an expense of {double} for {string} on {string} under the category I just created")
+    public void iHaveCreatedAnExpenseUnderTheCategoryIJustCreated(double amount, String description, String date) {
+        iHaveCreatedAnExpense(amount, description, date, ctx.getCategoryId());
+    }
+
     // ─── Get expenses steps ───────────────────────────────────────────────
 
     @When("I get all expenses for my user")

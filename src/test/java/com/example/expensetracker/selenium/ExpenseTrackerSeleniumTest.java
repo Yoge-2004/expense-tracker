@@ -460,4 +460,67 @@ public class ExpenseTrackerSeleniumTest {
         String token = (String) ((JavascriptExecutor) driver).executeScript("return localStorage.getItem('token');");
         assertNull(token, "Auth token should be cleared from localStorage after logout");
     }
+
+    // =========================================================================
+    // SUITE 21: REGRESSION — USERNAME MUST ACTUALLY BE SENT ON REGISTRATION
+    // =========================================================================
+    // The two existing username tests (TC-04, TC-05) only ever verified that
+    // the suggestions widget *looks* interactive — that a dropdown appears and
+    // that clicking a chip fills the input. Neither ever checked that the
+    // value a person actually types or selects makes it into the request the
+    // form submits. That gap is exactly how a real bug shipped: the backend
+    // had no `username` field to receive it, and register.js's submit handler
+    // never read `#reg-username` at all, so every signup silently discarded
+    // whatever the user entered there — even though the field was marked
+    // required and had its own step-progress indicator implying it mattered.
+    //
+    // This test intercepts window.fetch before submitting the real form (via
+    // real DOM interactions, not by calling internal JS functions directly)
+    // and asserts the captured request body actually contains the username
+    // the user typed. It doesn't require a live backend — the fetch never
+    // needs to resolve for the assertion to be meaningful, since what's being
+    // verified is what the frontend *sends*, not what a server *returns*.
+
+    @Test
+    @Order(21)
+    @DisplayName("TC-21: Registration form must include the typed username in its submitted payload")
+    public void testRegistrationPayloadIncludesUsername() {
+        driver.get(registerUrl);
+        wait.until(ExpectedConditions.titleContains("Create Account"));
+
+        // Capture the body of the next call to /auth/register instead of letting
+        // it hit the network (there is no live backend in this file:// suite).
+        ((JavascriptExecutor) driver).executeScript(
+                "window.__capturedRegisterBody = null;" +
+                "const originalFetch = window.fetch;" +
+                "window.fetch = function(url, options) {" +
+                "    if (typeof url === 'string' && url.includes('/auth/register')) {" +
+                "        window.__capturedRegisterBody = options && options.body;" +
+                "        return Promise.resolve(new Response(JSON.stringify({id: 1, email: 'x@y.com'}), " +
+                "            { status: 201, headers: {'Content-Type': 'application/json'} }));" +
+                "    }" +
+                "    return originalFetch.apply(this, arguments);" +
+                "};"
+        );
+
+        String expectedUsername = "selenium_regress_user";
+
+        driver.findElement(By.id("reg-name")).sendKeys("Selenium Regression");
+        driver.findElement(By.id("reg-username")).sendKeys(expectedUsername);
+        driver.findElement(By.id("reg-email")).sendKeys("selenium.regress@example.com");
+        driver.findElement(By.id("reg-password")).sendKeys("StrongPass1!");
+
+        WebElement submitBtn = driver.findElement(By.id("registerBtn"));
+        clickElement(submitBtn);
+
+        wait.until(d -> ((JavascriptExecutor) d).executeScript("return window.__capturedRegisterBody;") != null);
+
+        String capturedBody = (String) ((JavascriptExecutor) driver)
+                .executeScript("return window.__capturedRegisterBody;");
+
+        assertNotNull(capturedBody, "Registration form should have called /auth/register with a body");
+        assertTrue(capturedBody.contains(expectedUsername),
+                "Submitted registration payload must include the username the user actually typed — "
+                + "captured body was: " + capturedBody);
+    }
 }

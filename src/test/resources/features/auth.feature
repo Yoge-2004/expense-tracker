@@ -349,3 +349,38 @@ Feature: Authentication API
 
     When I send a reset password request without an email
     Then the response status code should be 400
+
+  Scenario: A user can register with a username and log back in using only that username
+    Regression guard for a bug found during manual testing: the signup form
+    has always collected a "Username" field, separate from the full display
+    name, and even showed live availability suggestions for it — but the
+    backend had no column to store it in, and the frontend's submit handler
+    never actually read the field's value at all. Every signup silently
+    discarded whatever the user typed there. The previous "username or email"
+    login fallback appeared to work but was actually matching against the
+    display *name* field, which is a different, unrelated piece of data.
+    This proves the full path end to end: a real username set at signup is
+    later sufficient, on its own, to authenticate.
+
+    When I register with name "Username Regression", username "regress_user_88", email "regress88@example.com", and password "RegressPass1!"
+    Then the response status code should be 201
+    When I login with username "regress_user_88" and password "RegressPass1!"
+    Then the response status code should be 200
+    And the response should contain a JWT token
+
+  Scenario: Registration is rejected when the username is missing
+    The username field is required (@NotBlank) exactly like name and email —
+    the signup form marks it required and shows a step-progress indicator for
+    it, so the backend must not silently accept its absence.
+
+    When I register with name "No Username", email "nousername@example.com", and password "SomePass1!"
+    Then the response status code should be 400
+
+  Scenario: Registration is rejected when the username is already taken
+    Two different people cannot both register with the same username, even if
+    their emails and display names are completely different.
+
+    When I register with name "First Person", username "taken_name_1", email "first@example.com", and password "SomePass1!"
+    Then the response status code should be 201
+    When I register with name "Second Person", username "taken_name_1", email "second@example.com", and password "SomePass1!"
+    Then the response status code should be 400

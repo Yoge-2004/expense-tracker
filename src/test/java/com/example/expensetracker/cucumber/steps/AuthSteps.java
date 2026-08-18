@@ -35,14 +35,17 @@ public class AuthSteps {
 
     @Given("I am a registered and authenticated user")
     public void iAmRegisteredAndAuthenticated() {
-        // Generate unique email per scenario to avoid H2 unique-constraint clashes
-        String email    = "user-" + UUID.randomUUID() + "@test.com";
+        // Generate unique email/username per scenario to avoid H2 unique-constraint clashes
+        String unique   = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        String email    = "user-" + unique + "@test.com";
+        String username = "testuser_" + unique;
         String password = "Test@1234";
         String name     = "Test User";
 
         // Register
         Map<String, String> reg = new HashMap<>();
         reg.put("name",     name);
+        reg.put("username", username);
         reg.put("email",    email);
         reg.put("password", password);
 
@@ -78,6 +81,7 @@ public class AuthSteps {
         ctx.setAuthToken(token);
         ctx.setUserEmail(email);
         ctx.setUserPassword(password);
+        ctx.setUserUsername(username);
     }
 
     // ─── Registration steps ────────────────────────────────────────────────
@@ -86,6 +90,7 @@ public class AuthSteps {
     public void aUserIsRegistered(String email, String password) {
         Map<String, String> body = new HashMap<>();
         body.put("name",     "Seed User");
+        body.put("username", randomUsername());
         body.put("email",    email);
         body.put("password", password);
 
@@ -99,10 +104,20 @@ public class AuthSteps {
         assertThat(r.statusCode()).as("Seed registration failed").isIn(201, 400);
     }
 
+    /**
+     * Generates a short, unique, valid username (matches the backend's
+     * {@code ^[a-zA-Z0-9._]{3,30}$} pattern) for steps that need to register a
+     * user but aren't specifically testing username behaviour themselves.
+     */
+    private String randomUsername() {
+        return "u_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
     @When("I register with name {string}, email {string}, and password {string}")
     public void iRegister(String name, String email, String password) {
         Map<String, String> body = new HashMap<>();
         body.put("name",     name);
+        body.put("username", randomUsername());
         body.put("email",    email);
         body.put("password", password);
 
@@ -194,6 +209,55 @@ public class AuthSteps {
                         .body(body)
                         .when()
                         .post("/api/auth/login")
+        );
+    }
+
+    /**
+     * Logs in using the username field (not email) as the identifier — the
+     * request DTO's JSON key is still {@code email} (see {@code LoginRequest}),
+     * since it was never renamed when it was widened to accept either. This
+     * step exists specifically to guard against the regression found this
+     * session: the signup form collected a username, but neither the DTO nor
+     * the backend had anywhere to put it, so nothing typed there could ever
+     * be used to log back in — the old "username or email" fallback silently
+     * matched against the display *name* field instead.
+     */
+    @When("I login with username {string} and password {string}")
+    public void iLoginWithUsername(String username, String password) {
+        Map<String, String> body = new HashMap<>();
+        body.put("email",    username); // deliberately reusing the "email" JSON key — see LoginRequest
+        body.put("password", password);
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/login")
+        );
+    }
+
+    /**
+     * Registers a brand-new user supplying every field the real signup form
+     * collects — including username, which {@link #iRegister} deliberately
+     * generates a throwaway value for since most scenarios using it aren't
+     * testing username behaviour specifically. This step is for scenarios
+     * that need to control (and later assert on) the exact username used.
+     */
+    @When("I register with name {string}, username {string}, email {string}, and password {string}")
+    public void iRegisterWithUsername(String name, String username, String email, String password) {
+        Map<String, String> body = new HashMap<>();
+        body.put("name",     name);
+        body.put("username", username);
+        body.put("email",    email);
+        body.put("password", password);
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/register")
         );
     }
 

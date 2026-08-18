@@ -171,6 +171,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "Yogeshwaran",
+                                        "username", "yoge_26",
                                         "email", "yoge@example.com",
                                         "password", "secret123",
                                         "otp", "482913",

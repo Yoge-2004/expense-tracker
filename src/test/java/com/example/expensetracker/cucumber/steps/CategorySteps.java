@@ -157,4 +157,59 @@ public class CategorySteps {
                 .as("Global category list should contain '%s'", categoryName)
                 .contains(categoryName);
     }
+
+    // ─── Delete category steps ────────────────────────────────────────────
+    // These guard the category-deletion feature built this session: a
+    // category can only be removed if nothing references it, and global
+    // (system-seeded) categories can never be removed at all.
+
+    @When("I delete the category I just created")
+    public void iDeleteTheCategoryIJustCreated() {
+        ctx.setLastResponse(
+                ctx.request()
+                        .header("Authorization", "Bearer " + ctx.getAuthToken())
+                        .when()
+                        .delete("/api/categories/" + ctx.getCategoryId() + "/user/" + ctx.getUserId())
+        );
+    }
+
+    @When("I delete global category {string}")
+    public void iDeleteGlobalCategory(String categoryName) {
+        // Look up the global category's real ID by name first, since it's
+        // system-seeded rather than created by this scenario.
+        Response globals = ctx.request()
+                .header("Authorization", "Bearer " + ctx.getAuthToken())
+                .when()
+                .get("/api/categories/global");
+
+        Long globalId = null;
+        List<Map<String, Object>> list = globals.jsonPath().getList("$");
+        for (Map<String, Object> cat : list) {
+            if (categoryName.equals(cat.get("name"))) {
+                globalId = Long.valueOf(cat.get("id").toString());
+                break;
+            }
+        }
+        assertThat(globalId).as("Global category '%s' should exist to attempt deleting it", categoryName).isNotNull();
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .header("Authorization", "Bearer " + ctx.getAuthToken())
+                        .when()
+                        .delete("/api/categories/" + globalId + "/user/" + ctx.getUserId())
+        );
+    }
+
+    @And("the category I created should no longer exist for my user")
+    public void theCategoryShouldNoLongerExist() {
+        Response r = ctx.request()
+                .header("Authorization", "Bearer " + ctx.getAuthToken())
+                .when()
+                .get("/api/categories/user/" + ctx.getUserId());
+
+        List<Long> ids = r.jsonPath().getList("id", Long.class);
+        assertThat(ids)
+                .as("Deleted category id %d should no longer appear in the user's category list", ctx.getCategoryId())
+                .doesNotContain(ctx.getCategoryId());
+    }
 }
