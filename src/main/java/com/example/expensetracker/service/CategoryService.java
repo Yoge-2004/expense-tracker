@@ -63,4 +63,21 @@ public interface CategoryService {
      *         empty list if none are defined
      */
     List<Category> getGlobalCategories();
+
+    /**
+     * Deletes a user-owned category, but only if it is not currently in use.
+     *
+     * <p>A category is considered "in use" if any expense or recurring
+     * expense/subscription (for any user, though in practice only its owner
+     * could reference it) points to it. Global (system-seeded) categories can
+     * never be deleted through this method.</p>
+     *
+     * @param categoryId the ID of the category to delete
+     * @param user       the user attempting the deletion; must own the category
+     * @throws IllegalArgumentException if the category doesn't exist, isn't
+     *                                  owned by this user, or is a global category
+     * @throws IllegalStateException    if the category is currently referenced
+     *                                  by one or more expenses
+     */
+    void deleteCategory(Long categoryId, User user);
 }

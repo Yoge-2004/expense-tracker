@@ -631,6 +631,7 @@ public class ExpenseController {
             map.put("nextDueDate", sub.getNextDueDate());
             map.put("frequency",   sub.getFrequency());
             map.put("intervalDays", sub.getIntervalDays());
+            map.put("categoryId", sub.getCategory() != null ? sub.getCategory().getId() : null);
             map.put("categoryName", sub.getCategory() != null ? sub.getCategory().getName() : "Uncategorized");
             return map;
         }).collect(Collectors.toList());

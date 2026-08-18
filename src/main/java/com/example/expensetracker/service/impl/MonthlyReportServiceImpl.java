@@ -189,6 +189,16 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String generateMonthlyReportHtml(Long userId, int year, int month) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        MonthlyReportDto report = generateMonthlyReport(userId, year, month);
+        return buildMonthlyReportHtml(user.getName(), report);
+    }
+
     private void saveReportLog(User user, int year, int month, boolean success, String errorMsg) {
         Optional<MonthlyReportLog> existing = reportLogRepository.findByUserAndReportYearAndReportMonth(user, year, month);
         MonthlyReportLog logEntry = existing.orElseGet(() -> new MonthlyReportLog());

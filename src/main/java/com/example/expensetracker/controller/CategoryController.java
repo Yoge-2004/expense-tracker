@@ -234,10 +234,32 @@ public class CategoryController {
                 ))
         )
     })
-    @GetMapping("/global")
-    public ResponseEntity<List<CategoryDto>> getGlobalCategories() {
-        List<CategoryDto> categories = categoryService.getGlobalCategories()
-                .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
-        return ResponseEntity.ok(categories);
+    @Operation(
+        summary = "Delete user category",
+        description = """
+            Deletes a personal category owned by the specified user.
+
+            **Business rules:**
+            - Global (system-seeded) categories can never be deleted.
+            - A category still referenced by any expense or recurring
+              subscription cannot be deleted — returns `409 Conflict`.
+            - Only the owning user may delete their own category.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Category deleted successfully"),
+        @ApiResponse(responseCode = "400", description = "Category not found, not owned by this user, or is a global category"),
+        @ApiResponse(responseCode = "409", description = "Category is still in use by one or more expenses")
+    })
+    @DeleteMapping("/{categoryId}/user/{userId}")
+    public ResponseEntity<Void> deleteCategory(
+            @Parameter(description = "ID of the category to delete", required = true, example = "6")
+            @PathVariable Long categoryId,
+            @Parameter(description = "ID of the user who owns the category", required = true, example = "1")
+            @PathVariable Long userId) {
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        categoryService.deleteCategory(categoryId, user);
+        return ResponseEntity.noContent().build();
     }
 }

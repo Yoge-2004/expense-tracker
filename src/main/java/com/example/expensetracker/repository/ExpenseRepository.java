@@ -49,4 +49,14 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
      *         empty list if no matching expenses exist
      */
     List<Expense> findByUserAndExpenseDateBetween(User user, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Checks whether any expense (for any user) currently references the given
+     * category. Used to guard category deletion — a category that's in use
+     * must not be deleted, since doing so would orphan those expense records.
+     *
+     * @param categoryId the ID of the category to check
+     * @return {@code true} if at least one expense references this category
+     */
+    boolean existsByCategory_Id(Long categoryId);
 }

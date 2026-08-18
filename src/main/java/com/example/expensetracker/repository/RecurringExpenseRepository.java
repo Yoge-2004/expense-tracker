@@ -54,4 +54,13 @@ public interface RecurringExpenseRepository extends JpaRepository<RecurringExpen
      *         empty list if the user has no active subscriptions
      */
     List<RecurringExpense> findByUser(User user);
+
+    /**
+     * Checks whether any recurring expense/subscription (for any user)
+     * currently references the given category — see
+     * {@link com.example.expensetracker.repository.ExpenseRepository#existsByCategory_Id}
+     * for the equivalent check on one-off expenses. Both must be checked
+     * before a category can be safely deleted.
+     */
+    boolean existsByCategory_Id(Long categoryId);
 }

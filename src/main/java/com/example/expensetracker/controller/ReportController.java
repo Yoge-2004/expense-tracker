@@ -5,6 +5,8 @@ import com.example.expensetracker.service.MonthlyReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +38,24 @@ public class ReportController {
 
         MonthlyReportDto report = monthlyReportService.generateMonthlyReport(userId, y, m);
         return ResponseEntity.ok(report);
+    }
+
+    @Operation(summary = "Get monthly financial report as a standalone HTML document (same template used for the emailed report)")
+    @GetMapping(value = "/monthly/user/{userId}/html", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> getMonthlyReportHtml(
+            @PathVariable Long userId,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+
+        LocalDate now = LocalDate.now();
+        int y = year != null ? year : now.getYear();
+        int m = month != null ? month : now.getMonthValue();
+
+        String html = monthlyReportService.generateMonthlyReportHtml(userId, y, m);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"monthly-report-" + y + "-" + m + ".html\"")
+                .body(html);
     }
 
     @Operation(summary = "Trigger sending monthly financial report to user's email")

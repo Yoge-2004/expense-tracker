@@ -37,14 +37,25 @@ public class CategoryServiceImpl implements CategoryService {
 
     /** Repository used for category persistence and querying. */
     private final CategoryRepository categoryRepository;
+    private final com.example.expensetracker.repository.ExpenseRepository expenseRepository;
+    private final com.example.expensetracker.repository.RecurringExpenseRepository recurringExpenseRepository;
 
     /**
-     * Constructs a {@code CategoryServiceImpl} with the required category repository.
+     * Constructs a {@code CategoryServiceImpl} with the required repositories.
      *
      * @param categoryRepository the JPA repository for {@link Category} entities
+     * @param expenseRepository  used to check whether a category is referenced
+     *                           by any one-off expense before deletion
+     * @param recurringExpenseRepository used to check whether a category is
+     *                           referenced by any recurring expense/subscription
+     *                           before deletion
      */
-    public CategoryServiceImpl(CategoryRepository categoryRepository) {
+    public CategoryServiceImpl(CategoryRepository categoryRepository,
+                                com.example.expensetracker.repository.ExpenseRepository expenseRepository,
+                                com.example.expensetracker.repository.RecurringExpenseRepository recurringExpenseRepository) {
         this.categoryRepository = categoryRepository;
+        this.expenseRepository = expenseRepository;
+        this.recurringExpenseRepository = recurringExpenseRepository;
     }
 
     /**
@@ -111,5 +122,39 @@ public class CategoryServiceImpl implements CategoryService {
     @Cacheable(value = "globalCategories")
     public List<Category> getGlobalCategories() {
         return categoryRepository.findByUserIsNull();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Ownership and the global-category guard are checked before the usage
+     * check, so a user attempting to delete someone else's category (or a
+     * global one) gets a clear "not found/not yours" error rather than a
+     * confusing "in use" message. Both {@link ExpenseRepository} and
+     * {@link RecurringExpenseRepository} are checked, since a category can be
+     * referenced by either a one-off expense or a recurring subscription.</p>
+     */
+    @Override
+    @Caching(evict = {
+        @CacheEvict(value = "userCategories", key = "#user.id"),
+        @CacheEvict(value = "globalCategories", allEntries = true)
+    })
+    public void deleteCategory(Long categoryId, User user) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+
+        if (category.getUser() == null) {
+            throw new IllegalArgumentException("Global categories cannot be deleted");
+        }
+        if (!category.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Category not found");
+        }
+        if (expenseRepository.existsByCategory_Id(categoryId)
+                || recurringExpenseRepository.existsByCategory_Id(categoryId)) {
+            throw new IllegalStateException(
+                    "Category '" + category.getName() + "' is still used by one or more expenses and can't be deleted");
+        }
+
+        categoryRepository.delete(category);
     }
 }
