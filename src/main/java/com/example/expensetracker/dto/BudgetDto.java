@@ -4,6 +4,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Request payload for creating or updating a category budget limit.
+ *
+ * <p>Used both to create a new {@link com.example.expensetracker.model.Budget}
+ * and to update an existing one — the service layer treats a second submission
+ * for the same user–category pair as an update rather than creating a
+ * duplicate (see
+ * {@link com.example.expensetracker.controller.ExpenseController#setBudget}).</p>
+ *
+ * @see com.example.expensetracker.model.Budget
+ * @see BudgetStatusDto
+ */
 @Schema(description = "Sets a spending limit for a specific category and period")
 public class BudgetDto {
 

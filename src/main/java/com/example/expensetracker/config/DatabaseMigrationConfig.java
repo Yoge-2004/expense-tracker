@@ -11,6 +11,22 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Statement;
 
+/**
+ * Applies lightweight, idempotent schema patches on startup for columns that
+ * may be missing from an older database (e.g. a Space that's been running
+ * since before {@code currency}, {@code account_locked}, or {@code enabled}
+ * were added to {@link com.example.expensetracker.model.User}).
+ *
+ * <p><b>PostgreSQL-specific:</b> uses {@code ALTER TABLE ... ADD COLUMN IF NOT
+ * EXISTS}, which is Postgres syntax. Against a different database engine
+ * (e.g. H2 in tests) each statement's exception is caught and logged as a
+ * warning rather than failing startup, so this silently does nothing useful
+ * there — schema setup for non-Postgres environments relies on JPA's own
+ * {@code ddl-auto} instead.</p>
+ *
+ * <p>Runs via {@link ApplicationStartedEvent} at {@code @Order(1)}, before
+ * most other startup logic, so later beans can assume these columns exist.</p>
+ */
 @Component
 public class DatabaseMigrationConfig {
 

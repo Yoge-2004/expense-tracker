@@ -50,9 +50,34 @@ public class UserController {
             "cool", "swift", "hyper", "super", "smart", "ultra", "epic", "bright", "fast", "elite", "prime", "neo", "pure", "nova", "apex", "grand", "star"
     );
 
+    // ─── GET /api/users/suggest-usernames ─────────────────────────────────
+
+    @Operation(
+        summary = "Suggest available usernames",
+        description = """
+            Generates three unique, currently-available username suggestions based
+            on a user-supplied base string (typically their full name, entered
+            during signup before they've chosen a username of their own).
+
+            **Generation strategy:** each candidate is built by randomly applying
+            one of three patterns to the sanitised base — a numeric suffix
+            (`alex_842`), a themed tag suffix (`alex.zone`), or an adjective
+            prefix (`swift_alex`) — and checked against the database for
+            collisions against both existing usernames and emails before being
+            added to the result. Generation retries up to 25 times to fill three
+            unique slots; if collisions exhaust those attempts, a guaranteed
+            fallback (`prefix_<random 4-digit number>`) fills any remaining slots.
+
+            Deliberately requires no authentication (see the empty
+            `@SecurityRequirements` override below) — this runs during signup,
+            before the user has an account or JWT to authenticate with.
+            """
+    )
+    @ApiResponse(responseCode = "200", description = "Always returns exactly three unique, currently-available username suggestions")
     @io.swagger.v3.oas.annotations.security.SecurityRequirements
     @GetMapping("/suggest-usernames")
     public ResponseEntity<java.util.Map<String, Object>> suggestUsernames(
+            @Parameter(description = "Base string to derive suggestions from — typically the user's name, lowercased and stripped of non-alphanumeric characters internally.", example = "Yogeshwaran")
             @RequestParam(defaultValue = "user") String base) {
 
         String prefix = base.trim().toLowerCase().replaceAll("[^a-z0-9]", "");
@@ -96,8 +121,22 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    // ─── GET /api/users/{userId} ───────────────────────────────────────────
+
+    @Operation(
+        summary = "Get user profile",
+        description = "Returns the authenticated user's basic profile fields — id, display name, email, and preferred currency — used by the dashboard for the welcome greeting and currency formatting on initial load."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Profile returned successfully"),
+        @ApiResponse(responseCode = "400", description = "No user found with the given ID",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @GetMapping("/{userId}")
-    public ResponseEntity<java.util.Map<String, Object>> getUserProfile(@PathVariable Long userId) {
+    public ResponseEntity<java.util.Map<String, Object>> getUserProfile(
+            @Parameter(description = "Database ID of the user whose profile to fetch.", required = true, example = "1")
+            @PathVariable Long userId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         java.util.Map<String, Object> map = new java.util.HashMap<>();

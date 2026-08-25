@@ -411,15 +411,45 @@ public class ExpenseController {
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget set successfully"));
     }
 
+    @Operation(
+        summary = "Delete budget by ID",
+        description = """
+            Deletes a single budget limit by its own database ID.
+
+            ⚠️ **Known authorization gap:** unlike every other mutating endpoint in
+            this controller, this one does not take a `userId` and never verifies
+            the budget belongs to the authenticated caller before deleting it — it
+            calls `budgetRepository.deleteById(budgetId)` directly. Any
+            authenticated user can delete any budget in the system if they know
+            or guess its ID. Prefer `DELETE /budget/user/{userId}/category/{categoryId}`
+            below, which is correctly scoped to the calling user, until this is
+            fixed to verify ownership first.
+            """
+    )
+    @ApiResponse(responseCode = "200", description = "Budget deleted (or silently no-op if the ID didn't exist — deleteById does not throw on a missing row)")
     @DeleteMapping("/budget/{budgetId}")
-    public ResponseEntity<?> deleteBudgetById(@PathVariable Long budgetId) {
+    public ResponseEntity<?> deleteBudgetById(
+            @Parameter(description = "Database ID of the budget to delete. NOTE: not verified against any user — see the authorization gap above.", required = true, example = "3")
+            @PathVariable Long budgetId) {
         budgetRepository.deleteById(budgetId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget limit deleted successfully"));
     }
 
+    @Operation(
+        summary = "Delete budget by user and category",
+        description = "Deletes the budget limit set for a specific category, scoped to a specific user — unlike deleteBudgetById above, this correctly verifies the user exists first and only ever deletes that user's own budget for the given category."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Budget deleted (or silently no-op if no matching budget existed for this user/category pair)"),
+        @ApiResponse(responseCode = "400", description = "No user found with the given userId")
+    })
     @DeleteMapping("/budget/user/{userId}/category/{categoryId}")
     @org.springframework.transaction.annotation.Transactional
-    public ResponseEntity<?> deleteBudgetByCategory(@PathVariable Long userId, @PathVariable Long categoryId) {
+    public ResponseEntity<?> deleteBudgetByCategory(
+            @Parameter(description = "ID of the user who owns the budget.", required = true, example = "1")
+            @PathVariable Long userId,
+            @Parameter(description = "ID of the category whose budget limit should be removed.", required = true, example = "3")
+            @PathVariable Long categoryId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         budgetRepository.deleteByUserAndCategoryId(user, categoryId);

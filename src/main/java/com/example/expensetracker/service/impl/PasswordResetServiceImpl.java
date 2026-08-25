@@ -24,6 +24,29 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+/**
+ * Implements {@link PasswordResetService} — see that interface for the
+ * public contract. This class documents implementation-specific behaviour
+ * the interface doesn't cover:
+ *
+ * <ul>
+ *   <li><b>Rate limiting &amp; expiry:</b> each OTP is valid for {@value
+ *   #OTP_TTL_MINUTES} minutes and allows at most {@value #MAX_ATTEMPTS}
+ *   verification attempts before being rejected outright, even if the
+ *   correct code is later supplied.</li>
+ *   <li><b>Graceful degradation without SMTP:</b> if {@code app.mail.enabled}
+ *   is false or {@code spring.mail.host} isn't configured (common in local
+ *   dev or a fresh deployment), the OTP is logged instead of emailed rather
+ *   than throwing — signup/reset flows keep working, just without real email
+ *   delivery. If mail is enabled but no {@link JavaMailSender} bean is
+ *   actually available, the failure is logged and swallowed rather than
+ *   propagated, so a misconfigured mail server doesn't break the OTP flow
+ *   for the caller.</li>
+ *   <li><b>Test hook:</b> {@link OtpDeliveryListener}, if a bean is present,
+ *   is notified of every OTP issued — this exists so automated tests can
+ *   capture the generated code without needing to read real email.</li>
+ * </ul>
+ */
 @Service
 public class PasswordResetServiceImpl implements PasswordResetService {
 

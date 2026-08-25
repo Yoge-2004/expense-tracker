@@ -4,6 +4,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Read-only view of how much of a budget has been consumed for its current
+ * period, computed dynamically at request time rather than stored — {@code
+ * spent} and {@code percentage} are always calculated fresh from the user's
+ * actual expenses, never persisted, so they can never go stale.
+ *
+ * @see BudgetDto
+ * @see com.example.expensetracker.model.Budget
+ */
 @Schema(description = "Budget utilisation status for one expense category and period")
 public class BudgetStatusDto {
 

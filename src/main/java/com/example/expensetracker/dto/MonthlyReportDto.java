@@ -3,6 +3,13 @@ package com.example.expensetracker.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Full monthly financial summary — the data model behind both the emailed
+ * monthly report and its HTML-download fallback (used when email delivery
+ * is disabled), so both surfaces render from exactly the same numbers.
+ *
+ * @see com.example.expensetracker.service.MonthlyReportService
+ */
 public class MonthlyReportDto {
     private String period; // e.g. "August 2026"
     private int year;

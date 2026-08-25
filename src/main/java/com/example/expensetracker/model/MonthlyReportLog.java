@@ -3,6 +3,17 @@ package com.example.expensetracker.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Audit record of a monthly report email send attempt for one user/period.
+ *
+ * <p>The unique constraint on (user, year, month) means at most one log row
+ * ever exists per user per period — {@link
+ * com.example.expensetracker.service.impl.MonthlyReportServiceImpl} looks up
+ * any existing row before sending and updates it in place rather than
+ * inserting a duplicate, so this doubles as a record of whether a report was
+ * already sent for a given month (preventing accidental re-sends) as well as
+ * a log of whether the send succeeded.</p>
+ */
 @Entity
 @Table(name = "monthly_report_logs", uniqueConstraints = {
     @UniqueConstraint(name = "uk_user_report_period", columnNames = {"user_id", "report_year", "report_month"})
