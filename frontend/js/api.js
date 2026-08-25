@@ -8,7 +8,24 @@ let loadingTimer;
 let isServerOnline = true;
 
 function ensureFeedbackUi() {
-    if (document.getElementById("appToastRegion")) return;
+    // Previously only checked for #appToastRegion's existence as a proxy for
+    // "all three elements are present" — but if #appLoading or
+    // #serverStatusBadge ever went missing independently while
+    // #appToastRegion remained, this would return early without repairing
+    // them, and setLoading()/updateServerStatus() would then throw on the
+    // missing element. Checking all three closes that gap — but naively
+    // re-injecting the full template when only one is missing would create
+    // duplicate-ID elements for whichever ones still exist, since
+    // insertAdjacentHTML doesn't check for existing IDs. Removing any
+    // partial remnants first avoids that.
+    const allPresent = document.getElementById("appToastRegion")
+        && document.getElementById("appLoading")
+        && document.getElementById("serverStatusBadge");
+    if (allPresent) return;
+
+    document.getElementById("appLoading")?.remove();
+    document.getElementById("serverStatusBadge")?.remove();
+    document.getElementById("appToastRegion")?.remove();
     document.body.insertAdjacentHTML("beforeend", `
         <div id="appLoading" class="app-loading" aria-live="polite" aria-busy="true">
             <span class="spinner" aria-hidden="true"></span><span id="loadingText">Connecting to the server…</span>
@@ -40,6 +57,7 @@ function setLoading(isLoading, customText = "Connecting to the server…") {
     const loadingText = document.getElementById("loadingText");
     if (loadingText) loadingText.textContent = customText;
     clearTimeout(loadingTimer);
+    if (!loader) return;
     if (isLoading) {
         loadingTimer = setTimeout(() => loader.classList.add("visible"), 200);
     } else {

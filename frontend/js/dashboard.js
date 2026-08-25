@@ -18,10 +18,13 @@ let allCategories = [];
 let userOnlyCategories = []; // subset of allCategories actually deletable (excludes global/seeded ones)
 let pieChart = null;
 let trendChart = null;
+let budgetVsActualChart = null;
+let recurringSplitChart = null;
+let dayOfWeekChart = null;
 
 const elements = {
     totalAmount: document.getElementById("totalAmount"),
-    expenseCount: document.getElementById("expenseCount"),
+    expenseCount: document.getElementById("expenseCountText"),
     expenseList: document.getElementById("expenseList"),
     filterSearch: document.getElementById("filterSearch"),
     filterSort: document.getElementById("filterSort"),
@@ -242,7 +245,14 @@ async function updateProMetrics(expenses) {
     try {
         const subs = await apiRequest(`/expenses/recurring/user/${userId}`);
         const safeSubs = Array.isArray(subs) ? subs : [];
-        const activeSubs = safeSubs.filter(s => s.status === 'ACTIVE');
+        // Every record returned by this endpoint IS an active subscription —
+        // RecurringExpense has no status/paused/cancelled concept at all, so
+        // this used to filter on a field (`status`) that the backend never
+        // sent. That silently zeroed out the count and monthly total on
+        // every real account, regardless of how many subscriptions actually
+        // existed — every screenshot taken this session showed "0 Active"
+        // for exactly this reason.
+        const activeSubs = safeSubs;
         const monthlyTotal = activeSubs.reduce((acc, s) => acc + Number(s.amount || 0), 0);
 
         const subsBadge = document.getElementById("subsCountBadge");
@@ -292,6 +302,7 @@ async function loadBudgets() {
                 usageBadge.textContent = "No Budget Set";
                 usageBadge.className = "status-badge badge-neutral";
             }
+            if (budgetVsActualChart) { budgetVsActualChart.destroy(); budgetVsActualChart = null; }
             return;
         }
 
@@ -349,6 +360,8 @@ async function loadBudgets() {
                 </div>
             </div>`;
         }).join("");
+
+        renderBudgetVsActualChart(budgets);
     } catch (e) {
         console.error("Budget Error", e);
     }
@@ -545,6 +558,164 @@ function renderTrendChart(expenses) {
     });
 }
 
+/**
+ * Renders a horizontal 2-segment bar comparing total recurring (subscription)
+ * spend against total one-time spend — answers "how much of my spending is
+ * actually locked in vs. discretionary," which neither the category pie nor
+ * the daily trend line can show, since both mix the two together.
+ */
+function renderRecurringSplitChart(expenses) {
+    const canvas = document.getElementById('recurringSplitChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const isLight = document.body.getAttribute("data-theme") === "light";
+    const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
+    const textColor = isLight ? '#6B6558' : '#A8A395';
+
+    if (recurringSplitChart) recurringSplitChart.destroy();
+    if (!Array.isArray(expenses) || expenses.length === 0) return;
+
+    let recurringTotal = 0;
+    let oneTimeTotal = 0;
+    expenses.forEach(exp => {
+        const amt = Number(exp.amount || 0);
+        const isRecurring = exp.recurring || exp.isRecurring;
+        if (isRecurring) recurringTotal += amt; else oneTimeTotal += amt;
+    });
+
+    recurringSplitChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Recurring', 'One-Time'],
+            datasets: [{
+                data: [recurringTotal, oneTimeTotal],
+                backgroundColor: ['#A23E32', '#C79A3E'],
+                borderRadius: 6,
+            }],
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => formatCompactCurrency(value) } },
+                y: { grid: { display: false }, ticks: { color: textColor, font: { weight: '600' } } },
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: { displayColors: false, callbacks: { label: context => ` ${formatCurrency(context.parsed.x)}` } },
+            },
+        },
+    });
+}
+
+/**
+ * Renders a bar chart of total spend grouped by day of the week — a
+ * behavioral insight none of the other charts surface: WHEN spending
+ * happens, not just how much or on what. Reveals patterns like weekend
+ * overspending that a category or time-trend view can't show on its own.
+ */
+function renderDayOfWeekChart(expenses) {
+    const canvas = document.getElementById('dayOfWeekChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const isLight = document.body.getAttribute("data-theme") === "light";
+    const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
+    const textColor = isLight ? '#6B6558' : '#A8A395';
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    if (dayOfWeekChart) dayOfWeekChart.destroy();
+    if (!Array.isArray(expenses) || expenses.length === 0) return;
+
+    const totalsByDay = [0, 0, 0, 0, 0, 0, 0];
+    expenses.forEach(exp => {
+        const d = new Date(exp.date || exp.expenseDate);
+        if (isNaN(d.getTime())) return;
+        totalsByDay[d.getDay()] += Number(exp.amount || 0);
+    });
+
+    dayOfWeekChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dayLabels,
+            datasets: [{
+                data: totalsByDay,
+                backgroundColor: '#4C7A78',
+                borderRadius: 6,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { grid: { display: false }, ticks: { color: textColor } },
+                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => formatCompactCurrency(value) } },
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: { displayColors: false, callbacks: { label: context => ` ${formatCurrency(context.parsed.y)}` } },
+            },
+        },
+    });
+}
+
+/**
+ * Renders a grouped bar chart comparing each budgeted category's limit
+ * against what was actually spent — the one chart on this dashboard that
+ * answers "am I on track," not just "where did money go." Bars for
+ * categories currently over budget render in the danger color so overages
+ * are visible at a glance without reading numbers.
+ */
+function renderBudgetVsActualChart(budgets) {
+    const canvas = document.getElementById('budgetVsActualChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const isLight = document.body.getAttribute("data-theme") === "light";
+    const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
+    const textColor = isLight ? '#6B6558' : '#A8A395';
+
+    if (budgetVsActualChart) budgetVsActualChart.destroy();
+
+    if (!budgets || budgets.length === 0) {
+        return; // Empty state is already handled by the budget list above this chart.
+    }
+
+    const labels = budgets.map(b => b.categoryName || 'Uncategorized');
+    const limits = budgets.map(b => Number(b.limit || 0));
+    const spent = budgets.map(b => Number(b.spent || 0));
+    const overBudgetColors = budgets.map(b => (b.percentage > 100 ? '#C0392B' : '#C79A3E'));
+
+    budgetVsActualChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Budget',
+                    data: limits,
+                    backgroundColor: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)',
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Actual Spent',
+                    data: spent,
+                    backgroundColor: overBudgetColors,
+                    borderRadius: 4,
+                },
+            ],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { grid: { display: false }, ticks: { color: textColor } },
+                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => formatCompactCurrency(value) } },
+            },
+            plugins: {
+                legend: { display: true, labels: { color: textColor, boxWidth: 12, padding: 12 } },
+                tooltip: { callbacks: { label: context => ` ${context.dataset.label}: ${formatCurrency(context.parsed.y)}` } },
+            },
+        },
+    });
+}
+
 function buildTrendSeries(dailyTotals) {
     const availableDates = Object.keys(dailyTotals).sort();
     if (!availableDates.length) return { dates: [], values: [] };
@@ -637,10 +808,36 @@ function applyFilters() {
     renderPieChart(filtered);
     renderList(filtered);
     renderTrendChart(filtered);
+    renderRecurringSplitChart(filtered);
+    renderDayOfWeekChart(filtered);
 }
 
-[elements.filterSearch, elements.filterSort, elements.filterCategory, elements.filterStartDate, elements.filterEndDate, elements.filterMonth, elements.filterYear]
+[elements.filterSort, elements.filterCategory, elements.filterStartDate, elements.filterEndDate, elements.filterMonth, elements.filterYear]
     .forEach(el => el.addEventListener('input', applyFilters));
+
+/**
+ * Delays calling `fn` until `delay` ms have passed since the last call —
+ * standard debounce so a rapid sequence of events (like keystrokes) only
+ * triggers the expensive work once, after the user pauses.
+ */
+function debounce(fn, delay) {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+}
+
+// The search box previously shared the same immediate, un-debounced
+// 'input' listener as the dropdown/date filters above. Those only fire on
+// discrete user actions (selecting an option, picking a date), so running
+// applyFilters() immediately is fine for them. Text input fires on every
+// keystroke, though, and applyFilters() destroys and rebuilds both charts
+// plus the full transaction list each time — on a real dataset, typing a
+// multi-character search term visibly stuttered. 250ms is enough to let
+// someone finish typing a character or two without the UI feeling laggy,
+// while still feeling instant once they pause.
+elements.filterSearch.addEventListener('input', debounce(applyFilters, 250));
 
 document.getElementById("resetFiltersBtn")?.addEventListener("click", () => {
     elements.filterSearch.value = "";
@@ -681,7 +878,17 @@ function animateNumber(el, target, isCurrency = false) {
 function updateStats(expenses) {
     const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     animateNumber(elements.totalAmount, total, true);
-    animateNumber(elements.expenseCount, expenses.length, false);
+    // Not animateNumber() here: it unconditionally writes a bare number
+    // (e.g. "5") to the element's textContent, which would clobber the
+    // "N transactions recorded" phrasing this element actually shows.
+    // elements.expenseCount also pointed at a nonexistent "expenseCount" id
+    // until now (the real element is #expenseCountText) — so before this
+    // fix, this line silently did nothing at all on every filter change,
+    // and the count only ever reflected whatever it was on initial load.
+    if (elements.expenseCount) {
+        const count = expenses.length;
+        elements.expenseCount.textContent = `${count} transaction${count === 1 ? '' : 's'} recorded`;
+    }
 }
 
 function renderList(expenses) {

@@ -496,6 +496,17 @@ button[type="submit"]:active {
     background: rgba(var(--primary-rgb), 0.1) !important;
 }
 
+/* Previously undefined, meaning focus fell through to the browser's own
+   default outline — which rendered inconsistently across pages (visible with
+   a stray-looking gold-ish ring on some, invisible on others, depending on
+   how each browser/OS resolves an unstyled default outline in context). A
+   deliberate, on-brand focus treatment removes that inconsistency. */
+.btn-icon:focus-visible {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
+}
+
 /* --- Theme Toggle Button (Desktop & Mobile) --- */
 .theme-toggle-btn {
     width: 42px !important;
@@ -840,6 +851,40 @@ button[type="submit"]:active {
     .expense-item { align-items: flex-start; gap: 12px; }
     .expense-item > div:last-child { gap: 5px !important; }
     .expense-amount { font-size: 14px; margin-right: 2px !important; }
+
+    /* .card-header (e.g. "Budget Governance / Monthly Category Limits" next
+       to the "+ New Budget" button) has no wrap behavior at all, and on
+       narrow screens the button's fixed width leaves too little room for
+       the heading, forcing it to wrap into a tall multi-line block that
+       visually collides with the button beside it. Stacking vertically
+       here gives both their own full-width row instead. */
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .card-header .btn-small,
+    .card-header > button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* .server-status-badge is fixed at bottom-right on every page with no
+       mobile-aware repositioning, so on narrow screens it inevitably lands
+       on top of whatever real content happens to be there — on the login
+       page specifically, it sits directly over the "Create one free" link.
+       Shrinking it to a dot-only indicator removes the collision while
+       keeping the connectivity signal (and the status text is still
+       available via the title attribute on tap/hold). */
+    .server-status-badge {
+        padding: 8px !important;
+        width: 16px;
+        height: 16px;
+        justify-content: center;
+    }
+    .server-status-badge #statusText {
+        display: none;
+    }
 }
 
 .chart-wrapper {
@@ -2238,7 +2283,9 @@ button[type="submit"]:active {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 24px;
+    /* margin-bottom moved to the .auth-top-actions wrapper now that
+       .hero-brand lives inside it as a flex sibling of the theme toggle —
+       keeping it here too would double the spacing before the headline. */
 }
 
 .hero-brand-icon {
@@ -2308,7 +2355,13 @@ button[type="submit"]:active {
     background: rgba(23, 26, 20,0.85);
     border: 1px solid var(--border);
     border-radius: 16px;
-    backdrop-filter: blur(16px);
+    /* Was a hardcoded blur(16px) — active (unlike most backdrop-filter uses
+       in this file, which resolve to the inert --glass:none) and sitting on
+       top of the continuously-animated ambient orbs, meaning the browser had
+       to resample the blur every frame those orbs moved behind it. --glass
+       is already the site's established convention for "no backdrop blur"
+       everywhere else; this was an inconsistent leftover exception. */
+    backdrop-filter: var(--glass);
     width: fit-content;
     min-width: 220px;
 }
@@ -2388,7 +2441,7 @@ button[type="submit"]:active {
     background: rgba(23, 26, 20,0.6);
     border: 1px solid var(--border);
     border-radius: 14px;
-    backdrop-filter: blur(12px);
+    backdrop-filter: var(--glass); /* see .float-card comment — same fix, same reason */
     transition: border-color 0.3s;
 }
 
@@ -2922,13 +2975,23 @@ button[type="submit"]:active {
 
 /* Top action bar for auth pages (Theme toggle, etc) */
 .auth-top-actions {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 100;
+    /* Previously position:absolute (top:20px; right:20px) relative to the
+       WHOLE VIEWPORT, since this element sat outside .auth-page entirely in
+       the DOM. That meant its alignment with .hero-brand / .hero-back-link
+       was pure coincidence — it wasn't actually a flex sibling of either,
+       just two independently-positioned things that happened to land near
+       each other depending on whatever padding values were current. When
+       .auth-hero's padding was later trimmed (fixing an unrelated scrollbar
+       bug), the logo moved but this fixed top:20px never did, breaking what
+       alignment there was. Now a real flex row containing both, so they're
+       always vertically centered together regardless of any future padding
+       changes. */
     display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 12px;
+    width: 100%;
+    margin-bottom: 24px;
 }
 
 /* Username suggestion chips */

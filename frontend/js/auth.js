@@ -46,12 +46,21 @@ function initGoogleSignIn() {
         callback: handleGoogleCredentialResponse
     });
 
-    // Render Google's real button into the hidden container (see index.html)
-    // so the click-forwarding trick in handleGoogleOAuth() has something
-    // reliable to click, instead of depending on the unreliable prompt().
+    // Render Google's real button, at full natural size, directly on top of
+    // our custom-styled button (see the wrapper in index.html: both are
+    // position:absolute within the same relative container, matching size).
+    // Google's button is implemented via an internal iframe, so previously
+    // trying to (a) render it into a 1x1px clipped box and (b) guess its
+    // internal DOM structure to forward a synthetic .click() to it was
+    // fragile on both counts — Google's SDK may not render/function
+    // correctly with no real space, and the guessed selector may simply
+    // never match, silently falling through to the unreliable prompt() API.
+    // Stacking the real button on top means the user's actual click lands
+    // on Google's genuine element directly; no guessing, no synthetic click.
     const realBtnContainer = document.getElementById("googleRealButton");
     if (realBtnContainer) {
-        google.accounts.id.renderButton(realBtnContainer, { type: "standard", width: 300 });
+        const width = Math.min(Math.round(realBtnContainer.getBoundingClientRect().width) || 300, 400);
+        google.accounts.id.renderButton(realBtnContainer, { type: "standard", width, height: 44 });
     }
 }
 
@@ -78,6 +87,12 @@ async function handleGoogleCredentialResponse(credentialResponse) {
 }
 
 function handleGoogleOAuth() {
+    // Under normal circumstances this never actually runs — the real Google
+    // button is stacked directly on top of this one and intercepts the
+    // click first (see initGoogleSignIn). This only fires as a last-resort
+    // fallback if that overlay somehow failed to render (e.g. Google's
+    // script hasn't loaded yet, or the client ID isn't configured), so the
+    // button still does *something* informative instead of nothing.
     if (!isGoogleSignInConfigured()) {
         showToast("Google Sign-In isn't set up yet — add a real Client ID in js/config.js.", "error");
         return;
@@ -86,17 +101,6 @@ function handleGoogleOAuth() {
         showToast("Google Sign-In is still loading — please try again in a moment.", "error");
         return;
     }
-    // Forward the click to Google's own rendered button (see initGoogleSignIn)
-    // instead of calling google.accounts.id.prompt() directly — prompt() is
-    // the "One Tap" API, which has silent-suppression rules (cooldowns after
-    // a previous dismissal, FedCM eligibility, etc.) and commonly shows
-    // nothing at all when triggered from a button click.
-    const realBtn = document.querySelector("#googleRealButton div[role='button']");
-    if (realBtn) {
-        realBtn.click();
-        return;
-    }
-    // Fallback if Google's button hasn't finished rendering yet for some reason.
     google.accounts.id.prompt();
 }
 

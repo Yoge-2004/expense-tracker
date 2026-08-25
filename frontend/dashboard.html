@@ -176,6 +176,58 @@
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
+
+            <!-- Bar Chart: Recurring vs One-Time Spend — answers "how much of
+                 my spending is actually locked in vs. discretionary," which
+                 neither the category pie nor the daily trend line can show,
+                 since both mix recurring and one-off spend together. -->
+            <div class="card insight-card">
+                <div class="section-heading">
+                    <div>
+                        <span class="card-label">Spend Composition</span>
+                        <h4 class="section-title">Recurring vs. One-Time</h4>
+                    </div>
+                    <span class="section-meta">All Time</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="recurringSplitChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart: Day-of-Week Spending Pattern — a behavioral
+                 insight none of the other charts surface: WHEN spending
+                 happens, not just how much or on what. Reveals patterns like
+                 weekend overspending that a category or time-trend view
+                 can't show on its own. -->
+            <div class="card insight-card">
+                <div class="section-heading">
+                    <div>
+                        <span class="card-label">Spending Habits</span>
+                        <h4 class="section-title">By Day of Week</h4>
+                    </div>
+                    <span class="section-meta">All Time</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="dayOfWeekChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart: Budget vs Actual — the one genuinely actionable
+                 comparison in the whole dashboard: not just "here's what you
+                 spent" but "here's what you spent against what you meant to
+                 spend," per category, so overages are immediately visible. -->
+            <div class="card insight-card" style="grid-column: 1 / -1;">
+                <div class="section-heading">
+                    <div>
+                        <span class="card-label">Budget Governance</span>
+                        <h4 class="section-title">Budget vs. Actual</h4>
+                    </div>
+                    <span class="section-meta">This period</span>
+                </div>
+                <div class="chart-wrapper" style="height:240px;">
+                    <canvas id="budgetVsActualChart"></canvas>
+                </div>
+            </div>
         </section>
 
         <!-- CATEGORY BUDGETS MATRIX -->
