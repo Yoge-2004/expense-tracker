@@ -2310,16 +2310,16 @@ button[type="submit"]:active {
 }
 
 @keyframes cardFloat1 {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(0.8deg); }
 }
 @keyframes cardFloat2 {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-14px); }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-18px) rotate(-0.8deg); }
 }
 @keyframes cardFloat3 {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(0.5deg); }
 }
 
 @keyframes slideUpFade {
@@ -2345,7 +2345,9 @@ button[type="submit"]:active {
     display: grid;
     grid-template-columns: 1.15fr 1fr;
     overflow: hidden;
-    background: var(--bg-dark);
+    background: transparent !important;
+    position: relative;
+    z-index: 1;
 }
 
 /* ── Left Hero Panel ── */
@@ -2387,29 +2389,31 @@ button[type="submit"]:active {
 .hero-orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(60px);
-    animation: orbFloat 12s ease-in-out infinite;
+    filter: blur(55px);
+    animation: orbFloat 10s ease-in-out infinite;
+    pointer-events: none;
+    opacity: 0.9;
 }
 
 .hero-orb-1 {
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(var(--primary-rgb),0.25) 0%, transparent 70%);
-    top: -150px; right: -100px;
+    width: 520px; height: 520px;
+    background: radial-gradient(circle, rgba(var(--primary-rgb),0.38) 0%, rgba(var(--primary-rgb),0.12) 45%, transparent 70%);
+    top: -120px; right: -80px;
     animation-delay: 0s;
 }
 
 .hero-orb-2 {
-    width: 350px; height: 350px;
-    background: radial-gradient(circle, rgba(var(--accent-rgb),0.2) 0%, transparent 70%);
-    bottom: -100px; left: -80px;
-    animation-delay: -4s;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(var(--accent-rgb),0.32) 0%, rgba(var(--accent-rgb),0.10) 45%, transparent 70%);
+    bottom: -80px; left: -60px;
+    animation-delay: -3.5s;
 }
 
 .hero-orb-3 {
-    width: 250px; height: 250px;
-    background: radial-gradient(circle, rgba(var(--highlight-rgb),0.15) 0%, transparent 70%);
-    top: 40%; left: 30%;
-    animation-delay: -8s;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(var(--highlight-rgb),0.28) 0%, rgba(var(--highlight-rgb),0.08) 45%, transparent 70%);
+    top: 35%; left: 25%;
+    animation-delay: -7s;
 }
 
 .hero-grid {
@@ -2418,20 +2422,9 @@ button[type="submit"]:active {
     width: 100%;
     height: 100%;
     background-image:
-        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
     background-size: 40px 40px;
-}
-
-.auth-hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 520px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    animation: slideUpFade 0.8s var(--ease) both;
 }
 
 .hero-brand {
@@ -2628,14 +2621,17 @@ button[type="submit"]:active {
 /* ── Right Form Panel ── */
 .auth-form-section {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    background: var(--bg-dark);
-    padding: 40px 48px;
+    background: rgba(16, 18, 14, 0.70) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    padding: 48px 48px;
     min-height: 100vh;
     height: 100%;
     overflow-y: auto;
     box-sizing: border-box;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .auth-card {
@@ -5136,9 +5132,9 @@ button[type="submit"]:active {
     50% { transform: translateY(-3px); }
 }
 
-.float-card-1 { animation: floatLift 4s ease-in-out infinite; }
-.float-card-2 { animation: floatLift 4.5s ease-in-out infinite 0.5s; }
-.float-card-3 { animation: floatLift 5s ease-in-out infinite 1s; }
+.float-card-1 { animation: cardFloat1 5s ease-in-out infinite !important; }
+.float-card-2 { animation: cardFloat2 6s ease-in-out infinite -1.5s !important; }
+.float-card-3 { animation: cardFloat3 4.5s ease-in-out infinite -3s !important; }
 
 /* 35. Tooltip Elastic Pop */
 @keyframes tooltipElasticPop {
