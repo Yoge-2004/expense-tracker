@@ -1238,6 +1238,25 @@ body.modal-open {
     padding: 0 12px;
 }
 
+.google-btn-container {
+    width: 100%;
+    min-height: 46px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent !important;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2px;
+}
+
+.google-btn-container > div,
+.google-btn-container iframe {
+    margin: 0 auto !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+}
+
 .btn-oauth {
     width: 100%;
     padding: 14px;
