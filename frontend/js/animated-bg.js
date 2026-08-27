@@ -10,21 +10,13 @@
     'use strict';
 
     function initAnimatedBackground() {
-        // Find or create the background canvas container
-        let bgContainer = document.querySelector('.hero-bg') || document.querySelector('.auth-hero-bg');
-        if (!bgContainer) {
-            bgContainer = document.createElement('div');
-            bgContainer.className = 'hero-bg';
-            document.body.insertBefore(bgContainer, document.body.firstChild);
-        }
-
-        // Create canvas if not present
-        let canvas = bgContainer.querySelector('.animated-mesh-canvas');
+        // Create canvas directly on document.body as fixed background so it ALWAYS fills the entire viewport seamlessly
+        let canvas = document.querySelector('.animated-mesh-canvas');
         if (!canvas) {
             canvas = document.createElement('canvas');
             canvas.className = 'animated-mesh-canvas';
             canvas.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; opacity:0.85;';
-            bgContainer.insertBefore(canvas, bgContainer.firstChild);
+            document.body.insertBefore(canvas, document.body.firstChild);
         }
 
         const ctx = canvas.getContext('2d');
