@@ -32,6 +32,10 @@ public class ExpenseDto {
     /** Number of days between charges when frequency is CUSTOM. */
     private Integer intervalDays;
 
+    /** Timestamp when the expense record was created. */
+    @Schema(description = "Timestamp when the expense was created in database", accessMode = Schema.AccessMode.READ_ONLY)
+    private java.time.LocalDateTime createdAt;
+
     public ExpenseDto() {}
 
     public ExpenseDto(Long id, BigDecimal amount, String description,
@@ -60,4 +64,6 @@ public class ExpenseDto {
     public void        setFrequency(String frequency)  { this.frequency = frequency; }
     public Integer     getIntervalDays()               { return intervalDays; }
     public void        setIntervalDays(Integer days)   { this.intervalDays = days; }
+    public java.time.LocalDateTime getCreatedAt()      { return createdAt; }
+    public void        setCreatedAt(java.time.LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

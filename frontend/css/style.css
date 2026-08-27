@@ -230,13 +230,30 @@ body::after {
     padding: 0;
     box-sizing: border-box;
     font-family: var(--font-body);
-    /* Smooths the dark/light theme toggle across every page — previously
-       every background/text/border color snapped instantly since nothing
-       transitioned the CSS custom properties that drive them. Elements that
-       already define their own `transition` (buttons, cards, etc.) keep
-       using that instead, since a more specific rule's shorthand fully
-       replaces this one rather than combining with it. */
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Strict hidden rule to prevent class display rules from overriding hidden attribute */
+[hidden],
+#customIntervalWrap[hidden],
+#recurringOptions[hidden] {
+    display: none !important;
+}
+
+/* Targeted smooth transitions for theme switches without layout thrashing */
+body,
+.dashboard-container,
+.auth-page,
+.auth-card,
+.metric-card,
+.chart-card,
+.transactions-card,
+.budget-card,
+.modal,
+.top-bar,
+.form-input,
+select,
+input {
+    transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
 }
 
 input::-ms-reveal,
@@ -244,8 +261,7 @@ input::-ms-clear {
     display: none;
 }
 
-/* Money/count fields: type the number, no native spinner arrows —
-   they clash with the theme and aren't useful for entering amounts. */
+/* Money/count fields: type the number, no native spinner arrows */
 input[type="number"] {
     -moz-appearance: textfield;
 }
@@ -255,8 +271,7 @@ input[type="number"]::-webkit-inner-spin-button {
     margin: 0;
 }
 
-/* Toggle switch (e.g. "Make Recurring Subscription") — replaces the
-   unstyled native checkbox, which rendered oversized against this theme. */
+/* Toggle switch (e.g. "Make Recurring Subscription") */
 .switch-label {
     display: flex;
     align-items: center;
@@ -278,18 +293,20 @@ input[type="number"]::-webkit-inner-spin-button {
     cursor: pointer;
     transition: background 0.25s var(--ease), border-color 0.25s var(--ease);
     flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .switch-label input[type="checkbox"]::before {
     content: '';
     position: absolute;
-    top: 3px;
-    left: 3px;
+    top: 2px;
+    left: 2px;
     width: 18px;
     height: 18px;
     border-radius: 50%;
     background: var(--text-muted);
     transition: transform 0.25s var(--ease), background 0.25s var(--ease);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .switch-label input[type="checkbox"]:checked {
@@ -310,6 +327,9 @@ input[type="number"]::-webkit-inner-spin-button {
 .switch-text {
     font-size: 14px;
     color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 html {
@@ -986,9 +1006,81 @@ button[type="submit"]:active {
     background-size: 1em;
 }
 
+.filter-date-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.date-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2px 10px;
+}
+
+.filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.date-input-wrap input[type="date"] {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 13px;
+    padding: 8px 4px;
+    cursor: pointer;
+}
+
+.filter-quick-presets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: var(--card-bg-hover);
+    color: var(--text-main);
+    border-color: var(--primary);
+}
+
+.preset-btn.active {
+    background: var(--primary);
+    color: #14120C !important;
+    border-color: var(--primary);
+    font-weight: 700;
+}
+
 select option {
     background-color: var(--bg-dark);
     color: var(--text-main);
+}
+
+body.modal-open {
+    overflow: hidden !important;
+    touch-action: none !important;
 }
 
 .modal-overlay {
@@ -1005,6 +1097,8 @@ select option {
     padding: 20px 16px;
     box-sizing: border-box;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-overlay.active {
@@ -1020,6 +1114,8 @@ select option {
     max-width: 460px;
     max-height: calc(100vh - 40px);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     border: 1px solid var(--border);
     box-sizing: border-box;
     margin: auto;
@@ -1163,6 +1259,25 @@ select option {
     background: rgba(255, 255, 255, 0.08);
     border-color: var(--accent);
     transform: translateY(-1px);
+}
+
+.btn-oauth.is-loading {
+    opacity: 0.9;
+    pointer-events: none;
+    border-color: var(--primary) !important;
+    background: var(--card-bg-hover) !important;
+    box-shadow: 0 0 16px var(--primary-glow) !important;
+}
+
+.spinner-sm {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(var(--primary-rgb), 0.3);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .dark-date {
@@ -1856,25 +1971,26 @@ button[type="submit"]:active {
 .dashboard-heading {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     align-items: flex-start;
-    padding-left: 2px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
 }
 
 .brand-badge {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .brand-title {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 800;
     letter-spacing: -0.6px;
     color: var(--text-main);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     line-height: 1.2;
 }
 
@@ -1884,7 +2000,7 @@ button[type="submit"]:active {
     padding: 3px 8px;
     border-radius: 999px;
     background: var(--primary-gradient);
-    color: #FFF;
+    color: #14120C;
     letter-spacing: 0.5px;
     vertical-align: middle;
 }
@@ -1892,8 +2008,8 @@ button[type="submit"]:active {
 #userWelcomeText {
     font-size: 14px;
     color: var(--text-muted);
-    margin: 2px 0 0 0;
-    line-height: 1.4;
+    margin: 4px 0 0 0;
+    letter-spacing: 0.01em;
 }
 
 .live-pulse {
@@ -3088,55 +3204,61 @@ button[type="submit"]:active {
     }
 
     .hero-float-cards {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
-        justify-content: center !important;
         width: 100% !important;
-        margin-bottom: 14px !important;
-        padding: 10px 4px !important;
-        overflow-y: visible !important;
+        margin-bottom: 16px !important;
+        padding: 6px 0 !important;
     }
 
     .float-card {
         margin-left: 0 !important;
         min-width: 0 !important;
-        flex: 1 1 140px !important;
+        flex: 1 1 auto !important;
+    }
+
+    .float-card:nth-child(3) {
+        grid-column: 1 / -1 !important;
     }
 
     .perks-grid {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)) !important;
+        display: flex !important;
+        flex-direction: column !important;
         gap: 10px !important;
         width: 100% !important;
-        margin-top: 14px !important;
+        margin-top: 16px !important;
+        margin-bottom: 8px !important;
     }
 
     .perk-item {
-        padding: 10px 12px !important;
-        border-radius: 12px !important;
+        padding: 12px 14px !important;
+        border-radius: 14px !important;
         background: var(--card-bg) !important;
         border: 1px solid var(--border) !important;
         display: flex !important;
         align-items: center !important;
-        gap: 10px !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .hero-features {
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px;
+        margin-top: 12px;
     }
 
     .dashboard-container {
-        padding: 24px 18px 48px !important;
+        padding: 24px 20px 48px !important;
+        gap: 20px !important;
     }
 
     .auth-form-section {
         width: 100% !important;
-        padding: 32px 16px 48px !important;
+        padding: 32px 20px 48px !important;
         box-sizing: border-box !important;
     }
 
@@ -3144,7 +3266,7 @@ button[type="submit"]:active {
         max-width: 100% !important;
         width: 100% !important;
         margin: 0 auto !important;
-        padding: 32px 22px !important;
+        padding: 32px 24px !important;
         border-radius: 20px !important;
     }
 
@@ -3159,8 +3281,20 @@ button[type="submit"]:active {
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 12px !important;
-        padding-bottom: 12px !important;
+        gap: 14px !important;
+        padding-top: 8px !important;
+        padding-bottom: 16px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .dashboard-heading {
+        margin-bottom: 2px !important;
+    }
+
+    .dashboard-heading #userWelcomeText {
+        margin-top: 4px !important;
+        font-size: 13px !important;
+        color: var(--text-muted) !important;
     }
 
     .top-bar-actions {
@@ -3193,9 +3327,17 @@ button[type="submit"]:active {
     }
 
     .add-expense-button {
-        flex: 1 1 auto !important;
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        height: 46px !important;
         padding: 10px 16px !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        border-radius: 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-bottom: 4px !important;
     }
 
     .command-kbd {
@@ -3861,32 +4003,87 @@ button[type="submit"]:active {
     filter: none;
 }
 
-/* ── Add category + button ── */
+/* ── Category Action Buttons (Add + & Manage ✎) ── */
+#addCategoryBtn,
+#manageCategoriesBtn {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease) !important;
+}
+
 #addCategoryBtn {
     background: var(--primary-gradient) !important;
-    color: #fff !important;
-    border-color: transparent !important;
-    font-weight: 700 !important;
-    font-size: 16px !important;
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 12px var(--primary-glow) !important;
-    flex-shrink: 0;
+    color: #14120C !important;
+    border: none !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px var(--primary-glow) !important;
 }
+
 #addCategoryBtn:hover {
-    transform: scale(1.08) !important;
-    box-shadow: 0 6px 18px var(--primary-glow) !important;
+    transform: translateY(-2px) scale(1.04) !important;
+    box-shadow: 0 6px 20px var(--primary-glow) !important;
+}
+
+#manageCategoriesBtn {
+    background: var(--input-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border) !important;
+}
+
+#manageCategoriesBtn:hover {
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
+    background: var(--card-bg-hover) !important;
+    transform: translateY(-2px) scale(1.04) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+#addCategoryBtn:active,
+#manageCategoriesBtn:active {
+    transform: scale(0.96) !important;
 }
 
 /* ── Form group box for recurring ── */
 .form-group-box {
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid var(--border);
     background: var(--input-bg);
     padding: 16px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    margin-top: 12px;
+    box-sizing: border-box !important;
     animation: expandIn 0.25s var(--ease) both;
 }
+
+.form-group-box .form-group {
+    width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+
+.form-group-box select,
+.form-group-box input {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+    font-size: 14px !important;
+}
+
 @keyframes expandIn {
     from { opacity: 0; transform: scaleY(0.9); }
     to   { opacity: 1; transform: scaleY(1); }
@@ -4131,4 +4328,541 @@ button[type="submit"]:active {
     .metric-value {
         font-size: 22px !important;
     }
+}
+
+/* =============================================================================
+   10. SMART FINANCIAL INSIGHTS INTELLIGENCE PANEL
+============================================================================= */
+.insights-intelligence-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 12px 32px var(--shadow-color);
+    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+.insights-intelligence-panel:hover {
+    border-color: rgba(var(--primary-rgb), 0.35);
+    box-shadow: 0 16px 40px var(--shadow-color), 0 0 24px var(--primary-glow);
+}
+
+.insights-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.insights-panel-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.insights-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.12);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
+    padding: 4px 10px;
+    border-radius: 999px;
+    width: fit-content;
+}
+
+.insights-panel-heading {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+}
+
+.insights-panel-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+    animation: pulseDotAnim 2s infinite ease-in-out;
+}
+
+@keyframes pulseDotAnim {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+.insights-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.insight-card-item {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+
+.insight-card-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    background: var(--card-bg-hover);
+}
+
+.insight-card-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.insight-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.insight-card-label {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.insight-card-content {
+    font-size: 13.5px;
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+.insight-card-content strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* =============================================================================
+   11. AMBIENT ANIMATED BACKGROUND & MICRO-ANIMATIONS
+============================================================================= */
+.hero-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    background: radial-gradient(circle at 10% 20%, rgba(var(--primary-rgb), 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(76, 122, 120, 0.06) 0%, transparent 50%);
+}
+
+.hero-bg::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 10%;
+    width: 650px;
+    height: 650px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, transparent 70%);
+    filter: blur(80px);
+    animation: ambientOrbOne 18s ease-in-out infinite alternate;
+}
+
+.hero-bg::after {
+    content: '';
+    position: absolute;
+    bottom: -15%;
+    right: 15%;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(76, 122, 120, 0.12) 0%, transparent 70%);
+    filter: blur(85px);
+    animation: ambientOrbTwo 22s ease-in-out infinite alternate;
+}
+
+@keyframes ambientOrbOne {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(50px, 70px) scale(1.1); }
+    100% { transform: translate(-30px, 40px) scale(0.92); }
+}
+
+@keyframes ambientOrbTwo {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(-60px, -50px) scale(1.08); }
+    100% { transform: translate(40px, -70px) scale(0.95); }
+}
+
+/* Button & Interactive Micro-Animations */
+.btn-primary:active,
+.btn-secondary:active,
+.btn-icon:active,
+.pill-chip:active {
+    transform: scale(0.97) !important;
+}
+
+.metric-card,
+.card {
+    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease) !important;
+}
+
+.metric-card:hover,
+.card:hover {
+    transform: translateY(-4px) scale(1.012) !important;
+    border-color: rgba(var(--primary-rgb), 0.45) !important;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.45), 0 0 25px rgba(var(--primary-rgb), 0.22) !important;
+}
+
+/* ==========================================================================
+   SUPER-CHARGED 17+ ANIMATIONS SYSTEM (60FPS HARDWARE-ACCELERATED)
+   ========================================================================== */
+
+/* 1. Cascade Entry Animation on Page Load */
+@keyframes cascadeFadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-cascade {
+    animation: cascadeFadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.delay-1 { animation-delay: 0.05s !important; }
+.delay-2 { animation-delay: 0.10s !important; }
+.delay-3 { animation-delay: 0.15s !important; }
+.delay-4 { animation-delay: 0.20s !important; }
+.delay-5 { animation-delay: 0.25s !important; }
+.delay-6 { animation-delay: 0.30s !important; }
+.delay-7 { animation-delay: 0.35s !important; }
+.delay-8 { animation-delay: 0.40s !important; }
+
+/* 2. Interactive Card 3D Magnetic Elevation & Luminous Glow */
+.metric-card,
+.card,
+.auth-card,
+.smart-intelligence-card {
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                border-color 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    will-change: transform, box-shadow;
+}
+
+/* 3. Transaction Item Staggered Slide & Scale-In */
+@keyframes itemSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-14px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.expense-item,
+.sub-row {
+    animation: itemSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.expense-item:hover {
+    transform: translateX(4px) scale(1.008);
+    background: var(--card-bg-hover) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+/* 4. Progress Bar & Step Bar Shimmer Wave */
+@keyframes shimmerSweep {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.budget-bar-fill,
+.step-bar {
+    position: relative;
+    overflow: hidden;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.budget-bar-fill::after,
+.step-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    background-size: 200% 100%;
+    animation: shimmerSweep 2.8s infinite linear;
+}
+
+/* 5. Live Server Status Beacon & Breathing Neon Halo */
+@keyframes liveHaloPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 122, 120, 0.75);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 122, 120, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 122, 120, 0);
+    }
+}
+
+.server-status-badge .status-dot.online,
+.live-pulse-dot {
+    animation: liveHaloPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+/* 6. Expanding Click Fluid Ripple */
+.ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(var(--primary-rgb), 0.25) 70%, transparent 100%);
+    transform: scale(0);
+    animation: rippleExpand 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes rippleExpand {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* 7. Elastic Spring Modal Entrance & Backdrop Blur Fade */
+@keyframes modalSpringIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.88) translateY(24px);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.02) translateY(-4px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-overlay.active {
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+.modal-overlay.active .modal {
+    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 8. Toast Slide In & Progress Timer Line */
+@keyframes toastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(120%) scale(0.9);
+    }
+    70% {
+        transform: translateX(-8px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes toastTimerLine {
+    0% { width: 100%; }
+    100% { width: 0%; }
+}
+
+.toast {
+    animation: toastSlideIn 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.6);
+    animation: toastTimerLine 3.5s linear forwards;
+}
+
+/* 9. Category Pill Pop & Active Glow */
+@keyframes pillPop {
+    0% { transform: scale(0.94); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+
+.pill-chip {
+    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.pill-chip:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
+}
+
+.pill-chip.active {
+    animation: pillPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 10. Number Counter Flash / Glow on Change */
+@keyframes numberGlow {
+    0% { color: var(--primary); text-shadow: 0 0 16px rgba(var(--primary-rgb), 0.8); }
+    100% { color: var(--text-main); text-shadow: none; }
+}
+
+.number-updated {
+    animation: numberGlow 0.75s ease-out;
+}
+
+/* 11. Form Input Radiant Focus Halo & Icon Nudge */
+@keyframes iconNudge {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2) rotate(-6deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+
+.input-wrapper {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25), 0 8px 20px rgba(0,0,0,0.3) !important;
+}
+
+.input-wrapper:focus-within .input-icon {
+    color: var(--primary) !important;
+    animation: iconNudge 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 12. Multi-Ring Dual Speed Action Spinner */
+@keyframes dualSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner-sm {
+    border-width: 2.5px;
+    border-top-color: currentColor;
+    border-right-color: transparent;
+    animation: dualSpin 0.7s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite !important;
+}
+
+/* 13. 1-Tap Date Preset Energetic Flash */
+@keyframes presetActiveFlash {
+    0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.8); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0); }
+    100% { transform: scale(1); }
+}
+
+.preset-btn.active {
+    animation: presetActiveFlash 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 14. Validation Error Harmonic Shake */
+@keyframes errorHarmonicShake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-8px) rotate(-1deg); }
+    30% { transform: translateX(7px) rotate(1deg); }
+    45% { transform: translateX(-5px); }
+    60% { transform: translateX(4px); }
+    75% { transform: translateX(-2px); }
+}
+
+.shake,
+.is-invalid {
+    animation: errorHarmonicShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* 15. Dropdown Menu Accordion Unfurl */
+@keyframes dropdownUnfurl {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px) scaleY(0.92);
+        transform-origin: top center;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        transform-origin: top center;
+    }
+}
+
+.custom-select-wrapper.open .custom-select-options,
+.profile-menu.active {
+    animation: dropdownUnfurl 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 16. Empty State Floating Bobbing Illustration */
+@keyframes gentleFloatBob {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-9px) rotate(1.5deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+.empty-state svg,
+.empty-state-icon,
+.floating-element {
+    animation: gentleFloatBob 4s ease-in-out infinite;
+    display: inline-block;
+    will-change: transform;
+}
+
+/* 17. Button Magnetic Pulse on Hover */
+@keyframes btnPulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(var(--primary-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
+}
+
+.btn-primary:hover,
+#openModalBtn:hover {
+    animation: btnPulseGlow 1.8s infinite;
 }

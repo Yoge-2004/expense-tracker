@@ -192,6 +192,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "Yogeshwaran",
+                                        "username", "yoge_26",
                                         "email", "yoge@example.com",
                                         "password", "secret123",
                                         "otp", "000000"))))
@@ -210,6 +211,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "Yogeshwaran",
+                                        "username", "yoge_26",
                                         "email", "yoge@example.com",
                                         "password", "secret123",
                                         "otp", "482913"))))
@@ -224,6 +226,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "Yogeshwaran",
+                                        "username", "yoge_26",
                                         "email", "yoge@example.com",
                                         "password", "abc",
                                         "otp", "482913"))))
@@ -237,6 +240,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("name", "",
+                                        "username", "yoge_26",
                                         "email", "yoge@example.com",
                                         "password", "secret123",
                                         "otp", "482913"))))

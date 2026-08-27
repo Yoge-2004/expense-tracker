@@ -457,5 +457,27 @@ document.addEventListener("DOMContentLoaded", () => {
             toggleGlobalTheme();
         }
     });
+
+    // Global Interactive Multi-Color Fluid Click Ripple Effect
+    document.addEventListener("click", (e) => {
+        const targetBtn = e.target.closest(".btn-primary, .btn-secondary, .btn-oauth, .pill-chip, .preset-btn, .btn-icon, button[type='submit']");
+        if (!targetBtn) return;
+
+        const rect = targetBtn.getBoundingClientRect();
+        const ripple = document.createElement("span");
+        ripple.className = "ripple-effect";
+        const size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = `${size}px`;
+        ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+        ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+
+        const oldPos = window.getComputedStyle(targetBtn).position;
+        if (oldPos === 'static') targetBtn.style.position = 'relative';
+        targetBtn.style.overflow = 'hidden';
+
+        targetBtn.appendChild(ripple);
+        ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+        setTimeout(() => ripple.remove(), 600);
+    });
 });
 

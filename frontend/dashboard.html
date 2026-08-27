@@ -19,7 +19,7 @@
 
     <div class="dashboard-container">
         <!-- TOP COMMAND HEADER -->
-        <header class="top-bar">
+        <header class="top-bar animate-cascade delay-1">
             <div class="dashboard-heading">
                 <div class="brand-badge">
                     <span class="brand-title">ExpenseTracker <span class="pro-tag">PRO</span></span>
@@ -89,7 +89,7 @@
         </header>
 
         <!-- 4-COLUMN FINANCIAL METRICS MATRIX -->
-        <section class="grid-4-metrics">
+        <section class="grid-4-metrics animate-cascade delay-2">
             <!-- Metric 1: Total Spent -->
             <div class="metric-card">
                 <div class="metric-header">
@@ -147,8 +147,28 @@
             </div>
         </section>
 
+        <!-- SMART FINANCIAL INSIGHTS INTELLIGENCE PANEL -->
+        <section class="insights-intelligence-panel animate-cascade delay-3" id="insightsPanel">
+            <div class="insights-panel-header">
+                <div class="insights-panel-title-wrap">
+                    <div class="insights-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>SMART INTELLIGENCE</span>
+                    </div>
+                    <h3 class="insights-panel-heading">Financial Pulse & Insights</h3>
+                </div>
+                <div class="insights-panel-meta" id="insightsHealthBadge">
+                    <span class="pulse-dot"></span>
+                    <span id="insightsHealthScoreText">100% Budget Health</span>
+                </div>
+            </div>
+            <div class="insights-cards-grid" id="insightsCardsGrid">
+                <!-- Dynamically generated via renderFinancialInsights() in dashboard.js -->
+            </div>
+        </section>
+
         <!-- ANALYTICS & INSIGHTS GRID (2 COLUMNS) -->
-        <section class="grid-analytics">
+        <section class="grid-analytics animate-cascade delay-4">
             <!-- Donut Chart: Spend by Category -->
             <div class="card insight-card">
                 <div class="section-heading">
@@ -231,7 +251,7 @@
         </section>
 
         <!-- CATEGORY BUDGETS MATRIX -->
-        <section class="card budget-section">
+        <section class="card budget-section animate-cascade delay-5">
             <div class="card-header">
                 <div>
                     <span class="card-label">Budget Governance</span>
@@ -251,7 +271,7 @@
         </section>
 
         <!-- TRANSACTIONS TABLE & QUICK FILTERS -->
-        <section class="card recent-transactions">
+        <section class="card recent-transactions animate-cascade delay-6">
             <div class="list-header">
                 <div>
                     <span class="card-label">Audit Trail</span>
@@ -279,19 +299,27 @@
             <!-- Category Pills Quick Bar -->
             <div class="category-pills-bar" id="categoryPillsBar">
                 <button class="pill-chip active" data-category="all">All Transactions</button>
-                <button class="pill-chip" data-category="food">Food & Dining</button>
-                <button class="pill-chip" data-category="utilities">Utilities & Bills</button>
-                <button class="pill-chip" data-category="shopping">Shopping</button>
-                <button class="pill-chip" data-category="entertainment">Entertainment</button>
-                <button class="pill-chip" data-category="travel">Travel</button>
             </div>
 
             <!-- Filter Toolbar Drawer -->
             <div class="filter-toolbar" id="filterPanel">
-                <input type="text" id="filterStartDate" class="filter-select dark-date" placeholder="Start Date"
-                    onfocus="this.type='date'; if (this.showPicker) { try { this.showPicker(); } catch(e) {} }" onblur="if(!this.value)this.type='text'">
-                <input type="text" id="filterEndDate" class="filter-select dark-date" placeholder="End Date"
-                    onfocus="this.type='date'; if (this.showPicker) { try { this.showPicker(); } catch(e) {} }" onblur="if(!this.value)this.type='text'">
+                <div class="filter-date-group">
+                    <div class="date-input-wrap">
+                        <span class="filter-label">From</span>
+                        <input type="date" id="filterStartDate" class="dark-date" title="Start Date">
+                    </div>
+                    <div class="date-input-wrap">
+                        <span class="filter-label">To</span>
+                        <input type="date" id="filterEndDate" class="dark-date" title="End Date">
+                    </div>
+                </div>
+
+                <div class="filter-quick-presets" id="datePresetsWrap">
+                    <button type="button" class="preset-btn active" data-preset="all">All Dates</button>
+                    <button type="button" class="preset-btn" data-preset="today">Today</button>
+                    <button type="button" class="preset-btn" data-preset="month">This Month</button>
+                    <button type="button" class="preset-btn" data-preset="last30">Last 30 Days</button>
+                </div>
 
                 <select id="filterMonth" class="filter-select">
                     <option value="all">All Months</option>
@@ -532,7 +560,8 @@
         </div>
     </div>
 
-    <script src="js/api.js?v=2.2"></script>
-    <script src="js/dashboard.js?v=2.2"></script>
+    <script src="js/api.js?v=2.3"></script>
+    <script src="js/animated-bg.js?v=2.3"></script>
+    <script src="js/dashboard.js?v=2.3"></script>
 </body>
 </html>

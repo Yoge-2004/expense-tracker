@@ -8,9 +8,47 @@ if (!token || !userId) window.location.href = "index.html";
 document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
 document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
 
+// Timezone-safe local date helpers (guarantees local timezone accuracy at 12:00 AM midnight)
+function getLocalDateString(d = new Date()) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(dateString) {
+    if (!dateString) return new Date();
+    if (dateString instanceof Date) return dateString;
+    const parts = String(dateString).split('T')[0].split('-');
+    if (parts.length === 3) {
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    return new Date(dateString);
+}
+
 // Helpers
 const formatCurrency = (amt) => (typeof formatGlobalCurrency === "function" ? formatGlobalCurrency(amt) : `${typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "$"} ${Number(amt || 0).toFixed(2)}`);
-const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const d = parseLocalDate(dateString);
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+// Modal Scroll Lock Helpers
+function openModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.classList.add("active");
+    document.body.classList.add("modal-open");
+}
+
+function closeModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.classList.remove("active");
+    const anyActive = document.querySelector(".modal-overlay.active");
+    if (!anyActive) {
+        document.body.classList.remove("modal-open");
+    }
+}
 
 // Global State
 let allExpenses = [];
@@ -134,15 +172,21 @@ function loadExpenseCache() {
 
 function renderDashboardData(expenses, categories) {
     allCategories = categories;
-    allExpenses = expenses;
+    allExpenses = (expenses || []).sort((a, b) => {
+        const dDiff = new Date(b.expenseDate) - new Date(a.expenseDate);
+        if (dDiff !== 0) return dDiff;
+        if (b.createdAt && a.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+        return (b.id || 0) - (a.id || 0);
+    });
 
     populateCategoryDropdown(allCategories);
-    populateFilterDropdowns(allCategories, expenses);
+    populateFilterDropdowns(allCategories, allExpenses);
+    renderCategoryPills(allCategories);
 
     applyFilters();
-    renderTrendChart(expenses);
+    renderTrendChart(allExpenses);
     loadBudgets();
-    updateProMetrics(expenses);
+    updateProMetrics(allExpenses);
 }
 
 async function loadDashboard(skipCache = false) {
@@ -264,30 +308,148 @@ async function updateProMetrics(expenses) {
     }
 }
 
-// Keyboard Shortcuts & Category Pill Bar Handlers
+let cachedBudgets = [];
+
+/**
+ * Computes and renders real-time financial insights into the Smart Intelligence panel.
+ */
+function renderFinancialInsights(expenses) {
+    const grid = document.getElementById("insightsCardsGrid");
+    const healthBadge = document.getElementById("insightsHealthScoreText");
+    if (!grid) return;
+
+    const safeExpenses = Array.isArray(expenses) ? expenses : (allExpenses || []);
+
+    if (safeExpenses.length === 0) {
+        grid.innerHTML = `
+            <div class="insight-card-item" style="grid-column: 1 / -1; text-align: center; padding: 24px;">
+                <p class="text-muted" style="margin: 0; font-size: 13.5px;">No transactions recorded for this period. Add expenses to generate real-time financial intelligence.</p>
+            </div>
+        `;
+        if (healthBadge) healthBadge.textContent = "100% Budget Health";
+        return;
+    }
+
+    const now = new Date();
+    const currentDay = Math.max(now.getDate(), 1);
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+    // 1. Current month burn rate and projection
+    const currentMonthExpenses = safeExpenses.filter(e => {
+        const d = new Date(e.expenseDate);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const dailyBurn = currentMonthSpent / currentDay;
+    const projectedSpent = dailyBurn * daysInMonth;
+
+    // 2. Category dominance & percentage share
+    const catMap = {};
+    let totalAll = 0;
+    safeExpenses.forEach(e => {
+        const amt = Number(e.amount || 0);
+        const cat = e.categoryName || "Other";
+        catMap[cat] = (catMap[cat] || 0) + amt;
+        totalAll += amt;
+    });
+
+    let topCat = "None";
+    let topCatAmt = 0;
+    Object.entries(catMap).forEach(([cat, amt]) => {
+        if (amt > topCatAmt) {
+            topCatAmt = amt;
+            topCat = cat;
+        }
+    });
+    const topCatPct = totalAll > 0 ? ((topCatAmt / totalAll) * 100).toFixed(1) : "0";
+
+    // 3. Peak single transaction
+    let peakExpense = null;
+    safeExpenses.forEach(e => {
+        const amt = Number(e.amount || 0);
+        if (!peakExpense || amt > Number(peakExpense.amount || 0)) {
+            peakExpense = e;
+        }
+    });
+
+    // 4. Budget adherence score
+    let healthScore = 100;
+    let budgetInsightText = "All categories operating smoothly within limits.";
+    if (cachedBudgets && cachedBudgets.length > 0) {
+        let exceededCount = 0;
+        let warningCount = 0;
+        cachedBudgets.forEach(b => {
+            const limit = Number(b.limit || b.amount || 0);
+            const spent = Number(b.spent || 0);
+            if (limit > 0) {
+                const ratio = spent / limit;
+                if (ratio > 1.0) exceededCount++;
+                else if (ratio >= 0.8) warningCount++;
+            }
+        });
+        const penalty = (exceededCount * 25) + (warningCount * 10);
+        healthScore = Math.max(0, 100 - penalty);
+        if (exceededCount > 0) {
+            budgetInsightText = `⚠️ <strong>${exceededCount} budget(s) exceeded</strong>. Review high-spend categories immediately.`;
+        } else if (warningCount > 0) {
+            budgetInsightText = `🟡 <strong>${warningCount} budget(s) nearing limit</strong> (&gt;80% capacity utilized).`;
+        } else {
+            budgetInsightText = `🟢 <strong>${cachedBudgets.length} of ${cachedBudgets.length}</strong> categories strictly on target.`;
+        }
+    }
+    if (healthBadge) {
+        healthBadge.textContent = `${healthScore}% Budget Health`;
+    }
+
+    grid.innerHTML = `
+        <div class="insight-card-item">
+            <div class="insight-card-item-header">
+                <div class="insight-icon-box" style="background: rgba(199, 154, 62, 0.15); color: #C79A3E;">🔥</div>
+                <span class="insight-card-label">Burn Velocity & Runway</span>
+            </div>
+            <div class="insight-card-content">
+                Averaging <strong>${formatCurrency(dailyBurn)}/day</strong> this month. Projected month-end outflow is <strong>${formatCurrency(projectedSpent)}</strong>.
+            </div>
+        </div>
+
+        <div class="insight-card-item">
+            <div class="insight-card-item-header">
+                <div class="insight-icon-box" style="background: rgba(76, 122, 120, 0.15); color: #4C7A78;">📊</div>
+                <span class="insight-card-label">Category Concentration</span>
+            </div>
+            <div class="insight-card-content">
+                <strong>${topCat}</strong> is your primary driver, taking <strong>${topCatPct}%</strong> (<strong>${formatCurrency(topCatAmt)}</strong>) of all recorded spend.
+            </div>
+        </div>
+
+        <div class="insight-card-item">
+            <div class="insight-card-item-header">
+                <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">🎯</div>
+                <span class="insight-card-label">Budget Adherence</span>
+            </div>
+            <div class="insight-card-content">
+                ${budgetInsightText}
+            </div>
+        </div>
+
+        <div class="insight-card-item">
+            <div class="insight-card-item-header">
+                <div class="insight-icon-box" style="background: rgba(162, 62, 50, 0.15); color: #A23E32;">🏷️</div>
+                <span class="insight-card-label">Peak Outflow Alert</span>
+            </div>
+            <div class="insight-card-content">
+                ${peakExpense ? `Largest transaction is <strong>${formatCurrency(peakExpense.amount)}</strong> for <em>${peakExpense.description || 'Expense'}</em>.` : 'No transactions recorded.'}
+            </div>
+        </div>
+    `;
+}
+
+// Keyboard Shortcuts
 document.addEventListener("keydown", (e) => {
     if ((e.key === '/' || (e.metaKey && e.key === 'k') || (e.ctrlKey && e.key === 'k')) && document.activeElement.tagName !== 'INPUT') {
         e.preventDefault();
         elements.filterSearch?.focus();
     }
-});
-
-document.querySelectorAll(".pill-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-        document.querySelectorAll(".pill-chip").forEach(c => c.classList.remove("active"));
-        chip.classList.add("active");
-        const category = chip.getAttribute("data-category");
-        if (elements.filterCategory) {
-            if (category === "all") {
-                elements.filterCategory.value = "all";
-            } else {
-                const options = Array.from(elements.filterCategory.options);
-                const matchedOption = options.find(opt => opt.text.toLowerCase().includes(category));
-                elements.filterCategory.value = matchedOption ? matchedOption.value : "all";
-            }
-            applyFilters();
-        }
-    });
 });
 
 // --- 2. BUDGET LOGIC ---
@@ -361,7 +523,9 @@ async function loadBudgets() {
             </div>`;
         }).join("");
 
+        cachedBudgets = budgets;
         renderBudgetVsActualChart(budgets);
+        renderFinancialInsights(allExpenses);
     } catch (e) {
         console.error("Budget Error", e);
     }
@@ -398,7 +562,7 @@ elements.addBudgetBtn.addEventListener("click", () => {
     budgetCategorySelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
     setBudgetForm.reset();
     if (customBudgetDates) customBudgetDates.hidden = true;
-    setBudgetModal.classList.add("active");
+    openModal(setBudgetModal);
 });
 
 // Edit Budget — pre-fill the budget modal with existing values and re-open it
@@ -420,12 +584,15 @@ window.openEditBudget = (budgetId, categoryId, categoryName, limit, period, star
     if (startEl) startEl.value = startDate || "";
     if (endEl)   endEl.value   = endDate   || "";
 
-    setBudgetModal.classList.add("active");
+    openModal(setBudgetModal);
 };
 
 
 document.getElementById("closeBudgetModalBtn")?.addEventListener("click", () => {
-    setBudgetModal.classList.remove("active");
+    closeModal(setBudgetModal);
+});
+setBudgetModal?.addEventListener("click", (e) => {
+    if (e.target === setBudgetModal) closeModal(setBudgetModal);
 });
 
 budgetPeriod?.addEventListener("change", () => {
@@ -763,16 +930,16 @@ function getTrendGradient(chart) {
 }
 
 
-// --- 4. FILTERING (With Validation) ---
+// --- 4. FILTERING (With Validation & Quick Presets) ---
 function applyFilters() {
     let filtered = [...allExpenses];
-    const search = elements.filterSearch.value.toLowerCase();
-    const startDate = elements.filterStartDate.value;
-    const endDate = elements.filterEndDate.value;
+    const search = elements.filterSearch.value.toLowerCase().trim();
+    const startDate = elements.filterStartDate ? elements.filterStartDate.value : "";
+    const endDate = elements.filterEndDate ? elements.filterEndDate.value : "";
 
     // Date Range Validation
     if (startDate && endDate) {
-        if (new Date(startDate) > new Date(endDate)) {
+        if (startDate > endDate) {
             showToast("Start date cannot be after end date.", "error");
             elements.filterEndDate.value = "";
             return;
@@ -780,27 +947,37 @@ function applyFilters() {
     }
 
     // 1. Search
-    if (search) filtered = filtered.filter(e => e.description.toLowerCase().includes(search) || (e.categoryName && e.categoryName.toLowerCase().includes(search)));
+    if (search) filtered = filtered.filter(e => (e.description && e.description.toLowerCase().includes(search)) || (e.categoryName && e.categoryName.toLowerCase().includes(search)));
 
     // 2. Category
     if (elements.filterCategory.value !== 'all') filtered = filtered.filter(e => e.categoryName === elements.filterCategory.value);
 
-    // 3. Date
+    // 3. Date Range
     if (startDate || endDate) {
-        if (startDate) filtered = filtered.filter(e => e.expenseDate >= startDate);
-        if (endDate) filtered = filtered.filter(e => e.expenseDate <= endDate);
+        if (startDate) filtered = filtered.filter(e => (e.expenseDate || '').split('T')[0] >= startDate);
+        if (endDate) filtered = filtered.filter(e => (e.expenseDate || '').split('T')[0] <= endDate);
     } else {
-        if (elements.filterMonth.value !== 'all') filtered = filtered.filter(e => new Date(e.expenseDate).getMonth() === parseInt(elements.filterMonth.value));
-        if (elements.filterYear.value !== 'all') filtered = filtered.filter(e => new Date(e.expenseDate).getFullYear() === parseInt(elements.filterYear.value));
+        if (elements.filterMonth.value !== 'all') filtered = filtered.filter(e => parseLocalDate(e.expenseDate).getMonth() === parseInt(elements.filterMonth.value));
+        if (elements.filterYear.value !== 'all') filtered = filtered.filter(e => parseLocalDate(e.expenseDate).getFullYear() === parseInt(elements.filterYear.value));
     }
 
-    // 4. Sort
+    // 4. Sort with Timestamp Tie-Breaking (Ensures newly added expenses stay on top)
     const sort = elements.filterSort.value;
     filtered.sort((a, b) => {
-        if (sort === 'date-desc') return new Date(b.expenseDate) - new Date(a.expenseDate);
-        if (sort === 'date-asc') return new Date(a.expenseDate) - new Date(b.expenseDate);
-        if (sort === 'amount-desc') return b.amount - a.amount;
-        if (sort === 'amount-asc') return a.amount - b.amount;
+        if (sort === 'date-desc') {
+            const dDiff = new Date(b.expenseDate) - new Date(a.expenseDate);
+            if (dDiff !== 0) return dDiff;
+            if (b.createdAt && a.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+            return (b.id || 0) - (a.id || 0);
+        }
+        if (sort === 'date-asc') {
+            const dDiff = new Date(a.expenseDate) - new Date(b.expenseDate);
+            if (dDiff !== 0) return dDiff;
+            if (a.createdAt && b.createdAt) return new Date(a.createdAt) - new Date(b.createdAt);
+            return (a.id || 0) - (b.id || 0);
+        }
+        if (sort === 'amount-desc') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
+        if (sort === 'amount-asc') return (Number(a.amount) || 0) - (Number(b.amount) || 0);
         return 0;
     });
 
@@ -810,10 +987,49 @@ function applyFilters() {
     renderTrendChart(filtered);
     renderRecurringSplitChart(filtered);
     renderDayOfWeekChart(filtered);
+    renderFinancialInsights(filtered);
 }
 
 [elements.filterSort, elements.filterCategory, elements.filterStartDate, elements.filterEndDate, elements.filterMonth, elements.filterYear]
-    .forEach(el => el.addEventListener('input', applyFilters));
+    .filter(Boolean)
+    .forEach(el => el.addEventListener('input', () => {
+        if (el === elements.filterStartDate || el === elements.filterEndDate) {
+            document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(b => b.classList.remove("active"));
+        }
+        if (el === elements.filterCategory) {
+            syncCategoryPillSelection(elements.filterCategory.value);
+        }
+        applyFilters();
+    }));
+
+// Quick 1-tap Date Presets (Mobile & Desktop)
+document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const preset = btn.getAttribute("data-preset");
+        const now = new Date();
+        const todayStr = getLocalDateString(now);
+
+        if (preset === "all") {
+            if (elements.filterStartDate) elements.filterStartDate.value = "";
+            if (elements.filterEndDate) elements.filterEndDate.value = "";
+        } else if (preset === "today") {
+            if (elements.filterStartDate) elements.filterStartDate.value = todayStr;
+            if (elements.filterEndDate) elements.filterEndDate.value = todayStr;
+        } else if (preset === "month") {
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            if (elements.filterStartDate) elements.filterStartDate.value = getLocalDateString(firstDay);
+            if (elements.filterEndDate) elements.filterEndDate.value = todayStr;
+        } else if (preset === "last30") {
+            const past30 = new Date(now.getTime() - 30 * 86400000);
+            if (elements.filterStartDate) elements.filterStartDate.value = getLocalDateString(past30);
+            if (elements.filterEndDate) elements.filterEndDate.value = todayStr;
+        }
+        applyFilters();
+    });
+});
 
 /**
  * Delays calling `fn` until `delay` ms have passed since the last call —
@@ -828,27 +1044,20 @@ function debounce(fn, delay) {
     };
 }
 
-// The search box previously shared the same immediate, un-debounced
-// 'input' listener as the dropdown/date filters above. Those only fire on
-// discrete user actions (selecting an option, picking a date), so running
-// applyFilters() immediately is fine for them. Text input fires on every
-// keystroke, though, and applyFilters() destroys and rebuilds both charts
-// plus the full transaction list each time — on a real dataset, typing a
-// multi-character search term visibly stuttered. 250ms is enough to let
-// someone finish typing a character or two without the UI feeling laggy,
-// while still feeling instant once they pause.
 elements.filterSearch.addEventListener('input', debounce(applyFilters, 250));
 
 document.getElementById("resetFiltersBtn")?.addEventListener("click", () => {
     elements.filterSearch.value = "";
-    elements.filterStartDate.value = "";
-    elements.filterStartDate.type = "text";
-    elements.filterEndDate.value = "";
-    elements.filterEndDate.type = "text";
+    if (elements.filterStartDate) elements.filterStartDate.value = "";
+    if (elements.filterEndDate) elements.filterEndDate.value = "";
+    document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-preset") === "all");
+    });
     elements.filterMonth.value = "all";
     elements.filterYear.value = "all";
     elements.filterCategory.value = "all";
     elements.filterSort.value = "date-desc";
+    syncCategoryPillSelection("all");
     applyFilters();
 });
 
@@ -901,12 +1110,13 @@ function renderList(expenses) {
             </div>`;
         return;
     }
-    elements.expenseList.innerHTML = expenses.map(exp => {
+    elements.expenseList.innerHTML = expenses.map((exp, idx) => {
         const catColor = getCategoryColor(exp.categoryName);
         const catName = exp.categoryName || 'General';
         const isRecurring = exp.recurring || exp.isRecurring;
+        const delay = Math.min(idx * 0.04, 0.4);
         return `
-        <div class="expense-item">
+        <div class="expense-item" style="animation-delay: ${delay}s;">
             <div class="expense-emoji-box" style="width:40px; height:40px; border-radius:12px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                 <span style="font-size:18px;">${getCategoryEmoji(catName)}</span>
             </div>
@@ -956,8 +1166,14 @@ function populateCategoryDropdown(categories) {
 
 function populateFilterDropdowns(categories, expenses) {
     if (categories && categories.length > 0) {
+        const currentVal = elements.filterCategory ? elements.filterCategory.value : "all";
         const catOpts = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         elements.filterCategory.innerHTML = '<option value="all">All Categories</option>' + catOpts;
+        if (categories.some(c => c.name === currentVal)) {
+            elements.filterCategory.value = currentVal;
+        } else {
+            elements.filterCategory.value = "all";
+        }
     }
 
     if (expenses && expenses.length > 0) {
@@ -965,6 +1181,48 @@ function populateFilterDropdowns(categories, expenses) {
         const yearOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
         elements.filterYear.innerHTML = '<option value="all">All Years</option>' + yearOpts;
     }
+}
+
+function renderCategoryPills(categories) {
+    const pillsBar = document.getElementById("categoryPillsBar");
+    if (!pillsBar) return;
+
+    const currentSelectedCat = (elements.filterCategory && elements.filterCategory.value) ? elements.filterCategory.value : "all";
+
+    const allChip = `<button class="pill-chip ${currentSelectedCat === 'all' ? 'active' : ''}" data-category="all">All Transactions</button>`;
+
+    const catChips = (categories || []).map(cat => {
+        const icon = getCategoryEmoji(cat.name);
+        const isActive = currentSelectedCat.toLowerCase() === cat.name.toLowerCase();
+        return `<button class="pill-chip ${isActive ? 'active' : ''}" data-category="${cat.name}">${icon} ${cat.name}</button>`;
+    }).join("");
+
+    pillsBar.innerHTML = allChip + catChips;
+
+    pillsBar.querySelectorAll(".pill-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            pillsBar.querySelectorAll(".pill-chip").forEach(c => c.classList.remove("active"));
+            chip.classList.add("active");
+            const category = chip.getAttribute("data-category");
+            if (elements.filterCategory) {
+                elements.filterCategory.value = category;
+                applyFilters();
+            }
+        });
+    });
+}
+
+function syncCategoryPillSelection(selectedCatName) {
+    const pillsBar = document.getElementById("categoryPillsBar");
+    if (!pillsBar) return;
+    pillsBar.querySelectorAll(".pill-chip").forEach(chip => {
+        const chipCat = chip.getAttribute("data-category");
+        if (!selectedCatName || selectedCatName === "all") {
+            chip.classList.toggle("active", chipCat === "all");
+        } else {
+            chip.classList.toggle("active", chipCat.toLowerCase() === selectedCatName.toLowerCase());
+        }
+    });
 }
 
 
@@ -1039,7 +1297,7 @@ window.editExpense = (id) => {
     elements.recurringOptions.hidden = true;
     document.querySelector(".modal h3").textContent = "Edit Expense";
     document.querySelector(".modal button[type='submit']").textContent = "Update Expense";
-    elements.modal.classList.add("active");
+    openModal(elements.modal);
 };
 
 window.deleteExpense = async (id, event) => {
@@ -1060,7 +1318,9 @@ window.deleteExpense = async (id, event) => {
 
 function syncRecurringIntervalVisibility() {
     if (elements.customIntervalWrap && elements.recurringFrequency) {
-        elements.customIntervalWrap.hidden = (elements.recurringFrequency.value !== "CUSTOM");
+        const isCustom = (elements.recurringFrequency.value === "CUSTOM");
+        elements.customIntervalWrap.hidden = !isCustom;
+        elements.customIntervalWrap.style.display = isCustom ? "flex" : "none";
     }
 }
 
@@ -1068,35 +1328,36 @@ function syncRecurringIntervalVisibility() {
 document.getElementById("openModalBtn").addEventListener("click", () => {
     elements.addForm.reset();
     document.getElementById("expenseId").value = "";
-    document.getElementById("date").value = new Date().toISOString().split("T")[0];
+    document.getElementById("date").value = getLocalDateString();
     elements.isRecurring.checked = false;
     elements.isRecurring.parentElement.style.display = "flex";
     elements.recurringOptions.hidden = true;
+    elements.recurringOptions.style.display = "none";
+    if (elements.recurringFrequency) elements.recurringFrequency.value = "MONTHLY";
     syncRecurringIntervalVisibility();
     document.querySelector(".modal h3").textContent = "Add Expense";
     document.querySelector(".modal button[type='submit']").textContent = "Save Expense";
-    elements.modal.classList.add("active");
+    openModal(elements.modal);
 });
 
-document.getElementById("closeExpenseModalBtn")?.addEventListener("click", () => elements.modal.classList.remove("active"));
+document.getElementById("closeExpenseModalBtn")?.addEventListener("click", () => closeModal(elements.modal));
 
 // Close expense modal when clicking the backdrop (outside the modal card)
 elements.modal?.addEventListener("click", (e) => {
-    if (e.target === elements.modal) elements.modal.classList.remove("active");
+    if (e.target === elements.modal) closeModal(elements.modal);
 });
 
 // Close any open modal on Escape key
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-        elements.modal?.classList.remove("active");
-        setBudgetModal?.classList.remove("active");
-        document.getElementById("editSubModal")?.classList.remove("active");
+        document.querySelectorAll(".modal-overlay.active").forEach(m => closeModal(m));
     }
 });
 
-
 elements.isRecurring.addEventListener("change", () => {
-    elements.recurringOptions.hidden = !elements.isRecurring.checked;
+    const isChecked = elements.isRecurring.checked;
+    elements.recurringOptions.hidden = !isChecked;
+    elements.recurringOptions.style.display = isChecked ? "flex" : "none";
     syncRecurringIntervalVisibility();
 });
 elements.recurringFrequency.addEventListener("change", () => {
@@ -1106,12 +1367,16 @@ elements.recurringFrequency.addEventListener("change", () => {
 // Add Category
 elements.addCategoryBtn.addEventListener("click", async () => {
     const name = prompt("Enter new category name:");
-    if (!name) return;
+    if (!name || !name.trim()) return;
     try {
-        const newCat = await apiRequest(`/categories/user/${userId}`, { method: "POST", body: JSON.stringify({ name: name }) });
+        const newCat = await apiRequest(`/categories/user/${userId}`, { method: "POST", body: JSON.stringify({ name: name.trim() }) });
         allCategories.push(newCat);
         userOnlyCategories.push(newCat);
-        const option = document.createElement("option"); option.value = newCat.id; option.textContent = newCat.name; option.selected = true; elements.categorySelect.appendChild(option);
+        populateCategoryDropdown(allCategories);
+        populateFilterDropdowns(allCategories, allExpenses);
+        renderCategoryPills(allCategories);
+        elements.categorySelect.value = newCat.id;
+        showToast(`Category "${newCat.name}" created!`, "success");
     } catch (error) { showToast(error.message, "error"); }
 });
 
@@ -1169,6 +1434,8 @@ async function renderManageCategoriesList() {
                 allCategories = allCategories.filter(c => String(c.id) !== String(catId));
                 userOnlyCategories = userOnlyCategories.filter(c => String(c.id) !== String(catId));
                 populateCategoryDropdown(allCategories);
+                populateFilterDropdowns(allCategories, allExpenses);
+                renderCategoryPills(allCategories);
                 showToast(`Category "${catName}" deleted.`, "success");
                 renderManageCategoriesList();
             } catch (error) {
@@ -1179,14 +1446,14 @@ async function renderManageCategoriesList() {
 }
 
 document.getElementById("manageCategoriesBtn")?.addEventListener("click", () => {
-    manageCategoriesModal.classList.add("active");
+    openModal(manageCategoriesModal);
     renderManageCategoriesList();
 });
 document.getElementById("closeManageCategoriesModalBtn")?.addEventListener("click", () => {
-    manageCategoriesModal.classList.remove("active");
+    closeModal(manageCategoriesModal);
 });
 manageCategoriesModal?.addEventListener("click", (e) => {
-    if (e.target === manageCategoriesModal) manageCategoriesModal.classList.remove("active");
+    if (e.target === manageCategoriesModal) closeModal(manageCategoriesModal);
 });
 
 elements.toggleFiltersBtn.addEventListener("click", () => { elements.filterPanel.classList.toggle("active"); });
@@ -1210,6 +1477,25 @@ const dashCurrTrigger = document.getElementById("dashCurrencyTrigger");
 const dashCurrLabel = document.getElementById("dashCurrencyLabel");
 const currencySelector = document.getElementById("currencySelector");
 
+function syncCurrencyDropdown(currCode) {
+    if (typeof WORLD_CURRENCIES === "undefined") return;
+    const activeCurr = currCode || (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "USD");
+    const item = WORLD_CURRENCIES.find(c => c.code === activeCurr) || WORLD_CURRENCIES[0];
+    if (currencySelector) currencySelector.value = item.code;
+    if (dashCurrLabel && item) dashCurrLabel.textContent = `${item.flag} ${item.code} (${item.symbol})`;
+
+    if (dashCurrWrapper) {
+        const optionsList = dashCurrWrapper.querySelectorAll(".custom-option");
+        optionsList.forEach(opt => {
+            if (opt.getAttribute("data-value") === item.code) {
+                opt.classList.add("selected");
+            } else {
+                opt.classList.remove("selected");
+            }
+        });
+    }
+}
+
 if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined") {
     const optionsContainer = dashCurrWrapper.querySelector(".custom-select-options");
     const activeCurr = typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "USD";
@@ -1229,10 +1515,7 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
     const searchInput = optionsContainer.querySelector(".custom-select-search");
     const optionsList = optionsContainer.querySelectorAll(".custom-option");
 
-    const initialItem = WORLD_CURRENCIES.find(c => c.code === activeCurr) || WORLD_CURRENCIES[0];
-    if (dashCurrLabel && initialItem) {
-        dashCurrLabel.textContent = `${initialItem.flag} ${initialItem.code} (${initialItem.symbol})`;
-    }
+    syncCurrencyDropdown(activeCurr);
 
     dashCurrTrigger.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -1259,24 +1542,16 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
     optionsList.forEach(opt => {
         opt.addEventListener("click", (e) => {
             e.stopPropagation();
-            optionsList.forEach(o => o.classList.remove("selected"));
-            opt.classList.add("selected");
             const newCurr = opt.getAttribute("data-value");
-            const item = WORLD_CURRENCIES.find(c => c.code === newCurr);
-            if (currencySelector) currencySelector.value = newCurr;
-            if (dashCurrLabel && item) dashCurrLabel.textContent = `${item.flag} ${item.code} (${item.symbol})`;
+            syncCurrencyDropdown(newCurr);
             dashCurrWrapper.classList.remove("open");
 
             localStorage.setItem("userCurrency", newCurr);
+            if (typeof setCurrencySymbol === "function") setCurrencySymbol(newCurr);
             apiRequest(`/users/${userId}/currency`, { method: "PUT", body: JSON.stringify({ currency: newCurr }) }).catch(err => console.warn("Failed to persist currency preference:", err));
             showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
             updateModalLabels();
             applyFilters();
-            // applyFilters() -> updateStats() re-renders Total Outflow, but Daily
-            // Burn Rate and the month-end forecast only live inside
-            // updateProMetrics(), which otherwise only runs once on initial load —
-            // without this they'd keep showing the old currency's symbol until a
-            // full page reload.
             updateProMetrics(allExpenses);
         });
     });
@@ -1368,6 +1643,8 @@ if (sendMonthlyReportBtn) {
                 if (typeof setCurrencySymbol === "function") {
                     setCurrencySymbol(profile.currency);
                 }
+                syncCurrencyDropdown(profile.currency);
+                updateModalLabels();
             }
             // Inject email under the user name in the profile menu
             const profileMenu = elements.profileMenu;
@@ -1494,20 +1771,23 @@ importFileInput?.addEventListener("change", async (e) => {
 elements.manageSubsBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     elements.profileMenu.classList.remove("active");
-    elements.subsModal.classList.add("active");
+    openModal(elements.subsModal);
     loadSubscriptions();
 });
 
 // Also handle the "Manage Subscriptions →" link in the metrics card
 document.getElementById("manageSubsLink")?.addEventListener("click", async (e) => {
     e.preventDefault();
-    elements.subsModal.classList.add("active");
+    openModal(elements.subsModal);
     loadSubscriptions();
 });
 
 // Close Modal
 elements.closeSubsBtn.addEventListener("click", () => {
-    elements.subsModal.classList.remove("active");
+    closeModal(elements.subsModal);
+});
+elements.subsModal?.addEventListener("click", (e) => {
+    if (e.target === elements.subsModal) closeModal(elements.subsModal);
 });
 
 // Load List (With Edit & Delete Buttons)
@@ -1568,7 +1848,7 @@ window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTH
     if (intervalInput) intervalInput.value = intervalDays || 1;
     const intervalWrap = document.getElementById("editSubIntervalWrap");
     if (intervalWrap) intervalWrap.hidden = frequency !== "CUSTOM";
-    editSubModal.classList.add("active");
+    openModal(editSubModal);
 };
 
 // Toggle custom interval field inside edit subscription form
@@ -1578,7 +1858,10 @@ document.getElementById("editSubFrequency")?.addEventListener("change", (e) => {
 });
 
 document.getElementById("closeEditSubModalBtn")?.addEventListener("click", () => {
-    editSubModal.classList.remove("active");
+    closeModal(editSubModal);
+});
+editSubModal?.addEventListener("click", (e) => {
+    if (e.target === editSubModal) closeModal(editSubModal);
 });
 
 editSubForm?.addEventListener("submit", async (e) => {
@@ -1608,7 +1891,7 @@ editSubForm?.addEventListener("submit", async (e) => {
             body: JSON.stringify(body)
         });
         showToast("Subscription updated successfully.", "success");
-        editSubModal.classList.remove("active");
+        closeModal(editSubModal);
         loadSubscriptions();
     } catch (e) {
         showToast(e.message, "error");
@@ -1644,7 +1927,7 @@ elements.deleteAccountBtn.addEventListener("click", (e) => {
     elements.deleteConfirmInput.value = "";
     elements.confirmDeleteAccountBtn.style.opacity = "0.5";
     elements.confirmDeleteAccountBtn.style.pointerEvents = "none";
-    elements.deleteAccountModal.classList.add("active");
+    openModal(elements.deleteAccountModal);
     setTimeout(() => elements.deleteConfirmInput.focus(), 150);
 });
 
@@ -1657,14 +1940,14 @@ elements.deleteConfirmInput.addEventListener("input", () => {
 
 // Close modal on cancel
 elements.cancelDeleteAccountBtn.addEventListener("click", () => {
-    elements.deleteAccountModal.classList.remove("active");
+    closeModal(elements.deleteAccountModal);
     elements.deleteConfirmInput.value = "";
 });
 
 // Close modal on overlay click
 elements.deleteAccountModal.addEventListener("click", (e) => {
     if (e.target === elements.deleteAccountModal) {
-        elements.deleteAccountModal.classList.remove("active");
+        closeModal(elements.deleteAccountModal);
         elements.deleteConfirmInput.value = "";
     }
 });
