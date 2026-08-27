@@ -237,10 +237,27 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
 }
 
 // Global Theme Handler
+
+// Browser chrome (tab bar / PWA title bar) color per theme — kept in sync
+// with the --bg-dark value each theme sets in css/style.css so the tab
+// color actually matches the page instead of staying fixed on dark.
+const THEME_COLOR_MAP = { dark: "#10120E", light: "#F8F9FA" };
+
+function updateThemeColorMeta(theme) {
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("name", "theme-color");
+        document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", THEME_COLOR_MAP[theme] || THEME_COLOR_MAP.dark);
+}
+
 function initGlobalTheme() {
     const savedTheme = localStorage.getItem("theme") || "dark";
     document.documentElement.setAttribute("data-theme", savedTheme);
     document.body.setAttribute("data-theme", savedTheme);
+    updateThemeColorMeta(savedTheme);
     updateAllThemeIcons(savedTheme);
 }
 
@@ -267,15 +284,33 @@ function updateAllThemeIcons(theme) {
 function toggleGlobalTheme() {
     const currentTheme = document.body.getAttribute("data-theme") === "light" ? "light" : "dark";
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
+
+    // Engage the transition window before the attribute flips, so the
+    // very first frame of the color change is already transitioning
+    // instead of snapping, then let it settle and clean up.
+    document.documentElement.classList.add("theme-transitioning");
+    clearTimeout(window.__themeTransitionCleanup);
+
     document.documentElement.setAttribute("data-theme", nextTheme);
     document.body.setAttribute("data-theme", nextTheme);
     localStorage.setItem("theme", nextTheme);
+    updateThemeColorMeta(nextTheme);
     updateAllThemeIcons(nextTheme);
     // Let anything that needs to re-render with the new theme's colors
     // (e.g. canvas-drawn charts, which don't pick up CSS variables on
     // their own) react AFTER the theme has actually been applied, rather
     // than racing a click listener attached directly to the toggle button.
-    document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: nextTheme } }));
+    // Deferred one frame so the (expensive, synchronous) chart re-render
+    // this triggers doesn't block the paint of the color transition itself
+    // — that block was the main source of the toggle feeling laggy rather
+    // than smooth.
+    requestAnimationFrame(() => {
+        document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: nextTheme } }));
+    });
+
+    window.__themeTransitionCleanup = setTimeout(() => {
+        document.documentElement.classList.remove("theme-transitioning");
+    }, 450);
 }
 
 // Global Multi-Currency System (50 World Currencies)

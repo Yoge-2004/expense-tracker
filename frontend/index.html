@@ -5,10 +5,23 @@
     <meta charset="UTF-8">
     <title>Sign In | ExpenseTracker Pro</title>
     <link rel="stylesheet" href="css/style.css?v=2.2">
+    <link rel="stylesheet" href="css/motion-extended.css?v=1.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
     <meta name="description" content="Sign in to ExpenseTracker Pro — the smartest way to track spending, set budgets, and gain financial clarity.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
+    <script>
+        // Applies the saved theme (and syncs the browser tab color to match)
+        // before first paint, so there's no flash of the wrong theme/tab color.
+        (function () {
+            try {
+                var t = localStorage.getItem("theme") || "dark";
+                document.documentElement.setAttribute("data-theme", t);
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m) m.setAttribute("content", t === "light" ? "#F8F9FA" : "#10120E");
+            } catch (e) {}
+        })();
+    </script>
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://cozy-narwhal-3099ad.netlify.app/index.html">
 
@@ -194,6 +207,7 @@
     <script src="js/animated-bg.js?v=2.3"></script>
     <script src="js/auth.js?v=2.3"></script>
     <script src="js/password-toggle.js?v=2.3"></script>
+    <script src="js/motion.js?v=1.0"></script>
 </body>
 
 </html>

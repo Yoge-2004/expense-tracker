@@ -5,8 +5,19 @@
     <meta charset="UTF-8">
     <title>Financial Workspace | Expense Tracker Pro</title>
     <link rel="stylesheet" href="css/style.css?v=2.2">
+    <link rel="stylesheet" href="css/motion-extended.css?v=1.0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("theme") || "dark";
+                document.documentElement.setAttribute("data-theme", t);
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m) m.setAttribute("content", t === "light" ? "#F8F9FA" : "#10120E");
+            } catch (e) {}
+        })();
+    </script>
     <meta name="description" content="Your private ExpenseTracker Pro dashboard — track spending, manage budgets, and monitor recurring subscriptions.">
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon"
@@ -563,5 +574,6 @@
     <script src="js/api.js?v=2.3"></script>
     <script src="js/animated-bg.js?v=2.3"></script>
     <script src="js/dashboard.js?v=2.3"></script>
+    <script src="js/motion.js?v=1.0"></script>
 </body>
 </html>

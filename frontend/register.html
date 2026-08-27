@@ -5,9 +5,20 @@
     <meta charset="UTF-8">
     <title>Create Account | ExpenseTracker Pro</title>
     <link rel="stylesheet" href="css/style.css?v=2.2">
+    <link rel="stylesheet" href="css/motion-extended.css?v=1.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("theme") || "dark";
+                document.documentElement.setAttribute("data-theme", t);
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m) m.setAttribute("content", t === "light" ? "#F8F9FA" : "#10120E");
+            } catch (e) {}
+        })();
+    </script>
     <meta name="description" content="Create your free ExpenseTracker Pro account and take control of your finances today.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://cozy-narwhal-3099ad.netlify.app/register.html">
@@ -263,6 +274,7 @@
     <script src="js/auth.js?v=2.3"></script>
     <script src="js/register.js?v=2.3"></script>
     <script src="js/password-toggle.js?v=2.3"></script>
+    <script src="js/motion.js?v=1.0"></script>
     <script>
         // Form Validation, Step Progress, Password Strength & Username Suggestions
         const nameInput = document.getElementById('reg-name');

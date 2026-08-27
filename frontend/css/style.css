@@ -66,6 +66,27 @@
     --on-primary: #10120E;
 }
 
+/* Smooth theme switch — scoped to a class toggled on <html> for ~0.5s
+   around the switch (see toggleGlobalTheme in js/api.js), rather than a
+   permanent global transition, so it doesn't fight the site's existing
+   hover/press transition timings the rest of the time. Without this, every
+   [data-theme="light"] override above (all !important, all instant) applied
+   in one un-transitioned frame, which read as a hard cut rather than a
+   lag — but felt laggy because color and background-color changed
+   immediately while shadows/borders didn't, so pieces of the UI updated
+   out of sync with each other. */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+    transition: background-color 0.4s var(--ease),
+                color 0.4s var(--ease),
+                border-color 0.4s var(--ease),
+                box-shadow 0.4s var(--ease),
+                fill 0.4s var(--ease),
+                stroke 0.4s var(--ease) !important;
+}
+
 /* LIGHT MODE OVERRIDES — Radiant Porcelain Glass & Royal Liquid Gold */
 [data-theme="light"] {
     --bg-dark: #F8F9FA;
@@ -3296,6 +3317,34 @@ button[type="submit"]:active {
         margin-left: 0 !important;
         min-width: 0 !important;
         flex: 1 1 auto !important;
+        align-items: flex-start !important;
+        min-height: 74px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* The 2-up grid halves each card's width, and "12 budgets" / "6
+       subscriptions" were wrapping onto a second line at 15px while
+       "₹24,810" stayed on one — that mismatch in line count is what made
+       the row look unaligned (card 2 taller than card 1, both stretched
+       to match by the grid, leaving mismatched internal spacing). Sizing
+       down slightly and clamping to one line keeps every card the same
+       shape regardless of label length. */
+    .float-card-value {
+        font-size: 13.5px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+    }
+
+    .float-card-label {
+        font-size: 10.5px !important;
+        line-height: 1.3 !important;
+    }
+
+    .float-card-icon {
+        width: 30px !important;
+        height: 30px !important;
     }
 
     .float-card:nth-child(3) {
@@ -3791,9 +3840,20 @@ button[type="submit"]:active {
     backdrop-filter: blur(12px) !important;
     font-size: 11px !important;
     font-weight: 700 !important;
-    padding: 5px 12px !important;
     letter-spacing: 0.04em;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+/* This padding used to be unconditional and !important, which — because it
+   sits later in the file than the mobile dot-shrink rule (max-width: 900px,
+   also !important) — silently won every tie on mobile too, stretching the
+   badge back out to a 12px-padded pill and clipping/misshaping the
+   text-hidden dot instead of the clean small circle the mobile rule
+   intended. Scoping it to desktop widths lets the mobile rule's own
+   padding stand. */
+@media (min-width: 901px) {
+    .server-status-badge {
+        padding: 5px 12px !important;
+    }
 }
 .server-status-badge.online {
     background: rgba(var(--success-rgb), 0.12) !important;
