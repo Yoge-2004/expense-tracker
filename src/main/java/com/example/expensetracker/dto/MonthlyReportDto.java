@@ -17,9 +17,33 @@ public class MonthlyReportDto {
     private BigDecimal totalOutflow;
     private String currency;
     private int transactionCount;
+    private BigDecimal dailyAverage;
+    private BigDecimal highestExpenseAmount;
+    private String highestExpenseDescription;
+    private BigDecimal recurringTotal;
+    private List<String> insights;
+    private int budgetHealthScore;
     private List<CategoryReportDto> categoryBreakdown;
     private List<BudgetReportDto> budgetStatuses;
     private List<ExpenseDto> topExpenses;
+
+    public BigDecimal getDailyAverage() { return dailyAverage; }
+    public void setDailyAverage(BigDecimal dailyAverage) { this.dailyAverage = dailyAverage; }
+
+    public BigDecimal getHighestExpenseAmount() { return highestExpenseAmount; }
+    public void setHighestExpenseAmount(BigDecimal highestExpenseAmount) { this.highestExpenseAmount = highestExpenseAmount; }
+
+    public String getHighestExpenseDescription() { return highestExpenseDescription; }
+    public void setHighestExpenseDescription(String highestExpenseDescription) { this.highestExpenseDescription = highestExpenseDescription; }
+
+    public BigDecimal getRecurringTotal() { return recurringTotal; }
+    public void setRecurringTotal(BigDecimal recurringTotal) { this.recurringTotal = recurringTotal; }
+
+    public List<String> getInsights() { return insights; }
+    public void setInsights(List<String> insights) { this.insights = insights; }
+
+    public int getBudgetHealthScore() { return budgetHealthScore; }
+    public void setBudgetHealthScore(int budgetHealthScore) { this.budgetHealthScore = budgetHealthScore; }
 
     public String getPeriod() { return period; }
     public void setPeriod(String period) { this.period = period; }

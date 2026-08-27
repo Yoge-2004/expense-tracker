@@ -234,6 +234,13 @@ public class CategoryController {
                 ))
         )
     })
+    @GetMapping("/global")
+    public ResponseEntity<List<CategoryDto>> getGlobalCategories() {
+        List<CategoryDto> categories = categoryService.getGlobalCategories()
+                .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(categories);
+    }
+
     @Operation(
         summary = "Delete user category",
         description = """

@@ -27,8 +27,20 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
 
+    public RestAuthenticationEntryPoint() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.objectMapper = mapper;
+    }
+
     public RestAuthenticationEntryPoint(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        if (objectMapper != null) {
+            this.objectMapper = objectMapper;
+        } else {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            this.objectMapper = mapper;
+        }
     }
 
     @Override

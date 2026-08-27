@@ -24,8 +24,20 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
 
+    public RestAccessDeniedHandler() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        this.objectMapper = mapper;
+    }
+
     public RestAccessDeniedHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        if (objectMapper != null) {
+            this.objectMapper = objectMapper;
+        } else {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            this.objectMapper = mapper;
+        }
     }
 
     @Override

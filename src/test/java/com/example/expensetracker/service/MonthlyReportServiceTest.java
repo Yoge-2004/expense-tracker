@@ -105,6 +105,9 @@ class MonthlyReportServiceTest {
     @Test
     @DisplayName("sendMonthlyReportEmail → Skips dispatch if report already sent in database")
     void sendMonthlyReportEmail_skipsIfAlreadySent() {
+        ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.gmail.com");
+        ReflectionTestUtils.setField(service, "mailEnabled", true);
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(testUser, 2026, 8)).thenReturn(true);
 
