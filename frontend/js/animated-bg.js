@@ -4,13 +4,13 @@
  * =============================================================================
  * Generates an active, flowing, multi-layered glowing aurora background with
  * smooth fluid wave physics, glowing particle nodes, mouse glow, and click bursts.
+ * Fully optimized for both Dark Theme and Light Theme.
  */
 
 (function () {
     'use strict';
 
     function initAnimatedBackground() {
-        // Create canvas directly on document.body as fixed background
         let canvas = document.querySelector('.animated-mesh-canvas');
         if (!canvas) {
             canvas = document.createElement('canvas');
@@ -50,50 +50,54 @@
         // Click sparkle burst effect
         let clickBursts = [];
         window.addEventListener('click', (e) => {
-            const burstCount = 14;
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light';
+            const burstCount = 16;
             const x = e.clientX;
             const y = e.clientY;
             for (let i = 0; i < burstCount; i++) {
-                const angle = (Math.PI * 2 / burstCount) * i + (Math.random() - 0.5) * 0.4;
-                const speed = 2 + Math.random() * 4.5;
+                const angle = (Math.PI * 2 / burstCount) * i + (Math.random() - 0.5) * 0.5;
+                const speed = 2.5 + Math.random() * 5.0;
                 clickBursts.push({
                     x: x,
                     y: y,
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed,
-                    size: 2 + Math.random() * 3,
+                    size: 2.5 + Math.random() * 3.5,
                     life: 1.0,
                     decay: 0.02 + Math.random() * 0.02,
-                    color: Math.random() > 0.5 ? '212, 175, 55' : '76, 175, 160'
+                    color: isLight
+                        ? (Math.random() > 0.5 ? '180, 130, 30' : '40, 140, 130')
+                        : (Math.random() > 0.5 ? '212, 175, 55' : '76, 175, 160')
                 });
             }
         });
 
-        // Vibrant multi-hue palette for rich dynamic aura
+        // Vibrant multi-hue palette for rich dynamic aura in both themes
         const PALETTES = {
             dark: [
-                { r: 212, g: 175, b: 55,  a: 0.38 }, // Radiant Amber Gold
-                { r: 76,  g: 175, b: 160, a: 0.32 }, // Emerald Teal
-                { r: 231, g: 76,  b: 60,  a: 0.28 }, // Coral Crimson
-                { r: 155, g: 89,  b: 182, a: 0.25 }, // Amethyst Purple
-                { r: 52,  g: 152, b: 219, a: 0.28 }, // Azure Sky
-                { r: 241, g: 196, b: 15,  a: 0.30 }, // Sunburst Gold
-                { r: 46,  g: 204, b: 113, a: 0.24 }, // Mint Emerald
-                { r: 230, g: 126, b: 34,  a: 0.26 }  // Warm Amber
+                { r: 212, g: 175, b: 55,  a: 0.40 }, // Radiant Amber Gold
+                { r: 76,  g: 175, b: 160, a: 0.35 }, // Emerald Teal
+                { r: 231, g: 76,  b: 60,  a: 0.30 }, // Coral Crimson
+                { r: 155, g: 89,  b: 182, a: 0.28 }, // Amethyst Purple
+                { r: 52,  g: 152, b: 219, a: 0.30 }, // Azure Sky
+                { r: 241, g: 196, b: 15,  a: 0.32 }, // Sunburst Gold
+                { r: 46,  g: 204, b: 113, a: 0.26 }, // Mint Emerald
+                { r: 230, g: 126, b: 34,  a: 0.28 }  // Warm Amber
             ],
             light: [
-                { r: 212, g: 175, b: 55,  a: 0.24 }, // Soft Gold
-                { r: 76,  g: 175, b: 160, a: 0.20 }, // Soft Teal
-                { r: 230, g: 120, b: 110, a: 0.18 }, // Soft Coral
-                { r: 160, g: 110, b: 190, a: 0.16 }, // Soft Violet
-                { r: 90,  g: 170, b: 210, a: 0.18 }, // Soft Sky
-                { r: 240, g: 180, b: 80,  a: 0.20 }  // Soft Honey
+                { r: 199, g: 154, b: 62,  a: 0.38 }, // Rich Honey Gold
+                { r: 41,  g: 128, b: 185, a: 0.34 }, // Vibrant Azure
+                { r: 231, g: 76,  b: 60,  a: 0.30 }, // Rich Coral
+                { r: 142, g: 68,  b: 173, a: 0.30 }, // Royal Orchid Violet
+                { r: 39,  g: 174, b: 96,  a: 0.30 }, // Spring Emerald
+                { r: 230, g: 126, b: 34,  a: 0.34 }, // Warm Tangerine
+                { r: 26,  g: 188, b: 156, a: 0.32 }, // Turquoise Mint
+                { r: 212, g: 175, b: 55,  a: 0.36 }  // Pure Gold
             ]
         };
 
-        function getThemePalette() {
-            const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light';
-            return isLight ? PALETTES.light : PALETTES.dark;
+        function isLightTheme() {
+            return document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light';
         }
 
         class AuroraOrb {
@@ -105,30 +109,30 @@
             reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.radius = Math.max(width, height) * (0.26 + Math.random() * 0.24);
-                this.vx = (Math.random() - 0.5) * 0.7;
-                this.vy = (Math.random() - 0.5) * 0.7;
+                this.radius = Math.max(width, height) * (0.28 + Math.random() * 0.24);
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
                 this.angle = Math.random() * Math.PI * 2;
                 this.angleSpeed = 0.004 + Math.random() * 0.006;
                 this.pulseSpeed = 0.012 + Math.random() * 0.018;
                 this.pulseAngle = Math.random() * Math.PI * 2;
             }
 
-            update(time, palette) {
+            update(time, palette, isLight) {
                 this.angle += this.angleSpeed;
                 this.pulseAngle += this.pulseSpeed;
 
                 // Fluid wave displacement
-                this.x += this.vx + Math.sin(this.angle) * 1.2;
-                this.y += this.vy + Math.cos(this.angle * 0.8) * 1.2;
+                this.x += this.vx + Math.sin(this.angle) * 1.3;
+                this.y += this.vy + Math.cos(this.angle * 0.8) * 1.3;
 
                 // React smoothly to mouse movement
                 const dx = mouseX - this.x;
                 const dy = mouseY - this.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 450 && dist > 0 && isHovering) {
-                    this.x += (dx / dist) * 0.5;
-                    this.y += (dy / dist) * 0.5;
+                if (dist < 480 && dist > 0 && isHovering) {
+                    this.x += (dx / dist) * 0.6;
+                    this.y += (dy / dist) * 0.6;
                 }
 
                 // Bounce gently within boundaries
@@ -145,10 +149,17 @@
                     this.x, this.y, currentRadius
                 );
 
-                gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`);
-                gradient.addColorStop(0.4, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.45})`);
-                gradient.addColorStop(0.8, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.12})`);
-                gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+                if (isLight) {
+                    gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.85})`);
+                    gradient.addColorStop(0.35, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.45})`);
+                    gradient.addColorStop(0.75, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.12})`);
+                    gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+                } else {
+                    gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`);
+                    gradient.addColorStop(0.4, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.45})`);
+                    gradient.addColorStop(0.8, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.12})`);
+                    gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+                }
 
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
@@ -166,15 +177,15 @@
             reset() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.size = Math.random() * 2.2 + 0.8;
+                this.size = Math.random() * 2.4 + 0.8;
                 this.vx = (Math.random() - 0.5) * 0.4;
-                this.vy = -(0.2 + Math.random() * 0.5); // float upward
+                this.vy = -(0.25 + Math.random() * 0.55); // float upward
                 this.opacity = Math.random() * 0.7 + 0.2;
                 this.twinkleSpeed = 0.02 + Math.random() * 0.03;
                 this.twinkleAngle = Math.random() * Math.PI * 2;
             }
 
-            update() {
+            update(isLight) {
                 this.x += this.vx;
                 this.y += this.vy;
                 this.twinkleAngle += this.twinkleSpeed;
@@ -186,9 +197,14 @@
                 if (this.x < -10) this.x = width + 10;
                 if (this.x > width + 10) this.x = -10;
 
-                const currentAlpha = Math.max(0.1, Math.min(0.85, this.opacity + Math.sin(this.twinkleAngle) * 0.3));
+                const currentAlpha = Math.max(0.12, Math.min(0.9, this.opacity + Math.sin(this.twinkleAngle) * 0.3));
 
-                ctx.fillStyle = `rgba(240, 215, 140, ${currentAlpha})`;
+                if (isLight) {
+                    ctx.fillStyle = `rgba(160, 115, 30, ${currentAlpha * 0.8})`;
+                } else {
+                    ctx.fillStyle = `rgba(240, 215, 140, ${currentAlpha})`;
+                }
+
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -198,7 +214,7 @@
         let orbs = [];
         let particles = [];
         const ORB_COUNT = 8;
-        const PARTICLE_COUNT = Math.min(48, Math.max(24, Math.floor(width / 30)));
+        const PARTICLE_COUNT = Math.min(52, Math.max(26, Math.floor(width / 28)));
 
         function initOrbs() {
             orbs = [];
@@ -218,32 +234,44 @@
             mouseX += (targetMouseX - mouseX) * 0.06;
             mouseY += (targetMouseY - mouseY) * 0.06;
 
+            const isLight = isLightTheme();
             ctx.clearRect(0, 0, width, height);
-            ctx.globalCompositeOperation = 'screen';
 
-            const palette = getThemePalette();
+            if (isLight) {
+                ctx.globalCompositeOperation = 'source-over';
+            } else {
+                ctx.globalCompositeOperation = 'screen';
+            }
+
+            const palette = isLight ? PALETTES.light : PALETTES.dark;
 
             // 1. Draw glowing aurora orbs
             for (let i = 0; i < orbs.length; i++) {
-                orbs[i].update(time, palette);
+                orbs[i].update(time, palette, isLight);
             }
 
             // 2. Draw mouse halo orb
             if (isHovering) {
-                const mouseGrad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 220);
-                mouseGrad.addColorStop(0, 'rgba(212, 175, 55, 0.18)');
-                mouseGrad.addColorStop(0.5, 'rgba(76, 175, 160, 0.08)');
-                mouseGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                const mouseGrad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 240);
+                if (isLight) {
+                    mouseGrad.addColorStop(0, 'rgba(199, 154, 62, 0.22)');
+                    mouseGrad.addColorStop(0.5, 'rgba(41, 128, 185, 0.10)');
+                    mouseGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                } else {
+                    mouseGrad.addColorStop(0, 'rgba(212, 175, 55, 0.22)');
+                    mouseGrad.addColorStop(0.5, 'rgba(76, 175, 160, 0.10)');
+                    mouseGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                }
                 ctx.fillStyle = mouseGrad;
                 ctx.beginPath();
-                ctx.arc(mouseX, mouseY, 220, 0, Math.PI * 2);
+                ctx.arc(mouseX, mouseY, 240, 0, Math.PI * 2);
                 ctx.fill();
             }
 
             // 3. Draw stardust particles
             ctx.globalCompositeOperation = 'source-over';
             for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
+                particles[i].update(isLight);
             }
 
             // 4. Draw click burst sparks
