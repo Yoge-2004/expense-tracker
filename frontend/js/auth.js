@@ -69,18 +69,15 @@ function initGoogleSignIn() {
             cancel_on_tap_outside: true
         });
 
-        const containers = document.querySelectorAll("#googleBtnContainer, .google-btn-container");
-        containers.forEach(container => {
-            const parentWidth = container.parentElement?.getBoundingClientRect().width || 380;
+        const realButtons = document.querySelectorAll("#googleRealButton, .google-real-btn");
+        realButtons.forEach(btnContainer => {
+            const parentWidth = btnContainer.parentElement?.getBoundingClientRect().width || 380;
             const width = Math.min(Math.max(Math.round(parentWidth) || 360, 280), 440);
-            google.accounts.id.renderButton(container, {
-                theme: document.documentElement.getAttribute("data-theme") === "light" ? "outline" : "filled_black",
-                size: "large",
+            google.accounts.id.renderButton(btnContainer, {
                 type: "standard",
-                shape: "rectangular",
-                text: "continue_with",
-                logo_alignment: "center",
-                width: width
+                size: "large",
+                width: width,
+                height: 48
             });
         });
     } catch (e) {

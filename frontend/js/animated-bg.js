@@ -43,24 +43,28 @@
 
         // Floating Aurora Glowing Orbs
         let orbs = [];
-        const ORB_COUNT = 6;
+        const ORB_COUNT = 8;
 
         const PALETTES = {
             dark: [
-                { r: 199, g: 154, b: 62, a: 0.28 },  // Gold
-                { r: 76,  g: 122, b: 120, a: 0.24 }, // Teal
-                { r: 162, g: 62,  b: 50,  a: 0.22 }, // Wine Red
-                { r: 212, g: 175, b: 55,  a: 0.20 }, // Bright Amber
-                { r: 42,  g: 157, b: 143, a: 0.22 }, // Emerald Cyan
-                { r: 142, g: 68,  b: 173, a: 0.16 }  // Deep Purple
+                { r: 199, g: 154, b: 62, a: 0.40 },  // Rich Gold
+                { r: 76,  g: 122, b: 120, a: 0.35 }, // Emerald Teal
+                { r: 162, g: 62,  b: 50,  a: 0.32 }, // Royal Wine Red
+                { r: 212, g: 175, b: 55,  a: 0.35 }, // Bright Radiant Amber
+                { r: 42,  g: 157, b: 143, a: 0.30 }, // Cyan Turquoise
+                { r: 142, g: 68,  b: 173, a: 0.26 }, // Deep Violet
+                { r: 230, g: 126, b: 34,  a: 0.28 }, // Warm Coral
+                { r: 46,  g: 204, b: 113, a: 0.22 }  // Spring Mint
             ],
             light: [
-                { r: 212, g: 175, b: 55,  a: 0.18 }, // Soft Gold
-                { r: 76,  g: 175, b: 160, a: 0.16 }, // Soft Teal
-                { r: 220, g: 100, b: 90,  a: 0.14 }, // Soft Coral
-                { r: 180, g: 140, b: 60,  a: 0.15 }, // Warm Amber
-                { r: 90,  g: 180, b: 190, a: 0.14 }, // Soft Sky
-                { r: 180, g: 120, b: 200, a: 0.12 }  // Soft Lavender
+                { r: 212, g: 175, b: 55,  a: 0.25 }, // Soft Gold
+                { r: 76,  g: 175, b: 160, a: 0.22 }, // Soft Teal
+                { r: 220, g: 100, b: 90,  a: 0.20 }, // Soft Coral
+                { r: 180, g: 140, b: 60,  a: 0.22 }, // Warm Amber
+                { r: 90,  g: 180, b: 190, a: 0.18 }, // Soft Sky
+                { r: 180, g: 120, b: 200, a: 0.16 }, // Soft Lavender
+                { r: 100, g: 200, b: 150, a: 0.18 }, // Soft Mint
+                { r: 240, g: 160, b: 80,  a: 0.20 }  // Soft Peach
             ]
         };
 
