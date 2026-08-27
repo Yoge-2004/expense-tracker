@@ -6286,3 +6286,66 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .toast {
     animation: toastSpringSlide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
 }
+
+/* ==========================================================================
+   GLOBAL INTERACTION & CASCADE ANIMATIONS ACROSS ALL PAGES
+   ========================================================================== */
+
+/* Universal Stagger Delays for Grid/List Elements */
+.stagger-1, .cascade-1 { animation-delay: 0.05s !important; }
+.stagger-2, .cascade-2 { animation-delay: 0.10s !important; }
+.stagger-3, .cascade-3 { animation-delay: 0.15s !important; }
+.stagger-4, .cascade-4 { animation-delay: 0.20s !important; }
+.stagger-5, .cascade-5 { animation-delay: 0.25s !important; }
+.stagger-6, .cascade-6 { animation-delay: 0.30s !important; }
+.stagger-7, .cascade-7 { animation-delay: 0.35s !important; }
+.stagger-8, .cascade-8 { animation-delay: 0.40s !important; }
+.stagger-9, .cascade-9 { animation-delay: 0.45s !important; }
+.stagger-10, .cascade-10 { animation-delay: 0.50s !important; }
+
+/* Interactive Hover Vibrancy for Table Rows & Lists */
+.table tbody tr, .transaction-item, .activity-item, .budget-item, .debt-item {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s ease, box-shadow 0.22s ease !important;
+}
+.table tbody tr:hover, .transaction-item:hover, .activity-item:hover, .budget-item:hover, .debt-item:hover {
+    transform: scale(1.01) translateX(4px) !important;
+    background: rgba(var(--primary-rgb), 0.08) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Glass Card 3D Depth on Hover */
+.card, .metric-card, .chart-card, .transactions-card, .budget-card, .float-card, .perk-item {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease !important;
+}
+.card:hover, .metric-card:hover, .chart-card:hover, .transactions-card:hover, .budget-card:hover {
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 16px 36px -10px rgba(var(--primary-rgb), 0.25), 0 0 16px rgba(var(--primary-rgb), 0.10) !important;
+}
+
+/* Navigation Links Dynamic Underline */
+.nav-link, .sidebar-nav a, .tab-btn {
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.nav-link:hover, .sidebar-nav a:hover, .tab-btn:hover {
+    transform: translateX(4px) !important;
+    color: var(--primary) !important;
+}
+
+/* Category & Filter Pill Spring Scale */
+.category-pill, .filter-chip, .suggestion-chip, .currency-chip {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.category-pill:hover, .filter-chip:hover, .suggestion-chip:hover, .currency-chip:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.22) !important;
+}
+
+/* Form Input Glowing Micro-Interactions */
+.form-input, .command-search-input, select {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.form-input:hover, .command-search-input:hover {
+    border-color: rgba(var(--primary-rgb), 0.5) !important;
+}
