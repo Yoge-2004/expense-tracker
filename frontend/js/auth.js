@@ -68,8 +68,23 @@ function initGoogleSignIn() {
             auto_select: false,
             cancel_on_tap_outside: true
         });
+
+        const containers = document.querySelectorAll("#googleBtnContainer, .google-btn-container");
+        containers.forEach(container => {
+            const parentWidth = container.parentElement?.getBoundingClientRect().width || 380;
+            const width = Math.min(Math.max(Math.round(parentWidth) || 360, 280), 440);
+            google.accounts.id.renderButton(container, {
+                theme: document.documentElement.getAttribute("data-theme") === "light" ? "outline" : "filled_black",
+                size: "large",
+                type: "standard",
+                shape: "rectangular",
+                text: "continue_with",
+                logo_alignment: "center",
+                width: width
+            });
+        });
     } catch (e) {
-        // Silently continue if initial load fails
+        console.warn("Google Sign-In initialization:", e);
     }
 }
 
@@ -125,11 +140,11 @@ function handleGoogleOAuth() {
                 setTimeout(() => {
                     setGoogleButtonLoading(false);
                     if (reason === "opt_out_or_no_session") {
-                        showToast("Please sign in to your Google Account first or allow third-party cookies.", "info");
+                        showToast("Please select your Google Account or sign in using the Google button.", "info");
                     } else if (reason === "suppressed_by_user") {
-                        showToast("Google prompt was dismissed recently. Please try again in a few moments.", "info");
+                        showToast("Google prompt was dismissed recently. Please click the Google button to sign in.", "info");
                     } else {
-                        showToast("Google Sign-In prompt unavailable. Make sure this site's URL is in Authorized JavaScript Origins in Google Cloud Console.", "info");
+                        showToast("Make sure this site's URL is added to Authorized JavaScript Origins in Google Cloud Console.", "info");
                     }
                 }, 1000);
             } else if (notification.isSkippedMoment()) {
@@ -144,5 +159,15 @@ function handleGoogleOAuth() {
 
 document.addEventListener("DOMContentLoaded", () => {
     initGoogleSignIn();
+    let attempts = 0;
+    const interval = setInterval(() => {
+        attempts++;
+        if (window.google?.accounts?.id) {
+            initGoogleSignIn();
+            clearInterval(interval);
+        } else if (attempts > 15) {
+            clearInterval(interval);
+        }
+    }, 250);
 });
 
