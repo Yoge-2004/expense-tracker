@@ -4866,3 +4866,289 @@ button[type="submit"]:active {
 #openModalBtn:hover {
     animation: btnPulseGlow 1.8s infinite;
 }
+
+/* ==========================================================================
+   ADDITIONAL 22 ADVANCED MICRO-ANIMATIONS (TOTAL 39+ SYSTEM)
+   ========================================================================== */
+
+/* 18. Particle Sparkle Burst on Action */
+@keyframes sparkleBurst {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    50% { opacity: 0.9; }
+    100% { transform: scale(1.6) rotate(180deg); opacity: 0; }
+}
+
+.sparkle-burst {
+    position: absolute;
+    pointer-events: none;
+    animation: sparkleBurst 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 19. Budget Goal Confetti Flutter */
+@keyframes confettiFlutter {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+}
+
+.confetti-particle {
+    position: absolute;
+    width: 6px;
+    height: 10px;
+    border-radius: 2px;
+    animation: confettiFlutter 1.4s ease-out forwards;
+    pointer-events: none;
+}
+
+/* 20. Glossy Holographic Card Light Sweep */
+@keyframes glossySweep {
+    0% { transform: translateX(-120%) rotate(25deg); opacity: 0; }
+    40% { opacity: 0.25; }
+    100% { transform: translateX(220%) rotate(25deg); opacity: 0; }
+}
+
+.metric-card::before,
+.insight-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--primary-rgb), 0.18),
+        transparent
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.metric-card:hover::before,
+.insight-card:hover::before {
+    animation: glossySweep 0.95s cubic-bezier(0.2, 0.8, 0.4, 1);
+}
+
+/* 21. Neon Ambient Glowing Border on Open Modals */
+@keyframes modalBorderGlow {
+    0%, 100% {
+        border-color: rgba(var(--primary-rgb), 0.4);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--primary-rgb), 0.25);
+    }
+    50% {
+        border-color: rgba(76, 122, 120, 0.6);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(76, 122, 120, 0.4);
+    }
+}
+
+.modal-overlay.active .modal {
+    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               modalBorderGlow 4s ease-in-out infinite alternate !important;
+}
+
+/* 22. Chart Container Hover Lift & Canvas Glow */
+@keyframes chartSegmentPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1.01); }
+}
+
+.chart-wrapper:hover,
+.trend-chart-wrapper:hover {
+    filter: drop-shadow(0 8px 18px rgba(var(--primary-rgb), 0.15));
+    transition: filter 0.3s ease;
+}
+
+/* 23. Sliding Underline / Active Tab Indicator */
+@keyframes tabSlideIndicator {
+    0% { transform: scaleX(0.4); opacity: 0; }
+    100% { transform: scaleX(1); opacity: 1; }
+}
+
+.profile-menu a:hover {
+    background: rgba(var(--primary-rgb), 0.08);
+    transform: translateX(3px);
+    transition: all 0.2s ease;
+}
+
+/* 24. Skeleton Loading Shimmer Wave */
+@keyframes skeletonShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-loading {
+    background: linear-gradient(90deg, var(--input-bg) 25%, rgba(var(--primary-rgb), 0.08) 50%, var(--input-bg) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.8s infinite linear;
+    border-radius: 8px;
+}
+
+/* 25. Animated SVG Stroke Draw for Checkmarks */
+@keyframes strokeDrawCheck {
+    0% { stroke-dashoffset: 50; }
+    100% { stroke-dashoffset: 0; }
+}
+
+.svg-check-draw path {
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+    animation: strokeDrawCheck 0.45s ease-out forwards;
+}
+
+/* 26. Delete Warning Pulse Shockwave */
+@keyframes deleteWarningPulse {
+    0% { box-shadow: 0 0 0 0 rgba(162, 62, 50, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(162, 62, 50, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(162, 62, 50, 0); }
+}
+
+.btn-delete:hover,
+#deleteAccountBtn:hover {
+    animation: deleteWarningPulse 1.2s infinite;
+}
+
+/* 27. Floating Pro Tag Diamond Ping */
+@keyframes proPing {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.08); filter: brightness(1.25); text-shadow: 0 0 8px rgba(var(--primary-rgb), 0.8); }
+}
+
+.pro-badge,
+.pro-tag {
+    animation: proPing 3s ease-in-out infinite;
+}
+
+/* 28. Budget Health Gauge Breathing Ring */
+@keyframes gaugeBreathe {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(76, 122, 120, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(76, 122, 120, 0.15);
+    }
+}
+
+.insights-panel-meta {
+    animation: gaugeBreathe 2.5s infinite ease-in-out;
+}
+
+/* 29. Form Button Submit Success Morph */
+@keyframes btnSuccessMorph {
+    0% { transform: scale(0.96); background: var(--primary); }
+    50% { transform: scale(1.04); background: #27ae60; box-shadow: 0 0 20px rgba(39, 174, 96, 0.6); }
+    100% { transform: scale(1); background: #27ae60; }
+}
+
+.btn-success-morph {
+    animation: btnSuccessMorph 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* 30. Smooth Accordion Filter Drawer Slide */
+@keyframes filterDrawerSlide {
+    0% { opacity: 0; transform: translateY(-12px); max-height: 0; }
+    100% { opacity: 1; transform: translateY(0); max-height: 600px; }
+}
+
+.filter-panel.active {
+    animation: filterDrawerSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 31. Interactive Magnetic Avatar Float & Glow */
+@keyframes avatarGlow {
+    0%, 100% { box-shadow: 0 0 0 2px var(--border); }
+    50% { box-shadow: 0 0 0 3px var(--primary), 0 0 14px rgba(var(--primary-rgb), 0.4); }
+}
+
+.avatar:hover {
+    transform: scale(1.08) rotate(3deg);
+    animation: avatarGlow 2s infinite ease-in-out;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 32. Table Header Gradient Drift */
+@keyframes headerGradientDrift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.list-header {
+    background-size: 200% 200%;
+    animation: headerGradientDrift 12s ease infinite;
+}
+
+/* 33. Sync & Refresh Icon Spin */
+@keyframes syncRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.btn-icon:hover svg,
+.btn-text-icon:hover svg {
+    transform: rotate(15deg) scale(1.1);
+    transition: transform 0.25s ease;
+}
+
+/* 34. Dynamic Shadow Lift on Cards */
+@keyframes floatLift {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.float-card-1 { animation: floatLift 4s ease-in-out infinite; }
+.float-card-2 { animation: floatLift 4.5s ease-in-out infinite 0.5s; }
+.float-card-3 { animation: floatLift 5s ease-in-out infinite 1s; }
+
+/* 35. Tooltip Elastic Pop */
+@keyframes tooltipElasticPop {
+    0% { transform: scale(0.8) translateY(6px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+[title]:hover::after {
+    animation: tooltipElasticPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 36. Field Verified Flash */
+@keyframes validFieldFlash {
+    0% { border-color: var(--border); }
+    50% { border-color: #27ae60; box-shadow: 0 0 10px rgba(39, 174, 96, 0.35); }
+    100% { border-color: rgba(39, 174, 96, 0.5); }
+}
+
+.is-valid {
+    animation: validFieldFlash 0.4s ease-out forwards;
+}
+
+/* 37. Presets Bar Glide In */
+@keyframes presetsGlideIn {
+    0% { transform: translateX(-15px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.filter-quick-presets {
+    animation: presetsGlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 38. Smart Intelligence Star Accent Pulse */
+@keyframes pulseSparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+    50% { transform: scale(1.25) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 6px var(--primary)); }
+}
+
+.insights-badge svg {
+    animation: pulseSparkle 2.5s ease-in-out infinite;
+}
+
+/* 39. Aurora Color Shift Cycle */
+@keyframes auroraColorCycle {
+    0%   { filter: hue-rotate(0deg); }
+    50%  { filter: hue-rotate(30deg); }
+    100% { filter: hue-rotate(0deg); }
+}
+
+.auth-hero-bg {
+    animation: auroraColorCycle 20s infinite alternate linear;
+}

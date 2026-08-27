@@ -37,7 +37,7 @@ function setGoogleButtonLoading(loading, message = "Connecting to Google...") {
         if (loading) {
             btn.classList.add("is-loading");
             btn.innerHTML = `
-                <div class="spinner-sm"></div>
+                <div class="spinner-sm" style="display:inline-block; vertical-align:middle; margin-right:8px;"></div>
                 <span>${message}</span>
             `;
         } else {
@@ -61,24 +61,15 @@ function isGoogleSignInConfigured() {
 
 function initGoogleSignIn() {
     if (!isGoogleSignInConfigured() || !window.google?.accounts?.id) return;
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredentialResponse
-    });
-
-    const realBtnContainer = document.getElementById("googleRealButton");
-    if (realBtnContainer) {
-        realBtnContainer.addEventListener("click", () => {
-            setGoogleButtonLoading(true, "Connecting to Google...");
-            showToast("Connecting to Google...", "info");
-            setTimeout(() => {
-                if (!localStorage.getItem("token")) {
-                    setGoogleButtonLoading(false);
-                }
-            }, 8000);
+    try {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
         });
-        const width = Math.min(Math.round(realBtnContainer.getBoundingClientRect().width) || 300, 400);
-        google.accounts.id.renderButton(realBtnContainer, { type: "standard", width, height: 44 });
+    } catch (e) {
+        // Silently continue if initial load fails
     }
 }
 
@@ -113,29 +104,30 @@ function handleGoogleOAuth() {
     if (!isGoogleSignInConfigured()) {
         setTimeout(() => {
             setGoogleButtonLoading(false);
-            showToast("Google Sign-In isn't set up yet — add a real Client ID in js/config.js.", "error");
-        }, 500);
+            showToast("Google Sign-In isn't configured with a live Client ID in js/config.js. Please sign in with username/email.", "info");
+        }, 1200);
         return;
     }
+
     if (!window.google?.accounts?.id) {
         setTimeout(() => {
             setGoogleButtonLoading(false);
-            showToast("Google Sign-In is still loading — please try again in a moment.", "error");
-        }, 500);
+            showToast("Google authentication service is still loading — please try again in a moment.", "info");
+        }, 1200);
         return;
     }
 
-    setTimeout(() => {
-        if (!localStorage.getItem("token")) {
-            setGoogleButtonLoading(false);
-        }
-    }, 8000);
-
-    google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            setGoogleButtonLoading(false);
-        }
-    });
+    try {
+        initGoogleSignIn();
+        google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                setTimeout(() => { setGoogleButtonLoading(false); }, 1500);
+            }
+        });
+    } catch (e) {
+        setGoogleButtonLoading(false);
+        showToast("Unable to open Google prompt: " + e.message, "error");
+    }
 }
 
 document.addEventListener("DOMContentLoaded", initGoogleSignIn);
