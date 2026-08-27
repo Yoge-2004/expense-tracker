@@ -97,6 +97,64 @@ async function handleGoogleCredentialResponse(credentialResponse) {
     }
 }
 
+function openGoogleOAuthPopup() {
+    const nonce = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const redirectUri = window.location.origin + window.location.pathname;
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20email%20profile&nonce=${nonce}&prompt=select_account`;
+
+    const width = 500;
+    const height = 620;
+    const left = Math.max(0, (window.screen.width - width) / 2);
+    const top = Math.max(0, (window.screen.height - height) / 2);
+
+    const popup = window.open(authUrl, "google_oauth_popup", `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,menubar=no,location=no`);
+
+    if (!popup || popup.closed || typeof popup.closed === "undefined") {
+        setGoogleButtonLoading(false);
+        showToast("Popup was blocked by your browser. Please allow popups for this site.", "error");
+        return;
+    }
+
+    // Keep the spinner visible while the popup is open
+    const popupTimer = setInterval(() => {
+        try {
+            if (popup.closed) {
+                clearInterval(popupTimer);
+                setTimeout(() => {
+                    if (!localStorage.getItem("token")) {
+                        setGoogleButtonLoading(false);
+                    }
+                }, 800);
+            }
+        } catch (e) {
+            // Cross-origin access error while on google.com is expected
+        }
+    }, 500);
+}
+
+function checkUrlForGoogleIdToken() {
+    const hash = window.location.hash;
+    if (hash && hash.includes("id_token=")) {
+        const params = new URLSearchParams(hash.substring(1));
+        const idToken = params.get("id_token");
+        if (idToken) {
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ type: "GOOGLE_ID_TOKEN", idToken }, window.location.origin);
+                window.close();
+            } else {
+                window.history.replaceState(null, "", window.location.pathname + window.location.search);
+                handleGoogleCredentialResponse({ credential: idToken });
+            }
+        }
+    }
+}
+
+window.addEventListener("message", (event) => {
+    if (event.origin === window.location.origin && event.data?.type === "GOOGLE_ID_TOKEN") {
+        handleGoogleCredentialResponse({ credential: event.data.idToken });
+    }
+});
+
 function handleGoogleOAuth() {
     setGoogleButtonLoading(true, "Connecting to Google...");
     showToast("Connecting to Google...", "info");
@@ -109,26 +167,26 @@ function handleGoogleOAuth() {
         return;
     }
 
-    if (!window.google?.accounts?.id) {
-        setTimeout(() => {
-            setGoogleButtonLoading(false);
-            showToast("Google authentication service is still loading — please try again in a moment.", "info");
-        }, 1200);
-        return;
-    }
-
-    try {
-        initGoogleSignIn();
-        google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                setTimeout(() => { setGoogleButtonLoading(false); }, 1500);
-            }
-        });
-    } catch (e) {
-        setGoogleButtonLoading(false);
-        showToast("Unable to open Google prompt: " + e.message, "error");
+    // Try Google GIS One-Tap first; if not displayed, open Google OAuth account popup
+    if (window.google?.accounts?.id) {
+        try {
+            initGoogleSignIn();
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    // Fall back to standard Google OAuth popup
+                    openGoogleOAuthPopup();
+                }
+            });
+        } catch (e) {
+            openGoogleOAuthPopup();
+        }
+    } else {
+        openGoogleOAuthPopup();
     }
 }
 
-document.addEventListener("DOMContentLoaded", initGoogleSignIn);
+document.addEventListener("DOMContentLoaded", () => {
+    checkUrlForGoogleIdToken();
+    initGoogleSignIn();
+});
 
