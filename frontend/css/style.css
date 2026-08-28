@@ -4428,7 +4428,14 @@ button[type="submit"]:active {
 /* ── Extra small screens (phones < 480px) ── */
 @media (max-width: 480px) {
     .dashboard-container {
-        padding: 16px 12px 32px !important;
+        /* Was 16px 12px 32px — most phones fall under this 480px
+           breakpoint (not just unusually small ones), so this was the
+           padding nearly everyone actually saw, and 12px read as the
+           Record Expense button, theme toggle, and search bar sitting
+           flush against the screen edges with no margin. Matching the
+           20px horizontal padding used at the wider 900px tier instead
+           of shrinking it further. */
+        padding: 20px 20px 40px !important;
         gap: 14px !important;
     }
 

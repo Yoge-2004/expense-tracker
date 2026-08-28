@@ -625,7 +625,9 @@ setBudgetForm?.addEventListener("submit", async (e) => {
             })
         });
         showToast("Budget limit saved.", "success");
-        setBudgetModal.classList.remove("active");
+        // Same fix as the expense form: go through closeModal() so
+        // body's scroll-lock class actually gets cleared.
+        closeModal(setBudgetModal);
         loadBudgets();
     } catch (err) {
         showToast(err.message, "error");
@@ -1273,7 +1275,15 @@ elements.addForm.addEventListener("submit", async (e) => {
             showToast("Expense added.", "success");
         }
 
-        elements.modal.classList.remove("active");
+        // Was elements.modal.classList.remove("active") directly, which
+        // skips closeModal()'s cleanup of document.body's "modal-open"
+        // class (added by openModal() to lock background scroll while
+        // the modal is up). Every other close path in this file — the
+        // X button, clicking the overlay, Escape — goes through
+        // closeModal() and was fine; this success path was the one
+        // exception, so submitting the form left the page unscrollable
+        // until a full refresh reset body's class list.
+        closeModal(elements.modal);
         elements.addForm.reset();
         loadDashboard(true);
     } catch (err) {
