@@ -3467,13 +3467,14 @@ button[type="submit"]:active {
         flex-wrap: wrap !important;
         align-items: center !important;
         justify-content: space-between !important;
-        /* Was 10px. This is the actual spacing between Record Expense,
-           the theme toggle, and the search bar — the outer margin fixed
-           previously was dashboard-container's padding (screen edge to
-           this box), a separate property from the gap between this
-           box's own children. */
         gap: 16px !important;
         width: 100% !important;
+        box-sizing: border-box !important;
+        /* This is the actual fix requested: padding, not gap. gap only
+           controls spacing *between* the button/icon/search-bar as
+           siblings — it does nothing for the space between this box's
+           own edge and each of them. Padding is what creates that. */
+        padding: 0 14px !important;
     }
 
     .command-search-wrapper {
