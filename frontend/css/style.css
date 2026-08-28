@@ -3401,6 +3401,15 @@ button[type="submit"]:active {
         width: 100% !important;
         padding: 32px 20px 48px !important;
         box-sizing: border-box !important;
+        /* Same bug as .auth-hero had: the desktop base rule's
+           min-height: 100vh (for the 2-column split-screen layout) was
+           never reset here, so on mobile the form panel was still forced
+           to a full screen height even though the sign-in card itself is
+           much shorter — leaving a trailing blank gap of hero-background
+           below the card once scrolled into view. */
+        min-height: auto !important;
+        height: auto !important;
+        overflow-y: visible !important;
     }
 
     .auth-card {
