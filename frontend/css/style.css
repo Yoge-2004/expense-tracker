@@ -3866,6 +3866,17 @@ button[type="submit"]:active {
     color: var(--danger) !important;
 }
 
+/* This block is desktop-only styling (the 80px left padding is the
+   2-column split-screen layout's indent) but was unscoped and !important,
+   so on mobile it silently beat the @media (max-width: 900px) .auth-hero
+   rule above — which sets min-height: auto and overflow: visible so the
+   hero stacks normally in the page's flow. With this forcing
+   min-height: 100vh !important back on regardless of width, the hero
+   panel was padded out to a full screen height of mostly-empty background
+   even though its actual content (headline/subline/perks) is far shorter,
+   leaving a large blank gap above/below the visible content as the page
+   scrolled. Scoping to desktop widths restores the mobile fix. */
+@media (min-width: 901px) {
 .auth-hero {
     background: transparent !important;
     position: relative;
@@ -3900,6 +3911,7 @@ button[type="submit"]:active {
     bottom: 0;
     left: 0;
     pointer-events: none;
+}
 }
 
 /* ── Auth card improvements ── */
