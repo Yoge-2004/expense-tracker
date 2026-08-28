@@ -2498,6 +2498,18 @@ button[type="submit"]:active {
     /* margin-bottom moved to the .auth-top-actions wrapper now that
        .hero-brand lives inside it as a flex sibling of the theme toggle —
        keeping it here too would double the spacing before the headline. */
+
+    /* .auth-top-actions centers its two flex children (align-items:
+       center), but that only centers each child's own box — it doesn't
+       make the two boxes the same height. .hero-brand's box height was
+       determined by .hero-brand-icon at 38px, while .theme-toggle-btn is
+       a fixed 42px, so the row centered two different-height boxes
+       around the same line: correct on the math, but visibly off,
+       because a few px of asymmetric padding/box-shadow on each element
+       reads as "not aligned" well before it reads as "different sizes".
+       Matching the height directly removes the discrepancy instead of
+       relying on centering two unequal boxes to look flush. */
+    min-height: 42px;
 }
 
 .hero-brand-icon {
