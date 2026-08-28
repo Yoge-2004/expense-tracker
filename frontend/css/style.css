@@ -795,6 +795,13 @@ button[type="submit"]:active {
     justify-content: center;
     font-weight: 700;
     box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3);
+    /* Without this, the text renders in a line box using the page's
+       default line-height (~1.5), and centering that box (rather than
+       the glyph itself) leaves visibly more space above the letter than
+       below it. line-height: 1 shrinks the line box down to the glyph's
+       own height so align-items/place-items center what's actually
+       visible. */
+    line-height: 1;
 }
 
 .profile-menu {
