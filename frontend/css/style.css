@@ -3329,9 +3329,16 @@ button[type="submit"]:active {
         margin-left: 0 !important;
         min-width: 0 !important;
         flex: 1 1 auto !important;
-        align-items: flex-start !important;
-        min-height: 74px !important;
+        align-items: center !important;
         box-sizing: border-box !important;
+        /* Was min-height: 74px !important + align-items: flex-start —
+           that was working around .float-card-value wrapping to 2 lines
+           and making the card taller than its neighbor. Now that the
+           value is clamped to one line (below), every card naturally
+           lands at the same, shorter height on its own, so forcing an
+           extra floor just left empty space under the text. Tightened
+           padding too, for a noticeably smaller card as asked. */
+        padding: 10px 14px !important;
     }
 
     /* The 2-up grid halves each card's width, and "12 budgets" / "6
@@ -3460,7 +3467,12 @@ button[type="submit"]:active {
         flex-wrap: wrap !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 10px !important;
+        /* Was 10px. This is the actual spacing between Record Expense,
+           the theme toggle, and the search bar — the outer margin fixed
+           previously was dashboard-container's padding (screen edge to
+           this box), a separate property from the gap between this
+           box's own children. */
+        gap: 16px !important;
         width: 100% !important;
     }
 
@@ -3471,7 +3483,7 @@ button[type="submit"]:active {
         max-width: 100% !important;
         flex: 1 1 100% !important;
         height: 44px !important;
-        margin-top: 4px !important;
+        margin-top: 10px !important;
         position: relative !important;
         z-index: 50 !important;
         pointer-events: auto !important;
@@ -3495,7 +3507,7 @@ button[type="submit"]:active {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin-bottom: 4px !important;
+        margin-bottom: 8px !important;
     }
 
     .command-kbd {
@@ -4440,7 +4452,11 @@ button[type="submit"]:active {
     }
 
     .top-bar-actions {
-        gap: 8px !important;
+        /* Was 8px !important — this 480px block sits later in the file
+           than the 16px fix at the 900px tier, and since most phones
+           are under 480px wide, this narrower value (not the 16px one)
+           is what was actually reaching most people. */
+        gap: 14px !important;
     }
 
     .metric-value {
