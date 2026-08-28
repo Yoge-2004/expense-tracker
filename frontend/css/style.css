@@ -3359,8 +3359,16 @@ button[type="submit"]:active {
         height: 30px !important;
     }
 
+    /* This used to span both grid columns so the odd third card wouldn't
+       leave a visibly empty cell next to it — but "6 subscriptions" is
+       short, so spanning the full row just moved the empty space inside
+       the card instead of removing it (a wide box with left-aligned
+       content and nothing after it). Sizing it like its siblings instead
+       — same width as cards 1 and 2, alone in its own row — keeps the
+       card itself tight to its content; the row simply has one card
+       instead of two, rather than one oversized card with dead space. */
     .float-card:nth-child(3) {
-        grid-column: 1 / -1 !important;
+        grid-column: auto !important;
     }
 
     .perks-grid {
