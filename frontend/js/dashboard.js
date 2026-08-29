@@ -1583,8 +1583,31 @@ function updateModalLabels() {
 }
 updateModalLabels();
 
-elements.profileTrigger.addEventListener("click", (e) => { e.stopPropagation(); elements.profileMenu.classList.toggle("active"); });
-document.addEventListener("click", (e) => { if (!elements.profileTrigger.contains(e.target) && !elements.profileMenu.contains(e.target)) elements.profileMenu.classList.remove("active"); });
+function toggleProfileMenu(forceState) {
+    const isOpen = typeof forceState === "boolean" ? forceState : !elements.profileMenu.classList.contains("active");
+    elements.profileMenu.classList.toggle("active", isOpen);
+    elements.profileTrigger.setAttribute("aria-expanded", String(isOpen));
+}
+
+elements.profileTrigger.addEventListener("click", (e) => { e.stopPropagation(); toggleProfileMenu(); });
+elements.profileTrigger.addEventListener("keydown", (e) => {
+    // Was mouse-only: a div with a click listener and no keyboard handling
+    // is invisible to keyboard-only and screen-reader users — there was no
+    // way to open this menu without a pointer at all.
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        toggleProfileMenu();
+    } else if (e.key === "Escape") {
+        toggleProfileMenu(false);
+    }
+});
+document.addEventListener("click", (e) => { if (!elements.profileTrigger.contains(e.target) && !elements.profileMenu.contains(e.target)) toggleProfileMenu(false); });
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && elements.profileMenu.classList.contains("active")) {
+        toggleProfileMenu(false);
+        elements.profileTrigger.focus();
+    }
+});
 document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "index.html"; });
 
 const sendMonthlyReportBtn = document.getElementById("sendMonthlyReportBtn");
@@ -1604,7 +1627,7 @@ if (sendMonthlyReportBtn) {
 
     sendMonthlyReportBtn.addEventListener("click", async (e) => {
         e.preventDefault();
-        elements.profileMenu.classList.remove("active");
+        toggleProfileMenu(false);
         try {
             const authConfig = await apiRequest("/auth/config", { method: "GET" }).catch(() => ({ emailVerificationEnabled: false }));
             if (authConfig && authConfig.emailVerificationEnabled === false) {
@@ -1780,7 +1803,7 @@ importFileInput?.addEventListener("change", async (e) => {
 // Open Modal
 elements.manageSubsBtn.addEventListener("click", async (e) => {
     e.preventDefault();
-    elements.profileMenu.classList.remove("active");
+    toggleProfileMenu(false);
     openModal(elements.subsModal);
     loadSubscriptions();
 });
@@ -1933,7 +1956,7 @@ window.cancelSubscription = async (id, event) => {
 // Open the delete account confirmation modal
 elements.deleteAccountBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    elements.profileMenu.classList.remove("active");
+    toggleProfileMenu(false);
     elements.deleteConfirmInput.value = "";
     elements.confirmDeleteAccountBtn.style.opacity = "0.5";
     elements.confirmDeleteAccountBtn.style.pointerEvents = "none";
