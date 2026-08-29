@@ -714,14 +714,22 @@ button[type="submit"]:active {
 }
 
 /* ================== 6. DASHBOARD ================== */
+/* Consolidated from 3 separate unconditional declarations (was lines
+   ~717/847/1547): max-width, padding, and gap each had two different
+   competing values (1200px vs 1280px, 30px 24px vs 40px 36px 56px, 32px
+   vs 24px) with the later one silently winning either way. Kept the
+   values that were actually winning so there's no visual change --
+   mobile breakpoints for this selector are untouched and still layer
+   on top of this exactly as before. */
 .dashboard-container {
-    max-width: 1200px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 30px 24px;
+    padding: 40px 36px 56px;
+    gap: 24px;
     height: auto;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    animation: cardEntrance 0.5s var(--ease) both;
 }
 
 .top-bar {
@@ -746,24 +754,32 @@ button[type="submit"]:active {
     background: rgba(255, 255, 255, 0.05);
 }
 
+/* Consolidated from 4 separate unconditional declarations of .avatar
+   scattered across this file (was lines ~749/1736/3152/3740), each
+   setting a different, sometimes conflicting subset of the same
+   properties. Concretely: three separate `transition:` declarations
+   existed for the same element, and since `transition` fully replaces
+   rather than merges, only the LAST one in the file actually applied --
+   `transition: box-shadow 0.2s` -- silently dropping the intended
+   `transform` transition, so hovering the avatar (which scales it via
+   .user-profile:hover .avatar) snapped instantly instead of animating
+   smoothly. Also 3 separate box-shadow values and 3 font-weight values
+   were fighting the same way. This keeps the values that were actually
+   winning the cascade (so no visual change there) and restores the
+   transform transition that was supposed to apply. */
 .avatar {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: var(--primary-gradient);
     color: var(--on-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3);
-    /* Without this, the text renders in a line box using the page's
-       default line-height (~1.5), and centering that box (rather than
-       the glyph itself) leaves visibly more space above the letter than
-       below it. line-height: 1 shrinks the line box down to the glyph's
-       own height so align-items/place-items center what's actually
-       visible. */
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 16px;
     line-height: 1;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3), 0 4px 12px rgba(var(--primary-rgb), 0.2);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
 
 .profile-menu {
@@ -836,7 +852,7 @@ button[type="submit"]:active {
 }
 
 /* Dashboard visual hierarchy */
-.dashboard-container { max-width: 1280px; margin: 0 auto; padding: 40px 36px 56px; gap: 24px; }
+
 
 /* Large monitors / 4K — the container was hard-capped at 1280px regardless
    of viewport, leaving huge unused margins on wide screens. Scale up in
@@ -1536,9 +1552,7 @@ body.modal-open {
 }
 
 /* --- Dashboard entrance --- */
-.dashboard-container {
-    animation: cardEntrance 0.5s var(--ease) both;
-}
+
 
 /* --- Cards --- */
 .card {
@@ -1733,9 +1747,6 @@ button[type="submit"]:active {
 }
 
 /* --- Avatar --- */
-.avatar {
-    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
-}
 
 .user-profile:hover .avatar {
     transform: scale(1.1);
@@ -3149,18 +3160,6 @@ button[type="submit"]:active {
 }
 
 /* Avatar ring */
-.avatar {
-    width: 38px; height: 38px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-weight: 900;
-    font-size: 16px;
-    background: var(--primary-gradient);
-    color: var(--on-primary);
-    box-shadow: 0 0 0 2px rgba(var(--primary-rgb),0.4), 0 4px 12px rgba(var(--primary-rgb),0.3);
-    transition: box-shadow 0.3s;
-}
 .user-profile:hover .avatar {
     box-shadow: 0 0 0 3px var(--primary), 0 6px 20px rgba(var(--primary-rgb),0.4);
 }
@@ -3737,12 +3736,6 @@ button[type="submit"]:active {
 }
 
 /* ── Avatar with gradient ring ── */
-.avatar {
-    background: var(--primary-gradient) !important;
-    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3), 0 4px 12px rgba(var(--primary-rgb), 0.2);
-    transition: box-shadow 0.2s;
-    font-weight: 800 !important;
-}
 .avatar:hover {
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.5), 0 6px 20px rgba(var(--primary-rgb), 0.25);
 }
