@@ -143,36 +143,6 @@ body {
     overflow-x: hidden;
 }
 
-body::before {
-    content: '';
-    position: fixed;
-    top: -120px;
-    left: -100px;
-    width: 550px;
-    height: 550px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.18) 0%, transparent 70%);
-    filter: blur(70px);
-    z-index: 0;
-    pointer-events: none;
-    animation: globalAmbientOrbFloat1 18s ease-in-out infinite alternate;
-}
-
-body::after {
-    content: '';
-    position: fixed;
-    bottom: -150px;
-    right: -100px;
-    width: 600px;
-    height: 600px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--accent-rgb), 0.14) 0%, transparent 70%);
-    filter: blur(80px);
-    z-index: 0;
-    pointer-events: none;
-    animation: globalAmbientOrbFloat2 22s ease-in-out infinite alternate;
-}
-
 [data-theme="light"] body::before {
     background: radial-gradient(circle, rgba(var(--primary-rgb), 0.16) 0%, transparent 70%);
     filter: blur(65px);
@@ -183,17 +153,9 @@ body::after {
     filter: blur(75px);
 }
 
-@keyframes globalAmbientOrbFloat1 {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(60px, 40px) scale(1.12); }
-    100% { transform: translate(-30px, 50px) scale(0.95); }
-}
 
-@keyframes globalAmbientOrbFloat2 {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(-50px, -45px) scale(1.15); }
-    100% { transform: translate(40px, -20px) scale(0.92); }
-}
+
+
 
 .auth-page, .dashboard-container, .main-layout, .auth-card {
     position: relative;
@@ -3703,24 +3665,6 @@ button[type="submit"]:active {
     opacity: 0.4;
 }
 
-/* ── Hero background animated gradient ── */
-.hero-bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    background: radial-gradient(ellipse 80% 60% at 50% -10%,
-        rgba(var(--primary-rgb), 0.09) 0%,
-        transparent 70%),
-    radial-gradient(ellipse 60% 40% at 90% 90%,
-        rgba(var(--highlight-rgb), 0.07) 0%,
-        transparent 70%);
-    pointer-events: none;
-    animation: heroPulse 8s ease-in-out infinite alternate;
-}
-@keyframes heroPulse {
-    from { opacity: 0.8; }
-    to   { opacity: 1; }
-}
 
 /* ── Top bar glassmorphism ── */
 .top-bar {
@@ -4700,43 +4644,9 @@ button[type="submit"]:active {
                 radial-gradient(circle at 90% 80%, rgba(76, 122, 120, 0.06) 0%, transparent 50%);
 }
 
-.hero-bg::before {
-    content: '';
-    position: absolute;
-    top: -20%;
-    left: 10%;
-    width: 650px;
-    height: 650px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, transparent 70%);
-    filter: blur(80px);
-    animation: ambientOrbOne 18s ease-in-out infinite alternate;
-}
 
-.hero-bg::after {
-    content: '';
-    position: absolute;
-    bottom: -15%;
-    right: 15%;
-    width: 600px;
-    height: 600px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(76, 122, 120, 0.12) 0%, transparent 70%);
-    filter: blur(85px);
-    animation: ambientOrbTwo 22s ease-in-out infinite alternate;
-}
 
-@keyframes ambientOrbOne {
-    0%   { transform: translate(0, 0) scale(1); }
-    50%  { transform: translate(50px, 70px) scale(1.1); }
-    100% { transform: translate(-30px, 40px) scale(0.92); }
-}
 
-@keyframes ambientOrbTwo {
-    0%   { transform: translate(0, 0) scale(1); }
-    50%  { transform: translate(-60px, -50px) scale(1.08); }
-    100% { transform: translate(40px, -70px) scale(0.95); }
-}
 
 /* Button & Interactive Micro-Animations */
 .btn-primary:active,
@@ -5219,31 +5129,6 @@ button[type="submit"]:active {
     animation: deleteWarningPulse 1.2s infinite;
 }
 
-/* 27. Floating Pro Tag Diamond Ping */
-@keyframes proPing {
-    0%, 100% { transform: scale(1); filter: brightness(1); }
-    50% { transform: scale(1.08); filter: brightness(1.25); text-shadow: 0 0 8px rgba(var(--primary-rgb), 0.8); }
-}
-
-.pro-badge,
-.pro-tag {
-    animation: proPing 3s ease-in-out infinite;
-}
-
-/* 28. Budget Health Gauge Breathing Ring */
-@keyframes gaugeBreathe {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(76, 122, 120, 0.5);
-    }
-    50% {
-        box-shadow: 0 0 0 6px rgba(76, 122, 120, 0.15);
-    }
-}
-
-.insights-panel-meta {
-    animation: gaugeBreathe 2.5s infinite ease-in-out;
-}
-
 /* 29. Form Button Submit Success Morph */
 @keyframes btnSuccessMorph {
     0% { transform: scale(0.96); background: var(--primary); }
@@ -5275,18 +5160,6 @@ button[type="submit"]:active {
     transform: scale(1.08) rotate(3deg);
     animation: avatarGlow 2s infinite ease-in-out;
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* 32. Table Header Gradient Drift */
-@keyframes headerGradientDrift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-.list-header {
-    background-size: 200% 200%;
-    animation: headerGradientDrift 12s ease infinite;
 }
 
 /* 33. Sync & Refresh Icon Spin */
@@ -5352,17 +5225,6 @@ button[type="submit"]:active {
     animation: pulseSparkle 2.5s ease-in-out infinite;
 }
 
-/* 39. Aurora Color Shift Cycle */
-@keyframes auroraColorCycle {
-    0%   { filter: hue-rotate(0deg); }
-    50%  { filter: hue-rotate(30deg); }
-    100% { filter: hue-rotate(0deg); }
-}
-
-.auth-hero-bg {
-    animation: auroraColorCycle 20s infinite alternate linear;
-}
-
 /* ==========================================================================
    EXTENDED 100+ ADVANCED ANIMATION & MICRO-INTERACTION SUITE (40 TO 145+)
    ========================================================================== */
@@ -5386,29 +5248,6 @@ button[type="submit"]:active {
     animation: ambientMeshBreathe 14s ease-in-out infinite alternate;
 }
 
-/* 42. Light Beam Glide */
-@keyframes lightBeamGlide {
-    0% { transform: translateX(-150%) skewX(-25deg); }
-    100% { transform: translateX(250%) skewX(-25deg); }
-}
-.hero-brand::after, .navbar-brand::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 40%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-    animation: lightBeamGlide 7s ease-in-out infinite;
-    pointer-events: none;
-}
-
-/* 43. Prism Rainbow Glint */
-@keyframes prismGlint {
-    0%, 100% { filter: drop-shadow(0 0 4px rgba(var(--primary-rgb), 0.3)); }
-    50% { filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), 0.5)) drop-shadow(0 0 8px rgba(var(--highlight-rgb), 0.4)); }
-}
-.pro-badge, .pro-tag {
-    animation: prismGlint 3.5s ease-in-out infinite;
-}
-
 /* 44. Sunburst Expanding Pulse */
 @keyframes sunburstPulse {
     0% { transform: rotate(0deg) scale(0.95); opacity: 0.8; }
@@ -5428,79 +5267,10 @@ button[type="submit"]:active {
     animation: moonlightShimmer 4s ease-in-out infinite;
 }
 
-/* 46. Celestial Particle Drift */
-@keyframes celestialDrift {
-    0% { transform: translateY(0) translateX(0); }
-    50% { transform: translateY(-16px) translateX(8px); }
-    100% { transform: translateY(0) translateX(0); }
-}
-.celestial-node {
-    animation: celestialDrift 8s ease-in-out infinite;
-}
-
-/* 47. Starlight Twinkle Burst */
-@keyframes starlightTwinkle {
-    0%, 100% { transform: scale(0.6); opacity: 0.3; }
-    50% { transform: scale(1.35); opacity: 1; filter: drop-shadow(0 0 6px #fff); }
-}
-.starlight-spark {
-    animation: starlightTwinkle 2.2s ease-in-out infinite;
-}
-
-/* 48. Grid Lattice Flow */
-@keyframes gridLatticeFlow {
-    0% { background-position: 0 0; }
-    100% { background-position: 40px 40px; }
-}
-.hero-grid {
-    animation: gridLatticeFlow 28s linear infinite;
-}
-
-/* 49. Horizon Glow Wave */
-@keyframes horizonGlowWave {
-    0%, 100% { opacity: 0.35; transform: scaleY(1); }
-    50% { opacity: 0.75; transform: scaleY(1.25); }
-}
-.auth-page::after {
-    content: '';
-    position: fixed;
-    bottom: 0; left: 0; width: 100vw; height: 180px;
-    background: radial-gradient(ellipse at bottom, rgba(var(--primary-rgb), 0.12) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-    animation: horizonGlowWave 9s ease-in-out infinite alternate;
-}
-
-/* 50. Vignette Cinematic Breathe */
-@keyframes vignetteBreathe {
-    0%, 100% { opacity: 0.25; }
-    50% { opacity: 0.45; }
-}
-.auth-hero-bg::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-    animation: vignetteBreathe 10s ease-in-out infinite;
-}
-
-/* 51. Glass Refraction Angle Shift */
-@keyframes glassRefraction {
-    0%, 100% { border-color: rgba(255, 255, 255, 0.08); }
-    50% { border-color: rgba(var(--primary-rgb), 0.25); }
-}
-.glass-panel, .card {
-    animation: glassRefraction 6s ease-in-out infinite;
-}
-
 /* 52. Liquid Glow Undulation */
-@keyframes liquidGlowUndulate {
-    0%, 100% { border-radius: 28px 24px 28px 24px; }
-    50% { border-radius: 24px 28px 24px 28px; }
-}
+
 .auth-card {
-    animation: liquidGlowUndulate 8s ease-in-out infinite alternate, slideUpFade 0.7s var(--ease) 0.1s both;
+    animation: slideUpFade 0.7s var(--ease) 0.1s both;
 }
 
 /* 53. Card 3D Parallax Tilt */
@@ -5510,33 +5280,6 @@ button[type="submit"]:active {
 }
 .float-card:hover {
     animation: card3DTilt 2.5s ease-in-out infinite alternate;
-}
-
-/* 54. Card Border Neon Flow */
-@keyframes neonBorderFlow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.neon-border-card {
-    background-size: 200% 200%;
-    animation: neonBorderFlow 4s ease infinite;
-}
-
-/* 55. Specular Highlight Light Sweep */
-@keyframes specularSweep {
-    0% { left: -100%; opacity: 0; }
-    40% { opacity: 0.3; }
-    100% { left: 200%; opacity: 0; }
-}
-.float-card::after, .perk-item::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%; width: 60%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-    transform: skewX(-20deg);
-    animation: specularSweep 8s ease-in-out infinite;
-    pointer-events: none;
 }
 
 /* 56. Surface Elastic Spring Pop-In */
@@ -5549,32 +5292,9 @@ button[type="submit"]:active {
     animation: surfaceElasticPop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* 57. Frosted Glass Blur Morph */
-@keyframes glassBlurMorph {
-    0%, 100% { backdrop-filter: blur(16px); }
-    50% { backdrop-filter: blur(28px); }
-}
-.frosted-glass {
-    animation: glassBlurMorph 6s ease-in-out infinite alternate;
-}
-
 /* 58. Card Magnetic Elevation Lift */
 .metric-card, .float-card, .perk-item, .card {
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease !important;
-}
-
-/* 59. Card Corner Sparkle Flare */
-@keyframes cornerSparkle {
-    0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
-    50% { transform: scale(1) rotate(90deg); opacity: 1; filter: drop-shadow(0 0 6px var(--primary)); }
-}
-.sparkle-corner::before {
-    content: '✦';
-    position: absolute;
-    top: 10px; right: 12px;
-    color: var(--primary);
-    font-size: 13px;
-    animation: cornerSparkle 3s ease-in-out infinite;
 }
 
 /* 60. Card Depth Multi-Shadow Expansion */
@@ -5641,28 +5361,6 @@ button[type="submit"]:active {
 }
 .row-highlight {
     animation: goldPulseHighlight 1.8s ease-out forwards;
-}
-
-/* 68. Premium RGB Border Cycle */
-@keyframes rgbBorderCycle {
-    0% { border-color: rgba(212, 175, 55, 0.6); }
-    33% { border-color: rgba(76, 175, 160, 0.6); }
-    66% { border-color: rgba(231, 76, 60, 0.6); }
-    100% { border-color: rgba(212, 175, 55, 0.6); }
-}
-.pro-card-featured {
-    animation: rgbBorderCycle 6s infinite linear;
-}
-
-/* 69. Liquid Gold Button Sweep */
-@keyframes liquidGoldSweep {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.btn-primary {
-    background-size: 200% auto !important;
-    animation: liquidGoldSweep 6s ease infinite !important;
 }
 
 /* 70. Gradient Angle Rotation */
@@ -5769,17 +5467,6 @@ button[type="submit"]:active {
     animation: chipScaleTap 0.3s ease;
 }
 
-/* 80. Holographic Flicker Effect */
-@keyframes holoFlicker {
-    0%, 100% { opacity: 1; }
-    42% { opacity: 0.85; }
-    44% { opacity: 1; }
-    88% { opacity: 0.9; }
-}
-.holo-element {
-    animation: holoFlicker 5s infinite;
-}
-
 /* 81. Ghost Button Glass Fill Hover */
 .btn-ghost, .btn-secondary {
     transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
@@ -5797,17 +5484,6 @@ button[type="submit"]:active {
 }
 .spin-action {
     animation: spinReload360 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* 83. Shimmer Badge Glance */
-@keyframes badgeGlance {
-    0% { background-position: -100% center; }
-    100% { background-position: 200% center; }
-}
-.badge-shimmer {
-    background: linear-gradient(90deg, var(--card-bg) 0%, rgba(var(--primary-rgb), 0.25) 50%, var(--card-bg) 100%);
-    background-size: 200% 100%;
-    animation: badgeGlance 3s infinite;
 }
 
 /* 84. Button Pill Width Expansion */
@@ -6000,37 +5676,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: counterNumberRoll 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 108. Chart Legend Dot Pulse */
-@keyframes legendPulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
-    50% { transform: scale(1.25); box-shadow: 0 0 8px currentColor; }
-}
-.legend-dot {
-    animation: legendPulse 3s ease-in-out infinite;
-}
-
 /* 109. Financial Health Breathing Gauge */
 @keyframes healthGaugePulse {
     0%, 100% { stroke-dasharray: 280, 300; stroke: var(--primary); }
     50% { stroke-dasharray: 290, 300; stroke: var(--accent); }
-}
-
-/* 110. Spending Spike Alarm Glow */
-@keyframes spikeAlarmGlow {
-    0%, 100% { background-color: rgba(var(--accent-rgb), 0.1); border-color: rgba(var(--accent-rgb), 0.3); }
-    50% { background-color: rgba(var(--accent-rgb), 0.25); border-color: var(--accent); box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.3); }
-}
-.spending-spike-card {
-    animation: spikeAlarmGlow 2s ease-in-out infinite;
-}
-
-/* 111. Sparkline Undulating Wave */
-@keyframes sparklineWave {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-}
-.sparkline-svg path {
-    animation: sparklineWave 3s ease-in-out infinite;
 }
 
 /* 112. Chart Grid Lines Entrance */
@@ -6049,17 +5698,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     filter: drop-shadow(0 2px 8px rgba(var(--primary-rgb), 0.5));
 }
 
-/* 114. Progress Bar Diagonal Stripes Stream */
-@keyframes diagonalStripesStream {
-    0% { background-position: 0 0; }
-    100% { background-position: 40px 0; }
-}
-.progress-bar-striped {
-    background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
-    background-size: 40px 40px;
-    animation: diagonalStripesStream 2s linear infinite;
-}
-
 /* 115. Metric Number Micro Bounce */
 @keyframes metricUpdateBounce {
     0% { transform: scale(1); }
@@ -6070,15 +5708,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: metricUpdateBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* 116. Percentage Arrow Float */
-@keyframes arrowFloatUpDown {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-}
-.percent-badge svg {
-    animation: arrowFloatUpDown 2s ease-in-out infinite;
-}
-
 /* 117. Live Radar Status Beacon Pulse */
 @keyframes radarBeaconPulse {
     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
@@ -6087,15 +5716,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .status-dot {
     animation: radarBeaconPulse 2s infinite !important;
-}
-
-/* 118. Pro Diamond Badge Ping */
-@keyframes diamondSpinPing {
-    0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 4px var(--primary)); }
-    50% { transform: scale(1.2) rotate(15deg); filter: drop-shadow(0 0 10px #fff); }
-}
-.pro-badge {
-    animation: diamondSpinPing 3s ease-in-out infinite;
 }
 
 /* 119. Category Filter Pill Click Bounce */
@@ -6141,16 +5761,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: tagSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 124. Neon Border Cycle on Active Pills */
-@keyframes neonPillCycle {
-    0% { border-color: var(--primary); }
-    50% { border-color: var(--accent); }
-    100% { border-color: var(--primary); }
-}
-.pill-cycle-active {
-    animation: neonPillCycle 4s linear infinite;
-}
-
 /* 125. Notification Counter Pop-In */
 @keyframes badgePopIn {
     0% { transform: scale(0); opacity: 0; }
@@ -6189,51 +5799,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: stepRingGlow 2s ease-in-out infinite;
 }
 
-/* 129. Soft Urgency Strobe */
-@keyframes softUrgencyStrobe {
-    0%, 100% { opacity: 0.85; }
-    50% { opacity: 1; filter: drop-shadow(0 0 8px #e67e22); }
-}
-.urgency-soft {
-    animation: softUrgencyStrobe 2.2s infinite;
-}
-
-/* 130. Discount Savings Tag Flutter */
-@keyframes discountTagFlutter {
-    0%, 100% { transform: rotate(0deg); }
-    25% { transform: rotate(3deg); }
-    75% { transform: rotate(-3deg); }
-}
-.savings-tag {
-    animation: discountTagFlutter 3s ease-in-out infinite;
-    transform-origin: top left;
-}
-
 /* 131. Concentric Radar Ping */
-@keyframes radarWaveExpand {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(2.8); opacity: 0; }
-}
+
 .radar-ping::before {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: 50%;
     border: 1.5px solid var(--primary);
-    animation: radarWaveExpand 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-/* 132. Corner Ribbon Float Glint */
-@keyframes ribbonGlintSweep {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-.ribbon-banner::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    animation: ribbonGlintSweep 3s infinite;
+    animation: 1, 0.3, 1) infinite;
 }
 
 /* 133. Gold Coin Drop Bounce */
@@ -6257,15 +5831,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: receiptSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 135. Wallet Sparkle Glow */
-@keyframes walletGlowBurst {
-    0%, 100% { filter: drop-shadow(0 0 4px var(--primary)); }
-    50% { filter: drop-shadow(0 0 16px var(--primary)) drop-shadow(0 0 24px #fff); }
-}
-.wallet-icon-glow {
-    animation: walletGlowBurst 3s ease-in-out infinite;
-}
-
 /* 136. Piggy Bank Gentle Wobble */
 @keyframes piggyBankWobble {
     0%, 100% { transform: rotate(0deg) scale(1); }
@@ -6283,40 +5848,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .recurring-bill-card {
     animation: billFold3D 0.5s ease-out;
-}
-
-/* 138. Bank-Grade Security Laser Scan */
-@keyframes securityLaserScan {
-    0% { top: 0%; opacity: 0.8; }
-    50% { top: 100%; opacity: 1; }
-    100% { top: 0%; opacity: 0.8; }
-}
-.security-badge::before {
-    content: '';
-    position: absolute;
-    left: 0; width: 100%; height: 2px;
-    background: linear-gradient(90deg, transparent, #2ecc71, transparent);
-    box-shadow: 0 0 8px #2ecc71;
-    animation: securityLaserScan 3s ease-in-out infinite;
-    pointer-events: none;
-}
-
-/* 139. Streak Fire Flame Flicker */
-@keyframes flameFlicker {
-    0%, 100% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 4px #e67e22); }
-    50% { transform: scale(1.15) rotate(3deg); filter: drop-shadow(0 0 12px #e74c3c); }
-}
-.streak-badge svg {
-    animation: flameFlicker 1.8s ease-in-out infinite;
-}
-
-/* 140. Trophy Milestone Starburst */
-@keyframes trophyShine {
-    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px var(--primary)); }
-    50% { transform: scale(1.12); filter: drop-shadow(0 0 18px var(--primary)) drop-shadow(0 0 30px #f1c40f); }
-}
-.trophy-badge svg {
-    animation: trophyShine 2.5s ease-in-out infinite;
 }
 
 /* 141. 5-Star Sparkle Cascade */
@@ -6481,46 +6012,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border-color: rgba(var(--primary-rgb), 0.5) !important;
 }
 
-/* 151. Card Hologram Refraction Shine */
-@keyframes cardHoloReflect {
-    0% { background-position: 0% 0%; }
-    50% { background-position: 100% 100%; }
-    100% { background-position: 0% 0%; }
-}
-.holo-card-shine {
-    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(var(--primary-rgb), 0.15) 50%, rgba(255,255,255,0.05) 100%);
-    background-size: 200% 200%;
-    animation: cardHoloReflect 6s ease infinite;
-}
-
-/* 152. Gold Liquid Ripple Wave */
-@keyframes goldLiquidWave {
-    0%, 100% { border-color: rgba(var(--primary-rgb), 0.3); }
-    50% { border-color: var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.35); }
-}
-.liquid-gold-border {
-    animation: goldLiquidWave 3.5s ease-in-out infinite;
-}
-
-/* 153. Crystal Glass 3D Tilt Glow */
-@keyframes crystalTiltGlow {
-    0%, 100% { filter: drop-shadow(0 4px 12px rgba(var(--primary-rgb), 0.15)); }
-    50% { filter: drop-shadow(0 12px 28px rgba(var(--primary-rgb), 0.35)); }
-}
-.crystal-glow {
-    animation: crystalTiltGlow 4s ease-in-out infinite;
-}
-
-/* 154. Ambient Particle Cloud Drift */
-@keyframes particleCloudDrift {
-    0% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-15px) scale(1.08); }
-    100% { transform: translateY(0) scale(1); }
-}
-.cloud-drift {
-    animation: particleCloudDrift 7s ease-in-out infinite;
-}
-
 /* 155. Dynamic Metric Counter 3D Flip */
 @keyframes metricCounterFlip {
     0% { transform: perspective(400px) rotateX(-90deg); opacity: 0; }
@@ -6529,16 +6020,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .metric-flip-in {
     animation: metricCounterFlip 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* 156. Golden Ring Pulsing Radar */
-@keyframes goldRadarPing {
-    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.7); }
-    70% { box-shadow: 0 0 0 14px rgba(var(--primary-rgb), 0); }
-    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
-}
-.gold-radar {
-    animation: goldRadarPing 2s infinite;
 }
 
 /* 157. Interactive Cyber Button Glow */
@@ -6568,38 +6049,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: auroraLightCascade 0.4s ease forwards;
 }
 
-/* 160. Floating Badge Ping */
-@keyframes floatingBadgePing {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
-.auth-welcome-badge, .status-pill {
-    animation: floatingBadgePing 3s ease-in-out infinite;
-}
-
-/* 161. Rainbow Shimmer Text */
-@keyframes rainbowShimmerText {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.shimmer-text {
-    background: linear-gradient(90deg, var(--primary) 0%, #fff 50%, var(--primary) 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: rainbowShimmerText 4s linear infinite;
-}
-
-/* 162. 3D Floating Mesh Warp */
-@keyframes floatingMeshWarp {
-    0%, 100% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(2deg) scale(1.03); }
-}
-.mesh-warp {
-    animation: floatingMeshWarp 12s ease-in-out infinite alternate;
-}
-
 /* 163. Spring Accordion Reveal */
 @keyframes springAccordionReveal {
     0% { opacity: 0; transform: scaleY(0.85); transform-origin: top; }
@@ -6609,51 +6058,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: springAccordionReveal 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 164. Shimmering Glass Card Shine */
-@keyframes glassCardShine {
-    0% { transform: translateX(-150%) rotate(35deg); }
-    100% { transform: translateX(250%) rotate(35deg); }
-}
-.card-shine::after {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
-    transform: rotate(35deg);
-    animation: glassCardShine 7s infinite ease-in-out;
-    pointer-events: none;
-}
-
-/* 165. Diamond Halo Sparkle */
-@keyframes diamondHaloSparkle {
-    0%, 100% { filter: drop-shadow(0 0 2px var(--primary)); transform: scale(1); }
-    50% { filter: drop-shadow(0 0 10px var(--primary)) drop-shadow(0 0 16px #fff); transform: scale(1.15); }
-}
-.diamond-halo {
-    animation: diamondHaloSparkle 2.8s ease-in-out infinite;
-}
-
 /* 166. Fluid Wave Ripple Button */
-@keyframes fluidWaveRipple {
-    0% { transform: scale(0.9); opacity: 0.8; }
-    100% { transform: scale(1.8); opacity: 0; }
-}
+
 .fluid-ripple::before {
     content: '';
     position: absolute;
     inset: -4px;
     border-radius: inherit;
     border: 2px solid var(--primary);
-    animation: fluidWaveRipple 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-/* 167. Micro-Interaction Nudge Icon */
-@keyframes microNudgeIcon {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(3px); }
-}
-.nudge-hover:hover svg {
-    animation: microNudgeIcon 0.6s ease infinite;
+    animation: 1, 0.3, 1) infinite;
 }
 
 /* 168. Smooth Page Transition Blur */
@@ -6663,15 +6076,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .page-fade-enter {
     animation: pageTransitionBlur 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* 169. Gradient Pulse Ring */
-@keyframes gradientPulseRing {
-    0%, 100% { border-color: rgba(var(--primary-rgb), 0.3); box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.15); }
-    50% { border-color: var(--primary); box-shadow: 0 0 18px rgba(var(--primary-rgb), 0.45); }
-}
-.gradient-ring {
-    animation: gradientPulseRing 3s ease-in-out infinite;
 }
 
 /* 170. Starburst Achievement Burst */

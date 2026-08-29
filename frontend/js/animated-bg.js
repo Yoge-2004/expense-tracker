@@ -229,7 +229,14 @@
 
         initOrbs();
 
-        let animFrameId;
+        // Was previously unconditional: this canvas ran its render loop
+        // forever regardless of the user's OS-level motion preference or
+        // whether the tab was even visible. prefersReducedMotion gates the
+        // loop from ever starting (drawing one static frame instead);
+        // visibilitychange stops/resumes it as the tab is hidden/shown,
+        // rather than relying on browser-specific background-tab throttling.
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let animFrameId = null;
         function render(time) {
             mouseX += (targetMouseX - mouseX) * 0.06;
             mouseY += (targetMouseY - mouseY) * 0.06;
@@ -294,10 +301,24 @@
                 ctx.fill();
             }
 
-            animFrameId = requestAnimationFrame(render);
+            if (!document.hidden && !prefersReducedMotion) {
+                animFrameId = requestAnimationFrame(render);
+            } else {
+                animFrameId = null;
+            }
         }
 
-        animFrameId = requestAnimationFrame(render);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !prefersReducedMotion && animFrameId === null) {
+                animFrameId = requestAnimationFrame(render);
+            }
+        });
+
+        if (prefersReducedMotion) {
+            render(); // one static frame, no loop
+        } else {
+            animFrameId = requestAnimationFrame(render);
+        }
     }
 
     if (document.readyState === 'loading') {
