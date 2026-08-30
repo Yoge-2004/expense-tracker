@@ -831,8 +831,8 @@ button[type="submit"]:active {
 
 .grid-stats {
     display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 24px;
+    grid-template-columns: minmax(260px, 310px) minmax(0, 1fr);
+    gap: 20px;
 }
 
 .card {
@@ -882,7 +882,7 @@ button[type="submit"]:active {
 .dashboard-heading h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -1px; }
 .dashboard-heading p { margin-top: 10px; }
 .top-bar-actions { display: flex; gap: 12px; align-items: center; }
-.grid-stats { grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); gap: 20px; }
+
 .summary-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .summary-stack .add-expense-button { grid-column: 1 / -1; min-height: 58px; }
 .summary-card-primary {
@@ -906,7 +906,7 @@ button[type="submit"]:active {
 .trend-card { min-height: 330px; }
 .trend-chart-wrapper { position: relative; height: 260px; width: 100%; margin-top: 4px; }
 .chart-card { min-height: 284px; }
-.chart-wrapper { height: 220px; }
+
 .recent-transactions { padding: 22px; }
 .list-header h3 { font-size: 18px; letter-spacing: -.35px; }
 .expense-item { padding: 15px 12px; }
@@ -1233,7 +1233,22 @@ body.modal-open {
 
 #customIntervalWrap { margin-top: 12px; }
 
-.app-loading { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(16, 18, 14, .68); color: #fff; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+.app-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(4, 6, 14, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
 .app-loading.visible { opacity: 1; pointer-events: auto; }
 .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,.28); border-top-color: var(--accent); border-radius: 50%; animation: app-spin .75s linear infinite; }
 .toast-region { position: fixed; z-index: 2100; top: 20px; right: 20px; width: min(360px, calc(100vw - 32px)); display: grid; gap: 10px; }
@@ -2078,15 +2093,25 @@ button[type="submit"]:active {
     line-height: 1.2;
 }
 
+/* Consolidated: block 2's gradient-clipped-text technique is what
+   currently renders (confirmed against the live screenshots -- "PRO"
+   shows as small gold text, not a filled pill badge) so that's kept as
+   the real behavior. color is kept as the fallback for browsers without
+   background-clip:text support, where it'll show as solid-colored text
+   instead of gradient-filled. */
 .pro-tag {
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 9px;
+    font-weight: 900;
     padding: 3px 8px;
     border-radius: 999px;
     background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     color: #14120C;
-    letter-spacing: 0.5px;
-    vertical-align: middle;
+    letter-spacing: 0.12em;
+    vertical-align: super;
+    margin-left: 2px;
 }
 
 #userWelcomeText {
@@ -2101,6 +2126,9 @@ button[type="submit"]:active {
     height: 8px;
     border-radius: 50%;
     background: var(--success);
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
     box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0.7);
     animation: livePulseAnim 1.6s infinite;
 }
@@ -2218,21 +2246,31 @@ button[type="submit"]:active {
 
 /* STATUS BADGES */
 .status-badge {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 999px;
+    padding: 3px 10px;
+    border-radius: 100px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
 }
 
 
 
+/* Consolidated: block 2's transition (gap+opacity only) had silently
+   replaced block 1's broader "transition: 0.2s" (which covered
+   everything, including color) rather than merging with it -- so
+   .link-action:hover's color change was snapping instantly instead of
+   fading. Restored color to the transition. */
 .link-action {
     color: var(--primary);
-    font-weight: 700;
-    font-size: 13px;
-    transition: 0.2s;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s var(--ease), gap 0.2s var(--ease), opacity 0.2s;
+    opacity: 0.85;
 }
 
 .link-action:hover {
@@ -2307,8 +2345,17 @@ button[type="submit"]:active {
 .btn-text-icon {
     font-size: 12px;
     font-weight: 700;
+    letter-spacing: 0.02em;
+    min-width: fit-content;
+    height: 36px;
+    padding: 0 14px;
     width: auto;
-    padding: 0 12px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .modal-header {
@@ -3748,15 +3795,7 @@ button[type="submit"]:active {
 }
 
 /* ── Brand badge live pulse ── */
-.live-pulse {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-    position: relative;
-    display: inline-block;
-    flex-shrink: 0;
-}
+
 
 /* ── Category pills improved ── */
 .pill-chip {
@@ -3781,21 +3820,7 @@ button[type="submit"]:active {
 }
 
 /* ── Export / import buttons ── */
-.btn-text-icon {
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.02em;
-    min-width: fit-content !important;
-    height: 36px !important;
-    padding: 0 14px !important;
-    width: auto !important;
-    white-space: nowrap !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    flex-shrink: 0 !important;
-}
+
 
 /* ── Section heading dividers ── */
 .section-heading,
@@ -3958,14 +3983,7 @@ button[type="submit"]:active {
 }
 
 /* ── Status badges improved ── */
-.status-badge {
-    border-radius: 100px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 3px 10px;
-}
+
 /* Consolidated: each of these 4 badges was declared twice (opacity
    0.15/0.3 vs 0.12/0.25, the later -- lower-opacity -- pair was
    winning). Also .badge-warning's first declaration used a hardcoded
@@ -4021,17 +4039,7 @@ button[type="submit"]:active {
 }
 
 /* ── Pro tag badge ── */
-.pro-tag {
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 0.12em;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    vertical-align: super;
-    margin-left: 2px;
-}
+
 
 /* ── Register step indicator ── */
 .step-bar {
@@ -4046,11 +4054,7 @@ button[type="submit"]:active {
 }
 
 /* ── Loading overlay improvements ── */
-.app-loading {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    background: rgba(4, 6, 14, 0.8) !important;
-}
+
 .app-loading .spinner {
     width: 28px !important;
     height: 28px !important;
@@ -4101,17 +4105,7 @@ button[type="submit"]:active {
 }
 
 /* ── Fancy link action ── */
-.link-action {
-    color: var(--primary) !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    text-decoration: none !important;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: gap 0.2s var(--ease), opacity 0.2s;
-    opacity: 0.85;
-}
+
 .link-action:hover {
     gap: 8px;
     opacity: 1;
