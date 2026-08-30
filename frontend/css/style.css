@@ -609,11 +609,7 @@ button[type="submit"]:active {
     padding: 0;
 }
 
-.btn-delete:hover {
-    background: var(--accent) !important;
-    color: var(--on-primary) !important;
-    transform: scale(1.05);
-}
+
 
 .btn-edit {
     width: 36px;
@@ -630,11 +626,7 @@ button[type="submit"]:active {
     padding: 0;
 }
 
-.btn-edit:hover {
-    background: var(--primary) !important;
-    color: var(--on-primary) !important;
-    transform: scale(1.05);
-}
+
 
 /* ================== 5. AUTH PAGES ================== */
 .split-screen {
@@ -1667,19 +1659,28 @@ button[type="submit"]:active {
                 box-shadow 0.2s var(--ease) !important;
 }
 
-.btn-edit:hover {
-    transform: translateY(-2px) scale(1.08) !important;
-    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.3) !important;
-}
+
 
 .btn-edit:active {
     transform: scale(0.93) !important;
     transition-duration: 0.08s !important;
 }
 
+/* Consolidated from 2 declarations -- transform had scale(1.05) vs
+   translateY(-2px) scale(1.08) !important (the latter was winning). */
+.btn-edit:hover {
+    background: var(--primary);
+    color: var(--on-primary);
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Consolidated from 2 declarations, same shape as .btn-edit:hover above. */
 .btn-delete:hover {
-    transform: translateY(-2px) scale(1.08) !important;
-    box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.35) !important;
+    background: var(--accent);
+    color: var(--on-primary);
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.35);
 }
 
 .btn-delete:active {
@@ -2225,10 +2226,7 @@ button[type="submit"]:active {
     letter-spacing: 0.5px;
 }
 
-.badge-primary { background: rgba(var(--primary-rgb), 0.15); color: var(--primary); border: 1px solid rgba(var(--primary-rgb), 0.3); }
-.badge-warning { background: rgba(179, 127, 34, 0.15); color: var(--warning); border: 1px solid rgba(179, 127, 34, 0.3); }
-.badge-success { background: rgba(var(--success-rgb), 0.15); color: var(--success); border: 1px solid rgba(var(--success-rgb), 0.3); }
-.badge-accent { background: rgba(var(--accent-rgb), 0.15); color: var(--accent); border: 1px solid rgba(var(--accent-rgb), 0.3); }
+
 
 .link-action {
     color: var(--primary);
@@ -3968,6 +3966,13 @@ button[type="submit"]:active {
     text-transform: uppercase;
     padding: 3px 10px;
 }
+/* Consolidated: each of these 4 badges was declared twice (opacity
+   0.15/0.3 vs 0.12/0.25, the later -- lower-opacity -- pair was
+   winning). Also .badge-warning's first declaration used a hardcoded
+   rgba(179,127,34,...) instead of the --warning-rgb token its 3
+   siblings all use -- currently harmless since it was already losing
+   to the later block, but inconsistent and worth cleaning up while
+   here. */
 .badge-primary {
     background: rgba(var(--primary-rgb), 0.12);
     color: var(--primary);
