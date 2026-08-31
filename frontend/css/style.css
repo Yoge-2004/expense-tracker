@@ -1144,16 +1144,25 @@ body.modal-open {
     touch-action: none !important;
 }
 
+/* Consolidated from 3 unconditional declarations of .modal-overlay. The
+   base rule's own backdrop-filter (blur(12px) saturate(160%), from the
+   3rd declaration) was actually dead code: .modal-overlay.active (2
+   classes) and .modal-overlay:not(.active) (also 2 selectors, plus
+   !important) both have higher specificity and between them cover
+   every possible state, so the bare selector's own backdrop-filter
+   value could never actually apply. Dropped it. Added the missing
+   -webkit-backdrop-filter to .active for Safari, matching the
+   :not(.active) rule which already had both prefixes. */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(4, 6, 14, 0.75);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: 0.3s;
+    transition: opacity 0.3s var(--ease), backdrop-filter 0.3s;
     z-index: 999;
     padding: 20px 16px;
     box-sizing: border-box;
@@ -1161,25 +1170,42 @@ body.modal-open {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
 }
-
+.modal-overlay:not(.active) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
 .modal-overlay.active {
     opacity: 1;
     pointer-events: all;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
+/* Consolidated from 3 unconditional declarations of .modal (was lines
+   ~1184/1754/3678). border, background, border-radius, and box-shadow
+   each had 2 competing values; kept whichever was already winning
+   (later + no !important beats earlier, same as everywhere else in
+   this cleanup). The @keyframes modalIn this used to animate in with
+   was itself dead: see the .modal-overlay.active .modal consolidation
+   below for why. */
 .modal {
-    background: var(--bg-dark);
+    background: rgba(23, 26, 20, 0.96);
     padding: 28px 24px;
-    border-radius: 20px;
+    border-radius: 24px;
     width: 100%;
     max-width: 460px;
     max-height: calc(100vh - 40px);
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(var(--ink-rgb), 0.08);
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(var(--primary-rgb), 0.08);
     box-sizing: border-box;
     margin: auto;
+    transform: scale(0.93) translateY(12px);
+    transition: transform 0.35s var(--ease), opacity 0.3s;
+    opacity: 0;
 }
 
 .modal::-webkit-scrollbar {
@@ -1527,11 +1553,6 @@ body.modal-open {
     to   { opacity: 1; transform: translateY(0)   scaleY(1); }
 }
 
-@keyframes modalIn {
-    from { opacity: 0; transform: scale(0.93) translateY(12px); }
-    to   { opacity: 1; transform: scale(1)    translateY(0); }
-}
-
 @keyframes cardEntrance {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -1735,26 +1756,9 @@ button[type="submit"]:active {
 /* (Progress bar entrance — merged into .budget-bar-fill above.) */
 
 /* --- Modals --- */
-.modal-overlay {
-    transition: opacity 0.3s var(--ease), backdrop-filter 0.3s;
-    backdrop-filter: blur(0px);
-}
 
-.modal-overlay.active {
-    backdrop-filter: blur(4px);
-}
 
-.modal {
-    transform: scale(0.93) translateY(12px);
-    transition: transform 0.35s var(--ease), opacity 0.3s;
-    opacity: 0;
-}
 
-.modal-overlay.active .modal {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-    animation: modalIn 0.35s var(--ease) both;
-}
 
 /* --- Profile menu --- */
 .profile-menu {
@@ -2005,7 +2009,7 @@ button[type="submit"]:active {
 
 /* (Elastic modal entrance removed: .modal.active .modal-content never
    matched real markup. .modal-overlay.active .modal already animates
-   in via modalIn — see keyframes above.) */
+   in via modalSpringIn — see keyframes near its declaration below.) */
 
 /* (Table Row Highlights & Slide — removed: .expense-row/tbody tr never matched
    real markup; .expense-item already has working hover treatment elsewhere.) */
@@ -3667,32 +3671,7 @@ button[type="submit"]:active {
 /* ── Improved modal backdrop ── */
 /* NOTE: Only add visual enhancements here. The show/hide logic (opacity,
    pointer-events, position, z-index) lives in the original rules above. */
-.modal-overlay {
-    backdrop-filter: blur(12px) saturate(160%);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    background: rgba(4, 6, 14, 0.75);
-}
-/* When NOT active, suppress the backdrop-filter so it doesn't render over everything */
-.modal-overlay:not(.active) {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-}
-.modal {
-    border: 1px solid rgba(var(--ink-rgb), 0.08);
-    background: rgba(23, 26, 20, 0.96);
-    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
-                0 0 0 1px rgba(var(--primary-rgb), 0.08);
-    border-radius: 24px;
-    /* NO animation here — animation only runs when entering active state */
-}
-/* Animation only when modal is shown */
-.modal-overlay.active .modal {
-    animation: modalIn 0.35s var(--ease) both;
-}
-@keyframes modalIn {
-    from { opacity: 0; transform: scale(0.94) translateY(20px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-}
+
 [data-theme="light"] .modal {
     background: rgba(255, 255, 255, 0.97) !important;
     border-color: rgba(0, 0, 0, 0.06);
@@ -4803,8 +4782,16 @@ button[type="submit"]:active {
     -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
+/* Consolidated: this was declared 4 times total (2 already merged into
+   the .modal rule above using the plain "modalIn" keyframe, which is
+   why that keyframe was dead -- this pair's !important animation value
+   was always winning instead). Kept modalSpringIn (entrance bounce) +
+   modalBorderGlow (a subtle glow while the dialog is open, not an
+   always-on-forever animation like the ones cut in the previous
+   animation pass, since it only runs while a modal is actually visible). */
 .modal-overlay.active .modal {
-    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               modalBorderGlow 4s ease-in-out infinite alternate;
 }
 
 /* 8. Toast Slide In & Progress Timer Line */
@@ -5054,10 +5041,7 @@ button[type="submit"]:active {
     }
 }
 
-.modal-overlay.active .modal {
-    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-               modalBorderGlow 4s ease-in-out infinite alternate !important;
-}
+
 
 /* 22. Chart Container Hover Lift & Canvas Glow */
 @keyframes chartSegmentPop {
