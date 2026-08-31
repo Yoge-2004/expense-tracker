@@ -2201,7 +2201,19 @@ button[type="submit"]:active {
     }
 }
 
+/* Consolidated from 3 unconditional declarations each of .metric-card,
+   .metric-card:hover, and .metric-card-glow (the last is unused dead
+   code -- not referenced in any shipped HTML or added by JS -- but
+   consolidated anyway for consistency in case it's revived later).
+   .metric-card's own transition had narrowed from "all 0.3s" down to
+   just transform+box-shadow across the 3 declarations, silently
+   dropping border-color -- the same bug shape as .avatar and
+   .link-action earlier in this cleanup. :hover DOES change border-color
+   (via a !important declaration that was winning), so it was snapping
+   instantly instead of fading. Restored border-color to the transition. */
 .metric-card {
+    position: relative;
+    overflow: hidden;
     background: var(--card-bg);
     backdrop-filter: var(--glass);
     border: 1px solid var(--border);
@@ -2211,18 +2223,20 @@ button[type="submit"]:active {
     flex-direction: column;
     justify-content: space-between;
     gap: 12px;
-    transition: all 0.3s var(--ease);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
 }
 
 .metric-card:hover {
     transform: translateY(-4px);
     border-color: var(--border-accent);
-    box-shadow: var(--shadow-premium);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-accent);
 }
 
 .metric-card-glow {
-    background: var(--card-bg) !important;
-    border-color: rgba(var(--primary-rgb), 0.35) !important;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-color: rgba(var(--primary-rgb), 0.2);
+    box-shadow: 0 0 30px -5px rgba(var(--primary-rgb), 0.12);
 }
 
 .metric-header {
@@ -2242,6 +2256,7 @@ button[type="submit"]:active {
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--text-main);
+    animation: countUp 0.55s var(--ease) both;
 }
 
 .metric-footer {
@@ -2313,30 +2328,43 @@ button[type="submit"]:active {
     margin-bottom: 8px;
 }
 
+/* Consolidated from 3 unconditional declarations each of .pill-chip,
+   .pill-chip:hover, and .pill-chip.active. Kept whichever value was
+   already winning per property (padding, border-radius, font-size, and
+   transition each had 2-3 competing values); merged :hover's two
+   declarations since they set non-overlapping properties (color/border/
+   background from one, transform/box-shadow from the other) so both
+   were already applying together, just needlessly split across the
+   file. .pill-chip:hover:not(.active) is a separate, deliberately more
+   specific rule for the non-active hover state and is left as-is. */
 .pill-chip {
-    padding: 8px 16px;
-    border-radius: 999px;
+    padding: 6px 16px;
+    border-radius: 100px;
     background: var(--input-bg);
     border: 1px solid var(--border);
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
+    letter-spacing: 0.01em;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.25s var(--ease);
+    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .pill-chip:hover {
     color: var(--text-main);
     border-color: var(--border-accent);
     background: rgba(var(--primary-rgb), 0.08);
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
 }
 
 .pill-chip.active {
     background: var(--primary-gradient);
-    color: #FFF;
+    color: #fff;
     border-color: transparent;
-    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.35);
+    box-shadow: 0 4px 12px var(--primary-glow);
+    animation: pillPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* BUDGET GRID MATRIX */
@@ -3184,19 +3212,10 @@ button[type="submit"]:active {
 }
 
 /* ── Dashboard Enhancements ── */
-.metric-card {
-    transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
-}
-.metric-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 24px 48px -12px rgba(0,0,0,0.4);
-    border-color: var(--border-accent) !important;
-}
+
 
 /* Animated number counters */
-.metric-value {
-    color: var(--text-main);
-}
+
 
 /* (Transaction row hover — removed: .expense-row duplicate, superseded by
    the working .expense-item:hover rules elsewhere.) */
@@ -3223,10 +3242,7 @@ button[type="submit"]:active {
 }
 
 /* Card glow variant */
-.metric-card-glow {
-    border-color: rgba(var(--primary-rgb),0.2) !important;
-    box-shadow: 0 0 30px -5px rgba(var(--primary-rgb),0.12) !important;
-}
+
 
 /* Top action bar for auth pages (Theme toggle, etc) */
 .auth-top-actions {
@@ -3559,9 +3575,7 @@ button[type="submit"]:active {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-.metric-value {
-    animation: countUp 0.55s var(--ease) both;
-}
+
 
 /* ── Shimmer / skeleton loading ── */
 @keyframes shimmer {
@@ -3600,21 +3614,7 @@ button[type="submit"]:active {
 }
 
 /* ── Enhanced metric cards ── */
-.metric-card {
-    position: relative;
-    overflow: hidden;
-    background: var(--card-bg) !important;
-    border: 1px solid var(--border) !important;
-    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
-}
-.metric-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-accent);
-}
-.metric-card-glow {
-    background: var(--card-bg) !important;
-    border: 1px solid var(--border) !important;
-}
+
 .metric-card-glow::after {
     display: none !important;
 }
@@ -3777,21 +3777,7 @@ button[type="submit"]:active {
 
 
 /* ── Category pills improved ── */
-.pill-chip {
-    border-radius: 100px !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    padding: 6px 16px !important;
-    letter-spacing: 0.01em;
-    transition: all 0.2s var(--ease) !important;
-    white-space: nowrap;
-}
-.pill-chip.active {
-    background: var(--primary-gradient) !important;
-    color: #fff !important;
-    border-color: transparent !important;
-    box-shadow: 0 4px 12px var(--primary-glow) !important;
-}
+
 .pill-chip:hover:not(.active) {
     border-color: var(--primary) !important;
     color: var(--primary) !important;
@@ -4837,18 +4823,7 @@ button[type="submit"]:active {
     100% { transform: scale(1); }
 }
 
-.pill-chip {
-    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
 
-.pill-chip:hover {
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
-}
-
-.pill-chip.active {
-    animation: pillPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
 
 /* 10. Number Counter Flash / Glow on Change */
 @keyframes numberGlow {
