@@ -60,8 +60,16 @@
 
 /* 182. Reveal: revealed end-state for every variant above, plus staggered
    children support — motion.js sets --reveal-delay per element for a
-   cascading wave instead of every item popping in at once. */
-[data-reveal].is-revealed {
+   cascading wave instead of every item popping in at once.
+   :where() wraps [data-reveal] so it contributes zero specificity here:
+   without it, this rule's specificity (0,2,0) ties with component hover
+   rules like .metric-card:hover, and — being in this later-loaded
+   stylesheet — was winning that tie permanently once an element was
+   revealed, silently overriding transform: none onto every hover state
+   forever after. This still correctly beats the plain [data-reveal="x"]
+   hidden-state rule above (lower specificity, same file), just no longer
+   outranks a component's own hover/interactive styling. */
+:where([data-reveal]).is-revealed {
     opacity: 1;
     filter: blur(0);
     transform: none;

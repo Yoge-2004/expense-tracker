@@ -741,7 +741,7 @@ button[type="submit"]:active {
     height: auto;
     display: flex;
     flex-direction: column;
-    animation: cardEntrance 0.5s var(--ease) both;
+    animation: cardEntrance 0.5s var(--ease);
 }
 
 .top-bar {
@@ -835,6 +835,23 @@ button[type="submit"]:active {
     gap: 20px;
 }
 
+/* Consolidated from 4 unconditional declarations of .card and 3 of
+   .card:hover. .card's transition itself was never missing a needed
+   property (unlike .avatar/.link-action/.metric-card elsewhere in this
+   cleanup) -- but a real bug was found here anyway, of a different
+   kind: cardEntrance's "both" fill-mode was never removed. CSS
+   animations, while filled via "both"/"forwards", override transform
+   from ANY normal (non-!important) stylesheet declaration regardless of
+   specificity -- so .card:hover's transform (translateY/scale) could
+   NEVER actually apply, permanently, for the entire life of the page
+   after the entrance animation finished playing. Confirmed by
+   forcibly clearing the animation at runtime and re-testing hover --
+   went from a stuck 3D identity matrix to the correct 2D
+   scale+translate the instant the fill-mode stopped locking it in.
+   Dropped "both" (plain default fill-mode is "none", which only
+   applies the animation's keyframe styles while it's actually
+   playing) so the entrance animation still runs once on load exactly
+   as before, but stops overriding transform once it's done. */
 .card {
     background: var(--card-bg);
     backdrop-filter: var(--glass);
@@ -846,6 +863,35 @@ button[type="submit"]:active {
     justify-content: flex-start;
     gap: 16px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+    animation: cardEntrance 0.5s var(--ease);
+    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+/* .card:hover and .metric-card:hover share the same lift/shadow but
+   differ in border-color intensity. Determined by measuring actual
+   getComputedStyle() under a real simulated hover in a browser rather
+   than by manual cascade tracing -- this selector web (.card,
+   .metric-card, .stat-card, .chart-card, .transactions-card,
+   .budget-card all sharing overlapping compound hover selectors
+   elsewhere in this file) proved too easy to get wrong by eye, which is
+   exactly what happened on the first attempt at this consolidation. */
+.card:hover,
+.metric-card:hover {
+    /* !important restored: this needs to keep beating .insight-card:hover
+       / .trend-card:hover (equal specificity, separate rule elsewhere in
+       this file) the same way the original pre-consolidation declaration
+       did. Confirmed removing it let .insight-card:hover's translateY(-3px)
+       win over this rule's -4px for elements with both classes -- a real
+       behavior change from dropping !important without checking for this
+       specific sibling-selector interaction first. */
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 16px 36px -10px rgba(var(--primary-rgb), 0.25), 0 0 16px rgba(var(--primary-rgb), 0.10) !important;
+}
+.card:hover {
+    border-color: rgba(var(--primary-rgb), 0.45) !important;
+}
+.metric-card:hover {
+    border-color: rgba(var(--primary-rgb), 0.6) !important;
 }
 
 .card-label {
@@ -1036,14 +1082,36 @@ button[type="submit"]:active {
     font-size: 16px;
 }
 
+/* Consolidated from 3 unconditional declarations each of .filter-toolbar
+   and .filter-toolbar.active (the latter wasn't caught by the earlier
+   automated scan since it's a compound selector, same situation as the
+   modal rules). The base rule even had two of its own `transition`
+   declarations in the same block (only the second was taking effect).
+   display:flex !important on the base rule means the toolbar is always
+   flex regardless of open/closed state -- visibility is actually
+   controlled by max-height/opacity/pointer-events -- so
+   .active { display:flex } was fully redundant and dropped. */
 .filter-toolbar {
     gap: 10px;
     margin-bottom: 16px;
     flex-wrap: wrap;
+    display: flex !important;
+    border-radius: 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 16px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    max-height: 0;
+    transition: max-height 0.35s var(--ease), opacity 0.25s var(--ease);
 }
 
 .filter-toolbar.active {
-    display: flex;
+    opacity: 1;
+    pointer-events: all;
+    max-height: 700px;
+    animation: filterSlide 0.25s var(--ease) both;
 }
 
 .filter-select {
@@ -1603,15 +1671,7 @@ body.modal-open {
 
 
 /* --- Cards --- */
-.card {
-    transition: box-shadow 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.3s var(--ease);
-    animation: cardEntrance 0.5s var(--ease) both;
-}
 
-.card:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    border-color: rgba(var(--primary-rgb), 0.15);
-}
 
 .grid-stats .card:nth-child(1) { animation-delay: 0.05s; }
 .grid-stats .card:nth-child(2) { animation-delay: 0.12s; }
@@ -1805,21 +1865,7 @@ button[type="submit"]:active {
 /* (Duplicate focus glow removed — see .command-search-wrapper:focus-within above.) */
 
 /* --- Filter panel slide-down --- */
-.filter-toolbar {
-    transition: opacity 0.25s var(--ease);
-    opacity: 0;
-    display: flex !important;
-    pointer-events: none;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.35s var(--ease), opacity 0.25s var(--ease);
-}
 
-.filter-toolbar.active {
-    opacity: 1;
-    pointer-events: all;
-    max-height: 700px;
-}
 
 /* --- Budget items entrance --- */
 .budget-item {
@@ -1955,7 +2001,7 @@ button[type="submit"]:active {
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease !important;
 }
 
-.stat-card:hover, .metric-card:hover {
+.stat-card:hover {
     transform: translateY(-10px) scale(1.025) rotate(0.5deg) !important;
     box-shadow: 0 20px 45px -10px rgba(var(--primary-rgb), 0.45), 0 0 25px rgba(178, 138, 50, 0.3) !important;
     border-color: rgba(var(--primary-rgb), 0.6) !important;
@@ -1966,15 +2012,7 @@ button[type="submit"]:active {
 }
 
 /* Prominent Card & Panel Styles */
-.card {
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.35s ease !important;
-}
 
-.card:hover {
-    transform: translateY(-6px) scale(1.01) !important;
-    border-color: rgba(var(--primary-rgb), 0.4) !important;
-    box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--primary-rgb), 0.25) !important;
-}
 
 /* Interactive Buttons */
 .btn-primary, .btn-submit {
@@ -2224,12 +2262,6 @@ button[type="submit"]:active {
     justify-content: space-between;
     gap: 12px;
     transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
-}
-
-.metric-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--border-accent);
-    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-accent);
 }
 
 .metric-card-glow {
@@ -2944,6 +2976,7 @@ button[type="submit"]:active {
 .form-input:focus + .input-icon,
 .input-wrapper:focus-within .input-icon {
     color: var(--primary);
+    animation: iconNudge 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .input-eye {
@@ -4042,16 +4075,7 @@ button[type="submit"]:active {
 }
 
 /* ── Filter panel improved ── */
-.filter-toolbar {
-    border-radius: 14px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    padding: 16px;
-    overflow: hidden;
-}
-.filter-toolbar.active {
-    animation: filterSlide 0.25s var(--ease) both;
-}
+
 @keyframes filterSlide {
     from { opacity: 0; transform: translateY(-8px); max-height: 0; }
     to   { opacity: 1; transform: translateY(0); max-height: 700px; }
@@ -4614,16 +4638,7 @@ button[type="submit"]:active {
 }
 
 .metric-card,
-.card {
-    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease) !important;
-}
 
-.metric-card:hover,
-.card:hover {
-    transform: translateY(-4px) scale(1.012) !important;
-    border-color: rgba(var(--primary-rgb), 0.45) !important;
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.45), 0 0 25px rgba(var(--primary-rgb), 0.22) !important;
-}
 
 /* ==========================================================================
    SUPER-CHARGED 17+ ANIMATIONS SYSTEM (60FPS HARDWARE-ACCELERATED)
@@ -4851,10 +4866,7 @@ button[type="submit"]:active {
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25), 0 8px 20px rgba(0,0,0,0.3) !important;
 }
 
-.input-wrapper:focus-within .input-icon {
-    color: var(--primary) !important;
-    animation: iconNudge 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+
 
 /* 12. Multi-Ring Dual Speed Action Spinner */
 @keyframes dualSpin {
@@ -5928,7 +5940,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .card, .metric-card, .chart-card, .transactions-card, .budget-card, .float-card, .perk-item {
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease !important;
 }
-.card:hover, .metric-card:hover, .chart-card:hover, .transactions-card:hover, .budget-card:hover {
+.chart-card:hover, .transactions-card:hover, .budget-card:hover {
     transform: translateY(-4px) scale(1.01) !important;
     box-shadow: 0 16px 36px -10px rgba(var(--primary-rgb), 0.25), 0 0 16px rgba(var(--primary-rgb), 0.10) !important;
 }
