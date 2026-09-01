@@ -523,16 +523,18 @@ button[type="submit"]:active {
     width: 36px;
     height: 36px;
     flex-shrink: 0;
-    background: var(--input-bg) !important;
-    border: 1px solid var(--border) !important;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: var(--text-muted);
-    transition: 0.2s;
     padding: 0;
+    transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
+                background 0.2s var(--ease), transform 0.2s var(--ease),
+                box-shadow 0.2s var(--ease);
 }
 
 .btn-icon:hover,
@@ -597,16 +599,18 @@ button[type="submit"]:active {
 .btn-delete {
     width: 36px;
     height: 36px;
-    background: rgba(var(--accent-rgb), 0.1) !important;
-    border: 1px solid rgba(var(--accent-rgb), 0.3) !important;
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
     border-radius: 8px;
-    color: var(--accent) !important;
+    color: var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
     padding: 0;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease),
+                border-color 0.2s var(--ease), transform 0.2s var(--ease),
+                box-shadow 0.2s var(--ease);
 }
 
 
@@ -794,22 +798,43 @@ button[type="submit"]:active {
     transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
 
+/* Consolidated from 3 unconditional declarations of .profile-menu, 2 of
+   .profile-menu.active, and 3 total across .profile-menu a /
+   .profile-menu a:hover. Two things worth noting: (1) .profile-menu.active
+   had its "animation" property set twice with different keyframe names
+   (slideDown, then menuDown) -- animation is a non-merging shorthand, so
+   only the later one (menuDown) ever actually played; slideDown was
+   entirely dead. (2) .profile-menu a's transition list didn't include
+   transform even though :hover sets translateX(3px) -- same narrowed-
+   transition pattern found repeatedly elsewhere in this cleanup -- so
+   that slide was snapping instantly instead of easing in. Fixed both. */
 .profile-menu {
     position: absolute;
     top: 60px;
     right: 0;
     width: 180px;
-    background: var(--bg-dark);
-    border: 1px solid var(--border);
+    background: rgba(23, 26, 20, 0.95);
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
+    border: 1px solid rgba(var(--ink-rgb), 0.08);
     border-radius: 16px;
     flex-direction: column;
     overflow: visible;
     z-index: 2000;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
+    transform-origin: top right;
+    transition: opacity 0.2s var(--ease), transform 0.25s var(--ease);
+    opacity: 0;
+    transform: scale(0.95) translateY(-6px);
+    display: flex !important;
+    pointer-events: none;
 }
 
 .profile-menu.active {
-    display: flex;
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: all;
+    animation: menuDown 0.2s var(--ease) both;
 }
 
 .profile-menu a {
@@ -817,11 +842,14 @@ button[type="submit"]:active {
     font-size: 14px;
     color: var(--text-main);
     border-bottom: 1px solid var(--border);
-    transition: 0.2s;
+    transition: background 0.18s var(--ease), color 0.18s var(--ease),
+                padding-left 0.18s var(--ease), transform 0.18s var(--ease);
 }
 
 .profile-menu a:hover {
-    background: var(--input-bg);
+    background: rgba(var(--primary-rgb), 0.08);
+    padding-left: 26px;
+    transform: translateX(3px);
 }
 
 .profile-menu a:last-child {
@@ -955,7 +983,6 @@ button[type="submit"]:active {
 
 .recent-transactions { padding: 22px; }
 .list-header h3 { font-size: 18px; letter-spacing: -.35px; }
-.expense-item { padding: 15px 12px; }
 .expense-meta { color: var(--text-muted); font-size: 12px; }
 
 @media (max-width: 900px) {
@@ -1058,17 +1085,7 @@ button[type="submit"]:active {
     border-radius: 10px;
 }
 
-.expense-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-}
 
-.expense-item:hover {
-    background: var(--input-bg);
-}
 
 .expense-info h4 {
     font-size: 16px;
@@ -1730,11 +1747,7 @@ button[type="submit"]:active {
 }
 
 /* --- Icon buttons --- */
-.btn-icon {
-    transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
-                background 0.2s var(--ease), transform 0.2s var(--ease),
-                box-shadow 0.2s var(--ease) !important;
-}
+
 
 .btn-icon:hover {
     transform: translateY(-1px) !important;
@@ -1749,11 +1762,7 @@ button[type="submit"]:active {
 /* --- Edit / Delete buttons: hover-lift + active-press motion
    (base colors are set where these classes are first defined, above) --- */
 .btn-edit,
-.btn-delete {
-    transition: background 0.2s var(--ease), color 0.2s var(--ease),
-                border-color 0.2s var(--ease), transform 0.2s var(--ease),
-                box-shadow 0.2s var(--ease) !important;
-}
+
 
 
 
@@ -1788,18 +1797,7 @@ button[type="submit"]:active {
 .btn-delete.shake { animation: shake 0.4s var(--ease); }
 
 /* --- Expense list items --- */
-.expense-item {
-    transition: background 0.2s var(--ease), transform 0.2s var(--ease),
-                box-shadow 0.2s var(--ease);
-    animation: expenseSlideIn 0.35s var(--ease) both;
-    border-radius: 10px;
-}
 
-.expense-item:hover {
-    transform: translateX(3px);
-    box-shadow: inset 3px 0 0 var(--accent);
-    background: var(--input-bg);
-}
 
 /* Stagger each item */
 .expense-item:nth-child(1)  { animation-delay: 0.04s; }
@@ -1821,30 +1819,7 @@ button[type="submit"]:active {
 
 
 /* --- Profile menu --- */
-.profile-menu {
-    transform-origin: top right;
-    transition: opacity 0.2s var(--ease), transform 0.25s var(--ease);
-    opacity: 0;
-    transform: scale(0.95) translateY(-6px);
-    display: flex !important; /* always in flow, toggled via opacity+pointer-events */
-    pointer-events: none;
-}
 
-.profile-menu.active {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-    pointer-events: all;
-    animation: slideDown 0.25s var(--ease) both;
-}
-
-.profile-menu a {
-    transition: background 0.18s var(--ease), color 0.18s var(--ease),
-                padding-left 0.18s var(--ease);
-}
-
-.profile-menu a:hover {
-    padding-left: 26px;
-}
 
 /* --- Avatar --- */
 
@@ -2192,7 +2167,7 @@ button[type="submit"]:active {
     gap: 10px;
     min-width: 260px;
     height: 44px;
-    transition: all 0.3s var(--ease);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .command-search-wrapper:focus-within {
@@ -2873,11 +2848,27 @@ button[type="submit"]:active {
     margin-top: 16px;
 }
 
+/* Consolidated from 3 unconditional declarations. Note: block 2's
+   properties (display:flex, gap, margin-bottom:28px) don't semantically
+   fit this element -- .step-bar is used exactly once in the shipped
+   HTML, as a single width-animated progress-fill div nested inside
+   .step-progress, not a flex container -- and look like they may have
+   been intended for a different component under the same class name.
+   Since they don't actually conflict with anything (non-overlapping
+   properties), preserved as-is rather than guessed at and removed,
+   since I have no way to visually confirm removing them wouldn't
+   change something currently rendering correctly. */
 .step-bar {
     height: 100%;
     background: var(--primary-gradient);
     border-radius: 2px;
-    transition: width 0.4s var(--ease);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Auth form */
@@ -3653,18 +3644,34 @@ button[type="submit"]:active {
 }
 
 /* ── Transaction row improvements ── */
+/* Consolidated from 4 unconditional declarations of .expense-item and 4
+   of .expense-item:hover, plus three real bugs found along the way:
+   (1) the last .expense-item:hover declaration had a dangling
+   ".expense-item," on its own line before it -- valid CSS (blank lines
+   are just whitespace), so this was silently applying hover-only
+   styling (including a !important background) to every expense item
+   unconditionally, hovered or not. (2) the winning transition list
+   dropped box-shadow even though :hover sets one -- same narrowed-
+   transition pattern found repeatedly elsewhere in this cleanup.
+   (3) expenseSlideIn's "both" fill-mode -- same animation-cascade-lock
+   issue as cardEntrance/itemSlideIn found earlier: it permanently
+   overrides transform once the entrance animation finishes, blocking
+   :hover's translateX/scale from ever applying. All three fixed. */
 .expense-item {
-    border-radius: 14px;
-    padding: 14px 18px;
-    border: 1px solid var(--border);
-    background: var(--card-bg);
-    transition: background 0.2s, transform 0.2s var(--ease), border-color 0.2s;
     display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 14px;
+    padding: 14px 18px;
     margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card-bg);
     position: relative;
     overflow: hidden;
+    animation: expenseSlideIn 0.35s var(--ease);
+    transition: background 0.2s var(--ease), transform 0.2s var(--ease),
+                border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 .expense-item::before {
     content: '';
@@ -3681,7 +3688,8 @@ button[type="submit"]:active {
 .expense-item:hover {
     background: var(--card-bg-hover);
     border-color: var(--border-accent);
-    transform: translateX(4px);
+    transform: translateX(4px) scale(1.008);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 .expense-item:hover::before {
     opacity: 1;
@@ -3779,18 +3787,7 @@ button[type="submit"]:active {
 /* ── Profile menu glassmorphism ── */
 /* NOTE: opacity/pointer-events/transform show-hide lives in original rules.
    Only add visual surface enhancements here. */
-.profile-menu {
-    background: rgba(23, 26, 20, 0.95);
-    backdrop-filter: var(--glass);
-    -webkit-backdrop-filter: var(--glass);
-    border: 1px solid rgba(var(--ink-rgb), 0.08);
-    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
-    /* NO unconditional animation — it would override opacity:0 on hidden state */
-}
-/* Animate only when becoming active */
-.profile-menu.active {
-    animation: menuDown 0.2s var(--ease) both;
-}
+
 @keyframes menuDown {
     from { opacity: 0; transform: translateY(-8px) scale(0.96); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -4040,12 +4037,6 @@ button[type="submit"]:active {
 
 
 /* ── Register step indicator ── */
-.step-bar {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    margin-bottom: 28px;
-}
 /* ── Smooth scroll area ── */
 .scroll-area, .scroll-area-modal {
     scroll-behavior: smooth;
@@ -4101,6 +4092,14 @@ button[type="submit"]:active {
 }
 
 /* ── Subscription row ── */
+/* Consolidated from 2 declarations. Same two bugs as .card/.metric-card
+   found earlier in this cleanup: the winning transition list dropped
+   border-color even though .sub-row:hover changes it (restored), and
+   the entrance animation used "both" fill-mode, which -- per the
+   cardEntrance investigation above -- permanently locks transform via
+   the CSS animation cascade layer once the animation finishes,
+   blocking .sub-row:hover's translateX(4px) from ever applying.
+   Dropped "both" here too. */
 .sub-row {
     border-radius: 12px;
     padding: 14px 16px;
@@ -4110,7 +4109,8 @@ button[type="submit"]:active {
     align-items: center;
     gap: 14px;
     margin-bottom: 8px;
-    transition: all 0.2s var(--ease);
+    animation: itemSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .sub-row:hover {
     border-color: var(--border-accent);
@@ -4692,17 +4692,7 @@ button[type="submit"]:active {
     }
 }
 
-.expense-item,
-.sub-row {
-    animation: itemSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease, box-shadow 0.2s ease;
-}
 
-.expense-item:hover {
-    transform: translateX(4px) scale(1.008);
-    background: var(--card-bg-hover) !important;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-}
 
 /* 4. Progress Bar & Step Bar Shimmer Wave */
 @keyframes shimmerSweep {
@@ -4711,11 +4701,7 @@ button[type="submit"]:active {
 }
 
 .budget-bar-fill,
-.step-bar {
-    position: relative;
-    overflow: hidden;
-    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+
 
 .budget-bar-fill::after,
 .step-bar::after {
@@ -5049,11 +5035,7 @@ button[type="submit"]:active {
     100% { transform: scaleX(1); opacity: 1; }
 }
 
-.profile-menu a:hover {
-    background: rgba(var(--primary-rgb), 0.08);
-    transform: translateX(3px);
-    transition: all 0.2s ease;
-}
+
 
 /* 24. Skeleton Loading Shimmer Wave */
 @keyframes skeletonShimmer {
@@ -5572,10 +5554,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* 99. Search Bar Stretch on Focus */
-.command-search-wrapper {
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
 /* 100. Step Progress Bar Gleam Stream */
 @keyframes stepBarGleam {
     0% { background-position: -200% center; }
