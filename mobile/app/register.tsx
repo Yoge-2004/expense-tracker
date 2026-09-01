@@ -1,533 +1,818 @@
-import React, { useState, useRef, useEffect } from 'react';
+/**
+ * @file register.tsx
+ * @description Secure Account Registration screen.
+ * Features:
+ * - Google Sign-In integration for one-tap account creation.
+ * - Username handle & Full Name inputs.
+ * - Preferred Currency selector (INR, USD, EUR, GBP, etc.).
+ * - Dynamic verification mode detection via `/auth/config`.
+ * - 2-step OTP email verification workflow when SMTP is active.
+ * - Rich ambient aura background and staggered spring animations.
+ * - Full iOS and Android safe area adaptation.
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  StyleSheet, Text, TextInput, View, TouchableOpacity,
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
-  ScrollView, Animated,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Animated,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useAlert } from '../context/AlertContext';
+import { apiRequest, ApiError } from '../services/api';
+import { WORLD_CURRENCIES } from '../services/currency';
+import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+import { AmbientAura } from '../components/AmbientAura';
+import { StaggeredView } from '../components/StaggeredView';
+import { GOOGLE_OAUTH_CONFIG } from '../constants/auth';
 
-const STEPS = ['Name', 'Email', 'Password'];
+WebBrowser.maybeCompleteAuthSession();
 
-const PERKS = [
-  { icon: 'shield-checkmark', text: 'Bank-grade security', color: '#C79A3E' },
-  { icon: 'analytics', text: 'Smart spending insights', color: '#A23E32' },
-  { icon: 'notifications', text: 'Budget alerts', color: '#4C7A78' },
-  { icon: 'repeat', text: 'Subscription tracking', color: '#C9932E' },
-];
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidUsername(username: string): boolean {
+  return /^[a-zA-Z0-9._]{3,30}$/.test(username);
+}
 
 export default function RegisterScreen() {
-  const { register, sendSignupOtp, theme } = useAuth();
+  const { register, loginWithGoogle, theme } = useAuth();
+  const { showAlert } = useAlert();
   const router = useRouter();
+  const c = Colors[theme];
+  const isLight = theme === 'light';
+  const insets = useSafeAreaInsets();
+
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [currency, setCurrency] = useState('INR');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+
+  const [isEmailVerificationEnabled, setIsEmailVerificationEnabled] = useState(false);
+  const [checkingConfig, setCheckingConfig] = useState(true);
   const [otpSent, setOtpSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  const isLight = theme === 'light';
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: 'expensetracker',
+  });
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_OAUTH_CONFIG.webClientId,
+    iosClientId: GOOGLE_OAUTH_CONFIG.iosClientId,
+    androidClientId: GOOGLE_OAUTH_CONFIG.androidClientId,
+    webClientId: GOOGLE_OAUTH_CONFIG.webClientId,
+    redirectUri,
+  });
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
-  const scaleAnim = useRef(new Animated.Value(0.93)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, friction: 8, tension: 60, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 7, tension: 50, useNativeDriver: true }),
     ]).start();
   }, []);
 
-  const c = {
-    bg: isLight ? '#EDEAE0' : '#10120E',
-    card: isLight ? '#FCFBF6' : 'rgba(23,26,20,0.9)',
-    border: isLight ? '#DAD4C1' : 'rgba(236,231,216,0.08)',
-    text: isLight ? '#1E1B15' : '#ECE7D8',
-    textMuted: isLight ? '#6B6558' : '#A8A395',
-    inputBg: isLight ? '#F5F2E9' : 'rgba(23,26,20,0.7)',
-    accent: '#C79A3E',
-    orange: '#A23E32',
+  useEffect(() => {
+    async function checkAuthConfig() {
+      try {
+        const config = await apiRequest('/auth/config');
+        if (config && typeof config.emailVerificationEnabled === 'boolean') {
+          setIsEmailVerificationEnabled(config.emailVerificationEnabled);
+        }
+      } catch {
+        setIsEmailVerificationEnabled(false);
+      } finally {
+        setCheckingConfig(false);
+      }
+    }
+    checkAuthConfig();
+  }, []);
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.params?.id_token || (response as any).authentication?.idToken;
+      if (idToken) {
+        handleGoogleToken(idToken);
+      }
+    }
+  }, [response]);
+
+  const handleGoogleToken = async (idToken: string) => {
+    setIsGoogleLoading(true);
+    try {
+      await loginWithGoogle(idToken);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('🎉 Welcome!', 'Google Sign-In successful!', undefined, 'success');
+    } catch (err: any) {
+      const msg = err instanceof ApiError ? err.message : err.message || 'Google registration failed.';
+      showAlert('Google Sign-In Failed', msg, undefined, 'error');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const validateBaseInputs = (): boolean => {
+    const cleanName = name.trim();
+    if (!cleanName) {
+      showAlert('Missing Name', 'Please enter your full display name.');
+      return false;
+    }
+    if (cleanName.length < 2) {
+      showAlert('Invalid Name', 'Name must be at least 2 characters.');
+      return false;
+    }
+
+    const cleanUsername = username.trim();
+    if (!cleanUsername) {
+      showAlert('Missing Username', 'Please enter a unique username handle.');
+      return false;
+    }
+    if (!isValidUsername(cleanUsername)) {
+      showAlert(
+        'Invalid Username',
+        'Username must be 3-30 characters and contain only letters, numbers, dots, or underscores.'
+      );
+      return false;
+    }
+
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      showAlert('Missing Email', 'Please enter your email address.');
+      return false;
+    }
+    if (!isValidEmail(cleanEmail)) {
+      showAlert('Invalid Email', 'Please enter a valid email format (e.g. name@domain.com).');
+      return false;
+    }
+
+    if (!password || password.length < 6) {
+      showAlert('Weak Password', 'Password must be at least 6 characters.');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      showAlert('Password Mismatch', 'Password and confirmation password do not match.');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSendOtp = async () => {
-    if (!name.trim() || !email.trim() || !password) {
-      Alert.alert('Missing Info', 'Please fill in all fields.');
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
-      return;
-    }
+    if (!validateBaseInputs()) return;
+
     setIsLoading(true);
     try {
-      await sendSignupOtp(email.trim(), name.trim());
+      await apiRequest('/auth/signup/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim(), name: name.trim() }),
+      });
       setOtpSent(true);
-      Alert.alert('Code Sent', `A 6-digit verification code was sent to ${email.trim()}.`);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('Code Sent 📩', `A 6-digit verification code was sent to ${email.trim()}.`);
     } catch (error: any) {
-      Alert.alert('Failed to send code', error.message || 'Could not send verification email.');
+      const isApiErr = error instanceof ApiError;
+      const msg = isApiErr ? error.message : 'Could not send verification email.';
+      showAlert('Failed to Send Code', msg, undefined, 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRegister = async () => {
+  const handleRegisterDirect = async () => {
+    if (!validateBaseInputs()) return;
+
+    setIsLoading(true);
+    try {
+      await register(name.trim(), username.trim(), email.trim(), password, 'BYPASS', currency);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('🎉 Welcome!', 'Account created successfully! Please sign in with your credentials.', [
+        { text: 'Sign In', onPress: () => router.replace('/login') },
+      ], 'success');
+    } catch (error: any) {
+      const isApiErr = error instanceof ApiError;
+      const msg = isApiErr ? error.message : 'Something went wrong during registration.';
+      showAlert('Registration Failed', msg, undefined, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegisterWithOtp = async () => {
     if (!otp || otp.trim().length !== 6) {
-      Alert.alert('Invalid Code', 'Please enter the 6-digit code from your email.');
+      showAlert('Invalid Code', 'Please enter the 6-digit code received in your email.');
       return;
     }
     setIsLoading(true);
     try {
-      await register(name.trim(), email.trim(), password, otp.trim());
-      Alert.alert('🎉 Welcome!', 'Account created! Please sign in.', [
-        { text: 'Sign In', onPress: () => router.replace('/login') }
-      ]);
+      await register(name.trim(), username.trim(), email.trim(), password, otp.trim(), currency);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('🎉 Welcome!', 'Account created successfully! Please sign in.', [
+        { text: 'Sign In', onPress: () => router.replace('/login') },
+      ], 'success');
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message || 'Something went wrong.');
+      const isApiErr = error instanceof ApiError;
+      const msg = isApiErr ? error.message : 'Invalid verification code or registration failed.';
+      showAlert('Registration Failed', msg, undefined, 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const inputBorder = (field: string) =>
-    focusedField === field ? c.accent : c.border;
-
-  const completedCount = [name, email, password, otpSent ? otp : null].filter(Boolean).length;
-  const progressPct = (completedCount / 4) * 100;
+  const inputBorder = (field: string) => (focusedField === field ? c.primary : c.border);
+  const selectedCurrItem = WORLD_CURRENCIES.find((item) => item.code === currency) || WORLD_CURRENCIES[0];
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: c.bg }]}
     >
+      <AmbientAura />
+
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: Math.max(insets.top + 16, 48),
+            paddingBottom: Math.max(insets.bottom + 20, 32),
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* HEADER */}
-        <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <TouchableOpacity
-            style={[styles.backBtn, { borderColor: c.border, backgroundColor: c.inputBg }]}
-            onPress={() => router.replace('/login')}
-          >
-            <Ionicons name="arrow-back" size={18} color={c.textMuted} />
-          </TouchableOpacity>
-
-          <View style={styles.headerTitle}>
-            <Text style={[styles.headerLabel, { color: c.textMuted }]}>{otpSent ? 'Step 2 of 2: Verification' : 'Step 1 of 2: Details'}</Text>
-            <Text style={[styles.pageTitle, { color: c.text }]}>Create your account</Text>
-
-            {/* Progress bar */}
-            <View style={[styles.progressBg, { backgroundColor: c.border }]}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  { backgroundColor: c.accent, width: `${progressPct}%` },
-                ]}
-              />
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* FORM CARD */}
         <Animated.View
           style={[
-            styles.formCard,
+            styles.card,
             {
               backgroundColor: c.card,
               borderColor: c.border,
               opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+              transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          {/* Full Name */}
-          <View style={styles.fieldGroup}>
-            <View style={styles.fieldLabelRow}>
-              <View style={[styles.stepDot, { backgroundColor: name ? c.accent : c.border }]}>
-                {name
-                  ? <Ionicons name="checkmark" size={10} color="#10120E" />
-                  : <Text style={styles.stepDotText}>1</Text>
-                }
+          {/* Header */}
+          <StaggeredView delay={100} direction="down">
+            <View style={styles.header}>
+              <View style={[styles.iconWrap, { backgroundColor: c.primary }]}>
+                <Ionicons name="person-add" size={24} color="#10120E" />
               </View>
-              <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Full Name</Text>
+              <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
+              <Text style={[styles.subtitle, { color: c.textMuted }]}>
+                {isEmailVerificationEnabled && otpSent
+                  ? 'Enter the 6-digit OTP sent to your email'
+                  : 'Join ExpenseTracker PRO and master your finances'}
+              </Text>
             </View>
-            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('name') }]}>
-              <Ionicons name="person-outline" size={18} color={focusedField === 'name' ? c.accent : c.textMuted} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: c.text }]}
-                placeholder="John Doe"
-                placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
-                autoCapitalize="words"
-                value={name}
-                onChangeText={setName}
-                editable={!otpSent}
-                onFocus={() => setFocusedField('name')}
-                onBlur={() => setFocusedField(null)}
-              />
-              {name.length > 0 && (
-                <Ionicons name="checkmark-circle" size={18} color={c.accent} />
-              )}
-            </View>
-          </View>
+          </StaggeredView>
 
-          {/* Email */}
-          <View style={styles.fieldGroup}>
-            <View style={styles.fieldLabelRow}>
-              <View style={[styles.stepDot, { backgroundColor: email ? c.accent : c.border }]}>
-                {email
-                  ? <Ionicons name="checkmark" size={10} color="#10120E" />
-                  : <Text style={styles.stepDotText}>2</Text>
-                }
-              </View>
-              <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Email Address</Text>
-            </View>
-            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('email') }]}>
-              <Ionicons name="mail-outline" size={18} color={focusedField === 'email' ? c.accent : c.textMuted} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: c.text }]}
-                placeholder="name@example.com"
-                placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-                editable={!otpSent}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-              />
-              {email.includes('@') && (
-                <Ionicons name="checkmark-circle" size={18} color={c.accent} />
-              )}
-            </View>
-          </View>
-
-          {/* Password */}
-          <View style={styles.fieldGroup}>
-            <View style={styles.fieldLabelRow}>
-              <View style={[styles.stepDot, { backgroundColor: password.length >= 6 ? c.accent : c.border }]}>
-                {password.length >= 6
-                  ? <Ionicons name="checkmark" size={10} color="#10120E" />
-                  : <Text style={styles.stepDotText}>3</Text>
-                }
-              </View>
-              <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Password <Text style={{ color: c.textMuted, fontWeight: '400' }}>(min. 6 chars)</Text></Text>
-            </View>
-            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('password') }]}>
-              <Ionicons name="lock-closed-outline" size={18} color={focusedField === 'password' ? c.accent : c.textMuted} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: c.text }]}
-                placeholder="••••••••"
-                placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                value={password}
-                onChangeText={setPassword}
-                editable={!otpSent}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={18} color={c.textMuted} />
+          {/* Google Sign-Up One-Tap */}
+          {(!isEmailVerificationEnabled || !otpSent) && (
+            <StaggeredView delay={130} direction="up">
+              <TouchableOpacity
+                activeOpacity={0.85}
+                disabled={isGoogleLoading || !request}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  promptAsync();
+                }}
+                style={[styles.googleOAuthBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                {isGoogleLoading ? (
+                  <ActivityIndicator color={c.primary} size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-google" size={19} color="#EA4335" />
+                    <Text style={[styles.googleOAuthText, { color: c.text }]}>Sign up with Google</Text>
+                  </>
+                )}
               </TouchableOpacity>
-            </View>
-            {/* Strength indicator */}
-            {password.length > 0 && (
-              <View style={styles.strengthRow}>
-                {[1, 2, 3, 4].map(i => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.strengthSegment,
-                      {
-                        backgroundColor:
-                          password.length >= i * 3
-                            ? i <= 1 ? '#A23E32' : i <= 2 ? '#C9932E' : i <= 3 ? '#A97F2E' : '#C79A3E'
-                            : c.border,
-                      },
-                    ]}
+
+              <View style={styles.dividerRow}>
+                <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
+                <Text style={[styles.dividerText, { color: c.textMuted }]}>or register with email</Text>
+                <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
+              </View>
+            </StaggeredView>
+          )}
+
+          {/* STEP 1: Details Entry */}
+          {(!isEmailVerificationEnabled || !otpSent) && (
+            <StaggeredView delay={160} direction="up">
+              {/* Full Name */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: c.textMuted }]}>Full Name</Text>
+                <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder('name') }]}>
+                  <Ionicons name="person-outline" size={18} color={focusedField === 'name' ? c.primary : c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: c.text }]}
+                    placeholder="John Doe"
+                    placeholderTextColor={c.textMuted}
+                    value={name}
+                    onChangeText={setName}
+                    onFocus={() => setFocusedField('name')}
+                    onBlur={() => setFocusedField(null)}
                   />
-                ))}
-                <Text style={[styles.strengthLabel, { color: c.textMuted }]}>
-                  {password.length < 4 ? 'Weak' : password.length < 7 ? 'Fair' : password.length < 10 ? 'Good' : 'Strong'}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Verification Code (OTP) Field */}
-          {otpSent && (
-            <View style={styles.fieldGroup}>
-              <View style={styles.fieldLabelRow}>
-                <View style={[styles.stepDot, { backgroundColor: otp.length === 6 ? c.accent : c.border }]}>
-                  {otp.length === 6
-                    ? <Ionicons name="checkmark" size={10} color="#10120E" />
-                    : <Text style={styles.stepDotText}>4</Text>
-                  }
                 </View>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Verification Code</Text>
               </View>
-              <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: inputBorder('otp') }]}>
-                <Ionicons name="key-outline" size={18} color={focusedField === 'otp' ? c.accent : c.textMuted} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { color: c.text, letterSpacing: 3, fontWeight: '700' }]}
-                  placeholder="6-digit code"
-                  placeholderTextColor={isLight ? '#6B6558' : '#5A5648'}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  value={otp}
-                  onChangeText={setOtp}
-                  onFocus={() => setFocusedField('otp')}
-                  onBlur={() => setFocusedField(null)}
-                />
+
+              {/* Username Handle */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: c.textMuted }]}>Username Handle</Text>
+                <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder('username') }]}>
+                  <Ionicons name="at-outline" size={18} color={focusedField === 'username' ? c.primary : c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: c.text }]}
+                    placeholder="johndoe_26"
+                    placeholderTextColor={c.textMuted}
+                    autoCapitalize="none"
+                    value={username}
+                    onChangeText={(val) => setUsername(val.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
+                    onFocus={() => setFocusedField('username')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
               </View>
-              <TouchableOpacity onPress={handleSendOtp} style={{ marginTop: 6 }}>
-                <Text style={{ fontSize: 12, color: c.accent, fontWeight: '600' }}>Resend verification code</Text>
+
+              {/* Email */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: c.textMuted }]}>Email Address</Text>
+                <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder('email') }]}>
+                  <Ionicons name="mail-outline" size={18} color={focusedField === 'email' ? c.primary : c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: c.text }]}
+                    placeholder="john@example.com"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
+              </View>
+
+              {/* Preferred Ledger Currency Selector */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: c.textMuted }]}>Preferred Currency</Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setShowCurrencyModal(true)}
+                  style={[styles.currencySelectorBox, { backgroundColor: c.inputBg, borderColor: c.border }]}
+                >
+                  <View style={styles.currencyLeft}>
+                    <Text style={styles.currencyFlag}>{selectedCurrItem.flag}</Text>
+                    <Text style={[styles.currencyName, { color: c.text }]}>
+                      {selectedCurrItem.name} ({selectedCurrItem.code})
+                    </Text>
+                  </View>
+                  <View style={[styles.currencyBadge, { backgroundColor: c.primary + '18' }]}>
+                    <Text style={[styles.currencySymbol, { color: c.primary }]}>{selectedCurrItem.symbol}</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* Password */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: c.textMuted }]}>Password</Text>
+                <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder('password') }]}>
+                  <Ionicons name="lock-closed-outline" size={18} color={focusedField === 'password' ? c.primary : c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: c.text }]}
+                    placeholder="Min 6 characters"
+                    placeholderTextColor={c.textMuted}
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={18} color={c.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Confirm Password */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: c.textMuted }]}>Confirm Password</Text>
+                <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder('confirmPassword') }]}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color={focusedField === 'confirmPassword' ? c.primary : c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: c.text }]}
+                    placeholder="Re-enter password"
+                    placeholderTextColor={c.textMuted}
+                    secureTextEntry={!showConfirmPassword}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    onFocus={() => setFocusedField('confirmPassword')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn}>
+                    <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={18} color={c.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Submit Button */}
+              {isEmailVerificationEnabled ? (
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
+                  onPress={handleSendOtp}
+                  disabled={isLoading}
+                  activeOpacity={0.85}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={isLight ? '#FFF' : '#10120E'} size="small" />
+                  ) : (
+                    <View style={styles.btnInner}>
+                      <Text style={[styles.btnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                        Send Verification Code
+                      </Text>
+                      <Ionicons name="arrow-forward" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
+                  onPress={handleRegisterDirect}
+                  disabled={isLoading}
+                  activeOpacity={0.85}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={isLight ? '#FFF' : '#10120E'} size="small" />
+                  ) : (
+                    <View style={styles.btnInner}>
+                      <Text style={[styles.btnText, { color: isLight ? '#FFF' : '#10120E' }]}>Create Account</Text>
+                      <Ionicons name="checkmark-circle" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )}
+            </StaggeredView>
+          )}
+
+          {/* STEP 2: Email OTP Verification Entry */}
+          {isEmailVerificationEnabled && otpSent && (
+            <StaggeredView delay={150} direction="up">
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: c.textMuted }]}>6-Digit Verification Code</Text>
+                <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder('otp') }]}>
+                  <Ionicons name="key-outline" size={18} color={focusedField === 'otp' ? c.primary : c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: c.text, letterSpacing: 4, fontWeight: '700', fontSize: 18 }]}
+                    placeholder="123456"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    value={otp}
+                    onChangeText={setOtp}
+                    onFocus={() => setFocusedField('otp')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.otpActionsRow}>
+                <TouchableOpacity onPress={() => setOtpSent(false)}>
+                  <Text style={[styles.otpActionText, { color: c.textMuted }]}>Edit details</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleSendOtp} disabled={isLoading}>
+                  <Text style={[styles.otpActionText, { color: c.primary }]}>Resend Code</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
+                onPress={handleRegisterWithOtp}
+                disabled={isLoading}
+                activeOpacity={0.85}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={isLight ? '#FFF' : '#10120E'} size="small" />
+                ) : (
+                  <View style={styles.btnInner}>
+                    <Text style={[styles.btnText, { color: isLight ? '#FFF' : '#10120E' }]}>Verify & Sign Up</Text>
+                    <Ionicons name="checkmark-circle" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                  </View>
+                )}
               </TouchableOpacity>
-            </View>
+            </StaggeredView>
           )}
 
-          {/* ACTION BUTTON */}
-          {!otpSent ? (
-            <TouchableOpacity
-              style={[styles.submitBtn, { opacity: isLoading ? 0.7 : 1 }]}
-              onPress={handleSendOtp}
-              disabled={isLoading}
-              activeOpacity={0.85}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#10120E" size="small" />
-              ) : (
-                <View style={styles.submitBtnInner}>
-                  <Text style={styles.submitBtnText}>Send Verification Code</Text>
-                  <Ionicons name="paper-plane" size={18} color="#10120E" />
-                </View>
-              )}
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.submitBtn, { opacity: isLoading ? 0.7 : 1 }]}
-              onPress={handleRegister}
-              disabled={isLoading}
-              activeOpacity={0.85}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#10120E" size="small" />
-              ) : (
-                <View style={styles.submitBtnInner}>
-                  <Text style={styles.submitBtnText}>Create Account</Text>
-                  <Ionicons name="rocket" size={18} color="#10120E" />
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity style={styles.signInLink} onPress={() => router.replace('/login')}>
-            <Text style={[styles.signInLinkText, { color: c.textMuted }]}>
-              Already have an account?{' '}
-              <Text style={{ color: c.accent, fontWeight: '800' }}>Sign In</Text>
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* PERKS SECTION */}
-        <Animated.View style={[styles.perksSection, { opacity: fadeAnim }]}>
-          <Text style={[styles.perksTitle, { color: c.textMuted }]}>Everything you get for free</Text>
-          <View style={styles.perksGrid}>
-            {PERKS.map((perk, i) => (
-              <View key={i} style={[styles.perkItem, { backgroundColor: perk.color + '12', borderColor: perk.color + '30' }]}>
-                <Ionicons name={perk.icon as any} size={16} color={perk.color} />
-                <Text style={[styles.perkText, { color: perk.color }]}>{perk.text}</Text>
-              </View>
-            ))}
+          {/* Footer Navigation Link */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: c.textMuted }]}>Already have an account? </Text>
+            <Link href="/login" asChild>
+              <TouchableOpacity>
+                <Text style={[styles.footerLink, { color: c.primary }]}>Sign In</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
         </Animated.View>
       </ScrollView>
+
+      {/* Currency Selection Modal */}
+      <Modal
+        visible={showCurrencyModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCurrencyModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: c.text }]}>Select Preferred Currency</Text>
+              <TouchableOpacity onPress={() => setShowCurrencyModal(false)}>
+                <Ionicons name="close" size={22} color={c.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={WORLD_CURRENCIES}
+              keyExtractor={(item) => item.code}
+              style={{ maxHeight: 380 }}
+              renderItem={({ item }) => {
+                const isSelected = item.code === currency;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.currencyModalItem,
+                      {
+                        backgroundColor: isSelected ? c.primary + '18' : 'transparent',
+                        borderColor: isSelected ? c.primary : c.border,
+                      },
+                    ]}
+                    onPress={() => {
+                      setCurrency(item.code);
+                      setShowCurrencyModal(false);
+                    }}
+                  >
+                    <View style={styles.modalItemLeft}>
+                      <Text style={styles.modalItemFlag}>{item.flag}</Text>
+                      <View>
+                        <Text style={[styles.modalItemName, { color: c.text }]}>{item.name}</Text>
+                        <Text style={[styles.modalItemCode, { color: c.textMuted }]}>{item.code}</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.modalItemSymbol, { color: isSelected ? c.primary : c.text }]}>
+                      {item.symbol}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-
-  /* HEADER */
-  header: {
-    marginBottom: 24,
-  },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    borderWidth: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  headerTitle: {},
-  headerLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  pageTitle: {
-    fontSize: 30,
-    fontWeight: '900',
-    letterSpacing: -1,
-    marginBottom: 16,
-  },
-  progressBg: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-
-  /* FORM CARD */
-  formCard: {
+  card: {
     borderRadius: 24,
     borderWidth: 1,
     padding: 24,
-    marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
     shadowRadius: 24,
-    elevation: 10,
+    elevation: 8,
   },
-  fieldGroup: {
+  header: {
+    alignItems: 'center',
     marginBottom: 20,
   },
-  fieldLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  stepDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  iconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  stepDotText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#A8A395',
-  },
-  fieldLabel: {
-    fontSize: 12,
+  title: {
+    fontSize: 24,
     fontWeight: '700',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  googleOAuthBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  googleOAuthText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    height: 52,
-    paddingHorizontal: 14,
+  fieldGroup: {
+    marginBottom: 14,
   },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 15 },
-  eyeBtn: { padding: 4 },
-
-  /* STRENGTH */
-  strengthRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-  },
-  strengthSegment: {
-    flex: 1,
-    height: 3,
-    borderRadius: 2,
-  },
-  strengthLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    width: 42,
-    textAlign: 'right',
-  },
-
-  /* SUBMIT */
-  submitBtn: {
-    marginTop: 8,
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: '#C79A3E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#C79A3E',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  submitBtnInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  submitBtnText: {
-    color: '#10120E',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-  },
-  signInLink: {
-    marginTop: 18,
-    alignItems: 'center',
-  },
-  signInLinkText: {
-    fontSize: 14,
-  },
-
-  /* PERKS */
-  perksSection: {},
-  perksTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  perksGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  perkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  perkText: {
+  label: {
     fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  inputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  eyeBtn: {
+    padding: 6,
+  },
+  currencySelectorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  currencyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  currencyFlag: {
+    fontSize: 18,
+  },
+  currencyName: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  currencyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  currencySymbol: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  primaryBtn: {
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  btnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  btnText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  otpActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  otpActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 13,
+  },
+  footerLink: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  currencyModalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  modalItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalItemFlag: {
+    fontSize: 20,
+  },
+  modalItemName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalItemCode: {
+    fontSize: 11,
+  },
+  modalItemSymbol: {
+    fontSize: 16,
     fontWeight: '700',
   },
 });

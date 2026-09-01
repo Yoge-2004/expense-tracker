@@ -7,17 +7,20 @@ interface StaggeredViewProps {
   duration?: number;
   style?: StyleProp<ViewStyle>;
   direction?: 'up' | 'down' | 'left' | 'right';
+  scale?: boolean;
 }
 
 export const StaggeredView: React.FC<StaggeredViewProps> = ({
   children,
   delay = 0,
-  duration = 500,
+  duration = 450,
   style,
   direction = 'up',
+  scale = true,
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateAnim = useRef(new Animated.Value(getInitialTranslate(direction))).current;
+  const scaleAnim = useRef(new Animated.Value(scale ? 0.94 : 1)).current;
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -29,10 +32,20 @@ export const StaggeredView: React.FC<StaggeredViewProps> = ({
         }),
         Animated.spring(translateAnim, {
           toValue: 0,
-          friction: 8,
-          tension: 50,
+          friction: 7,
+          tension: 65,
           useNativeDriver: true,
         }),
+        ...(scale
+          ? [
+              Animated.spring(scaleAnim, {
+                toValue: 1,
+                friction: 6,
+                tension: 70,
+                useNativeDriver: true,
+              }),
+            ]
+          : []),
       ]).start();
     }, delay);
 
@@ -48,8 +61,8 @@ export const StaggeredView: React.FC<StaggeredViewProps> = ({
         {
           opacity: fadeAnim,
           transform: isHorizontal
-            ? [{ translateX: translateAnim }]
-            : [{ translateY: translateAnim }],
+            ? [{ translateX: translateAnim }, { scale: scaleAnim }]
+            : [{ translateY: translateAnim }, { scale: scaleAnim }],
         },
       ]}
     >
@@ -58,12 +71,17 @@ export const StaggeredView: React.FC<StaggeredViewProps> = ({
   );
 };
 
-function getInitialTranslate(direction: string): number {
+function getInitialTranslate(direction: 'up' | 'down' | 'left' | 'right'): number {
   switch (direction) {
-    case 'up': return 24;
-    case 'down': return -24;
-    case 'left': return 30;
-    case 'right': return -30;
-    default: return 24;
+    case 'up':
+      return 24;
+    case 'down':
+      return -24;
+    case 'left':
+      return 24;
+    case 'right':
+      return -24;
+    default:
+      return 24;
   }
 }

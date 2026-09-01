@@ -1,21 +1,66 @@
+/**
+ * @file add-expense.tsx
+ * @description Screen for logging new/edited transactions, configuring recurring commitments,
+ * and setting category spending caps with enterprise-grade defensive validation and exception handling.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Switch, Modal, Animated } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  Animated,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { apiRequest } from '../../services/api';
+import { useAlert } from '../../context/AlertContext';
+import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
+import { Colors, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { AnimatedButton } from '../../components/AnimatedButton';
-import { AnimatedCard } from '../../components/AnimatedCard';
+import * as Haptics from 'expo-haptics';
+
+import { AmbientAura } from '../../components/AmbientAura';
+import { StaggeredView } from '../../components/StaggeredView';
+import { ManageCategoriesModal } from '../../components/ManageCategoriesModal';
+import { CalendarPickerModal } from '../../components/CalendarPickerModal';
 
 interface Category {
   id: number;
   name: string;
 }
 
+/**
+ * Validates whether an ISO date string (YYYY-MM-DD) represents a real calendar date.
+ */
+function isValidDateString(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  const y = parseInt(yearStr, 10);
+  const m = parseInt(monthStr, 10);
+  const d = parseInt(dayStr, 10);
+
+  if (m < 1 || m > 12) return false;
+  if (d < 1 || d > 31) return false;
+
+  const dateObj = new Date(y, m - 1, d);
+  return dateObj.getFullYear() === y && dateObj.getMonth() === m - 1 && dateObj.getDate() === d;
+}
+
+/**
+ * Add / Edit Expense and Budget Screen.
+ */
 export default function AddExpenseScreen() {
   const { userId, theme, currency } = useAuth();
+  const { showAlert } = useAlert();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     editId?: string;
     editDescription?: string;
@@ -25,48 +70,15 @@ export default function AddExpenseScreen() {
   }>();
   const isEditMode = !!params.editId;
   const currSymbol = getCurrencySymbol(currency);
+  const isLight = theme === 'light';
+  const c = Colors[theme];
+
   const [activeTab, setActiveTab] = useState<'expense' | 'budget'>('expense');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isLight = theme === 'light';
-
-  // Dynamic Theme Colors configuration
-  const getThemeColors = () => {
-    if (theme === 'light') {
-      return {
-        bg: '#EDEAE0',
-        card: '#FCFBF6',
-        border: '#DAD4C1',
-        text: '#1E1B15',
-        textMuted: '#6B6558',
-        inputBg: '#F5F2E9',
-        inputBorder: '#DAD4C1',
-        tabBg: '#FCFBF6',
-        accent: '#9C7623',
-        orange: '#8F3327',
-      };
-    }
-    return {
-      bg: '#10120E',
-      card: 'rgba(23, 26, 20, 0.9)',
-      border: 'rgba(236, 231, 216, 0.08)',
-      text: '#ECE7D8',
-      textMuted: '#A8A395',
-      inputBg: 'rgba(23, 26, 20, 0.7)',
-      inputBorder: 'rgba(236, 231, 216, 0.08)',
-      tabBg: 'rgba(23, 26, 20, 0.7)',
-      accent: '#C79A3E',
-      orange: '#A23E32',
-    };
-  };
-
-  const c = getThemeColors();
-
-  // Custom Category creation state
-  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   // Expense form state
   const [description, setDescription] = useState('');
@@ -74,31 +86,38 @@ export default function AddExpenseScreen() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState('MONTHLY');
-  const [intervalDays, setIntervalDays] = useState('1');
+  const [intervalDays, setIntervalDays] = useState('30');
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Budget form state
   const [budgetCategoryId, setBudgetCategoryId] = useState<number | null>(null);
   const [budgetLimit, setBudgetLimit] = useState('');
 
-  // Animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const subFormAnim = useRef(new Animated.Value(0)).current;
-  const customIntervalAnim = useRef(new Animated.Value(0)).current;
+  // Form field errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Animations
+  const subFormAnim = useRef(new Animated.Value(0)).current;
+
+  /**
+   * Fetches merged global & user-defined categories.
+   */
   const loadCategories = async () => {
     if (!userId) return;
     try {
       const [globalCats, userCats] = await Promise.all([
-        apiRequest('/categories/global'),
-        apiRequest(`/categories/user/${userId}`)
+        apiRequest('/categories/global').catch(() => []),
+        apiRequest(`/categories/user/${userId}`).catch(() => []),
       ]);
-      const merged = [...(globalCats || []), ...(userCats || [])];
-      
-      // Deduplicate by name
-      const uniqueCats: Category[] = [];
+      const merged = [
+        ...(Array.isArray(globalCats) ? globalCats : []),
+        ...(Array.isArray(userCats) ? userCats : []),
+      ];
+
       const seen = new Set();
-      merged.forEach(cat => {
-        if (!seen.has(cat.name.toLowerCase())) {
+      const uniqueCats: Category[] = [];
+      merged.forEach((cat) => {
+        if (cat && cat.name && !seen.has(cat.name.toLowerCase())) {
           seen.add(cat.name.toLowerCase());
           uniqueCats.push(cat);
         }
@@ -106,18 +125,11 @@ export default function AddExpenseScreen() {
 
       setCategories(uniqueCats);
       if (uniqueCats.length > 0) {
-        if (categoryId === null) setCategoryId(uniqueCats[0].id);
-        if (budgetCategoryId === null) setBudgetCategoryId(uniqueCats[0].id);
+        if (!categoryId) setCategoryId(uniqueCats[0].id);
+        if (!budgetCategoryId) setBudgetCategoryId(uniqueCats[0].id);
       }
-
-      // Fade in form
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    } catch (e) {
-      console.error('Failed to load categories', e);
+    } catch (e: any) {
+      console.warn('[AddExpenseScreen] Error fetching categories:', e);
     } finally {
       setIsLoading(false);
     }
@@ -125,180 +137,184 @@ export default function AddExpenseScreen() {
 
   useEffect(() => {
     loadCategories();
-  }, [userId]);
-
-  // Pre-fill the form when opened in edit mode — runs after categories load
-  // so it overrides the default "select first category" behavior above.
-  useEffect(() => {
-    if (isEditMode && !isLoading) {
+    if (isEditMode) {
       if (params.editDescription) setDescription(params.editDescription);
       if (params.editAmount) setAmount(params.editAmount);
       if (params.editCategoryId) setCategoryId(Number(params.editCategoryId));
-      // Recurring options don't apply when editing an existing expense —
-      // PUT /expenses/{id} only ever updates the expense itself.
-      setIsRecurring(false);
+      if (params.editDate) setExpenseDate(params.editDate);
     }
-  }, [isEditMode, isLoading]);
+  }, [userId, params.editId]);
 
-  // Animate sub-form display on recurring toggle
-  useEffect(() => {
-    Animated.timing(subFormAnim, {
-      toValue: isRecurring ? 1 : 0,
-      duration: 250,
+  const toggleRecurring = (val: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setIsRecurring(val);
+    Animated.spring(subFormAnim, {
+      toValue: val ? 1 : 0,
+      friction: 8,
+      tension: 45,
       useNativeDriver: false,
     }).start();
-  }, [isRecurring]);
-
-  // Animate custom interval field display
-  useEffect(() => {
-    Animated.timing(customIntervalAnim, {
-      toValue: frequency === 'CUSTOM' ? 1 : 0,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
-  }, [frequency]);
-
-  const handleCreateCategory = async () => {
-    if (!newCategoryName.trim() || !userId) {
-      Alert.alert('Error', 'Please enter a category name.');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const newCat = await apiRequest(`/categories/user/${userId}`, {
-        method: 'POST',
-        body: JSON.stringify({ name: newCategoryName.trim() }),
-      });
-      Alert.alert('Success', `Category "${newCategoryName.trim()}" created!`);
-      const targetName = newCategoryName.trim().toLowerCase();
-      setNewCategoryName('');
-      setShowNewCategoryModal(false);
-      
-      // Refresh list
-      const [globalCats, userCats] = await Promise.all([
-        apiRequest('/categories/global'),
-        apiRequest(`/categories/user/${userId}`)
-      ]);
-      const merged = [...(globalCats || []), ...(userCats || [])];
-      const uniqueCats: Category[] = [];
-      const seen = new Set();
-      merged.forEach(cat => {
-        if (!seen.has(cat.name.toLowerCase())) {
-          seen.add(cat.name.toLowerCase());
-          uniqueCats.push(cat);
-        }
-      });
-      setCategories(uniqueCats);
-
-      // Auto-select the newly created category
-      const found = uniqueCats.find(cat => cat.name.toLowerCase() === targetName);
-      if (found) {
-        setCategoryId(found.id);
-        setBudgetCategoryId(found.id);
-      }
-    } catch (error: any) {
-      Alert.alert('Failed', error.message || 'Could not create custom category.');
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
-  const handleAddExpense = async () => {
-    if (!description || !amount || !categoryId || !userId) {
-      Alert.alert('Error', 'Please fill in all required fields.');
+  /**
+   * Validates and submits a new or updated expense.
+   */
+  const handleSaveExpense = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const fieldErrors: Record<string, string> = {};
+
+    const cleanDesc = description.trim();
+    if (!cleanDesc) {
+      fieldErrors.description = 'Description is required.';
+    } else if (cleanDesc.length > 255) {
+      fieldErrors.description = 'Description cannot exceed 255 characters.';
+    }
+
+    const cleanAmount = amount.trim();
+    if (!cleanAmount) {
+      fieldErrors.amount = 'Amount is required.';
+    } else {
+      const numAmount = parseFloat(cleanAmount);
+      if (isNaN(numAmount) || numAmount <= 0) {
+        fieldErrors.amount = 'Please enter a valid positive amount.';
+      } else if (numAmount > 100000000) {
+        fieldErrors.amount = 'Amount cannot exceed 100,000,000.';
+      }
+    }
+
+    if (!categoryId) {
+      fieldErrors.category = 'Please select a category.';
+    }
+
+    if (!expenseDate.trim() || !isValidDateString(expenseDate.trim())) {
+      fieldErrors.date = 'Please enter a valid calendar date in YYYY-MM-DD format.';
+    }
+
+    if (isRecurring && frequency === 'CUSTOM') {
+      const days = parseInt(intervalDays.trim(), 10);
+      if (isNaN(days) || days < 1 || days > 365) {
+        fieldErrors.intervalDays = 'Custom interval must be between 1 and 365 days.';
+      }
+    }
+
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      const firstError = Object.values(fieldErrors)[0];
+      showAlert('Validation Error', firstError);
       return;
     }
-    setIsSubmitting(true);
-    try {
-      const todayString = new Date().toISOString().split('T')[0];
 
-      if (isEditMode) {
-        // Update an existing expense — preserve its original date rather
-        // than silently bumping it to today just because it was edited.
+    setErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const numAmount = parseFloat(cleanAmount);
+
+      if (isEditMode && params.editId) {
         await apiRequest(`/expenses/${params.editId}/user/${userId}`, {
           method: 'PUT',
           body: JSON.stringify({
-            amount: parseFloat(amount),
-            description: description.trim(),
-            expenseDate: params.editDate || todayString,
-            categoryId: categoryId,
+            description: cleanDesc,
+            amount: numAmount,
+            categoryId,
+            expenseDate: expenseDate.trim(),
           }),
         });
-        Alert.alert('Success', 'Expense updated successfully!');
-        router.push('/(tabs)');
-        return;
-      }
-
-      if (isRecurring) {
-        // Create a subscription
-        const bodyData: any = {
-          amount: parseFloat(amount),
-          description: description.trim(),
-          startDate: todayString,
-          frequency: frequency,
-          categoryId: categoryId,
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        showAlert('Updated', 'Expense updated successfully.', [
+          { text: 'OK', onPress: () => router.replace('/(tabs)') },
+        ]);
+      } else {
+        const payload: any = {
+          description: cleanDesc,
+          amount: numAmount,
+          categoryId,
+          expenseDate: expenseDate.trim(),
+          isRecurring,
         };
-        if (frequency === 'CUSTOM') {
-          const days = parseInt(intervalDays);
-          if (isNaN(days) || days < 1) {
-            Alert.alert('Error', 'Custom intervals must be at least one day.');
-            setIsSubmitting(false);
-            return;
+
+        if (isRecurring) {
+          payload.frequency = frequency;
+          if (frequency === 'CUSTOM') {
+            payload.intervalDays = parseInt(intervalDays.trim(), 10);
           }
-          bodyData.intervalDays = days;
         }
 
-        await apiRequest(`/expenses/recurring/user/${userId}`, {
-          method: 'POST',
-          body: JSON.stringify(bodyData),
-        });
-        Alert.alert('Success', 'Recurring subscription configured successfully!');
-      } else {
-        // Create normal expense
         await apiRequest(`/expenses/user/${userId}`, {
           method: 'POST',
-          body: JSON.stringify({
-            amount: parseFloat(amount),
-            description: description.trim(),
-            expenseDate: todayString,
-            categoryId: categoryId,
-          }),
+          body: JSON.stringify(payload),
         });
-        Alert.alert('Success', 'Expense recorded successfully!');
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        showAlert('🎉 Logged!', 'Transaction recorded successfully.', [
+          { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
+        ]);
+        setDescription('');
+        setAmount('');
+        setIsRecurring(false);
       }
-      
-      // Reset form & redirect
-      setDescription('');
-      setAmount('');
-      setIsRecurring(false);
-      setIntervalDays('1');
-      router.push('/(tabs)');
-    } catch (error: any) {
-      Alert.alert('Failed', error.message || 'Could not save the expense entry.');
+    } catch (e: any) {
+      const isApiErr = e instanceof ApiError;
+      const msg = isApiErr ? e.message : 'Could not save expense transaction.';
+      showAlert('Save Error', msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSetBudget = async () => {
-    if (!budgetLimit || !budgetCategoryId || !userId) {
-      Alert.alert('Error', 'Please enter a budget limit.');
+  /**
+   * Validates and establishes a monthly category budget cap.
+   */
+  const handleSaveBudget = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const fieldErrors: Record<string, string> = {};
+
+    if (!budgetCategoryId) {
+      fieldErrors.budgetCategory = 'Please select a category for this budget.';
+    }
+
+    const cleanLimit = budgetLimit.trim();
+    if (!cleanLimit) {
+      fieldErrors.budgetLimit = 'Budget limit amount is required.';
+    } else {
+      const numLimit = parseFloat(cleanLimit);
+      if (isNaN(numLimit) || numLimit <= 0) {
+        fieldErrors.budgetLimit = 'Please enter a valid positive budget amount.';
+      } else if (numLimit > 100000000) {
+        fieldErrors.budgetLimit = 'Budget cap cannot exceed 100,000,000.';
+      }
+    }
+
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      const firstError = Object.values(fieldErrors)[0];
+      showAlert('Validation Error', firstError);
       return;
     }
+
+    setErrors({});
     setIsSubmitting(true);
+
     try {
+      const numLimit = parseFloat(cleanLimit);
       await apiRequest(`/expenses/budget/user/${userId}`, {
         method: 'POST',
         body: JSON.stringify({
           categoryId: budgetCategoryId,
-          limitAmount: parseFloat(budgetLimit),
+          limit: numLimit,
+          period: 'MONTHLY',
         }),
       });
-      Alert.alert('Success', 'Category budget configured successfully!');
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('🎯 Budget Set', 'Category spending cap saved successfully.', [
+        { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
+      ]);
       setBudgetLimit('');
-      router.push('/(tabs)');
-    } catch (error: any) {
-      Alert.alert('Failed', error.message || 'Could not save budget configurations.');
+    } catch (e: any) {
+      const isApiErr = e instanceof ApiError;
+      const msg = isApiErr ? e.message : 'Could not save category budget.';
+      showAlert('Budget Error', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -306,574 +322,691 @@ export default function AddExpenseScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color={c.accent} />
-        <Text style={[styles.loadingText, { color: c.textMuted }]}>Setting up form...</Text>
+      <View style={[styles.loadingBox, { backgroundColor: c.bg }]}>
+        <AmbientAura />
+        <ActivityIndicator size="large" color={c.primary} />
       </View>
     );
   }
 
   return (
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <AmbientAura />
 
-        {/* ── PAGE HEADER ── */}
-        <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, { color: c.text }]}>{isEditMode ? 'Edit Expense' : 'Add Record'}</Text>
-          <Text style={[styles.pageSub, { color: c.textMuted }]}>
-            {isEditMode ? 'Update the details below' : 'Log an expense or set a budget'}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Math.max(insets.top + 10, 48) },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Header */}
+        <View style={styles.header}>
+          <Text style={[styles.pageTitle, { color: c.text }]}>
+            {isEditMode ? 'Edit Transaction' : 'Record Outflow'}
+          </Text>
+          <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>
+            {isEditMode ? 'Update transaction details' : 'Log a purchase or set category budget limits'}
           </Text>
         </View>
 
-        {/* ── TAB SWITCHER (hidden while editing — editing is expense-only) ── */}
+        {/* Tab Switcher: Expense vs Budget */}
         {!isEditMode && (
-        <View style={[styles.tabContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'expense' && [styles.activeTabExpense]]}
-            onPress={() => setActiveTab('expense')}
-          >
-            <Ionicons name="receipt-outline" size={15} color={activeTab === 'expense' ? '#10120E' : c.textMuted} />
-            <Text style={[styles.tabButtonText, { color: activeTab === 'expense' ? '#10120E' : c.textMuted }]}>Expense</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'budget' && [styles.activeTabBudget]]}
-            onPress={() => setActiveTab('budget')}
-          >
-            <Ionicons name="pie-chart-outline" size={15} color={activeTab === 'budget' ? '#10120E' : c.textMuted} />
-            <Text style={[styles.tabButtonText, { color: activeTab === 'budget' ? '#10120E' : c.textMuted }]}>Budget</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={[styles.tabsWrap, { backgroundColor: c.card, borderColor: c.border }]}>
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setActiveTab('expense');
+              }}
+              style={[
+                styles.tabBtn,
+                activeTab === 'expense' && { backgroundColor: c.primary },
+              ]}
+            >
+              <Ionicons
+                name="receipt-outline"
+                size={16}
+                color={activeTab === 'expense' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted}
+              />
+              <Text
+                style={[
+                  styles.tabBtnText,
+                  {
+                    color: activeTab === 'expense' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                  },
+                ]}
+              >
+                Log Expense
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setActiveTab('budget');
+              }}
+              style={[
+                styles.tabBtn,
+                activeTab === 'budget' && { backgroundColor: c.primary },
+              ]}
+            >
+              <Ionicons
+                name="shield-outline"
+                size={16}
+                color={activeTab === 'budget' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted}
+              />
+              <Text
+                style={[
+                  styles.tabBtnText,
+                  {
+                    color: activeTab === 'budget' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                  },
+                ]}
+              >
+                Set Budget Cap
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {activeTab === 'expense' ? (
-          /* EXPENSE FORM */
-          <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
-
-            {/* Description */}
-            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#C79A3E18' }]}>
-                  <Ionicons name="pencil-outline" size={14} color="#C79A3E" />
-                </View>
-                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Description</Text>
-              </View>
-              <TextInput
-                style={[styles.bigInput, { color: c.text, borderBottomColor: c.border }]}
-                placeholder="e.g. Netflix, Grocery run, Fuel top-up"
-                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
-                value={description}
-                onChangeText={setDescription}
-              />
-            </View>
-
-            {/* Amount */}
-            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#A23E3218' }]}>
-                  <Ionicons name="cash-outline" size={14} color="#A23E32" />
-                </View>
-                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Amount</Text>
-              </View>
-              <View style={styles.amountRow}>
-                <Text style={[styles.currencySymbol, { color: c.accent }]}>{currSymbol}</Text>
-                <TextInput
-                  style={[styles.amountInput, { color: c.text }]}
-                  placeholder="0.00"
-                  placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
-                  keyboardType="decimal-pad"
-                  value={amount}
-                  onChangeText={setAmount}
-                />
-              </View>
-            </View>
-
-            {/* Category */}
-            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#4C7A7818' }]}>
-                  <Ionicons name="grid-outline" size={14} color="#4C7A78" />
-                </View>
-                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Category</Text>
-                <TouchableOpacity
-                  onPress={() => setShowNewCategoryModal(true)}
-                  style={[styles.addCatBtn, { backgroundColor: c.accent + '18', borderColor: c.accent + '40' }]}
+          /* =========================================
+              CASE 1: LOG EXPENSE FORM
+             ========================================= */
+          <StaggeredView delay={100} direction="up">
+            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              {/* Description Input */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Description / Merchant</Text>
+                <View
+                  style={[
+                    styles.inputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: errors.description ? c.accent : c.border,
+                    },
+                  ]}
                 >
-                  <Ionicons name="add" size={12} color={c.accent} />
-                  <Text style={[styles.addCatText, { color: c.accent }]}>New</Text>
+                  <Ionicons name="pencil-outline" size={18} color={c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.textInput, { color: c.text }]}
+                    placeholder="e.g. Blue Tokai Coffee, Figma Plan"
+                    placeholderTextColor={c.textMuted}
+                    value={description}
+                    maxLength={255}
+                    onChangeText={(v) => {
+                      setDescription(v);
+                      if (errors.description) setErrors((prev) => ({ ...prev, description: '' }));
+                    }}
+                  />
+                </View>
+                {!!errors.description && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.description}</Text>}
+              </View>
+
+              {/* Amount Input */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Amount ({currSymbol})</Text>
+                <View
+                  style={[
+                    styles.amountInputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: errors.amount ? c.accent : c.border,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.currencyPrefix, { color: c.primary }]}>{currSymbol}</Text>
+                  <TextInput
+                    style={[styles.amountInput, { color: c.text }]}
+                    placeholder="0.00"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="decimal-pad"
+                    value={amount}
+                    onChangeText={(v) => {
+                      setAmount(v);
+                      if (errors.amount) setErrors((prev) => ({ ...prev, amount: '' }));
+                    }}
+                  />
+                </View>
+                {!!errors.amount && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.amount}</Text>}
+              </View>
+
+              {/* Category Selector */}
+              <View style={styles.fieldGroup}>
+                <View style={styles.catLabelRow}>
+                  <Text style={[styles.fieldLabel, { color: c.textMuted, marginBottom: 0 }]}>Category</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowCategoryModal(true)}
+                    style={styles.manageCatBtn}
+                  >
+                    <Ionicons name="settings-outline" size={13} color={c.primary} />
+                    <Text style={[styles.manageCatBtnText, { color: c.primary }]}>Manage</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChipsScroll}>
+                  {categories.map((cat) => {
+                    const isSelected = categoryId === cat.id;
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                          setCategoryId(cat.id);
+                          if (errors.category) setErrors((prev) => ({ ...prev, category: '' }));
+                        }}
+                        style={[
+                          styles.catChip,
+                          {
+                            backgroundColor: isSelected ? c.primary : c.inputBg,
+                            borderColor: isSelected ? c.primary : c.border,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.catChipEmoji}>{getCategoryEmoji(cat.name)}</Text>
+                        <Text
+                          style={[
+                            styles.catChipText,
+                            {
+                              color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
+                              fontWeight: isSelected ? '800' : '600',
+                            },
+                          ]}
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Date Input (Opens Calendar Modal) */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Date (Tap to Pick)</Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setShowCalendarModal(true)}
+                  style={[
+                    styles.inputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: errors.date ? c.accent : c.border,
+                      justifyContent: 'space-between',
+                    },
+                  ]}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <Ionicons name="calendar" size={18} color={c.primary} style={styles.inputIcon} />
+                    <Text style={[{ fontSize: 14, fontWeight: '700', color: c.text }]}>
+                      {expenseDate || 'Select Date'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
                 </TouchableOpacity>
+                {!!errors.date && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.date}</Text>}
               </View>
-              <View style={styles.categoryChips}>
-                {categories.map((cat) => {
-                  const isActive = categoryId === cat.id;
-                  return (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.categoryChip,
-                        { backgroundColor: isActive ? c.accent : c.inputBg, borderColor: isActive ? c.accent : c.border },
-                      ]}
-                      onPress={() => setCategoryId(cat.id)}
-                    >
-                      <Text style={[styles.categoryChipText, { color: isActive ? '#10120E' : c.textMuted }]}>
-                        {cat.name}
+
+              {/* Recurring Switch (Disabled in edit mode) */}
+              {!isEditMode && (
+                <View style={[styles.recurringToggleRow, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                  <View style={styles.recurringToggleLeft}>
+                    <Ionicons name="repeat" size={20} color={isRecurring ? c.primary : c.textMuted} />
+                    <View>
+                      <Text style={[styles.recurringTitle, { color: c.text }]}>Recurring Commitment</Text>
+                      <Text style={[styles.recurringSub, { color: c.textMuted }]}>
+                        Auto-generate subscription run-rate
                       </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
+                    </View>
+                  </View>
 
-            {/* Recurring Toggle (hidden while editing an existing expense) */}
-            {!isEditMode && (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setIsRecurring(!isRecurring)}
-              style={[
-                styles.recurringRow,
-                { backgroundColor: isRecurring ? c.accent + '18' : c.card, borderColor: isRecurring ? c.accent : c.border }
-              ]}
-            >
-              <View style={[styles.recurringIcon, { backgroundColor: isRecurring ? c.accent : c.accent + '18' }]}>
-                <Ionicons name="repeat" size={18} color={isRecurring ? '#10120E' : c.accent} />
-              </View>
-              <View style={styles.recurringText}>
-                <Text style={[styles.recurringTitle, { color: c.text }]}>Make Recurring</Text>
-                <Text style={[styles.recurringSub, { color: c.textMuted }]}>
-                  {isRecurring ? 'Tracked as subscription' : 'One-time expense record'}
-                </Text>
-              </View>
-              <View style={[styles.statusPill, { backgroundColor: isRecurring ? c.accent : c.inputBg, borderColor: isRecurring ? c.accent : c.border }]}>
-                <Text style={[styles.statusPillText, { color: isRecurring ? '#10120E' : c.textMuted }]}>
-                  {isRecurring ? 'ON' : 'OFF'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            )}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      toggleRecurring(!isRecurring);
+                    }}
+                    style={[
+                      styles.togglePill,
+                      {
+                        backgroundColor: isRecurring ? c.primary : c.card,
+                        borderColor: isRecurring ? c.primary : c.border,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.toggleKnob,
+                        {
+                          backgroundColor: isRecurring ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                          transform: [{ translateX: isRecurring ? 18 : 2 }],
+                        },
+                      ]}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
 
-            {/* Frequency selector (if recurring) */}
-            {isRecurring && (
-              <Animated.View style={[styles.subForm, { opacity: subFormAnim, transform: [{ translateY: subFormAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }] }]}>
-                <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
-                  <Text style={[styles.formSectionLabel, { color: c.textMuted, marginBottom: 12 }]}>Billing Frequency</Text>
-                  <View style={styles.frequencyChips}>
+              {/* Recurring Interval Configuration Panel */}
+              {isRecurring && !isEditMode && (
+                <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                  <Text style={[styles.recurringBoxLabel, { color: c.textMuted }]}>BILLING FREQUENCY</Text>
+                  <View style={styles.freqRow}>
                     {['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'].map((freq) => {
-                      const isActive = frequency === freq;
-                      const freqColor = { DAILY: '#A23E32', WEEKLY: '#C9932E', MONTHLY: '#C79A3E', YEARLY: '#4C7A78', CUSTOM: '#C79A3E' }[freq] || '#C79A3E';
+                      const isSelected = frequency === freq;
                       return (
                         <TouchableOpacity
                           key={freq}
+                          activeOpacity={0.8}
+                          onPress={() => setFrequency(freq)}
                           style={[
                             styles.freqChip,
-                            { backgroundColor: isActive ? freqColor + '20' : c.inputBg, borderColor: isActive ? freqColor : c.border },
+                            {
+                              backgroundColor: isSelected ? c.primary : c.card,
+                              borderColor: isSelected ? c.primary : c.border,
+                            },
                           ]}
-                          onPress={() => setFrequency(freq)}
                         >
-                          <Text style={[styles.freqChipText, { color: isActive ? freqColor : c.textMuted }]}>
-                            {freq === 'CUSTOM' ? 'Custom' : freq}
+                          <Text
+                            style={[
+                              styles.freqChipText,
+                              {
+                                color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                                fontWeight: isSelected ? '800' : '600',
+                              },
+                            ]}
+                          >
+                            {freq}
                           </Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
+
                   {frequency === 'CUSTOM' && (
-                    <Animated.View style={{ opacity: customIntervalAnim }}>
-                      <Text style={[styles.formSectionLabel, { color: c.textMuted, marginTop: 12, marginBottom: 8 }]}>Repeat every (days)</Text>
-                      <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                        <TextInput
-                          style={[styles.inputField, { color: c.text }]}
-                          placeholder="e.g. 14"
-                          placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
-                          keyboardType="number-pad"
-                          value={intervalDays}
-                          onChangeText={setIntervalDays}
-                        />
-                        <Text style={[styles.inputSuffix, { color: c.textMuted }]}>days</Text>
-                      </View>
-                    </Animated.View>
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Custom Cycle (in Days)</Text>
+                      <TextInput
+                        style={[
+                          styles.customDaysInput,
+                          {
+                            backgroundColor: c.card,
+                            borderColor: errors.intervalDays ? c.accent : c.border,
+                            color: c.text,
+                          },
+                        ]}
+                        keyboardType="number-pad"
+                        placeholder="e.g. 14, 45, 90"
+                        placeholderTextColor={c.textMuted}
+                        value={intervalDays}
+                        onChangeText={(v) => {
+                          setIntervalDays(v);
+                          if (errors.intervalDays) setErrors((prev) => ({ ...prev, intervalDays: '' }));
+                        }}
+                      />
+                      {!!errors.intervalDays && (
+                        <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.intervalDays}</Text>
+                      )}
+                    </View>
                   )}
                 </View>
-              </Animated.View>
-            )}
-
-            {/* Submit */}
-            <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: c.accent, opacity: isSubmitting ? 0.7 : 1 }]}
-              onPress={handleAddExpense}
-              disabled={isSubmitting}
-              activeOpacity={0.85}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#10120E" size="small" />
-              ) : (
-                <View style={styles.submitBtnInner}>
-                  <Ionicons name={isEditMode ? 'checkmark-circle' : isRecurring ? 'repeat' : 'add-circle'} size={20} color="#10120E" />
-                  <Text style={styles.submitBtnText}>
-                    {isEditMode ? 'Update Expense' : isRecurring ? 'Save Subscription' : 'Record Expense'}
-                  </Text>
-                </View>
               )}
-            </TouchableOpacity>
-          </Animated.View>
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSaveExpense}
+                disabled={isSubmitting}
+                style={[
+                  styles.submitBtn,
+                  { backgroundColor: c.primary, opacity: isSubmitting ? 0.7 : 1 },
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#10120E" />
+                ) : (
+                  <View style={styles.submitBtnInner}>
+                    <Text style={[styles.submitBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                      {isEditMode ? 'Update Expense' : 'Log Transaction'}
+                    </Text>
+                    <Ionicons
+                      name={isEditMode ? 'checkmark-circle' : 'add-circle'}
+                      size={20}
+                      color={isLight ? '#FFF' : '#10120E'}
+                    />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </StaggeredView>
         ) : (
-          /* BUDGET FORM */
-          <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
-            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#4C7A7818' }]}>
-                  <Ionicons name="grid-outline" size={14} color="#4C7A78" />
-                </View>
-                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Target Category</Text>
-                <TouchableOpacity
-                  onPress={() => setShowNewCategoryModal(true)}
-                  style={[styles.addCatBtn, { backgroundColor: c.accent + '18', borderColor: c.accent + '40' }]}
+          /* =========================================
+              CASE 2: BUDGET SETTING FORM
+             ========================================= */
+          <StaggeredView delay={100} direction="up">
+            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              {/* Category Selector */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Target Category</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChipsScroll}>
+                  {categories.map((cat) => {
+                    const isSelected = budgetCategoryId === cat.id;
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                          setBudgetCategoryId(cat.id);
+                          if (errors.budgetCategory) setErrors((prev) => ({ ...prev, budgetCategory: '' }));
+                        }}
+                        style={[
+                          styles.catChip,
+                          {
+                            backgroundColor: isSelected ? c.primary : c.inputBg,
+                            borderColor: isSelected ? c.primary : c.border,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.catChipEmoji}>{getCategoryEmoji(cat.name)}</Text>
+                        <Text
+                          style={[
+                            styles.catChipText,
+                            {
+                              color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
+                              fontWeight: isSelected ? '800' : '600',
+                            },
+                          ]}
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+                {!!errors.budgetCategory && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.budgetCategory}</Text>}
+              </View>
+
+              {/* Limit Input */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Monthly Spending Cap ({currSymbol})</Text>
+                <View
+                  style={[
+                    styles.amountInputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: errors.budgetLimit ? c.accent : c.border,
+                    },
+                  ]}
                 >
-                  <Ionicons name="add" size={12} color={c.accent} />
-                  <Text style={[styles.addCatText, { color: c.accent }]}>New</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.categoryChips}>
-                {categories.map((cat) => {
-                  const isActive = budgetCategoryId === cat.id;
-                  return (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[
-                        styles.categoryChip,
-                        { backgroundColor: isActive ? c.orange : c.inputBg, borderColor: isActive ? c.orange : c.border },
-                      ]}
-                      onPress={() => setBudgetCategoryId(cat.id)}
-                    >
-                      <Text style={[styles.categoryChipText, { color: isActive ? '#10120E' : c.textMuted }]}>
-                        {cat.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            <View style={[styles.formSection, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.formSectionHeader}>
-                <View style={[styles.formSectionIcon, { backgroundColor: '#C9932E18' }]}>
-                  <Ionicons name="speedometer-outline" size={14} color="#C9932E" />
+                  <Text style={[styles.currencyPrefix, { color: c.primary }]}>{currSymbol}</Text>
+                  <TextInput
+                    style={[styles.amountInput, { color: c.text }]}
+                    placeholder="0.00"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="decimal-pad"
+                    value={budgetLimit}
+                    onChangeText={(v) => {
+                      setBudgetLimit(v);
+                      if (errors.budgetLimit) setErrors((prev) => ({ ...prev, budgetLimit: '' }));
+                    }}
+                  />
                 </View>
-                <Text style={[styles.formSectionLabel, { color: c.textMuted }]}>Monthly Limit</Text>
+                {!!errors.budgetLimit && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.budgetLimit}</Text>}
               </View>
-              <View style={styles.amountRow}>
-                <Text style={[styles.currencySymbol, { color: c.orange }]}>{currSymbol}</Text>
-                <TextInput
-                  style={[styles.amountInput, { color: c.text }]}
-                  placeholder="0"
-                  placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
-                  keyboardType="decimal-pad"
-                  value={budgetLimit}
-                  onChangeText={setBudgetLimit}
-                />
-                <Text style={[styles.inputSuffix, { color: c.textMuted }]}>/month</Text>
-              </View>
-            </View>
 
-            <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: c.orange, opacity: isSubmitting ? 0.7 : 1 }]}
-              onPress={handleSetBudget}
-              disabled={isSubmitting}
-              activeOpacity={0.85}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#10120E" size="small" />
-              ) : (
-                <View style={styles.submitBtnInner}>
-                  <Ionicons name="pie-chart" size={20} color="#10120E" />
-                  <Text style={styles.submitBtnText}>Set Budget Limit</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
+              {/* Submit Budget */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSaveBudget}
+                disabled={isSubmitting}
+                style={[
+                  styles.submitBtn,
+                  { backgroundColor: c.primary, opacity: isSubmitting ? 0.7 : 1 },
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#10120E" />
+                ) : (
+                  <View style={styles.submitBtnInner}>
+                    <Text style={[styles.submitBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                      Establish Budget Cap
+                    </Text>
+                    <Ionicons name="shield-checkmark" size={20} color={isLight ? '#FFF' : '#10120E'} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </StaggeredView>
         )}
       </ScrollView>
 
-      {/* ── NEW CATEGORY MODAL ── */}
-      <Modal
-        visible={showNewCategoryModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowNewCategoryModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setShowNewCategoryModal(false)}
-        >
-          <TouchableOpacity
-            style={[styles.modalContent, { backgroundColor: c.card, borderColor: c.border }]}
-            activeOpacity={1}
-          >
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHeader}>
-              <View style={[styles.modalIconBox, { backgroundColor: c.accent + '15' }]}>
-                <Ionicons name="grid-outline" size={20} color={c.accent} />
-              </View>
-              <Text style={[styles.modalTitle, { color: c.text }]}>New Category</Text>
-            </View>
-
-            <View style={[styles.inputWrapper, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <Ionicons name="bag-handle-outline" size={16} color={c.textMuted} style={{ marginRight: 8 }} />
-              <TextInput
-                style={[styles.inputField, { color: c.text, flex: 1 }]}
-                placeholder="e.g. Subscriptions, Gifts"
-                placeholderTextColor={isLight ? '#A8A395' : '#2A2E22'}
-                value={newCategoryName}
-                onChangeText={setNewCategoryName}
-                autoFocus={true}
-              />
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalCancelBtn, { borderColor: c.border, backgroundColor: c.inputBg }]}
-                onPress={() => { setNewCategoryName(''); setShowNewCategoryModal(false); }}
-              >
-                <Text style={[styles.modalCancelText, { color: c.textMuted }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSaveBtn, { backgroundColor: c.accent }]}
-                onPress={handleCreateCategory}
-              >
-                <Text style={styles.modalSaveText}>Create</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* Category Management Modal */}
+      <ManageCategoriesModal
+        visible={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onCategoriesUpdated={() => loadCategories()}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screenWrapper: { flex: 1 },
-  container: { flex: 1 },
-  loadingContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12,
+  scrollView: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
   },
-  loadingText: { fontSize: 14, fontWeight: '500' },
-
-  /* PAGE HEADER */
-  pageHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 8,
+  loadingBox: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    marginBottom: 20,
   },
   pageTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
-    letterSpacing: -0.8,
+    letterSpacing: -0.6,
   },
-  pageSub: {
+  pageSubtitle: {
     fontSize: 13,
-    marginTop: 3,
+    marginTop: 2,
   },
-
-  /* TAB SWITCHER */
-  tabContainer: {
+  tabsWrap: {
     flexDirection: 'row',
-    borderWidth: 1,
     borderRadius: 16,
-    marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 20,
+    borderWidth: 1,
     padding: 4,
+    marginBottom: 20,
   },
-  tabButton: {
+  tabBtn: {
     flex: 1,
     flexDirection: 'row',
-    paddingVertical: 11,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 12,
-    gap: 6,
-  },
-  activeTabExpense: {
-    backgroundColor: '#C79A3E',
-  },
-  activeTabBudget: {
-    backgroundColor: '#A23E32',
-  },
-  tabButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
-  /* FORM CONTAINER */
-  formContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    gap: 12,
-  },
-
-  /* FORM SECTION CARD */
-  formSection: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 16,
-  },
-  formSectionHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
-  formSectionIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+  tabBtnText: {
+    fontSize: 13.5,
+    fontWeight: '800',
   },
-  formSectionLabel: {
-    fontSize: 11,
+  formCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  fieldGroup: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 11.5,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    flex: 1,
+    marginBottom: 8,
   },
-  addCatBtn: {
+  catLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  manageCatBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    gap: 4,
   },
-  addCatText: {
-    fontSize: 11,
+  manageCatBtnText: {
+    fontSize: 12,
     fontWeight: '700',
   },
-
-  /* BIG TEXT INPUT */
-  bigInput: {
-    fontSize: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-  },
-
-  /* AMOUNT ROW */
-  amountRow: {
+  inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 48,
+    paddingHorizontal: 14,
   },
-  currencySymbol: {
-    fontSize: 28,
+  inputIcon: {
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 14.5,
+    height: '100%',
+    fontWeight: '600',
+  },
+  amountInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 54,
+    paddingHorizontal: 16,
+  },
+  currencyPrefix: {
+    fontSize: 22,
     fontWeight: '900',
+    marginRight: 8,
   },
   amountInput: {
     flex: 1,
-    fontSize: 36,
+    fontSize: 24,
     fontWeight: '900',
-    letterSpacing: -1,
+    height: '100%',
   },
-  inputSuffix: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  /* CATEGORY CHIPS */
-  categoryChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  catChipsScroll: {
     gap: 8,
+    paddingVertical: 2,
   },
-  categoryChip: {
-    borderWidth: 1.5,
-    borderRadius: 999,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-  },
-  categoryChipText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
-  /* RECURRING TOGGLE */
-  recurringRow: {
+  catChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderRadius: 18,
-    padding: 16,
   },
-  recurringIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recurringText: { flex: 1 },
-  recurringTitle: {
+  catChipEmoji: {
     fontSize: 15,
+  },
+  catChipText: {
+    fontSize: 12.5,
+  },
+  recurringToggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 16,
+  },
+  recurringToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  recurringTitle: {
+    fontSize: 14,
     fontWeight: '700',
   },
   recurringSub: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11.5,
+    marginTop: 1,
   },
-  statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
+  togglePill: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 1,
+    justifyContent: 'center',
   },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+  toggleKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
   },
-
-  /* FREQUENCY */
-  subForm: { gap: 0 },
-  frequencyChips: {
+  recurringBox: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 16,
+  },
+  recurringBoxLabel: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+  freqRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   freqChip: {
-    borderWidth: 1.5,
-    borderRadius: 999,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   freqChipText: {
-    fontSize: 12,
+    fontSize: 11,
+  },
+  customDaysInput: {
+    height: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    fontSize: 14,
     fontWeight: '700',
   },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    height: 48,
-    paddingHorizontal: 14,
-    marginTop: 4,
-  },
-  inputField: {
-    flex: 1,
-    fontSize: 15,
-  },
-
-  /* SUBMIT */
   submitBtn: {
-    height: 56,
-    borderRadius: 18,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 8,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   submitBtnInner: {
     flexDirection: 'row',
@@ -881,82 +1014,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitBtnText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#10120E',
-    letterSpacing: 0.3,
-  },
-
-  /* MODAL */
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
-  },
-  modalIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  modalCancelBtn: {
-    flex: 1,
-    height: 50,
-    borderWidth: 1,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCancelText: {
     fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: -0.2,
+  },
+  errorMsg: {
+    fontSize: 11.5,
     fontWeight: '600',
-  },
-  modalSaveBtn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#C79A3E',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  modalSaveText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#10120E',
+    marginTop: 5,
+    marginLeft: 2,
   },
 });

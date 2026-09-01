@@ -1,13 +1,35 @@
+/**
+ * @file subscriptions.tsx
+ * @description Recurring Subscriptions & Membership Tracker screen.
+ * Displays committed monthly & annual run-rates, upcoming billing countdowns,
+ * instant edit modals, and one-tap cancellation confirmations with full exception handling.
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { apiRequest } from '../../services/api';
+import { useAlert } from '../../context/AlertContext';
+import { apiRequest, ApiError } from '../../services/api';
+import { getCurrencySymbol } from '../../services/currency';
+import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+
+import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
+import { NumberTicker } from '../../components/NumberTicker';
+import { EditSubscriptionModal } from '../../components/EditSubscriptionModal';
 
 interface Subscription {
   id: number;
@@ -15,72 +37,84 @@ interface Subscription {
   amount: number;
   nextDueDate: string;
   frequency: string;
-  categoryName: string;
+  categoryId: number;
+  categoryName?: string;
+  intervalDays?: number;
 }
 
-const FREQUENCY_COLORS: Record<string, string> = {
-  DAILY: '#A23E32',
-  WEEKLY: '#C9932E',
-  MONTHLY: '#C79A3E',
-  YEARLY: '#4C7A78',
-  CUSTOM: '#8B5E34',
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  food: '#A23E32',
-  transport: '#4C7A78',
-  utilities: '#C9932E',
-  entertainment: '#B06B5C',
-  health: '#5B8C5A',
-};
-
-function getCategoryColor(name: string) {
-  return CATEGORY_COLORS[name.toLowerCase()] || '#6B7280';
+interface Category {
+  id: number;
+  name: string;
 }
 
-function getCategoryIcon(name: string): any {
-  const n = name.toLowerCase();
-  if (n.includes('food') || n.includes('dining')) return 'fast-food';
-  if (n.includes('transport') || n.includes('travel')) return 'car';
-  if (n.includes('utilities') || n.includes('bill')) return 'flash';
-  if (n.includes('entertainment') || n.includes('movie')) return 'game-controller';
-  if (n.includes('health') || n.includes('medical')) return 'medical';
-  return 'repeat';
-}
-
+/**
+ * Calculates remaining days until a target due date string.
+ *
+ * @param dateStr - ISO formatted date string.
+ * @returns Number of days until due.
+ */
 function getDaysUntil(dateStr: string): number {
-  const target = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  return diff;
+  if (!dateStr) return 999;
+  try {
+    const target = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return isNaN(diff) ? 999 : diff;
+  } catch {
+    return 999;
+  }
 }
 
+/**
+ * Subscriptions & Recurring commitments management screen.
+ */
 export default function SubscriptionsScreen() {
-  const { userId, theme } = useAuth();
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
+  const { userId, theme, currency } = useAuth();
+  const { showAlert } = useAlert();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const currSym = getCurrencySymbol(currency);
+  const c = Colors[theme];
   const isLight = theme === 'light';
 
-  const c = {
-    bg: isLight ? '#EDEAE0' : '#10120E',
-    card: isLight ? '#FCFBF6' : 'rgba(23,26,20,0.9)',
-    border: isLight ? '#DAD4C1' : 'rgba(236,231,216,0.07)',
-    text: isLight ? '#1E1B15' : '#ECE7D8',
-    textMuted: isLight ? '#6B6558' : '#A8A395',
-    inputBg: isLight ? '#F5F2E9' : 'rgba(23,26,20,0.7)',
-    accent: '#C79A3E',
-    orange: '#A23E32',
-  };
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingSub, setEditingSub] = useState<Subscription | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const fetchSubscriptions = async () => {
+  /**
+   * Fetches user subscriptions and merged category lookup options.
+   */
+  const fetchSubscriptionsAndCategories = async () => {
     if (!userId) return;
     try {
-      const data = await apiRequest(`/expenses/recurring/user/${userId}`);
-      setSubscriptions(data || []);
-    } catch (e) {
-      console.error('Failed to load subscriptions', e);
+      const [subsData, globalCats, userCats] = await Promise.all([
+        apiRequest(`/expenses/recurring/user/${userId}`),
+        apiRequest(`/categories/global`),
+        apiRequest(`/categories/user/${userId}`),
+      ]);
+
+      setSubscriptions(Array.isArray(subsData) ? subsData : []);
+      const merged = [
+        ...(Array.isArray(globalCats) ? globalCats : []),
+        ...(Array.isArray(userCats) ? userCats : []),
+      ];
+      const seen = new Set();
+      const uniqueCats: Category[] = [];
+      merged.forEach((cat) => {
+        if (cat && cat.name && !seen.has(cat.name.toLowerCase())) {
+          seen.add(cat.name.toLowerCase());
+          uniqueCats.push(cat);
+        }
+      });
+      setCategories(uniqueCats);
+      setFetchError(null);
+    } catch (e: any) {
+      console.warn('[SubscriptionsScreen] Failed to load recurring subscriptions:', e);
+      const isApiErr = e instanceof ApiError;
+      setFetchError(isApiErr ? e.message : 'Could not synchronize subscriptions.');
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -89,31 +123,39 @@ export default function SubscriptionsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchSubscriptions();
+      fetchSubscriptionsAndCategories();
     }, [userId])
   );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchSubscriptions();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    fetchSubscriptionsAndCategories();
   };
 
-  const handleCancel = (subId: number, name: string) => {
-    Alert.alert(
-      'Cancel Subscription',
-      `Cancel the recurring payment for "${name}"? This cannot be undone.`,
+  /**
+   * Deletes a recurring subscription.
+   */
+  const handleDelete = (sub: Subscription) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    showAlert(
+      'Cancel Subscription?',
+      `Are you sure you want to stop tracking "${sub.description}"? Past transactions won't be deleted.`,
       [
-        { text: 'Keep Active', style: 'cancel' },
+        { text: 'Keep It', style: 'cancel' },
         {
-          text: 'Cancel It',
+          text: 'Cancel Plan',
           style: 'destructive',
           onPress: async () => {
             try {
-              await apiRequest(`/expenses/recurring/${subId}`, { method: 'DELETE' });
-              Alert.alert('Done', 'Subscription cancelled.');
-              fetchSubscriptions();
-            } catch (error: any) {
-              Alert.alert('Failed', error.message || 'Could not cancel.');
+              await apiRequest(`/expenses/recurring/${sub.id}/user/${userId}`, {
+                method: 'DELETE',
+              });
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              setSubscriptions((prev) => prev.filter((s) => s.id !== sub.id));
+            } catch (e: any) {
+              const msg = e instanceof ApiError ? e.message : 'Could not delete subscription.';
+              showAlert('Cancellation Error', msg);
             }
           },
         },
@@ -121,353 +163,542 @@ export default function SubscriptionsScreen() {
     );
   };
 
-  const totalMonthly = subscriptions.reduce((sum, s) => {
-    const multipliers: Record<string, number> = {
-      DAILY: 30, WEEKLY: 4.33, MONTHLY: 1, YEARLY: 1 / 12,
-    };
-    return sum + Number(s.amount) * (multipliers[s.frequency] ?? 1);
+  // Run-rate calculations with strict NaN/Infinity guards
+  const monthlyTotal = subscriptions.reduce((sum, s) => {
+    const amt = Math.max(0, Number(s.amount || 0));
+    const freq = (s.frequency || 'MONTHLY').toUpperCase();
+    if (freq === 'DAILY') return sum + amt * 30;
+    if (freq === 'WEEKLY') return sum + amt * 4.33;
+    if (freq === 'YEARLY') return sum + amt / 12;
+    return sum + amt;
   }, 0);
 
-  if (isLoading && !refreshing) {
+  const yearlyTotal = monthlyTotal * 12;
+
+  if (isLoading && !refreshing && subscriptions.length === 0) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color={c.accent} />
-        <Text style={[styles.loadingText, { color: c.textMuted }]}>Loading subscriptions...</Text>
+      <View style={[styles.loadingBox, { backgroundColor: c.bg }]}>
+        <AmbientAura />
+        <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
+  // Offline Error State
+  if (!isLoading && fetchError && subscriptions.length === 0) {
+    return (
+      <View style={[styles.errorWrapper, { backgroundColor: c.bg }]}>
+        <AmbientAura />
+        <View style={styles.errorCard}>
+          <View style={[styles.errorIconBox, { backgroundColor: c.accent + '20' }]}>
+            <Ionicons name="cloud-offline-outline" size={38} color={c.accent} />
+          </View>
+          <Text style={[styles.errorTitle, { color: c.text }]}>Unable to Load Subscriptions</Text>
+          <Text style={[styles.errorDesc, { color: c.textMuted }]}>{fetchError}</Text>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => {
+              setIsLoading(true);
+              fetchSubscriptionsAndCategories();
+            }}
+            style={[styles.retryBtn, { backgroundColor: c.primary }]}
+          >
+            <Ionicons name="refresh" size={18} color="#10120E" />
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: c.bg }]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />}
-    >
-      {/* ── HEADER ── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.pageTitle, { color: c.text }]}>Subscriptions</Text>
-          <Text style={[styles.pageSub, { color: c.textMuted }]}>Your recurring payments</Text>
-        </View>
-        <View style={[styles.countBadge, { backgroundColor: c.accent + '18', borderColor: c.accent + '40' }]}>
-          <Text style={[styles.countBadgeText, { color: c.accent }]}>{subscriptions.length} active</Text>
-        </View>
-      </View>
+    <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
+      <AmbientAura />
 
-      {/* ── MONTHLY TOTAL CARD ── */}
-      {subscriptions.length > 0 && (
-        <View style={[styles.totalCard, { backgroundColor: c.card, borderColor: c.accent + '35' }]}>
-          <View style={[styles.totalCardGlow, { backgroundColor: c.accent + '12' }]} />
-          <View style={styles.totalCardContent}>
-            <View>
-              <Text style={[styles.totalCardLabel, { color: c.textMuted }]}>Monthly total</Text>
-              <Text style={[styles.totalCardAmount, { color: c.text }]}>
-                ₹{totalMonthly.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              </Text>
-              <Text style={[styles.totalCardSub, { color: c.textMuted }]}>
-                across {subscriptions.length} subscription{subscriptions.length !== 1 ? 's' : ''}
-              </Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Math.max(insets.top + 10, 48) },
+        ]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
+      >
+        {/* Header Bar */}
+        <View style={styles.header}>
+          <View style={styles.headerTitleWrap}>
+            <Text style={[styles.pageTitle, { color: c.text }]}>Subscriptions</Text>
+            <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>
+              {subscriptions.length} active recurring commitment{subscriptions.length === 1 ? '' : 's'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push('/(tabs)/add-expense')}
+            style={[styles.addBtn, { backgroundColor: c.primary }]}
+            accessibilityLabel="Add Subscription"
+          >
+            <Ionicons name="add" size={20} color={isLight ? '#FFF' : '#10120E'} />
+            <Text style={[styles.addBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>New</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Total Run-Rate KPI Cards */}
+        <StaggeredView delay={100} direction="up">
+          <View style={styles.kpiRow}>
+            {/* Monthly Load */}
+            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: c.primary + '40' }]}>
+              <View style={styles.kpiHeader}>
+                <Text style={[styles.kpiLabel, { color: c.textMuted }]}>Monthly Burn</Text>
+                <View style={[styles.kpiBadge, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="repeat" size={13} color={c.primary} />
+                </View>
+              </View>
+              <NumberTicker
+                value={monthlyTotal}
+                prefix={currSym}
+                decimals={0}
+                style={[styles.kpiValue, { color: c.primary }]}
+              />
+              <Text style={[styles.kpiSub, { color: c.textMuted }]}>Committed recurring</Text>
             </View>
-            <View style={[styles.totalCardIcon, { backgroundColor: c.accent + '20', borderColor: c.accent + '50' }]}>
-              <Ionicons name="repeat" size={22} color={c.accent} />
+
+            {/* Annual Run Rate */}
+            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: c.teal + '40' }]}>
+              <View style={styles.kpiHeader}>
+                <Text style={[styles.kpiLabel, { color: c.textMuted }]}>Annual Load</Text>
+                <View style={[styles.kpiBadge, { backgroundColor: c.teal + '18' }]}>
+                  <Ionicons name="calendar-outline" size={13} color={c.teal} />
+                </View>
+              </View>
+              <NumberTicker
+                value={yearlyTotal}
+                prefix={currSym}
+                decimals={0}
+                style={[styles.kpiValue, { color: c.teal }]}
+              />
+              <Text style={[styles.kpiSub, { color: c.textMuted }]}>Projected 12m run-rate</Text>
             </View>
           </View>
-        </View>
-      )}
+        </StaggeredView>
 
-      {/* ── LIST ── */}
-      {subscriptions.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <View style={[styles.emptyIconBox, { backgroundColor: c.accent + '12' }]}>
-            <Ionicons name="repeat-outline" size={40} color={c.accent} />
-          </View>
-          <Text style={[styles.emptyTitle, { color: c.text }]}>No subscriptions yet</Text>
-          <Text style={[styles.emptyBody, { color: c.textMuted }]}>
-            When adding an expense, toggle "Repeat this expense" to create a recurring subscription here.
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.list}>
-          {subscriptions.map((item, index) => {
-            const col = getCategoryColor(item.categoryName);
-            const freqColor = FREQUENCY_COLORS[item.frequency] || '#6B7280';
-            const daysUntil = getDaysUntil(item.nextDueDate);
-            const isDueSoon = daysUntil <= 3 && daysUntil >= 0;
-            return (
-              <StaggeredView key={item.id} delay={Math.min(index * 70, 490)} direction="up">
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: c.card,
-                    borderColor: c.border,
-                    borderLeftColor: col,
-                    borderLeftWidth: 3,
-                  },
-                ]}
+        {/* Subscriptions List */}
+        <StaggeredView delay={200} direction="up">
+          {subscriptions.length === 0 ? (
+            <View style={[styles.emptyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={[styles.emptyIconBox, { backgroundColor: c.primary + '15' }]}>
+                <Ionicons name="sparkles" size={32} color={c.primary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: c.text }]}>Zero Active Subscriptions</Text>
+              <Text style={[styles.emptyDesc, { color: c.textMuted }]}>
+                Track Netflix, Spotify, gym memberships, and rent renewals in one intelligent view.
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => router.push('/(tabs)/add-expense')}
+                style={[styles.emptyActionBtn, { backgroundColor: c.primary }]}
               >
-                {/* Card Header */}
-                <View style={styles.cardHeader}>
-                  <View style={[styles.catIcon, { backgroundColor: col + '20' }]}>
-                    <Ionicons name={getCategoryIcon(item.categoryName)} size={20} color={col} />
-                  </View>
-                  <View style={styles.cardInfo}>
-                    <Text style={[styles.cardTitle, { color: c.text }]}>{item.description}</Text>
-                    <View style={styles.cardMetaRow}>
-                      <Text style={[styles.cardMeta, { color: c.textMuted }]}>{item.categoryName}</Text>
-                      <View style={[styles.freqBadge, { backgroundColor: freqColor + '18', borderColor: freqColor + '40' }]}>
-                        <Text style={[styles.freqBadgeText, { color: freqColor }]}>
-                          {item.frequency}
+                <Ionicons name="add" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                <Text style={[styles.emptyActionBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                  Add Recurring Plan
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.subsList}>
+              {subscriptions.map((sub, index) => {
+                const days = getDaysUntil(sub.nextDueDate);
+                const isUrgent = days <= 3 && days >= 0;
+                const isOverdue = days < 0;
+                const catColor = getCategoryColor(sub.categoryName || '').color;
+
+                return (
+                  <StaggeredView key={sub.id} delay={120 + Math.min(index * 60, 400)} direction="up">
+                    <View
+                      style={[
+                        styles.subCard,
+                        {
+                          backgroundColor: c.card,
+                          borderColor: isUrgent ? c.accent : isOverdue ? c.warning : c.border,
+                        },
+                      ]}
+                    >
+                    <View style={styles.subTopRow}>
+                      <View style={styles.subLeft}>
+                        <View style={[styles.catIconWrap, { backgroundColor: catColor + '18' }]}>
+                          <Text style={styles.catEmojiText}>
+                            {getCategoryEmoji(sub.categoryName || 'General')}
+                          </Text>
+                        </View>
+                        <View style={styles.subMeta}>
+                          <Text style={[styles.subTitle, { color: c.text }]}>{sub.description}</Text>
+                          <View style={styles.subSubRow}>
+                            <Text style={[styles.subCatText, { color: catColor }]}>
+                              {sub.categoryName || 'General'}
+                            </Text>
+                            <Text style={[styles.dotText, { color: c.textMuted }]}>•</Text>
+                            <Text style={[styles.subFreqText, { color: c.textMuted }]}>
+                              {sub.frequency}
+                              {sub.frequency === 'CUSTOM' && sub.intervalDays ? ` (${sub.intervalDays}d)` : ''}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={styles.subRight}>
+                        <Text style={[styles.subAmtText, { color: c.text }]}>
+                          {currSym}
+                          {Number(sub.amount || 0).toLocaleString('en-IN', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          })}
                         </Text>
                       </View>
                     </View>
+
+                    {/* Bottom Status Row & Actions */}
+                    <View style={[styles.subBottomRow, { borderTopColor: c.border }]}>
+                      {/* Due badge */}
+                      <View
+                        style={[
+                          styles.dueBadge,
+                          {
+                            backgroundColor: isUrgent
+                              ? c.accent + '20'
+                              : isOverdue
+                              ? c.warning + '20'
+                              : c.inputBg,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={isUrgent ? 'flame' : 'alarm-outline'}
+                          size={12}
+                          color={isUrgent ? c.accent : isOverdue ? c.warning : c.textMuted}
+                        />
+                        <Text
+                          style={[
+                            styles.dueBadgeText,
+                            {
+                              color: isUrgent ? c.accent : isOverdue ? c.warning : c.textMuted,
+                            },
+                          ]}
+                        >
+                          {isOverdue
+                            ? `Overdue by ${Math.abs(days)}d`
+                            : days === 0
+                            ? 'Due Today!'
+                            : `Due in ${days} days`}
+                        </Text>
+                      </View>
+
+                      {/* Action buttons */}
+                      <View style={styles.actionButtonsRow}>
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => setEditingSub(sub)}
+                          style={[styles.iconActionBtn, { backgroundColor: c.inputBg }]}
+                        >
+                          <Ionicons name="pencil" size={14} color={c.primary} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => handleDelete(sub)}
+                          style={[styles.iconActionBtn, { backgroundColor: c.inputBg }]}
+                        >
+                          <Ionicons name="trash-outline" size={14} color={c.accent} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
-                  <Text style={[styles.cardAmount, { color: c.text }]}>₹{Number(item.amount).toFixed(0)}</Text>
-                </View>
+                </StaggeredView>
+                );
+              })}
+            </View>
+          )}
+        </StaggeredView>
+      </ScrollView>
 
-                {/* Divider */}
-                <View style={[styles.divider, { backgroundColor: c.border }]} />
-
-                {/* Card Footer */}
-                <View style={styles.cardFooter}>
-                  <View style={styles.dueDateRow}>
-                    <Ionicons
-                      name={isDueSoon ? 'alert-circle' : 'calendar-outline'}
-                      size={13}
-                      color={isDueSoon ? '#A23E32' : c.textMuted}
-                    />
-                    <Text style={[styles.dueDateText, { color: isDueSoon ? '#A23E32' : c.textMuted }]}>
-                      {isDueSoon
-                        ? daysUntil === 0 ? 'Due today!' : `Due in ${daysUntil}d`
-                        : `Next: ${item.nextDueDate}`}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.cancelBtn}
-                    onPress={() => handleCancel(item.id, item.description)}
-                  >
-                    <Ionicons name="close-circle-outline" size={13} color="#A23E32" />
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              </StaggeredView>
-            );
-          })}
-        </View>
-      )}
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+      {/* Edit Subscription Modal */}
+      <EditSubscriptionModal
+        visible={!!editingSub}
+        subscription={editingSub}
+        categories={categories}
+        onClose={() => setEditingSub(null)}
+        onUpdated={() => fetchSubscriptionsAndCategories()}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  loadingContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12,
+  screenWrapper: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
   },
-  loadingText: { fontSize: 14, fontWeight: '500' },
-
-  /* HEADER */
+  loadingBox: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  errorCard: {
+    alignItems: 'center',
+    padding: 24,
+    gap: 12,
+  },
+  errorIconBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  errorDesc: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  retryBtnText: {
+    color: '#10120E',
+    fontWeight: '800',
+    fontSize: 14,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
+    marginBottom: 20,
+  },
+  headerTitleWrap: {
+    flex: 1,
+    marginRight: 10,
   },
   pageTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
-    letterSpacing: -0.8,
+    letterSpacing: -0.6,
   },
-  pageSub: {
+  pageSubtitle: {
     fontSize: 13,
     marginTop: 2,
   },
-  countBadge: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 12,
+    flexShrink: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  countBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
+  addBtnText: {
+    fontWeight: '800',
+    fontSize: 13.5,
   },
-
-  /* TOTAL CARD */
-  totalCard: {
-    marginHorizontal: 20,
+  kpiRow: {
+    flexDirection: 'row',
+    gap: 12,
     marginBottom: 20,
+  },
+  kpiCard: {
+    flex: 1,
     borderRadius: 20,
     borderWidth: 1,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  totalCardGlow: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    top: -50,
-    right: -30,
-  },
-  totalCardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-  },
-  totalCardLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  totalCardAmount: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -1,
-  },
-  totalCardSub: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  totalCardIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  /* LIST */
-  list: {
-    paddingHorizontal: 20,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 18,
     padding: 16,
-    marginBottom: 14,
-    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  catIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  cardMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardMeta: {
-    fontSize: 12,
-  },
-  freqBadge: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  freqBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-  },
-  cardAmount: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.5,
-  },
-  divider: {
-    height: 1,
-    marginVertical: 12,
-  },
-  cardFooter: {
+  kpiHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
-  dueDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  kpiLabel: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  dueDateText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  cancelBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    backgroundColor: 'rgba(162, 62, 50,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(162, 62, 50,0.2)',
-  },
-  cancelBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#A23E32',
-  },
-
-  /* EMPTY */
-  emptyContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingTop: 60,
-    gap: 14,
-  },
-  emptyIconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  kpiBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyTitle: {
+  kpiValue: {
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 2,
+  },
+  kpiSub: {
+    fontSize: 11,
+  },
+  subsList: {
+    gap: 12,
+  },
+  subCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  subTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  subLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  catIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  catEmojiText: {
     fontSize: 20,
+  },
+  subMeta: {
+    flex: 1,
+  },
+  subTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 3,
+  },
+  subSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  subCatText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  dotText: {
+    fontSize: 8,
+  },
+  subFreqText: {
+    fontSize: 11.5,
+  },
+  subRight: {
+    alignItems: 'flex-end',
+  },
+  subAmtText: {
+    fontSize: 17,
+    fontWeight: '900',
+    letterSpacing: -0.4,
+  },
+  subBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  dueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  dueBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 32,
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+  },
+  emptyIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  emptyTitle: {
+    fontSize: 17,
     fontWeight: '800',
   },
-  emptyBody: {
-    fontSize: 14,
+  emptyDesc: {
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
+  },
+  emptyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginTop: 6,
+  },
+  emptyActionBtnText: {
+    fontWeight: '800',
+    fontSize: 13.5,
   },
 });

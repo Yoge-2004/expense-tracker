@@ -1,16 +1,58 @@
+/**
+ * @file index.tsx
+ * @description Primary Financial Dashboard screen.
+ * Displays:
+ * - Top greeting bar with data hub export & theme toggle.
+ * - Safe area notch adaptation via useSafeAreaInsets.
+ * - Offline cached status and retry banners.
+ * - 4-metric matrix with animated NumberTicker components.
+ * - In-depth financial intelligence insight module.
+ * - 5 SVG graphical charts (Category Donut, Spend Trend, Recurring Split, Day-of-Week, Budget vs Actual).
+ * - Bounded Recent Transactions Ledger Container with internal scrolling to prevent infinite page growth.
+ * - Multi-criteria search, global & custom category filter pills, custom date range (start & end date), and sorting.
+ * - Custom in-app Alert and Confirmation modal integration.
+ * - Pull-to-refresh and local cache hydration with exception recovery.
+ */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, RefreshControl, Alert, Share, Animated } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
+  RefreshControl,
+  Animated,
+  Dimensions,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { apiRequest } from '../../services/api';
+import { useAlert } from '../../context/AlertContext';
+import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
+import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
-import { AnimatedCard } from '../../components/AnimatedCard';
-import { AnimatedButton } from '../../components/AnimatedButton';
-import { AnimatedProgressBar } from '../../components/AnimatedProgressBar';
+import { useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+
+import { AmbientAura } from '../../components/AmbientAura';
+import { NumberTicker } from '../../components/NumberTicker';
 import { StaggeredView } from '../../components/StaggeredView';
+import { InsightCards } from '../../components/InsightCards';
+import {
+  CategoryDonutChart,
+  SpendTrendChart,
+  RecurringSplitChart,
+  DayOfWeekChart,
+  BudgetVsActualChart,
+} from '../../components/FinancialCharts';
+import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
+import { ExportImportModal } from '../../components/ExportImportModal';
+
+const { width } = Dimensions.get('window');
 
 interface Expense {
   id: number;
@@ -19,6 +61,8 @@ interface Expense {
   expenseDate: string;
   categoryId: number;
   categoryName: string;
+  isRecurring?: boolean;
+  recurring?: boolean;
 }
 
 interface BudgetStatus {
@@ -36,1134 +80,1099 @@ interface Category {
   name: string;
 }
 
+interface Subscription {
+  id: number;
+  description: string;
+  amount: number;
+  frequency: string;
+}
+
+/**
+ * Main dashboard screen component.
+ */
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
-  const router = useRouter();
+  const { showAlert } = useAlert();
+  const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
-
-  const handleDeleteExpense = async (expenseId: number) => {
-    try {
-      await apiRequest(`/expenses/${expenseId}/user/${userId}`, { method: 'DELETE' });
-      setExpenses(prev => prev.filter(e => e.id !== expenseId));
-      fetchData();
-    } catch (e: any) {
-      Alert.alert('Delete Failed', e.message || 'Could not delete this expense.');
-    }
-  };
-
-  const handleExpenseLongPress = (item: Expense) => {
-    Alert.alert(
-      item.description,
-      `₹${Number(item.amount).toFixed(2)} · ${item.categoryName}`,
-      [
-        {
-          text: 'Edit',
-          onPress: () => router.push({
-            pathname: '/(tabs)/add-expense',
-            params: {
-              editId: String(item.id),
-              editDescription: item.description,
-              editAmount: String(item.amount),
-              editCategoryId: String(item.categoryId),
-              editDate: item.expenseDate,
-            },
-          }),
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Delete Expense?', 'This cannot be undone.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Delete', style: 'destructive', onPress: () => handleDeleteExpense(item.id) },
-            ]);
-          },
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
-
   const isLight = theme === 'light';
+  const c = Colors[theme];
 
-  // Dynamic Theme Colors configuration
-  const getThemeColors = () => {
-    if (theme === 'light') {
-      return {
-        bg: '#EDEAE0',
-        card: '#FCFBF6',
-        border: '#DAD4C1',
-        text: '#1E1B15',
-        textMuted: '#6B6558',
-        inputBg: '#F5F2E9',
-        inputBorder: '#DAD4C1',
-        trackBg: '#DAD4C1',
-        accent: '#9C7623',
-        accentDark: '#7C5E1B',
-        accentOrange: '#8F3327',
-        cardTotalBg: 'rgba(156, 118, 35, 0.08)',
-        cardTotalBorder: 'rgba(156, 118, 35, 0.25)',
-        cardCountBg: 'rgba(143, 51, 39, 0.08)',
-        cardCountBorder: 'rgba(143, 51, 39, 0.25)',
-      };
-    }
-    return {
-      bg: '#10120E',
-      card: 'rgba(23, 26, 20, 0.85)',
-      border: 'rgba(236, 231, 216, 0.07)',
-      text: '#ECE7D8',
-      textMuted: '#A8A395',
-      inputBg: 'rgba(23, 26, 20, 0.7)',
-      inputBorder: 'rgba(236, 231, 216, 0.08)',
-      trackBg: '#171A14',
-      accent: '#C79A3E',
-      accentDark: '#A97F2E',
-      accentOrange: '#A23E32',
-      cardTotalBg: 'rgba(199, 154, 62, 0.12)',
-      cardTotalBorder: 'rgba(199, 154, 62, 0.3)',
-      cardCountBg: 'rgba(162, 62, 50, 0.12)',
-      cardCountBorder: 'rgba(162, 62, 50, 0.3)',
-    };
-  };
-
-  const c = getThemeColors();
-
-  // Data state
+  // Data states
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [cachedTime, setCachedTime] = useState<string | null>(null);
 
-  // Filters and Actions UI states
+  // Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortOption, setSortOption] = useState('date-desc');
+  const [datePreset, setDatePreset] = useState<DatePresetType>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [sortOption, setSortOption] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc');
   const [showFilters, setShowFilters] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
 
-  // Animated values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  // Animation values
   const filterAnim = useRef(new Animated.Value(0)).current;
 
-  const CACHE_VERSION = 1;
-  const cacheKey = `expenseCache_${userId}`;
+  const CACHE_KEY = `expense_cache_v4_${userId}`;
 
-  const saveCache = async (data: { expenses: Expense[]; budgets: BudgetStatus[]; categories: Category[] }) => {
+  /**
+   * Persists dashboard state to AsyncStorage for offline resilience.
+   */
+  const saveCache = async (data: any) => {
     try {
-      await AsyncStorage.setItem(cacheKey, JSON.stringify({ v: CACHE_VERSION, savedAt: Date.now(), ...data }));
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), ...data }));
     } catch (e) {
-      console.warn('Could not save local expense cache', e);
+      console.warn('[Dashboard] Could not save cache to AsyncStorage:', e);
     }
   };
 
+  /**
+   * Loads offline cached state from AsyncStorage.
+   */
   const loadCache = async () => {
     try {
-      const raw = await AsyncStorage.getItem(cacheKey);
+      const raw = await AsyncStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
-      if (parsed.v !== CACHE_VERSION || !Array.isArray(parsed.expenses)) return null;
+      if (parsed.savedAt) {
+        const d = new Date(parsed.savedAt);
+        setCachedTime(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      }
       return parsed;
     } catch (e) {
+      console.warn('[Dashboard] Corrupted cache detected, clearing:', e);
+      await AsyncStorage.removeItem(CACHE_KEY).catch(() => {});
       return null;
     }
   };
 
-  const fetchData = async (usedCache: boolean = false) => {
+  /**
+   * Synchronizes dashboard state from backend endpoints with error containment.
+   * Merges global categories and user custom categories.
+   */
+  const fetchData = async (silent: boolean = false) => {
     if (!userId) return;
+    if (!silent) setIsLoading(true);
+
     try {
-      const [expensesData, budgetsData, categoriesData] = await Promise.all([
+      const [expensesData, budgetsData, globalCats, userCats, subsData] = await Promise.all([
         apiRequest(`/expenses/user/${userId}`),
         apiRequest(`/expenses/budget/status/user/${userId}`),
-        apiRequest(`/categories/global`),
+        apiRequest(`/categories/global`).catch(() => []),
+        apiRequest(`/categories/user/${userId}`).catch(() => []),
+        apiRequest(`/expenses/recurring/user/${userId}`),
       ]);
-      setExpenses(expensesData || []);
-      setBudgets(budgetsData || []);
-      setCategories(categoriesData || []);
-      saveCache({ expenses: expensesData || [], budgets: budgetsData || [], categories: categoriesData || [] });
 
-      // Trigger animations on data fetch
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(progressAnim, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: false,
-        })
-      ]).start();
-    } catch (e) {
-      console.error('Failed to load metrics', e);
-      if (usedCache) {
-        // Already showing last-known data from cache — just let the person know
-        // it might not be current, rather than clearing the screen.
-        Alert.alert('Offline', "Couldn't reach the server — showing your last saved data.");
-      } else {
-        Alert.alert('Connection Error', "Couldn't load your data. Check your connection and try again.");
-      }
+      const safeExp = Array.isArray(expensesData) ? expensesData : [];
+      const safeBud = Array.isArray(budgetsData) ? budgetsData : [];
+      const safeSub = Array.isArray(subsData) ? subsData : [];
+
+      // Merge global & custom user categories without duplicates
+      const mergedCats = [
+        ...(Array.isArray(globalCats) ? globalCats : []),
+        ...(Array.isArray(userCats) ? userCats : []),
+      ];
+      const seenNames = new Set<string>();
+      const safeCat: Category[] = [];
+      mergedCats.forEach((cat) => {
+        if (cat && cat.name && !seenNames.has(cat.name.trim().toLowerCase())) {
+          seenNames.add(cat.name.trim().toLowerCase());
+          safeCat.push(cat);
+        }
+      });
+
+      setExpenses(safeExp);
+      setBudgets(safeBud);
+      setCategories(safeCat);
+      setSubscriptions(safeSub);
+      setFetchError(null);
+      setCachedTime(null);
+
+      saveCache({
+        expenses: safeExp,
+        budgets: safeBud,
+        categories: safeCat,
+        subscriptions: safeSub,
+      });
+    } catch (err: any) {
+      console.warn('[Dashboard] Error fetching dashboard data:', err);
+      const isApiErr = err instanceof ApiError;
+      const msg = isApiErr ? err.message : 'Unable to synchronize with server.';
+      setFetchError(msg);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
   };
 
+  /**
+   * Hydrates from offline storage first then initiates network sync.
+   */
   const loadWithCache = async () => {
     const cached = await loadCache();
     if (cached) {
-      setExpenses(cached.expenses || []);
-      setBudgets(cached.budgets || []);
-      setCategories(cached.categories || []);
+      if (Array.isArray(cached.expenses)) setExpenses(cached.expenses);
+      if (Array.isArray(cached.budgets)) setBudgets(cached.budgets);
+      if (Array.isArray(cached.categories)) setCategories(cached.categories);
+      if (Array.isArray(cached.subscriptions)) setSubscriptions(cached.subscriptions);
       setIsLoading(false);
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.timing(progressAnim, { toValue: 1, duration: 700, useNativeDriver: false }),
-      ]).start();
+      fetchData(true);
+    } else {
+      fetchData(false);
     }
-    fetchData(!!cached);
   };
 
   useFocusEffect(
     useCallback(() => {
-      progressAnim.setValue(0);
       loadWithCache();
     }, [userId])
   );
 
   const onRefresh = () => {
     setRefreshing(true);
-    progressAnim.setValue(0);
-    fetchData();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    fetchData(true);
   };
 
-  useEffect(() => {
-    Animated.timing(filterAnim, {
-      toValue: showFilters ? 1 : 0,
-      duration: 250,
+  const toggleFilterPanel = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const toValue = showFilters ? 0 : 1;
+    setShowFilters(!showFilters);
+    Animated.spring(filterAnim, {
+      toValue,
+      friction: 8,
+      tension: 50,
       useNativeDriver: false,
     }).start();
-  }, [showFilters]);
-
-  // CSV Export Utility
-  const handleExportCSV = async () => {
-    if (expenses.length === 0) {
-      Alert.alert('No Data', 'There are no expenses to export.');
-      return;
-    }
-    try {
-      const csvHeader = 'ID,Description,Amount,Date,Category\n';
-      const csvRows = filteredExpenses.map(e => 
-        `${e.id},"${e.description.replace(/"/g, '""')}",${e.amount},${e.expenseDate},"${e.categoryName}"`
-      ).join('\n');
-      const csvContent = csvHeader + csvRows;
-
-      await Share.share({
-        title: 'Expense Export',
-        message: csvContent,
-      });
-    } catch (error) {
-      Alert.alert('Export Failed', 'Could not share the export content.');
-    }
   };
 
-  // Calculations for graphs
-  const totalSpent = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
-
-  // Group by category
-  const categorySummary = expenses.reduce((acc: { [key: string]: number }, item) => {
-    acc[item.categoryName] = (acc[item.categoryName] || 0) + Number(item.amount);
-    return acc;
-  }, {});
-
-  const categoryList = Object.keys(categorySummary).map(cat => ({
-    name: cat,
-    amount: categorySummary[cat],
-    percentage: totalSpent > 0 ? (categorySummary[cat] / totalSpent) * 100 : 0,
-  })).sort((a, b) => b.amount - a.amount);
-
-  const CATEGORY_COLORS: Record<string, string> = {
-    food: '#A23E32', dining: '#A23E32', restaurant: '#A23E32',
-    transport: '#4C7A78', travel: '#4C7A78', uber: '#4C7A78',
-    utilities: '#C9932E', electricity: '#C9932E', water: '#C9932E', bills: '#C9932E',
-    entertainment: '#B06B5C', movie: '#B06B5C', netflix: '#B06B5C',
-    health: '#5B8C5A', medical: '#5B8C5A', gym: '#5B8C5A',
-    shopping: '#C79A3E', clothes: '#C79A3E', amazon: '#C79A3E',
-    education: '#8B5E34', books: '#8B5E34', course: '#8B5E34',
-    groceries: '#6B7280', supermarket: '#6B7280', market: '#6B7280',
-  };
-
-  const getCategoryColor = (name: string) => {
-    const n = (name || '').toLowerCase();
-    for (const [key, col] of Object.entries(CATEGORY_COLORS)) {
-      if (n.includes(key)) return col;
-    }
-    // Consistent hash-based color for unknown categories
-    const palette = ['#C79A3E', '#4C7A78', '#A23E32', '#C9932E', '#5B8C5A', '#B06B5C', '#8B5E34', '#6B7280'];
-    const idx = n.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % palette.length;
-    return palette[idx];
-  };
-
-  const getCategoryIconName = (name: string): any => {
-    const norm = name.toLowerCase();
-    if (norm.includes('food') || norm.includes('dining') || norm.includes('restaurant')) return 'fast-food';
-    if (norm.includes('transport') || norm.includes('travel') || norm.includes('uber') || norm.includes('fuel')) return 'car';
-    if (norm.includes('util') || norm.includes('electric') || norm.includes('water') || norm.includes('bill')) return 'flash';
-    if (norm.includes('entertain') || norm.includes('movie') || norm.includes('netflix') || norm.includes('game')) return 'game-controller';
-    if (norm.includes('health') || norm.includes('medical') || norm.includes('gym') || norm.includes('fitness')) return 'medical';
-    if (norm.includes('shop') || norm.includes('cloth') || norm.includes('amazon')) return 'bag-handle';
-    if (norm.includes('edu') || norm.includes('book') || norm.includes('course')) return 'book';
-    if (norm.includes('grocer') || norm.includes('market') || norm.includes('super')) return 'cart';
-    if (norm.includes('subscri') || norm.includes('saas') || norm.includes('software')) return 'laptop';
-    return 'wallet';
-  };
-
-  // Spending Trend SVG Points calculation (Last 90 days)
-  const getTrendSvgData = () => {
-    const dailySpends: { [key: string]: number } = {};
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-    expenses.forEach(e => {
-      const eDate = new Date(e.expenseDate);
-      if (eDate >= ninetyDaysAgo) {
-        dailySpends[e.expenseDate] = (dailySpends[e.expenseDate] || 0) + Number(e.amount);
-      }
-    });
-
-    const sortedDates = Object.keys(dailySpends).sort();
-    const dataPoints = sortedDates.map(date => dailySpends[date]);
-
-    if (dataPoints.length < 2) return null;
-
-    const maxVal = Math.max(...dataPoints, 100);
-    const width = 320;
-    const height = 140;
-    const paddingLeft = 45;
-    const paddingRight = 15;
-    const paddingTop = 15;
-    const paddingBottom = 25;
-
-    const points = dataPoints.map((val, index) => {
-      const x = paddingLeft + (index / (dataPoints.length - 1)) * (width - paddingLeft - paddingRight);
-      const y = height - paddingBottom - (val / maxVal) * (height - paddingTop - paddingBottom);
-      return { x, y, val, date: sortedDates[index] };
-    });
-
-    const pathData = points.reduce((acc, p, i) => 
-      i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`, ''
+  const handleExpenseLongPress = (item: Expense) => {
+    showAlert(
+      'Transaction Actions',
+      `"${item.description}" — ${currSymbol}${item.amount}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiRequest(`/expenses/${item.id}/user/${userId}`, { method: 'DELETE' });
+              setExpenses((prev) => prev.filter((e) => e.id !== item.id));
+              showAlert('Deleted', 'Expense record removed successfully.', undefined, 'success');
+              fetchData(true);
+            } catch (e: any) {
+              const msg = e instanceof ApiError ? e.message : 'Could not delete expense record.';
+              showAlert('Delete Failed', msg, undefined, 'error');
+            }
+          },
+        },
+      ],
+      'destructive'
     );
-
-    // Compute area background fill coordinate path
-    const fillPathData = `${pathData} L ${points[points.length - 1].x} ${height - paddingBottom} L ${points[0].x} ${height - paddingBottom} Z`;
-
-    const minDateStr = new Date(sortedDates[0]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    const maxDateStr = new Date(sortedDates[sortedDates.length - 1]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-    return { points, pathData, fillPathData, width, height, maxVal, minDateStr, maxDateStr, paddingLeft, paddingRight, paddingTop, paddingBottom };
   };
 
-  const trendData = getTrendSvgData();
+  // Calculations for Matrix Metrics
+  const totalSpent = expenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
 
-  // Filters logic
+  const now = new Date();
+  const currentDay = Math.max(now.getDate(), 1);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const currentMonthExpenses = expenses.filter((e) => {
+    if (!e.expenseDate) return false;
+    try {
+      const d = new Date(e.expenseDate);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    } catch {
+      return false;
+    }
+  });
+  const currentMonthSpent = currentMonthExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+  const dailyBurn = currentMonthSpent / currentDay;
+  const monthEndForecast = dailyBurn * daysInMonth;
+
+  // Category summary
+  const catSummary: Record<string, number> = {};
+  expenses.forEach((e) => {
+    const name = e.categoryName || 'General';
+    catSummary[name] = (catSummary[name] || 0) + Math.max(0, Number(e.amount || 0));
+  });
+  const sortedCats = Object.entries(catSummary).sort((a, b) => b[1] - a[1]);
+  const highestCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
+  const highestCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
+
+  // Filtered & Sorted Expenses List (including Custom Date Range)
   const filteredExpenses = expenses
-    .filter(e => {
-      const matchSearch = e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          e.categoryName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchCategory = selectedCategory === 'all' || e.categoryName === selectedCategory;
-      return matchSearch && matchCategory;
+    .filter((e) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (e.description && e.description.toLowerCase().includes(q)) ||
+        (e.categoryName && e.categoryName.toLowerCase().includes(q));
+
+      const matchCategory =
+        selectedCategory === 'all' ||
+        (e.categoryName && e.categoryName.toLowerCase() === selectedCategory.toLowerCase());
+
+      let matchDate = true;
+      if (e.expenseDate) {
+        try {
+          const expD = new Date(e.expenseDate);
+          const expDStr = e.expenseDate.split('T')[0];
+
+          if (datePreset === 'today') {
+            const todayStr = now.toISOString().split('T')[0];
+            matchDate = expDStr === todayStr;
+          } else if (datePreset === 'month') {
+            matchDate = expD.getMonth() === now.getMonth() && expD.getFullYear() === now.getFullYear();
+          } else if (datePreset === 'last30') {
+            const thirtyAgo = new Date();
+            thirtyAgo.setDate(thirtyAgo.getDate() - 30);
+            matchDate = expD >= thirtyAgo;
+          } else if (datePreset === 'custom') {
+            if (startDate.trim() && expDStr < startDate.trim()) {
+              matchDate = false;
+            }
+            if (endDate.trim() && expDStr > endDate.trim()) {
+              matchDate = false;
+            }
+          }
+        } catch {
+          matchDate = true;
+        }
+      }
+
+      return matchSearch && matchCategory && matchDate;
     })
     .sort((a, b) => {
-      if (sortOption === 'date-desc') return new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime();
-      if (sortOption === 'date-asc') return new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime();
-      if (sortOption === 'amount-desc') return b.amount - a.amount;
-      if (sortOption === 'amount-asc') return a.amount - b.amount;
+      try {
+        if (sortOption === 'date-desc') return new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime();
+        if (sortOption === 'date-asc') return new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime();
+        if (sortOption === 'amount-desc') return Number(b.amount || 0) - Number(a.amount || 0);
+        if (sortOption === 'amount-asc') return Number(a.amount || 0) - Number(b.amount || 0);
+      } catch {
+        return 0;
+      }
       return 0;
     });
 
-  if (isLoading && !refreshing) {
+  if (!isLoading && fetchError && expenses.length === 0) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color={c.accent} />
-        <Text style={[styles.loadingText, { color: c.textMuted }]}>Loading your finances...</Text>
+      <View style={[styles.errorWrapper, { backgroundColor: c.bg }]}>
+        <AmbientAura />
+        <View style={styles.errorCard}>
+          <View style={[styles.errorIconBox, { backgroundColor: c.accent + '20' }]}>
+            <Ionicons name="cloud-offline-outline" size={38} color={c.accent} />
+          </View>
+          <Text style={[styles.errorTitle, { color: c.text }]}>Unable to Load Ledger</Text>
+          <Text style={[styles.errorDesc, { color: c.textMuted }]}>{fetchError}</Text>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => fetchData(false)}
+            style={[styles.retryBtn, { backgroundColor: c.primary }]}
+          >
+            <Ionicons name="refresh" size={18} color="#10120E" />
+            <Text style={styles.retryBtnText}>Retry Connection</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
-  const avgDaily = expenses.length > 0 ? totalSpent / 30 : 0;
-  const topCategory = categoryList.length > 0 ? categoryList[0] : null;
+  if (isLoading && !refreshing && expenses.length === 0) {
+    return (
+      <View style={[styles.loadingWrapper, { backgroundColor: c.bg }]}>
+        <AmbientAura />
+        <ActivityIndicator size="large" color={c.primary} />
+        <Text style={[styles.loadingSub, { color: c.textMuted }]}>Assembling Financial Ledger...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
+      <AmbientAura />
+
       <ScrollView
-        style={styles.container}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Math.max(insets.top + 10, 48) },
+        ]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
       >
-        {/* ── TOP BAR ── */}
+        {/* =========================================
+            1. TOP COMMAND BAR
+           ========================================= */}
         <View style={styles.topBar}>
-          <View style={styles.greetingGroup}>
-            <View style={[styles.avatarBadge, { backgroundColor: c.accent }]}>
-              <Text style={styles.avatarText}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+          <View style={styles.userCol}>
+            <View style={[styles.avatarCircle, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}>
+              <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
             </View>
-            <View>
-              <Text style={[styles.greeting, { color: c.text }]}>Hello, {userName || 'Tracker'} 👋</Text>
-              <Text style={[styles.dateLabel, { color: c.textMuted }]}>
-                {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+            <View style={styles.userGreetingCol}>
+              <Text style={[styles.greetingTitle, { color: c.text }]} numberOfLines={1} ellipsizeMode="tail">
+                Welcome back, {userName || 'User'} 👋
+              </Text>
+              <Text style={[styles.todayDate, { color: c.textMuted }]} numberOfLines={1}>
+                {now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
               </Text>
             </View>
           </View>
-          <TouchableOpacity style={[styles.themeToggleButton, { borderColor: c.border, backgroundColor: c.inputBg }]} onPress={toggleTheme}>
-            <Ionicons name={isLight ? 'moon' : 'sunny'} size={18} color={c.accent} />
-          </TouchableOpacity>
-        </View>
 
-        {/* ── HERO BALANCE CARD ── */}
-        <StaggeredView delay={100} direction="up">
-          <View style={[styles.heroCard, { backgroundColor: c.card, borderColor: c.accent + '35' }]}>
-            {/* Glow blob */}
-            <View style={[styles.heroGlow, { backgroundColor: c.accent + '18' }]} />
-            <View style={[styles.heroGlowOrange, { backgroundColor: c.accentOrange + '12' }]} />
-
-            <View style={styles.heroCardTop}>
-              <View>
-                <Text style={[styles.heroCardLabel, { color: c.textMuted }]}>Total Spent This Month</Text>
-                <Text style={[styles.heroCardAmount, { color: c.text }]}>{currSymbol}{totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
-              </View>
-              <View style={[styles.heroBadge, { backgroundColor: c.accent + '20', borderColor: c.accent + '50' }]}>
-                <Ionicons name="analytics" size={20} color={c.accent} />
-              </View>
-            </View>
-
-            {/* Quick stat pills */}
-            <View style={styles.heroStats}>
-              <View style={[styles.heroStatPill, { backgroundColor: c.accent + '15', borderColor: c.accent + '30' }]}>
-                <Ionicons name="receipt-outline" size={13} color={c.accent} />
-                <Text style={[styles.heroStatValue, { color: c.accent }]}>{expenses.length} expenses</Text>
-              </View>
-              <View style={[styles.heroStatPill, { backgroundColor: c.accentOrange + '15', borderColor: c.accentOrange + '30' }]}>
-                <Ionicons name="flame-outline" size={13} color={c.accentOrange} />
-                <Text style={[styles.heroStatValue, { color: c.accentOrange }]}>{currSymbol}{avgDaily.toFixed(0)}/day avg</Text>
-              </View>
-              {topCategory && (
-                <View style={[styles.heroStatPill, { backgroundColor: '#4C7A7815', borderColor: '#4C7A7830' }]}>
-                  <Ionicons name="star-outline" size={13} color="#4C7A78" />
-                  <Text style={[styles.heroStatValue, { color: '#4C7A78' }]}>{topCategory.name}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </StaggeredView>
-
-        {/* ── SPEND BY CATEGORY ── */}
-        {categoryList.length > 0 && (
-          <StaggeredView delay={250} direction="up">
-            <View style={styles.listHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Spend by Category</Text>
-              <View style={[styles.sectionBadge, { backgroundColor: c.accent + '18' }]}>
-                <Text style={[styles.sectionBadgeText, { color: c.accent }]}>{categoryList.length} active</Text>
-              </View>
-            </View>
-            <View style={[styles.sectionCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              {categoryList.map((item, index) => {
-                const col = getCategoryColor(item.name);
-                return (
-                  <View key={index} style={[styles.categoryRow, index < categoryList.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + '60' }]}>
-                    <View style={styles.categoryHeader}>
-                      <View style={styles.categoryNameCol}>
-                        <View style={[styles.catIconBox, { backgroundColor: col + '20' }]}>
-                          <Ionicons name={getCategoryIconName(item.name)} size={14} color={col} />
-                        </View>
-                        <Text style={[styles.categoryName, { color: c.text }]}>{item.name}</Text>
-                      </View>
-                      <View style={styles.categoryRightCol}>
-                        <Text style={[styles.categoryAmount, { color: c.text }]}>{currSymbol}{item.amount.toFixed(0)}</Text>
-                        <Text style={[styles.categoryPct, { color: col }]}>{item.percentage.toFixed(0)}%</Text>
-                      </View>
-                    </View>
-                    <View style={[styles.progressTrack, { backgroundColor: c.trackBg }]}>
-                      <Animated.View style={[
-                        styles.progressBar,
-                        {
-                          backgroundColor: col,
-                          width: progressAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0%', `${item.percentage}%`]
-                          }),
-                          shadowColor: col,
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.5,
-                          shadowRadius: 4,
-                          elevation: 3,
-                        }
-                      ]} />
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </StaggeredView>
-        )}
-
-        {/* ── MONTHLY BUDGETS ── */}
-        <StaggeredView delay={400} direction="up">
-          <View style={styles.listHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Monthly Budgets</Text>
-              {budgets.length > 0 && (
-                <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 2 }}>Hold a budget to delete it</Text>
-              )}
-            </View>
+          <View style={styles.topBarRight}>
+            {/* Export / Data Hub Button */}
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)/add-expense')}
-              style={[styles.addBudgetBtn, { backgroundColor: c.accentOrange + '18', borderColor: c.accentOrange + '40' }]}
+              activeOpacity={0.8}
+              onPress={() => setExportModalVisible(true)}
+              style={[styles.topActionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+              accessibilityLabel="Export Data"
             >
-              <Ionicons name="add" size={14} color={c.accentOrange} />
-              <Text style={[styles.addBudgetText, { color: c.accentOrange }]}>Add</Text>
+              <Ionicons name="share-outline" size={18} color={c.primary} />
+            </TouchableOpacity>
+
+            {/* Theme Toggle Button */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                toggleTheme();
+              }}
+              style={[styles.topActionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+              accessibilityLabel="Toggle Theme"
+            >
+              <Ionicons name={isLight ? 'moon' : 'sunny'} size={18} color={c.primary} />
             </TouchableOpacity>
           </View>
-          <View style={[styles.sectionCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            {budgets.length === 0 ? (
-              <View style={styles.emptyBudgetBox}>
-                <View style={[styles.emptyIconBox, { backgroundColor: c.accent + '15' }]}>
-                  <Ionicons name="wallet-outline" size={30} color={c.accent} />
-                </View>
-                <Text style={[styles.emptyBudgetText, { color: c.textMuted }]}>No budgets configured yet</Text>
-                <TouchableOpacity onPress={() => router.push('/(tabs)/add-expense')} style={[styles.emptyActionBtn, { borderColor: c.accent + '50', backgroundColor: c.accent + '10' }]}>
-                  <Text style={[styles.emptyLink, { color: c.accent }]}>+ Set up a Budget</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              budgets.map((item, index) => {
-                const isOver = item.spent > item.limit;
-                const pct = Math.min(item.percentage, 100);
-                const barColor = isOver ? '#A23E32' : pct > 80 ? '#C9932E' : '#5B8C5A';
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    activeOpacity={0.7}
-                    delayLongPress={350}
-                    onLongPress={() => {
-                      Alert.alert(
-                        `Delete "${item.categoryName}" budget?`,
-                        'This removes the limit — it does not delete any expenses already recorded against it.',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Delete',
-                            style: 'destructive',
-                            onPress: async () => {
-                              try {
-                                const endpoint = item.budgetId
-                                  ? `/expenses/budget/${item.budgetId}`
-                                  : `/expenses/budget/user/${userId}/category/${item.categoryId}`;
-                                await apiRequest(endpoint, { method: 'DELETE' });
-                                setBudgets(prev => prev.filter((_, i) => i !== index));
-                                fetchData();
-                              } catch (e: any) {
-                                Alert.alert('Delete Failed', e.message || 'Could not delete this budget.');
-                              }
-                            },
-                          },
-                        ]
-                      );
-                    }}
-                  >
-                  <View style={[styles.budgetRow, index < budgets.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + '60' }]}>
-                    <View style={styles.categoryHeader}>
-                      <View style={styles.categoryNameCol}>
-                        <View style={[styles.catIconBox, { backgroundColor: barColor + '20' }]}>
-                          <Ionicons name={isOver ? 'warning-outline' : 'checkmark-circle-outline'} size={14} color={barColor} />
-                        </View>
-                        <Text style={[styles.categoryName, { color: c.text }]}>{item.categoryName}</Text>
-                      </View>
-                      <View style={styles.categoryRightCol}>
-                        <Text style={[styles.categoryAmount, { color: c.text }]}>{currSymbol}{item.spent.toFixed(0)}</Text>
-                        <Text style={[styles.categoryPct, { color: barColor }]}>{pct.toFixed(0)}%</Text>
-                      </View>
-                    </View>
-                    <View style={[styles.progressTrack, { backgroundColor: c.trackBg }]}>
-                      <Animated.View style={[
-                        styles.progressBar,
-                        {
-                          backgroundColor: barColor,
-                          width: progressAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0%', `${pct}%`]
-                          }),
-                          shadowColor: barColor,
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.4,
-                          shadowRadius: 4,
-                          elevation: 3,
-                        }
-                      ]} />
-                    </View>
-                    <Text style={[styles.budgetSubline, { color: c.textMuted }]}>{currSymbol}{item.spent.toFixed(0)} of {currSymbol}{item.limit.toFixed(0)} limit</Text>
-                  </View>
-                  </TouchableOpacity>
-                );
-              })
-            )}
-          </View>
-        </StaggeredView>
+        </View>
 
-        {/* Spending Trend (Up to 90 Days - Detailed) */}
-        {trendData && (
-          <StaggeredView delay={550} direction="up">
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Spending Trend</Text>
-            <View style={[styles.sectionCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              <Text style={[styles.trendLabel, { color: c.textMuted }]}>Up to last 90 days of spending</Text>
-              <View style={styles.trendWrapper}>
-                <Svg width="100%" height={trendData.height} viewBox={`0 0 ${trendData.width} ${trendData.height}`}>
-                  <Defs>
-                    <LinearGradient id="trendAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="#C79A3E" stopOpacity={0.35} />
-                      <Stop offset="100%" stopColor="#C79A3E" stopOpacity={0.0} />
-                    </LinearGradient>
-                  </Defs>
-                  
-                  {/* Grid Lines */}
-                  <Line x1={trendData.paddingLeft} y1={15} x2={trendData.width - trendData.paddingRight} y2={15} stroke={isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)"} strokeWidth="1" />
-                  <Line x1={trendData.paddingLeft} y1={60} x2={trendData.width - trendData.paddingRight} y2={60} stroke={isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)"} strokeWidth="1" />
-                  <Line x1={trendData.paddingLeft} y1={115} x2={trendData.width - trendData.paddingRight} y2={115} stroke={isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)"} strokeWidth="1" />
-                  
-                  {/* Area fill */}
-                  <Path d={trendData.fillPathData} fill="url(#trendAreaGrad)" />
-                  
-                  {/* Line path */}
-                  <Path d={trendData.pathData} fill="none" stroke="#C79A3E" strokeWidth="2.5" />
-                  
-                  {/* Detailed Labels */}
-                  <SvgText x={5} y={20} fill={c.textMuted} fontSize={10} fontWeight="bold">{currSymbol}{trendData.maxVal.toFixed(0)}</SvgText>
-                  <SvgText x={5} y={65} fill={c.textMuted} fontSize={10}>{currSymbol}{(trendData.maxVal / 2).toFixed(0)}</SvgText>
-                  <SvgText x={5} y={118} fill={c.textMuted} fontSize={10}>{currSymbol}0</SvgText>
-
-                  {/* Timeline labels at the bottom */}
-                  <SvgText x={trendData.paddingLeft} y={135} fill={c.textMuted} fontSize={10}>{trendData.minDateStr}</SvgText>
-                  <SvgText x={trendData.width - trendData.paddingRight - 35} y={135} fill={c.textMuted} fontSize={10} textAnchor="end">{trendData.maxDateStr}</SvgText>
-                  
-                  {/* Dots (only shown if date points are sparse) */}
-                  {trendData.points.length <= 15 && trendData.points.map((p, idx) => (
-                    <Circle key={idx} cx={p.x} cy={p.y} r={4} fill="#C79A3E" />
-                  ))}
-                </Svg>
-              </View>
-            </View>
-          </StaggeredView>
+        {/* Offline / Cached Data Banner */}
+        {fetchError && expenses.length > 0 && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => fetchData(true)}
+            style={[styles.offlineBanner, { backgroundColor: '#C79A3E18', borderColor: '#C79A3E40' }]}
+          >
+            <Ionicons name="cloud-offline" size={16} color="#C79A3E" />
+            <Text style={[styles.offlineBannerText, { color: '#C79A3E' }]}>
+              Offline mode {cachedTime ? `· Cached at ${cachedTime}` : ''} · Tap to retry
+            </Text>
+          </TouchableOpacity>
         )}
 
-        {/* Recent Expense Entries */}
-        <StaggeredView delay={700} direction="up" style={{ marginBottom: 40 }}>
-          <View style={styles.listHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Expenses</Text>
-              <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 2 }}>Hold an entry to edit or delete</Text>
+        {/* =========================================
+            2. FOUR-METRIC MATRIX KPI GRID
+           ========================================= */}
+        <StaggeredView delay={100} direction="up">
+          <View style={styles.matrixGrid}>
+            {/* Total Ledger Outflow */}
+            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.primary + '40' }]}>
+              <View style={styles.matrixTop}>
+                <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Total Outflow</Text>
+                <View style={[styles.matrixBadge, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="wallet-outline" size={13} color={c.primary} />
+                </View>
+              </View>
+              <NumberTicker
+                value={totalSpent}
+                prefix={currSymbol}
+                decimals={0}
+                style={[styles.matrixValue, { color: c.text }]}
+              />
+              <Text style={[styles.matrixSub, { color: c.textMuted }]}>All-time cumulative</Text>
             </View>
-            <View style={styles.listActions}>
-              <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={[styles.iconAction, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                <Ionicons name="filter" size={18} color={c.accent} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleExportCSV} style={[styles.iconAction, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                <Ionicons name="download-outline" size={18} color={c.accent} />
-              </TouchableOpacity>
-            </View>
-          </View>
 
-          {/* Search bar */}
-          <View style={[styles.searchContainer, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-            <Ionicons name="search-outline" size={18} color={c.textMuted} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: c.text }]}
-              placeholder="Search expenses..."
-              placeholderTextColor={isLight ? '#A8A395' : '#6B6558'}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-
-          {/* Expandable filters panel */}
-          {showFilters && (
-            <Animated.View style={[
-              styles.filtersPanel,
-              {
-                backgroundColor: c.card,
-                borderColor: c.border,
-                opacity: filterAnim,
-                transform: [{
-                  translateY: filterAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-10, 0]
-                  })
-                }]
-              }
-            ]}>
-              <Text style={[styles.filterLabel, { color: c.textMuted }]}>Category</Text>
-              <View style={styles.filterRow}>
-                <TouchableOpacity 
-                  style={[styles.filterBtn, { backgroundColor: c.inputBg, borderColor: c.border }, selectedCategory === 'all' && styles.filterBtnActive]}
-                  onPress={() => setSelectedCategory('all')}
-                >
-                  <Text style={[styles.filterBtnText, { color: c.textMuted }, selectedCategory === 'all' && styles.filterBtnTextActive]}>All</Text>
-                </TouchableOpacity>
-                {categories.map(cItem => (
-                  <TouchableOpacity 
-                    key={cItem.id}
-                    style={[styles.filterBtn, { backgroundColor: c.inputBg, borderColor: c.border }, selectedCategory === cItem.name && styles.filterBtnActive]}
-                    onPress={() => setSelectedCategory(cItem.name)}
-                  >
-                    <Text style={[styles.filterBtnText, { color: c.textMuted }, selectedCategory === cItem.name && styles.filterBtnTextActive]}>{cItem.name}</Text>
-                  </TouchableOpacity>
-                ))}
+            {/* Current Month Burn */}
+            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.teal + '40' }]}>
+              <View style={styles.matrixTop}>
+                <Text style={[styles.matrixLabel, { color: c.textMuted }]}>This Month</Text>
+                <View style={[styles.matrixBadge, { backgroundColor: c.teal + '18' }]}>
+                  <Ionicons name="calendar-outline" size={13} color={c.teal} />
+                </View>
               </View>
-
-              <Text style={[styles.filterLabel, { color: c.textMuted }]}>Sort By</Text>
-              <View style={styles.filterRow}>
-                <TouchableOpacity 
-                  style={[styles.filterBtn, { backgroundColor: c.inputBg, borderColor: c.border }, sortOption === 'date-desc' && styles.filterBtnActive]}
-                  onPress={() => setSortOption('date-desc')}
-                >
-                  <Text style={[styles.filterBtnText, { color: c.textMuted }, sortOption === 'date-desc' && styles.filterBtnTextActive]}>Newest</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.filterBtn, { backgroundColor: c.inputBg, borderColor: c.border }, sortOption === 'date-asc' && styles.filterBtnActive]}
-                  onPress={() => setSortOption('date-asc')}
-                >
-                  <Text style={[styles.filterBtnText, { color: c.textMuted }, sortOption === 'date-asc' && styles.filterBtnTextActive]}>Oldest</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.filterBtn, { backgroundColor: c.inputBg, borderColor: c.border }, sortOption === 'amount-desc' && styles.filterBtnActive]}
-                  onPress={() => setSortOption('amount-desc')}
-                >
-                  <Text style={[styles.filterBtnText, { color: c.textMuted }, sortOption === 'amount-desc' && styles.filterBtnTextActive]}>High to Low</Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          )}
-
-          {/* ── EXPENSES LIST ── */}
-          {filteredExpenses.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <View style={[styles.emptyIconBox, { backgroundColor: c.accent + '15', borderWidth: 1, borderColor: c.accent + '30' }]}>
-                <Ionicons name="receipt-outline" size={36} color={c.accent} />
-              </View>
-              <Text style={[styles.emptyTitle, { color: c.text }]}>No expenses found</Text>
-              <Text style={[styles.emptyText, { color: c.textMuted }]}>
-                {searchQuery ? `No results for "${searchQuery}"` : 'Add your first expense to get started'}
+              <NumberTicker
+                value={currentMonthSpent}
+                prefix={currSymbol}
+                decimals={0}
+                style={[styles.matrixValue, { color: c.teal }]}
+              />
+              <Text style={[styles.matrixSub, { color: c.textMuted }]}>
+                Day {currentDay} of {daysInMonth}
               </Text>
             </View>
-          ) : (
-            filteredExpenses.map((item, index) => {
-              const col = getCategoryColor(item.categoryName);
-              return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.7}
-                onLongPress={() => handleExpenseLongPress(item)}
-                delayLongPress={350}
-              >
-              <Animated.View
-                style={[
-                  styles.transactionCard,
-                  {
-                    backgroundColor: c.card,
-                    borderColor: c.border,
-                    borderLeftColor: col,
-                    borderLeftWidth: 3,
-                    opacity: fadeAnim,
-                    transform: [{
-                      translateY: fadeAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [20 + (index * 6), 0]
-                      })
-                    }]
-                  }
-                ]}
-              >
-                <View style={[styles.txIconCircle, { backgroundColor: col + '22', borderWidth: 1, borderColor: col + '40' }]}>
-                  <Ionicons name={getCategoryIconName(item.categoryName)} size={20} color={col} />
+
+            {/* Daily Velocity / Burn Rate */}
+            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.accent + '40' }]}>
+              <View style={styles.matrixTop}>
+                <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Daily Velocity</Text>
+                <View style={[styles.matrixBadge, { backgroundColor: c.accent + '18' }]}>
+                  <Ionicons name="speedometer-outline" size={13} color={c.accent} />
                 </View>
-                <View style={styles.txMain}>
-                  <Text style={[styles.txTitle, { color: c.text }]} numberOfLines={1}>{item.description}</Text>
-                  <Text style={[styles.txMeta, { color: c.textMuted }]}>
-                    <Text style={{ color: col, fontWeight: '600' }}>{item.categoryName}</Text>
-                    {' • '}{new Date(item.expenseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </View>
+              <NumberTicker
+                value={dailyBurn}
+                prefix={currSymbol}
+                suffix="/d"
+                decimals={0}
+                style={[styles.matrixValue, { color: c.accent }]}
+              />
+              <Text style={[styles.matrixSub, { color: c.textMuted }]}>
+                Proj: {currSymbol}{Math.round(monthEndForecast).toLocaleString('en-IN')}
+              </Text>
+            </View>
+
+            {/* Top Cost Driver */}
+            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.warning + '40' }]}>
+              <View style={styles.matrixTop}>
+                <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Top Category</Text>
+                <View style={[styles.matrixBadge, { backgroundColor: c.warning + '18' }]}>
+                  <Ionicons name="pie-chart-outline" size={13} color={c.warning} />
+                </View>
+              </View>
+              <Text style={[styles.matrixValue, { color: c.text, fontSize: 16 }]} numberOfLines={1}>
+                {highestCatName}
+              </Text>
+              <Text style={[styles.matrixSub, { color: c.textMuted }]}>
+                {currSymbol}{Math.round(highestCatAmt).toLocaleString('en-IN')} (
+                {totalSpent > 0 ? ((highestCatAmt / totalSpent) * 100).toFixed(0) : 0}%)
+              </Text>
+            </View>
+          </View>
+        </StaggeredView>
+
+        {/* =========================================
+            3. IN-DEPTH FINANCIAL INTELLIGENCE CARDS
+           ========================================= */}
+        <InsightCards
+          expenses={expenses}
+          budgets={budgets}
+        />
+
+        {/* =========================================
+            4. VISUAL SVG ANALYTICS & CHARTS
+           ========================================= */}
+        <StaggeredView delay={180} direction="up">
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Visual Analytics</Text>
+              <Text style={[styles.sectionSub, { color: c.textMuted }]}>
+                Dynamic trend breakdown & category distributions
+              </Text>
+            </View>
+          </View>
+        </StaggeredView>
+
+        {/* 1. Category Donut */}
+        <StaggeredView delay={220} direction="up">
+          <CategoryDonutChart expenses={expenses} />
+        </StaggeredView>
+
+        {/* 2. Spend Trend Line */}
+        <StaggeredView delay={280} direction="up">
+          <SpendTrendChart expenses={expenses} />
+        </StaggeredView>
+
+        {/* 3. Recurring vs Variable Spend Split */}
+        <StaggeredView delay={340} direction="up">
+          <RecurringSplitChart expenses={expenses} />
+        </StaggeredView>
+
+        {/* 4. Day of the Week Distribution */}
+        <StaggeredView delay={400} direction="up">
+          <DayOfWeekChart expenses={expenses} />
+        </StaggeredView>
+
+        {/* 5. Budget vs Actual Progress Bar */}
+        <StaggeredView delay={460} direction="up">
+          <BudgetVsActualChart budgets={budgets} />
+        </StaggeredView>
+
+        {/* =========================================
+            5. BOUNDED TRANSACTIONS CONTAINER
+            (Prevents the entire screen from growing infinitely)
+           ========================================= */}
+        <StaggeredView delay={520} direction="up">
+          <View style={[styles.ledgerContainer, { backgroundColor: c.card, borderColor: c.border }]}>
+            {/* Ledger Container Header */}
+            <View style={styles.ledgerHeader}>
+              <View style={styles.ledgerHeaderLeft}>
+                <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Transactions</Text>
+                <View style={[styles.countBadge, { backgroundColor: c.primary + '18' }]}>
+                  <Text style={[styles.countBadgeText, { color: c.primary }]}>
+                    {filteredExpenses.length}
                   </Text>
                 </View>
-                <Text style={[styles.txAmount, { color: col, fontWeight: '800' }]}>-{currSymbol}{Number(item.amount).toFixed(2)}</Text>
-              </Animated.View>
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={toggleFilterPanel}
+                style={[
+                  styles.filterToggleBtn,
+                  {
+                    backgroundColor: showFilters ? c.primary + '20' : c.inputBg,
+                    borderColor: showFilters ? c.primary : c.border,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={showFilters ? 'options' : 'options-outline'}
+                  size={14}
+                  color={showFilters ? c.primary : c.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.filterToggleText,
+                    { color: showFilters ? c.primary : c.textMuted },
+                  ]}
+                >
+                  Filter
+                </Text>
               </TouchableOpacity>
-              );
-            })
-          )}
+            </View>
+
+            {/* Search Input */}
+            <View style={[styles.searchBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+              <Ionicons name="search" size={16} color={c.textMuted} style={styles.searchIcon} />
+              <TextInput
+                style={[styles.searchInput, { color: c.text }]}
+                placeholder="Search description or category..."
+                placeholderTextColor={c.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={16} color={c.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Category Filter Pills & Custom Date Presets */}
+            <CategoryPillsBar
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              datePreset={datePreset}
+              onSelectDatePreset={setDatePreset}
+              startDate={startDate}
+              onStartDateChange={setStartDate}
+              endDate={endDate}
+              onEndDateChange={setEndDate}
+            />
+
+            {/* Expandable Advanced Sort & Controls */}
+            {showFilters && (
+              <View style={[styles.advancedPanel, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                <Text style={[styles.advancedLabel, { color: c.textMuted }]}>Sort Order:</Text>
+                <View style={styles.sortChipsWrap}>
+                  {[
+                    { id: 'date-desc', label: 'Latest First' },
+                    { id: 'date-asc', label: 'Oldest First' },
+                    { id: 'amount-desc', label: 'Highest Amount' },
+                    { id: 'amount-asc', label: 'Lowest Amount' },
+                  ].map((s) => {
+                    const isSelected = sortOption === s.id;
+                    return (
+                      <TouchableOpacity
+                        key={s.id}
+                        onPress={() => setSortOption(s.id as any)}
+                        style={[
+                          styles.sortChip,
+                          {
+                            backgroundColor: isSelected ? c.primary : c.card,
+                            borderColor: isSelected ? c.primary : c.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.sortChipText,
+                            {
+                              color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                              fontWeight: isSelected ? '800' : '600',
+                            },
+                          ]}
+                        >
+                          {s.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Bounded Scrollable Items Box */}
+            <View style={[styles.scrollableLedgerBox, { borderColor: c.border }]}>
+              {filteredExpenses.length === 0 ? (
+                <View style={styles.emptyLedgerInside}>
+                  <Ionicons name="receipt-outline" size={38} color={c.textMuted} />
+                  <Text style={[styles.emptyLedgerTitle, { color: c.text }]}>No transactions found</Text>
+                  <Text style={[styles.emptyLedgerSub, { color: c.textMuted }]}>
+                    {searchQuery || selectedCategory !== 'all' || datePreset !== 'all'
+                      ? 'Adjust your search query or filter pills.'
+                      : 'Tap the + button to log an expense.'}
+                  </Text>
+                </View>
+              ) : (
+                <ScrollView
+                  style={styles.innerListScroll}
+                  nestedScrollEnabled={true}
+                  showsVerticalScrollIndicator={true}
+                >
+                  <View style={styles.transactionsList}>
+                    {filteredExpenses.map((item) => {
+                      const catColor = getCategoryColor(item.categoryName || 'General').color;
+                      return (
+                        <TouchableOpacity
+                          key={item.id}
+                          activeOpacity={0.7}
+                          onLongPress={() => handleExpenseLongPress(item)}
+                          style={[styles.txCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+                        >
+                          <View style={styles.txLeft}>
+                            <View style={[styles.catIconWrap, { backgroundColor: catColor + '18' }]}>
+                              <Text style={styles.catEmojiText}>{getCategoryEmoji(item.categoryName || 'General')}</Text>
+                            </View>
+                            <View style={styles.txMeta}>
+                              <Text style={[styles.txDesc, { color: c.text }]} numberOfLines={1}>
+                                {item.description}
+                              </Text>
+                              <View style={styles.txSubRow}>
+                                <Text style={[styles.txCatName, { color: catColor }]}>
+                                  {item.categoryName || 'General'}
+                                </Text>
+                                <Text style={[styles.txDot, { color: c.textMuted }]}>•</Text>
+                                <Text style={[styles.txDate, { color: c.textMuted }]}>{item.expenseDate}</Text>
+                                {(item.isRecurring || item.recurring) && (
+                                  <View style={[styles.recurringBadge, { backgroundColor: c.primary + '18' }]}>
+                                    <Ionicons name="repeat" size={10} color={c.primary} />
+                                    <Text style={[styles.recurringBadgeText, { color: c.primary }]}>Sub</Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+
+                          <View style={styles.txRight}>
+                            <Text style={[styles.txAmount, { color: c.text }]}>
+                              -{currSymbol}
+                              {Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              )}
+            </View>
+          </View>
         </StaggeredView>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Export / Import Modal */}
+      <ExportImportModal
+        visible={exportModalVisible}
+        expenses={expenses}
+        onClose={() => setExportModalVisible(false)}
+        onDataImported={() => fetchData(true)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screenWrapper: { flex: 1 },
-  container: { flex: 1 },
-  loadingContainer: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12,
+  screenWrapper: {
+    flex: 1,
   },
-  loadingText: {
-    fontSize: 14, fontWeight: '500',
+  scrollView: {
+    flex: 1,
   },
-
-  /* TOP BAR */
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+  },
+  loadingWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingSub: {
+    marginTop: 12,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  errorWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  errorCard: {
+    alignItems: 'center',
+    padding: 24,
+    gap: 12,
+  },
+  errorIconBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  errorDesc: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  retryBtnText: {
+    color: '#10120E',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  offlineBannerText: {
+    flex: 1,
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    marginBottom: 20,
   },
-  greetingGroup: {
+  userCol: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    marginRight: 10,
   },
-  avatarBadge: {
+  userGreetingCol: {
+    flex: 1,
+  },
+  avatarCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+    borderWidth: 2,
+    flexShrink: 0,
   },
-  avatarText: {
+  avatarLetter: {
+    color: '#10120E',
     fontSize: 18,
     fontWeight: '900',
-    color: '#10120E',
   },
-  greeting: {
+  greetingTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  dateLabel: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  themeToggleButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  /* HERO BALANCE CARD */
-  heroCard: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 22,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  heroGlow: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    top: -60,
-    right: -40,
-  },
-  heroGlowOrange: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    bottom: -30,
-    right: 60,
-  },
-  heroCardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  heroCardLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  heroCardAmount: {
-    fontSize: 36,
     fontWeight: '900',
-    letterSpacing: -1.5,
+    letterSpacing: -0.4,
   },
-  heroBadge: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+  todayDate: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  topActionBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  heroStats: {
+  matrixGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
+    marginBottom: 18,
   },
-  heroStatPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
+  matrixCard: {
+    width: (width - 42) / 2,
+    borderRadius: 18,
     borderWidth: 1,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  heroStatValue: {
-    fontSize: 12,
-    fontWeight: '700',
+  matrixTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
-
-  /* SECTIONS */
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+  matrixLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  listHeader: {
+  matrixBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  matrixValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 2,
+  },
+  matrixSub: {
+    fontSize: 10.5,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    marginTop: 6,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
-  sectionBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  sectionSub: {
+    fontSize: 12,
+    marginTop: 1,
   },
-  sectionBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  sectionCard: {
-    borderRadius: 18,
+  ledgerContainer: {
+    borderRadius: 22,
     borderWidth: 1,
     padding: 16,
-    overflow: 'hidden',
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
   },
-
-  /* CATEGORY ROWS */
-  categoryRow: {
-    paddingVertical: 12,
-  },
-  budgetRow: {
-    paddingVertical: 12,
-  },
-  categoryHeader: {
+  ledgerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 14,
   },
-  categoryNameCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  categoryRightCol: {
+  ledgerHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  catIconBox: {
-    width: 28,
-    height: 28,
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 8,
+  },
+  countBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  filterToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  filterToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 40,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  searchIcon: {
+    marginRight: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    height: '100%',
+  },
+  advancedPanel: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 12,
+  },
+  advancedLabel: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  sortChipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  sortChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  sortChipText: {
+    fontSize: 11.5,
+  },
+  scrollableLedgerBox: {
+    height: 380,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  innerListScroll: {
+    flex: 1,
+    padding: 8,
+  },
+  emptyLedgerInside: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 8,
+  },
+  emptyLedgerTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  emptyLedgerSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
+  transactionsList: {
+    gap: 8,
+  },
+  txCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  txLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  catIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  categoryName: {
-    fontSize: 14,
-    fontWeight: '600',
+  catEmojiText: {
+    fontSize: 16,
   },
-  categoryAmount: {
-    fontSize: 14,
+  txMeta: {
+    flex: 1,
+  },
+  txDesc: {
+    fontSize: 13.5,
     fontWeight: '700',
+    marginBottom: 2,
   },
-  categoryPct: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  progressTrack: {
-    height: 7,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  budgetSubline: {
-    fontSize: 11,
-    marginTop: 5,
-  },
-  alertText: { color: '#A23E32' },
-
-  /* BUDGET ADD BUTTON */
-  addBudgetBtn: {
+  txSubRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
   },
-  addBudgetText: {
-    fontSize: 12,
+  txCatName: {
+    fontSize: 10.5,
     fontWeight: '700',
   },
-
-  /* EMPTY STATES */
-  emptyBudgetBox: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    gap: 10,
+  txDot: {
+    fontSize: 8,
   },
-  emptyIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+  txDate: {
+    fontSize: 10.5,
   },
-  emptyBudgetText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  emptyActionBtn: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  emptyLink: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    gap: 10,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  emptyText: {
-    fontSize: 13,
-  },
-
-  /* TREND */
-  trendLabel: { fontSize: 12, marginBottom: 10 },
-  trendWrapper: { alignItems: 'center', justifyContent: 'center' },
-
-  /* SEARCH / FILTER */
-  listActions: { flexDirection: 'row', gap: 12 },
-  iconAction: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchContainer: {
+  recurringBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 14,
-    height: 46,
-    paddingHorizontal: 14,
-    marginBottom: 14,
+    gap: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginLeft: 4,
   },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14 },
-  filtersPanel: {
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-  },
-  filterLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 14,
-  },
-  filterBtn: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-  },
-  filterBtnActive: {
-    backgroundColor: 'rgba(199, 154, 62,0.12)',
-    borderColor: '#C79A3E',
-  },
-  filterBtnText: { fontSize: 12 },
-  filterBtnTextActive: { color: '#C79A3E', fontWeight: '700' },
-
-  /* TRANSACTION CARDS */
-  transactionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  txIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  txMain: { flex: 1, paddingRight: 8 },
-  txTitle: { fontSize: 15, fontWeight: '600', marginBottom: 3 },
-  txMeta: { fontSize: 12 },
-  txAmount: {
-    fontSize: 15,
+  recurringBadgeText: {
+    fontSize: 9,
     fontWeight: '800',
+  },
+  txRight: {
+    alignItems: 'flex-end',
+  },
+  txAmount: {
+    fontSize: 14.5,
+    fontWeight: '900',
     letterSpacing: -0.3,
   },
-
-
 });

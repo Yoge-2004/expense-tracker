@@ -7,14 +7,25 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yoge.expensetracker"
+      "bundleIdentifier": "com.yoge.expensetracker",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "expensetracker",
+              "com.googleusercontent.apps.487469737581-p826efhglp29u44vvo2cl4focntjg8e6"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "package": "com.yoge.expensetracker",
       "usesCleartextTraffic": true
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-web-browser"
     ],
     "scheme": "expensetracker"
   }
