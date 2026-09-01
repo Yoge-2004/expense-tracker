@@ -25,7 +25,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.487469737581-p826efhglp29u44vvo2cl4focntjg8e6"
+        }
+      ]
     ],
     "scheme": "expensetracker"
   }

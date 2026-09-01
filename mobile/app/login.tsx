@@ -29,14 +29,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
 import { AmbientAura } from '../components/AmbientAura';
 import { StaggeredView } from '../components/StaggeredView';
-import { GOOGLE_OAUTH_CONFIG } from '../constants/auth';
-
-WebBrowser.maybeCompleteAuthSession();
+import { performGoogleSignIn } from '../services/googleAuth';
 
 const FEATURES = [
   { icon: 'trending-up', label: 'Real-time Analytics', color: '#C79A3E' },
@@ -64,18 +59,6 @@ export default function LoginScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'expensetracker',
-  });
-
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_OAUTH_CONFIG.webClientId,
-    iosClientId: GOOGLE_OAUTH_CONFIG.iosClientId,
-    androidClientId: GOOGLE_OAUTH_CONFIG.androidClientId,
-    webClientId: GOOGLE_OAUTH_CONFIG.webClientId,
-    redirectUri,
-  });
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
   const scaleAnim = useRef(new Animated.Value(0.94)).current;
@@ -90,20 +73,15 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.params?.id_token || (response as any).authentication?.idToken;
-      if (idToken) {
-        handleGoogleToken(idToken);
-      }
-    }
-  }, [response]);
-
-  const handleGoogleToken = async (idToken: string) => {
+  const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      await loginWithGoogle(idToken);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.selectionAsync().catch(() => {});
+      const idToken = await performGoogleSignIn();
+      if (idToken) {
+        await loginWithGoogle(idToken);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      }
     } catch (err: any) {
       const msg = err instanceof ApiError ? err.message : err.message || 'Google authentication failed.';
       showAlert('Google Sign-In Failed', msg, undefined, 'error');
@@ -233,11 +211,8 @@ export default function LoginScreen() {
           <StaggeredView delay={130} direction="up">
             <TouchableOpacity
               activeOpacity={0.85}
-              disabled={isGoogleLoading || !request}
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => {});
-                promptAsync();
-              }}
+              disabled={isGoogleLoading}
+              onPress={handleGoogleSignIn}
               style={[styles.googleOAuthBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
             >
               {isGoogleLoading ? (

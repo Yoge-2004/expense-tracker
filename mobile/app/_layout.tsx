@@ -10,7 +10,10 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AlertProvider } from '../context/AlertContext';
 import { ActivityIndicator, View, Text, Animated, StyleSheet, StatusBar } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useFonts } from 'expo-font';
+
+WebBrowser.maybeCompleteAuthSession();
 import { Fraunces_500Medium, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
 import {
   HankenGrotesk_400Regular,
@@ -153,6 +156,10 @@ function RootLayoutNav() {
       <Stack.Screen
         name="forgot-password"
         options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="expo-auth-session"
+        options={{ animation: 'none' }}
       />
       <Stack.Screen
         name="(tabs)"
