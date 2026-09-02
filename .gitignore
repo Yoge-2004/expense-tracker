@@ -31,3 +31,6 @@ screenshots/
 app.jar
 
 scratch/
+*.db
+*.mv.db
+*.trace.db

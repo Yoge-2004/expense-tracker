@@ -73,12 +73,28 @@ export default function AddExpenseScreen() {
   const isLight = theme === 'light';
   const c = Colors[theme];
 
-  const [activeTab, setActiveTab] = useState<'expense' | 'budget'>('expense');
+  const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'savings' | 'budget'>('expense');
+
+  // Income form state
+  const [incomeSource, setIncomeSource] = useState('');
+  const [incomeAmount, setIncomeAmount] = useState('');
+  const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split('T')[0]);
+  const [incomeDesc, setIncomeDesc] = useState('');
+  const [incomeIsRecurring, setIncomeIsRecurring] = useState(false);
+
+  // Savings Goal form state
+  const [goalName, setGoalName] = useState('');
+  const [goalTargetAmount, setGoalTargetAmount] = useState('');
+  const [goalInitialAmount, setGoalInitialAmount] = useState('');
+  const defaultTargetDate = new Date();
+  defaultTargetDate.setMonth(defaultTargetDate.getMonth() + 6);
+  const [goalTargetDate, setGoalTargetDate] = useState(defaultTargetDate.toISOString().split('T')[0]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [calendarTarget, setCalendarTarget] = useState<"expense" | "income" | "savings">("expense");
 
   // Expense form state
   const [description, setDescription] = useState('');
@@ -265,6 +281,89 @@ export default function AddExpenseScreen() {
   /**
    * Validates and establishes a monthly category budget cap.
    */
+  /**
+   * Validates and logs an income stream to the backend.
+   */
+  const handleSaveIncome = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (!incomeSource.trim()) {
+      showAlert('Validation Error', 'Please provide the income source or payor name.');
+      return;
+    }
+    const numAmt = parseFloat(incomeAmount);
+    if (isNaN(numAmt) || numAmt <= 0) {
+      showAlert('Validation Error', 'Please enter a valid positive income amount.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await apiRequest(`/incomes/user/${userId}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          source: incomeSource.trim(),
+          amount: numAmt,
+          incomeDate: incomeDate,
+          description: incomeDesc.trim(),
+          isRecurring: incomeIsRecurring,
+        }),
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('💰 Recorded!', 'Income stream logged successfully.', [
+        { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
+      ]);
+      setIncomeSource('');
+      setIncomeAmount('');
+      setIncomeDesc('');
+      setIncomeIsRecurring(false);
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : 'Could not save income record.';
+      showAlert('Save Error', msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Validates and establishes a new savings goal target.
+   */
+  const handleSaveSavingsGoal = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (!goalName.trim()) {
+      showAlert('Validation Error', 'Please provide a name for this savings milestone.');
+      return;
+    }
+    const numTarget = parseFloat(goalTargetAmount);
+    if (isNaN(numTarget) || numTarget <= 0) {
+      showAlert('Validation Error', 'Please enter a valid positive target amount.');
+      return;
+    }
+    const numCurrent = parseFloat(goalInitialAmount || '0') || 0;
+    setIsSubmitting(true);
+    try {
+      await apiRequest(`/savings/goals/user/${userId}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          name: goalName.trim(),
+          targetAmount: numTarget,
+          currentAmount: numCurrent,
+          targetDate: goalTargetDate,
+        }),
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('🎯 Goal Created!', 'Savings milestone configured successfully.', [
+        { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
+      ]);
+      setGoalName('');
+      setGoalTargetAmount('');
+      setGoalInitialAmount('');
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : 'Could not save savings goal.';
+      showAlert('Save Error', msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSaveBudget = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const fieldErrors: Record<string, string> = {};
@@ -352,7 +451,7 @@ export default function AddExpenseScreen() {
           </Text>
         </View>
 
-        {/* Tab Switcher: Expense vs Budget */}
+        {/* Tab Switcher: Expense vs Income vs Savings vs Budget */}
         {!isEditMode && (
           <View style={[styles.tabsWrap, { backgroundColor: c.card, borderColor: c.border }]}>
             <TouchableOpacity
@@ -367,18 +466,66 @@ export default function AddExpenseScreen() {
             >
               <Ionicons
                 name="receipt-outline"
-                size={16}
+                size={15}
                 color={activeTab === 'expense' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted}
               />
               <Text
                 style={[
                   styles.tabBtnText,
-                  {
-                    color: activeTab === 'expense' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
-                  },
+                  { color: activeTab === 'expense' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
                 ]}
               >
-                Log Expense
+                Expense
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setActiveTab('income');
+              }}
+              style={[
+                styles.tabBtn,
+                activeTab === 'income' && { backgroundColor: '#10B981' },
+              ]}
+            >
+              <Ionicons
+                name="cash-outline"
+                size={15}
+                color={activeTab === 'income' ? '#FFF' : c.textMuted}
+              />
+              <Text
+                style={[
+                  styles.tabBtnText,
+                  { color: activeTab === 'income' ? '#FFF' : c.textMuted },
+                ]}
+              >
+                Income
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setActiveTab('savings');
+              }}
+              style={[
+                styles.tabBtn,
+                activeTab === 'savings' && { backgroundColor: '#F59E0B' },
+              ]}
+            >
+              <Ionicons
+                name="flag-outline"
+                size={15}
+                color={activeTab === 'savings' ? '#FFF' : c.textMuted}
+              />
+              <Text
+                style={[
+                  styles.tabBtnText,
+                  { color: activeTab === 'savings' ? '#FFF' : c.textMuted },
+                ]}
+              >
+                Goal
               </Text>
             </TouchableOpacity>
 
@@ -394,24 +541,219 @@ export default function AddExpenseScreen() {
             >
               <Ionicons
                 name="shield-outline"
-                size={16}
+                size={15}
                 color={activeTab === 'budget' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted}
               />
               <Text
                 style={[
                   styles.tabBtnText,
-                  {
-                    color: activeTab === 'budget' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
-                  },
+                  { color: activeTab === 'budget' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
                 ]}
               >
-                Set Budget Cap
+                Budget
               </Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {activeTab === 'expense' ? (
+        {activeTab === 'income' ? (
+          /* =========================================
+              CASE: LOG INCOME FORM
+             ========================================= */
+          <StaggeredView delay={100} direction="up">
+            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Source / Payor</Text>
+                <TextInput
+                  style={[styles.textInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
+                  placeholder="e.g. Primary Tech Salary, Consulting"
+                  placeholderTextColor={c.textMuted}
+                  value={incomeSource}
+                  onChangeText={setIncomeSource}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Amount ({currSymbol})</Text>
+                <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                  <Text style={[styles.currencyPrefix, { color: "#10B981" }]}>{currSymbol}</Text>
+                  <TextInput
+                    style={[styles.amountInput, { color: c.text }]}
+                    placeholder="0.00"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="decimal-pad"
+                    value={incomeAmount}
+                    onChangeText={setIncomeAmount}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Date Received (Tap to Pick)</Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    setCalendarTarget("income");
+                    setShowCalendarModal(true);
+                  }}
+                  style={[
+                    styles.inputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: c.border,
+                      justifyContent: "space-between",
+                    },
+                  ]}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                    <Ionicons name="calendar" size={18} color="#10B981" style={styles.inputIcon} />
+                    <Text style={[{ fontSize: 14, fontWeight: "700", color: c.text }]}>
+                      {incomeDate || "Select Date"}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Description (Optional)</Text>
+                <TextInput
+                  style={[styles.textInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
+                  placeholder="e.g. Direct deposit from employer"
+                  placeholderTextColor={c.textMuted}
+                  value={incomeDesc}
+                  onChangeText={setIncomeDesc}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setIncomeIsRecurring(!incomeIsRecurring)}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+                >
+                  <Ionicons
+                    name={incomeIsRecurring ? "checkbox" : "square-outline"}
+                    size={22}
+                    color={incomeIsRecurring ? "#10B981" : c.textMuted}
+                  />
+                  <Text style={{ color: c.text, fontWeight: "600", fontSize: 13.5 }}>
+                    Recurring Stream (e.g. Monthly Salary)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSaveIncome}
+                disabled={isSubmitting}
+                style={[styles.submitBtn, { backgroundColor: "#10B981", opacity: isSubmitting ? 0.7 : 1 }]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <View style={styles.submitBtnInner}>
+                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>Record Inflow</Text>
+                    <Ionicons name="arrow-down-circle" size={20} color="#FFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </StaggeredView>
+        ) : activeTab === 'savings' ? (
+          /* =========================================
+              CASE: SAVINGS GOAL FORM
+             ========================================= */
+          <StaggeredView delay={100} direction="up">
+            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Milestone Name</Text>
+                <TextInput
+                  style={[styles.textInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
+                  placeholder="e.g. Emergency Fund, Tesla Model Y"
+                  placeholderTextColor={c.textMuted}
+                  value={goalName}
+                  onChangeText={setGoalName}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Target Cap ({currSymbol})</Text>
+                <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                  <Text style={[styles.currencyPrefix, { color: "#F59E0B" }]}>{currSymbol}</Text>
+                  <TextInput
+                    style={[styles.amountInput, { color: c.text }]}
+                    placeholder="10000.00"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="decimal-pad"
+                    value={goalTargetAmount}
+                    onChangeText={setGoalTargetAmount}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Initial Balance Saved ({currSymbol})</Text>
+                <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                  <Text style={[styles.currencyPrefix, { color: c.textMuted }]}>{currSymbol}</Text>
+                  <TextInput
+                    style={[styles.amountInput, { color: c.text }]}
+                    placeholder="0.00"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="decimal-pad"
+                    value={goalInitialAmount}
+                    onChangeText={setGoalInitialAmount}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Target Due Date (Tap to Pick)</Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    setCalendarTarget("savings");
+                    setShowCalendarModal(true);
+                  }}
+                  style={[
+                    styles.inputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: c.border,
+                      justifyContent: "space-between",
+                    },
+                  ]}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                    <Ionicons name="calendar" size={18} color="#F59E0B" style={styles.inputIcon} />
+                    <Text style={[{ fontSize: 14, fontWeight: "700", color: c.text }]}>
+                      {goalTargetDate || "Select Date"}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSaveSavingsGoal}
+                disabled={isSubmitting}
+                style={[styles.submitBtn, { backgroundColor: "#F59E0B", opacity: isSubmitting ? 0.7 : 1 }]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <View style={styles.submitBtnInner}>
+                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>Configure Milestone</Text>
+                    <Ionicons name="flag" size={20} color="#FFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </StaggeredView>
+        ) : activeTab === 'expense' ? (
           /* =========================================
               CASE 1: LOG EXPENSE FORM
              ========================================= */
@@ -529,7 +871,11 @@ export default function AddExpenseScreen() {
                 <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Date (Tap to Pick)</Text>
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  onPress={() => setShowCalendarModal(true)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    setCalendarTarget("expense");
+                    setShowCalendarModal(true);
+                  }}
                   style={[
                     styles.inputWrap,
                     {
@@ -788,6 +1134,37 @@ export default function AddExpenseScreen() {
         visible={showCategoryModal}
         onClose={() => setShowCategoryModal(false)}
         onCategoriesUpdated={() => loadCategories()}
+      />
+
+      {/* Interactive Calendar Date Picker Modal */}
+      <CalendarPickerModal
+        visible={showCalendarModal}
+        title={
+          calendarTarget === "income"
+            ? "Select Inflow Date"
+            : calendarTarget === "savings"
+            ? "Select Target Due Date"
+            : "Select Expense Date"
+        }
+        initialDate={
+          calendarTarget === "income"
+            ? incomeDate
+            : calendarTarget === "savings"
+            ? goalTargetDate
+            : expenseDate
+        }
+        onClose={() => setShowCalendarModal(false)}
+        onSelectDate={(selectedDate) => {
+          if (calendarTarget === "income") {
+            setIncomeDate(selectedDate);
+          } else if (calendarTarget === "savings") {
+            setGoalTargetDate(selectedDate);
+          } else {
+            setExpenseDate(selectedDate);
+            if (errors.date) setErrors((prev) => ({ ...prev, date: "" }));
+          }
+          setShowCalendarModal(false);
+        }}
       />
     </View>
   );

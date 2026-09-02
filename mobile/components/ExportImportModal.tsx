@@ -1,6 +1,6 @@
 /**
  * @file ExportImportModal.tsx
- * @description Modal providing multi-format data export (CSV, JSON, Plaintext Executive Summary)
+ * @description Modal providing multi-format data export (Excel, CSV, JSON, Plaintext Executive Summary)
  * via the native OS Share Sheet and bulk transaction import parsing JSON payloads.
  */
 
@@ -19,7 +19,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors } from '../constants/theme';
-import { apiRequest } from '../services/api';
+import { apiRequest, API_BASE_URL } from '../services/api';
 import { getCurrencySymbol } from '../services/currency';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -52,6 +52,22 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   const [jsonInput, setJsonInput] = useState('');
   const [showImportBox, setShowImportBox] = useState(false);
   const [importing, setImporting] = useState(false);
+
+  /**
+   * Generates and triggers native share for PowerBI-grade Excel Dashboard download link.
+   */
+  const handleExportExcel = async () => {
+    try {
+      const url = `${API_BASE_URL}/reports/user/${userId}/export/excel`;
+      await Share.share({
+        title: 'financial_statement_dashboard.xlsx',
+        message: `Executive Financial Dashboard (.xlsx) available: ${url}`,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (e: any) {
+      showAlert('Export Failed', e.message || 'Could not export Excel.');
+    }
+  };
 
   /**
    * Generates and triggers native share for a formatted CSV file.
@@ -198,6 +214,19 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 
           {/* Action Cards */}
           <View style={styles.actionsGrid}>
+            {/* Excel PowerBI */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleExportExcel}
+              style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+            >
+              <View style={[styles.iconBox, { backgroundColor: '#107C4120' }]}>
+                <Ionicons name="bar-chart" size={22} color="#107C41" />
+              </View>
+              <Text style={[styles.actionTitle, { color: c.text }]}>Excel Dashboard</Text>
+              <Text style={[styles.actionSub, { color: c.textMuted }]}>PowerBI charts</Text>
+            </TouchableOpacity>
+
             {/* CSV */}
             <TouchableOpacity
               activeOpacity={0.8}

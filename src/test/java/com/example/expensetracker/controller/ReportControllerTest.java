@@ -4,7 +4,12 @@ import com.example.expensetracker.dto.MonthlyReportDto;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.JwtAuthenticationFilter;
 import com.example.expensetracker.security.JwtService;
+import com.example.expensetracker.model.User;
+import com.example.expensetracker.service.ExportService;
 import com.example.expensetracker.service.MonthlyReportService;
+import com.example.expensetracker.service.UserService;
+import java.util.Optional;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +40,8 @@ class ReportControllerTest {
     @Autowired private MockMvc mockMvc;
 
     @MockitoBean private MonthlyReportService monthlyReportService;
+    @MockitoBean private ExportService exportService;
+    @MockitoBean private UserService userService;
     @MockitoBean private JwtService jwtService;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -80,5 +87,35 @@ class ReportControllerTest {
         mockMvc.perform(post("/api/reports/monthly/user/1/send-email?year=2026&month=8"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Monthly report email successfully sent."));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("GET /api/reports/user/{userId}/export/excel → 200 OK")
+    void exportFinancialStatementExcel_returns200() throws Exception {
+        User user = new User();
+        user.setId(1L);
+        user.setName("Yogeshwaran");
+        when(userService.findById(1L)).thenReturn(Optional.of(user));
+        when(exportService.exportFinancialStatementExcel(user)).thenReturn("PK".getBytes());
+
+        mockMvc.perform(get("/api/reports/user/1/export/excel"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"financial-summary.xlsx\""));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("GET /api/reports/user/{userId}/export/pdf → 200 OK")
+    void exportFinancialStatementPdf_returns200() throws Exception {
+        User user = new User();
+        user.setId(1L);
+        user.setName("Yogeshwaran");
+        when(userService.findById(1L)).thenReturn(Optional.of(user));
+        when(exportService.exportFinancialStatementPdf(user)).thenReturn("%PDF-1.4".getBytes());
+
+        mockMvc.perform(get("/api/reports/user/1/export/pdf"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"financial-statement.pdf\""));
     }
 }

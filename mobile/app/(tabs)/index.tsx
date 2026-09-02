@@ -80,6 +80,25 @@ interface Category {
   name: string;
 }
 
+interface Income {
+  id: number;
+  source: string;
+  amount: number;
+  incomeDate: string;
+  description?: string;
+  isRecurring?: boolean;
+  recurring?: boolean;
+}
+
+interface SavingsGoal {
+  id: number;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate: string;
+  status: string;
+}
+
 interface Subscription {
   id: number;
   description: string;
@@ -103,6 +122,8 @@ export default function DashboardScreen() {
   const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -163,12 +184,14 @@ export default function DashboardScreen() {
     if (!silent) setIsLoading(true);
 
     try {
-      const [expensesData, budgetsData, globalCats, userCats, subsData] = await Promise.all([
+      const [expensesData, budgetsData, globalCats, userCats, subsData, incomesData, savingsData] = await Promise.all([
         apiRequest(`/expenses/user/${userId}`),
         apiRequest(`/expenses/budget/status/user/${userId}`),
         apiRequest(`/categories/global`).catch(() => []),
         apiRequest(`/categories/user/${userId}`).catch(() => []),
         apiRequest(`/expenses/recurring/user/${userId}`),
+        apiRequest(`/incomes/user/${userId}`).catch(() => []),
+        apiRequest(`/savings/goals/user/${userId}`).catch(() => []),
       ]);
 
       const safeExp = Array.isArray(expensesData) ? expensesData : [];
@@ -193,6 +216,8 @@ export default function DashboardScreen() {
       setBudgets(safeBud);
       setCategories(safeCat);
       setSubscriptions(safeSub);
+      setIncomes(Array.isArray(incomesData) ? incomesData : []);
+      setSavingsGoals(Array.isArray(savingsData) ? savingsData : []);
       setFetchError(null);
       setCachedTime(null);
 
@@ -280,8 +305,11 @@ export default function DashboardScreen() {
     );
   };
 
-  // Calculations for Matrix Metrics
+  // Calculations for Matrix & Cash Flow Metrics
   const totalSpent = expenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+  const totalIncome = incomes.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+  const netCashFlow = totalIncome - totalSpent;
+  const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100).toFixed(1) : "0.0";
 
   const now = new Date();
   const currentDay = Math.max(now.getDate(), 1);
@@ -469,6 +497,52 @@ export default function DashboardScreen() {
         )}
 
         {/* =========================================
+            1.5 EXECUTIVE CASH FLOW OVERVIEW
+           ========================================= */}
+        <StaggeredView delay={40} direction="up">
+          <View style={[styles.cashFlowCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={styles.cashFlowHeader}>
+              <View style={styles.cashFlowHeaderLeft}>
+                <Ionicons name="trending-up" size={16} color={c.primary} />
+                <Text style={[styles.cashFlowTitle, { color: c.text }]}>Executive Cash Flow</Text>
+              </View>
+              <View style={[styles.statusPill, { backgroundColor: netCashFlow >= 0 ? "#10B98120" : "#EF444420" }]}>
+                <Text style={[styles.statusPillText, { color: netCashFlow >= 0 ? "#10B981" : "#EF4444" }]}>
+                  {netCashFlow >= 0 ? "Surplus" : "Deficit"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.cashFlowMetricsRow}>
+              <View style={styles.cashFlowCol}>
+                <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Total Inflow</Text>
+                <Text style={[styles.cashFlowAmount, { color: "#10B981" }]}>
+                  +{currSymbol}{Math.round(totalIncome).toLocaleString("en-IN")}
+                </Text>
+              </View>
+
+              <View style={[styles.cashFlowDivider, { backgroundColor: c.border }]} />
+
+              <View style={styles.cashFlowCol}>
+                <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Total Outflow</Text>
+                <Text style={[styles.cashFlowAmount, { color: c.text }]}>
+                  -{currSymbol}{Math.round(totalSpent).toLocaleString("en-IN")}
+                </Text>
+              </View>
+
+              <View style={[styles.cashFlowDivider, { backgroundColor: c.border }]} />
+
+              <View style={styles.cashFlowCol}>
+                <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Savings Rate</Text>
+                <Text style={[styles.cashFlowAmount, { color: c.primary }]}>
+                  {savingsRate}%
+                </Text>
+              </View>
+            </View>
+          </View>
+        </StaggeredView>
+
+        {/* =========================================
             2. FOUR-METRIC MATRIX KPI GRID
            ========================================= */}
         <StaggeredView delay={100} direction="up">
@@ -594,6 +668,44 @@ export default function DashboardScreen() {
         <StaggeredView delay={460} direction="up">
           <BudgetVsActualChart budgets={budgets} />
         </StaggeredView>
+
+        {/* =========================================
+            4.5 SAVINGS GOALS & MILESTONES
+           ========================================= */}
+        {savingsGoals.length > 0 && (
+          <StaggeredView delay={480} direction="up">
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: c.text }]}>Savings Goals</Text>
+                <Text style={[styles.sectionSub, { color: c.textMuted }]}>
+                  Target milestones and asset accumulation
+                </Text>
+              </View>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 4 }}>
+              {savingsGoals.map((goal) => {
+                const ratio = goal.targetAmount > 0 ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100)) : 0;
+                return (
+                  <View key={goal.id} style={[styles.goalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                    <View style={styles.goalTopRow}>
+                      <Text style={[styles.goalName, { color: c.text }]} numberOfLines={1}>{goal.name}</Text>
+                      <Text style={[styles.goalPercent, { color: c.primary }]}>{ratio}%</Text>
+                    </View>
+                    <View style={[styles.goalProgressBar, { backgroundColor: c.inputBg }]}>
+                      <View style={[styles.goalProgressFill, { width: `${ratio}%`, backgroundColor: c.primary }]} />
+                    </View>
+                    <View style={styles.goalBottomRow}>
+                      <Text style={[styles.goalSaved, { color: c.textMuted }]}>
+                        {currSymbol}{Math.round(goal.currentAmount).toLocaleString("en-IN")} / {currSymbol}{Math.round(goal.targetAmount).toLocaleString("en-IN")}
+                      </Text>
+                      <Text style={[styles.goalDate, { color: c.textMuted }]}>Due: {goal.targetDate || "Flexible"}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </StaggeredView>
+        )}
 
         {/* =========================================
             5. BOUNDED TRANSACTIONS CONTAINER
@@ -927,6 +1039,114 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+  },
+  cashFlowCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cashFlowHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  cashFlowHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  cashFlowTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  statusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  cashFlowMetricsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  cashFlowCol: {
+    flex: 1,
+    alignItems: "center",
+  },
+  cashFlowDivider: {
+    width: 1,
+    height: 28,
+  },
+  cashFlowLabel: {
+    fontSize: 10.5,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  cashFlowAmount: {
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  goalCard: {
+    width: 240,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  goalTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  goalName: {
+    fontSize: 13.5,
+    fontWeight: "800",
+    flex: 1,
+    marginRight: 6,
+  },
+  goalPercent: {
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  goalProgressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  goalProgressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  goalBottomRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  goalSaved: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  goalDate: {
+    fontSize: 10.5,
   },
   matrixGrid: {
     flexDirection: 'row',

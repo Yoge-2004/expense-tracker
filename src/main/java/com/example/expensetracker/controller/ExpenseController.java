@@ -5,6 +5,8 @@ import com.example.expensetracker.mapper.ExpenseMapper;
 import com.example.expensetracker.model.*;
 import com.example.expensetracker.repository.*;
 import com.example.expensetracker.service.ExpenseService;
+import com.example.expensetracker.service.ExportService;
+import com.example.expensetracker.service.ImportService;
 import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -64,18 +66,24 @@ public class ExpenseController {
     private final BudgetRepository budgetRepository;
     private final RecurringExpenseRepository recurringRepository;
     private final ExpenseRepository expenseRepository;
+    private final ExportService exportService;
+    private final ImportService importService;
 
     public ExpenseController(ExpenseService expenseService, UserService userService,
                              CategoryRepository categoryRepository,
                              BudgetRepository budgetRepository,
                              RecurringExpenseRepository recurringRepository,
-                             ExpenseRepository expenseRepository) {
+                             ExpenseRepository expenseRepository,
+                             ExportService exportService,
+                             ImportService importService) {
         this.expenseService = expenseService;
         this.userService = userService;
         this.categoryRepository = categoryRepository;
         this.budgetRepository = budgetRepository;
         this.recurringRepository = recurringRepository;
         this.expenseRepository = expenseRepository;
+        this.exportService = exportService;
+        this.importService = importService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -812,7 +820,7 @@ public class ExpenseController {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  EXPORT & IMPORT (CSV, JSON, PDF)
+    //  EXPORT & IMPORT (CSV, JSON, PDF, EXCEL)
     // ═══════════════════════════════════════════════════════════════════════
 
     @Operation(summary = "Export expenses to CSV")
@@ -820,20 +828,7 @@ public class ExpenseController {
     public ResponseEntity<byte[]> exportCsv(@PathVariable Long userId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        List<Expense> expenses = expenseService.getUserExpenses(user);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("ID,Date,Category,Amount,Description,Recurring\n");
-        for (Expense e : expenses) {
-            sb.append(e.getId()).append(",")
-                    .append(e.getDate()).append(",")
-                    .append("\"").append(e.getCategory() != null ? e.getCategory().getName() : "Uncategorized").append("\",")
-                    .append(e.getAmount()).append(",")
-                    .append("\"").append(e.getDescription() != null ? e.getDescription().replace("\"", "\"\"") : "").append("\",")
-                    .append(e.isRecurring()).append("\n");
-        }
-
-        byte[] bytes = sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] bytes = exportService.exportExpensesToCsv(user);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.csv\"")
                 .contentType(MediaType.parseMediaType("text/csv"))
@@ -845,22 +840,11 @@ public class ExpenseController {
     public ResponseEntity<byte[]> exportJson(@PathVariable Long userId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        List<ExpenseDto> dtos = expenseService.getUserExpenses(user).stream()
-                .map(ExpenseMapper::toDto)
-                .collect(Collectors.toList());
-
-        try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-            byte[] bytes = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(dtos);
-
-            return ResponseEntity.ok()
-                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.json\"")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(bytes);
-        } catch (Exception e) {
-            throw new RuntimeException("Error exporting JSON", e);
-        }
+        byte[] bytes = exportService.exportExpensesToJson(user);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.json\"")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(bytes);
     }
 
     @Operation(summary = "Export expenses to PDF report")
@@ -868,51 +852,23 @@ public class ExpenseController {
     public ResponseEntity<byte[]> exportPdf(@PathVariable Long userId) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        List<Expense> expenses = expenseService.getUserExpenses(user);
+        byte[] bytes = exportService.exportExpensesToPdf(user);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(bytes);
+    }
 
-        try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
-            com.lowagie.text.Document document = new com.lowagie.text.Document(com.lowagie.text.PageSize.A4);
-            com.lowagie.text.pdf.PdfWriter.getInstance(document, out);
-            document.open();
-
-            com.lowagie.text.Font titleFont = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA_BOLD, 18);
-            com.lowagie.text.Paragraph title = new com.lowagie.text.Paragraph("Expense Tracker Summary Report", titleFont);
-            title.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
-            document.add(title);
-
-            com.lowagie.text.Font subTitleFont = com.lowagie.text.FontFactory.getFont(com.lowagie.text.FontFactory.HELVETICA, 12);
-            com.lowagie.text.Paragraph userPara = new com.lowagie.text.Paragraph("User: " + user.getName() + " (" + user.getEmail() + ")\nGenerated: " + LocalDate.now() + "\n\n", subTitleFont);
-            document.add(userPara);
-
-            com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(4);
-            table.setWidthPercentage(100);
-            table.addCell("Date");
-            table.addCell("Category");
-            table.addCell("Description");
-            table.addCell("Amount");
-
-            BigDecimal total = BigDecimal.ZERO;
-            for (Expense e : expenses) {
-                table.addCell(e.getDate() != null ? e.getDate().toString() : "");
-                table.addCell(e.getCategory() != null ? e.getCategory().getName() : "Uncategorized");
-                table.addCell(e.getDescription() != null ? e.getDescription() : "");
-                table.addCell(e.getAmount() != null ? e.getAmount().toString() : "0.00");
-                if (e.getAmount() != null) total = total.add(e.getAmount());
-            }
-            document.add(table);
-
-            com.lowagie.text.Paragraph totalPara = new com.lowagie.text.Paragraph("\nTotal Expenses: " + total.toString(), titleFont);
-            document.add(totalPara);
-
-            document.close();
-
-            return ResponseEntity.ok()
-                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.pdf\"")
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .body(out.toByteArray());
-        } catch (Exception e) {
-            throw new RuntimeException("Error exporting PDF", e);
-        }
+    @Operation(summary = "Export expenses to Excel workbook (.xlsx)")
+    @GetMapping({"/user/{userId}/export/excel", "/user/{userId}/export/xlsx"})
+    public ResponseEntity<byte[]> exportExcel(@PathVariable Long userId) {
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        byte[] bytes = exportService.exportExpensesToExcel(user);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(bytes);
     }
 
     @Operation(
@@ -933,93 +889,7 @@ public class ExpenseController {
     public ResponseEntity<?> importCsv(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        int count = 0;
-        List<String> rowErrors = new ArrayList<>();
-
-        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(file.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
-            String headerLine = reader.readLine();
-            if (headerLine == null || headerLine.isBlank()) {
-                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "CSV file is empty."));
-            }
-
-            String[] headerParts = headerLine.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-            Map<String, Integer> col = new HashMap<>();
-            for (int i = 0; i < headerParts.length; i++) {
-                col.put(headerParts[i].replace("\"", "").trim().toLowerCase(), i);
-            }
-
-            List<String> missing = new ArrayList<>();
-            for (String required : List.of("date", "category", "amount")) {
-                if (!col.containsKey(required)) missing.add(required);
-            }
-            if (!missing.isEmpty()) {
-                return ResponseEntity.badRequest().body(Collections.singletonMap("error",
-                        "CSV is missing required column(s): " + String.join(", ", missing) +
-                        ". Columns found: " + String.join(", ", headerParts)));
-            }
-
-            int dateIdx = col.get("date");
-            int catIdx = col.get("category");
-            int amtIdx = col.get("amount");
-            Integer descIdx = col.get("description"); // optional — null if absent
-
-            String line;
-            int rowNum = 1; // header is row 1
-            while ((line = reader.readLine()) != null) {
-                rowNum++;
-                if (line.trim().isEmpty()) continue;
-
-                try {
-                    String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-                    int maxNeeded = Math.max(dateIdx, Math.max(catIdx, amtIdx));
-                    if (parts.length <= maxNeeded) {
-                        rowErrors.add("Row " + rowNum + ": expected at least " + (maxNeeded + 1) + " columns, found " + parts.length + ".");
-                        continue;
-                    }
-
-                    String dateStr = parts[dateIdx].replace("\"", "").trim();
-                    String catName = parts[catIdx].replace("\"", "").trim();
-                    String amtStr = parts[amtIdx].replace("\"", "").trim().replaceAll("[^0-9.\\-]", "");
-                    String desc = (descIdx != null && descIdx < parts.length) ? parts[descIdx].replace("\"", "").trim() : "";
-
-                    if (dateStr.isEmpty() || catName.isEmpty() || amtStr.isEmpty()) {
-                        rowErrors.add("Row " + rowNum + ": date, category, or amount is empty.");
-                        continue;
-                    }
-
-                    Expense expense = new Expense();
-                    expense.setExpenseDate(LocalDate.parse(dateStr));
-                    expense.setAmount(new BigDecimal(amtStr));
-                    expense.setDescription(desc.isEmpty() ? catName : desc);
-
-                    Category category = categoryRepository.findByNameIgnoreCase(catName).orElseGet(() -> {
-                        Category newCat = new Category();
-                        newCat.setName(catName);
-                        newCat.setUser(user);
-                        return categoryRepository.save(newCat);
-                    });
-                    expense.setCategory(category);
-                    expenseService.createExpense(expense, user);
-                    count++;
-
-                } catch (Exception rowEx) {
-                    rowErrors.add("Row " + rowNum + ": " + rowEx.getMessage());
-                }
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Failed to read CSV file: " + e.getMessage()));
-        }
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("imported", count);
-        result.put("failedRows", rowErrors.size());
-        if (!rowErrors.isEmpty()) {
-            result.put("errors", rowErrors);
-        }
-        result.put("message", count > 0
-                ? "Imported " + count + " expense" + (count == 1 ? "" : "s") + " successfully" + (rowErrors.isEmpty() ? "." : ", " + rowErrors.size() + " row(s) skipped.")
-                : "No rows could be imported.");
+        Map<String, Object> result = importService.importExpensesFromCsv(file, user);
         return ResponseEntity.ok(result);
     }
 
@@ -1028,38 +898,24 @@ public class ExpenseController {
     public ResponseEntity<?> importJson(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Map<String, Object> result = importService.importExpensesFromJson(file, user);
+        return ResponseEntity.ok(result);
+    }
 
-        int count = 0;
-        try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-            List<ExpenseDto> dtos = mapper.readValue(file.getInputStream(), new com.fasterxml.jackson.core.type.TypeReference<List<ExpenseDto>>() {});
-
-            for (ExpenseDto dto : dtos) {
-                Expense expense = new Expense();
-                expense.setAmount(dto.getAmount());
-                expense.setDescription(dto.getDescription());
-                expense.setExpenseDate(dto.getExpenseDate() != null ? dto.getExpenseDate() : LocalDate.now());
-
-                Category category = null;
-                if (dto.getCategoryName() != null && !dto.getCategoryName().isBlank()) {
-                    category = categoryRepository.findByNameIgnoreCase(dto.getCategoryName()).orElseGet(() -> {
-                        Category newCat = new Category();
-                        newCat.setName(dto.getCategoryName());
-                        newCat.setUser(user);
-                        return categoryRepository.save(newCat);
-                    });
-                } else if (dto.getCategoryId() != null) {
-                    category = categoryRepository.findById(dto.getCategoryId()).orElse(null);
-                }
-                expense.setCategory(category);
-                expenseService.createExpense(expense, user);
-                count++;
-            }
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Failed to parse JSON file: " + e.getMessage()));
-        }
-        return ResponseEntity.ok(Collections.singletonMap("message", "Imported " + count + " expenses successfully"));
+    /**
+     * Imports expenses from an uploaded Microsoft Excel (.xlsx / .xls) workbook for the given user.
+     *
+     * @param userId target user ID
+     * @param file uploaded Excel spreadsheet
+     * @return summary map containing imported count, failed row count, and per-row error messages
+     */
+    @Operation(summary = "Import expenses from Excel file (.xlsx / .xls)", description = "Uploads a Microsoft Excel workbook containing expense entries. Supports dynamic header detection and per-row error tracking.")
+    @PostMapping(value = {"/user/{userId}/import/excel", "/user/{userId}/import/xlsx"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importExcel(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Map<String, Object> result = importService.importExpensesFromExcel(file, user);
+        return ResponseEntity.ok(result);
     }
 
     private LocalDate nextOccurrence(LocalDate date, String frequency, Integer intervalDays) {

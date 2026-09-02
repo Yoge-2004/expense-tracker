@@ -57,6 +57,13 @@
                     </svg>
                     <span>Record Expense</span>
                 </button>
+                <button class="btn-primary add-income-button" id="openIncomeModalBtn" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10B981; font-weight: 600; padding: 0 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; height: 40px;" title="Record Income Stream">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Record Income</span>
+                </button>
 
                 <button id="themeToggle" class="btn-icon theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
                     <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -101,8 +108,22 @@
 
         <!-- 4-COLUMN FINANCIAL METRICS MATRIX -->
         <section class="grid-4-metrics animate-cascade delay-2">
-            <!-- Metric 1: Total Spent -->
-            <div class="metric-card">
+            <!-- Metric 1: Total Inflow (Income) -->
+            <div class="metric-card" style="border-left: 4px solid #10B981;">
+                <div class="metric-header">
+                    <span class="card-label" style="color:#10B981; font-weight:700;">Total Inflow</span>
+                    <span class="status-badge badge-success" id="incomeCountBadge">0 Inflows</span>
+                </div>
+                <div class="metric-value-row">
+                    <span class="metric-value" id="totalIncomeAmount" style="color:#10B981;">$0.00</span>
+                </div>
+                <div class="metric-footer">
+                    <span class="text-muted" id="recurringIncomeText">0 recurring streams</span>
+                </div>
+            </div>
+
+            <!-- Metric 2: Total Spent (Expenses) -->
+            <div class="metric-card" style="border-left: 4px solid #EF4444;">
                 <div class="metric-header">
                     <span class="card-label">Total Outflow</span>
                     <span class="status-badge badge-neutral" id="budgetUsageBadge">— Used</span>
@@ -115,31 +136,37 @@
                 </div>
             </div>
 
-            <!-- Metric 2: Daily Burn Rate & Month End Forecast -->
-            <div class="metric-card">
+            <!-- Metric 3: Net Cash Flow -->
+            <div class="metric-card" style="border-left: 4px solid #3B82F6;">
                 <div class="metric-header">
-                    <span class="card-label">Daily Burn Rate</span>
-                    <span class="status-badge badge-neutral" id="burnRateBadge">Daily Average</span>
+                    <span class="card-label">Net Cash Flow</span>
+                    <span class="status-badge badge-primary" id="netFlowBadge">Balanced</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="dailyBurnRate">₹0.00 / day</span>
+                    <span class="metric-value" id="netCashFlowAmount">$0.00</span>
                 </div>
                 <div class="metric-footer">
-                    <span class="text-muted" id="monthForecast">Projected: ₹0.00</span>
+                    <span class="text-muted" id="burnRateBadge">Burn: <span id="dailyBurnRate">₹0.00 / day</span></span>
                 </div>
             </div>
 
-            <!-- Metric 3: Top Spending Category -->
-            <div class="metric-card">
+            <!-- Hidden projection anchor to preserve script compatibility -->
+            <span id="monthForecast" style="display:none;">Projected: $0.00</span>
+            <span id="topCategoryName" style="display:none;">—</span>
+            <span id="topCategoryAmount" style="display:none;">$0.00</span>
+            <span id="topCatBadge" style="display:none;"></span>
+
+            <!-- Metric 4: Savings Rate & Goals Progress -->
+            <div class="metric-card" style="border-left: 4px solid #F59E0B;">
                 <div class="metric-header">
-                    <span class="card-label">Highest Category</span>
-                    <span class="status-badge badge-neutral" id="topCatBadge">Top Outflow</span>
+                    <span class="card-label" style="color:#F59E0B; font-weight:700;">Savings Rate</span>
+                    <span class="status-badge badge-warning" id="savingsGoalBadge">0 Goals</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="topCategoryName">—</span>
+                    <span class="metric-value" id="savingsRateValue" style="color:#F59E0B;">0.0%</span>
                 </div>
                 <div class="metric-footer">
-                    <span class="text-muted" id="topCategoryAmount">₹0.00 spent</span>
+                    <span class="text-muted" id="totalSavedProgress">Saved: $0.00</span>
                 </div>
             </div>
 
@@ -281,6 +308,26 @@
             </div>
         </section>
 
+        <!-- SAVINGS GOALS & MILESTONES -->
+        <section class="card savings-section animate-cascade delay-5" style="margin-top:24px;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                    <span class="card-label" style="color:#F59E0B; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Wealth Accumulation</span>
+                    <h3 class="section-title" style="margin:4px 0 0; font-size:18px;">Savings Goals & Milestones</h3>
+                </div>
+                <button id="addGoalBtn" class="btn-primary btn-small" title="Create a New Savings Goal" style="background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>New Goal</span>
+                </button>
+            </div>
+            <div id="savingsGoalsList" class="savings-grid-matrix" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+                <p class="text-muted" style="font-size:13px;">Loading savings goals...</p>
+            </div>
+        </section>
+
         <!-- TRANSACTIONS TABLE & QUICK FILTERS -->
         <section class="card recent-transactions animate-cascade delay-6">
             <div class="list-header">
@@ -290,11 +337,12 @@
                 </div>
                 
                 <div class="list-header-actions">
-                    <input type="file" id="importFileInput" accept=".csv,.json" style="display:none">
-                    <button id="importBtn" class="btn-icon btn-text-icon" title="Import expenses from a .csv or .json file" style="gap:6px;">
+                    <input type="file" id="importFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
+                    <button id="importBtn" class="btn-icon btn-text-icon" title="Import transactions from .csv, .json, or .xlsx file" style="gap:6px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.json)</span>
+                        Import <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.xlsx)</span>
                     </button>
+                    <button id="exportExcelBtn" class="btn-icon btn-text-icon" title="Export PowerBI Executive Excel Dashboard" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);">📊 Excel</button>
                     <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export CSV">CSV</button>
                     <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export JSON">JSON</button>
                     <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export PDF Report">PDF</button>
@@ -370,6 +418,26 @@
             <!-- Expense List Table -->
             <div class="scroll-area" id="expenseList">
                 <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading expenses...</p>
+            </div>
+        </section>
+
+        <!-- INCOMING CASH FLOW & REVENUE STREAMS -->
+        <section class="card income-section animate-cascade delay-6" style="margin-top:24px;">
+            <div class="list-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                    <span class="card-label" style="color:#10B981; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Cash Inflow</span>
+                    <h2 class="section-title" style="margin:4px 0 0; font-size:18px;">Income & Earnings Streams</h2>
+                </div>
+                <button id="addIncomeTableBtn" class="btn-primary btn-small" style="background:#10B981; border-color:#10B981; color:#fff;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Record Income</span>
+                </button>
+            </div>
+            <div class="scroll-area" id="incomeList">
+                <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading incomes...</p>
             </div>
         </section>
     </main>
@@ -553,6 +621,93 @@
         </div>
     </div>
 
+
+    <!-- MODAL DIALOG: RECORD / EDIT INCOME -->
+    <div class="modal-overlay" id="incomeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="incomeModalTitle">Record Income</h3>
+                <button class="modal-close" id="closeIncomeModalBtn" aria-label="Close">&times;</button>
+            </div>
+            <form id="incomeForm">
+                <input type="hidden" id="incomeId">
+                <div class="form-group">
+                    <label>Source / Payor</label>
+                    <input type="text" id="incomeSource" required placeholder="e.g. Primary Salary, Client Retainer">
+                </div>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="incomeAmount" required placeholder="0.00" step="0.01" min="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Date Received</label>
+                    <input type="date" id="incomeDate" required class="dark-date">
+                </div>
+                <div class="form-group">
+                    <label>Description (Optional)</label>
+                    <input type="text" id="incomeDesc" placeholder="e.g. Direct deposit from employer">
+                </div>
+                <div class="form-group flex-row">
+                    <label class="switch-label" for="incomeIsRecurring">
+                        <span class="switch-text" style="display:flex; align-items:center; gap:8px;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#10B981;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            Recurring Income (e.g. Monthly Salary)
+                        </span>
+                        <input type="checkbox" id="incomeIsRecurring" style="margin-left:auto;">
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:16px; background:#10B981; border-color:#10B981;">Save Income</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: CREATE / EDIT SAVINGS GOAL -->
+    <div class="modal-overlay" id="savingsGoalModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="savingsGoalModalTitle">New Savings Goal</h3>
+                <button class="modal-close" id="closeSavingsGoalModalBtn" aria-label="Close">&times;</button>
+            </div>
+            <form id="savingsGoalForm">
+                <input type="hidden" id="goalId">
+                <div class="form-group">
+                    <label>Goal Name</label>
+                    <input type="text" id="goalName" required placeholder="e.g. Emergency Fund, Tesla Model Y">
+                </div>
+                <div class="form-group">
+                    <label>Target Amount</label>
+                    <input type="number" id="goalTargetAmount" required placeholder="10000.00" step="0.01" min="0.01">
+                </div>
+                <div class="form-group" id="goalInitialAmountWrap">
+                    <label>Initial Balance (Saved so far)</label>
+                    <input type="number" id="goalCurrentAmount" placeholder="0.00" step="0.01" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Target Date</label>
+                    <input type="date" id="goalTargetDate" required class="dark-date">
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Save Goal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: DEPOSIT INTO SAVINGS GOAL -->
+    <div class="modal-overlay" id="savingsDepositModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Deposit to <span id="depositGoalName">Goal</span></h3>
+                <button class="modal-close" id="closeDepositModalBtn" aria-label="Close">&times;</button>
+            </div>
+            <form id="savingsDepositForm">
+                <input type="hidden" id="depositGoalId">
+                <div class="form-group">
+                    <label>Contribution Amount</label>
+                    <input type="number" id="depositAmount" required placeholder="0.00" step="0.01" min="0.01" autofocus>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Add Deposit</button>
+            </form>
+        </div>
+    </div>
 
     <!-- MODAL DIALOG: DELETE ACCOUNT CONFIRMATION -->
     <div class="modal-overlay" id="deleteAccountModal">

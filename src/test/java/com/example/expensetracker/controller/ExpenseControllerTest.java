@@ -8,6 +8,8 @@ import com.example.expensetracker.repository.RecurringExpenseRepository;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.service.ExpenseService;
+import com.example.expensetracker.service.ExportService;
+import com.example.expensetracker.service.ImportService;
 import com.example.expensetracker.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +73,8 @@ class ExpenseControllerTest {
     @MockitoBean BudgetRepository budgetRepository;
     @MockitoBean RecurringExpenseRepository recurringExpenseRepository;
     @MockitoBean ExpenseRepository expenseRepository;
+    @MockitoBean ExportService exportService;
+    @MockitoBean ImportService importService;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
 
@@ -830,13 +834,7 @@ class ExpenseControllerTest {
         @DisplayName("GET /api/expenses/user/{userId}/export/csv → 200 OK with CSV file header")
         void exportCsv_returns200() throws Exception {
             when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
-            Expense exp = new Expense();
-            exp.setId(10L);
-            exp.setAmount(new BigDecimal("100.00"));
-            exp.setDescription("Lunch");
-            exp.setExpenseDate(LocalDate.of(2025, 6, 1));
-            exp.setCategory(foodCategory);
-            when(expenseService.getUserExpenses(sampleUser)).thenReturn(List.of(exp));
+            when(exportService.exportExpensesToCsv(sampleUser)).thenReturn("ID,Date,Category\n".getBytes());
 
             mockMvc.perform(get("/api/expenses/user/1/export/csv"))
                     .andExpect(status().isOk())
@@ -848,7 +846,7 @@ class ExpenseControllerTest {
         @DisplayName("GET /api/expenses/user/{userId}/export/json → 200 OK with JSON attachment")
         void exportJson_returns200() throws Exception {
             when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
-            when(expenseService.getUserExpenses(sampleUser)).thenReturn(Collections.emptyList());
+            when(exportService.exportExpensesToJson(sampleUser)).thenReturn("[]".getBytes());
 
             mockMvc.perform(get("/api/expenses/user/1/export/json"))
                     .andExpect(status().isOk())
@@ -860,11 +858,23 @@ class ExpenseControllerTest {
         @DisplayName("GET /api/expenses/user/{userId}/export/pdf → 200 OK with PDF report attachment")
         void exportPdf_returns200() throws Exception {
             when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
-            when(expenseService.getUserExpenses(sampleUser)).thenReturn(Collections.emptyList());
+            when(exportService.exportExpensesToPdf(sampleUser)).thenReturn("%PDF-1.4".getBytes());
 
             mockMvc.perform(get("/api/expenses/user/1/export/pdf"))
                     .andExpect(status().isOk())
                     .andExpect(header().string("Content-Disposition", "attachment; filename=\"expenses.pdf\""));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("GET /api/expenses/user/{userId}/export/excel → 200 OK with Excel attachment")
+        void exportExcel_returns200() throws Exception {
+            when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
+            when(exportService.exportExpensesToExcel(sampleUser)).thenReturn("PK".getBytes());
+
+            mockMvc.perform(get("/api/expenses/user/1/export/excel"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Disposition", "attachment; filename=\"expenses.xlsx\""));
         }
 
         @Test
@@ -883,7 +893,8 @@ class ExpenseControllerTest {
         @DisplayName("POST /api/expenses/user/{userId}/import/csv → 200 OK on valid CSV file upload")
         void importCsv_returns200() throws Exception {
             when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
-            when(categoryRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.of(foodCategory));
+            when(importService.importExpensesFromCsv(any(), eq(sampleUser)))
+                    .thenReturn(Map.of("message", "Imported 1 expense successfully."));
 
             String csvContent = "ID,Date,Category,Amount,Description\n1,2025-06-01,Food,150.00,Dinner\n";
             org.springframework.mock.web.MockMultipartFile file =
@@ -892,6 +903,39 @@ class ExpenseControllerTest {
             mockMvc.perform(multipart("/api/expenses/user/1/import/csv").file(file))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Imported 1 expense successfully."));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("POST /api/expenses/user/{userId}/import/json → 200 OK on valid JSON file upload")
+        void importJson_returns200() throws Exception {
+            when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
+            when(importService.importExpensesFromJson(any(), eq(sampleUser)))
+                    .thenReturn(Map.of("message", "Imported 2 expenses successfully"));
+
+            String jsonContent = "[{\"amount\": 100.0, \"description\": \"Test\"}]";
+            org.springframework.mock.web.MockMultipartFile file =
+                    new org.springframework.mock.web.MockMultipartFile("file", "expenses.json", "application/json", jsonContent.getBytes());
+
+            mockMvc.perform(multipart("/api/expenses/user/1/import/json").file(file))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Imported 2 expenses successfully"));
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("POST /api/expenses/user/{userId}/import/excel → 200 OK on valid Excel file upload")
+        void importExcel_returns200() throws Exception {
+            when(userService.findById(1L)).thenReturn(Optional.of(sampleUser));
+            when(importService.importExpensesFromExcel(any(), eq(sampleUser)))
+                    .thenReturn(Map.of("message", "Imported 3 expenses successfully."));
+
+            org.springframework.mock.web.MockMultipartFile file =
+                    new org.springframework.mock.web.MockMultipartFile("file", "expenses.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dummy".getBytes());
+
+            mockMvc.perform(multipart("/api/expenses/user/1/import/excel").file(file))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Imported 3 expenses successfully."));
         }
     }
 }

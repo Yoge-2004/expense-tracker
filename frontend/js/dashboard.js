@@ -202,10 +202,12 @@ async function loadDashboard(skipCache = false) {
     try {
         console.log("Loading Dashboard Data...");
 
-        const [expenses, globalCats, userCats] = await Promise.all([
+        const [expenses, globalCats, userCats, incomes, savingsGoals] = await Promise.all([
             apiRequest(`/expenses/user/${userId}`),
             apiRequest(`/categories/global`),
-            apiRequest(`/categories/user/${userId}`)
+            apiRequest(`/categories/user/${userId}`),
+            apiRequest(`/incomes/user/${userId}`).catch(err => { console.warn("Incomes fetch error:", err); return []; }),
+            apiRequest(`/savings/goals/user/${userId}`).catch(err => { console.warn("Savings fetch error:", err); return []; })
         ]);
 
         // Merge Categories safely
@@ -215,6 +217,9 @@ async function loadDashboard(skipCache = false) {
         userOnlyCategories = safeUser;
 
         renderDashboardData(expenses, categories);
+        renderIncomes(incomes || []);
+        renderSavingsGoals(savingsGoals || []);
+        updateCashFlowMetrics(expenses || [], incomes || [], savingsGoals || []);
         saveExpenseCache(expenses, categories);
 
     } catch (error) {
@@ -1736,6 +1741,10 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage) {
     }
 }
 
+document.getElementById("exportExcelBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/reports/user/${userId}/export/excel`, "financial_statement_dashboard.xlsx", "Generating PowerBI Executive Excel Dashboard...");
+});
+
 document.getElementById("exportCsvBtn")?.addEventListener("click", () => {
     downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/csv`, "expenses.csv", "Exporting CSV...");
 });
@@ -1760,8 +1769,13 @@ importFileInput?.addEventListener("change", async (e) => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const isJson = file.name.toLowerCase().endsWith(".json");
-    const endpoint = isJson ? `/expenses/user/${userId}/import/json` : `/expenses/user/${userId}/import/csv`;
+    const fname = file.name.toLowerCase();
+    let endpoint = `/expenses/user/${userId}/import/csv`;
+    if (fname.endsWith(".json")) {
+        endpoint = `/expenses/user/${userId}/import/json`;
+    } else if (fname.endsWith(".xlsx") || fname.endsWith(".xls")) {
+        endpoint = `/expenses/user/${userId}/import/excel`;
+    }
 
     try {
         setLoading(true, "Importing file...");
@@ -2025,3 +2039,361 @@ document.addEventListener("click", (e) => {
     btn.appendChild(ripple);
     ripple.addEventListener("animationend", () => ripple.remove());
 });
+
+
+// =========================================================================
+// EXECUTIVE CASH FLOW & INFLOW / SAVINGS GOVERNANCE
+// =========================================================================
+
+function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
+    const totalSpent = (expenses || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const totalIncome = (incomes || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    const netCashFlow = totalIncome - totalSpent;
+    const recurringIncomes = (incomes || []).filter(i => i.isRecurring || i.recurring).length;
+    const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100) : 0;
+    const totalSaved = (savingsGoals || []).reduce((acc, curr) => acc + Number(curr.currentAmount || 0), 0);
+
+    const totalIncomeEl = document.getElementById("totalIncomeAmount");
+    if (totalIncomeEl) totalIncomeEl.textContent = formatCurrency(totalIncome);
+
+    const incomeCountBadge = document.getElementById("incomeCountBadge");
+    if (incomeCountBadge) incomeCountBadge.textContent = `${(incomes || []).length} Inflow${(incomes || []).length === 1 ? "" : "s"}`;
+
+    const recurringIncomeText = document.getElementById("recurringIncomeText");
+    if (recurringIncomeText) recurringIncomeText.textContent = `${recurringIncomes} recurring stream${recurringIncomes === 1 ? "" : "s"}`;
+
+    const netCashFlowEl = document.getElementById("netCashFlowAmount");
+    if (netCashFlowEl) {
+        netCashFlowEl.textContent = (netCashFlow < 0 ? "-" : "+") + formatCurrency(Math.abs(netCashFlow));
+        netCashFlowEl.style.color = netCashFlow >= 0 ? "#10B981" : "#EF4444";
+    }
+
+    const netFlowBadge = document.getElementById("netFlowBadge");
+    if (netFlowBadge) {
+        if (netCashFlow > 0) {
+            netFlowBadge.textContent = "Surplus";
+            netFlowBadge.className = "status-badge badge-success";
+        } else if (netCashFlow < 0) {
+            netFlowBadge.textContent = "Deficit";
+            netFlowBadge.className = "status-badge badge-danger";
+        } else {
+            netFlowBadge.textContent = "Balanced";
+            netFlowBadge.className = "status-badge badge-neutral";
+        }
+    }
+
+    const savingsRateEl = document.getElementById("savingsRateValue");
+    if (savingsRateEl) {
+        savingsRateEl.textContent = `${savingsRate.toFixed(1)}%`;
+        savingsRateEl.style.color = savingsRate >= 20 ? "#10B981" : (savingsRate >= 0 ? "#F59E0B" : "#EF4444");
+    }
+
+    const savingsGoalBadge = document.getElementById("savingsGoalBadge");
+    if (savingsGoalBadge) {
+        savingsGoalBadge.textContent = `${(savingsGoals || []).length} Goal${(savingsGoals || []).length === 1 ? "" : "s"}`;
+    }
+
+    const totalSavedProgress = document.getElementById("totalSavedProgress");
+    if (totalSavedProgress) {
+        totalSavedProgress.textContent = `Saved: ${formatCurrency(totalSaved)}`;
+    }
+}
+
+function renderIncomes(incomes) {
+    const listEl = document.getElementById("incomeList");
+    if (!listEl) return;
+    if (!incomes || incomes.length === 0) {
+        listEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:24px 0;">No income records logged yet. Click <strong>+ Record Income</strong> to track earnings.</p>`;
+        return;
+    }
+
+    listEl.innerHTML = `
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%; border-collapse:collapse; margin-top:8px;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border); text-align:left; color:var(--text-muted); font-size:12px;">
+                        <th style="padding:10px 14px;">Date</th>
+                        <th style="padding:10px 14px;">Source</th>
+                        <th style="padding:10px 14px;">Description</th>
+                        <th style="padding:10px 14px;">Type</th>
+                        <th style="padding:10px 14px; text-align:right;">Amount</th>
+                        <th style="padding:10px 14px; text-align:center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${incomes.map(inc => `
+                        <tr style="border-bottom:1px solid var(--border); font-size:13.5px;">
+                            <td style="padding:12px 14px; white-space:nowrap; color:var(--text-muted);">${inc.incomeDate || "—"}</td>
+                            <td style="padding:12px 14px; font-weight:600;">${escapeHtml(inc.source || "Income")}</td>
+                            <td style="padding:12px 14px; color:var(--text-muted);">${escapeHtml(inc.description || "—")}</td>
+                            <td style="padding:12px 14px;">
+                                ${(inc.isRecurring || inc.recurring) 
+                                    ? '<span class="status-badge badge-success" style="font-size:11px;">Recurring</span>' 
+                                    : '<span class="status-badge badge-neutral" style="font-size:11px;">One-Time</span>'}
+                            </td>
+                            <td style="padding:12px 14px; text-align:right; font-weight:700; color:#10B981;">
+                                +${formatCurrency(inc.amount)}
+                            </td>
+                            <td style="padding:12px 14px; text-align:center;">
+                                <button class="btn-icon delete-income-btn" data-income-id="${inc.id}" title="Delete Income" style="color:var(--text-muted);">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    listEl.querySelectorAll(".delete-income-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const incId = btn.getAttribute("data-income-id");
+            if (!confirm("Are you sure you want to delete this income stream?")) return;
+            try {
+                setLoading(true, "Deleting income...");
+                await apiRequest(`/incomes/${incId}/user/${userId}`, { method: "DELETE" });
+                showToast("Income record deleted.", "success");
+                await loadDashboard(true);
+            } catch (err) {
+                showToast(err.message || "Failed to delete income", "error");
+            } finally {
+                setLoading(false);
+            }
+        });
+    });
+}
+
+function renderSavingsGoals(goals) {
+    const container = document.getElementById("savingsGoalsList");
+    if (!container) return;
+    if (!goals || goals.length === 0) {
+        container.innerHTML = `<p class="text-muted" style="font-size:13px; grid-column:1/-1;">No savings goals configured yet. Click <strong>+ New Goal</strong> to set targets for emergency reserves, investments, or travel.</p>`;
+        return;
+    }
+
+    container.innerHTML = goals.map(goal => {
+        const target = Number(goal.targetAmount || 0);
+        const current = Number(goal.currentAmount || 0);
+        const ratio = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+        const isCompleted = current >= target;
+
+        return `
+            <div class="card" style="padding:16px; border:1px solid var(--border); border-radius:12px; background:var(--card-bg, rgba(255,255,255,0.03));">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <div>
+                        <h4 style="margin:0; font-size:15px; font-weight:700;">${escapeHtml(goal.name || "Savings Goal")}</h4>
+                        <span style="font-size:11.5px; color:var(--text-muted);">Target: ${goal.targetDate || "Flexible"}</span>
+                    </div>
+                    ${isCompleted 
+                        ? '<span class="status-badge badge-success" style="font-size:11px;">Completed 🎯</span>'
+                        : `<span class="status-badge badge-warning" style="font-size:11px;">${ratio}% Achieved</span>`}
+                </div>
+                
+                <div style="margin: 12px 0 6px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px;">
+                        <span style="font-weight:700; color:#F59E0B;">${formatCurrency(current)}</span>
+                        <span style="color:var(--text-muted);">${formatCurrency(target)}</span>
+                    </div>
+                    <div style="height:8px; width:100%; background:var(--border); border-radius:4px; overflow:hidden;">
+                        <div style="height:100%; width:${ratio}%; background: linear-gradient(90deg, #F59E0B, #10B981); border-radius:4px; transition:width 0.4s ease;"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+                    <button class="btn-primary btn-small deposit-goal-btn" data-goal-id="${goal.id}" data-goal-name="${escapeHtml(goal.name)}" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:4px 12px; cursor:pointer;">
+                        + Deposit
+                    </button>
+                    <button class="btn-icon delete-goal-btn" data-goal-id="${goal.id}" title="Delete Goal" style="color:var(--text-muted);">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    container.querySelectorAll(".deposit-goal-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const goalId = btn.getAttribute("data-goal-id");
+            const goalName = btn.getAttribute("data-goal-name");
+            document.getElementById("depositGoalId").value = goalId;
+            document.getElementById("depositGoalName").textContent = goalName;
+            document.getElementById("depositAmount").value = "";
+            openModal(document.getElementById("savingsDepositModal"));
+        });
+    });
+
+    container.querySelectorAll(".delete-goal-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const goalId = btn.getAttribute("data-goal-id");
+            if (!confirm("Are you sure you want to delete this savings goal?")) return;
+            try {
+                setLoading(true, "Deleting savings goal...");
+                await apiRequest(`/savings/goals/${goalId}/user/${userId}`, { method: "DELETE" });
+                showToast("Savings goal deleted.", "success");
+                await loadDashboard(true);
+            } catch (err) {
+                showToast(err.message || "Failed to delete savings goal", "error");
+            } finally {
+                setLoading(false);
+            }
+        });
+    });
+}
+
+// Income Modal & Form
+const incomeModal = document.getElementById("incomeModal");
+const incomeForm = document.getElementById("incomeForm");
+const openIncomeModalBtn = document.getElementById("openIncomeModalBtn");
+const addIncomeTableBtn = document.getElementById("addIncomeTableBtn");
+const closeIncomeModalBtn = document.getElementById("closeIncomeModalBtn");
+
+function openNewIncomeModal() {
+    if (!incomeModal) return;
+    document.getElementById("incomeId").value = "";
+    document.getElementById("incomeSource").value = "";
+    document.getElementById("incomeAmount").value = "";
+    document.getElementById("incomeDate").value = new Date().toISOString().split("T")[0];
+    document.getElementById("incomeDesc").value = "";
+    document.getElementById("incomeIsRecurring").checked = false;
+    document.getElementById("incomeModalTitle").textContent = "Record Income";
+    openModal(incomeModal);
+}
+
+openIncomeModalBtn?.addEventListener("click", openNewIncomeModal);
+addIncomeTableBtn?.addEventListener("click", openNewIncomeModal);
+closeIncomeModalBtn?.addEventListener("click", () => closeModal(incomeModal));
+
+incomeForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("incomeId").value;
+    const payload = {
+        source: document.getElementById("incomeSource").value.trim(),
+        amount: parseFloat(document.getElementById("incomeAmount").value),
+        incomeDate: document.getElementById("incomeDate").value,
+        description: document.getElementById("incomeDesc").value.trim(),
+        isRecurring: document.getElementById("incomeIsRecurring").checked
+    };
+
+    try {
+        setLoading(true, id ? "Updating income..." : "Recording income...");
+        if (id) {
+            await apiRequest(`/incomes/${id}/user/${userId}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            showToast("Income updated successfully.", "success");
+        } else {
+            await apiRequest(`/incomes/user/${userId}`, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            showToast("Income recorded successfully!", "success");
+        }
+        closeModal(incomeModal);
+        await loadDashboard(true);
+    } catch (err) {
+        showToast(err.message || "Failed to save income", "error");
+    } finally {
+        setLoading(false);
+    }
+});
+
+// Savings Goal Modal & Form
+const savingsGoalModal = document.getElementById("savingsGoalModal");
+const savingsGoalForm = document.getElementById("savingsGoalForm");
+const addGoalBtn = document.getElementById("addGoalBtn");
+const closeSavingsGoalModalBtn = document.getElementById("closeSavingsGoalModalBtn");
+
+addGoalBtn?.addEventListener("click", () => {
+    if (!savingsGoalModal) return;
+    document.getElementById("goalId").value = "";
+    document.getElementById("goalName").value = "";
+    document.getElementById("goalTargetAmount").value = "";
+    document.getElementById("goalCurrentAmount").value = "0";
+    const targetD = new Date();
+    targetD.setMonth(targetD.getMonth() + 6);
+    document.getElementById("goalTargetDate").value = targetD.toISOString().split("T")[0];
+    document.getElementById("savingsGoalModalTitle").textContent = "New Savings Goal";
+    openModal(savingsGoalModal);
+});
+
+closeSavingsGoalModalBtn?.addEventListener("click", () => closeModal(savingsGoalModal));
+
+savingsGoalForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("goalId").value;
+    const payload = {
+        name: document.getElementById("goalName").value.trim(),
+        targetAmount: parseFloat(document.getElementById("goalTargetAmount").value),
+        currentAmount: parseFloat(document.getElementById("goalCurrentAmount").value || 0),
+        targetDate: document.getElementById("goalTargetDate").value
+    };
+
+    try {
+        setLoading(true, id ? "Updating goal..." : "Creating savings goal...");
+        if (id) {
+            await apiRequest(`/savings/goals/${id}/user/${userId}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            showToast("Savings goal updated.", "success");
+        } else {
+            await apiRequest(`/savings/goals/user/${userId}`, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            showToast("Savings goal created!", "success");
+        }
+        closeModal(savingsGoalModal);
+        await loadDashboard(true);
+    } catch (err) {
+        showToast(err.message || "Failed to save savings goal", "error");
+    } finally {
+        setLoading(false);
+    }
+});
+
+// Savings Deposit Modal & Form
+const savingsDepositModal = document.getElementById("savingsDepositModal");
+const savingsDepositForm = document.getElementById("savingsDepositForm");
+const closeDepositModalBtn = document.getElementById("closeDepositModalBtn");
+
+closeDepositModalBtn?.addEventListener("click", () => closeModal(savingsDepositModal));
+
+savingsDepositForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const goalId = document.getElementById("depositGoalId").value;
+    const amount = parseFloat(document.getElementById("depositAmount").value);
+
+    try {
+        setLoading(true, "Recording contribution...");
+        await apiRequest(`/savings/goals/${goalId}/deposit/user/${userId}`, {
+            method: "POST",
+            body: JSON.stringify({ amount })
+        });
+        showToast("Deposit contributed successfully! 🎯", "success");
+        closeModal(savingsDepositModal);
+        await loadDashboard(true);
+    } catch (err) {
+        showToast(err.message || "Deposit failed", "error");
+    } finally {
+        setLoading(false);
+    }
+});
+
+// Ensure clicking anywhere in a date input immediately triggers native calendar picker popup
+function bindDatePickerAutoPopups() {
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        if (!input.dataset.pickerBound) {
+            input.dataset.pickerBound = "true";
+            input.addEventListener("click", function() {
+                if (typeof this.showPicker === "function") {
+                    try { this.showPicker(); } catch (e) {}
+                }
+            });
+        }
+    });
+}
+document.addEventListener("DOMContentLoaded", bindDatePickerAutoPopups);
+bindDatePickerAutoPopups();

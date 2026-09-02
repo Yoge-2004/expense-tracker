@@ -1,15 +1,23 @@
 package com.example.expensetracker.service.impl;
 
 import com.example.expensetracker.dto.ExpenseDto;
+import com.example.expensetracker.dto.IncomeDto;
 import com.example.expensetracker.dto.MonthlyReportDto;
+import com.example.expensetracker.dto.SavingsGoalDto;
 import com.example.expensetracker.mapper.ExpenseMapper;
+import com.example.expensetracker.mapper.IncomeMapper;
+import com.example.expensetracker.mapper.SavingsGoalMapper;
 import com.example.expensetracker.model.Budget;
 import com.example.expensetracker.model.Expense;
+import com.example.expensetracker.model.Income;
 import com.example.expensetracker.model.MonthlyReportLog;
+import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.BudgetRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
+import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.repository.MonthlyReportLogRepository;
+import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.MonthlyReportService;
 import jakarta.mail.internet.MimeMessage;
@@ -26,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -33,6 +42,15 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Production implementation of {@link MonthlyReportService}.
+ *
+ * <p>Aggregates financial transactions (expenses and incomes), savings goals, and budget adherence
+ * to construct an executive financial intelligence report. Renders responsive HTML email summaries
+ * and supports automated monthly dispatches and standalone HTML report downloads.</p>
+ *
+ * @author Yogeshwaran
+ */
 @Service
 public class MonthlyReportServiceImpl implements MonthlyReportService {
 
@@ -40,6 +58,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
     private final UserRepository userRepository;
     private final ExpenseRepository expenseRepository;
+    private final IncomeRepository incomeRepository;
+    private final SavingsGoalRepository savingsGoalRepository;
     private final BudgetRepository budgetRepository;
     private final MonthlyReportLogRepository reportLogRepository;
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
@@ -50,18 +70,36 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Value("${app.mail.enabled:false}")
     private boolean mailEnabled;
 
+    /**
+     * Constructs a new {@link MonthlyReportServiceImpl} with required dependencies.
+     *
+     * @param userRepository repository for user entity lookups
+     * @param expenseRepository repository for expense data access
+     * @param incomeRepository repository for income data access
+     * @param savingsGoalRepository repository for savings goals data access
+     * @param budgetRepository repository for budget limits lookups
+     * @param reportLogRepository repository for audit logging report dispatches
+     * @param mailSenderProvider lazy provider for JavaMailSender bean
+     */
     public MonthlyReportServiceImpl(UserRepository userRepository,
                                     ExpenseRepository expenseRepository,
+                                    IncomeRepository incomeRepository,
+                                    SavingsGoalRepository savingsGoalRepository,
                                     BudgetRepository budgetRepository,
                                     MonthlyReportLogRepository reportLogRepository,
                                     ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.userRepository = userRepository;
         this.expenseRepository = expenseRepository;
+        this.incomeRepository = incomeRepository;
+        this.savingsGoalRepository = savingsGoalRepository;
         this.budgetRepository = budgetRepository;
         this.reportLogRepository = reportLogRepository;
         this.mailSenderProvider = mailSenderProvider;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public MonthlyReportDto generateMonthlyReport(Long userId, int year, int month) {
@@ -72,14 +110,29 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
         List<Expense> expenses = expenseRepository.findByUserAndExpenseDateBetween(user, startDate, endDate);
+        List<Income> incomes = incomeRepository.findByUserAndIncomeDateBetween(user, startDate, endDate);
+        List<SavingsGoal> savingsGoals = savingsGoalRepository.findByUser(user);
 
         BigDecimal totalOutflow = expenses.stream()
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal totalIncome = incomes.stream()
+                .map(Income::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal netCashFlow = totalIncome.subtract(totalOutflow);
+        double savingsRate = 0.0;
+        if (totalIncome.compareTo(BigDecimal.ZERO) > 0) {
+            savingsRate = netCashFlow.divide(totalIncome, 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100))
+                    .doubleValue();
+            savingsRate = Math.round(savingsRate * 10.0) / 10.0;
+        }
+
         int daysInMonth = startDate.lengthOfMonth();
         BigDecimal dailyAverage = daysInMonth > 0 && totalOutflow.compareTo(BigDecimal.ZERO) > 0
-                ? totalOutflow.divide(BigDecimal.valueOf(daysInMonth), 2, java.math.RoundingMode.HALF_UP)
+                ? totalOutflow.divide(BigDecimal.valueOf(daysInMonth), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
         BigDecimal recurringTotal = expenses.stream()
@@ -148,11 +201,31 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 .map(ExpenseMapper::toDto)
                 .collect(Collectors.toList());
 
+        // Incomes DTOs
+        List<IncomeDto> incomeDtos = incomes.stream()
+                .sorted(Comparator.comparing(Income::getIncomeDate).reversed())
+                .map(IncomeMapper::toDto)
+                .collect(Collectors.toList());
+
+        // Savings Goals DTOs
+        List<SavingsGoalDto> savingsGoalDtos = savingsGoals.stream()
+                .map(SavingsGoalMapper::toDto)
+                .collect(Collectors.toList());
+
         String currency = user.getCurrency() != null ? user.getCurrency() : "INR";
         String monthTitle = Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " " + year;
 
         // Executive Insights
         List<String> insights = new ArrayList<>();
+        if (totalIncome.compareTo(BigDecimal.ZERO) > 0) {
+            insights.add(String.format("💰 Cash Flow: Total income of <strong>%s %s</strong> with net savings of <strong>%s %s</strong> (%.1f%% savings rate).",
+                    currency, totalIncome, currency, netCashFlow, savingsRate));
+        }
+        if (!savingsGoalDtos.isEmpty()) {
+            long completedGoals = savingsGoalDtos.stream().filter(g -> "COMPLETED".equalsIgnoreCase(g.getStatus())).count();
+            insights.add(String.format("🎯 Savings Progress: Tracking <strong>%d savings goals</strong> (%d achieved milestones).",
+                    savingsGoalDtos.size(), completedGoals));
+        }
         if (!categoryBreakdown.isEmpty()) {
             MonthlyReportDto.CategoryReportDto topCat = categoryBreakdown.get(0);
             insights.add(String.format("💡 Primary Driver: <strong>%s</strong> accounted for <strong>%.1f%%</strong> (%s %s) of total monthly outflow.",
@@ -175,7 +248,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     highestExpenseDescription != null && !highestExpenseDescription.isBlank() ? " ('" + highestExpenseDescription + "')" : ""));
         }
         if (insights.isEmpty()) {
-            insights.add("✨ No recorded expenses for this period. Your budget remained completely untouched.");
+            insights.add("✨ No recorded transactions for this period. Your budget remained completely untouched.");
         }
 
         MonthlyReportDto dto = new MonthlyReportDto();
@@ -183,6 +256,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         dto.setYear(year);
         dto.setMonth(month);
         dto.setTotalOutflow(totalOutflow);
+        dto.setTotalIncome(totalIncome);
+        dto.setNetCashFlow(netCashFlow);
+        dto.setSavingsRate(savingsRate);
         dto.setCurrency(currency);
         dto.setTransactionCount(expenses.size());
         dto.setDailyAverage(dailyAverage);
@@ -194,10 +270,15 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         dto.setCategoryBreakdown(categoryBreakdown);
         dto.setBudgetStatuses(budgetStatuses);
         dto.setTopExpenses(topExpenses);
+        dto.setIncomes(incomeDtos);
+        dto.setSavingsGoals(savingsGoalDtos);
 
         return dto;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void sendMonthlyReportEmail(Long userId, int year, int month) {
@@ -243,6 +324,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public String generateMonthlyReportHtml(Long userId, int year, int month) {
@@ -265,6 +349,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         reportLogRepository.save(logEntry);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "0 0 * * * ?")
     @Transactional
@@ -295,7 +382,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.", sentCount, month, year);
     }
 
+    /**
+     * Renders responsive HTML financial report including cash flow summary, category breakdown,
+     * budget limits, income inflows, and savings goals milestones.
+     */
     private String buildMonthlyReportHtml(String userName, MonthlyReportDto report) {
+        // Categories
         StringBuilder categoryRows = new StringBuilder();
         for (MonthlyReportDto.CategoryReportDto c : report.getCategoryBreakdown()) {
             categoryRows.append("""
@@ -309,6 +401,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 """.formatted(c.getCategoryName(), report.getCurrency(), c.getTotalAmount(), c.getPercentage()));
         }
 
+        // Budgets
         StringBuilder budgetCards = new StringBuilder();
         for (MonthlyReportDto.BudgetReportDto b : report.getBudgetStatuses()) {
             String badgeColor = b.getUsagePercentage() > 100 ? "#ef4444" : (b.getUsagePercentage() > 80 ? "#f59e0b" : "#10b981");
@@ -331,6 +424,65 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 """.formatted(b.getCategoryName(), badgeColor, badgeText, b.getUsagePercentage(), badgeColor, barWidth, report.getCurrency(), b.getSpentAmount(), report.getCurrency(), b.getLimitAmount()));
         }
 
+        // Savings Goals
+        StringBuilder savingsCards = new StringBuilder();
+        if (report.getSavingsGoals() != null && !report.getSavingsGoals().isEmpty()) {
+            for (SavingsGoalDto g : report.getSavingsGoals()) {
+                boolean completed = "COMPLETED".equalsIgnoreCase(g.getStatus()) || g.getProgressPercentage() >= 100.0;
+                String badgeColor = completed ? "#10b981" : "#3b82f6";
+                String badgeText = completed ? "Achieved 🎉" : String.format("%.1f%%", g.getProgressPercentage());
+                double barWidth = Math.min(g.getProgressPercentage(), 100.0);
+                savingsCards.append("""
+                    <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 14px; font-weight: 700; color: #ece7d8;">%s</span>
+                            <span style="font-size: 12px; font-weight: 700; color: %s; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 6px;">%s</span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+                            <div style="background: %s; width: %.1f%%; height: 100%%; border-radius: 999px;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #a8a395;">
+                            <span>Saved: <strong>%s %s</strong></span>
+                            <span>Target: <strong>%s %s</strong>%s</span>
+                        </div>
+                    </div>
+                    """.formatted(
+                        g.getName(),
+                        badgeColor,
+                        badgeText,
+                        badgeColor,
+                        barWidth,
+                        report.getCurrency(),
+                        g.getCurrentAmount(),
+                        report.getCurrency(),
+                        g.getTargetAmount(),
+                        g.getTargetDate() != null ? " · Due " + g.getTargetDate().toString() : ""
+                    ));
+            }
+        }
+
+        // Incomes Rows
+        StringBuilder incomeRows = new StringBuilder();
+        if (report.getIncomes() != null && !report.getIncomes().isEmpty()) {
+            for (IncomeDto inc : report.getIncomes()) {
+                incomeRows.append("""
+                    <tr>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; color: #a8a395;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 12px; color: #10b981;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); text-align: right; font-weight: 700; color: #10b981;">+ %s %s</td>
+                    </tr>
+                    """.formatted(
+                        inc.getIncomeDate() != null ? inc.getIncomeDate().toString() : "—",
+                        inc.getDescription() != null && !inc.getDescription().isBlank() ? inc.getDescription() : "Income Inflow",
+                        inc.getSource() != null ? inc.getSource() : "General",
+                        report.getCurrency(),
+                        inc.getAmount()
+                    ));
+            }
+        }
+
+        // Executive Insights
         StringBuilder insightItems = new StringBuilder();
         if (report.getInsights() != null) {
             for (String insight : report.getInsights()) {
@@ -342,6 +494,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             }
         }
 
+        // Top Expenses
         StringBuilder topExpenseRows = new StringBuilder();
         if (report.getTopExpenses() != null && !report.getTopExpenses().isEmpty()) {
             for (ExpenseDto exp : report.getTopExpenses()) {
@@ -350,7 +503,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; color: #a8a395;">%s</td>
                         <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
                         <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 12px; color: #c79a3e;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); text-align: right; font-weight: 700; color: #ece7d8;">%s %s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); text-align: right; font-weight: 700; color: #ef4444;">- %s %s</td>
                     </tr>
                     """.formatted(
                         exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "—",
@@ -370,7 +523,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
               body { margin: 0; padding: 0; background-color: #080a07; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ece7d8; }
-              .email-container { max-width: 640px; margin: 30px auto; background: #131711; border: 1px solid rgba(236, 231, 216, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.6); }
+              .email-container { max-width: 660px; margin: 30px auto; background: #131711; border: 1px solid rgba(236, 231, 216, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.6); }
               .email-header { padding: 36px 32px; text-align: center; border-bottom: 1px solid rgba(236, 231, 216, 0.08); background: linear-gradient(180deg, rgba(199, 154, 62, 0.15) 0%%, rgba(19, 23, 17, 0) 100%%); }
               .brand-badge { display: inline-block; background: rgba(199, 154, 62, 0.15); border: 1px solid rgba(199, 154, 62, 0.3); border-radius: 999px; padding: 6px 18px; font-size: 13px; font-weight: 800; color: #c79a3e; letter-spacing: 0.5px; }
               .stat-grid { display: table; width: 100%%; margin-bottom: 24px; }
@@ -394,22 +547,37 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   
                   <!-- Hero Outflow -->
                   <div class="hero-card">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #a8a395;">Total Outflow</div>
+                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #a8a395;">Total Outflow (Expenses)</div>
                     <div class="hero-val">%s %s</div>
                     <div style="font-size: 13px; color: #a8a395; margin-top: 6px;">Across %d transactions</div>
                   </div>
 
-                  <!-- 4-Stat Metric Grid -->
+                  <!-- Cash Flow & Inflow Metric Grid -->
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Daily Average</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Total Income Inflow</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%s %s</div>
+                      </div>
+                    </div>
+                    <div class="stat-cell">
+                      <div class="stat-box">
+                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Net Savings (%s%%)</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="stat-grid">
+                    <div class="stat-cell">
+                      <div class="stat-box">
+                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Daily Expense Average</div>
                         <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Budget Score</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Budget Health Score</div>
                         <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%d%%</div>
                       </div>
                     </div>
@@ -418,7 +586,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Peak Expense</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Peak Single Expense</div>
                         <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
@@ -432,6 +600,28 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
                   <!-- Key Insights -->
                   <div class="section-title">🧠 Key Financial Insights</div>
+                  <div style="margin-bottom: 24px;">
+                    %s
+                  </div>
+
+                  <!-- Monthly Income Sources -->
+                  <div class="section-title">💵 Monthly Income Sources</div>
+                  <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+                    <thead>
+                      <tr style="color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;">
+                        <th style="padding: 6px 12px;">Date</th>
+                        <th style="padding: 6px 12px;">Description</th>
+                        <th style="padding: 6px 12px;">Source</th>
+                        <th style="padding: 6px 12px; text-align: right;">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      %s
+                    </tbody>
+                  </table>
+
+                  <!-- Active Savings Goals -->
+                  <div class="section-title">🎯 Active Savings Goals & Milestones</div>
                   <div style="margin-bottom: 24px;">
                     %s
                   </div>
@@ -452,7 +642,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   </table>
 
                   <!-- Budget Adherence -->
-                  <div class="section-title">🎯 Budget Adherence & Limits</div>
+                  <div class="section-title">🛡️ Budget Adherence & Limits</div>
                   <div style="margin-bottom: 24px;">
                     %s
                   </div>
@@ -475,6 +665,11 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 report.getTotalOutflow(),
                 report.getTransactionCount(),
                 report.getCurrency(),
+                report.getTotalIncome(),
+                report.getSavingsRate(),
+                report.getCurrency(),
+                report.getNetCashFlow(),
+                report.getCurrency(),
                 report.getDailyAverage(),
                 report.getBudgetHealthScore(),
                 report.getCurrency(),
@@ -482,10 +677,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 report.getCurrency(),
                 report.getRecurringTotal(),
                 insightItems.toString(),
+                incomeRows.length() > 0 ? incomeRows.toString() : "<tr><td colspan='4' style='padding: 12px; color: #a8a395;'>No income recorded this month.</td></tr>",
+                savingsCards.length() > 0 ? savingsCards.toString() : "<div style='color: #a8a395; font-size: 13px;'>No active savings goals configured. Start a savings goal in your dashboard!</div>",
                 categoryRows.length() > 0 ? categoryRows.toString() : "<tr><td colspan='3' style='padding: 12px; color: #a8a395;'>No spending recorded this month.</td></tr>",
                 budgetCards.length() > 0 ? budgetCards.toString() : "<div style='color: #a8a395; font-size: 13px;'>No category budgets configured for this period.</div>",
                 topExpenseRows.length() > 0 ? """
-                    <div class="section-title">💳 Largest Transactions</div>
+                    <div class="section-title">💳 Largest Outflow Transactions</div>
                     <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                       <thead>
                         <tr style="color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;">

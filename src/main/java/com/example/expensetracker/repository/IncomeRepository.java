@@ -1,0 +1,34 @@
+package com.example.expensetracker.repository;
+
+import com.example.expensetracker.model.Income;
+import com.example.expensetracker.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Spring Data JPA repository for {@link Income} entities.
+ *
+ * @author Yogeshwaran
+ */
+public interface IncomeRepository extends JpaRepository<Income, Long> {
+
+    /**
+     * Retrieves all income records belonging to a user.
+     *
+     * @param user the user entity
+     * @return list of income entities
+     */
+    List<Income> findByUser(User user);
+
+    /**
+     * Retrieves all income records belonging to a user within an inclusive date range.
+     *
+     * @param user the user entity
+     * @param startDate range start date (inclusive)
+     * @param endDate range end date (inclusive)
+     * @return list of matching income entities
+     */
+    List<Income> findByUserAndIncomeDateBetween(User user, LocalDate startDate, LocalDate endDate);
+}

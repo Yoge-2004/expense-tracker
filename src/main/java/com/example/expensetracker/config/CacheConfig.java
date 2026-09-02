@@ -17,7 +17,7 @@ import java.util.List;
  * <p>Neon's free tier provides <strong>100 compute-unit hours per project per month</strong>
  * and <strong>0.5 GB storage</strong>. Every SQL query against a suspended or cold
  * Neon compute incurs a cold-start penalty (1–3 seconds). Caching the most
- * frequently read data — user expense lists and category lists — dramatically
+ * frequently read data — user expense lists, category lists, and user incomes — dramatically
  * reduces the number of round-trips to Neon, which:</p>
  * <ul>
  *   <li>Extends the monthly 100 CU-hour budget (each query wakes up compute)</li>
@@ -36,6 +36,7 @@ import java.util.List;
  *   <li>{@code userCategories} — per-user category lists; key = userId</li>
  *   <li>{@code globalCategories} — global/system categories (single entry)</li>
  *   <li>{@code budgetStatus}   — budget status per user; key = userId</li>
+ *   <li>{@code userIncomes}    — per-user income records; key = userId</li>
  * </ul>
  *
  * <h3>Cache Invalidation</h3>
@@ -79,7 +80,8 @@ public class CacheConfig implements CachingConfigurer {
                 "userExpenses",       // expense list per user (most frequent read)
                 "userCategories",     // per-user custom categories
                 "globalCategories",   // system categories (rarely change)
-                "budgetStatus"        // budget % per user
+                "budgetStatus",       // budget % per user
+                "userIncomes"         // per-user income records
         ));
         // Allow dynamic creation of unlisted caches (safe fallback)
         manager.setAllowNullValues(false);
@@ -90,7 +92,7 @@ public class CacheConfig implements CachingConfigurer {
      * Registers individual cache regions explicitly.
      * This ensures caches are available immediately without lazy initialization.
      *
-     * @return array of Spring {@link ConcurrentMapCache} instances
+     * @return list of Spring {@link ConcurrentMapCache} instances
      */
     @Bean
     public List<ConcurrentMapCache> cacheRegions() {
@@ -98,7 +100,8 @@ public class CacheConfig implements CachingConfigurer {
                 new ConcurrentMapCache("userExpenses"),
                 new ConcurrentMapCache("userCategories"),
                 new ConcurrentMapCache("globalCategories"),
-                new ConcurrentMapCache("budgetStatus")
+                new ConcurrentMapCache("budgetStatus"),
+                new ConcurrentMapCache("userIncomes")
         );
     }
 }
