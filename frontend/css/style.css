@@ -2304,6 +2304,22 @@ button[type="submit"]:active {
     text-decoration: underline;
 }
 
+/* [data-theme="light"] override: the dark-theme gold (#D4AF37, via
+   var(--primary)) and hover gold (#A97F2E) both fail WCAG AA contrast
+   against the light theme's near-white card background -- measured
+   2.10:1 for the resting state (and worse once the opacity:0.85 on the
+   base rule further dims it toward the background) and 3.64:1 on
+   hover, both well under the 4.5:1 minimum for normal text. Darker
+   shades of the same gold hue restore accessible contrast (5.18:1 and
+   6.08:1 respectively, accounting for that same opacity blending)
+   without changing the brand color in dark theme. */
+[data-theme="light"] .link-action {
+    color: #6B5010;
+}
+[data-theme="light"] .link-action:hover {
+    color: #5C4400;
+}
+
 /* ANALYTICS GRID */
 .grid-analytics {
     display: grid;
