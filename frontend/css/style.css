@@ -2826,15 +2826,22 @@ button[type="submit"]:active {
     flex-shrink: 0;
 }
 
-.float-card-value {
-    font-size: 15px;
-    font-weight: 800;
+.float-card-value,
+.float-card-amount,
+.perk-title {
+    font-size: 13.5px;
+    font-weight: 700;
     color: var(--text-main);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 2px;
 }
 
-.float-card-label {
-    font-size: 11px;
+.float-card-label,
+.perk-sub {
+    font-size: 11.5px;
     color: var(--text-muted);
+    line-height: 1.4;
     margin-top: 1px;
 }
 
