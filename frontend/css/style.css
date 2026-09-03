@@ -244,6 +244,12 @@ body {
     border-color: var(--border) !important;
 }
 
+[data-theme="light"] .command-kbd {
+    background: rgba(15, 23, 42, 0.08) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid rgba(199, 154, 62, 0.20) !important;
+}
+
 [data-theme="light"] .command-search-input {
     color: var(--text-main) !important;
 }
@@ -2383,12 +2389,22 @@ button[type="submit"]:active {
 }
 
 .command-search-input {
-    background: transparent;
-    border: none;
-    outline: none;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     color: var(--text-main);
     font-size: 13.5px;
     width: 100%;
+}
+
+.command-search-input:focus,
+.command-search-input:hover,
+.command-search-input:active {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .command-kbd {
@@ -3611,10 +3627,7 @@ button[type="submit"]:active {
 
 /* (Budget bar width transition — already on .budget-bar-fill above.) */
 
-/* Command search glow */
-.command-search-input:focus {
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb),0.15) !important;
-}
+/* Command search glow handled strictly on wrapper (.command-search-wrapper:focus-within) */
 
 /* Top bar glass effect */
 .top-bar {
@@ -6162,7 +6175,7 @@ button[type="submit"]:active {
 }
 
 /* 85. Input Focus Aura Halo */
-.form-input:focus, .command-search-input:focus, select:focus {
+.form-input:focus, select:focus {
     outline: none !important;
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22) !important;
     border-color: var(--primary) !important;
@@ -6673,10 +6686,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* Form Input Glowing Micro-Interactions */
-.form-input, .command-search-input, select {
+.form-input, select {
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-.form-input:hover, .command-search-input:hover {
+.form-input:hover {
     border-color: rgba(var(--primary-rgb), 0.5) !important;
 }
 
