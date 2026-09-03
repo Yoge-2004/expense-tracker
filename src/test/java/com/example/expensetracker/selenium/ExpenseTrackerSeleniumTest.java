@@ -32,6 +32,7 @@ public class ExpenseTrackerSeleniumTest {
         options.addArguments("--disable-setuid-sandbox");
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--remote-allow-origins=*");
+        options.addArguments("--allow-file-access-from-files");
         options.addArguments("--window-size=1440,900");
 
         if (System.getProperty("headless", "true").equals("true")) {
@@ -58,6 +59,7 @@ public class ExpenseTrackerSeleniumTest {
             fallbackOptions.addArguments("--no-sandbox");
             fallbackOptions.addArguments("--disable-dev-shm-usage");
             fallbackOptions.addArguments("--remote-allow-origins=*");
+            fallbackOptions.addArguments("--allow-file-access-from-files");
             driver = new ChromeDriver(fallbackOptions);
         }
 
@@ -85,14 +87,24 @@ public class ExpenseTrackerSeleniumTest {
     }
 
     private void loginSessionAndGoToDashboard() {
-        driver.get(indexUrl);
-        ((JavascriptExecutor) driver).executeScript(
-                "localStorage.setItem('token', 'mock_jwt_token_123');" +
-                "localStorage.setItem('userId', '101');" +
-                "localStorage.setItem('userName', 'Alex Smith');" +
-                "localStorage.setItem('userCurrency', 'USD');"
-        );
-        driver.get(dashboardUrl);
+        if (!dashboardUrl.equals(driver.getCurrentUrl())) {
+            driver.get(indexUrl);
+            ((JavascriptExecutor) driver).executeScript(
+                    "localStorage.setItem('token', 'mock_jwt_token_123');" +
+                    "localStorage.setItem('userId', '101');" +
+                    "localStorage.setItem('userName', 'Alex Smith');" +
+                    "localStorage.setItem('userCurrency', 'USD');"
+            );
+            driver.get(dashboardUrl);
+        } else {
+            ((JavascriptExecutor) driver).executeScript(
+                    "localStorage.setItem('token', 'mock_jwt_token_123');" +
+                    "localStorage.setItem('userId', '101');" +
+                    "localStorage.setItem('userName', 'Alex Smith');" +
+                    "localStorage.setItem('userCurrency', 'USD');"
+            );
+        }
+        wait.until(ExpectedConditions.urlContains("dashboard.html"));
     }
 
     // =========================================================================
