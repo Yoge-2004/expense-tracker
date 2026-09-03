@@ -2654,8 +2654,9 @@ button[type="submit"]:active {
     width: 100%;
     display: grid;
     grid-template-columns: 1.15fr 1fr;
-    overflow-x: clip;
-    overflow-y: visible;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
     background: transparent !important;

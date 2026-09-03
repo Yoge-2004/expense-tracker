@@ -274,7 +274,20 @@
           to the active form section.
        ------------------------------------------------------------------- */
     function initAuthWheelSync() {
-        // No-op: Auth pages use unified window scrolling in the natural document flow
+        const hero = document.querySelector('.auth-hero');
+        if (!hero) return;
+
+        hero.addEventListener('wheel', (e) => {
+            if (window.innerWidth > 900) {
+                let delta = e.deltaY;
+                if (e.deltaMode === 1) {
+                    delta *= 28;
+                } else if (e.deltaMode === 2) {
+                    delta *= window.innerHeight;
+                }
+                window.scrollBy({ top: delta, behavior: 'auto' });
+            }
+        }, { passive: true });
     }
 
     ready(function () {
