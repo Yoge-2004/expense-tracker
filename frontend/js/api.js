@@ -70,7 +70,7 @@ function showToast(message, type = "info") {
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
     toast.setAttribute("role", type === "error" ? "alert" : "status");
-    toast.innerHTML = `<span>${message}</span><button class="toast-close" onclick="this.parentElement.remove()">✕</button>`;
+    toast.innerHTML = `<span class="toast-message">${message}</span><button type="button" class="toast-close" aria-label="Close notification" onclick="this.parentElement.remove()">✕</button>`;
     document.getElementById("appToastRegion").appendChild(toast);
     setTimeout(() => {
         if (toast.parentElement) {
