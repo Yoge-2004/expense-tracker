@@ -2657,10 +2657,8 @@ button[type="submit"]:active {
     height: auto;
     min-height: 0;
     align-self: stretch;
-    overflow: hidden !important;
-    overscroll-behavior: none !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
+    overflow: visible !important;
+    overscroll-behavior: auto !important;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -4188,21 +4186,18 @@ button[type="submit"]:active {
 @media (min-width: 901px) {
 .auth-hero {
     background: transparent !important;
-    position: sticky !important;
-    top: 0 !important;
-    align-self: start !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    overscroll-behavior: none !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
+    position: relative !important;
+    top: auto !important;
+    align-self: stretch !important;
+    overflow: visible !important;
+    overscroll-behavior: auto !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
     padding: clamp(28px, 4vh, 48px) clamp(32px, 3.5vw, 48px) clamp(24px, 3vh, 40px) clamp(40px, 5vw, 80px) !important;
     min-height: 100vh !important;
-    height: 100vh !important;
+    height: auto !important;
     box-sizing: border-box !important;
 }
 
