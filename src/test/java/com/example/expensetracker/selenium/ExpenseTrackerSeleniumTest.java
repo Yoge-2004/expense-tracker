@@ -68,7 +68,7 @@ public class ExpenseTrackerSeleniumTest {
         indexUrl = "file://" + new File("frontend/index.html").getAbsolutePath();
         registerUrl = "file://" + new File("frontend/register.html").getAbsolutePath();
         forgotPasswordUrl = "file://" + new File("frontend/forgot-password.html").getAbsolutePath();
-        dashboardUrl = "file://" + new File("frontend/dashboard.html").getAbsolutePath();
+        dashboardUrl = "file://" + new File("frontend/dashboard.html").getAbsolutePath() + "?test_mock_auth=true";
     }
 
     @AfterAll
@@ -87,24 +87,8 @@ public class ExpenseTrackerSeleniumTest {
     }
 
     private void loginSessionAndGoToDashboard() {
-        if (!dashboardUrl.equals(driver.getCurrentUrl())) {
-            driver.get(indexUrl);
-            ((JavascriptExecutor) driver).executeScript(
-                    "localStorage.setItem('token', 'mock_jwt_token_123');" +
-                    "localStorage.setItem('userId', '101');" +
-                    "localStorage.setItem('userName', 'Alex Smith');" +
-                    "localStorage.setItem('userCurrency', 'USD');"
-            );
-            driver.get(dashboardUrl);
-        } else {
-            ((JavascriptExecutor) driver).executeScript(
-                    "localStorage.setItem('token', 'mock_jwt_token_123');" +
-                    "localStorage.setItem('userId', '101');" +
-                    "localStorage.setItem('userName', 'Alex Smith');" +
-                    "localStorage.setItem('userCurrency', 'USD');"
-            );
-        }
-        wait.until(ExpectedConditions.urlContains("dashboard.html"));
+        driver.get(dashboardUrl);
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("userWelcomeText")));
     }
 
     // =========================================================================
