@@ -425,14 +425,45 @@ const WORLD_CURRENCIES = [
  */
 function detectLikelyCurrencyCode() {
     try {
-        const browserLocale = (navigator.languages && navigator.languages[0]) || navigator.language || Intl.NumberFormat().resolvedOptions().locale;
+        const timeZone = (Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+        if (timeZone) {
+            if (timeZone.startsWith('Asia/Kolkata') || timeZone.startsWith('Asia/Calcutta')) return 'INR';
+            if (timeZone.startsWith('Europe/London')) return 'GBP';
+            if (timeZone.startsWith('Asia/Tokyo')) return 'JPY';
+            if (timeZone.startsWith('Asia/Singapore')) return 'SGD';
+            if (timeZone.startsWith('Asia/Dubai')) return 'AED';
+            if (timeZone.startsWith('Australia/')) return 'AUD';
+            if (timeZone.startsWith('America/Toronto') || timeZone.startsWith('America/Vancouver') || timeZone.startsWith('America/Montreal') || timeZone.startsWith('America/Edmonton')) return 'CAD';
+            if (timeZone.startsWith('America/')) return 'USD';
+            if (timeZone.startsWith('Europe/Paris') || timeZone.startsWith('Europe/Berlin') || timeZone.startsWith('Europe/Rome') || timeZone.startsWith('Europe/Madrid') || timeZone.startsWith('Europe/Amsterdam') || timeZone.startsWith('Europe/Brussels') || timeZone.startsWith('Europe/Vienna') || timeZone.startsWith('Europe/Dublin') || timeZone.startsWith('Europe/Helsinki')) return 'EUR';
+        }
+        const browserLocale = (navigator.languages && navigator.languages[0]) || navigator.language || (Intl.NumberFormat && Intl.NumberFormat().resolvedOptions().locale) || '';
         const region = browserLocale.split(/[-_]/)[1]?.toUpperCase();
-        if (!region) return null;
-        const match = WORLD_CURRENCIES.find(c => c.locale.split('-')[1]?.toUpperCase() === region);
-        return match ? match.code : null;
+        if (region) {
+            const match = WORLD_CURRENCIES.find(c => c.locale && c.locale.split('-')[1]?.toUpperCase() === region);
+            if (match) return match.code;
+        }
+        return null;
     } catch (e) {
         return null;
     }
+}
+
+async function detectClientLocationCurrency() {
+    const fastCode = detectLikelyCurrencyCode();
+    if (fastCode) return fastCode;
+    try {
+        const res = await fetch('https://ipapi.co/currency/', { signal: AbortSignal.timeout(2000) });
+        if (res.ok) {
+            const code = (await res.text()).trim().toUpperCase();
+            if (code && typeof WORLD_CURRENCIES !== 'undefined' && WORLD_CURRENCIES.some(c => c.code === code)) {
+                return code;
+            }
+        }
+    } catch (e) {
+        // Fallback silently if offline or blocked
+    }
+    return null;
 }
 
 /**

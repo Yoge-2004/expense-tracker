@@ -50,26 +50,34 @@
 
             <div class="auth-hero-content animate-cascade delay-1">
                 <div class="auth-top-actions">
-                    <a href="index.html" class="hero-back-link">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                        Back to Sign In
-                    </a>
-                    <button class="btn-icon theme-toggle-btn" id="themeToggle" title="Switch Theme" aria-label="Switch Theme">
-                        <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="5"></circle>
-                            <line x1="12" y1="1" x2="12" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="23"></line>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                            <line x1="1" y1="12" x2="3" y2="12"></line>
-                            <line x1="21" y1="12" x2="23" y2="12"></line>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                        </svg>
-                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                        </svg>
-                    </button>
+                    <div class="hero-brand">
+                        <div class="hero-brand-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10120E" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <span class="hero-brand-name">ExpenseTracker <span class="pro-badge">PRO</span></span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <a href="index.html" class="hero-back-link">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                            <span>Sign In</span>
+                        </a>
+                        <button class="btn-icon theme-toggle-btn" id="themeToggle" title="Switch Theme" aria-label="Switch Theme">
+                            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <h1 class="hero-headline">Start your<br><span class="hero-headline-accent">financial journey.</span></h1>
@@ -184,10 +192,10 @@
                         </div>
                         <div class="input-wrapper">
                             <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5A3.5 3.5 0 0 0 11.5 6h-1A3.5 3.5 0 0 0 7 9.5v0A3.5 3.5 0 0 0 10.5 13h3a3.5 3.5 0 0 1 3.5 3.5v0a3.5 3.5 0 0 1-3.5 3.5h-1A3.5 3.5 0 0 1 9 16.5"/></svg>
-                            <input type="hidden" id="reg-currency" value="USD">
+                            <input type="hidden" id="reg-currency" value="">
                             <div class="custom-select-wrapper" id="currencySelectWrapper">
                                 <div class="custom-select-trigger" id="currencySelectTrigger">
-                                    <span id="selectedCurrencyLabel">🇺🇸 USD ($) — US Dollar</span>
+                                    <span id="selectedCurrencyLabel">None (Select Currency)</span>
                                     <svg class="custom-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
                                 <div class="custom-select-options"></div>
@@ -413,24 +421,26 @@
         nameInput.addEventListener('input', generateUsernameSuggestions);
         userInput.addEventListener('input', generateUsernameSuggestions);
 
-        // Dynamic 50-Currency Custom Select Component with Search Filter
+        // Dynamic 50-Currency Custom Select Component with Search Filter & Location Auto-Detection
         const currWrapper = document.getElementById("currencySelectWrapper");
         const currTrigger = document.getElementById("currencySelectTrigger");
         const currLabel = document.getElementById("selectedCurrencyLabel");
 
         if (currTrigger && currWrapper && typeof WORLD_CURRENCIES !== "undefined") {
             const optionsContainer = currWrapper.querySelector(".custom-select-options");
-            // For a brand-new signup there's no stored preference yet, so guess
-            // from the browser's locale instead of always defaulting to USD.
-            const activeCode = localStorage.getItem("userCurrency")
-                || (typeof detectLikelyCurrencyCode === "function" && detectLikelyCurrencyCode())
-                || "USD";
+            const currencyList = typeof getCurrenciesSortedByLikelihood === "function"
+                ? getCurrenciesSortedByLikelihood()
+                : WORLD_CURRENCIES;
 
+            // Render options starting with 'None'
             optionsContainer.innerHTML = `
                 <input type="text" class="custom-select-search" placeholder="Search 100+ currencies (USD, EUR, ₹, Yen)...">
                 <div class="custom-options-list">
-                    ${(typeof getCurrenciesSortedByLikelihood === "function" ? getCurrenciesSortedByLikelihood() : WORLD_CURRENCIES).map(item => `
-                        <div class="custom-option ${item.code === activeCode ? 'selected' : ''}" data-value="${item.code}" data-name="${item.name.toLowerCase()}" data-symbol="${item.symbol.toLowerCase()}">
+                    <div class="custom-option selected" data-value="" data-name="none select currency" data-symbol="">
+                        <span><span class="custom-option-flag">🌐</span> None (Select Currency)</span>
+                    </div>
+                    ${currencyList.map(item => `
+                        <div class="custom-option" data-value="${item.code}" data-name="${item.name.toLowerCase()}" data-symbol="${item.symbol.toLowerCase()}">
                             <span><span class="custom-option-flag">${item.flag}</span> ${item.code} (${item.symbol}) — ${item.name}</span>
                         </div>
                     `).join('')}
@@ -440,9 +450,40 @@
             const searchInput = optionsContainer.querySelector(".custom-select-search");
             const optionsList = optionsContainer.querySelectorAll(".custom-option");
 
-            const initialItem = WORLD_CURRENCIES.find(c => c.code === activeCode) || WORLD_CURRENCIES[0];
-            if (currencyInput) currencyInput.value = initialItem.code;
-            if (currLabel) currLabel.textContent = `${initialItem.flag} ${initialItem.code} (${initialItem.symbol}) — ${initialItem.name}`;
+            // Initial selection is explicitly 'None' — so progress bar is 0% and dot4 is not highlighted
+            if (currencyInput) currencyInput.value = "";
+            if (currLabel) currLabel.textContent = "None (Select Currency)";
+
+            function selectCurrency(code, triggerUpdate = true) {
+                optionsList.forEach(opt => {
+                    const optVal = opt.getAttribute("data-value");
+                    opt.classList.toggle("selected", optVal === (code || ""));
+                });
+
+                if (!code) {
+                    if (currencyInput) currencyInput.value = "";
+                    if (currLabel) currLabel.textContent = "None (Select Currency)";
+                } else {
+                    const item = WORLD_CURRENCIES.find(c => c.code === code);
+                    if (item) {
+                        if (currencyInput) currencyInput.value = item.code;
+                        if (currLabel) currLabel.textContent = `${item.flag} ${item.code} (${item.symbol}) — ${item.name}`;
+                    }
+                }
+
+                if (triggerUpdate) {
+                    updateFormState();
+                }
+            }
+
+            optionsList.forEach(opt => {
+                opt.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const val = opt.getAttribute("data-value");
+                    selectCurrency(val, true);
+                    currWrapper.classList.remove("open");
+                });
+            });
 
             currTrigger.addEventListener("click", (e) => {
                 e.stopPropagation();
@@ -459,34 +500,34 @@
                         const code = opt.getAttribute("data-value").toLowerCase();
                         const name = opt.getAttribute("data-name");
                         const symbol = opt.getAttribute("data-symbol");
-                        const match = code.includes(q) || name.includes(q) || symbol.includes(q);
+                        const match = !q || code.includes(q) || name.includes(q) || symbol.includes(q);
                         opt.style.display = match ? "flex" : "none";
                     });
                 });
                 searchInput.addEventListener("click", e => e.stopPropagation());
             }
 
-            optionsList.forEach(opt => {
-                opt.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    optionsList.forEach(o => o.classList.remove("selected"));
-                    opt.classList.add("selected");
-                    const val = opt.getAttribute("data-value");
-                    const item = WORLD_CURRENCIES.find(c => c.code === val);
-                    if (currencyInput) {
-                        currencyInput.value = val;
-                        currencyInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        currencyInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                    if (currLabel && item) currLabel.textContent = `${item.flag} ${item.code} (${item.symbol}) — ${item.name}`;
-                    currWrapper.classList.remove("open");
-                    updateFormState();
-                });
-            });
-
             document.addEventListener("click", () => {
                 currWrapper.classList.remove("open");
             });
+
+            // Automatically detect client location and update currency;
+            // THEN AND ONLY THEN is currency selected, dot4 highlighted, and progress updated!
+            (async function autoDetectClientLocationCurrency() {
+                try {
+                    let detected = null;
+                    if (typeof detectClientLocationCurrency === "function") {
+                        detected = await detectClientLocationCurrency();
+                    } else if (typeof detectLikelyCurrencyCode === "function") {
+                        detected = detectLikelyCurrencyCode();
+                    }
+                    if (detected && currencyInput && currencyInput.value === "") {
+                        selectCurrency(detected, true);
+                    }
+                } catch (err) {
+                    console.warn("Currency auto-detection error:", err);
+                }
+            })();
         }
 
         // Initialize state on load

@@ -2548,11 +2548,11 @@ button[type="submit"]:active {
 /* ── Auth Page Layout ── */
 .auth-page {
     min-height: 100vh;
-    height: 100%;
+    height: auto;
     width: 100%;
     display: grid;
     grid-template-columns: 1.15fr 1fr;
-    overflow: hidden;
+    overflow: visible;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
     background: transparent !important;
@@ -2568,9 +2568,11 @@ button[type="submit"]:active {
 
 /* ── Left Hero Panel ── */
 .auth-hero {
-    position: relative;
-    height: 100%;
+    position: sticky;
+    top: 0;
+    height: 100vh;
     min-height: 100vh;
+    align-self: start;
     overflow: hidden !important;
     overscroll-behavior: none !important;
     scrollbar-width: none !important;
@@ -2578,8 +2580,8 @@ button[type="submit"]:active {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: clamp(20px, 3vh, 36px) clamp(32px, 3.5vw, 48px) clamp(20px, 3vh, 36px) clamp(40px, 5vw, 80px);
+    justify-content: flex-start;
+    padding: clamp(28px, 4vh, 48px) clamp(32px, 3.5vw, 48px) clamp(24px, 3vh, 40px) clamp(40px, 5vw, 80px);
     background: transparent;
     box-sizing: border-box;
 }
@@ -2598,7 +2600,7 @@ button[type="submit"]:active {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    margin-top: 8px;
+    margin-top: 0;
     animation: slideUpFade 0.8s var(--ease) both;
 }
 
@@ -2865,13 +2867,10 @@ button[type="submit"]:active {
     -webkit-backdrop-filter: blur(24px) !important;
     padding: clamp(32px, 4vh, 48px) clamp(24px, 3.5vw, 48px);
     min-height: 100vh;
-    height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+    height: auto;
+    overflow: visible;
     box-sizing: border-box;
     border-left: 1px solid rgba(255, 255, 255, 0.05);
-    scrollbar-width: thin;
-    scrollbar-color: rgba(var(--ink-rgb), 0.25) transparent;
 }
 
 .auth-form-section::-webkit-scrollbar {
@@ -3989,7 +3988,9 @@ button[type="submit"]:active {
 @media (min-width: 901px) {
 .auth-hero {
     background: transparent !important;
-    position: relative;
+    position: sticky !important;
+    top: 0 !important;
+    align-self: start !important;
     overflow: hidden !important;
     overscroll-behavior: none !important;
     scrollbar-width: none !important;
@@ -3997,10 +3998,10 @@ button[type="submit"]:active {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: center !important;
-    padding: clamp(20px, 3vh, 36px) clamp(32px, 3.5vw, 48px) clamp(20px, 3vh, 36px) clamp(40px, 5vw, 80px) !important;
+    justify-content: flex-start !important;
+    padding: clamp(28px, 4vh, 48px) clamp(32px, 3.5vw, 48px) clamp(24px, 3vh, 40px) clamp(40px, 5vw, 80px) !important;
     min-height: 100vh !important;
-    height: 100% !important;
+    height: 100vh !important;
     box-sizing: border-box !important;
 }
 

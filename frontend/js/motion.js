@@ -274,12 +274,11 @@
        ------------------------------------------------------------------- */
     function initAuthWheelSync() {
         const hero = document.querySelector('.auth-hero');
-        const formSection = document.querySelector('.auth-form-section');
-        if (!hero || !formSection) return;
+        if (!hero) return;
 
         hero.addEventListener('wheel', (e) => {
             if (window.innerWidth > 900) {
-                formSection.scrollTop += e.deltaY;
+                window.scrollBy({ top: e.deltaY, behavior: 'auto' });
             }
         }, { passive: true });
     }
