@@ -411,62 +411,174 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 /* ==========================================================================
-   INCOME MODAL EMERALD THEME & GLOW EFFECTS
+   INCOME MODAL EMERALD THEME & OUTLINES & GLOW EFFECTS
    ========================================================================== */
+#incomeModal,
+.modal-overlay#incomeModal,
+#incomeModal .modal {
+    --primary: #10B981 !important;
+    --primary-rgb: 16, 185, 129 !important;
+    --primary-glow: rgba(16, 185, 129, 0.45) !important;
+    --primary-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    accent-color: #10B981 !important;
+}
+
 @keyframes emeraldModalBorderGlow {
     0%, 100% {
-        border-color: rgba(16, 185, 129, 0.45) !important;
-        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 24px rgba(16, 185, 129, 0.28) !important;
+        border-color: rgba(16, 185, 129, 0.5) !important;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 26px rgba(16, 185, 129, 0.32), 0 0 0 1px rgba(16, 185, 129, 0.3) !important;
     }
     50% {
-        border-color: rgba(5, 150, 105, 0.75) !important;
-        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 38px rgba(16, 185, 129, 0.45) !important;
+        border-color: rgba(5, 150, 105, 0.8) !important;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 40px rgba(16, 185, 129, 0.48), 0 0 0 1.5px rgba(16, 185, 129, 0.5) !important;
     }
 }
 
 @keyframes emeraldModalBorderGlowLight {
     0%, 100% {
-        border-color: rgba(16, 185, 129, 0.4) !important;
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08), 0 0 20px rgba(16, 185, 129, 0.2) !important;
+        border-color: rgba(16, 185, 129, 0.45) !important;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08), 0 0 22px rgba(16, 185, 129, 0.22), 0 0 0 1px rgba(16, 185, 129, 0.25) !important;
     }
     50% {
-        border-color: rgba(5, 150, 105, 0.65) !important;
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08), 0 0 32px rgba(16, 185, 129, 0.35) !important;
+        border-color: rgba(5, 150, 105, 0.7) !important;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08), 0 0 34px rgba(16, 185, 129, 0.38), 0 0 0 1.5px rgba(16, 185, 129, 0.4) !important;
     }
 }
 
+/* Modal Dialog Box Outline & Decorative Top Center Line */
 #incomeModal .modal {
-    border-color: rgba(16, 185, 129, 0.3) !important;
+    position: relative !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    outline: none !important;
     box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
-                0 0 0 1px rgba(16, 185, 129, 0.2) !important;
+                0 0 0 1px rgba(16, 185, 129, 0.28) !important;
+}
+
+#incomeModal .modal::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90px !important;
+    height: 3px !important;
+    border-radius: 0 0 6px 6px !important;
+    background: linear-gradient(90deg, transparent, #10B981, transparent) !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.6) !important;
+    pointer-events: none !important;
+    z-index: 10 !important;
 }
 
 #incomeModal.active .modal,
-.modal-overlay.active#incomeModal .modal {
-    border-color: rgba(16, 185, 129, 0.5) !important;
+.modal-overlay.active#incomeModal .modal,
+#incomeModal.modal-overlay.active .modal {
+    border-color: rgba(16, 185, 129, 0.6) !important;
+    outline: none !important;
     animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
                emeraldModalBorderGlow 4s ease-in-out infinite alternate !important;
 }
 
 [data-theme="light"] #incomeModal .modal {
-    border-color: rgba(16, 185, 129, 0.3) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    outline: none !important;
     box-shadow: 0 20px 45px rgba(16, 185, 129, 0.12),
-                0 0 0 1px rgba(16, 185, 129, 0.18) !important;
+                0 0 0 1px rgba(16, 185, 129, 0.22) !important;
 }
 
 [data-theme="light"] #incomeModal.active .modal,
-[data-theme="light"] .modal-overlay.active#incomeModal .modal {
-    border-color: rgba(16, 185, 129, 0.5) !important;
+[data-theme="light"] .modal-overlay.active#incomeModal .modal,
+[data-theme="light"] #incomeModal.modal-overlay.active .modal {
+    border-color: rgba(16, 185, 129, 0.6) !important;
+    outline: none !important;
     animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
                emeraldModalBorderGlowLight 4s ease-in-out infinite alternate !important;
 }
 
-/* Income Modal Emerald Toggle Switch */
+/* Center Top Line under Header (Replaces default gold line with Emerald) */
+#incomeModal .modal-header {
+    position: relative !important;
+}
+
+#incomeModal .modal-header::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 20px !important;
+    right: 20px !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, transparent, #10B981, transparent) !important;
+    opacity: 0.75 !important;
+}
+
+[data-theme="light"] #incomeModal .modal-header::after {
+    background: linear-gradient(90deg, transparent, #059669, transparent) !important;
+    opacity: 0.65 !important;
+}
+
+/* Form Inputs, Selects & Date Pickers in Income Modal: Outlines & Focus */
+#incomeModal input:not([type="checkbox"]),
+#incomeModal select,
+#incomeForm input:not([type="checkbox"]),
+#incomeForm select {
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, outline 0.2s ease !important;
+}
+
+#incomeModal input:not([type="checkbox"]):hover,
+#incomeModal select:hover,
+#incomeForm input:not([type="checkbox"]):hover,
+#incomeForm select:hover {
+    border-color: rgba(16, 185, 129, 0.55) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12) !important;
+}
+
+#incomeModal input:not([type="checkbox"]):focus,
+#incomeModal input:not([type="checkbox"]):focus-visible,
+#incomeModal select:focus,
+#incomeModal select:focus-visible,
+#incomeForm input:not([type="checkbox"]):focus,
+#incomeForm input:not([type="checkbox"]):focus-visible,
+#incomeForm select:focus,
+#incomeForm select:focus-visible {
+    border-color: #10B981 !important;
+    outline: 2px solid rgba(16, 185, 129, 0.4) !important;
+    outline-offset: 1px !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22), 0 0 16px rgba(16, 185, 129, 0.28) !important;
+}
+
+#incomeModal .dark-date::-webkit-calendar-picker-indicator {
+    filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg) !important;
+    cursor: pointer !important;
+}
+
+/* Toggle Switch Outline & Emerald States */
+#incomeModal .switch-label,
+#incomeModal .switch-label:focus,
+#incomeModal .switch-label:focus-visible {
+    outline: none !important;
+}
+
+#incomeModal .switch-label input[type="checkbox"],
+#incomeIsRecurring {
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    outline: none !important;
+}
+
+#incomeModal .switch-label input[type="checkbox"]:hover,
+#incomeIsRecurring:hover {
+    border-color: rgba(16, 185, 129, 0.7) !important;
+    outline: none !important;
+}
+
 #incomeModal .switch-label input[type="checkbox"]:checked,
 #incomeIsRecurring:checked {
     background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
     border-color: #10B981 !important;
     box-shadow: 0 2px 12px rgba(16, 185, 129, 0.5) !important;
+    outline: none !important;
     animation: none !important;
 }
 
@@ -477,33 +589,66 @@ input[type="number"]::-webkit-inner-spin-button {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
+#incomeModal .switch-label input[type="checkbox"]:focus,
 #incomeModal .switch-label input[type="checkbox"]:focus-visible,
+#incomeIsRecurring:focus,
 #incomeIsRecurring:focus-visible {
+    border-color: #10B981 !important;
     outline: 2px solid #10B981 !important;
     outline-offset: 2px !important;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.28) !important;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3) !important;
 }
 
-#incomeModal .switch-label:hover input[type="checkbox"] {
-    border-color: rgba(16, 185, 129, 0.7) !important;
-}
-
-/* Income Modal Form Inputs: Emerald Focus Ring & Glow */
-#incomeModal .form-group input:focus,
-#incomeModal .form-group select:focus,
-#incomeForm input:focus,
-#incomeForm select:focus {
-    border-color: #10B981 !important;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22), 0 0 14px rgba(16, 185, 129, 0.25) !important;
+/* Close Button in Income Modal */
+#incomeModal .modal-close {
     outline: none !important;
 }
 
-/* Income Modal Close Button */
 #incomeModal .modal-close:hover {
     color: #10B981 !important;
-    background: rgba(16, 185, 129, 0.12) !important;
+    background: rgba(16, 185, 129, 0.15) !important;
     border-color: rgba(16, 185, 129, 0.4) !important;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3) !important;
+    outline: none !important;
+}
+
+#incomeModal .modal-close:focus,
+#incomeModal .modal-close:focus-visible {
+    outline: 2px solid #10B981 !important;
+    outline-offset: 2px !important;
+    color: #10B981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* Submit Button in Income Modal */
+#incomeModal .btn-primary,
+#incomeForm .btn-primary,
+#incomeModal .add-income-button {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    border: 1px solid #10B981 !important;
+    outline: none !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
+
+#incomeModal .btn-primary:hover,
+#incomeForm .btn-primary:hover,
+#incomeModal .add-income-button:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    border-color: #059669 !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+    outline: none !important;
+    animation: none !important;
+}
+
+#incomeModal .btn-primary:focus,
+#incomeModal .btn-primary:focus-visible,
+#incomeForm .btn-primary:focus,
+#incomeForm .btn-primary:focus-visible,
+#incomeModal .add-income-button:focus,
+#incomeModal .add-income-button:focus-visible {
+    outline: 2px solid #10B981 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.35), 0 4px 16px rgba(16, 185, 129, 0.4) !important;
 }
 
 html {
@@ -5670,6 +5815,12 @@ button[type="submit"]:active {
 .modal-overlay.active .modal {
     animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
                modalBorderGlow 4s ease-in-out infinite alternate;
+}
+
+.modal-overlay.active#incomeModal .modal,
+#incomeModal.active .modal {
+    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               emeraldModalBorderGlow 4s ease-in-out infinite alternate !important;
 }
 
 /* 8. Toast Slide In & Progress Timer Line */
