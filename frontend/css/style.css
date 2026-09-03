@@ -380,6 +380,12 @@ input[type="number"]::-webkit-inner-spin-button {
     animation: none !important; /* Prevents tick/pop animation from distorting toggle switch */
 }
 
+.switch-label input[type="checkbox"] {
+    transition: background 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                border-color 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
 .switch-label input[type="checkbox"]::before {
     content: '' !important;
     position: absolute !important;
@@ -389,25 +395,60 @@ input[type="number"]::-webkit-inner-spin-button {
     height: 18px !important;
     border-radius: 50% !important;
     background: var(--text-muted) !important;
-    transition: transform 0.25s var(--ease), background 0.25s var(--ease) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Default / Expense modal golden toggle */
-.switch-label input[type="checkbox"]:checked {
-    background: var(--primary) !important;
-    border-color: var(--primary) !important;
+.switch-label:hover input[type="checkbox"] {
+    border-color: rgba(var(--primary-rgb), 0.6) !important;
+    box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.2) !important;
+}
+
+/* Default / Expense modal golden toggle (checked) */
+.switch-label input[type="checkbox"]:checked,
+#isRecurring:checked {
+    background: linear-gradient(135deg, #E0B45C 0%, #C79A3E 50%, #9E7422 100%) !important;
+    border-color: #C79A3E !important;
+    box-shadow: 0 2px 14px rgba(199, 154, 62, 0.5) !important;
+    outline: none !important;
     animation: none !important;
 }
 
-.switch-label input[type="checkbox"]:checked::before {
+.switch-label input[type="checkbox"]:checked::before,
+#isRecurring:checked::before {
     transform: translateX(20px) !important;
-    background: #14120C !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
 }
 
-.switch-label input[type="checkbox"]:focus-visible {
+.switch-label input[type="checkbox"]:focus-visible,
+#isRecurring:focus-visible {
+    border-color: var(--primary) !important;
     outline: 2px solid var(--primary) !important;
     outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.28) !important;
+}
+
+/* Expense modal top lip */
+#expenseModal .modal {
+    position: relative !important;
+}
+
+#expenseModal .modal::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90px !important;
+    height: 3px !important;
+    border-radius: 0 0 6px 6px !important;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent) !important;
+    box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.6) !important;
+    pointer-events: none !important;
+    z-index: 10 !important;
 }
 
 /* ==========================================================================
@@ -2868,6 +2909,34 @@ button[type="submit"]:active {
     letter-spacing: -0.3px;
     color: var(--text-main);
     margin-top: 2px;
+}
+
+/* INCOME FILTER TOOLBAR & PILLS */
+#incomePillsBar .pill-chip.active {
+    background: rgba(16, 185, 129, 0.18) !important;
+    border-color: #10B981 !important;
+    color: #10B981 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
+}
+
+#incomePillsBar .pill-chip:hover {
+    border-color: rgba(16, 185, 129, 0.6) !important;
+    color: #10B981 !important;
+}
+
+#incomeFilterPanel {
+    border-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+#incomeFilterPanel input:focus,
+#incomeFilterPanel select:focus {
+    border-color: #10B981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22) !important;
+    outline: none !important;
+}
+
+#incomeFilterPanel .dark-date::-webkit-calendar-picker-indicator {
+    filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg) !important;
 }
 
 /* CATEGORY PILLS BAR */

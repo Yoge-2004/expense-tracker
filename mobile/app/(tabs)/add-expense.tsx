@@ -86,6 +86,8 @@ export default function AddExpenseScreen() {
   const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split('T')[0]);
   const [incomeDesc, setIncomeDesc] = useState('');
   const [incomeIsRecurring, setIncomeIsRecurring] = useState(false);
+  const [incomeFrequency, setIncomeFrequency] = useState<'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM'>('MONTHLY');
+  const [incomeIntervalDays, setIncomeIntervalDays] = useState('1');
 
   // Savings Goal form state
   const [goalName, setGoalName] = useState('');
@@ -310,6 +312,8 @@ export default function AddExpenseScreen() {
           incomeDate: incomeDate,
           description: incomeDesc.trim(),
           isRecurring: incomeIsRecurring,
+          frequency: incomeIsRecurring ? incomeFrequency : null,
+          intervalDays: incomeIsRecurring && incomeFrequency === 'CUSTOM' ? (parseInt(incomeIntervalDays) || 1) : null,
         }),
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -320,6 +324,8 @@ export default function AddExpenseScreen() {
       setIncomeAmount('');
       setIncomeDesc('');
       setIncomeIsRecurring(false);
+      setIncomeFrequency('MONTHLY');
+      setIncomeIntervalDays('1');
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not save income record.';
       showAlert('Save Error', msg);
@@ -650,10 +656,69 @@ export default function AddExpenseScreen() {
                     color={incomeIsRecurring ? "#10B981" : c.textMuted}
                   />
                   <Text style={{ color: c.text, fontWeight: "600", fontSize: 13.5 }}>
-                    Recurring Stream (e.g. Monthly Salary)
+                    Recurring Stream (e.g. Wages / Retainer)
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {incomeIsRecurring && (
+                <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: "rgba(16, 185, 129, 0.3)" }]}>
+                  <Text style={[styles.recurringBoxLabel, { color: "#10B981" }]}>PAYMENT CADENCE</Text>
+                  <View style={styles.freqRow}>
+                    {(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'] as const).map((freq) => {
+                      const isSelected = incomeFrequency === freq;
+                      return (
+                        <TouchableOpacity
+                          key={freq}
+                          activeOpacity={0.8}
+                          onPress={() => setIncomeFrequency(freq)}
+                          style={[
+                            styles.freqChip,
+                            {
+                              backgroundColor: isSelected ? "#10B981" : c.card,
+                              borderColor: isSelected ? "#10B981" : c.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.freqChipText,
+                              {
+                                color: isSelected ? "#FFFFFF" : c.textMuted,
+                                fontWeight: isSelected ? '800' : '600',
+                              },
+                            ]}
+                          >
+                            {freq}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {incomeFrequency === 'CUSTOM' && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Custom Interval (Days)</Text>
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          styles.customDaysInput,
+                          {
+                            backgroundColor: c.card,
+                            borderColor: c.border,
+                            color: c.text,
+                          },
+                        ]}
+                        keyboardType="number-pad"
+                        placeholder="e.g. 14, 30, 45"
+                        placeholderTextColor={c.textMuted}
+                        value={incomeIntervalDays}
+                        onChangeText={setIncomeIntervalDays}
+                      />
+                    </View>
+                  )}
+                </View>
+              )}
 
               <TouchableOpacity
                 activeOpacity={0.85}

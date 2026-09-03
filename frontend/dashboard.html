@@ -437,12 +437,65 @@
                     <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon" title="Export Incomes CSV">CSV</button>
                     <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon" title="Export Incomes JSON">JSON</button>
                     <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon" title="Export Incomes PDF Report">PDF</button>
+                    <button id="toggleIncomeFiltersBtn" class="btn-icon" title="Show Income Filters" aria-label="Show income filters">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
+                    </button>
                     <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                         <span>Record Income</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Filter Pills for Incomes -->
+            <div class="category-pills-bar" id="incomePillsBar">
+                <button class="pill-chip active" data-income-filter="all">All Inflows</button>
+                <button class="pill-chip" data-income-filter="recurring">Recurring</button>
+                <button class="pill-chip" data-income-filter="one-time">One-Time</button>
+            </div>
+
+            <!-- Filter Toolbar Drawer for Incomes -->
+            <div class="filter-toolbar" id="incomeFilterPanel">
+                <div class="filter-date-group">
+                    <div class="date-input-wrap">
+                        <span class="filter-label">From</span>
+                        <input type="date" id="incomeFilterStartDate" class="dark-date" title="Start Date">
+                    </div>
+                    <div class="date-input-wrap">
+                        <span class="filter-label">To</span>
+                        <input type="date" id="incomeFilterEndDate" class="dark-date" title="End Date">
+                    </div>
+                </div>
+
+                <div class="filter-select-group">
+                    <div class="command-search-wrapper" style="max-width:240px; margin:0;">
+                        <input type="text" id="incomeSearchInput" placeholder="Search incomes..." class="command-search-input" style="padding-left:34px; height:38px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="command-search-icon" style="left:11px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </div>
+
+                    <select id="incomeFilterFrequency" class="form-input" style="height:38px; padding:0 12px; font-size:13px;" title="Filter by Cadence">
+                        <option value="all">All Frequencies</option>
+                        <option value="DAILY">Daily (Wages)</option>
+                        <option value="WEEKLY">Weekly (Wages)</option>
+                        <option value="MONTHLY">Monthly (Salary)</option>
+                        <option value="YEARLY">Yearly</option>
+                        <option value="CUSTOM">Custom</option>
+                    </select>
+
+                    <select id="incomeFilterSort" class="form-input" style="height:38px; padding:0 12px; font-size:13px;" title="Sort Incomes">
+                        <option value="date-desc">Newest First</option>
+                        <option value="date-asc">Oldest First</option>
+                        <option value="amount-desc">Highest Amount</option>
+                        <option value="amount-asc">Lowest Amount</option>
+                    </select>
+
+                    <button id="resetIncomeFiltersBtn" class="btn-icon btn-text-icon" title="Reset Income Filters" style="height:38px;">
+                        Reset
                     </button>
                 </div>
             </div>
@@ -463,7 +516,12 @@
     <div class="modal-overlay" id="expenseModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Record Expense</h3>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(var(--primary-rgb), 0.15); display:flex; align-items:center; justify-content:center; color:var(--primary); border:1px solid rgba(var(--primary-rgb), 0.3); box-shadow:0 0 12px rgba(var(--primary-rgb), 0.25);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </div>
+                    <h3 id="expenseModalTitle" style="margin:0;">Record Expense</h3>
+                </div>
                 <button class="modal-close" id="closeExpenseModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="addExpenseForm">
@@ -689,10 +747,27 @@
                     <label class="switch-label" for="incomeIsRecurring">
                         <span class="switch-text">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#10B981; flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                            <span>Recurring Income (e.g. Monthly Salary)</span>
+                            <span>Recurring Income Stream</span>
                         </span>
                         <input type="checkbox" id="incomeIsRecurring">
                     </label>
+                </div>
+
+                <div id="incomeRecurringOptions" hidden class="form-group-box">
+                    <div class="form-group">
+                        <label>Payment Frequency</label>
+                        <select id="incomeRecurringFrequency">
+                            <option value="MONTHLY">Monthly (e.g. Monthly Salary)</option>
+                            <option value="WEEKLY">Weekly (e.g. Weekly Wages)</option>
+                            <option value="DAILY">Daily (e.g. Daily Wages)</option>
+                            <option value="YEARLY">Yearly (e.g. Annual Bonus / Dividend)</option>
+                            <option value="CUSTOM">Custom Interval (Days)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="incomeCustomIntervalWrap" hidden>
+                        <label>Interval (Days)</label>
+                        <input type="number" id="incomeRecurringIntervalDays" min="1" value="1">
+                    </div>
                 </div>
                 <button type="submit" class="btn-primary add-income-button" style="margin-top:16px;">Save Income</button>
             </form>

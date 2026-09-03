@@ -31,4 +31,12 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
      * @return list of matching income entities
      */
     List<Income> findByUserAndIncomeDateBetween(User user, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Retrieves recurring income entries whose next due date is on or before a given date.
+     *
+     * @param date threshold date
+     * @return list of due recurring incomes
+     */
+    List<Income> findByIsRecurringTrueAndNextDueDateLessThanEqual(LocalDate date);
 }

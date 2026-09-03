@@ -25,7 +25,7 @@ public final class IncomeMapper {
             return null;
         }
 
-        return new IncomeDto(
+        IncomeDto dto = new IncomeDto(
                 income.getId(),
                 income.getAmount(),
                 income.getSource(),
@@ -34,6 +34,10 @@ public final class IncomeMapper {
                 income.getIsRecurring(),
                 income.getCreatedAt()
         );
+        dto.setFrequency(income.getFrequency());
+        dto.setIntervalDays(income.getIntervalDays());
+        dto.setNextDueDate(income.getNextDueDate());
+        return dto;
     }
 
     /**
@@ -54,6 +58,8 @@ public final class IncomeMapper {
         income.setDescription(request.getDescription());
         income.setIncomeDate(request.getIncomeDate());
         income.setIsRecurring(request.getIsRecurring());
+        income.setFrequency(request.getFrequency());
+        income.setIntervalDays(request.getIntervalDays());
         income.setUser(user);
         return income;
     }

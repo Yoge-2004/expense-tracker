@@ -35,6 +35,15 @@ public class IncomeDto {
     @Schema(description = "Timestamp when record was created", example = "2026-08-01T10:15:30")
     private LocalDateTime createdAt;
 
+    @Schema(description = "Recurrence frequency (DAILY, WEEKLY, MONTHLY, YEARLY, CUSTOM)", example = "MONTHLY")
+    private String frequency;
+
+    @Schema(description = "Interval in days for CUSTOM frequency", example = "14")
+    private Integer intervalDays;
+
+    @Schema(description = "Next scheduled recurrence date", example = "2026-09-01")
+    private LocalDate nextDueDate;
+
     /**
      * Default constructor.
      */
@@ -130,5 +139,35 @@ public class IncomeDto {
     /** @param createdAt Creation timestamp */
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    /** @return Frequency */
+    public String getFrequency() {
+        return frequency;
+    }
+
+    /** @param frequency Frequency */
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    /** @return Interval in days */
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    /** @param intervalDays Interval in days */
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
+    }
+
+    /** @return Next due date */
+    public LocalDate getNextDueDate() {
+        return nextDueDate;
+    }
+
+    /** @param nextDueDate Next due date */
+    public void setNextDueDate(LocalDate nextDueDate) {
+        this.nextDueDate = nextDueDate;
     }
 }

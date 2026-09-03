@@ -50,6 +50,12 @@ public class IncomeRequest {
     @Schema(description = "Whether this income recurs periodically (e.g. monthly salary)", example = "true")
     private Boolean isRecurring = false;
 
+    @Schema(description = "Recurrence frequency (DAILY, WEEKLY, MONTHLY, YEARLY, CUSTOM)", example = "MONTHLY")
+    private String frequency;
+
+    @Schema(description = "Interval in days when frequency is CUSTOM", example = "14")
+    private Integer intervalDays;
+
     /**
      * Default constructor.
      */
@@ -120,5 +126,25 @@ public class IncomeRequest {
     /** @param isRecurring True if recurring */
     public void setIsRecurring(Boolean isRecurring) {
         this.isRecurring = isRecurring;
+    }
+
+    /** @return Frequency */
+    public String getFrequency() {
+        return frequency;
+    }
+
+    /** @param frequency Frequency */
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    /** @return Interval in days */
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    /** @param intervalDays Interval in days */
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
     }
 }

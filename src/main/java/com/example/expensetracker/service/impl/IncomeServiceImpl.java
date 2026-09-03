@@ -52,6 +52,21 @@ public class IncomeServiceImpl implements IncomeService {
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public IncomeDto createIncome(IncomeRequest request, User user) {
         Income income = IncomeMapper.toEntity(request, user);
+        if (Boolean.TRUE.equals(income.getIsRecurring())) {
+            if (income.getFrequency() == null || income.getFrequency().isBlank()) {
+                income.setFrequency("MONTHLY");
+            }
+            if (income.getIntervalDays() == null || income.getIntervalDays() < 1) {
+                income.setIntervalDays(1);
+            }
+            if (income.getNextDueDate() == null && income.getIncomeDate() != null) {
+                income.setNextDueDate(calculateNextOccurrence(income.getIncomeDate(), income.getFrequency(), income.getIntervalDays()));
+            }
+        } else {
+            income.setFrequency(null);
+            income.setIntervalDays(null);
+            income.setNextDueDate(null);
+        }
         Income saved = incomeRepository.save(income);
         return IncomeMapper.toDto(saved);
     }
@@ -97,6 +112,23 @@ public class IncomeServiceImpl implements IncomeService {
         }
         if (request.getIsRecurring() != null) {
             existing.setIsRecurring(request.getIsRecurring());
+            if (Boolean.TRUE.equals(request.getIsRecurring())) {
+                existing.setFrequency(request.getFrequency() != null ? request.getFrequency() : (existing.getFrequency() != null ? existing.getFrequency() : "MONTHLY"));
+                existing.setIntervalDays(request.getIntervalDays() != null ? request.getIntervalDays() : (existing.getIntervalDays() != null ? existing.getIntervalDays() : 1));
+                if (existing.getNextDueDate() == null && existing.getIncomeDate() != null) {
+                    existing.setNextDueDate(calculateNextOccurrence(existing.getIncomeDate(), existing.getFrequency(), existing.getIntervalDays()));
+                }
+            } else {
+                existing.setFrequency(null);
+                existing.setIntervalDays(null);
+                existing.setNextDueDate(null);
+            }
+        }
+        if (request.getFrequency() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
+            existing.setFrequency(request.getFrequency());
+        }
+        if (request.getIntervalDays() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
+            existing.setIntervalDays(request.getIntervalDays());
         }
 
         Income saved = incomeRepository.save(existing);
@@ -160,5 +192,16 @@ public class IncomeServiceImpl implements IncomeService {
                 incomes.size(),
                 expenses.size()
         );
+    }
+
+    private LocalDate calculateNextOccurrence(LocalDate date, String freq, Integer intervalDays) {
+        if (freq == null) freq = "MONTHLY";
+        return switch (freq.toUpperCase()) {
+            case "DAILY" -> date.plusDays(1);
+            case "WEEKLY" -> date.plusWeeks(1);
+            case "YEARLY" -> date.plusYears(1);
+            case "CUSTOM" -> date.plusDays(intervalDays != null && intervalDays > 0 ? intervalDays : 1);
+            default -> date.plusMonths(1);
+        };
     }
 }

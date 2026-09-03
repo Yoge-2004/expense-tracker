@@ -1124,7 +1124,12 @@ function debounce(fn, delay) {
     };
 }
 
-elements.filterSearch.addEventListener('input', debounce(applyFilters, 250));
+elements.filterSearch.addEventListener('input', debounce(() => {
+    applyFilters();
+    if (typeof applyIncomeFilters === 'function') {
+        applyIncomeFilters();
+    }
+}, 250));
 
 document.getElementById("resetFiltersBtn")?.addEventListener("click", () => {
     elements.filterSearch.value = "";
@@ -2279,18 +2284,118 @@ function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
     }
 }
 
-function renderIncomes(incomes) {
-    allIncomes = Array.isArray(incomes) ? incomes : [];
+function formatIncomeFrequency(freq, interval) {
+    if (!freq) return "Monthly";
+    switch ((freq || "").toUpperCase()) {
+        case "DAILY": return "Daily";
+        case "WEEKLY": return "Weekly";
+        case "MONTHLY": return "Monthly";
+        case "YEARLY": return "Yearly";
+        case "CUSTOM": return interval ? `Every ${interval}d` : "Custom";
+        default: return "Monthly";
+    }
+}
+
+let currentIncomeFilter = 'all'; // 'all', 'recurring', 'one-time'
+
+function applyIncomeFilters() {
     const listEl = document.getElementById("incomeList");
     if (!listEl) return;
+
     if (!allIncomes || allIncomes.length === 0) {
         listEl.innerHTML = `
             <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
                 <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No income records logged yet</p>
-                <p style="font-size:12.5px; margin:0 0 12px; color:var(--text-muted);">Track your salary, investments, client retainers, or other inflows.</p>
+                <p style="font-size:12.5px; margin:0 0 12px; color:var(--text-muted);">Track your salary, wages, investments, or other inflows.</p>
                 <button type="button" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; cursor:pointer;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Record Income</span>
+                </button>
+            </div>`;
+        return;
+    }
+
+    let filtered = [...allIncomes];
+    const dedicatedSearch = document.getElementById("incomeSearchInput")?.value.toLowerCase().trim() || "";
+    const globalSearch = elements.filterSearch ? elements.filterSearch.value.toLowerCase().trim() : "";
+    const search = dedicatedSearch || globalSearch;
+
+    const startDate = document.getElementById("incomeFilterStartDate")?.value || "";
+    const endDate = document.getElementById("incomeFilterEndDate")?.value || "";
+    const frequency = document.getElementById("incomeFilterFrequency")?.value || "all";
+    const sort = document.getElementById("incomeFilterSort")?.value || "date-desc";
+
+    if (startDate && endDate && startDate > endDate) {
+        showToast("Income start date cannot be after end date.", "error");
+        const endInput = document.getElementById("incomeFilterEndDate");
+        if (endInput) endInput.value = "";
+        return;
+    }
+
+    // 1. Search filter
+    if (search) {
+        filtered = filtered.filter(inc =>
+            (inc.source && inc.source.toLowerCase().includes(search)) ||
+            (inc.description && inc.description.toLowerCase().includes(search))
+        );
+    }
+
+    // 2. Type quick pill filter
+    if (currentIncomeFilter === 'recurring') {
+        filtered = filtered.filter(inc => inc.isRecurring || inc.recurring);
+    } else if (currentIncomeFilter === 'one-time') {
+        filtered = filtered.filter(inc => !(inc.isRecurring || inc.recurring));
+    }
+
+    // 3. Frequency filter
+    if (frequency !== 'all') {
+        filtered = filtered.filter(inc => {
+            if (!(inc.isRecurring || inc.recurring)) return false;
+            const incFreq = (inc.frequency || "MONTHLY").toUpperCase();
+            return incFreq === frequency;
+        });
+    }
+
+    // 4. Date range filter
+    if (startDate) {
+        filtered = filtered.filter(inc => (inc.incomeDate || '').split('T')[0] >= startDate);
+    }
+    if (endDate) {
+        filtered = filtered.filter(inc => (inc.incomeDate || '').split('T')[0] <= endDate);
+    }
+
+    // 5. Sorting
+    filtered.sort((a, b) => {
+        if (sort === 'date-desc') {
+            const dDiff = new Date(b.incomeDate) - new Date(a.incomeDate);
+            if (dDiff !== 0) return dDiff;
+            return (b.id || 0) - (a.id || 0);
+        }
+        if (sort === 'date-asc') {
+            const dDiff = new Date(a.incomeDate) - new Date(b.incomeDate);
+            if (dDiff !== 0) return dDiff;
+            return (a.id || 0) - (b.id || 0);
+        }
+        if (sort === 'amount-desc') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
+        if (sort === 'amount-asc') return (Number(a.amount) || 0) - (Number(b.amount) || 0);
+        return 0;
+    });
+
+    renderIncomesTableOnly(filtered);
+}
+window.applyIncomeFilters = applyIncomeFilters;
+
+function renderIncomesTableOnly(incomes) {
+    const listEl = document.getElementById("incomeList");
+    if (!listEl) return;
+
+    if (!incomes || incomes.length === 0) {
+        listEl.innerHTML = `
+            <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No matching incomes found</p>
+                <p style="font-size:12.5px; margin:0 0 12px; color:var(--text-muted);">Try adjusting your search query, cadence filter, or date range.</p>
+                <button type="button" class="btn-icon btn-text-icon" onclick="resetIncomeFilters()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; cursor:pointer;">
+                    <span>Clear Income Filters</span>
                 </button>
             </div>`;
         return;
@@ -2310,21 +2415,24 @@ function renderIncomes(incomes) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${incomes.map((inc, idx) => `
+                    ${incomes.map((inc, idx) => {
+                        const isRec = !!(inc.isRecurring || inc.recurring);
+                        const freqLabel = formatIncomeFrequency(inc.frequency, inc.intervalDays);
+                        return `
                         <tr class="table-row-stagger" style="animation-delay: ${Math.min(idx * 35, 350)}ms; border-bottom:1px solid var(--border); font-size:13.5px;">
                             <td style="padding:12px 14px; white-space:nowrap; color:var(--text-muted);">${inc.incomeDate || "—"}</td>
                             <td style="padding:12px 14px; font-weight:600;">${escapeHtml(inc.source || "Income")}</td>
                             <td style="padding:12px 14px; color:var(--text-muted);">${escapeHtml(inc.description || "—")}</td>
                             <td style="padding:12px 14px;">
-                                ${(inc.isRecurring || inc.recurring) 
-                                    ? '<span class="status-badge badge-success" style="font-size:11px;">Recurring</span>' 
+                                ${isRec 
+                                    ? `<span class="status-badge badge-success" style="font-size:11px; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3);">Recurring (${freqLabel})</span>` 
                                     : '<span class="status-badge badge-neutral" style="font-size:11px;">One-Time</span>'}
                             </td>
                             <td style="padding:12px 14px; text-align:right; font-weight:700; color:#10B981;">
                                 +${formatCurrency(inc.amount)}
                             </td>
                             <td style="padding:12px 14px; text-align:center;">
-                                <button class="btn-icon edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${!!(inc.isRecurring || inc.recurring)}" title="Edit Income" style="color:var(--text-muted); margin-right:4px;">
+                                <button class="btn-icon edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${isRec}" data-inc-freq="${escapeHtml(inc.frequency || "MONTHLY")}" data-inc-interval="${inc.intervalDays || 1}" title="Edit Income" style="color:var(--text-muted); margin-right:4px;">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 </button>
                                 <button class="btn-icon delete-income-btn" data-income-id="${inc.id}" title="Delete Income" style="color:var(--text-muted);">
@@ -2332,7 +2440,7 @@ function renderIncomes(incomes) {
                                 </button>
                             </td>
                         </tr>
-                    `).join("")}
+                    `;}).join("")}
                 </tbody>
             </table>
         </div>
@@ -2340,15 +2448,40 @@ function renderIncomes(incomes) {
 
     listEl.querySelectorAll(".edit-income-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-            if (!incomeModal) return;
+            const modal = document.getElementById("incomeModal");
+            if (!modal) return;
             document.getElementById("incomeId").value = btn.getAttribute("data-inc-id") || "";
             document.getElementById("incomeSource").value = btn.getAttribute("data-inc-source") || "";
             document.getElementById("incomeAmount").value = btn.getAttribute("data-inc-amount") || "";
             document.getElementById("incomeDate").value = btn.getAttribute("data-inc-date") || new Date().toISOString().split("T")[0];
             document.getElementById("incomeDesc").value = btn.getAttribute("data-inc-desc") || "";
-            document.getElementById("incomeIsRecurring").checked = btn.getAttribute("data-inc-recurring") === "true";
-            document.getElementById("incomeModalTitle").textContent = "Edit Income Stream";
-            openModal(incomeModal);
+
+            const isRec = btn.getAttribute("data-inc-recurring") === "true";
+            const incRecEl = document.getElementById("incomeIsRecurring");
+            if (incRecEl) incRecEl.checked = isRec;
+
+            const freq = btn.getAttribute("data-inc-freq") || "MONTHLY";
+            const interval = btn.getAttribute("data-inc-interval") || "1";
+            const incFreqEl = document.getElementById("incomeRecurringFrequency");
+            if (incFreqEl) incFreqEl.value = freq;
+            const incIntervalEl = document.getElementById("incomeRecurringIntervalDays");
+            if (incIntervalEl) incIntervalEl.value = interval;
+
+            const incRecOptions = document.getElementById("incomeRecurringOptions");
+            if (incRecOptions) {
+                incRecOptions.hidden = !isRec;
+                incRecOptions.style.display = isRec ? "flex" : "none";
+            }
+            const incCustomWrap = document.getElementById("incomeCustomIntervalWrap");
+            if (incCustomWrap) {
+                const isCustom = freq === "CUSTOM";
+                incCustomWrap.hidden = !(isRec && isCustom);
+                incCustomWrap.style.display = (isRec && isCustom) ? "flex" : "none";
+            }
+
+            const titleEl = document.getElementById("incomeModalTitle");
+            if (titleEl) titleEl.textContent = "Edit Income Stream";
+            openModal(modal);
         });
     });
 
@@ -2368,6 +2501,11 @@ function renderIncomes(incomes) {
             }
         });
     });
+}
+
+function renderIncomes(incomes) {
+    allIncomes = Array.isArray(incomes) ? incomes : [];
+    applyIncomeFilters();
 }
 
 function renderSavingsGoals(goals) {
@@ -2486,6 +2624,20 @@ function openNewIncomeModal() {
     if (descEl) descEl.value = "";
     const recEl = document.getElementById("incomeIsRecurring");
     if (recEl) recEl.checked = false;
+    const incFreqEl = document.getElementById("incomeRecurringFrequency");
+    if (incFreqEl) incFreqEl.value = "MONTHLY";
+    const incIntervalEl = document.getElementById("incomeRecurringIntervalDays");
+    if (incIntervalEl) incIntervalEl.value = "1";
+    const incRecOptions = document.getElementById("incomeRecurringOptions");
+    if (incRecOptions) {
+        incRecOptions.hidden = true;
+        incRecOptions.style.display = "none";
+    }
+    const incCustomWrap = document.getElementById("incomeCustomIntervalWrap");
+    if (incCustomWrap) {
+        incCustomWrap.hidden = true;
+        incCustomWrap.style.display = "none";
+    }
     const titleEl = document.getElementById("incomeModalTitle");
     if (titleEl) titleEl.textContent = "Record Income";
     openModal(modal);
@@ -2499,15 +2651,98 @@ incomeModal?.addEventListener("click", (e) => {
     if (e.target === incomeModal) closeModal(incomeModal);
 });
 
+// Income recurrence visibility toggles
+const incomeIsRecurringEl = document.getElementById("incomeIsRecurring");
+const incomeRecurringOptionsEl = document.getElementById("incomeRecurringOptions");
+const incomeRecurringFrequencyEl = document.getElementById("incomeRecurringFrequency");
+const incomeCustomIntervalWrapEl = document.getElementById("incomeCustomIntervalWrap");
+
+incomeIsRecurringEl?.addEventListener("change", () => {
+    const isChecked = incomeIsRecurringEl.checked;
+    if (incomeRecurringOptionsEl) {
+        incomeRecurringOptionsEl.hidden = !isChecked;
+        incomeRecurringOptionsEl.style.display = isChecked ? "flex" : "none";
+    }
+    if (incomeCustomIntervalWrapEl) {
+        const isCustom = incomeRecurringFrequencyEl?.value === "CUSTOM";
+        incomeCustomIntervalWrapEl.hidden = !(isChecked && isCustom);
+        incomeCustomIntervalWrapEl.style.display = (isChecked && isCustom) ? "flex" : "none";
+    }
+});
+
+incomeRecurringFrequencyEl?.addEventListener("change", () => {
+    if (incomeCustomIntervalWrapEl) {
+        const isCustom = incomeRecurringFrequencyEl.value === "CUSTOM";
+        const isChecked = incomeIsRecurringEl?.checked;
+        incomeCustomIntervalWrapEl.hidden = !(isChecked && isCustom);
+        incomeCustomIntervalWrapEl.style.display = (isChecked && isCustom) ? "flex" : "none";
+    }
+});
+
+// Income filters UI listeners
+const toggleIncomeFiltersBtn = document.getElementById("toggleIncomeFiltersBtn");
+const incomeFilterPanel = document.getElementById("incomeFilterPanel");
+toggleIncomeFiltersBtn?.addEventListener("click", () => {
+    if (!incomeFilterPanel) return;
+    const isOpen = incomeFilterPanel.classList.toggle("active");
+    toggleIncomeFiltersBtn.style.color = isOpen ? "#10B981" : "";
+    toggleIncomeFiltersBtn.style.borderColor = isOpen ? "rgba(16, 185, 129, 0.4)" : "";
+});
+
+const incomePillsBar = document.getElementById("incomePillsBar");
+incomePillsBar?.querySelectorAll(".pill-chip").forEach(pill => {
+    pill.addEventListener("click", () => {
+        incomePillsBar.querySelectorAll(".pill-chip").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentIncomeFilter = pill.getAttribute("data-income-filter") || "all";
+        applyIncomeFilters();
+    });
+});
+
+document.getElementById("incomeSearchInput")?.addEventListener("input", debounce(applyIncomeFilters, 250));
+document.getElementById("incomeFilterStartDate")?.addEventListener("change", applyIncomeFilters);
+document.getElementById("incomeFilterEndDate")?.addEventListener("change", applyIncomeFilters);
+document.getElementById("incomeFilterFrequency")?.addEventListener("change", applyIncomeFilters);
+document.getElementById("incomeFilterSort")?.addEventListener("change", applyIncomeFilters);
+
+function resetIncomeFilters() {
+    const searchInput = document.getElementById("incomeSearchInput");
+    if (searchInput) searchInput.value = "";
+    const startDate = document.getElementById("incomeFilterStartDate");
+    if (startDate) startDate.value = "";
+    const endDate = document.getElementById("incomeFilterEndDate");
+    if (endDate) endDate.value = "";
+    const freq = document.getElementById("incomeFilterFrequency");
+    if (freq) freq.value = "all";
+    const sort = document.getElementById("incomeFilterSort");
+    if (sort) sort.value = "date-desc";
+
+    incomePillsBar?.querySelectorAll(".pill-chip").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-income-filter") === "all");
+    });
+    currentIncomeFilter = "all";
+    applyIncomeFilters();
+}
+window.resetIncomeFilters = resetIncomeFilters;
+document.getElementById("resetIncomeFiltersBtn")?.addEventListener("click", resetIncomeFilters);
+
 incomeForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = document.getElementById("incomeId").value;
+    const isRecurring = document.getElementById("incomeIsRecurring").checked;
+    const frequency = isRecurring ? (document.getElementById("incomeRecurringFrequency")?.value || "MONTHLY") : null;
+    const intervalDays = (isRecurring && frequency === "CUSTOM")
+        ? (parseInt(document.getElementById("incomeRecurringIntervalDays")?.value, 10) || 1)
+        : null;
+
     const payload = {
         source: document.getElementById("incomeSource").value.trim(),
         amount: parseFloat(document.getElementById("incomeAmount").value),
         incomeDate: document.getElementById("incomeDate").value,
         description: document.getElementById("incomeDesc").value.trim(),
-        isRecurring: document.getElementById("incomeIsRecurring").checked
+        isRecurring: isRecurring,
+        frequency: frequency,
+        intervalDays: intervalDays
     };
 
     try {

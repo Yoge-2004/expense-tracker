@@ -60,6 +60,24 @@ public class Income extends BaseEntity {
     private Boolean isRecurring = false;
 
     /**
+     * Recurrence frequency: DAILY, WEEKLY, MONTHLY, YEARLY, CUSTOM.
+     */
+    @Column(length = 20)
+    private String frequency;
+
+    /**
+     * Interval in days when frequency is CUSTOM.
+     */
+    @Column(name = "interval_days")
+    private Integer intervalDays;
+
+    /**
+     * Date when the next recurrence is due to be credited.
+     */
+    @Column(name = "next_due_date")
+    private LocalDate nextDueDate;
+
+    /**
      * The user account that owns this income entry.
      */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -203,5 +221,53 @@ public class Income extends BaseEntity {
      */
     public void setUser(User user) {
         this.user = user;
+    }
+
+    /**
+     * Retrieves recurrence frequency.
+     * @return frequency
+     */
+    public String getFrequency() {
+        return frequency;
+    }
+
+    /**
+     * Sets recurrence frequency.
+     * @param frequency frequency
+     */
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    /**
+     * Retrieves interval in days.
+     * @return interval in days
+     */
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    /**
+     * Sets interval in days.
+     * @param intervalDays interval in days
+     */
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
+    }
+
+    /**
+     * Retrieves next due date.
+     * @return next due date
+     */
+    public LocalDate getNextDueDate() {
+        return nextDueDate;
+    }
+
+    /**
+     * Sets next due date.
+     * @param nextDueDate next due date
+     */
+    public void setNextDueDate(LocalDate nextDueDate) {
+        this.nextDueDate = nextDueDate;
     }
 }
