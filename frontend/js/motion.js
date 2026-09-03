@@ -247,6 +247,7 @@
           the page scrolls, capped so it stays subtle.
        ------------------------------------------------------------------- */
     function initScrollParallax() {
+        if (document.querySelector('.auth-page')) return; // Auth pages maintain rock-solid scroll stability without parallax jitter
         const heroBg = document.querySelector('.auth-hero-bg');
         const scrollHost = document.querySelector('.dashboard-content') || window;
         if (!heroBg && scrollHost === window) return;
@@ -273,14 +274,7 @@
           to the active form section.
        ------------------------------------------------------------------- */
     function initAuthWheelSync() {
-        const hero = document.querySelector('.auth-hero');
-        if (!hero) return;
-
-        hero.addEventListener('wheel', (e) => {
-            if (window.innerWidth > 900) {
-                window.scrollBy({ top: e.deltaY, behavior: 'auto' });
-            }
-        }, { passive: true });
+        // No-op: Auth pages use unified window scrolling in the natural document flow
     }
 
     ready(function () {

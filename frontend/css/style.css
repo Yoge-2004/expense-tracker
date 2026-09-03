@@ -353,9 +353,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 html {
     overflow-x: hidden;
-    overflow-y: auto;
-    max-width: 100vw;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+    width: 100%;
+    max-width: 100%;
     color-scheme: dark;
+    overscroll-behavior-y: none;
 }
 
 html[data-theme="light"] {
@@ -363,20 +366,24 @@ html[data-theme="light"] {
 }
 
 html::-webkit-scrollbar {
-    width: 7px;
+    width: 9px;
 }
 
 html::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 html::-webkit-scrollbar-thumb {
-    background: rgba(var(--primary-rgb), 0.28);
+    background: rgba(var(--primary-rgb), 0.35);
     border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 html::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--primary-rgb), 0.48);
+    background: rgba(var(--primary-rgb), 0.55);
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 body {
@@ -388,7 +395,9 @@ body {
     height: auto;
     overflow-y: visible !important;
     overflow-x: hidden;
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
+    overscroll-behavior-y: none;
 
     transition: background 0.3s, color 0.3s;
 }
@@ -2645,7 +2654,8 @@ button[type="submit"]:active {
     width: 100%;
     display: grid;
     grid-template-columns: 1.15fr 1fr;
-    overflow: visible;
+    overflow-x: clip;
+    overflow-y: visible;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
     background: transparent !important;
