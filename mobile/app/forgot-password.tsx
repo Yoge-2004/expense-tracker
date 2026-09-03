@@ -460,7 +460,7 @@ export default function ForgotPasswordScreen() {
             <Link href="/login" asChild>
               <TouchableOpacity style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={16} color={c.primary} />
-                <Text style={[styles.backText, { color: c.primary }]}>Back to Sign In</Text>
+                <Text style={[styles.backText, { color: c.primary }]} numberOfLines={1}>Back to Sign In</Text>
               </TouchableOpacity>
             </Link>
           </View>

@@ -1089,21 +1089,46 @@ button[type="submit"]:active {
         justify-content: center;
     }
 
-    /* .server-status-badge is fixed at bottom-right on every page with no
-       mobile-aware repositioning, so on narrow screens it inevitably lands
-       on top of whatever real content happens to be there — on the login
-       page specifically, it sits directly over the "Create one free" link.
-       Shrinking it to a dot-only indicator removes the collision while
-       keeping the connectivity signal (and the status text is still
-       available via the title attribute on tap/hold). */
+    /* .server-status-badge chip rendering on small devices */
     .server-status-badge {
-        padding: 8px !important;
-        width: 16px;
-        height: 16px;
-        justify-content: center;
+        bottom: 12px !important;
+        right: 12px !important;
+        padding: 4px 10px !important;
+        gap: 6px !important;
+        font-size: 10.5px !important;
+        border-radius: 9999px !important;
+        width: auto !important;
+        height: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
     }
     .server-status-badge #statusText {
-        display: none;
+        display: inline-block !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        letter-spacing: 0.02em !important;
+    }
+    .server-status-badge .status-dot {
+        width: 6.5px !important;
+        height: 6.5px !important;
+    }
+
+    .auth-footer-text {
+        font-size: 12.5px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;
+        line-height: 1.4 !important;
+    }
+    .auth-footer-text .back-to-prefix {
+        display: none !important;
+    }
+    .auth-footer-link {
+        white-space: nowrap !important;
+        display: inline-block !important;
     }
 }
 
@@ -1435,29 +1460,34 @@ body.modal-open {
 
 .server-status-badge {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 18px;
+    right: 18px;
     z-index: 1500;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 20px;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 9999px;
     background: var(--card-bg);
     border: 1px solid var(--border);
-    backdrop-filter: var(--glass);
-    font-size: 12px;
-    font-weight: 600;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
     transition: all 0.3s ease;
+    user-select: none;
+    box-sizing: border-box;
 }
 
 .server-status-badge .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--success);
     box-shadow: 0 0 8px var(--success);
+    flex-shrink: 0;
 }
 
 .server-status-badge.offline {
@@ -2866,6 +2896,8 @@ button[type="submit"]:active {
     text-decoration: none;
     transition: color 0.2s;
     width: fit-content;
+    white-space: nowrap !important;
+    flex-shrink: 0;
 }
 
 .hero-back-link:hover { color: var(--text-main); }
@@ -3343,6 +3375,8 @@ button[type="submit"]:active {
     text-decoration: none;
     margin-left: 4px;
     transition: color 0.2s;
+    white-space: nowrap !important;
+    display: inline-block;
 }
 .auth-footer-link:hover { color: var(--primary); }
 
@@ -4007,24 +4041,14 @@ button[type="submit"]:active {
 
 /* ── Server status badge ── */
 .server-status-badge {
-    border-radius: 100px !important;
-    backdrop-filter: blur(12px) !important;
+    border-radius: 9999px !important;
+    backdrop-filter: blur(16px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
     font-size: 11px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.04em;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-}
-/* This padding used to be unconditional and !important, which — because it
-   sits later in the file than the mobile dot-shrink rule (max-width: 900px,
-   also !important) — silently won every tie on mobile too, stretching the
-   badge back out to a 12px-padded pill and clipping/misshaping the
-   text-hidden dot instead of the clean small circle the mobile rule
-   intended. Scoping it to desktop widths lets the mobile rule's own
-   padding stand. */
-@media (min-width: 901px) {
-    .server-status-badge {
-        padding: 5px 12px !important;
-    }
+    letter-spacing: 0.03em;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+    padding: 5px 12px;
 }
 .server-status-badge.online {
     background: rgba(var(--success-rgb), 0.12) !important;
