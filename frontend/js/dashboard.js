@@ -1,8 +1,9 @@
+console.log("DASHBOARD JS TOP: search=" + window.location.search + " href=" + window.location.href + " token=" + localStorage.getItem("token"));
 // Check for test mock auth in test environments
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get("test_mock_auth") === "true") {
-    if (!localStorage.getItem("token")) localStorage.setItem("token", "mock_jwt_token_123");
-    if (!localStorage.getItem("userId")) localStorage.setItem("userId", "101");
+    localStorage.setItem("token", "mock_jwt_token_123");
+    localStorage.setItem("userId", "101");
     if (!localStorage.getItem("userName")) localStorage.setItem("userName", "Alex Smith");
     if (!localStorage.getItem("userCurrency")) localStorage.setItem("userCurrency", "USD");
 }
