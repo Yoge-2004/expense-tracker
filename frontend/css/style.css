@@ -2571,15 +2571,15 @@ button[type="submit"]:active {
     position: relative;
     height: 100%;
     min-height: 100vh;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    padding: clamp(24px, 3.5vh, 44px) clamp(32px, 3.5vw, 48px) clamp(24px, 3.5vh, 44px) clamp(40px, 5vw, 80px);
+    justify-content: center;
+    padding: clamp(20px, 3vh, 36px) clamp(32px, 3.5vw, 48px) clamp(20px, 3vh, 36px) clamp(40px, 5vw, 80px);
     background: transparent;
     box-sizing: border-box;
 }
@@ -3990,15 +3990,15 @@ button[type="submit"]:active {
 .auth-hero {
     background: transparent !important;
     position: relative;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    padding: clamp(24px, 3.5vh, 44px) clamp(32px, 3.5vw, 48px) clamp(24px, 3.5vh, 44px) clamp(40px, 5vw, 80px) !important;
+    justify-content: center !important;
+    padding: clamp(20px, 3vh, 36px) clamp(32px, 3.5vw, 48px) clamp(20px, 3vh, 36px) clamp(40px, 5vw, 80px) !important;
     min-height: 100vh !important;
     height: 100% !important;
     box-sizing: border-box !important;

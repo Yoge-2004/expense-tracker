@@ -267,11 +267,29 @@
         }, { passive: true });
     }
 
+    /* -------------------------------------------------------------------
+       6. Auth split-screen wheel forwarding — locks the hero panel so it
+          never scrolls separately, and smoothly forwards wheel scrolling
+          to the active form section.
+       ------------------------------------------------------------------- */
+    function initAuthWheelSync() {
+        const hero = document.querySelector('.auth-hero');
+        const formSection = document.querySelector('.auth-form-section');
+        if (!hero || !formSection) return;
+
+        hero.addEventListener('wheel', (e) => {
+            if (window.innerWidth > 900) {
+                formSection.scrollTop += e.deltaY;
+            }
+        }, { passive: true });
+    }
+
     ready(function () {
         injectAmbientLayers();
         initScrollReveal();
         initTouchFeedback();
         initPointerInteractions();
         initScrollParallax();
+        initAuthWheelSync();
     });
 })();
