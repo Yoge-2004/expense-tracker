@@ -224,7 +224,7 @@
             });
         });
 
-        document.querySelectorAll('.metric-card, .float-card, .card').forEach((el) => {
+        document.querySelectorAll('.metric-card, .float-card, .perk-item, .card').forEach((el) => {
             el.classList.add('tilt-target', 'glow-follow');
             el.addEventListener('mousemove', (e) => {
                 const rect = el.getBoundingClientRect();

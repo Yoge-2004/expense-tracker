@@ -2529,6 +2529,10 @@ button[type="submit"]:active {
     0%, 100% { transform: translateY(0px) rotate(0deg); }
     50% { transform: translateY(-12px) rotate(0.5deg); }
 }
+@keyframes cardFloat4 {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-16px) rotate(-0.5deg); }
+}
 
 @keyframes slideUpFade {
     from { opacity: 0; transform: translateY(24px); }
@@ -5224,9 +5228,10 @@ button[type="submit"]:active {
     50% { transform: translateY(-3px); }
 }
 
-.float-card-1 { animation: cardFloat1 5s ease-in-out infinite !important; }
-.float-card-2 { animation: cardFloat2 6s ease-in-out infinite -1.5s !important; }
-.float-card-3 { animation: cardFloat3 4.5s ease-in-out infinite -3s !important; }
+.float-card-1, .perk-item:nth-child(1) { animation: cardFloat1 5s ease-in-out infinite !important; }
+.float-card-2, .perk-item:nth-child(2) { animation: cardFloat2 6s ease-in-out infinite -1.5s !important; }
+.float-card-3, .perk-item:nth-child(3) { animation: cardFloat3 4.5s ease-in-out infinite -3s !important; }
+.float-card-4, .perk-item:nth-child(4) { animation: cardFloat4 5.5s ease-in-out infinite -4.2s !important; }
 
 /* 35. Tooltip Elastic Pop */
 @keyframes tooltipElasticPop {
