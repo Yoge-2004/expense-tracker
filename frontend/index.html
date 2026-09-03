@@ -77,7 +77,7 @@
                 </div>
 
                 <h1 class="hero-headline">Your money,<br><span class="hero-headline-accent">fully in control.</span></h1>
-                <p class="hero-subline">Get clarity on every rupee you spend. Smart budgets, recurring trackers, and beautiful analytics — all in one place.</p>
+                <p class="hero-subline" id="heroSubline">Get clarity on every <span id="heroCurrencyWord">rupee</span> you spend. Smart budgets, recurring trackers, and beautiful analytics — all in one place.</p>
 
                 <!-- Floating stat cards -->
                 <div class="hero-float-cards">
@@ -86,7 +86,7 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C79A3E" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                         </div>
                         <div>
-                            <div class="float-card-value">₹24,810</div>
+                            <div class="float-card-value" id="heroSavedAmount">₹24,810</div>
                             <div class="float-card-label">Saved this month</div>
                         </div>
                     </div>
@@ -208,6 +208,91 @@
     <script src="js/auth.js?v=2.3"></script>
     <script src="js/password-toggle.js?v=2.3"></script>
     <script src="js/motion.js?v=1.0"></script>
+    <script>
+        // Adapt 24,810 card and subline to client location currency
+        (function() {
+            const SAVINGS_TABLE = {
+                INR: { amount: 24810, word: "rupee" },
+                USD: { amount: 2480, word: "dollar" },
+                EUR: { amount: 2350, word: "euro" },
+                GBP: { amount: 1980, word: "pound" },
+                JPY: { amount: 320000, word: "yen" },
+                CAD: { amount: 3100, word: "dollar" },
+                AUD: { amount: 3400, word: "dollar" },
+                CHF: { amount: 2200, word: "franc" },
+                AED: { amount: 8800, word: "dirham" },
+                SGD: { amount: 3150, word: "dollar" },
+                CNY: { amount: 16800, word: "yuan" },
+                BRL: { amount: 12400, word: "real" },
+                KRW: { amount: 3100000, word: "won" },
+                MXN: { amount: 42000, word: "peso" },
+                SEK: { amount: 24500, word: "krona" },
+                NOK: { amount: 25200, word: "krone" },
+                DKK: { amount: 16400, word: "krone" },
+                PLN: { amount: 9600, word: "złoty" },
+                ZAR: { amount: 42000, word: "rand" },
+                RUB: { amount: 215000, word: "ruble" },
+                IDR: { amount: 36000000, word: "rupiah" },
+                VND: { amount: 58000000, word: "dong" },
+                THB: { amount: 84000, word: "baht" },
+                PHP: { amount: 135000, word: "peso" },
+                MYR: { amount: 10800, word: "ringgit" },
+                NZD: { amount: 3800, word: "dollar" },
+                SAR: { amount: 9200, word: "riyal" },
+                TRY: { amount: 78000, word: "lira" },
+                PKR: { amount: 680000, word: "rupee" },
+                BDT: { amount: 285000, word: "taka" },
+                NGN: { amount: 3400000, word: "naira" }
+            };
+
+            function applyHeroCurrency(code) {
+                if (!code) return;
+                const amtEl = document.getElementById("heroSavedAmount");
+                const wordEl = document.getElementById("heroCurrencyWord");
+                if (!amtEl) return;
+
+                const cur = code.toUpperCase();
+                const info = (typeof getCurrencyInfo === "function" && getCurrencyInfo(cur)) || { code: cur, locale: "en-US", symbol: "$" };
+                const entry = SAVINGS_TABLE[cur];
+                const amt = entry ? entry.amount : 2480;
+                const word = entry ? entry.word : "penny";
+
+                try {
+                    amtEl.textContent = new Intl.NumberFormat(info.locale || "en-US", {
+                        style: "currency",
+                        currency: info.code,
+                        maximumFractionDigits: 0
+                    }).format(amt);
+                } catch (e) {
+                    amtEl.textContent = (info.symbol || "$") + amt.toLocaleString();
+                }
+
+                if (wordEl) {
+                    wordEl.textContent = word;
+                }
+            }
+
+            let detected = null;
+            const stored = localStorage.getItem("userCurrency");
+            if (stored && stored !== "None") {
+                detected = stored;
+            } else if (typeof detectLikelyCurrencyCode === "function") {
+                detected = detectLikelyCurrencyCode();
+            }
+
+            if (detected) {
+                applyHeroCurrency(detected);
+            }
+
+            if (!stored && typeof detectClientLocationCurrency === "function") {
+                detectClientLocationCurrency().then(locCode => {
+                    if (locCode && locCode !== detected) {
+                        applyHeroCurrency(locCode);
+                    }
+                }).catch(() => {});
+            }
+        })();
+    </script>
 </body>
 
 </html>
