@@ -186,20 +186,13 @@ body {
     box-shadow: 0 10px 30px -5px rgba(180, 140, 60, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.15) !important;
 }
 
-[data-theme="light"] .float-card {
-    background: rgba(255, 255, 255, 0.86) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(199, 154, 62, 0.28) !important;
-    box-shadow: 0 12px 32px -8px rgba(180, 140, 60, 0.20) !important;
-    color: var(--text-main) !important;
-}
-
+[data-theme="light"] .float-card,
 [data-theme="light"] .perk-item {
-    background: rgba(255, 255, 255, 0.84) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.76) !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+    border: 1px solid rgba(199, 154, 62, 0.24) !important;
+    box-shadow: 0 12px 32px -8px rgba(180, 140, 60, 0.18) !important;
     color: var(--text-main) !important;
 }
 
@@ -2795,23 +2788,20 @@ button[type="submit"]:active {
     margin-bottom: 20px;
 }
 
-.float-card {
+.float-card, .perk-item {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 14px 18px;
-    background: rgba(23, 26, 20,0.85);
-    border: 1px solid var(--border);
+    background: rgba(23, 26, 20, 0.52);
+    border: 1px solid rgba(236, 231, 216, 0.12);
     border-radius: 16px;
-    /* Was a hardcoded blur(16px) — active (unlike most backdrop-filter uses
-       in this file, which resolve to the inert --glass:none) and sitting on
-       top of the continuously-animated ambient orbs, meaning the browser had
-       to resample the blur every frame those orbs moved behind it. --glass
-       is already the site's established convention for "no backdrop blur"
-       everywhere else; this was an inconsistent leftover exception. */
-    backdrop-filter: var(--glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.38);
     width: fit-content;
     min-width: 220px;
+    box-sizing: border-box;
 }
 
 .float-card-1 { animation: cardFloat1 5s ease-in-out infinite; animation-delay: 0s; }
@@ -2890,14 +2880,16 @@ button[type="submit"]:active {
 
 .perk-item {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
-    background: rgba(23, 26, 20,0.6);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    backdrop-filter: var(--glass); /* see .float-card comment — same fix, same reason */
-    transition: border-color 0.3s;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: rgba(23, 26, 20, 0.52);
+    border: 1px solid rgba(236, 231, 216, 0.12);
+    border-radius: 16px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.38);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s, border-color 0.3s;
 }
 
 .perk-item:hover {
@@ -3620,10 +3612,10 @@ button[type="submit"]:active {
     }
 
     .perk-item {
-        padding: 12px 14px !important;
+        padding: 10px 14px !important;
         border-radius: 14px !important;
-        background: var(--card-bg) !important;
-        border: 1px solid var(--border) !important;
+        background: rgba(23, 26, 20, 0.52) !important;
+        border: 1px solid rgba(236, 231, 216, 0.12) !important;
         display: flex !important;
         align-items: center !important;
         gap: 12px !important;
@@ -4116,17 +4108,19 @@ button[type="submit"]:active {
 }
 
 /* ── Floating card orbits on auth hero ── */
-.float-card {
+.float-card, .perk-item {
+    background: rgba(23, 26, 20, 0.52) !important;
     border-radius: 18px !important;
     backdrop-filter: blur(20px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.4) !important;
-    transition: transform 0.3s var(--ease), box-shadow 0.3s;
+    border: 1px solid rgba(236, 231, 216, 0.12) !important;
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.38) !important;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s, border-color 0.3s;
 }
-.float-card:hover {
+.float-card:hover, .perk-item:hover {
     transform: translateY(-6px) !important;
     box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.5) !important;
+    border-color: rgba(199, 154, 62, 0.35) !important;
 }
 
 /* ── Insight card chart area ── */
@@ -4595,10 +4589,50 @@ button[type="submit"]:active {
     }
 }
 
-/* ── Auth pages: collapse hero on very small screens ── */
+/* ── Auth pages: compact layout on very small screens (<= 400px) ── */
 @media (max-width: 400px) {
     .hero-float-cards {
-        display: none !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin-bottom: 14px !important;
+        padding: 4px 0 !important;
+    }
+
+    .hero-float-cards .float-card:nth-child(3):last-child {
+        grid-column: 1 / -1 !important;
+        max-width: 220px !important;
+        margin: 0 auto !important;
+    }
+
+    .float-card, .perk-item {
+        padding: 8px 10px !important;
+        min-width: 0 !important;
+        gap: 8px !important;
+        border-radius: 12px !important;
+    }
+
+    .float-card-icon, .perk-icon {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        border-radius: 8px !important;
+    }
+
+    .float-card-icon svg, .perk-icon svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .float-card-value, .perk-title {
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+    }
+
+    .float-card-label, .perk-sub {
+        font-size: 9px !important;
+        line-height: 1.2 !important;
     }
 
     .hero-features {
@@ -4606,7 +4640,7 @@ button[type="submit"]:active {
     }
 
     .auth-hero {
-        padding: 32px 12px 14px !important;
+        padding: 24px 12px 14px !important;
     }
 
     .hero-headline {
