@@ -2652,11 +2652,11 @@ button[type="submit"]:active {
 
 /* ── Left Hero Panel ── */
 .auth-hero {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    min-height: 100vh;
-    align-self: start;
+    position: relative;
+    top: auto;
+    height: auto;
+    min-height: 0;
+    align-self: stretch;
     overflow: hidden !important;
     overscroll-behavior: none !important;
     scrollbar-width: none !important;
@@ -3580,11 +3580,15 @@ button[type="submit"]:active {
     }
 
     .auth-hero {
+        position: relative !important;
+        top: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        padding: 36px 18px 12px !important;
-        min-height: auto !important;
+        padding: 24px 16px 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
         border-bottom: 1px solid var(--border);
@@ -3599,6 +3603,8 @@ button[type="submit"]:active {
         flex-direction: column !important;
         align-items: center !important;
         overflow: visible !important;
+        height: auto !important;
+        min-height: 0 !important;
     }
 
     .hero-brand {
@@ -3833,7 +3839,13 @@ button[type="submit"]:active {
     }
     .hero-headline { font-size: 22px !important; }
     .auth-title { font-size: 22px !important; }
-    .auth-hero { padding: 26px 14px 8px !important; }
+    .auth-hero {
+        position: relative !important;
+        top: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 20px 14px 6px !important;
+    }
     .auth-form-section { padding: 12px 12px 30px !important; }
 
     .auth-card {
@@ -4790,7 +4802,11 @@ button[type="submit"]:active {
     }
 
     .auth-hero {
-        padding: 18px 10px 6px !important;
+        position: relative !important;
+        top: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 14px 10px 4px !important;
     }
 
     .auth-form-section {
@@ -4840,7 +4856,11 @@ button[type="submit"]:active {
     }
 
     .auth-hero {
-        padding-bottom: 10px !important;
+        position: relative !important;
+        top: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding-bottom: 8px !important;
     }
 
     .auth-form-section {
