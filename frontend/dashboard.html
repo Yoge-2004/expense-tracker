@@ -116,7 +116,7 @@
                     <span class="status-badge badge-success" id="incomeCountBadge">0 Inflows</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="totalIncomeAmount" style="color:#10B981;">$0.00</span>
+                    <span class="metric-value" id="totalIncomeAmount" style="color:#10B981;">—</span>
                 </div>
                 <div class="metric-footer">
                     <span class="text-muted" id="recurringIncomeText">0 recurring streams</span>
@@ -130,7 +130,7 @@
                     <span class="status-badge badge-neutral" id="budgetUsageBadge">— Used</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="totalAmount">₹0.00</span>
+                    <span class="metric-value" id="totalAmount">—</span>
                 </div>
                 <div class="metric-footer">
                     <span class="text-muted" id="expenseCountText">0 transactions recorded</span>
@@ -144,10 +144,10 @@
                     <span class="status-badge badge-primary" id="netFlowBadge">Balanced</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="netCashFlowAmount">$0.00</span>
+                    <span class="metric-value" id="netCashFlowAmount">—</span>
                 </div>
                 <div class="metric-footer">
-                    <span class="text-muted" id="burnRateBadge">Burn: <span id="dailyBurnRate">₹0.00 / day</span></span>
+                    <span class="text-muted" id="burnRateBadge">Burn: <span id="dailyBurnRate">— / day</span></span>
                 </div>
             </div>
 
@@ -167,7 +167,7 @@
                     <span class="metric-value" id="savingsRateValue" style="color:#F59E0B;">0.0%</span>
                 </div>
                 <div class="metric-footer">
-                    <span class="text-muted" id="totalSavedProgress">Saved: $0.00</span>
+                    <span class="text-muted" id="totalSavedProgress">Saved: —</span>
                 </div>
             </div>
 
@@ -178,7 +178,7 @@
                     <span class="status-badge badge-neutral" id="subsCountBadge">0 Active</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="subsMonthlyTotal">₹0.00 / mo</span>
+                    <span class="metric-value" id="subsMonthlyTotal">— / mo</span>
                 </div>
                 <div class="metric-footer">
                     <a href="#" id="manageSubsLink" class="link-action">Manage Subscriptions &rarr;</a>
@@ -295,7 +295,10 @@
                 </button>
             </div>
             <div id="budgetList" class="budget-grid-matrix">
-                <p class="text-muted" style="font-size:13px;">Loading budgets...</p>
+                <div class="empty-state-compact" style="text-align:center; padding:24px 12px; color:var(--text-muted); width:100%;">
+                    <p style="font-size:13.5px; font-weight:600; margin:0 0 4px; color:var(--text-main);">No budget limits configured</p>
+                    <span style="font-size:12px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
+                </div>
             </div>
         </section>
 
@@ -315,7 +318,10 @@
                 </button>
             </div>
             <div id="savingsGoalsList" class="savings-grid-matrix" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
-                <p class="text-muted" style="font-size:13px;">Loading savings goals...</p>
+                <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02);">
+                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No savings goals configured yet</p>
+                    <span style="font-size:12.5px;">Click <strong>+ New Goal</strong> to set targets for emergency reserves, investments, or travel.</span>
+                </div>
             </div>
         </section>
 
@@ -441,7 +447,10 @@
                 </div>
             </div>
             <div class="scroll-area" id="incomeList">
-                <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading incomes...</p>
+                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No income records logged yet</p>
+                    <span style="font-size:12.5px;">Click <strong>+ Record Income</strong> to track salary, investments, or client revenue.</span>
+                </div>
             </div>
         </section>
     </main>
@@ -460,7 +469,7 @@
                     <input type="text" id="desc" required placeholder="e.g. AWS Cloud Services">
                 </div>
                 <div class="form-group">
-                    <label>Amount (₹)</label>
+                    <label id="expenseAmountLabel">Amount</label>
                     <input type="number" id="amount" required placeholder="0.00" step="0.01">
                 </div>
 

@@ -64,6 +64,8 @@ function closeModal(modalEl) {
 let allExpenses = [];
 let allCategories = [];
 let userOnlyCategories = []; // subset of allCategories actually deletable (excludes global/seeded ones)
+let allIncomes = [];
+let allSavingsGoals = [];
 let pieChart = null;
 let trendChart = null;
 let budgetVsActualChart = null;
@@ -109,6 +111,35 @@ const elements = {
     confirmDeleteAccountBtn: document.getElementById("confirmDeleteAccountBtn"),
     cancelDeleteAccountBtn: document.getElementById("cancelDeleteAccountBtn")
 };
+
+// Immediate synchronization of metric cards with active currency
+function initCurrencyPlaceholders() {
+    const zeroCurr = formatCurrency(0);
+    if (elements.totalAmount && (elements.totalAmount.textContent.trim() === "—" || elements.totalAmount.textContent.includes("₹") || elements.totalAmount.textContent.includes("$"))) {
+        elements.totalAmount.textContent = zeroCurr;
+    }
+    const totalIncomeEl = document.getElementById("totalIncomeAmount");
+    if (totalIncomeEl && (totalIncomeEl.textContent.trim() === "—" || totalIncomeEl.textContent.includes("$"))) {
+        totalIncomeEl.textContent = zeroCurr;
+    }
+    const netCashFlowEl = document.getElementById("netCashFlowAmount");
+    if (netCashFlowEl && (netCashFlowEl.textContent.trim() === "—" || netCashFlowEl.textContent.includes("$"))) {
+        netCashFlowEl.textContent = zeroCurr;
+    }
+    const dailyBurnEl = document.getElementById("dailyBurnRate");
+    if (dailyBurnEl && (dailyBurnEl.textContent.includes("—") || dailyBurnEl.textContent.includes("₹"))) {
+        dailyBurnEl.textContent = `${zeroCurr} / day`;
+    }
+    const totalSavedProgress = document.getElementById("totalSavedProgress");
+    if (totalSavedProgress && (totalSavedProgress.textContent.includes("—") || totalSavedProgress.textContent.includes("$"))) {
+        totalSavedProgress.textContent = `Saved: ${zeroCurr}`;
+    }
+    const subsTotal = document.getElementById("subsMonthlyTotal");
+    if (subsTotal && (subsTotal.textContent.includes("—") || subsTotal.textContent.includes("₹"))) {
+        subsTotal.textContent = `${zeroCurr} / mo`;
+    }
+}
+initCurrencyPlaceholders();
 
 // ── Category palette (consistent colors per category name) — muted ink/stamp tones ──
 const CATEGORY_PALETTE = [
@@ -204,7 +235,11 @@ async function loadDashboard(skipCache = false) {
     const renderedFromCache = !!cached;
 
     if (cached) {
+        allExpenses = cached.expenses || [];
+        allCategories = cached.categories || [];
         renderDashboardData(cached.expenses, cached.categories);
+        renderIncomes(allIncomes || []);
+        renderSavingsGoals(allSavingsGoals || []);
     } else {
         showSkeletonLoading();
     }
@@ -220,6 +255,9 @@ async function loadDashboard(skipCache = false) {
             apiRequest(`/savings/goals/user/${userId}`).catch(err => { console.warn("Savings fetch error:", err); return []; })
         ]);
 
+        allIncomes = Array.isArray(incomes) ? incomes : [];
+        allSavingsGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
+
         // Merge Categories safely
         const safeGlobal = Array.isArray(globalCats) ? globalCats : [];
         const safeUser = Array.isArray(userCats) ? userCats : [];
@@ -227,9 +265,9 @@ async function loadDashboard(skipCache = false) {
         userOnlyCategories = safeUser;
 
         renderDashboardData(expenses, categories);
-        renderIncomes(incomes || []);
-        renderSavingsGoals(savingsGoals || []);
-        updateCashFlowMetrics(expenses || [], incomes || [], savingsGoals || []);
+        renderIncomes(allIncomes);
+        renderSavingsGoals(allSavingsGoals);
+        updateCashFlowMetrics(expenses || [], allIncomes, allSavingsGoals);
         saveExpenseCache(expenses, categories);
 
     } catch (error) {
@@ -245,6 +283,9 @@ async function loadDashboard(skipCache = false) {
             showToast("Couldn't load your data. Check your connection and try again.", "error");
             renderDashboardData([], []);
         }
+        renderIncomes(allIncomes || []);
+        renderSavingsGoals(allSavingsGoals || []);
+        loadBudgets();
     }
 }
 
@@ -323,7 +364,6 @@ async function updateProMetrics(expenses) {
     }
 }
 
-let cachedBudgets = [];
 
 /**
  * Computes and renders real-time financial insights into the Smart Intelligence panel.
@@ -469,12 +509,19 @@ document.addEventListener("keydown", (e) => {
 
 // --- 2. BUDGET LOGIC ---
 async function loadBudgets() {
+    const usageBadge = document.getElementById("budgetUsageBadge");
     try {
         const budgets = await apiRequest(`/expenses/budget/status/user/${userId}`);
-        const usageBadge = document.getElementById("budgetUsageBadge");
+        cachedBudgets = Array.isArray(budgets) ? budgets : [];
 
-        if (!budgets || budgets.length === 0) {
-            elements.budgetList.innerHTML = `<p class="text-muted" style="font-size:13px; text-align:center;">No budgets set.</p>`;
+        if (!cachedBudgets || cachedBudgets.length === 0) {
+            if (elements.budgetList) {
+                elements.budgetList.innerHTML = `
+                    <div class="empty-state-compact" style="text-align:center; padding:24px 12px; color:var(--text-muted); width:100%;">
+                        <p style="font-size:13.5px; font-weight:600; margin:0 0 4px; color:var(--text-main);">No budget limits configured</p>
+                        <span style="font-size:12px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
+                    </div>`;
+            }
             if (usageBadge) {
                 usageBadge.textContent = "No Budget Set";
                 usageBadge.className = "status-badge badge-neutral";
@@ -483,10 +530,9 @@ async function loadBudgets() {
             return;
         }
 
-        // Overall usage across every budgeted category — only earns a color
-        // when it's actually worth flagging, same thresholds as each row below.
-        const totalLimit = budgets.reduce((acc, b) => acc + Number(b.limit || 0), 0);
-        const totalSpent = budgets.reduce((acc, b) => acc + Number(b.spent || 0), 0);
+        // Overall usage across every budgeted category
+        const totalLimit = cachedBudgets.reduce((acc, b) => acc + Number(b.limit || 0), 0);
+        const totalSpent = cachedBudgets.reduce((acc, b) => acc + Number(b.spent || 0), 0);
         const overallPct = totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0;
 
         if (usageBadge) {
@@ -495,54 +541,65 @@ async function loadBudgets() {
                 (overallPct > 100 ? "badge-danger" : overallPct > 80 ? "badge-warning" : "badge-neutral");
         }
 
-        elements.budgetList.innerHTML = budgets.map(b => {
-            const pct = Math.min(b.percentage || 0, 100);
-            let barColor;
-            if (b.percentage > 100) { barColor = 'var(--danger)'; }
-            else if (b.percentage > 80) { barColor = 'var(--warning)'; }
-            else { barColor = 'var(--primary)'; }
+        if (elements.budgetList) {
+            elements.budgetList.innerHTML = cachedBudgets.map(b => {
+                const pct = Math.min(b.percentage || 0, 100);
+                let barColor;
+                if (b.percentage > 100) { barColor = 'var(--danger)'; }
+                else if (b.percentage > 80) { barColor = 'var(--warning)'; }
+                else { barColor = 'var(--primary)'; }
 
-            const catColor = getCategoryColor(b.categoryName);
-            const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
-            // Store current values for the edit pre-fill
-            const startStr = b.startDate || '';
-            const endStr   = b.endDate   || '';
-            return `
-            <div class="budget-item">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px;">
-                    <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
-                        <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
-                        <div style="min-width:0; flex:1;">
-                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                <span style="font-size:14px; font-weight:700; color:var(--text-main); line-height:1.2;">${b.categoryName}</span>
-                                <span class="status-badge badge-neutral" style="font-size:9px; padding:2px 7px; font-weight:700; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase;">${periodLabel}</span>
-                            </div>
-                            <div style="font-size:12px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; line-height:1.3;">
-                                ${formatCurrency(b.spent)} <span style="opacity:0.7;">of</span> ${formatCurrency(b.limit)}
+                const catColor = getCategoryColor(b.categoryName);
+                const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
+                const startStr = b.startDate || '';
+                const endStr   = b.endDate   || '';
+                return `
+                <div class="budget-item">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+                            <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
+                            <div style="min-width:0; flex:1;">
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    <span style="font-size:14px; font-weight:700; color:var(--text-main); line-height:1.2;">${b.categoryName}</span>
+                                    <span class="status-badge badge-neutral" style="font-size:9px; padding:2px 7px; font-weight:700; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase;">${periodLabel}</span>
+                                </div>
+                                <div style="font-size:12px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; line-height:1.3;">
+                                    ${formatCurrency(b.spent)} <span style="opacity:0.7;">of</span> ${formatCurrency(b.limit)}
+                                </div>
                             </div>
                         </div>
+                        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                            <span style="font-size:13px; font-weight:800; color:${barColor}; margin-right:2px;">${(b.percentage || 0).toFixed(0)}%</span>
+                            <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}')" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0}, event)" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                        <span style="font-size:13px; font-weight:800; color:${barColor}; margin-right:2px;">${(b.percentage || 0).toFixed(0)}%</span>
-                        <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}')" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0}, event)" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                    <div class="budget-bar-track">
+                        <div class="budget-bar-fill" style="width:${pct}%; background:${barColor};"></div>
                     </div>
-                </div>
-                <div class="budget-bar-track">
-                    <div class="budget-bar-fill" style="width:${pct}%; background:${barColor};"></div>
-                </div>
-            </div>`;
-        }).join("");
+                </div>`;
+            }).join("");
+        }
 
-        cachedBudgets = budgets;
-        renderBudgetVsActualChart(budgets);
+        renderBudgetVsActualChart(cachedBudgets);
         renderFinancialInsights(allExpenses);
     } catch (e) {
         console.error("Budget Error", e);
+        if (elements.budgetList) {
+            elements.budgetList.innerHTML = `
+                <div class="empty-state-compact" style="text-align:center; padding:24px 12px; color:var(--text-muted); width:100%;">
+                    <p style="font-size:13.5px; font-weight:600; margin:0 0 4px; color:var(--text-main);">No budget limits configured</p>
+                    <span style="font-size:12px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
+                </div>`;
+        }
+        if (usageBadge) {
+            usageBadge.textContent = "No Budget Set";
+            usageBadge.className = "status-badge badge-neutral";
+        }
     }
 }
 
@@ -1647,9 +1704,7 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
             if (typeof setCurrencySymbol === "function") setCurrencySymbol(newCurr);
             apiRequest(`/users/${userId}/currency`, { method: "PUT", body: JSON.stringify({ currency: newCurr }) }).catch(err => console.warn("Failed to persist currency preference:", err));
             showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
-            updateModalLabels();
-            applyFilters();
-            updateProMetrics(allExpenses);
+            refreshAllCurrencyDisplays();
         });
     });
 
@@ -1661,14 +1716,38 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
 function updateModalLabels() {
     const sym = typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "$";
     document.querySelectorAll("label").forEach(lbl => {
-        if (lbl.textContent.includes("Amount")) {
+        const text = lbl.textContent.trim();
+        if (text.startsWith("Amount") || text === "Amount" || text.startsWith("Amount (")) {
             lbl.textContent = `Amount (${sym})`;
-        } else if (lbl.textContent.includes("Monthly Limit")) {
+        } else if (text.includes("Monthly Limit")) {
             lbl.textContent = `Monthly Limit Amount (${sym})`;
+        } else if (text.includes("Target Amount")) {
+            lbl.textContent = `Target Amount (${sym})`;
+        } else if (text.includes("Initial Saved Amount")) {
+            lbl.textContent = `Initial Saved Amount (${sym})`;
+        } else if (text.includes("Contribution Amount")) {
+            lbl.textContent = `Contribution Amount (${sym})`;
         }
     });
 }
 updateModalLabels();
+
+function refreshAllCurrencyDisplays() {
+    updateModalLabels();
+    initCurrencyPlaceholders();
+    if (Array.isArray(allExpenses)) {
+        updateProMetrics(allExpenses);
+        applyFilters();
+    }
+    updateCashFlowMetrics(allExpenses || [], allIncomes || [], allSavingsGoals || []);
+    if (Array.isArray(allIncomes)) {
+        renderIncomes(allIncomes);
+    }
+    if (Array.isArray(allSavingsGoals)) {
+        renderSavingsGoals(allSavingsGoals);
+    }
+    loadBudgets();
+}
 
 function toggleProfileMenu(forceState) {
     const isOpen = typeof forceState === "boolean" ? forceState : !elements.profileMenu.classList.contains("active");
@@ -1759,12 +1838,16 @@ if (sendMonthlyReportBtn) {
                 localStorage.setItem("userName", profile.name);
             }
             if (profile.currency) {
+                const prevCurr = localStorage.getItem("userCurrency");
                 localStorage.setItem("userCurrency", profile.currency);
                 if (typeof setCurrencySymbol === "function") {
                     setCurrencySymbol(profile.currency);
                 }
                 syncCurrencyDropdown(profile.currency);
                 updateModalLabels();
+                if (prevCurr !== profile.currency || !elements.totalAmount || elements.totalAmount.textContent.includes("—")) {
+                    refreshAllCurrencyDisplays();
+                }
             }
             // Inject email under the user name in the profile menu
             const profileMenu = elements.profileMenu;
@@ -2189,10 +2272,15 @@ function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
 }
 
 function renderIncomes(incomes) {
+    allIncomes = Array.isArray(incomes) ? incomes : [];
     const listEl = document.getElementById("incomeList");
     if (!listEl) return;
-    if (!incomes || incomes.length === 0) {
-        listEl.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:24px 0;">No income records logged yet. Click <strong>+ Record Income</strong> to track earnings.</p>`;
+    if (!allIncomes || allIncomes.length === 0) {
+        listEl.innerHTML = `
+            <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No income records logged yet</p>
+                <span style="font-size:12.5px;">Click <strong>+ Record Income</strong> to track salary, investments, or client revenue.</span>
+            </div>`;
         return;
     }
 
@@ -2271,10 +2359,15 @@ function renderIncomes(incomes) {
 }
 
 function renderSavingsGoals(goals) {
+    allSavingsGoals = Array.isArray(goals) ? goals : [];
     const container = document.getElementById("savingsGoalsList");
     if (!container) return;
-    if (!goals || goals.length === 0) {
-        container.innerHTML = `<p class="text-muted" style="font-size:13px; grid-column:1/-1;">No savings goals configured yet. Click <strong>+ New Goal</strong> to set targets for emergency reserves, investments, or travel.</p>`;
+    if (!allSavingsGoals || allSavingsGoals.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02);">
+                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No savings goals configured yet</p>
+                <span style="font-size:12.5px;">Click <strong>+ New Goal</strong> to set targets for emergency reserves, investments, or travel.</span>
+            </div>`;
         return;
     }
 
