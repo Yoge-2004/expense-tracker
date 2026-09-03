@@ -99,20 +99,19 @@ public class ReportController {
     }
 
     /**
-     * Downloads the monthly financial report as a standalone HTML document.
+     * Exports an executive monthly financial statement as a standalone styled HTML page.
      *
      * @param userId user identifier
      * @param year calendar year (defaults to current year)
      * @param month calendar month (defaults to current month)
-     * @return response entity containing HTML report file attachment
+     * @return standalone HTML response
      */
     @Operation(
-        summary = "Get monthly financial report as HTML",
-        description = "Generates and serves the executive monthly financial summary template as a downloadable HTML document with visual progress bars and tables."
+        summary = "Export monthly statement to standalone HTML",
+        description = "Returns a beautifully styled executive monthly financial report formatted for printing or offline presentation."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "HTML report rendered successfully",
-            content = @Content(mediaType = MediaType.TEXT_HTML_VALUE, schema = @Schema(type = "string"))),
+        @ApiResponse(responseCode = "200", description = "HTML statement returned successfully"),
         @ApiResponse(responseCode = "400", description = "User not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -131,30 +130,29 @@ public class ReportController {
 
         String html = monthlyReportService.generateMonthlyReportHtml(userId, y, m);
         return ResponseEntity.ok()
-                .contentType(MediaType.TEXT_HTML)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"monthly-report-" + y + "-" + m + ".html\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"financial-report-" + y + "-" + m + ".html\"")
                 .body(html);
     }
 
     /**
-     * Triggers immediate dispatch of the executive monthly financial report email to the user.
+     * Manually triggers immediate dispatch of the monthly executive financial summary email.
      *
      * @param userId user identifier
      * @param year calendar year (defaults to current year)
      * @param month calendar month (defaults to current month)
-     * @return response entity with status confirmation
+     * @return operation status confirmation
      */
     @Operation(
-        summary = "Trigger sending monthly financial report email",
-        description = "Dispatches the executive monthly financial summary report directly to the user's registered email address."
+        summary = "Send monthly financial summary email",
+        description = "Immediately dispatches the comprehensive monthly financial statement HTML email to the authenticated user's address."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Email dispatch processed successfully"),
+        @ApiResponse(responseCode = "200", description = "Email triggered successfully"),
         @ApiResponse(responseCode = "400", description = "User not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PostMapping("/monthly/user/{userId}/send-email")
-    public ResponseEntity<Map<String, String>> sendMonthlyReportEmail(
+    public ResponseEntity<Map<String, Object>> sendMonthlyReportEmail(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
             @Parameter(description = "Calendar year (defaults to current year)", example = "2026")
@@ -171,14 +169,16 @@ public class ReportController {
     }
 
     /**
-     * Exports a comprehensive multi-sheet Microsoft Excel (.xlsx) financial workbook.
+     * Exports a comprehensive 4-sheet PowerBI-style financial intelligence dashboard workbook (.xlsx).
      *
      * @param userId user identifier
+     * @param currencyParam optional query parameter for display currency (e.g. INR, USD, EUR)
+     * @param currencyHeader optional request header for display currency
      * @return raw Excel workbook binary attachment
      */
     @Operation(
         summary = "Export comprehensive financial workbook to Excel (.xlsx)",
-        description = "Generates a 4-sheet financial spreadsheet containing Overview KPI metrics, Incomes, Expenses, and Savings Goals."
+        description = "Generates a 4-sheet financial spreadsheet containing Overview KPI metrics, Incomes, Expenses, and Savings Goals with dynamic currency resolution."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Excel workbook generated successfully"),
@@ -188,10 +188,14 @@ public class ReportController {
     @GetMapping({"/user/{userId}/export/excel", "/user/{userId}/export/xlsx"})
     public ResponseEntity<byte[]> exportFinancialStatementExcel(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
-            @PathVariable Long userId) {
+            @PathVariable Long userId,
+            @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
+            @RequestParam(value = "currency", required = false) String currencyParam,
+            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        byte[] bytes = exportService.exportFinancialStatementExcel(user);
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        byte[] bytes = exportService.exportFinancialStatementExcel(user, preferredCurrency);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-summary.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -199,14 +203,16 @@ public class ReportController {
     }
 
     /**
-     * Exports an executive financial statement report in PDF format.
+     * Exports an executive financial statement report in PDF format with dynamic currency resolution.
      *
      * @param userId user identifier
+     * @param currencyParam optional query parameter for display currency
+     * @param currencyHeader optional request header for display currency
      * @return raw PDF document binary attachment
      */
     @Operation(
         summary = "Export executive financial statement to PDF",
-        description = "Generates an executive PDF report containing Cash Flow KPIs, Incomes breakdown, Expenses breakdown, and Savings Goals status."
+        description = "Generates an executive PDF report containing Cash Flow KPIs, Incomes breakdown, Expenses breakdown, and Savings Goals status with dynamic currency resolution."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "PDF statement generated successfully"),
@@ -216,10 +222,14 @@ public class ReportController {
     @GetMapping("/user/{userId}/export/pdf")
     public ResponseEntity<byte[]> exportFinancialStatementPdf(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
-            @PathVariable Long userId) {
+            @PathVariable Long userId,
+            @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
+            @RequestParam(value = "currency", required = false) String currencyParam,
+            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        byte[] bytes = exportService.exportFinancialStatementPdf(user);
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        byte[] bytes = exportService.exportFinancialStatementPdf(user, preferredCurrency);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-statement.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)

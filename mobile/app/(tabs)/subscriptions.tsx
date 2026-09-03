@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -76,6 +77,10 @@ export default function SubscriptionsScreen() {
   const currSym = getCurrencySymbol(currency);
   const c = Colors[theme];
   const isLight = theme === 'light';
+
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 700;
+  const isDesktopOrTV = width >= 1024;
 
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -219,7 +224,13 @@ export default function SubscriptionsScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: Math.max(insets.top + 10, 48) },
+          {
+            paddingTop: Math.max(insets.top + 10, 48),
+            maxWidth: 1100,
+            width: '100%',
+            alignSelf: 'center',
+            paddingHorizontal: isDesktopOrTV ? 36 : (isLargeScreen ? 24 : 16),
+          },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}

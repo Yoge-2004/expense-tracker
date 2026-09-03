@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Financial Workspace | Expense Tracker Pro</title>
-    <link rel="stylesheet" href="css/style.css?v=2.2">
+    <link rel="stylesheet" href="css/style.css?v=2.4">
     <link rel="stylesheet" href="css/motion-extended.css?v=1.0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
@@ -97,7 +97,8 @@
                                 <div class="custom-select-options"></div>
                             </div>
                         </div>
-                        <a href="#" id="sendMonthlyReportBtn">📊 Email Monthly Report</a>
+                        <a href="#" id="viewMonthlyReportBtn">📊 View Monthly Report</a>
+                        <a href="#" id="sendMonthlyReportBtn">✉️ Email Monthly Report</a>
                         <a href="#" id="manageSubsBtn">🔄 Subscriptions</a>
                         <a href="#" id="logoutBtn">🚪 Logout</a>
                         <a href="#" id="deleteAccountBtn" style="color: #A23E32;">⚠️ Delete Account</a>
@@ -106,7 +107,7 @@
             </div>
         </header>
 
-        <!-- 4-COLUMN FINANCIAL METRICS MATRIX -->
+        <!-- FINANCIAL METRICS MATRIX (RESPONSIVE AUTO-FIT) -->
         <section class="grid-4-metrics animate-cascade delay-2">
             <!-- Metric 1: Total Inflow (Income) -->
             <div class="metric-card" style="border-left: 4px solid #10B981;">
@@ -170,7 +171,7 @@
                 </div>
             </div>
 
-            <!-- Metric 4: Recurring Subscriptions -->
+            <!-- Metric 5: Recurring Subscriptions -->
             <div class="metric-card">
                 <div class="metric-header">
                     <span class="card-label">Subscriptions</span>
@@ -235,10 +236,7 @@
                 </div>
             </div>
 
-            <!-- Bar Chart: Recurring vs One-Time Spend — answers "how much of
-                 my spending is actually locked in vs. discretionary," which
-                 neither the category pie nor the daily trend line can show,
-                 since both mix recurring and one-off spend together. -->
+            <!-- Bar Chart: Recurring vs One-Time Spend -->
             <div class="card insight-card">
                 <div class="section-heading">
                     <div>
@@ -252,11 +250,7 @@
                 </div>
             </div>
 
-            <!-- Bar Chart: Day-of-Week Spending Pattern — a behavioral
-                 insight none of the other charts surface: WHEN spending
-                 happens, not just how much or on what. Reveals patterns like
-                 weekend overspending that a category or time-trend view
-                 can't show on its own. -->
+            <!-- Bar Chart: Day-of-Week Spending Pattern -->
             <div class="card insight-card">
                 <div class="section-heading">
                     <div>
@@ -270,10 +264,7 @@
                 </div>
             </div>
 
-            <!-- Bar Chart: Budget vs Actual — the one genuinely actionable
-                 comparison in the whole dashboard: not just "here's what you
-                 spent" but "here's what you spent against what you meant to
-                 spend," per category, so overages are immediately visible. -->
+            <!-- Bar Chart: Budget vs Actual -->
             <div class="card insight-card" style="grid-column: 1 / -1;">
                 <div class="section-heading">
                     <div>
@@ -330,22 +321,23 @@
 
         <!-- TRANSACTIONS TABLE & QUICK FILTERS -->
         <section class="card recent-transactions animate-cascade delay-6">
-            <div class="list-header">
+            <div class="list-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div>
                     <span class="card-label">Audit Trail</span>
                     <h2 class="section-title">Transactions & Expenses</h2>
                 </div>
                 
-                <div class="list-header-actions">
+                <div class="list-header-actions" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                     <input type="file" id="importFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
                     <button id="importBtn" class="btn-icon btn-text-icon" title="Import transactions from .csv, .json, or .xlsx file" style="gap:6px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         Import <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.xlsx)</span>
                     </button>
                     <button id="exportExcelBtn" class="btn-icon btn-text-icon" title="Export PowerBI Executive Excel Dashboard" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);">📊 Excel</button>
-                    <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export CSV">CSV</button>
-                    <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export JSON">JSON</button>
-                    <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export PDF Report">PDF</button>
+                    <button id="exportReportPdfBtn" class="btn-icon btn-text-icon" title="Export Complete Executive Financial Statement (PDF)" style="font-weight:700; color:#3B82F6; border:1px solid rgba(59,130,246,0.4);">📑 Statement</button>
+                    <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export Expenses CSV">CSV</button>
+                    <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export Expenses JSON">JSON</button>
+                    <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export Expenses PDF Report">PDF</button>
                     <button id="toggleFiltersBtn" class="btn-icon" title="Show Advanced Filters" aria-label="Show advanced filters">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -423,18 +415,30 @@
 
         <!-- INCOMING CASH FLOW & REVENUE STREAMS -->
         <section class="card income-section animate-cascade delay-6" style="margin-top:24px;">
-            <div class="list-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div class="list-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                 <div>
                     <span class="card-label" style="color:#10B981; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Cash Inflow</span>
                     <h2 class="section-title" style="margin:4px 0 0; font-size:18px;">Income & Earnings Streams</h2>
                 </div>
-                <button id="addIncomeTableBtn" class="btn-primary btn-small" style="background:#10B981; border-color:#10B981; color:#fff;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span>Record Income</span>
-                </button>
+                
+                <div class="list-header-actions" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                    <input type="file" id="importIncomeFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
+                    <button id="importIncomeBtn" class="btn-icon btn-text-icon" title="Import Incomes from .csv, .json, or .xlsx file" style="gap:6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import Incomes <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.xlsx)</span>
+                    </button>
+                    <button id="exportIncomeExcelBtn" class="btn-icon btn-text-icon" title="Export Incomes PowerBI Excel Workbook" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);">📊 Excel</button>
+                    <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon" title="Export Incomes CSV">CSV</button>
+                    <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon" title="Export Incomes JSON">JSON</button>
+                    <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon" title="Export Incomes PDF Report">PDF</button>
+                    <button id="addIncomeTableBtn" class="btn-primary btn-small" style="background:#10B981; border-color:#10B981; color:#fff;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Record Income</span>
+                    </button>
+                </div>
             </div>
             <div class="scroll-area" id="incomeList">
                 <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading incomes...</p>
@@ -518,9 +522,14 @@
                 <button class="modal-close" id="closeBudgetModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="addBudgetForm">
+                <input type="hidden" id="budgetId">
                 <div class="form-group">
                     <label>Category</label>
                     <select id="budgetCategorySelect" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Monthly Limit</label>
+                    <input type="number" id="budgetLimit" required placeholder="0.00" step="0.01">
                 </div>
                 <div class="form-group">
                     <label>Period</label>
@@ -531,79 +540,85 @@
                         <option value="CUSTOM">Custom Date Range</option>
                     </select>
                 </div>
-                <div class="form-group" id="customBudgetDates" hidden>
-                    <div style="display:flex; gap:10px;">
+                <div class="form-group" id="customBudgetDates" style="display:none;">
+                    <div style="display:flex; gap:12px;">
                         <div style="flex:1;">
-                            <label>Start Date</label>
+                            <label style="font-size:12px;">Start Date</label>
                             <input type="date" id="budgetStartDate" class="dark-date">
                         </div>
                         <div style="flex:1;">
-                            <label>End Date</label>
+                            <label style="font-size:12px;">End Date</label>
                             <input type="date" id="budgetEndDate" class="dark-date">
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Limit Amount (₹)</label>
-                    <input type="number" id="budgetLimitAmount" required placeholder="e.g. 10000" step="0.01">
-                </div>
-                <button type="submit" class="btn-primary" style="margin-top:16px;">Set Budget Limit</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Save Budget</button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL DIALOG: MANAGED SUBSCRIPTIONS -->
+    <!-- MODAL DIALOG: SUBSCRIPTIONS OVERVIEW -->
     <div class="modal-overlay" id="subsModal">
-        <div class="modal modal-large">
+        <div class="modal modal-wide">
             <div class="modal-header">
-                <h3>Active Recurring Subscriptions</h3>
-                <button class="modal-close" id="closeSubsBtn" aria-label="Close">&times;</button>
+                <div>
+                    <h3 style="margin-bottom:2px;">Recurring Subscriptions</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Active subscriptions that renew automatically</p>
+                </div>
+                <button class="modal-close" id="closeSubsModalBtn" aria-label="Close">&times;</button>
             </div>
-            <div id="subsList" class="scroll-area-modal">
-                <p style="text-align:center; color:var(--text-muted);">Loading subscriptions...</p>
+            <div id="subsModalList" class="subs-modal-list">
+                <!-- Injected via renderSubscriptionsModal() -->
             </div>
         </div>
     </div>
 
-    <!-- MODAL DIALOG: EDIT SUBSCRIPTION -->
+    <!-- MODAL DIALOG: MANAGE CATEGORIES -->
     <div class="modal-overlay" id="manageCategoriesModal">
         <div class="modal">
             <div class="modal-header">
                 <h3>Manage Categories</h3>
                 <button class="modal-close" id="closeManageCategoriesModalBtn" aria-label="Close">&times;</button>
             </div>
-            <div id="manageCategoriesList" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto;">
-                <!-- populated by JS -->
+            <div class="manage-categories-body">
+                <p class="text-muted" style="font-size:12.5px; margin-bottom:14px;">
+                    Create custom categories or delete your personal ones. Built-in system categories are permanent.
+                </p>
+                <div id="categoriesList" class="categories-chip-list">
+                    <!-- Populated by renderManageCategories() in dashboard.js -->
+                </div>
             </div>
-            <p style="font-size:12px; color:var(--text-muted); margin-top:14px;">
-                Only categories that aren't used by any expense or subscription can be deleted.
-                Global categories (Food, Transport, Utilities, Entertainment, Health) can't be removed.
-            </p>
         </div>
     </div>
 
+    <!-- MODAL DIALOG: EDIT SUBSCRIPTION -->
     <div class="modal-overlay" id="editSubModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Edit Subscription</h3>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:28px; height:28px; border-radius:8px; background:rgba(var(--primary-rgb),0.15); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    </div>
+                    <h3 style="margin:0;">Edit Subscription</h3>
+                </div>
                 <button class="modal-close" id="closeEditSubModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="editSubForm">
                 <input type="hidden" id="editSubId">
                 <div class="form-group">
                     <label>Description</label>
-                    <input type="text" id="editSubDesc" required placeholder="Subscription name">
+                    <input type="text" id="editSubDesc" required placeholder="e.g. Netflix Premium">
                 </div>
                 <div class="form-group">
-                    <label>Amount (₹)</label>
-                    <input type="number" id="editSubAmount" required placeholder="0.00" step="0.01">
+                    <label>Amount</label>
+                    <input type="number" id="editSubAmount" required placeholder="0.00" step="0.01" min="0.01">
                 </div>
                 <div class="form-group">
-                    <label>Next Due Date</label>
-                    <input type="date" id="editSubNextDate" required class="dark-date">
+                    <label>Category</label>
+                    <select id="editSubCategory" required></select>
                 </div>
                 <div class="form-group">
-                    <label>Billing Frequency</label>
+                    <label>Billing Cadence</label>
                     <select id="editSubFrequency">
                         <option value="MONTHLY">Monthly</option>
                         <option value="WEEKLY">Weekly</option>
@@ -612,11 +627,16 @@
                         <option value="CUSTOM">Custom Interval (Days)</option>
                     </select>
                 </div>
-                <div class="form-group" id="editSubIntervalWrap" hidden>
+                <div class="form-group" id="editSubCustomIntervalWrap" hidden>
                     <label>Interval (Days)</label>
-                    <input type="number" id="editSubIntervalDays" min="1" value="1" placeholder="e.g. 14">
+                    <input type="number" id="editSubIntervalDays" min="1" value="30">
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top:16px;">Update Subscription</button>
+                <div class="form-group">
+                    <label>Next Billing Date</label>
+                    <input type="date" id="editSubNextDate" class="dark-date">
+                    <span style="font-size:11px; color:var(--text-muted); margin-top:3px; display:block;">Leave as-is to advance automatically based on cadence.</span>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Save Changes</button>
             </form>
         </div>
     </div>
@@ -665,38 +685,38 @@
     <div class="modal-overlay" id="savingsGoalModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="savingsGoalModalTitle">New Savings Goal</h3>
+                <h3 id="savingsGoalModalTitle">Create Savings Goal</h3>
                 <button class="modal-close" id="closeSavingsGoalModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="savingsGoalForm">
                 <input type="hidden" id="goalId">
                 <div class="form-group">
                     <label>Goal Name</label>
-                    <input type="text" id="goalName" required placeholder="e.g. Emergency Fund, Tesla Model Y">
+                    <input type="text" id="goalName" required placeholder="e.g. Emergency Fund, New Laptop">
                 </div>
                 <div class="form-group">
                     <label>Target Amount</label>
-                    <input type="number" id="goalTargetAmount" required placeholder="10000.00" step="0.01" min="0.01">
-                </div>
-                <div class="form-group" id="goalInitialAmountWrap">
-                    <label>Initial Balance (Saved so far)</label>
-                    <input type="number" id="goalCurrentAmount" placeholder="0.00" step="0.01" min="0" value="0">
+                    <input type="number" id="goalTargetAmount" required placeholder="0.00" step="0.01" min="0.01">
                 </div>
                 <div class="form-group">
-                    <label>Target Date</label>
-                    <input type="date" id="goalTargetDate" required class="dark-date">
+                    <label>Initial Saved Amount</label>
+                    <input type="number" id="goalCurrentAmount" placeholder="0.00" step="0.01" min="0" value="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Target Completion Date (Optional)</label>
+                    <input type="date" id="goalTargetDate" class="dark-date">
                 </div>
                 <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Save Goal</button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL DIALOG: DEPOSIT INTO SAVINGS GOAL -->
+    <!-- MODAL DIALOG: DEPOSIT TO SAVINGS GOAL -->
     <div class="modal-overlay" id="savingsDepositModal">
         <div class="modal">
             <div class="modal-header">
-                <h3>Deposit to <span id="depositGoalName">Goal</span></h3>
-                <button class="modal-close" id="closeDepositModalBtn" aria-label="Close">&times;</button>
+                <h3 id="savingsDepositTitle">Add Contribution</h3>
+                <button class="modal-close" id="closeSavingsDepositModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="savingsDepositForm">
                 <input type="hidden" id="depositGoalId">
@@ -706,6 +726,30 @@
                 </div>
                 <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Add Deposit</button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: PREVIEW MONTHLY REPORT -->
+    <div class="modal-overlay" id="monthlyReportModal">
+        <div class="modal" style="max-width: 860px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">📊</span>
+                    <h3 style="margin:0;">Monthly Financial Performance Report</h3>
+                </div>
+                <button class="modal-close" id="closeMonthlyReportModalBtn" aria-label="Close">&times;</button>
+            </div>
+            <div style="padding: 12px 16px; background: rgba(var(--primary-rgb), 0.08); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 13px; color: var(--text-muted);" id="monthlyReportMeta">Generated Executive Monthly Report</span>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" id="printReportBtn" class="btn-icon btn-text-icon" title="Print or Save as PDF">🖨️ Print</button>
+                    <button type="button" id="downloadHtmlReportBtn" class="btn-icon btn-text-icon" title="Download Report HTML">💾 Download</button>
+                    <button type="button" id="emailReportBtn" class="btn-primary btn-small" title="Email Report to My Address">✉️ Email Report</button>
+                </div>
+            </div>
+            <div style="flex: 1; min-height: 480px; position: relative;">
+                <iframe id="monthlyReportFrame" style="width: 100%; height: 100%; min-height: 480px; border: none; border-radius: 0 0 16px 16px; background: #fff;" title="Monthly Report Preview"></iframe>
+            </div>
         </div>
     </div>
 
@@ -728,7 +772,7 @@
 
     <script src="js/api.js?v=2.3"></script>
     <script src="js/animated-bg.js?v=2.3"></script>
-    <script src="js/dashboard.js?v=2.3"></script>
+    <script src="js/dashboard.js?v=2.4"></script>
     <script src="js/motion.js?v=1.0"></script>
 </body>
 </html>

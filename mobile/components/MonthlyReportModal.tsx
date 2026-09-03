@@ -17,6 +17,7 @@ import {
   Share,
   Dimensions,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -28,7 +29,7 @@ import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError, API_BASE_URL, getSession } from '../services/api';
 import { getCurrencySymbol } from '../services/currency';
 
-const { width, height } = Dimensions.get('window');
+// Dynamic dimensions calculated inside component
 
 const ALL_MONTHS = [
   { num: 1, name: 'Jan', full: 'January' },
@@ -56,6 +57,11 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
   const c = Colors[theme || 'dark'];
   const isLight = theme === 'light';
   const currSym = getCurrencySymbol(currency);
+
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 600;
+  const modalEffectiveWidth = Math.min(width - 40, 560);
+  const monthChipWidth = Math.floor((modalEffectiveWidth - 48) / 4);
 
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -297,8 +303,16 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         animationType="slide"
         onRequestClose={onClose}
       >
-        <View style={styles.backdrop}>
-          <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.backdrop, { justifyContent: isLargeScreen ? 'center' : 'flex-end', padding: isLargeScreen ? 20 : 0 }]}>
+          <View style={[styles.card, {
+            backgroundColor: c.card,
+            borderColor: c.border,
+            borderBottomLeftRadius: isLargeScreen ? 28 : 0,
+            borderBottomRightRadius: isLargeScreen ? 28 : 0,
+            maxWidth: 580,
+            width: '100%',
+            alignSelf: 'center',
+          }]}>
             {/* Header */}
             <View style={styles.headerRow}>
               <View style={styles.headerLeft}>
@@ -376,6 +390,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                     style={[
                       styles.monthChip,
                       {
+                        width: monthChipWidth,
                         backgroundColor: isSelected ? c.primary : (isValid ? c.inputBg : 'transparent'),
                         borderColor: isSelected ? c.primary : (isValid ? c.border : 'rgba(150,150,150,0.15)'),
                         opacity: isValid ? 1 : 0.3,
@@ -453,8 +468,16 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         animationType="slide"
         onRequestClose={() => setShowPreviewModal(false)}
       >
-        <View style={styles.previewBackdrop}>
-          <View style={[styles.previewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.previewBackdrop, { justifyContent: isLargeScreen ? 'center' : 'flex-end', padding: isLargeScreen ? 20 : 0 }]}>
+          <View style={[styles.previewCard, {
+            backgroundColor: c.card,
+            borderColor: c.border,
+            borderBottomLeftRadius: isLargeScreen ? 28 : 0,
+            borderBottomRightRadius: isLargeScreen ? 28 : 0,
+            maxWidth: 620,
+            width: '100%',
+            alignSelf: 'center',
+          }]}>
             <View style={styles.previewHeader}>
               <View>
                 <Text style={[styles.previewTitle, { color: c.text }]}>
@@ -636,7 +659,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   monthChip: {
-    width: (width - 64) / 4,
     paddingVertical: 9,
     borderRadius: 12,
     borderWidth: 1,
@@ -696,7 +718,8 @@ const styles = StyleSheet.create({
   },
   previewCard: {
     width: '100%',
-    height: height * 0.85,
+    maxHeight: '88%',
+    height: '85%',
     borderRadius: 24,
     borderWidth: 1,
     padding: 18,

@@ -14,6 +14,7 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
@@ -66,6 +67,9 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
   const { showAlert } = useAlert();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
+
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 600;
 
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
@@ -142,8 +146,16 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <View style={[styles.backdrop, { justifyContent: isLargeScreen ? 'center' : 'flex-end', padding: isLargeScreen ? 24 : 0 }]}>
+        <View style={[styles.modalCard, {
+          backgroundColor: c.surface,
+          borderColor: c.border,
+          borderBottomLeftRadius: isLargeScreen ? 28 : 0,
+          borderBottomRightRadius: isLargeScreen ? 28 : 0,
+          maxWidth: 580,
+          width: '100%',
+          alignSelf: 'center',
+        }]}>
           <View style={styles.header}>
             <View>
               <Text style={[styles.title, { color: c.text }]}>Edit Subscription</Text>

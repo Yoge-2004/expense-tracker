@@ -237,10 +237,14 @@ public class IncomeController {
     @Operation(summary = "Export incomes to PDF report", description = "Generates a printable PDF income report table with calculated totals.")
     @GetMapping("/user/{userId}/export/pdf")
     public ResponseEntity<byte[]> exportPdf(
-            @Parameter(description = "User ID", required = true) @PathVariable Long userId) {
+            @Parameter(description = "User ID", required = true) @PathVariable Long userId,
+            @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
+            @RequestParam(value = "currency", required = false) String currencyParam,
+            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        byte[] bytes = exportService.exportIncomesToPdf(user);
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        byte[] bytes = exportService.exportIncomesToPdf(user, preferredCurrency);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -250,10 +254,14 @@ public class IncomeController {
     @Operation(summary = "Export incomes to Excel (.xlsx)", description = "Generates a styled Microsoft Excel workbook containing all user incomes.")
     @GetMapping({"/user/{userId}/export/excel", "/user/{userId}/export/xlsx"})
     public ResponseEntity<byte[]> exportExcel(
-            @Parameter(description = "User ID", required = true) @PathVariable Long userId) {
+            @Parameter(description = "User ID", required = true) @PathVariable Long userId,
+            @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
+            @RequestParam(value = "currency", required = false) String currencyParam,
+            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        byte[] bytes = exportService.exportIncomesToExcel(user);
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        byte[] bytes = exportService.exportIncomesToExcel(user, preferredCurrency);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

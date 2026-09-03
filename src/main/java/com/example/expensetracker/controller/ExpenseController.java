@@ -849,10 +849,14 @@ public class ExpenseController {
 
     @Operation(summary = "Export expenses to PDF report")
     @GetMapping("/user/{userId}/export/pdf")
-    public ResponseEntity<byte[]> exportPdf(@PathVariable Long userId) {
+    public ResponseEntity<byte[]> exportPdf(
+            @PathVariable Long userId,
+            @RequestParam(value = "currency", required = false) String currencyParam,
+            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        byte[] bytes = exportService.exportExpensesToPdf(user);
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        byte[] bytes = exportService.exportExpensesToPdf(user, preferredCurrency);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -861,10 +865,14 @@ public class ExpenseController {
 
     @Operation(summary = "Export expenses to Excel workbook (.xlsx)")
     @GetMapping({"/user/{userId}/export/excel", "/user/{userId}/export/xlsx"})
-    public ResponseEntity<byte[]> exportExcel(@PathVariable Long userId) {
+    public ResponseEntity<byte[]> exportExcel(
+            @PathVariable Long userId,
+            @RequestParam(value = "currency", required = false) String currencyParam,
+            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        byte[] bytes = exportService.exportExpensesToExcel(user);
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        byte[] bytes = exportService.exportExpensesToExcel(user, preferredCurrency);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

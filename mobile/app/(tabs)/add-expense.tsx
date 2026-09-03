@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -72,6 +73,10 @@ export default function AddExpenseScreen() {
   const currSymbol = getCurrencySymbol(currency);
   const isLight = theme === 'light';
   const c = Colors[theme];
+
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 700;
+  const isDesktopOrTV = width >= 1024;
 
   const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'savings' | 'budget'>('expense');
 
@@ -436,7 +441,13 @@ export default function AddExpenseScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: Math.max(insets.top + 10, 48) },
+          {
+            paddingTop: Math.max(insets.top + 10, 48),
+            maxWidth: 900,
+            width: '100%',
+            alignSelf: 'center',
+            paddingHorizontal: isDesktopOrTV ? 36 : (isLargeScreen ? 24 : 16),
+          },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

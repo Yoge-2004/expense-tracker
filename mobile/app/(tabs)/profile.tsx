@@ -22,6 +22,7 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -44,6 +45,10 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isLight = theme === 'light';
   const c = Colors[theme];
+
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 700;
+  const isDesktopOrTV = width >= 1024;
 
   const [nickname, setNickname] = useState(userName || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -139,7 +144,13 @@ export default function ProfileScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: Math.max(insets.top + 10, 48) },
+          {
+            paddingTop: Math.max(insets.top + 10, 48),
+            maxWidth: 900,
+            width: '100%',
+            alignSelf: 'center',
+            paddingHorizontal: isDesktopOrTV ? 36 : (isLargeScreen ? 24 : 16),
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >

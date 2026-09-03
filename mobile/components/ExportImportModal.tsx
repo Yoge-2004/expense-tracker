@@ -1,7 +1,9 @@
 /**
  * @file ExportImportModal.tsx
- * @description Modal providing multi-format data export (Excel, CSV, JSON, Plaintext Executive Summary)
- * via the native OS Share Sheet and bulk transaction import parsing JSON payloads.
+ * @description Modal providing multi-format data export (Excel .xlsx PowerBI dashboard,
+ * PDF financial statement, CSV, JSON, Plaintext summary) as real downloadable files
+ * via expo-file-system and expo-sharing, along with native file-picker imports (.xlsx, .csv, .json)
+ * using expo-document-picker and expo-file-system multipart upload.
  */
 
 import React, { useState } from 'react';
@@ -13,16 +15,21 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
-  Share,
+  ScrollView,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Haptics from 'expo-haptics';
+
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors } from '../constants/theme';
 import { apiRequest, API_BASE_URL } from '../services/api';
 import { getCurrencySymbol } from '../services/currency';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 
 interface ExportImportModalProps {
   /** Controls modal display state. */
@@ -31,12 +38,12 @@ interface ExportImportModalProps {
   expenses: any[];
   /** Callback fired when user closes the modal. */
   onClose: () => void;
-  /** Callback triggered after a successful JSON ingestion to reload dashboard data. */
+  /** Callback triggered after a successful ingestion to reload dashboard data. */
   onDataImported: () => void;
 }
 
 /**
- * Data management and portability modal component.
+ * Enterprise Data Hub & Portability modal component.
  */
 export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   visible,
@@ -44,33 +51,99 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   onClose,
   onDataImported,
 }) => {
-  const { userId, theme, currency } = useAuth();
+  const { userId, token, theme, currency } = useAuth();
   const { showAlert } = useAlert();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 600;
+
   const [jsonInput, setJsonInput] = useState('');
-  const [showImportBox, setShowImportBox] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [showJsonBox, setShowJsonBox] = useState(false);
+  const [activeAction, setActiveAction] = useState<string | null>(null);
 
   /**
-   * Generates and triggers native share for PowerBI-grade Excel Dashboard download link.
+   * Helper to ensure a clean local directory path for saving export files.
+   */
+  const getBaseDir = () => {
+    return FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+  };
+
+  /**
+   * Downloads and shares PowerBI-grade Excel Workbook (.xlsx) file.
    */
   const handleExportExcel = async () => {
     try {
+      setActiveAction('export-excel');
+      const filename = `financial_statement_dashboard_${Date.now()}.xlsx`;
+      const fileUri = `${getBaseDir()}${filename}`;
       const url = `${API_BASE_URL}/reports/user/${userId}/export/excel`;
-      await Share.share({
-        title: 'financial_statement_dashboard.xlsx',
-        message: `Executive Financial Dashboard (.xlsx) available: ${url}`,
+
+      const downloadResult = await FileSystem.downloadAsync(url, fileUri, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
+      if (downloadResult.status !== 200) {
+        throw new Error(`Server returned HTTP ${downloadResult.status}`);
+      }
+
+      const isShareAvailable = await Sharing.isAvailableAsync();
+      if (isShareAvailable) {
+        await Sharing.shareAsync(downloadResult.uri, {
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          dialogTitle: 'Download Financial Dashboard (.xlsx)',
+          UTI: 'com.microsoft.excel.xlsx',
+        });
+      } else {
+        showAlert('Download Complete', `Excel dashboard saved to device: ${filename}`);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
-      showAlert('Export Failed', e.message || 'Could not export Excel.');
+      showAlert('Export Failed', e.message || 'Could not download Excel file.');
+    } finally {
+      setActiveAction(null);
     }
   };
 
   /**
-   * Generates and triggers native share for a formatted CSV file.
+   * Downloads and shares PDF Executive Financial Statement.
+   */
+  const handleExportPDF = async () => {
+    try {
+      setActiveAction('export-pdf');
+      const filename = `financial_statement_${Date.now()}.pdf`;
+      const fileUri = `${getBaseDir()}${filename}`;
+      const url = `${API_BASE_URL}/reports/user/${userId}/export/pdf`;
+
+      const downloadResult = await FileSystem.downloadAsync(url, fileUri, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (downloadResult.status !== 200) {
+        throw new Error(`Server returned HTTP ${downloadResult.status}`);
+      }
+
+      const isShareAvailable = await Sharing.isAvailableAsync();
+      if (isShareAvailable) {
+        await Sharing.shareAsync(downloadResult.uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Download Executive Statement (.pdf)',
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        showAlert('Download Complete', `PDF statement saved to device: ${filename}`);
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (e: any) {
+      showAlert('Export Failed', e.message || 'Could not download PDF file.');
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  /**
+   * Generates, writes, and shares actual CSV file.
    */
   const handleExportCSV = async () => {
     if (!expenses || expenses.length === 0) {
@@ -78,6 +151,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
       return;
     }
     try {
+      setActiveAction('export-csv');
       const csvHeader = 'ID,Description,Amount,Date,Category,Recurring\n';
       const csvRows = expenses
         .map((e) => {
@@ -87,18 +161,32 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         })
         .join('\n');
 
-      await Share.share({
-        title: 'Expenses_Export.csv',
-        message: csvHeader + csvRows,
+      const filename = `expenses_${Date.now()}.csv`;
+      const fileUri = `${getBaseDir()}${filename}`;
+      await FileSystem.writeAsStringAsync(fileUri, csvHeader + csvRows, {
+        encoding: FileSystem.EncodingType.UTF8,
       });
+
+      const isShareAvailable = await Sharing.isAvailableAsync();
+      if (isShareAvailable) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Save / Share Expenses CSV',
+          UTI: 'public.comma-separated-values-text',
+        });
+      } else {
+        showAlert('File Created', `CSV saved to ${filename}`);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
-      showAlert('Export Failed', e.message || 'Could not export CSV.');
+      showAlert('Export Failed', e.message || 'Could not export CSV file.');
+    } finally {
+      setActiveAction(null);
     }
   };
 
   /**
-   * Generates and triggers native share for raw JSON backup.
+   * Generates, writes, and shares actual JSON file.
    */
   const handleExportJSON = async () => {
     if (!expenses || expenses.length === 0) {
@@ -106,19 +194,34 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
       return;
     }
     try {
+      setActiveAction('export-json');
       const jsonData = JSON.stringify(expenses, null, 2);
-      await Share.share({
-        title: 'Expenses_Export.json',
-        message: jsonData,
+      const filename = `expenses_${Date.now()}.json`;
+      const fileUri = `${getBaseDir()}${filename}`;
+      await FileSystem.writeAsStringAsync(fileUri, jsonData, {
+        encoding: FileSystem.EncodingType.UTF8,
       });
+
+      const isShareAvailable = await Sharing.isAvailableAsync();
+      if (isShareAvailable) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'application/json',
+          dialogTitle: 'Save / Share Expenses JSON',
+          UTI: 'public.json',
+        });
+      } else {
+        showAlert('File Created', `JSON saved to ${filename}`);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
-      showAlert('Export Failed', e.message || 'Could not export JSON.');
+      showAlert('Export Failed', e.message || 'Could not export JSON file.');
+    } finally {
+      setActiveAction(null);
     }
   };
 
   /**
-   * Generates human-readable executive summary report.
+   * Generates human-readable executive summary text file.
    */
   const handleExportSummary = async () => {
     if (!expenses || expenses.length === 0) {
@@ -126,6 +229,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
       return;
     }
     try {
+      setActiveAction('export-summary');
       const total = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
       const summaryText =
         `--- FINANCIAL REPORT SUMMARY ---\n` +
@@ -138,32 +242,107 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
           .map((e) => `• ${e.expenseDate} | ${e.categoryName}: ${currSym}${e.amount} (${e.description})`)
           .join('\n');
 
-      await Share.share({
-        title: 'Financial_Summary_Report.txt',
-        message: summaryText,
+      const filename = `Financial_Summary_${Date.now()}.txt`;
+      const fileUri = `${getBaseDir()}${filename}`;
+      await FileSystem.writeAsStringAsync(fileUri, summaryText, {
+        encoding: FileSystem.EncodingType.UTF8,
       });
+
+      const isShareAvailable = await Sharing.isAvailableAsync();
+      if (isShareAvailable) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/plain',
+          dialogTitle: 'Save / Share Financial Summary',
+          UTI: 'public.plain-text',
+        });
+      } else {
+        showAlert('File Created', `Summary report saved to ${filename}`);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
       showAlert('Export Failed', e.message || 'Could not export summary.');
+    } finally {
+      setActiveAction(null);
     }
   };
 
   /**
-   * Ingests, parses, and sends bulk expense entries to the backend.
+   * Prompts native document picker to select an Excel, CSV, or JSON file and uploads it.
    */
-  const handleImportJSON = async () => {
+  const handlePickAndImport = async (fileType: 'excel' | 'csv' | 'json') => {
+    try {
+      setActiveAction(`import-${fileType}`);
+      const mimeTypes =
+        fileType === 'excel'
+          ? [
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              'application/vnd.ms-excel',
+            ]
+          : fileType === 'csv'
+          ? ['text/csv', 'text/comma-separated-values', 'application/csv']
+          : ['application/json'];
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: mimeTypes,
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      const uploadUrl = `${API_BASE_URL}/expenses/user/${userId}/import/${fileType}`;
+
+      const uploadRes = await FileSystem.uploadAsync(uploadUrl, asset.uri, {
+        fieldName: 'file',
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (uploadRes.status < 200 || uploadRes.status >= 300) {
+        throw new Error(uploadRes.body || `Server returned HTTP ${uploadRes.status}`);
+      }
+
+      let data: any = {};
+      try {
+        data = JSON.parse(uploadRes.body);
+      } catch (_) {}
+
+      const imported = data.imported ?? 0;
+      const failed = data.failedRows ?? 0;
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert(
+        'Import Successful! 📊',
+        `Successfully imported ${imported} transaction(s).` +
+          (failed > 0 ? ` (${failed} row(s) skipped due to format issues).` : '')
+      );
+      onDataImported();
+      onClose();
+    } catch (e: any) {
+      showAlert('Import Failed', e.message || `Failed to process ${fileType} import.`);
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  /**
+   * Ingests, parses, and sends pasted bulk JSON expense entries to the backend.
+   */
+  const handleImportJSONText = async () => {
     if (!jsonInput.trim() || !userId) {
       showAlert('Empty Input', 'Please paste valid JSON expense objects.');
       return;
     }
 
     try {
+      setActiveAction('import-json-text');
       const parsed = JSON.parse(jsonInput);
       const items = Array.isArray(parsed) ? parsed : [parsed];
 
-      setImporting(true);
       let successCount = 0;
-
       for (const item of items) {
         if (item.amount && item.description) {
           try {
@@ -178,33 +357,42 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
             });
             successCount++;
           } catch (e) {
-            // Ignore single row fail and continue batch
+            // Continue batch
           }
         }
       }
 
-      setImporting(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('Import Complete', `Successfully imported ${successCount} expense(s).`);
       setJsonInput('');
-      setShowImportBox(false);
+      setShowJsonBox(false);
       onDataImported();
       onClose();
     } catch (e: any) {
-      setImporting(false);
       showAlert('Invalid JSON', 'Please verify your JSON syntax and try again.');
+    } finally {
+      setActiveAction(null);
     }
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <View style={[styles.backdrop, { justifyContent: isLargeScreen ? 'center' : 'flex-end', padding: isLargeScreen ? 24 : 0 }]}>
+        <View style={[styles.modalCard, {
+          backgroundColor: c.surface,
+          borderColor: c.border,
+          borderBottomLeftRadius: isLargeScreen ? 28 : 0,
+          borderBottomRightRadius: isLargeScreen ? 28 : 0,
+          maxWidth: 640,
+          width: '100%',
+          alignSelf: 'center',
+        }]}>
+          {/* Header */}
           <View style={styles.header}>
             <View>
               <Text style={[styles.title, { color: c.text }]}>Data Hub & Reports</Text>
               <Text style={[styles.subtitle, { color: c.textMuted }]}>
-                Export your ledger or import transactions
+                Export real files or import transaction records
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { backgroundColor: c.inputBg }]}>
@@ -212,110 +400,214 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Action Cards */}
-          <View style={styles.actionsGrid}>
-            {/* Excel PowerBI */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleExportExcel}
-              style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
-            >
-              <View style={[styles.iconBox, { backgroundColor: '#107C4120' }]}>
-                <Ionicons name="bar-chart" size={22} color="#107C41" />
-              </View>
-              <Text style={[styles.actionTitle, { color: c.text }]}>Excel Dashboard</Text>
-              <Text style={[styles.actionSub, { color: c.textMuted }]}>PowerBI charts</Text>
-            </TouchableOpacity>
-
-            {/* CSV */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleExportCSV}
-              style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
-            >
-              <View style={[styles.iconBox, { backgroundColor: c.primary + '20' }]}>
-                <Ionicons name="document-text" size={22} color={c.primary} />
-              </View>
-              <Text style={[styles.actionTitle, { color: c.text }]}>Export CSV</Text>
-              <Text style={[styles.actionSub, { color: c.textMuted }]}>Spreadsheet ready</Text>
-            </TouchableOpacity>
-
-            {/* JSON */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleExportJSON}
-              style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
-            >
-              <View style={[styles.iconBox, { backgroundColor: c.teal + '20' }]}>
-                <Ionicons name="code-slash" size={22} color={c.teal} />
-              </View>
-              <Text style={[styles.actionTitle, { color: c.text }]}>Export JSON</Text>
-              <Text style={[styles.actionSub, { color: c.textMuted }]}>Raw data backup</Text>
-            </TouchableOpacity>
-
-            {/* Summary / Report */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleExportSummary}
-              style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
-            >
-              <View style={[styles.iconBox, { backgroundColor: c.accent + '20' }]}>
-                <Ionicons name="reader" size={22} color={c.accent} />
-              </View>
-              <Text style={[styles.actionTitle, { color: c.text }]}>Share Summary</Text>
-              <Text style={[styles.actionSub, { color: c.textMuted }]}>Executive overview</Text>
-            </TouchableOpacity>
-
-            {/* Import */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setShowImportBox(!showImportBox)}
-              style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
-            >
-              <View style={[styles.iconBox, { backgroundColor: c.sage + '20' }]}>
-                <Ionicons name="cloud-upload" size={22} color={c.sage} />
-              </View>
-              <Text style={[styles.actionTitle, { color: c.text }]}>Import JSON</Text>
-              <Text style={[styles.actionSub, { color: c.textMuted }]}>Paste & ingest</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Expandable JSON Import box */}
-          {showImportBox && (
-            <View style={styles.importBox}>
-              <Text style={[styles.importLabel, { color: c.textMuted }]}>
-                Paste JSON Array of Expenses:
-              </Text>
-              <TextInput
-                style={[
-                  styles.jsonInput,
-                  {
-                    backgroundColor: c.inputBg,
-                    borderColor: c.border,
-                    color: c.text,
-                  },
-                ]}
-                multiline
-                numberOfLines={4}
-                value={jsonInput}
-                onChangeText={setJsonInput}
-                placeholder='[{"description": "Grocery", "amount": 450, "categoryId": 1}]'
-                placeholderTextColor={c.textMuted}
-              />
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+            {/* Section 1: EXPORT REAL FILES */}
+            <Text style={[styles.sectionHeader, { color: c.textMuted }]}>
+              EXPORT REAL FILES (.xlsx, .pdf, .csv, .json)
+            </Text>
+            <View style={styles.actionsGrid}>
+              {/* Excel PowerBI */}
               <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleImportJSON}
-                disabled={importing}
-                style={[styles.ingestBtn, { backgroundColor: c.primary }]}
+                activeOpacity={0.8}
+                onPress={handleExportExcel}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
               >
-                {importing ? (
-                  <ActivityIndicator size="small" color="#10120E" />
-                ) : (
-                  <Text style={styles.ingestBtnText}>Ingest & Save Expenses</Text>
-                )}
+                <View style={[styles.iconBox, { backgroundColor: '#107C4120' }]}>
+                  {activeAction === 'export-excel' ? (
+                    <ActivityIndicator size="small" color="#107C41" />
+                  ) : (
+                    <Ionicons name="bar-chart" size={22} color="#107C41" />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Excel Dashboard</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>.xlsx PowerBI file</Text>
+              </TouchableOpacity>
+
+              {/* PDF Financial Statement */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleExportPDF}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: '#EF444420' }]}>
+                  {activeAction === 'export-pdf' ? (
+                    <ActivityIndicator size="small" color="#EF4444" />
+                  ) : (
+                    <Ionicons name="newspaper-outline" size={22} color="#EF4444" />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>PDF Statement</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>.pdf executive file</Text>
+              </TouchableOpacity>
+
+              {/* CSV */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleExportCSV}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: c.primary + '20' }]}>
+                  {activeAction === 'export-csv' ? (
+                    <ActivityIndicator size="small" color={c.primary} />
+                  ) : (
+                    <Ionicons name="document-text" size={22} color={c.primary} />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Export CSV</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>.csv spreadsheet</Text>
+              </TouchableOpacity>
+
+              {/* JSON */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleExportJSON}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: c.teal + '20' }]}>
+                  {activeAction === 'export-json' ? (
+                    <ActivityIndicator size="small" color={c.teal} />
+                  ) : (
+                    <Ionicons name="code-slash" size={22} color={c.teal} />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Export JSON</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>.json raw ledger</Text>
+              </TouchableOpacity>
+
+              {/* Summary / Report */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleExportSummary}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: c.accent + '20' }]}>
+                  {activeAction === 'export-summary' ? (
+                    <ActivityIndicator size="small" color={c.accent} />
+                  ) : (
+                    <Ionicons name="reader" size={22} color={c.accent} />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Summary .txt</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>Text breakdown</Text>
               </TouchableOpacity>
             </View>
-          )}
+
+            {/* Section 2: IMPORT LEDGER FILES */}
+            <Text style={[styles.sectionHeader, { color: c.textMuted, marginTop: 22 }]}>
+              IMPORT LEDGER FILES & INGESTION
+            </Text>
+            <View style={styles.actionsGrid}>
+              {/* Import Excel */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => handlePickAndImport('excel')}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: '#107C4120' }]}>
+                  {activeAction === 'import-excel' ? (
+                    <ActivityIndicator size="small" color="#107C41" />
+                  ) : (
+                    <Ionicons name="cloud-upload" size={22} color="#107C41" />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Import Excel</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>Pick .xlsx file</Text>
+              </TouchableOpacity>
+
+              {/* Import CSV */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => handlePickAndImport('csv')}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: c.primary + '20' }]}>
+                  {activeAction === 'import-csv' ? (
+                    <ActivityIndicator size="small" color={c.primary} />
+                  ) : (
+                    <Ionicons name="cloud-upload-outline" size={22} color={c.primary} />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Import CSV</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>Pick .csv file</Text>
+              </TouchableOpacity>
+
+              {/* Import JSON File */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => handlePickAndImport('json')}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: c.teal + '20' }]}>
+                  {activeAction === 'import-json' ? (
+                    <ActivityIndicator size="small" color={c.teal} />
+                  ) : (
+                    <Ionicons name="document-attach-outline" size={22} color={c.teal} />
+                  )}
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Import JSON</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>Pick .json file</Text>
+              </TouchableOpacity>
+
+              {/* Paste JSON */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setShowJsonBox(!showJsonBox)}
+                disabled={activeAction !== null}
+                style={[styles.actionCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              >
+                <View style={[styles.iconBox, { backgroundColor: c.sage + '20' }]}>
+                  <Ionicons name="code-working-outline" size={22} color={c.sage} />
+                </View>
+                <Text style={[styles.actionTitle, { color: c.text }]}>Paste JSON</Text>
+                <Text style={[styles.actionSub, { color: c.textMuted }]}>Manual input</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Expandable JSON Text Import Box */}
+            {showJsonBox && (
+              <View style={[styles.importBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                <Text style={[styles.importLabel, { color: c.textMuted }]}>
+                  Paste JSON Array of Expenses:
+                </Text>
+                <TextInput
+                  style={[
+                    styles.jsonInput,
+                    {
+                      backgroundColor: c.surface,
+                      borderColor: c.border,
+                      color: c.text,
+                    },
+                  ]}
+                  multiline
+                  numberOfLines={4}
+                  value={jsonInput}
+                  onChangeText={setJsonInput}
+                  placeholder='[{"description": "Grocery", "amount": 450, "categoryId": 1}]'
+                  placeholderTextColor={c.textMuted}
+                />
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={handleImportJSONText}
+                  disabled={activeAction !== null}
+                  style={[styles.ingestBtn, { backgroundColor: c.primary }]}
+                >
+                  {activeAction === 'import-json-text' ? (
+                    <ActivityIndicator size="small" color="#10120E" />
+                  ) : (
+                    <Text style={styles.ingestBtnText}>Ingest & Save Expenses</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -332,14 +624,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1,
-    padding: 24,
-    maxHeight: '85%',
+    padding: 22,
+    maxHeight: '88%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   title: {
     fontSize: 20,
@@ -357,60 +649,71 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
+    gap: 10,
   },
   actionCard: {
     width: '48%',
-    borderRadius: 16,
+    padding: 14,
+    borderRadius: 14,
     borderWidth: 1,
-    padding: 16,
-    alignItems: 'center',
-    gap: 6,
+    alignItems: 'flex-start',
   },
   iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 10,
   },
   actionTitle: {
     fontSize: 14,
     fontWeight: '700',
+    marginBottom: 2,
   },
   actionSub: {
     fontSize: 11,
   },
   importBox: {
-    gap: 8,
-    marginTop: 8,
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   importLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
+    marginBottom: 8,
   },
   jsonInput: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 10,
+    padding: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     fontSize: 12,
-    height: 90,
+    minHeight: 80,
     textAlignVertical: 'top',
   },
   ingestBtn: {
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   ingestBtnText: {
     color: '#10120E',
-    fontWeight: '800',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 13,
   },
 });

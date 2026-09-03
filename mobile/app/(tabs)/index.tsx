@@ -26,6 +26,7 @@ import {
   RefreshControl,
   Animated,
   Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,6 +41,8 @@ import * as Haptics from 'expo-haptics';
 
 import { AmbientAura } from '../../components/AmbientAura';
 import { NumberTicker } from '../../components/NumberTicker';
+import { AnimatedCard } from '../../components/AnimatedCard';
+import { AnimatedProgressBar } from '../../components/AnimatedProgressBar';
 import { StaggeredView } from '../../components/StaggeredView';
 import { InsightCards } from '../../components/InsightCards';
 import {
@@ -52,7 +55,7 @@ import {
 import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
 
-const { width } = Dimensions.get('window');
+// Responsive dimensions handled dynamically via useWindowDimensions()
 
 interface Expense {
   id: number;
@@ -116,6 +119,17 @@ export default function DashboardScreen() {
   const currSymbol = getCurrencySymbol(currency);
   const isLight = theme === 'light';
   const c = Colors[theme];
+
+  // Dynamic responsive window dimensions & adaptive layout breakpoints
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 600 && width < 1024;
+  const isDesktopOrTV = width >= 1024;
+  const isLargeScreen = width >= 600;
+
+  const containerPad = isDesktopOrTV ? 36 : (isTablet ? 24 : 16);
+  const contentWidth = Math.min(width, 1180);
+  const effectiveWidth = contentWidth - (containerPad * 2);
+  const matrixCardWidth = isLargeScreen ? (effectiveWidth - (3 * 12)) / 4 : (effectiveWidth - 10) / 2;
 
   // Data states
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -433,7 +447,13 @@ export default function DashboardScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: Math.max(insets.top + 10, 48) },
+          {
+            paddingTop: Math.max(insets.top + 10, 48),
+            maxWidth: 1180,
+            width: '100%',
+            alignSelf: 'center',
+            paddingHorizontal: containerPad,
+          },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
@@ -500,7 +520,7 @@ export default function DashboardScreen() {
             1.5 EXECUTIVE CASH FLOW OVERVIEW
            ========================================= */}
         <StaggeredView delay={40} direction="up">
-          <View style={[styles.cashFlowCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <AnimatedCard style={[styles.cashFlowCard, { backgroundColor: c.card, borderColor: c.border }]} scaleTo={0.98}>
             <View style={styles.cashFlowHeader}>
               <View style={styles.cashFlowHeaderLeft}>
                 <Ionicons name="trending-up" size={16} color={c.primary} />
@@ -516,39 +536,48 @@ export default function DashboardScreen() {
             <View style={styles.cashFlowMetricsRow}>
               <View style={styles.cashFlowCol}>
                 <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Total Inflow</Text>
-                <Text style={[styles.cashFlowAmount, { color: "#10B981" }]}>
-                  +{currSymbol}{Math.round(totalIncome).toLocaleString("en-IN")}
-                </Text>
+                <NumberTicker
+                  value={totalIncome}
+                  prefix={`+${currSymbol}`}
+                  decimals={0}
+                  style={[styles.cashFlowAmount, { color: "#10B981" }]}
+                />
               </View>
 
               <View style={[styles.cashFlowDivider, { backgroundColor: c.border }]} />
 
               <View style={styles.cashFlowCol}>
                 <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Total Outflow</Text>
-                <Text style={[styles.cashFlowAmount, { color: c.text }]}>
-                  -{currSymbol}{Math.round(totalSpent).toLocaleString("en-IN")}
-                </Text>
+                <NumberTicker
+                  value={totalSpent}
+                  prefix={`-${currSymbol}`}
+                  decimals={0}
+                  style={[styles.cashFlowAmount, { color: c.text }]}
+                />
               </View>
 
               <View style={[styles.cashFlowDivider, { backgroundColor: c.border }]} />
 
               <View style={styles.cashFlowCol}>
                 <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Savings Rate</Text>
-                <Text style={[styles.cashFlowAmount, { color: c.primary }]}>
-                  {savingsRate}%
-                </Text>
+                <NumberTicker
+                  value={parseFloat(savingsRate) || 0}
+                  suffix="%"
+                  decimals={1}
+                  style={[styles.cashFlowAmount, { color: c.primary }]}
+                />
               </View>
             </View>
-          </View>
+          </AnimatedCard>
         </StaggeredView>
 
         {/* =========================================
             2. FOUR-METRIC MATRIX KPI GRID
            ========================================= */}
         <StaggeredView delay={100} direction="up">
-          <View style={styles.matrixGrid}>
+          <View style={[styles.matrixGrid, { gap: isLargeScreen ? 12 : 10 }]}>
             {/* Total Ledger Outflow */}
-            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.primary + '40' }]}>
+            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.primary + '40' }]} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Total Outflow</Text>
                 <View style={[styles.matrixBadge, { backgroundColor: c.primary + '18' }]}>
@@ -562,10 +591,10 @@ export default function DashboardScreen() {
                 style={[styles.matrixValue, { color: c.text }]}
               />
               <Text style={[styles.matrixSub, { color: c.textMuted }]}>All-time cumulative</Text>
-            </View>
+            </AnimatedCard>
 
             {/* Current Month Burn */}
-            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.teal + '40' }]}>
+            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.teal + '40' }]} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>This Month</Text>
                 <View style={[styles.matrixBadge, { backgroundColor: c.teal + '18' }]}>
@@ -581,10 +610,10 @@ export default function DashboardScreen() {
               <Text style={[styles.matrixSub, { color: c.textMuted }]}>
                 Day {currentDay} of {daysInMonth}
               </Text>
-            </View>
+            </AnimatedCard>
 
             {/* Daily Velocity / Burn Rate */}
-            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.accent + '40' }]}>
+            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.accent + '40' }]} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Daily Velocity</Text>
                 <View style={[styles.matrixBadge, { backgroundColor: c.accent + '18' }]}>
@@ -601,10 +630,10 @@ export default function DashboardScreen() {
               <Text style={[styles.matrixSub, { color: c.textMuted }]}>
                 Proj: {currSymbol}{Math.round(monthEndForecast).toLocaleString('en-IN')}
               </Text>
-            </View>
+            </AnimatedCard>
 
             {/* Top Cost Driver */}
-            <View style={[styles.matrixCard, { backgroundColor: c.card, borderColor: c.warning + '40' }]}>
+            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.warning + '40' }]} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Top Category</Text>
                 <View style={[styles.matrixBadge, { backgroundColor: c.warning + '18' }]}>
@@ -618,7 +647,7 @@ export default function DashboardScreen() {
                 {currSymbol}{Math.round(highestCatAmt).toLocaleString('en-IN')} (
                 {totalSpent > 0 ? ((highestCatAmt / totalSpent) * 100).toFixed(0) : 0}%)
               </Text>
-            </View>
+            </AnimatedCard>
           </View>
         </StaggeredView>
 
@@ -686,21 +715,25 @@ export default function DashboardScreen() {
               {savingsGoals.map((goal) => {
                 const ratio = goal.targetAmount > 0 ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100)) : 0;
                 return (
-                  <View key={goal.id} style={[styles.goalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                  <AnimatedCard key={goal.id} style={[styles.goalCard, { width: isLargeScreen ? 280 : 240, backgroundColor: c.card, borderColor: c.border }]} scaleTo={0.96}>
                     <View style={styles.goalTopRow}>
                       <Text style={[styles.goalName, { color: c.text }]} numberOfLines={1}>{goal.name}</Text>
-                      <Text style={[styles.goalPercent, { color: c.primary }]}>{ratio}%</Text>
+                      <Text style={[styles.goalPercent, { color: ratio >= 100 ? "#10B981" : c.primary }]}>{ratio}%</Text>
                     </View>
-                    <View style={[styles.goalProgressBar, { backgroundColor: c.inputBg }]}>
-                      <View style={[styles.goalProgressFill, { width: `${ratio}%`, backgroundColor: c.primary }]} />
-                    </View>
+                    <AnimatedProgressBar
+                      progress={ratio}
+                      height={7}
+                      backgroundColor={c.inputBg}
+                      fillColor={ratio >= 100 ? "#10B981" : "#F59E0B"}
+                      style={{ borderRadius: 4, marginVertical: 8 }}
+                    />
                     <View style={styles.goalBottomRow}>
                       <Text style={[styles.goalSaved, { color: c.textMuted }]}>
                         {currSymbol}{Math.round(goal.currentAmount).toLocaleString("en-IN")} / {currSymbol}{Math.round(goal.targetAmount).toLocaleString("en-IN")}
                       </Text>
                       <Text style={[styles.goalDate, { color: c.textMuted }]}>Due: {goal.targetDate || "Flexible"}</Text>
                     </View>
-                  </View>
+                  </AnimatedCard>
                 );
               })}
             </ScrollView>
@@ -1155,7 +1188,6 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   matrixCard: {
-    width: (width - 42) / 2,
     borderRadius: 18,
     borderWidth: 1,
     padding: 14,

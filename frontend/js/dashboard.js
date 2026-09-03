@@ -1070,7 +1070,7 @@ document.getElementById("resetFiltersBtn")?.addEventListener("click", () => {
 
 
 // --- 5. UI RENDERING HELPERS & NUMBER COUNT ANIMATION ---
-function animateNumber(el, target, isCurrency = false) {
+function animateNumber(el, target, isCurrency = false, showSign = false) {
     if (!el) return;
     const duration = 850;
     const startTime = performance.now();
@@ -1081,14 +1081,85 @@ function animateNumber(el, target, isCurrency = false) {
         const progress = Math.min((now - startTime) / duration, 1);
         const easeOutBack = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
         const current = startVal + (target - startVal) * Math.min(Math.max(easeOutBack, 0), 1);
-        el.textContent = isCurrency ? formatCurrency(current) : Math.round(current);
+        const sign = showSign ? (current < 0 ? "-" : "+") : "";
+        el.textContent = isCurrency ? `${sign}${formatCurrency(Math.abs(current))}` : Math.round(current);
         if (progress < 1) {
             requestAnimationFrame(step);
         } else {
-            el.textContent = isCurrency ? formatCurrency(target) : target;
+            const finalSign = showSign ? (target < 0 ? "-" : "+") : "";
+            el.textContent = isCurrency ? `${finalSign}${formatCurrency(Math.abs(target))}` : target;
         }
     }
     requestAnimationFrame(step);
+}
+
+function animatePercent(el, target) {
+    if (!el) return;
+    const duration = 850;
+    const startTime = performance.now();
+    const startVal = parseFloat(el.getAttribute('data-val') || 0);
+    el.setAttribute('data-val', target);
+
+    function step(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = startVal + (target - startVal) * easeOut;
+        el.textContent = `${current.toFixed(1)}%`;
+        if (progress < 1) {
+            requestAnimationFrame(step);
+        } else {
+            el.textContent = `${target.toFixed(1)}%`;
+        }
+    }
+    requestAnimationFrame(step);
+}
+
+function celebrateSuccess(x, y) {
+    try {
+        const count = 28;
+        const colors = ["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6", "#EC4899", "#34D399", "#60A5FA"];
+        const container = document.createElement("div");
+        container.style.position = "fixed";
+        container.style.left = "0";
+        container.style.top = "0";
+        container.style.width = "100vw";
+        container.style.height = "100vh";
+        container.style.pointerEvents = "none";
+        container.style.zIndex = "999999";
+        document.body.appendChild(container);
+
+        const spawnX = typeof x === "number" && !isNaN(x) && x > 0 ? x : window.innerWidth / 2;
+        const spawnY = typeof y === "number" && !isNaN(y) && y > 0 ? y : window.innerHeight / 2;
+
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement("div");
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const size = Math.floor(Math.random() * 8) + 6;
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 180 + 70;
+            const destX = Math.cos(angle) * velocity;
+            const destY = Math.sin(angle) * velocity + 45;
+            const rotate = Math.random() * 720 - 360;
+
+            p.style.position = "absolute";
+            p.style.left = `${spawnX}px`;
+            p.style.top = `${spawnY}px`;
+            p.style.width = `${size}px`;
+            p.style.height = `${size * (Math.random() > 0.5 ? 1 : 1.5)}px`;
+            p.style.backgroundColor = color;
+            p.style.borderRadius = Math.random() > 0.35 ? "2px" : "50%";
+            p.style.opacity = "1";
+            p.style.transition = "transform 0.85s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.85s ease-out";
+            container.appendChild(p);
+
+            requestAnimationFrame(() => {
+                p.style.transform = `translate(${destX}px, ${destY}px) rotate(${rotate}deg) scale(${Math.random() * 0.4 + 0.6})`;
+                p.style.opacity = "0";
+            });
+        }
+
+        setTimeout(() => container.remove(), 950);
+    } catch (e) {}
 }
 
 function updateStats(expenses) {
@@ -1277,6 +1348,7 @@ elements.addForm.addEventListener("submit", async (e) => {
             showToast("Recurring expense created.", "success");
         } else {
             await apiRequest(`/expenses/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
+            celebrateSuccess(e.clientX, e.clientY);
             showToast("Expense added.", "success");
         }
 
@@ -1716,8 +1788,15 @@ const authToken = localStorage.getItem("token");
 async function downloadAuthenticated(url, fallbackFilename, loadingMessage) {
     showToast(loadingMessage, "info");
     try {
-        const res = await fetch(url, {
-            headers: { "Authorization": `Bearer ${authToken}` }
+        const currentToken = localStorage.getItem("token") || authToken || token;
+        const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
+        const sep = url.includes("?") ? "&" : "?";
+        const finalUrl = `${url}${sep}currency=${encodeURIComponent(activeCurr)}`;
+        const res = await fetch(finalUrl, {
+            headers: {
+                "Authorization": `Bearer ${currentToken}`,
+                "X-Currency": activeCurr
+            }
         });
         if (!res.ok) {
             throw new Error(`Export failed (${res.status})`);
@@ -1782,7 +1861,7 @@ importFileInput?.addEventListener("change", async (e) => {
         const res = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${localStorage.getItem("token") || token}`
             },
             body: formData
         });
@@ -2054,7 +2133,7 @@ function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
     const totalSaved = (savingsGoals || []).reduce((acc, curr) => acc + Number(curr.currentAmount || 0), 0);
 
     const totalIncomeEl = document.getElementById("totalIncomeAmount");
-    if (totalIncomeEl) totalIncomeEl.textContent = formatCurrency(totalIncome);
+    if (totalIncomeEl) animateNumber(totalIncomeEl, totalIncome, true);
 
     const incomeCountBadge = document.getElementById("incomeCountBadge");
     if (incomeCountBadge) incomeCountBadge.textContent = `${(incomes || []).length} Inflow${(incomes || []).length === 1 ? "" : "s"}`;
@@ -2064,7 +2143,7 @@ function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
 
     const netCashFlowEl = document.getElementById("netCashFlowAmount");
     if (netCashFlowEl) {
-        netCashFlowEl.textContent = (netCashFlow < 0 ? "-" : "+") + formatCurrency(Math.abs(netCashFlow));
+        animateNumber(netCashFlowEl, netCashFlow, true, true);
         netCashFlowEl.style.color = netCashFlow >= 0 ? "#10B981" : "#EF4444";
     }
 
@@ -2072,10 +2151,10 @@ function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
     if (netFlowBadge) {
         if (netCashFlow > 0) {
             netFlowBadge.textContent = "Surplus";
-            netFlowBadge.className = "status-badge badge-success";
+            netFlowBadge.className = "status-badge badge-success badge-pulse-glow";
         } else if (netCashFlow < 0) {
             netFlowBadge.textContent = "Deficit";
-            netFlowBadge.className = "status-badge badge-danger";
+            netFlowBadge.className = "status-badge badge-danger badge-pulse-glow";
         } else {
             netFlowBadge.textContent = "Balanced";
             netFlowBadge.className = "status-badge badge-neutral";
@@ -2084,7 +2163,7 @@ function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
 
     const savingsRateEl = document.getElementById("savingsRateValue");
     if (savingsRateEl) {
-        savingsRateEl.textContent = `${savingsRate.toFixed(1)}%`;
+        animatePercent(savingsRateEl, savingsRate);
         savingsRateEl.style.color = savingsRate >= 20 ? "#10B981" : (savingsRate >= 0 ? "#F59E0B" : "#EF4444");
     }
 
@@ -2121,8 +2200,8 @@ function renderIncomes(incomes) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${incomes.map(inc => `
-                        <tr style="border-bottom:1px solid var(--border); font-size:13.5px;">
+                    ${incomes.map((inc, idx) => `
+                        <tr class="table-row-stagger" style="animation-delay: ${Math.min(idx * 35, 350)}ms; border-bottom:1px solid var(--border); font-size:13.5px;">
                             <td style="padding:12px 14px; white-space:nowrap; color:var(--text-muted);">${inc.incomeDate || "—"}</td>
                             <td style="padding:12px 14px; font-weight:600;">${escapeHtml(inc.source || "Income")}</td>
                             <td style="padding:12px 14px; color:var(--text-muted);">${escapeHtml(inc.description || "—")}</td>
@@ -2135,6 +2214,9 @@ function renderIncomes(incomes) {
                                 +${formatCurrency(inc.amount)}
                             </td>
                             <td style="padding:12px 14px; text-align:center;">
+                                <button class="btn-icon edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${!!(inc.isRecurring || inc.recurring)}" title="Edit Income" style="color:var(--text-muted); margin-right:4px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </button>
                                 <button class="btn-icon delete-income-btn" data-income-id="${inc.id}" title="Delete Income" style="color:var(--text-muted);">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                 </button>
@@ -2145,6 +2227,20 @@ function renderIncomes(incomes) {
             </table>
         </div>
     `;
+
+    listEl.querySelectorAll(".edit-income-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (!incomeModal) return;
+            document.getElementById("incomeId").value = btn.getAttribute("data-inc-id") || "";
+            document.getElementById("incomeSource").value = btn.getAttribute("data-inc-source") || "";
+            document.getElementById("incomeAmount").value = btn.getAttribute("data-inc-amount") || "";
+            document.getElementById("incomeDate").value = btn.getAttribute("data-inc-date") || new Date().toISOString().split("T")[0];
+            document.getElementById("incomeDesc").value = btn.getAttribute("data-inc-desc") || "";
+            document.getElementById("incomeIsRecurring").checked = btn.getAttribute("data-inc-recurring") === "true";
+            document.getElementById("incomeModalTitle").textContent = "Edit Income Stream";
+            openModal(incomeModal);
+        });
+    });
 
     listEl.querySelectorAll(".delete-income-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -2172,21 +2268,21 @@ function renderSavingsGoals(goals) {
         return;
     }
 
-    container.innerHTML = goals.map(goal => {
+    container.innerHTML = goals.map((goal, idx) => {
         const target = Number(goal.targetAmount || 0);
         const current = Number(goal.currentAmount || 0);
         const ratio = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
         const isCompleted = current >= target;
 
         return `
-            <div class="card" style="padding:16px; border:1px solid var(--border); border-radius:12px; background:var(--card-bg, rgba(255,255,255,0.03));">
+            <div class="card savings-goal-card hover-lift table-row-stagger" style="animation-delay: ${Math.min(idx * 45, 450)}ms; padding:18px; border:1px solid var(--border); border-radius:14px; background:var(--card-bg, rgba(255,255,255,0.03));">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                     <div>
                         <h4 style="margin:0; font-size:15px; font-weight:700;">${escapeHtml(goal.name || "Savings Goal")}</h4>
                         <span style="font-size:11.5px; color:var(--text-muted);">Target: ${goal.targetDate || "Flexible"}</span>
                     </div>
                     ${isCompleted 
-                        ? '<span class="status-badge badge-success" style="font-size:11px;">Completed 🎯</span>'
+                        ? '<span class="status-badge badge-success badge-pulse-glow" style="font-size:11px;">Completed 🎯</span>'
                         : `<span class="status-badge badge-warning" style="font-size:11px;">${ratio}% Achieved</span>`}
                 </div>
                 
@@ -2196,7 +2292,7 @@ function renderSavingsGoals(goals) {
                         <span style="color:var(--text-muted);">${formatCurrency(target)}</span>
                     </div>
                     <div style="height:8px; width:100%; background:var(--border); border-radius:4px; overflow:hidden;">
-                        <div style="height:100%; width:${ratio}%; background: linear-gradient(90deg, #F59E0B, #10B981); border-radius:4px; transition:width 0.4s ease;"></div>
+                        <div class="goal-progress-fill" data-target-width="${ratio}%" style="height:100%; width:0%; background: linear-gradient(90deg, #F59E0B, #10B981); border-radius:4px;"></div>
                     </div>
                 </div>
 
@@ -2212,12 +2308,22 @@ function renderSavingsGoals(goals) {
         `;
     }).join("");
 
+    requestAnimationFrame(() => {
+        container.querySelectorAll(".goal-progress-fill").forEach(fill => {
+            const tw = fill.getAttribute("data-target-width");
+            if (tw) fill.style.width = tw;
+        });
+    });
+
     container.querySelectorAll(".deposit-goal-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const goalId = btn.getAttribute("data-goal-id");
             const goalName = btn.getAttribute("data-goal-name");
             document.getElementById("depositGoalId").value = goalId;
-            document.getElementById("depositGoalName").textContent = goalName;
+            const depositTitle = document.getElementById("savingsDepositTitle");
+            if (depositTitle) {
+                depositTitle.textContent = `Contribute to ${goalName}`;
+            }
             document.getElementById("depositAmount").value = "";
             openModal(document.getElementById("savingsDepositModal"));
         });
@@ -2288,6 +2394,7 @@ incomeForm?.addEventListener("submit", async (e) => {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
+            celebrateSuccess(e.clientX, e.clientY);
             showToast("Income recorded successfully!", "success");
         }
         closeModal(incomeModal);
@@ -2343,6 +2450,7 @@ savingsGoalForm?.addEventListener("submit", async (e) => {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
+            celebrateSuccess(e.clientX, e.clientY);
             showToast("Savings goal created!", "success");
         }
         closeModal(savingsGoalModal);
@@ -2372,6 +2480,7 @@ savingsDepositForm?.addEventListener("submit", async (e) => {
             method: "POST",
             body: JSON.stringify({ amount })
         });
+        celebrateSuccess(e.clientX, e.clientY);
         showToast("Deposit contributed successfully! 🎯", "success");
         closeModal(savingsDepositModal);
         await loadDashboard(true);
@@ -2397,3 +2506,139 @@ function bindDatePickerAutoPopups() {
 }
 document.addEventListener("DOMContentLoaded", bindDatePickerAutoPopups);
 bindDatePickerAutoPopups();
+
+// --- EXECUTIVE STATEMENT & INCOMES EXPORT / IMPORT CONTROLS ---
+document.getElementById("exportReportPdfBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/reports/user/${userId}/export/pdf`, "executive_financial_statement.pdf", "Generating Complete Executive Financial Statement PDF...");
+});
+
+document.getElementById("exportIncomeExcelBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/excel`, "incomes_powerbi_dashboard.xlsx", "Generating PowerBI Incomes Excel Workbook...");
+});
+
+document.getElementById("exportIncomeCsvBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/csv`, "incomes.csv", "Exporting Incomes CSV...");
+});
+
+document.getElementById("exportIncomeJsonBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/json`, "incomes.json", "Exporting Incomes JSON...");
+});
+
+document.getElementById("exportIncomePdfBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/pdf`, "incomes_report.pdf", "Generating Incomes PDF Report...");
+});
+
+const importIncomeBtn = document.getElementById("importIncomeBtn");
+const importIncomeFileInput = document.getElementById("importIncomeFileInput");
+
+importIncomeBtn?.addEventListener("click", () => importIncomeFileInput?.click());
+
+importIncomeFileInput?.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const fname = file.name.toLowerCase();
+    let endpoint = `/incomes/user/${userId}/import/csv`;
+    if (fname.endsWith(".xlsx") || fname.endsWith(".xls")) {
+        endpoint = `/incomes/user/${userId}/import/excel`;
+    }
+
+    try {
+        setLoading(true, "Importing income streams...");
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("token") || token}`
+            },
+            body: formData
+        });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || "Incomes import failed");
+        }
+
+        const data = await res.json();
+        showToast(data.message || "Incomes imported successfully!", "success");
+        await loadDashboard(true);
+    } catch (err) {
+        showToast(err.message, "error");
+    } finally {
+        setLoading(false);
+        importIncomeFileInput.value = "";
+    }
+});
+
+// --- INTERACTIVE MONTHLY REPORT PREVIEW MODAL ---
+const monthlyReportModal = document.getElementById("monthlyReportModal");
+const viewMonthlyReportBtn = document.getElementById("viewMonthlyReportBtn");
+const closeMonthlyReportModalBtn = document.getElementById("closeMonthlyReportModalBtn");
+const printReportBtn = document.getElementById("printReportBtn");
+const downloadHtmlReportBtn = document.getElementById("downloadHtmlReportBtn");
+const emailReportBtn = document.getElementById("emailReportBtn");
+const monthlyReportFrame = document.getElementById("monthlyReportFrame");
+let cachedReportHtml = "";
+
+async function openMonthlyReportPreview() {
+    if (!monthlyReportModal) return;
+    try {
+        setLoading(true, "Compiling monthly financial report...");
+        const res = await fetch(`${API_BASE_URL}/reports/monthly/user/${userId}/html`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token") || token}` }
+        });
+        if (!res.ok) throw new Error(`Failed to load monthly report (${res.status})`);
+        cachedReportHtml = await res.text();
+        if (monthlyReportFrame) {
+            monthlyReportFrame.srcdoc = cachedReportHtml;
+        }
+        openModal(monthlyReportModal);
+    } catch (err) {
+        showToast(err.message || "Unable to preview monthly report", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
+viewMonthlyReportBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleProfileMenu(false);
+    openMonthlyReportPreview();
+});
+
+closeMonthlyReportModalBtn?.addEventListener("click", () => closeModal(monthlyReportModal));
+
+printReportBtn?.addEventListener("click", () => {
+    if (monthlyReportFrame && monthlyReportFrame.contentWindow) {
+        monthlyReportFrame.contentWindow.focus();
+        monthlyReportFrame.contentWindow.print();
+    }
+});
+
+downloadHtmlReportBtn?.addEventListener("click", () => {
+    if (!cachedReportHtml) return;
+    const blob = new Blob([cachedReportHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `monthly-report-${new Date().toISOString().slice(0, 7)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Monthly report HTML saved.", "success");
+});
+
+emailReportBtn?.addEventListener("click", async () => {
+    try {
+        setLoading(true, "Dispatching monthly report to your email...");
+        await apiRequest(`/reports/monthly/user/${userId}/send-email`, { method: "POST" });
+        showToast("Monthly financial report emailed successfully!", "success");
+    } catch (err) {
+        showToast(err.message || "Failed to send email", "error");
+    } finally {
+        setLoading(false);
+    }
+});

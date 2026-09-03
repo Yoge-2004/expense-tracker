@@ -9,6 +9,7 @@ import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.service.impl.ExportServiceImpl;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -237,5 +238,62 @@ class ExportServiceImplTest {
         assertThat(bytes).isNotNull().isNotEmpty();
         String header = new String(bytes, 0, Math.min(bytes.length, 5), StandardCharsets.ISO_8859_1);
         assertThat(header).startsWith("%PDF");
+    }
+
+    @Test
+    @DisplayName("exportFinancialStatementExcel respects preferred INR currency and formats all sheets")
+    void exportFinancialStatementExcel_withPreferredCurrencyINR() throws Exception {
+        when(expenseRepository.findByUser(sampleUser)).thenReturn(List.of(sampleExpense));
+        when(incomeRepository.findByUser(sampleUser)).thenReturn(List.of(sampleIncome));
+        when(savingsGoalRepository.findByUser(sampleUser)).thenReturn(List.of(sampleGoal));
+
+        byte[] bytes = exportService.exportFinancialStatementExcel(sampleUser, "INR");
+        assertThat(bytes).isNotNull().isNotEmpty();
+
+        java.nio.file.Files.write(java.nio.file.Path.of("target/powerbi_dashboard_inr.xlsx"), bytes);
+
+        try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            Sheet dash = workbook.getSheetAt(0);
+            String subBanner = dash.getRow(2).getCell(0).getStringCellValue();
+            assertThat(subBanner).contains("INR");
+            assertThat(subBanner).contains("₹");
+
+            // Verify KPI card perimeter cells are created and styled
+            for (int r = 4; r <= 6; r++) {
+                for (int c = 0; c <= 7; c++) {
+                    Cell cell = dash.getRow(r).getCell(c);
+                    assertThat(cell).isNotNull();
+                    assertThat(cell.getCellStyle()).isNotNull();
+                }
+            }
+
+            // Verify Incomes sheet has INR symbol in header
+            Sheet incSheet = workbook.getSheet("Incomes");
+            assertThat(incSheet.getRow(0).getCell(3).getStringCellValue()).contains("₹");
+
+            // Verify Expenses sheet has INR symbol in header
+            Sheet expSheet = workbook.getSheet("Expenses");
+            assertThat(expSheet.getRow(0).getCell(3).getStringCellValue()).contains("₹");
+        }
+    }
+
+    @Test
+    @DisplayName("exportFinancialStatementExcel respects EUR currency")
+    void exportFinancialStatementExcel_withPreferredCurrencyEUR() throws Exception {
+        when(expenseRepository.findByUser(sampleUser)).thenReturn(List.of(sampleExpense));
+        when(incomeRepository.findByUser(sampleUser)).thenReturn(List.of(sampleIncome));
+        when(savingsGoalRepository.findByUser(sampleUser)).thenReturn(List.of(sampleGoal));
+
+        byte[] bytes = exportService.exportFinancialStatementExcel(sampleUser, "EUR");
+        assertThat(bytes).isNotNull().isNotEmpty();
+
+        java.nio.file.Files.write(java.nio.file.Path.of("target/powerbi_dashboard_eur.xlsx"), bytes);
+
+        try (Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
+            Sheet dash = workbook.getSheetAt(0);
+            String subBanner = dash.getRow(2).getCell(0).getStringCellValue();
+            assertThat(subBanner).contains("EUR");
+            assertThat(subBanner).contains("€");
+        }
     }
 }

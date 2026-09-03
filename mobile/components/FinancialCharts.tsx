@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, useWindowDimensions } from 'react-native';
 import Svg, {
   Path,
   Circle,
@@ -25,8 +25,7 @@ import { useAuth } from '../context/AuthContext';
 import { Colors, getCategoryColor, getCategoryEmoji } from '../constants/theme';
 import { getCurrencySymbol } from '../services/currency';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CHART_WIDTH = SCREEN_WIDTH - 40; // 20px padding on each side
+// Dynamic chart dimensions calculated adaptively per device form factor
 
 /**
  * Formats a numeric value into a compact currency abbreviation (e.g. ₹1.2k, ₹3.5M).
@@ -179,6 +178,7 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = ({ expenses }) =>
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
+  const { width: windowWidth } = useWindowDimensions();
 
   const safeExpenses = expenses || [];
   const days = 14;
@@ -203,7 +203,7 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = ({ expenses }) =>
 
   const maxVal = Math.max(...dayBuckets.map((d) => d.amount), 100);
   const chartHeight = 120;
-  const chartInnerWidth = CHART_WIDTH - 48;
+  const chartInnerWidth = Math.min(windowWidth - (windowWidth >= 1024 ? 64 : 40) - 48, 800);
   const stepX = chartInnerWidth / (days - 1);
 
   const points = dayBuckets.map((d, i) => {
@@ -536,6 +536,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 18,
     marginBottom: 16,
+    maxWidth: 1100,
+    width: '100%',
+    alignSelf: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,

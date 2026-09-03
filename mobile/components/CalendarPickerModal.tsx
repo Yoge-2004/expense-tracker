@@ -13,13 +13,14 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
 
-const { width } = Dimensions.get('window');
+// Dynamic window dimensions calculated inside component
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -46,6 +47,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   const { theme } = useAuth();
   const c = Colors[theme || 'dark'];
   const isLight = theme === 'light';
+  const { width } = useWindowDimensions();
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -247,7 +249,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   card: {
-    width: Math.min(width - 40, 360),
+    maxWidth: 360,
+    width: '92%',
     borderRadius: 24,
     borderWidth: 1,
     padding: 18,

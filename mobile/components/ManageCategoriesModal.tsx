@@ -16,6 +16,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
@@ -50,6 +51,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
   const { userId, theme } = useAuth();
   const { showAlert } = useAlert();
   const c = Colors[theme];
+
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 600;
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [usedIds, setUsedIds] = useState<Set<number>>(new Set());
@@ -157,8 +161,16 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={[styles.modalCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <View style={[styles.backdrop, { justifyContent: isLargeScreen ? 'center' : 'flex-end', padding: isLargeScreen ? 24 : 0 }]}>
+        <View style={[styles.modalCard, {
+          backgroundColor: c.surface,
+          borderColor: c.border,
+          borderBottomLeftRadius: isLargeScreen ? 28 : 0,
+          borderBottomRightRadius: isLargeScreen ? 28 : 0,
+          maxWidth: 580,
+          width: '100%',
+          alignSelf: 'center',
+        }]}>
           {/* Header */}
           <View style={styles.header}>
             <View>
