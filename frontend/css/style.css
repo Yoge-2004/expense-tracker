@@ -1508,8 +1508,21 @@ body.modal-open {
 }
 
 /* ================== 7. BUDGET PROGRESS BARS ================== */
+/* Consolidated from 3 declarations. Same animation-lock bug found
+   repeatedly in the Phase 3 cleanup: expenseSlideIn's "both" fill-mode
+   permanently overrides transform via the CSS animation cascade layer
+   once the entrance animation finishes, blocking :hover's
+   translateY(-2px) from ever applying. Dropped "both". */
 .budget-item {
     margin-bottom: 16px;
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    transition: all 0.25s var(--ease);
+    position: relative;
+    overflow: hidden;
+    animation: expenseSlideIn 0.4s var(--ease);
 }
 
 .budget-info {
@@ -1843,9 +1856,7 @@ button[type="submit"]:active {
 
 
 /* --- Budget items entrance --- */
-.budget-item {
-    animation: expenseSlideIn 0.4s var(--ease) both;
-}
+
 
 .budget-item:nth-child(1) { animation-delay: 0.05s; }
 .budget-item:nth-child(2) { animation-delay: 0.10s; }
@@ -2387,7 +2398,14 @@ button[type="submit"]:active {
     color: #fff;
     border-color: transparent;
     box-shadow: 0 4px 12px var(--primary-glow);
-    animation: pillPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    /* "forwards" removed: same animation-lock pattern found repeatedly in
+   Phase 3 -- pillPop's forwards fill-mode permanently overrides
+   transform via the CSS animation cascade layer once it finishes,
+   which silently blocked .pill-chip:hover's translateY/scale for any
+   pill that's also .active (a selected filter). Confirmed via real
+   hover simulation: was stuck at an identity matrix, now animates
+   correctly. */
+    animation: pillPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* BUDGET GRID MATRIX */
@@ -3978,15 +3996,7 @@ button[type="submit"]:active {
 }
 
 /* ── Budget card hover ── */
-.budget-item {
-    border-radius: 14px;
-    padding: 16px;
-    border: 1px solid var(--border);
-    background: var(--card-bg);
-    transition: all 0.25s var(--ease);
-    position: relative;
-    overflow: hidden;
-}
+
 .budget-item:hover {
     border-color: var(--border-accent);
     transform: translateY(-2px);
