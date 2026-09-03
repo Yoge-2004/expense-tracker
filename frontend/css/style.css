@@ -2921,16 +2921,53 @@ button[type="submit"]:active {
 }
 
 .hero-feature-pill {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    background: rgba(var(--primary-rgb),0.08);
-    border: 1px solid rgba(var(--primary-rgb),0.2);
+    background: rgba(var(--primary-rgb), 0.08);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
-    color: rgba(var(--primary-rgb),0.9);
+    color: var(--primary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.25);
+    transition: all 0.2s var(--ease);
+}
+
+.hero-feature-pill svg {
+    stroke: var(--primary);
+    flex-shrink: 0;
+    transition: stroke 0.2s var(--ease);
+}
+
+.hero-feature-pill:hover {
+    background: rgba(var(--primary-rgb), 0.14);
+    border-color: rgba(var(--primary-rgb), 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.35);
+}
+
+/* Light Theme: Crisp, high-contrast porcelain & royal bronze pills to eliminate blending */
+[data-theme="light"] .hero-feature-pill {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border: 1px solid rgba(180, 135, 45, 0.36) !important;
+    color: #1E293B !important;
+    box-shadow: 0 3px 10px -2px rgba(180, 140, 60, 0.18), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .hero-feature-pill svg {
+    stroke: #A87822 !important;
+}
+
+[data-theme="light"] .hero-feature-pill:hover {
+    background: #FFFFFF !important;
+    border-color: rgba(180, 135, 45, 0.65) !important;
+    color: #0F172A !important;
+    box-shadow: 0 5px 16px -2px rgba(180, 140, 60, 0.26) !important;
+    transform: translateY(-1px);
 }
 
 /* Back link */
