@@ -167,6 +167,10 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         });
 
         clearInterval(otpTimerInterval);
+        sessionStorage.setItem('flash_toast', JSON.stringify({
+            message: 'Registration successful! Please sign in with your credentials.',
+            type: 'success'
+        }));
         showToast('Registration successful! Redirecting to sign in…', 'success');
         setTimeout(() => { window.location.href = 'index.html'; }, 800);
 

@@ -112,12 +112,29 @@ async function checkHealth() {
     }
 }
 
+function checkPendingFlashToast() {
+    try {
+        const flash = sessionStorage.getItem("flash_toast");
+        if (flash) {
+            sessionStorage.removeItem("flash_toast");
+            const parsed = JSON.parse(flash);
+            if (parsed && parsed.message) {
+                setTimeout(() => showToast(parsed.message, parsed.type || "success"), 200);
+            }
+        }
+    } catch (_) {}
+}
+
 // Automatically check server health on load and periodically
 if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", checkHealth);
+        document.addEventListener("DOMContentLoaded", () => {
+            checkHealth();
+            checkPendingFlashToast();
+        });
     } else {
         checkHealth();
+        checkPendingFlashToast();
     }
     setInterval(checkHealth, 15000);
 }
@@ -178,7 +195,7 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
 
     updateServerStatus(true, "Connected");
 
-    if (response.status === 401 && !endpoint.includes("/auth/login")) {
+    if (response.status === 401 && !endpoint.includes("/auth/")) {
         localStorage.clear();
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");

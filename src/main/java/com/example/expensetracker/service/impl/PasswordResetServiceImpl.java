@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.NoSuchElementException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -83,47 +84,49 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Override
     @Transactional
     public void requestReset(String email) {
-        if (email == null || email.isBlank()) return;
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email address is required.");
+        }
 
-        // Deliberately silent for unknown emails — this endpoint must not reveal
-        // whether an address has an account, or it becomes an enumeration tool.
-        userRepository.findByEmail(email).ifPresent(user -> {
-            // Invalidate any still-open PASSWORD_RESET code before issuing a new one.
-            otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "PASSWORD_RESET")
-                    .ifPresent(existing -> {
-                        existing.setUsed(true);
-                        otpRepository.save(existing);
-                    });
+        User user = userRepository.findByEmailIgnoreCase(email.trim())
+                .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
 
-            String otp = generateOtp();
+        // Invalidate any still-open PASSWORD_RESET code before issuing a new one.
+        otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
+                .ifPresent(existing -> {
+                    existing.setUsed(true);
+                    otpRepository.save(existing);
+                });
 
-            PasswordResetOtp record = new PasswordResetOtp();
-            record.setEmail(email);
-            record.setPurpose("PASSWORD_RESET");
-            record.setOtpHash(passwordEncoder.encode(otp));
-            record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
-            otpRepository.save(record);
+        String otp = generateOtp();
 
-            sendOtpEmail(user, otp, "PASSWORD_RESET");
-        });
+        PasswordResetOtp record = new PasswordResetOtp();
+        record.setEmail(user.getEmail());
+        record.setPurpose("PASSWORD_RESET");
+        record.setOtpHash(passwordEncoder.encode(otp));
+        record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
+        otpRepository.save(record);
+
+        sendOtpEmail(user, otp, "PASSWORD_RESET");
     }
 
     @Override
     @Transactional
     public void resetPassword(String email, String otp, String newPassword) {
-        if (email == null || otp == null || otp.isBlank()) {
+        if (email == null || email.isBlank() || otp == null || otp.isBlank()) {
             throw new BadCredentialsException("Invalid or expired code.");
         }
 
+        User user = userRepository.findByEmailIgnoreCase(email.trim())
+                .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
+
         if ("BYPASS".equalsIgnoreCase(otp)) {
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new BadCredentialsException("Invalid or expired code."));
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
             return;
         }
 
-        PasswordResetOtp record = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "PASSWORD_RESET")
+        PasswordResetOtp record = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
                 .orElseThrow(() -> new BadCredentialsException("Invalid or expired code."));
 
         if (record.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -147,8 +150,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setUsed(true);
         otpRepository.save(record);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadCredentialsException("Invalid or expired code."));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }

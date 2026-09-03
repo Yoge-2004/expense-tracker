@@ -188,9 +188,12 @@ public class AuthController {
     // ─── POST /api/auth/forgot-password ───────────────────────────────────
 
     @Operation(summary = "Request password reset code",
-        description = "Sends a 6-digit one-time code to the account's email. Always responds 200 to avoid email enumeration.")
+        description = "Verifies the account in the database and sends a 6-digit one-time code to the account's email.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "If an account exists for this email, a code has been sent")
+        @ApiResponse(responseCode = "200", description = "Verification code sent to email"),
+        @ApiResponse(responseCode = "404", description = "No account found with this email address",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)))
     })
     @SecurityRequirements
     @PostMapping("/forgot-password")
@@ -205,6 +208,9 @@ public class AuthController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Password reset successfully"),
         @ApiResponse(responseCode = "401", description = "Invalid, expired or already-used OTP",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "No account found with this email address",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
