@@ -390,14 +390,13 @@ body {
     background: var(--bg-dark);
     color: var(--text-main);
 
-    /* Unified single root scrollbar: body is visible, html handles window scrolling */
+    /* Unified single root scrollbar: body delegates completely to html */
     min-height: 100vh;
     height: auto;
+    overflow: visible !important;
     overflow-y: visible !important;
-    overflow-x: hidden;
     width: 100%;
     max-width: 100%;
-    overscroll-behavior-y: none;
 
     transition: background 0.3s, color 0.3s;
 }

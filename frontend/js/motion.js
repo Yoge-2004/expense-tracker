@@ -274,20 +274,31 @@
           to the active form section.
        ------------------------------------------------------------------- */
     function initAuthWheelSync() {
-        const hero = document.querySelector('.auth-hero');
-        if (!hero) return;
+        const authPage = document.querySelector('.auth-page');
+        if (!authPage) return;
 
-        hero.addEventListener('wheel', (e) => {
-            if (window.innerWidth > 900) {
-                let delta = e.deltaY;
-                if (e.deltaMode === 1) {
-                    delta *= 28;
-                } else if (e.deltaMode === 2) {
-                    delta *= window.innerHeight;
-                }
-                window.scrollBy({ top: delta, behavior: 'auto' });
+        authPage.addEventListener('wheel', (e) => {
+            if (window.innerWidth <= 900) return;
+
+            // Don't intercept scrolling inside scrollable dropdowns or modals if any exist
+            const scrollableParent = e.target.closest('.scroll-area, .modal, .custom-select-options');
+            if (scrollableParent && scrollableParent.scrollHeight > scrollableParent.clientHeight) {
+                return;
             }
-        }, { passive: true });
+
+            e.preventDefault();
+
+            let delta = e.deltaY;
+            if (e.deltaMode === 1) {
+                // DOM_DELTA_LINE: Firefox / Linux standard line scroll
+                delta *= 28;
+            } else if (e.deltaMode === 2) {
+                // DOM_DELTA_PAGE
+                delta *= window.innerHeight;
+            }
+
+            window.scrollBy({ top: delta, behavior: 'auto' });
+        }, { passive: false });
     }
 
     ready(function () {
