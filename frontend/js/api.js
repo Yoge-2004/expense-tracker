@@ -91,6 +91,13 @@ function showToast(message, type = "info") {
 const apiCache = new Map();
 const CACHE_TTL_MS = 15000;
 
+function clearApiCache() {
+    apiCache.clear();
+}
+if (typeof window !== "undefined") {
+    window.clearApiCache = clearApiCache;
+}
+
 async function checkHealth() {
     try {
         const res = await fetch(`${API_BASE_URL}/health`, { cache: 'no-store' });
@@ -141,12 +148,13 @@ if (typeof document !== "undefined") {
 
 async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
     const method = (options.method || "GET").toUpperCase();
+    const skipCache = options.skipCache === true || options.cache === "no-store";
 
-    if (method !== "GET") {
+    if (method !== "GET" || skipCache) {
         apiCache.clear();
     }
 
-    if (method === "GET") {
+    if (method === "GET" && !skipCache) {
         const cached = apiCache.get(endpoint);
         if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
             return cached.data;

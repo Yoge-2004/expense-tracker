@@ -102,8 +102,8 @@ const elements = {
     // Subscription Elements
     manageSubsBtn: document.getElementById("manageSubsBtn"),
     subsModal: document.getElementById("subsModal"),
-    subsList: document.getElementById("subsList"),
-    closeSubsBtn: document.getElementById("closeSubsBtn"),
+    subsList: document.getElementById("subsModalList") || document.getElementById("subsList"),
+    closeSubsBtn: document.getElementById("closeSubsModalBtn") || document.getElementById("closeSubsBtn"),
     // Delete Account Elements
     deleteAccountBtn: document.getElementById("deleteAccountBtn"),
     deleteAccountModal: document.getElementById("deleteAccountModal"),
@@ -231,6 +231,12 @@ function renderDashboardData(expenses, categories) {
 }
 
 async function loadDashboard(skipCache = false) {
+    if (skipCache) {
+        if (typeof window.clearApiCache === "function") {
+            window.clearApiCache();
+        }
+        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+    }
     const cached = skipCache ? null : loadExpenseCache();
     const renderedFromCache = !!cached;
 
@@ -248,11 +254,11 @@ async function loadDashboard(skipCache = false) {
         console.log("Loading Dashboard Data...");
 
         const [expenses, globalCats, userCats, incomes, savingsGoals] = await Promise.all([
-            apiRequest(`/expenses/user/${userId}`),
-            apiRequest(`/categories/global`),
-            apiRequest(`/categories/user/${userId}`),
-            apiRequest(`/incomes/user/${userId}`).catch(err => { console.warn("Incomes fetch error:", err); return []; }),
-            apiRequest(`/savings/goals/user/${userId}`).catch(err => { console.warn("Savings fetch error:", err); return []; })
+            apiRequest(`/expenses/user/${userId}`, { skipCache }),
+            apiRequest(`/categories/global`, { skipCache }),
+            apiRequest(`/categories/user/${userId}`, { skipCache }),
+            apiRequest(`/incomes/user/${userId}`, { skipCache }).catch(err => { console.warn("Incomes fetch error:", err); return []; }),
+            apiRequest(`/savings/goals/user/${userId}`, { skipCache }).catch(err => { console.warn("Savings fetch error:", err); return []; })
         ]);
 
         allIncomes = Array.isArray(incomes) ? incomes : [];
@@ -645,7 +651,7 @@ window.openEditBudget = (budgetId, categoryId, categoryName, limit, period, star
     ).join("");
 
     // Pre-fill limit, period and dates
-    const limitInput = document.getElementById("budgetLimitAmount");
+    const limitInput = document.getElementById("budgetLimit") || document.getElementById("budgetLimitAmount");
     if (limitInput) limitInput.value = limit;
     if (budgetPeriod) {
         budgetPeriod.value = period || "MONTHLY";
@@ -677,7 +683,7 @@ setBudgetForm?.addEventListener("submit", async (e) => {
     if (submitBtn.disabled) return; // a submission is already in flight
 
     const catId = parseInt(budgetCategorySelect.value);
-    const limit = parseFloat(document.getElementById("budgetLimitAmount").value);
+    const limit = parseFloat((document.getElementById("budgetLimit") || document.getElementById("budgetLimitAmount")).value);
     const period = budgetPeriod.value;
     const startDate = document.getElementById("budgetStartDate").value || null;
     const endDate = document.getElementById("budgetEndDate").value || null;
@@ -1538,7 +1544,7 @@ elements.addCategoryBtn.addEventListener("click", async () => {
 const manageCategoriesModal = document.getElementById("manageCategoriesModal");
 
 async function renderManageCategoriesList() {
-    const listEl = document.getElementById("manageCategoriesList");
+    const listEl = document.getElementById("categoriesList") || document.getElementById("manageCategoriesList");
     if (!listEl) return;
 
     if (userOnlyCategories.length === 0) {
@@ -1971,6 +1977,8 @@ importFileInput?.addEventListener("change", async (e) => {
         } else {
             showToast(data.message || "Expenses imported successfully!", "success");
         }
+        if (typeof window.clearApiCache === "function") window.clearApiCache();
+        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
         // Must be awaited: loadDashboard is async, and without awaiting it here
         // the `finally` block below runs setLoading(false) immediately — hiding
         // the loading indicator before the actual refetch/re-render finishes,
@@ -2002,7 +2010,7 @@ document.getElementById("manageSubsLink")?.addEventListener("click", async (e) =
 });
 
 // Close Modal
-elements.closeSubsBtn.addEventListener("click", () => {
+elements.closeSubsBtn?.addEventListener("click", () => {
     closeModal(elements.subsModal);
 });
 elements.subsModal?.addEventListener("click", (e) => {
@@ -2065,14 +2073,14 @@ window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTH
     if (freqSelect) freqSelect.value = frequency;
     const intervalInput = document.getElementById("editSubIntervalDays");
     if (intervalInput) intervalInput.value = intervalDays || 1;
-    const intervalWrap = document.getElementById("editSubIntervalWrap");
+    const intervalWrap = document.getElementById("editSubCustomIntervalWrap") || document.getElementById("editSubIntervalWrap");
     if (intervalWrap) intervalWrap.hidden = frequency !== "CUSTOM";
     openModal(editSubModal);
 };
 
 // Toggle custom interval field inside edit subscription form
 document.getElementById("editSubFrequency")?.addEventListener("change", (e) => {
-    const wrap = document.getElementById("editSubIntervalWrap");
+    const wrap = document.getElementById("editSubCustomIntervalWrap") || document.getElementById("editSubIntervalWrap");
     if (wrap) wrap.hidden = e.target.value !== "CUSTOM";
 });
 
@@ -2279,7 +2287,11 @@ function renderIncomes(incomes) {
         listEl.innerHTML = `
             <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
                 <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No income records logged yet</p>
-                <span style="font-size:12.5px;">Click <strong>+ Record Income</strong> to track salary, investments, or client revenue.</span>
+                <p style="font-size:12.5px; margin:0 0 12px; color:var(--text-muted);">Track your salary, investments, client retainers, or other inflows.</p>
+                <button type="button" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; cursor:pointer;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Record Income</span>
+                </button>
             </div>`;
         return;
     }
@@ -2458,20 +2470,34 @@ const addIncomeTableBtn = document.getElementById("addIncomeTableBtn");
 const closeIncomeModalBtn = document.getElementById("closeIncomeModalBtn");
 
 function openNewIncomeModal() {
-    if (!incomeModal) return;
-    document.getElementById("incomeId").value = "";
-    document.getElementById("incomeSource").value = "";
-    document.getElementById("incomeAmount").value = "";
-    document.getElementById("incomeDate").value = new Date().toISOString().split("T")[0];
-    document.getElementById("incomeDesc").value = "";
-    document.getElementById("incomeIsRecurring").checked = false;
-    document.getElementById("incomeModalTitle").textContent = "Record Income";
-    openModal(incomeModal);
+    const modal = document.getElementById("incomeModal") || incomeModal;
+    if (!modal) return;
+    const form = document.getElementById("incomeForm") || incomeForm;
+    if (form) form.reset();
+    const idEl = document.getElementById("incomeId");
+    if (idEl) idEl.value = "";
+    const srcEl = document.getElementById("incomeSource");
+    if (srcEl) srcEl.value = "";
+    const amtEl = document.getElementById("incomeAmount");
+    if (amtEl) amtEl.value = "";
+    const dateEl = document.getElementById("incomeDate");
+    if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
+    const descEl = document.getElementById("incomeDesc");
+    if (descEl) descEl.value = "";
+    const recEl = document.getElementById("incomeIsRecurring");
+    if (recEl) recEl.checked = false;
+    const titleEl = document.getElementById("incomeModalTitle");
+    if (titleEl) titleEl.textContent = "Record Income";
+    openModal(modal);
 }
+window.openNewIncomeModal = openNewIncomeModal;
 
 openIncomeModalBtn?.addEventListener("click", openNewIncomeModal);
 addIncomeTableBtn?.addEventListener("click", openNewIncomeModal);
 closeIncomeModalBtn?.addEventListener("click", () => closeModal(incomeModal));
+incomeModal?.addEventListener("click", (e) => {
+    if (e.target === incomeModal) closeModal(incomeModal);
+});
 
 incomeForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2568,9 +2594,15 @@ savingsGoalForm?.addEventListener("submit", async (e) => {
 // Savings Deposit Modal & Form
 const savingsDepositModal = document.getElementById("savingsDepositModal");
 const savingsDepositForm = document.getElementById("savingsDepositForm");
-const closeDepositModalBtn = document.getElementById("closeDepositModalBtn");
+const closeDepositModalBtn = document.getElementById("closeSavingsDepositModalBtn") || document.getElementById("closeDepositModalBtn");
 
 closeDepositModalBtn?.addEventListener("click", () => closeModal(savingsDepositModal));
+savingsDepositModal?.addEventListener("click", (e) => {
+    if (e.target === savingsDepositModal) closeModal(savingsDepositModal);
+});
+savingsGoalModal?.addEventListener("click", (e) => {
+    if (e.target === savingsGoalModal) closeModal(savingsGoalModal);
+});
 
 savingsDepositForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2666,6 +2698,8 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
 
         const data = await res.json();
         showToast(data.message || "Incomes imported successfully!", "success");
+        if (typeof window.clearApiCache === "function") window.clearApiCache();
+        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
         await loadDashboard(true);
     } catch (err) {
         showToast(err.message, "error");
@@ -2745,3 +2779,23 @@ emailReportBtn?.addEventListener("click", async () => {
         setLoading(false);
     }
 });
+
+
+// --- AUTO-UPDATE DASHBOARD WITH SERVER DATA ---
+// Automatically keeps the UI refreshed whenever tab becomes active or on interval
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        loadDashboard(true);
+    }
+});
+
+window.addEventListener("focus", () => {
+    loadDashboard(true);
+});
+
+// Periodic background sync every 25 seconds
+setInterval(() => {
+    if (document.visibilityState === "visible") {
+        loadDashboard(true);
+    }
+}, 25000);

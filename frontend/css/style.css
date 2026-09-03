@@ -1017,8 +1017,22 @@ button[type="submit"]:active {
     font-weight: 500;
     letter-spacing: -0.01em;
 }
-/* Expense Action Button */
-.add-expense-button { width: 100%; padding: 15px 20px; font-size: 15px; }
+/* Top Bar Action Buttons */
+.top-bar .add-expense-button,
+.top-bar .add-income-button {
+    width: auto !important;
+    height: 40px !important;
+    padding: 0 16px !important;
+    font-size: 13.5px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+}
 
 /* Income Action Buttons — Emerald theme with high-contrast white text */
 .add-income-button,
@@ -3957,18 +3971,20 @@ button[type="submit"]:active {
         padding: 0 8px !important;
     }
 
-    .add-expense-button {
-        flex: 1 1 100% !important;
-        width: 100% !important;
-        height: 46px !important;
-        padding: 10px 16px !important;
-        font-size: 14px !important;
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        flex: 1 1 calc(50% - 6px) !important;
+        width: calc(50% - 6px) !important;
+        height: 44px !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
         font-weight: 700 !important;
         border-radius: 12px !important;
-        display: flex !important;
+        display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         margin-bottom: 8px !important;
+        box-sizing: border-box !important;
     }
 
     .command-kbd {
