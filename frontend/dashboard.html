@@ -495,13 +495,13 @@
                     </div>
                 </div>
 
-                <div class="form-group flex-row">
+                <div class="form-group flex-row switch-group">
                     <label class="switch-label" for="isRecurring">
-                        <span class="switch-text" style="display:flex; align-items:center; gap:8px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--primary);"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                            Make Recurring Subscription
+                        <span class="switch-text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--primary); flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <span>Make Recurring Subscription</span>
                         </span>
-                        <input type="checkbox" id="isRecurring" style="margin-left:auto;">
+                        <input type="checkbox" id="isRecurring">
                     </label>
                 </div>
 
@@ -659,7 +659,12 @@
     <div class="modal-overlay" id="incomeModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="incomeModalTitle">Record Income</h3>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(16, 185, 129, 0.15); display:flex; align-items:center; justify-content:center; color:#10B981; border:1px solid rgba(16, 185, 129, 0.3); box-shadow:0 0 12px rgba(16, 185, 129, 0.25);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </div>
+                    <h3 id="incomeModalTitle" style="margin:0;">Record Income</h3>
+                </div>
                 <button class="modal-close" id="closeIncomeModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="incomeForm">
@@ -680,13 +685,13 @@
                     <label>Description (Optional)</label>
                     <input type="text" id="incomeDesc" placeholder="e.g. Direct deposit from employer">
                 </div>
-                <div class="form-group flex-row">
+                <div class="form-group flex-row switch-group">
                     <label class="switch-label" for="incomeIsRecurring">
-                        <span class="switch-text" style="display:flex; align-items:center; gap:8px;">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#10B981;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                            Recurring Income (e.g. Monthly Salary)
+                        <span class="switch-text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#10B981; flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <span>Recurring Income (e.g. Monthly Salary)</span>
                         </span>
-                        <input type="checkbox" id="incomeIsRecurring" style="margin-left:auto;">
+                        <input type="checkbox" id="incomeIsRecurring">
                     </label>
                 </div>
                 <button type="submit" class="btn-primary add-income-button" style="margin-top:16px;">Save Income</button>
