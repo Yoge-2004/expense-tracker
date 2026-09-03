@@ -2553,9 +2553,17 @@ button[type="submit"]:active {
     display: grid;
     grid-template-columns: 1.15fr 1fr;
     overflow: hidden;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
     background: transparent !important;
     position: relative;
     z-index: 1;
+}
+
+.auth-page::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 /* ── Left Hero Panel ── */
@@ -2563,14 +2571,23 @@ button[type="submit"]:active {
     position: relative;
     height: 100%;
     min-height: 100vh;
-    overflow-y: auto;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 48px 48px 48px 80px;
+    padding: clamp(24px, 3.5vh, 44px) clamp(32px, 3.5vw, 48px) clamp(24px, 3.5vh, 44px) clamp(40px, 5vw, 80px);
     background: transparent;
     box-sizing: border-box;
+}
+
+.auth-hero::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .auth-hero-content {
@@ -2846,12 +2863,32 @@ button[type="submit"]:active {
     background: rgba(16, 18, 14, 0.70) !important;
     backdrop-filter: blur(24px) !important;
     -webkit-backdrop-filter: blur(24px) !important;
-    padding: 48px 48px;
+    padding: clamp(32px, 4vh, 48px) clamp(24px, 3.5vw, 48px);
     min-height: 100vh;
     height: 100%;
+    overflow-x: hidden;
     overflow-y: auto;
     box-sizing: border-box;
     border-left: 1px solid rgba(255, 255, 255, 0.05);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--ink-rgb), 0.25) transparent;
+}
+
+.auth-form-section::-webkit-scrollbar {
+    width: 6px;
+}
+
+.auth-form-section::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.auth-form-section::-webkit-scrollbar-thumb {
+    background: rgba(var(--ink-rgb), 0.25);
+    border-radius: 999px;
+}
+
+.auth-form-section::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--ink-rgb), 0.45);
 }
 
 
@@ -3953,15 +3990,24 @@ button[type="submit"]:active {
 .auth-hero {
     background: transparent !important;
     position: relative;
-    overflow-y: auto;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    padding: 48px 48px 48px 80px !important;
+    padding: clamp(24px, 3.5vh, 44px) clamp(32px, 3.5vw, 48px) clamp(24px, 3.5vh, 44px) clamp(40px, 5vw, 80px) !important;
     min-height: 100vh !important;
     height: 100% !important;
     box-sizing: border-box !important;
+}
+
+.auth-hero::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 .auth-hero::before {
     content: '';
