@@ -990,7 +990,64 @@ button[type="submit"]:active {
     font-weight: 500;
     letter-spacing: -0.01em;
 }
+/* Expense Action Button */
 .add-expense-button { width: 100%; padding: 15px 20px; font-size: 15px; }
+
+/* Income Action Buttons — Emerald theme with high-contrast white text */
+.add-income-button,
+#openIncomeModalBtn,
+#addIncomeTableBtn,
+#incomeForm button[type="submit"] {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(16, 185, 129, 0.5) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.25s var(--ease) !important;
+}
+
+.add-income-button span,
+#openIncomeModalBtn span,
+#addIncomeTableBtn span,
+#incomeForm button[type="submit"] span {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+.add-income-button svg,
+#openIncomeModalBtn svg,
+#addIncomeTableBtn svg,
+#incomeForm button[type="submit"] svg {
+    stroke: #FFFFFF !important;
+    color: #FFFFFF !important;
+}
+
+.add-income-button:hover,
+#openIncomeModalBtn:hover,
+#addIncomeTableBtn:hover,
+#incomeForm button[type="submit"]:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.5) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+    color: #FFFFFF !important;
+}
+
+.add-income-button:active,
+#openIncomeModalBtn:active,
+#addIncomeTableBtn:active,
+#incomeForm button[type="submit"]:active {
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+}
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .section-meta { color: var(--text-muted); font-size: 12px; }
 .trend-card { min-height: 330px; }
