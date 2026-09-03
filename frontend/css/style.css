@@ -353,16 +353,8 @@ input[type="number"]::-webkit-inner-spin-button {
 
 html {
     overflow-x: hidden;
+    overflow-y: auto;
     max-width: 100vw;
-    /* Tells the browser to render EVERY native form control (date picker
-       popups, <select> dropdown lists, scrollbars, etc.) using a dark native
-       theme by default, instead of relying on the OS's own light/dark
-       preference. Previously this was only ever applied via a manually-added
-       .dark-date class on individual date inputs — <select> elements (like
-       the category dropdown) had no coverage at all, and any date input
-       where someone forgot to add the class would silently fall back to
-       default colors. Setting it once here covers every native control on
-       every page automatically. */
     color-scheme: dark;
 }
 
@@ -370,14 +362,31 @@ html[data-theme="light"] {
     color-scheme: light;
 }
 
+html::-webkit-scrollbar {
+    width: 7px;
+}
+
+html::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.28);
+    border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.48);
+}
+
 body {
     background: var(--bg-dark);
     color: var(--text-main);
 
-    /* Allow scroll */
+    /* Unified single root scrollbar: body is visible, html handles window scrolling */
     min-height: 100vh;
     height: auto;
-    overflow-y: auto;
+    overflow-y: visible !important;
     overflow-x: hidden;
     max-width: 100vw;
 
@@ -3003,26 +3012,18 @@ button[type="submit"]:active {
     padding: clamp(32px, 4vh, 48px) clamp(24px, 3.5vw, 48px);
     min-height: 100vh;
     height: auto;
-    overflow: visible;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
     box-sizing: border-box;
     border-left: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .auth-form-section::-webkit-scrollbar {
-    width: 6px;
-}
-
-.auth-form-section::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.auth-form-section::-webkit-scrollbar-thumb {
-    background: rgba(var(--ink-rgb), 0.25);
-    border-radius: 999px;
-}
-
-.auth-form-section::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--ink-rgb), 0.45);
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 
@@ -3574,7 +3575,10 @@ button[type="submit"]:active {
         flex-direction: column !important;
         min-height: 100vh;
         height: auto;
-        overflow-y: auto !important;
+        overflow-y: visible !important;
+        overflow: visible !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
     }
 
     .auth-hero {
