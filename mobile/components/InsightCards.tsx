@@ -48,11 +48,33 @@ export interface BudgetStatus {
   period?: string;
 }
 
+export interface IncomeItem {
+  id: number;
+  source: string;
+  amount: number;
+  incomeDate: string;
+  description?: string;
+  isRecurring?: boolean;
+  recurring?: boolean;
+}
+
+export interface SavingsGoalItem {
+  id: number;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate?: string;
+}
+
 interface InsightCardsProps {
   /** Array of expense transactions. */
   expenses: ExpenseItem[];
   /** Array of budget limits with spent amounts. */
   budgets: BudgetStatus[];
+  /** Inflow transaction collection. */
+  incomes?: IncomeItem[];
+  /** Savings milestones and targets. */
+  savingsGoals?: SavingsGoalItem[];
 }
 
 interface DetailedInsightModalData {
@@ -78,7 +100,7 @@ const ESSENTIAL_CATEGORIES = [
 /**
  * Intelligent Financial Analytics component.
  */
-export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets }) => {
+export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, incomes = [], savingsGoals = [] }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -254,6 +276,51 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets })
   const recurringRatio =
     currentMonthSpent > 0 ? Math.round((recurringTotal / currentMonthSpent) * 100) : 0;
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 9. CROSS-DOMAIN SYNTHESIS: Incomes ↔ Expenses (Net Cash Flow & Savings Rate)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const safeIncomes = incomes || [];
+  const currentMonthIncomes = safeIncomes.filter((i) => {
+    if (!i.incomeDate) return false;
+    try {
+      const d = new Date(i.incomeDate);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    } catch {
+      return false;
+    }
+  });
+
+  const totalMonthlyInflow = currentMonthIncomes.reduce(
+    (acc, curr) => acc + Math.max(0, Number(curr.amount || 0)),
+    0
+  );
+  const totalAllInflow = safeIncomes.reduce(
+    (acc, curr) => acc + Math.max(0, Number(curr.amount || 0)),
+    0
+  );
+  const activeInflow = totalMonthlyInflow > 0 ? totalMonthlyInflow : totalAllInflow;
+  const netCashFlow = activeInflow - currentMonthSpent;
+  const savingsRate = activeInflow > 0 ? Math.round((netCashFlow / activeInflow) * 100) : 0;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 10. CROSS-DOMAIN SYNTHESIS: Savings Goals Funding Velocity
+  // ─────────────────────────────────────────────────────────────────────────────
+  const safeGoals = savingsGoals || [];
+  const totalGoalsTarget = safeGoals.reduce((s, g) => s + Math.max(0, Number(g.targetAmount || 0)), 0);
+  const totalGoalsCurrent = safeGoals.reduce((s, g) => s + Math.max(0, Number(g.currentAmount || 0)), 0);
+  const totalGoalsRemaining = Math.max(0, totalGoalsTarget - totalGoalsCurrent);
+  const goalsFundingPct = totalGoalsTarget > 0 ? Math.round((totalGoalsCurrent / totalGoalsTarget) * 100) : 0;
+  const monthsToFundGoals = (netCashFlow > 0 && totalGoalsRemaining > 0)
+    ? Math.max(1, Math.ceil(totalGoalsRemaining / netCashFlow))
+    : null;
+
+  // 11. CROSS-DOMAIN SYNTHESIS: Recurring Commitment Drag (Autonomy Index)
+  const recurringChitTotal = safeGoals
+    .filter((g: any) => g.isRecurring || (g.recurringAmount != null && Number(g.recurringAmount) > 0))
+    .reduce((s: number, g: any) => s + Math.max(0, Number(g.recurringAmount || 0)), 0);
+  const totalCommittedOverhead = recurringTotal + recurringChitTotal;
+  const commitmentAutonomyRatio = activeInflow > 0 ? Math.round((totalCommittedOverhead / activeInflow) * 100) : 0;
+
   const openDetail = (data: DetailedInsightModalData) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setSelectedInsight(data);
@@ -320,6 +387,187 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets })
 
       {/* Cards Grid */}
       <View style={styles.grid}>
+        {/* CROSS-DOMAIN CARD: Tri-Domain Wealth Interaction Flow */}
+        {(activeTab === 'all' || activeTab === 'forecasts' || activeTab === 'habits') && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              openDetail({
+                title: 'Tri-Domain Wealth Interaction',
+                icon: 'pie-chart-outline',
+                color: '#3B82F6',
+                headline:
+                  activeInflow > 0
+                    ? `Wealth allocation: ${Math.round((currentMonthSpent / (activeInflow || 1)) * 100)}% to expenses, with ${formatAmt(totalGoalsCurrent)} protected in chits & savings.`
+                    : 'Track income, expenses, and savings goals to visualize your tri-domain wealth loop.',
+                metrics: [
+                  { label: 'Earned Inflow', value: formatAmt(activeInflow) },
+                  { label: 'Outflow Drain', value: formatAmt(currentMonthSpent) },
+                  { label: 'Stored in Chits & Goals', value: formatAmt(totalGoalsCurrent) },
+                  { label: 'Net Available Liquidity', value: `${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}` },
+                ],
+                advice:
+                  activeInflow <= 0
+                    ? 'Log consistent inflows to unlock 50/30/20 wealth allocation metrics.'
+                    : netCashFlow < 0
+                    ? 'Outflow is depleting your liquidity. Pause discretionary spending to safeguard your chit and savings contributions.'
+                    : 'Healthy wealth loop: Cash flows smoothly from revenue into protected savings and essential living.',
+              })
+            }
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: '#3B82F618' }]}>
+                <Ionicons name="pie-chart-outline" size={18} color="#3B82F6" />
+              </View>
+              <Text style={[styles.cardTag, { color: '#3B82F6' }]}>Wealth Loop</Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: c.text }]}>Tri-Domain Flow</Text>
+            <Text style={[styles.cardPrimaryVal, { color: '#3B82F6' }]}>
+              {activeInflow > 0 ? `${savingsRate}% saved` : 'Active'}
+            </Text>
+            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
+              Chits/Goals: <Text style={{ color: '#3B82F6', fontWeight: '700' }}>{formatAmt(totalGoalsCurrent)}</Text>
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* CROSS-DOMAIN CARD: Recurring Commitment Drag (Autonomy) */}
+        {(activeTab === 'all' || activeTab === 'habits' || activeTab === 'forecasts') && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              openDetail({
+                title: 'Commitment Autonomy Drag',
+                icon: 'lock-closed-outline',
+                color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6',
+                headline:
+                  activeInflow > 0
+                    ? `Fixed recurring commitments (subscriptions + chits/RDs) lock up ${commitmentAutonomyRatio}% of your monthly inflow (${formatAmt(totalCommittedOverhead)}/mo).`
+                    : `You have ${formatAmt(totalCommittedOverhead)}/mo committed to recurring subscriptions and chit/RD installments.`,
+                metrics: [
+                  { label: 'Subscriptions Burn', value: `${formatAmt(recurringTotal)}/mo` },
+                  { label: 'Chits & RD Installments', value: `${formatAmt(recurringChitTotal)}/mo` },
+                  { label: 'Total Committed Run-rate', value: `${formatAmt(totalCommittedOverhead)}/mo` },
+                  { label: 'Income Autonomy Drag', value: `${commitmentAutonomyRatio}%` },
+                ],
+                advice:
+                  commitmentAutonomyRatio > 50
+                    ? 'Caution: Over 50% of your earnings is committed before discretionary spending begins. Audit non-essential subscriptions.'
+                    : 'Excellent: Your recurring commitments leave ample flexibility for discretionary choices and emergency buffers.',
+              })
+            }
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: (commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6') + '18' }]}>
+                <Ionicons name="lock-closed-outline" size={18} color={commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6'} />
+              </View>
+              <Text style={[styles.cardTag, { color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6' }]}>Autonomy</Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: c.text }]}>Commitment Drag</Text>
+            <Text style={[styles.cardPrimaryVal, { color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6' }]}>
+              {commitmentAutonomyRatio}%
+            </Text>
+            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
+              Locked: <Text style={{ color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6', fontWeight: '700' }}>{formatAmt(totalCommittedOverhead)}</Text>/mo
+            </Text>
+          </TouchableOpacity>
+        )}
+        {/* CROSS-DOMAIN CARD: Net Cash Flow & Savings Rate */}
+        {(activeTab === 'all' || activeTab === 'forecasts' || activeTab === 'habits') && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              openDetail({
+                title: 'Cash Flow & Savings Rate',
+                icon: 'trending-up-outline',
+                color: netCashFlow >= 0 ? '#10B981' : c.accent,
+                headline:
+                  activeInflow > 0
+                    ? `Retaining ${savingsRate}% of total revenue with a net ${netCashFlow >= 0 ? 'surplus' : 'deficit'} of ${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}.`
+                    : 'Log income sources in Cash Inflow to activate real-time net cash flow synthesis.',
+                metrics: [
+                  { label: 'Active Monthly Inflow', value: formatAmt(activeInflow) },
+                  { label: 'Active Monthly Outflow', value: formatAmt(currentMonthSpent) },
+                  { label: 'Net Cash Surplus', value: `${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}` },
+                  { label: 'Savings Retention Rate', value: `${savingsRate}%` },
+                ],
+                advice:
+                  activeInflow <= 0
+                    ? 'Recording revenue streams unlocks savings retention tracking, investment projections, and emergency runway calculations.'
+                    : savingsRate >= 20
+                    ? 'Your savings rate exceeds the 20% institutional benchmark for accelerated wealth accumulation and financial independence.'
+                    : netCashFlow >= 0
+                    ? 'Your cash flow is positive, but retaining under 20% limits wealth compounding. Reduce discretionary expenses to reach optimal savings.'
+                    : 'Spending exceeds income this month. Review high-variance categories to eliminate cash drain.',
+              })
+            }
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? '#10B981' : c.accent) + '18' }]}>
+                <Ionicons name="trending-up-outline" size={18} color={netCashFlow >= 0 ? '#10B981' : c.accent} />
+              </View>
+              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? '#10B981' : c.accent }]}>Cash Flow</Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: c.text }]}>Savings Retention</Text>
+            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? '#10B981' : c.accent }]}>
+              {activeInflow > 0 ? `${savingsRate}%` : 'N/A'}
+            </Text>
+            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
+              Net: <Text style={{ color: netCashFlow >= 0 ? '#10B981' : c.accent, fontWeight: '700' }}>
+                {netCashFlow >= 0 ? `+${formatAmt(netCashFlow)}` : `-${formatAmt(Math.abs(netCashFlow))}`}
+              </Text>
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* CROSS-DOMAIN CARD: Savings Milestones Runway */}
+        {(activeTab === 'all' || activeTab === 'forecasts') && safeGoals.length > 0 && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              openDetail({
+                title: 'Goal Funding Velocity',
+                icon: 'flag-outline',
+                color: '#F59E0B',
+                headline:
+                  monthsToFundGoals
+                    ? `At current monthly surplus (+${formatAmt(netCashFlow)}/mo), remaining goals will be fully funded in ~${monthsToFundGoals} month${monthsToFundGoals === 1 ? '' : 's'}.`
+                    : `${goalsFundingPct}% of total savings milestone target achieved (${formatAmt(totalGoalsCurrent)} of ${formatAmt(totalGoalsTarget)}).`,
+                metrics: [
+                  { label: 'Milestones Target', value: formatAmt(totalGoalsTarget) },
+                  { label: 'Current Accumulation', value: formatAmt(totalGoalsCurrent) },
+                  { label: 'Remaining Capital Needed', value: formatAmt(totalGoalsRemaining) },
+                  { label: 'Estimated Completion', value: monthsToFundGoals ? `~${monthsToFundGoals} Months` : 'N/A' },
+                ],
+                advice:
+                  monthsToFundGoals
+                    ? 'Maintaining your current surplus pace guarantees timely realization of target milestones without straining operational liquidity.'
+                    : netCashFlow <= 0
+                    ? 'Achieving positive monthly cash flow is required to accurately model goal milestone completion timelines.'
+                    : 'All savings targets are currently fully funded! Time to set new financial horizons.',
+              })
+            }
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: '#F59E0B18' }]}>
+                <Ionicons name="flag-outline" size={18} color="#F59E0B" />
+              </View>
+              <Text style={[styles.cardTag, { color: '#F59E0B' }]}>Milestones</Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: c.text }]}>Goal Velocity</Text>
+            <Text style={[styles.cardPrimaryVal, { color: '#F59E0B' }]}>
+              {monthsToFundGoals ? `~${monthsToFundGoals} mo` : `${goalsFundingPct}%`}
+            </Text>
+            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
+              Saved: <Text style={{ color: '#F59E0B', fontWeight: '700' }}>{goalsFundingPct}%</Text> of goals
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* CARD 1: Burn Velocity & Projection */}
         {(activeTab === 'all' || activeTab === 'forecasts') && (
           <TouchableOpacity

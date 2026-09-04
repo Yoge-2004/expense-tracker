@@ -24,7 +24,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { ApiError } from '../services/api';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -262,11 +262,9 @@ export default function LoginScreen() {
             <View style={styles.fieldGroup}>
               <View style={styles.passwordHeader}>
                 <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Password</Text>
-                <Link href="/forgot-password" asChild>
-                  <TouchableOpacity>
-                    <Text style={[styles.forgotText, { color: c.primary }]}>Forgot password?</Text>
-                  </TouchableOpacity>
-                </Link>
+                <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+                  <Text style={[styles.forgotText, { color: c.primary }]}>Forgot password?</Text>
+                </TouchableOpacity>
               </View>
 
               <View
@@ -322,11 +320,12 @@ export default function LoginScreen() {
               <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
             </View>
 
-            <Link href="/register" asChild>
-              <TouchableOpacity style={[styles.createAccountBtn, { borderColor: c.border }]}>
-                <Text style={[styles.createAccountText, { color: c.primary }]}>Create Free Account</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity
+              onPress={() => router.push('/register')}
+              style={StyleSheet.flatten([styles.createAccountBtn, { borderColor: c.border }])}
+            >
+              <Text style={[styles.createAccountText, { color: c.primary }]}>Create Free Account</Text>
+            </TouchableOpacity>
           </StaggeredView>
         </Animated.View>
       </ScrollView>

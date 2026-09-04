@@ -170,4 +170,19 @@ class MonthlyReportServiceTest {
         verify(mailSenderProvider, never()).getIfAvailable();
         verify(expenseRepository, never()).findByUserAndExpenseDateBetween(any(), any(), any());
     }
+
+    @Test
+    @DisplayName("sendMonthlyReportEmail → Throws IllegalStateException when mail host not configured")
+    void sendMonthlyReportEmail_throwsWhenMailNotConfigured() {
+        ReflectionTestUtils.setField(service, "configuredMailHost", "");
+        ReflectionTestUtils.setField(service, "mailEnabled", false);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        IllegalStateException ex = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () ->
+                service.sendMonthlyReportEmail(1L, 2026, 8));
+
+        org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("Email service is not configured"));
+        verify(mailSenderProvider, never()).getIfAvailable();
+    }
 }

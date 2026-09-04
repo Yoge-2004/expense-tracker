@@ -63,6 +63,42 @@ public class SavingsGoal extends BaseEntity {
     /**
      * The user account that established this savings goal.
      */
+    /**
+     * Flag indicating whether this savings goal has automated/recurring contributions (e.g. Chit fund, RD, SIP).
+     */
+    @Column(name = "is_recurring")
+    private Boolean isRecurring = false;
+
+    /**
+     * Recurring installment monetary amount.
+     */
+    @Column(name = "recurring_amount", precision = 12, scale = 2)
+    private BigDecimal recurringAmount;
+
+    /**
+     * Recurrence frequency: DAILY, WEEKLY, BI_WEEKLY, MONTHLY, YEARLY, CUSTOM.
+     */
+    @Column(length = 20)
+    private String frequency;
+
+    /**
+     * Interval in days when frequency is CUSTOM.
+     */
+    @Column(name = "interval_days")
+    private Integer intervalDays;
+
+    /**
+     * Next scheduled installment date.
+     */
+    @Column(name = "next_due_date")
+    private LocalDate nextDueDate;
+
+    /**
+     * Optional end date when recurring contributions should cease.
+     */
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -204,5 +240,52 @@ public class SavingsGoal extends BaseEntity {
      */
     public void setUser(User user) {
         this.user = user;
+    }
+    public Boolean getIsRecurring() {
+        return isRecurring != null ? isRecurring : false;
+    }
+
+    public void setIsRecurring(Boolean recurring) {
+        isRecurring = recurring != null ? recurring : false;
+    }
+
+    public BigDecimal getRecurringAmount() {
+        return recurringAmount;
+    }
+
+    public void setRecurringAmount(BigDecimal recurringAmount) {
+        this.recurringAmount = recurringAmount;
+    }
+
+    public String getFrequency() {
+        return frequency;
+    }
+
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
+    }
+
+    public LocalDate getNextDueDate() {
+        return nextDueDate;
+    }
+
+    public void setNextDueDate(LocalDate nextDueDate) {
+        this.nextDueDate = nextDueDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
     }
 }

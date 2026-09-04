@@ -67,4 +67,12 @@ public interface SavingsGoalService {
      * @throws IllegalArgumentException if the goal is not found or does not belong to the user
      */
     void deleteGoal(Long goalId, User user);
+
+    /**
+     * Retrieves all recurring savings goals (chits, recurring deposits, SIPs) for the specified user.
+     *
+     * @param user the owning user
+     * @return list of recurring {@link SavingsGoalDto} instances
+     */
+    List<SavingsGoalDto> getRecurringGoals(User user);
 }

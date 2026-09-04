@@ -34,6 +34,24 @@ public class SavingsGoalDto {
     @Schema(description = "Calculated progress completion percentage (0.0 to 100.0+)", example = "45.0")
     private double progressPercentage;
 
+    @Schema(description = "Whether this savings goal has recurring deposits/chits", example = "true")
+    private Boolean isRecurring;
+
+    @Schema(description = "Recurring installment deposit amount", example = "5000.00")
+    private BigDecimal recurringAmount;
+
+    @Schema(description = "Installment frequency (DAILY, WEEKLY, BI_WEEKLY, MONTHLY, YEARLY, CUSTOM)", example = "MONTHLY")
+    private String frequency;
+
+    @Schema(description = "Interval in days if custom cadence", example = "30")
+    private Integer intervalDays;
+
+    @Schema(description = "Next scheduled deposit due date", example = "2026-04-01")
+    private LocalDate nextDueDate;
+
+    @Schema(description = "Optional end date for recurring contributions", example = "2027-12-31")
+    private LocalDate endDate;
+
     /**
      * Default constructor.
      */
@@ -129,5 +147,52 @@ public class SavingsGoalDto {
     /** @param progressPercentage Calculated percentage progress */
     public void setProgressPercentage(double progressPercentage) {
         this.progressPercentage = progressPercentage;
+    }
+    public Boolean getIsRecurring() {
+        return isRecurring;
+    }
+
+    public void setIsRecurring(Boolean recurring) {
+        isRecurring = recurring;
+    }
+
+    public BigDecimal getRecurringAmount() {
+        return recurringAmount;
+    }
+
+    public void setRecurringAmount(BigDecimal recurringAmount) {
+        this.recurringAmount = recurringAmount;
+    }
+
+    public String getFrequency() {
+        return frequency;
+    }
+
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
+    }
+
+    public LocalDate getNextDueDate() {
+        return nextDueDate;
+    }
+
+    public void setNextDueDate(LocalDate nextDueDate) {
+        this.nextDueDate = nextDueDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
     }
 }

@@ -4,6 +4,7 @@ import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,4 +31,19 @@ public interface SavingsGoalRepository extends JpaRepository<SavingsGoal, Long> 
      * @return optional containing the matching savings goal if found and owned by user
      */
     Optional<SavingsGoal> findByIdAndUser(Long id, User user);
+    /**
+     * Retrieves all recurring savings goals whose next due date is on or before the given threshold date.
+     *
+     * @param date threshold date
+     * @return list of due recurring savings goals
+     */
+    List<SavingsGoal> findByIsRecurringTrueAndNextDueDateLessThanEqual(LocalDate date);
+
+    /**
+     * Retrieves all recurring savings goals configured for a specific user.
+     *
+     * @param user the user entity
+     * @return list of recurring savings goals
+     */
+    List<SavingsGoal> findByUserAndIsRecurringTrue(User user);
 }

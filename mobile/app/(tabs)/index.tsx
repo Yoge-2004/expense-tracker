@@ -36,7 +36,7 @@ import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
 import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { AmbientAura } from '../../components/AmbientAura';
@@ -91,6 +91,8 @@ interface Income {
   description?: string;
   isRecurring?: boolean;
   recurring?: boolean;
+  frequency?: string;
+  intervalDays?: number;
 }
 
 interface SavingsGoal {
@@ -100,6 +102,10 @@ interface SavingsGoal {
   currentAmount: number;
   targetDate: string;
   status: string;
+  isRecurring?: boolean;
+  recurringAmount?: number;
+  frequency?: string;
+  intervalDays?: number;
 }
 
 interface Subscription {
@@ -115,6 +121,7 @@ interface Subscription {
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
   const { showAlert } = useAlert();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
   const isLight = theme === 'light';
@@ -152,6 +159,7 @@ export default function DashboardScreen() {
   const [sortOption, setSortOption] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc');
   const [showFilters, setShowFilters] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [ledgerTab, setLedgerTab] = useState<'all' | 'expenses' | 'incomes'>('all');
 
   // Animation values
   const filterAnim = useRef(new Animated.Value(0)).current;
@@ -240,6 +248,8 @@ export default function DashboardScreen() {
         budgets: safeBud,
         categories: safeCat,
         subscriptions: safeSub,
+        incomes: Array.isArray(incomesData) ? incomesData : [],
+        savingsGoals: Array.isArray(savingsData) ? savingsData : [],
       });
     } catch (err: any) {
       console.warn('[Dashboard] Error fetching dashboard data:', err);
@@ -262,6 +272,8 @@ export default function DashboardScreen() {
       if (Array.isArray(cached.budgets)) setBudgets(cached.budgets);
       if (Array.isArray(cached.categories)) setCategories(cached.categories);
       if (Array.isArray(cached.subscriptions)) setSubscriptions(cached.subscriptions);
+      if (Array.isArray(cached.incomes)) setIncomes(cached.incomes);
+      if (Array.isArray(cached.savingsGoals)) setSavingsGoals(cached.savingsGoals);
       setIsLoading(false);
       fetchData(true);
     } else {
@@ -293,29 +305,137 @@ export default function DashboardScreen() {
     }).start();
   };
 
-  const handleExpenseLongPress = (item: Expense) => {
+  const handleTransactionEdit = (tx: UnifiedTxItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (tx.type === "expense") {
+      router.push({
+        pathname: "/(tabs)/add-expense",
+        params: {
+          editType: "expense",
+          editId: String(tx.id),
+          editDescription: tx.expenseRaw?.description || tx.title,
+          editAmount: String(tx.expenseRaw?.amount || tx.amount),
+          editCategoryId: String(tx.expenseRaw?.categoryId || ""),
+          editDate: tx.expenseRaw?.expenseDate || tx.date,
+        },
+      });
+    } else {
+      router.push({
+        pathname: "/(tabs)/add-expense",
+        params: {
+          editType: "income",
+          editId: String(tx.id),
+          editSource: tx.incomeRaw?.source || tx.title,
+          editAmount: String(tx.incomeRaw?.amount || tx.amount),
+          editDate: tx.incomeRaw?.incomeDate || tx.date,
+          editDescription: tx.incomeRaw?.description || "",
+          editIsRecurring: String(tx.incomeRaw?.isRecurring || false),
+          editFrequency: tx.incomeRaw?.frequency || "MONTHLY",
+          editIntervalDays: String(tx.incomeRaw?.intervalDays || "1"),
+        },
+      });
+    }
+  };
+
+  const handleTransactionDelete = (tx: UnifiedTxItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const isIncome = tx.type === "income";
     showAlert(
-      'Transaction Actions',
-      `"${item.description}" — ${currSymbol}${item.amount}`,
+      `Delete ${isIncome ? "Inflow" : "Expense"}?`,
+      `Are you sure you want to delete "${tx.title}" (${isIncome ? "+" : "-"}${currSymbol}${Number(tx.amount || 0).toLocaleString()})?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             try {
-              await apiRequest(`/expenses/${item.id}/user/${userId}`, { method: 'DELETE' });
-              setExpenses((prev) => prev.filter((e) => e.id !== item.id));
-              showAlert('Deleted', 'Expense record removed successfully.', undefined, 'success');
+              if (isIncome) {
+                await apiRequest(`/incomes/${tx.id}/user/${userId}`, { method: "DELETE" });
+                setIncomes((prev) => prev.filter((i) => i.id !== tx.id));
+              } else {
+                await apiRequest(`/expenses/${tx.id}/user/${userId}`, { method: "DELETE" });
+                setExpenses((prev) => prev.filter((e) => e.id !== tx.id));
+              }
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              showAlert("Deleted", `${isIncome ? "Inflow" : "Expense"} record removed successfully.`, undefined, "success");
               fetchData(true);
             } catch (e: any) {
-              const msg = e instanceof ApiError ? e.message : 'Could not delete expense record.';
-              showAlert('Delete Failed', msg, undefined, 'error');
+              const msg = e instanceof ApiError ? e.message : `Could not delete ${isIncome ? "income" : "expense"} record.`;
+              showAlert("Delete Failed", msg, undefined, "error");
             }
           },
         },
       ],
-      'destructive'
+      "destructive"
+    );
+  };
+
+  const handleTransactionPress = (tx: UnifiedTxItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const isIncome = tx.type === "income";
+    showAlert(
+      `${isIncome ? "Inflow" : "Expense"} Actions`,
+      `"${tx.title}" — ${isIncome ? "+" : "-"}${currSymbol}${Number(tx.amount || 0).toLocaleString()}`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Edit",
+          onPress: () => handleTransactionEdit(tx),
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => handleTransactionDelete(tx),
+        },
+      ]
+    );
+  };
+
+  const handleGoalEdit = (goal: SavingsGoal) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.push({
+      pathname: "/(tabs)/add-expense",
+      params: {
+        editType: "savings",
+        editId: String(goal.id),
+        editName: goal.name,
+        editTargetAmount: String(goal.targetAmount),
+        editCurrentAmount: String(goal.currentAmount),
+        editTargetDate: goal.targetDate || "",
+        editIsRecurring: String(goal.isRecurring || false),
+        editRecurringAmount: String(goal.recurringAmount || ""),
+        editFrequency: goal.frequency || "MONTHLY",
+        editIntervalDays: String(goal.intervalDays || "30"),
+      },
+    });
+  };
+
+  const handleGoalDelete = (goal: SavingsGoal) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    showAlert(
+      "Delete Savings Goal?",
+      `Are you sure you want to remove "${goal.name}"? Accumulated progress (${currSymbol}${Number(goal.currentAmount || 0).toLocaleString()}) will be removed.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Goal",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiRequest(`/savings/goals/${goal.id}/user/${userId}`, { method: "DELETE" });
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              setSavingsGoals((prev) => prev.filter((g) => g.id !== goal.id));
+              showAlert("Deleted", "Savings goal removed successfully.", undefined, "success");
+              fetchData(true);
+            } catch (e: any) {
+              const msg = e instanceof ApiError ? e.message : "Could not delete savings goal.";
+              showAlert("Delete Failed", msg, undefined, "error");
+            }
+          },
+        },
+      ],
+      "destructive"
     );
   };
 
@@ -351,7 +471,7 @@ export default function DashboardScreen() {
   const highestCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
   const highestCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
 
-  // Filtered & Sorted Expenses List (including Custom Date Range)
+  // Filtered Expenses List (including Custom Date Range)
   const filteredExpenses = expenses
     .filter((e) => {
       const q = searchQuery.toLowerCase().trim();
@@ -393,18 +513,101 @@ export default function DashboardScreen() {
       }
 
       return matchSearch && matchCategory && matchDate;
-    })
-    .sort((a, b) => {
-      try {
-        if (sortOption === 'date-desc') return new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime();
-        if (sortOption === 'date-asc') return new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime();
-        if (sortOption === 'amount-desc') return Number(b.amount || 0) - Number(a.amount || 0);
-        if (sortOption === 'amount-asc') return Number(a.amount || 0) - Number(b.amount || 0);
-      } catch {
-        return 0;
-      }
-      return 0;
     });
+
+  // Filtered Incomes List
+  const filteredIncomes = incomes
+    .filter((inc) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (inc.source && inc.source.toLowerCase().includes(q)) ||
+        (inc.description && inc.description.toLowerCase().includes(q));
+
+      let matchDate = true;
+      const dateStr = inc.incomeDate;
+      if (dateStr) {
+        try {
+          const incD = new Date(dateStr);
+          const incDStr = dateStr.split('T')[0];
+
+          if (datePreset === 'today') {
+            const todayStr = now.toISOString().split('T')[0];
+            matchDate = incDStr === todayStr;
+          } else if (datePreset === 'month') {
+            matchDate = incD.getMonth() === now.getMonth() && incD.getFullYear() === now.getFullYear();
+          } else if (datePreset === 'last30') {
+            const thirtyAgo = new Date();
+            thirtyAgo.setDate(thirtyAgo.getDate() - 30);
+            matchDate = incD >= thirtyAgo;
+          } else if (datePreset === 'custom') {
+            if (startDate.trim() && incDStr < startDate.trim()) {
+              matchDate = false;
+            }
+            if (endDate.trim() && incDStr > endDate.trim()) {
+              matchDate = false;
+            }
+          }
+        } catch {
+          matchDate = true;
+        }
+      }
+
+      return matchSearch && matchDate;
+    });
+
+  interface UnifiedTxItem {
+    id: number;
+    uniqueKey: string;
+    type: "expense" | "income";
+    title: string;
+    categoryOrSource: string;
+    amount: number;
+    date: string;
+    isRecurring: boolean;
+    expenseRaw?: Expense;
+    incomeRaw?: Income;
+  }
+
+  // Unified chronological ledger
+  const unifiedTransactions: UnifiedTxItem[] = [
+    ...(ledgerTab === "all" || ledgerTab === "expenses"
+      ? filteredExpenses.map((e) => ({
+          id: e.id,
+          uniqueKey: `exp-${e.id}`,
+          type: "expense" as const,
+          title: e.description || "Expense",
+          categoryOrSource: e.categoryName || "General",
+          amount: Number(e.amount || 0),
+          date: e.expenseDate || "",
+          isRecurring: !!(e.isRecurring || e.recurring),
+          expenseRaw: e,
+        }))
+      : []),
+    ...(ledgerTab === "all" || ledgerTab === "incomes"
+      ? filteredIncomes.map((i) => ({
+          id: i.id,
+          uniqueKey: `inc-${i.id}`,
+          type: "income" as const,
+          title: i.source || "Income",
+          categoryOrSource: i.source || "Inflow",
+          amount: Number(i.amount || 0),
+          date: i.incomeDate || "",
+          isRecurring: !!(i.isRecurring || i.recurring),
+          incomeRaw: i,
+        }))
+      : []),
+  ].sort((a, b) => {
+    try {
+      if (sortOption === 'date-desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (sortOption === 'date-asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (sortOption === 'amount-desc') return b.amount - a.amount;
+      if (sortOption === 'amount-asc') return a.amount - b.amount;
+    } catch {
+      return 0;
+    }
+    return 0;
+  });
 
   if (!isLoading && fetchError && expenses.length === 0) {
     return (
@@ -657,6 +860,8 @@ export default function DashboardScreen() {
         <InsightCards
           expenses={expenses}
           budgets={budgets}
+          incomes={incomes}
+          savingsGoals={savingsGoals}
         />
 
         {/* =========================================
@@ -733,6 +938,24 @@ export default function DashboardScreen() {
                       </Text>
                       <Text style={[styles.goalDate, { color: c.textMuted }]}>Due: {goal.targetDate || "Flexible"}</Text>
                     </View>
+                    <View style={styles.goalActionsRow}>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => handleGoalEdit(goal)}
+                        style={[styles.goalMiniActionBtn, { backgroundColor: c.inputBg }]}
+                        accessibilityLabel="Edit savings goal"
+                      >
+                        <Ionicons name="pencil" size={12} color="#F59E0B" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => handleGoalDelete(goal)}
+                        style={[styles.goalMiniActionBtn, { backgroundColor: c.inputBg }]}
+                        accessibilityLabel="Delete savings goal"
+                      >
+                        <Ionicons name="trash-outline" size={12} color={c.accent} />
+                      </TouchableOpacity>
+                    </View>
                   </AnimatedCard>
                 );
               })}
@@ -752,7 +975,7 @@ export default function DashboardScreen() {
                 <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Transactions</Text>
                 <View style={[styles.countBadge, { backgroundColor: c.primary + '18' }]}>
                   <Text style={[styles.countBadgeText, { color: c.primary }]}>
-                    {filteredExpenses.length}
+                    {unifiedTransactions.length}
                   </Text>
                 </View>
               </View>
@@ -779,6 +1002,45 @@ export default function DashboardScreen() {
                   ]}
                 >
                   Filter
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Activity Stream Selector Pills: All | Expenses | Incomes */}
+            <View style={[styles.streamTabsBar, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  setLedgerTab('all');
+                }}
+                style={[styles.streamTabBtn, ledgerTab === 'all' && { backgroundColor: c.card, borderColor: c.primary, borderWidth: 1 }]}
+              >
+                <Text style={[styles.streamTabText, { color: ledgerTab === 'all' ? c.primary : c.textMuted, fontWeight: ledgerTab === 'all' ? '800' : '600' }]}>
+                  All Activity ({filteredExpenses.length + filteredIncomes.length})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  setLedgerTab('expenses');
+                }}
+                style={[styles.streamTabBtn, ledgerTab === 'expenses' && { backgroundColor: c.card, borderColor: c.primary, borderWidth: 1 }]}
+              >
+                <Text style={[styles.streamTabText, { color: ledgerTab === 'expenses' ? c.primary : c.textMuted, fontWeight: ledgerTab === 'expenses' ? '800' : '600' }]}>
+                  Outflows ({filteredExpenses.length})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  setLedgerTab('incomes');
+                }}
+                style={[styles.streamTabBtn, ledgerTab === 'incomes' && { backgroundColor: c.card, borderColor: '#10B981', borderWidth: 1 }]}
+              >
+                <Text style={[styles.streamTabText, { color: ledgerTab === 'incomes' ? '#10B981' : c.textMuted, fontWeight: ledgerTab === 'incomes' ? '800' : '600' }]}>
+                  Inflows ({filteredIncomes.length})
                 </Text>
               </TouchableOpacity>
             </View>
@@ -857,14 +1119,14 @@ export default function DashboardScreen() {
 
             {/* Bounded Scrollable Items Box */}
             <View style={[styles.scrollableLedgerBox, { borderColor: c.border }]}>
-              {filteredExpenses.length === 0 ? (
+              {unifiedTransactions.length === 0 ? (
                 <View style={styles.emptyLedgerInside}>
                   <Ionicons name="receipt-outline" size={38} color={c.textMuted} />
-                  <Text style={[styles.emptyLedgerTitle, { color: c.text }]}>No transactions found</Text>
+                  <Text style={[styles.emptyLedgerTitle, { color: c.text }]}>No activity found</Text>
                   <Text style={[styles.emptyLedgerSub, { color: c.textMuted }]}>
                     {searchQuery || selectedCategory !== 'all' || datePreset !== 'all'
-                      ? 'Adjust your search query or filter pills.'
-                      : 'Tap the + button to log an expense.'}
+                      ? 'Adjust your search query, dates, or stream tabs.'
+                      : 'Log transactions to see live inflows and outflows.'}
                   </Text>
                 </View>
               ) : (
@@ -874,33 +1136,41 @@ export default function DashboardScreen() {
                   showsVerticalScrollIndicator={true}
                 >
                   <View style={styles.transactionsList}>
-                    {filteredExpenses.map((item) => {
-                      const catColor = getCategoryColor(item.categoryName || 'General').color;
+                    {unifiedTransactions.map((tx) => {
+                      const isIncome = tx.type === "income";
+                      const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
                       return (
                         <TouchableOpacity
-                          key={item.id}
+                          key={tx.uniqueKey}
                           activeOpacity={0.7}
-                          onLongPress={() => handleExpenseLongPress(item)}
+                          onPress={() => handleTransactionPress(tx)}
+                          onLongPress={() => handleTransactionPress(tx)}
                           style={[styles.txCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
                         >
                           <View style={styles.txLeft}>
-                            <View style={[styles.catIconWrap, { backgroundColor: catColor + '18' }]}>
-                              <Text style={styles.catEmojiText}>{getCategoryEmoji(item.categoryName || 'General')}</Text>
+                            <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
+                              {isIncome ? (
+                                <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
+                              ) : (
+                                <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
+                              )}
                             </View>
                             <View style={styles.txMeta}>
                               <Text style={[styles.txDesc, { color: c.text }]} numberOfLines={1}>
-                                {item.description}
+                                {tx.title}
                               </Text>
                               <View style={styles.txSubRow}>
                                 <Text style={[styles.txCatName, { color: catColor }]}>
-                                  {item.categoryName || 'General'}
+                                  {isIncome ? "Inflow" : tx.categoryOrSource}
                                 </Text>
                                 <Text style={[styles.txDot, { color: c.textMuted }]}>•</Text>
-                                <Text style={[styles.txDate, { color: c.textMuted }]}>{item.expenseDate}</Text>
-                                {(item.isRecurring || item.recurring) && (
-                                  <View style={[styles.recurringBadge, { backgroundColor: c.primary + '18' }]}>
-                                    <Ionicons name="repeat" size={10} color={c.primary} />
-                                    <Text style={[styles.recurringBadgeText, { color: c.primary }]}>Sub</Text>
+                                <Text style={[styles.txDate, { color: c.textMuted }]}>{tx.date}</Text>
+                                {tx.isRecurring && (
+                                  <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : c.primary) + "18" }]}>
+                                    <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : c.primary} />
+                                    <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : c.primary }]}>
+                                      {isIncome ? "Recurring Inflow" : "Sub"}
+                                    </Text>
                                   </View>
                                 )}
                               </View>
@@ -908,10 +1178,30 @@ export default function DashboardScreen() {
                           </View>
 
                           <View style={styles.txRight}>
-                            <Text style={[styles.txAmount, { color: c.text }]}>
-                              -{currSymbol}
-                              {Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                            <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : c.text, fontWeight: "800" }]}>
+                              {isIncome ? "+" : "-"}{currSymbol}
+                              {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                             </Text>
+                            <View style={styles.txRowActions}>
+                              <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => handleTransactionEdit(tx)}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
+                                accessibilityLabel="Edit transaction"
+                              >
+                                <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : c.primary} />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => handleTransactionDelete(tx)}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
+                                accessibilityLabel="Delete transaction"
+                              >
+                                <Ionicons name="trash-outline" size={12} color={c.accent} />
+                              </TouchableOpacity>
+                            </View>
                           </View>
                         </TouchableOpacity>
                       );
@@ -1252,6 +1542,24 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
+  streamTabsBar: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 10,
+    gap: 4,
+  },
+  streamTabBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streamTabText: {
+    fontSize: 12,
+  },
   ledgerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1424,7 +1732,35 @@ const styles = StyleSheet.create({
   },
   txAmount: {
     fontSize: 14.5,
-    fontWeight: '900',
+    fontWeight: "900",
     letterSpacing: -0.3,
+  },
+  txRowActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 6,
+    marginTop: 4,
+  },
+  txMiniActionBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  goalActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginTop: 6,
+  },
+  goalMiniActionBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

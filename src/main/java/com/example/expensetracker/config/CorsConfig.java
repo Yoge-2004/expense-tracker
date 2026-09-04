@@ -38,8 +38,8 @@ public class CorsConfig {
         
         config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin"));
-        config.setExposedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency"));
+        config.setExposedHeaders(List.of("Authorization", "Content-Type", "Content-Disposition"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L); // Cache preflight response for 1 hour
 
@@ -59,8 +59,8 @@ public class CorsConfig {
                 registry.addMapping("/**")
                         .allowedOriginPatterns("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                        .allowedHeaders("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin")
-                        .exposedHeaders("Authorization", "Content-Type")
+                        .allowedHeaders("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency")
+                        .exposedHeaders("Authorization", "Content-Type", "Content-Disposition")
                         .allowCredentials(true)
                         .maxAge(3600);
             }

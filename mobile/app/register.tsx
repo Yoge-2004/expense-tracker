@@ -30,7 +30,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError } from '../services/api';
 import { WORLD_CURRENCIES } from '../services/currency';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -508,11 +508,9 @@ export default function RegisterScreen() {
           {/* Footer Navigation Link */}
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: c.textMuted }]}>Already have an account? </Text>
-            <Link href="/login" asChild>
-              <TouchableOpacity>
-                <Text style={[styles.footerLink, { color: c.primary }]}>Sign In</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={() => router.replace('/login')}>
+              <Text style={[styles.footerLink, { color: c.primary }]}>Sign In</Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </ScrollView>

@@ -20,8 +20,7 @@
       }
     },
     "android": {
-      "package": "com.yoge.expensetracker",
-      "usesCleartextTraffic": true
+      "package": "com.yoge.expensetracker"
     },
     "plugins": [
       "expo-router",
@@ -31,7 +30,11 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.487469737581-p826efhglp29u44vvo2cl4focntjg8e6"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "scheme": "expensetracker"
   }

@@ -46,7 +46,7 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" id="filterSearch" placeholder="Search transactions (Press /)..." class="command-search-input">
+                    <input type="text" id="filterSearch" placeholder="Search expenses & incomes (Press /)..." class="command-search-input">
                     <span class="command-kbd">⌘K</span>
                 </div>
 
@@ -110,24 +110,24 @@
         <!-- FINANCIAL METRICS MATRIX (RESPONSIVE AUTO-FIT) -->
         <section class="grid-4-metrics animate-cascade delay-2">
             <!-- Metric 1: Total Inflow (Income) -->
-            <div class="metric-card" style="border-left: 4px solid #10B981;">
+            <div class="metric-card metric-card-inflow">
                 <div class="metric-header">
-                    <span class="card-label" style="color:#10B981; font-weight:700;">Total Inflow</span>
+                    <span class="card-label">Total Inflow</span>
                     <span class="status-badge badge-success" id="incomeCountBadge">0 Inflows</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="totalIncomeAmount" style="color:#10B981;">—</span>
+                    <span class="metric-value" id="totalIncomeAmount">—</span>
                 </div>
                 <div class="metric-footer">
                     <span class="text-muted" id="recurringIncomeText">0 recurring streams</span>
                 </div>
             </div>
 
-            <!-- Metric 2: Total Spent (Expenses) -->
-            <div class="metric-card" style="border-left: 4px solid #EF4444;">
+            <!-- Metric 2: Total Outflow (Expenses) -->
+            <div class="metric-card metric-card-outflow">
                 <div class="metric-header">
                     <span class="card-label">Total Outflow</span>
-                    <span class="status-badge badge-neutral" id="budgetUsageBadge">— Used</span>
+                    <span class="status-badge badge-outflow" id="budgetUsageBadge">— Used</span>
                 </div>
                 <div class="metric-value-row">
                     <span class="metric-value" id="totalAmount">—</span>
@@ -138,10 +138,10 @@
             </div>
 
             <!-- Metric 3: Net Cash Flow -->
-            <div class="metric-card" style="border-left: 4px solid #3B82F6;">
+            <div class="metric-card metric-card-netflow">
                 <div class="metric-header">
                     <span class="card-label">Net Cash Flow</span>
-                    <span class="status-badge badge-primary" id="netFlowBadge">Balanced</span>
+                    <span class="status-badge badge-netflow" id="netFlowBadge">Balanced</span>
                 </div>
                 <div class="metric-value-row">
                     <span class="metric-value" id="netCashFlowAmount">—</span>
@@ -158,13 +158,13 @@
             <span id="topCatBadge" style="display:none;"></span>
 
             <!-- Metric 4: Savings Rate & Goals Progress -->
-            <div class="metric-card" style="border-left: 4px solid #F59E0B;">
+            <div class="metric-card metric-card-savings">
                 <div class="metric-header">
-                    <span class="card-label" style="color:#F59E0B; font-weight:700;">Savings Rate</span>
+                    <span class="card-label">Savings Rate</span>
                     <span class="status-badge badge-warning" id="savingsGoalBadge">0 Goals</span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="savingsRateValue" style="color:#F59E0B;">0.0%</span>
+                    <span class="metric-value" id="savingsRateValue">0.0%</span>
                 </div>
                 <div class="metric-footer">
                     <span class="text-muted" id="totalSavedProgress">Saved: —</span>
@@ -172,16 +172,16 @@
             </div>
 
             <!-- Metric 5: Recurring Subscriptions -->
-            <div class="metric-card">
+            <div class="metric-card metric-card-subs">
                 <div class="metric-header">
                     <span class="card-label">Subscriptions</span>
-                    <span class="status-badge badge-neutral" id="subsCountBadge">0 Active</span>
+                    <span class="status-badge badge-subs" id="subsCountBadge">0 Active</span>
                 </div>
                 <div class="metric-value-row">
                     <span class="metric-value" id="subsMonthlyTotal">— / mo</span>
                 </div>
                 <div class="metric-footer">
-                    <a href="#" id="manageSubsLink" class="link-action">Manage Subscriptions &rarr;</a>
+                    <a href="#" id="manageSubsLink" class="link-action subs-link-action">Manage Subscriptions &rarr;</a>
                 </div>
             </div>
         </section>
@@ -295,9 +295,9 @@
                 </button>
             </div>
             <div id="budgetList" class="budget-grid-matrix">
-                <div class="empty-state-compact" style="text-align:center; padding:24px 12px; color:var(--text-muted); width:100%;">
-                    <p style="font-size:13.5px; font-weight:600; margin:0 0 4px; color:var(--text-main);">No budget limits configured</p>
-                    <span style="font-size:12px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
+                <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No budget limits configured</p>
+                    <span style="font-size:12.5px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
                 </div>
             </div>
         </section>
@@ -325,37 +325,90 @@
             </div>
         </section>
 
-        <!-- TRANSACTIONS TABLE & QUICK FILTERS -->
-        <section class="card recent-transactions animate-cascade delay-6">
+        <!-- UNIFIED AUDIT TRAIL & CASH FLOW LEDGER CONTAINER -->
+        <section class="card recent-transactions unified-ledger-card animate-cascade delay-6" id="unifiedLedgerCard">
             <div class="list-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div>
-                    <span class="card-label">Audit Trail</span>
-                    <h2 class="section-title">Transactions & Expenses</h2>
+                    <span class="card-label">Audit Trail & Cash Flow</span>
+                    <h2 class="section-title">Transactions & Inflows Ledger</h2>
                 </div>
                 
                 <div class="list-header-actions" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                     <input type="file" id="importFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
+                    <input type="file" id="importIncomeFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
                     <button id="importBtn" class="btn-icon btn-text-icon" title="Import transactions from .csv, .json, or .xlsx file" style="gap:6px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         Import <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.xlsx)</span>
                     </button>
-                    <button id="exportExcelBtn" class="btn-icon btn-text-icon" title="Export PowerBI Executive Excel Dashboard" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);">📊 Excel</button>
+                    <button id="importIncomeBtn" class="btn-icon btn-text-icon" title="Import Incomes from .csv, .json, or .xlsx file" style="gap:6px; display:none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import Incomes
+                    </button>
+                    <button id="exportExcelBtn" class="btn-icon btn-text-icon" title="Export Expenses Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);">📊 Excel</button>
+                    <button id="exportIncomeExcelBtn" class="btn-icon btn-text-icon" title="Export Incomes Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4); display:none;">📊 Incomes Excel</button>
                     <button id="exportReportPdfBtn" class="btn-icon btn-text-icon" title="Export Complete Executive Financial Statement (PDF)" style="font-weight:700; color:#3B82F6; border:1px solid rgba(59,130,246,0.4);">📑 Statement</button>
                     <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export Expenses CSV">CSV</button>
+                    <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon" title="Export Incomes CSV" style="display:none;">Income CSV</button>
                     <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export Expenses JSON">JSON</button>
+                    <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon" title="Export Incomes JSON" style="display:none;">Income JSON</button>
                     <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export Expenses PDF Report">PDF</button>
+                    <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon" title="Export Incomes PDF Report" style="display:none;">Income PDF</button>
                     <button id="toggleFiltersBtn" class="btn-icon" title="Show Advanced Filters" aria-label="Show advanced filters">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                         </svg>
                     </button>
+                    <button id="toggleIncomeFiltersBtn" class="btn-icon" title="Show Income Filters" aria-label="Show income filters" style="display:none;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
+                    </button>
+                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:#10B981; border-color:#10B981; color:#fff;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Inflow</span>
+                    </button>
+                    <button type="button" id="addExpenseTableBtn" class="btn-primary btn-small" onclick="openNewExpenseModal()" title="Record Expense">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Record Expense</span>
+                    </button>
                 </div>
             </div>
 
+            <!-- Stream Selection Tabs (Like the Mobile App) -->
+            <div class="ledger-stream-tabs" id="ledgerStreamTabs" style="display:flex; gap:6px; background:var(--input-bg, rgba(255,255,255,0.03)); border:1px solid var(--border); border-radius:12px; padding:4px; margin: 10px 0 16px; width:fit-content; max-width:100%; overflow-x:auto;">
+                <button type="button" class="stream-pill-btn active" data-tab="all" id="tabBtnAll" style="padding:7px 16px; border-radius:8px; border:none; background:var(--card-bg, rgba(255,255,255,0.08)); color:var(--text-main); font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
+                    <span>All Activity</span>
+                    <span class="stream-badge-count" id="badgeAllCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(199,154,62,0.2); color:var(--primary);">0</span>
+                </button>
+                <button type="button" class="stream-pill-btn" data-tab="expenses" id="tabBtnExpenses" style="padding:7px 16px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
+                    <span>Outflows</span>
+                    <span class="stream-badge-count" id="badgeExpensesCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(255,255,255,0.06); color:var(--text-muted);">0</span>
+                </button>
+                <button type="button" class="stream-pill-btn" data-tab="incomes" id="tabBtnIncomes" style="padding:7px 16px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
+                    <span>Inflows</span>
+                    <span class="stream-badge-count" id="badgeIncomesCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(16,185,129,0.15); color:#10B981;">0</span>
+                </button>
+            </div>
+
             <!-- Category Pills Quick Bar -->
-            <div class="category-pills-bar" id="categoryPillsBar">
-                <button class="pill-chip active" data-category="all">All Transactions</button>
+            <div class="category-pills-wrapper" id="categoryPillsWrapper">
+                <div class="category-pills-bar" id="categoryPillsBar">
+                    <button class="pill-chip active" data-category="all">All Transactions</button>
+                </div>
+                <button type="button" class="category-pills-scroll-cue" id="expensePillsScrollCue" title="Scroll to see more categories" aria-label="More categories">
+                    <span class="cue-dot"></span>
+                    <span class="cue-text">More</span>
+                    <svg class="cue-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
             </div>
 
             <!-- Filter Toolbar Drawer -->
@@ -413,54 +466,17 @@
                 </button>
             </div>
 
-            <!-- Expense List Table -->
-            <div class="scroll-area" id="expenseList">
-                <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading expenses...</p>
-            </div>
-        </section>
-
-        <!-- INCOMING CASH FLOW & REVENUE STREAMS -->
-        <section class="card income-section animate-cascade delay-6" style="margin-top:24px;">
-            <div class="list-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
-                <div>
-                    <span class="card-label" style="color:#10B981; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Cash Inflow</span>
-                    <h2 class="section-title" style="margin:4px 0 0; font-size:18px;">Income & Earnings Streams</h2>
+            <!-- Quick Filter Pills for Incomes (shown in Inflows tab) -->
+            <div class="category-pills-wrapper" id="incomePillsWrapper" style="display:none; margin-top:8px;">
+                <div class="category-pills-bar" id="incomePillsBar">
+                    <button class="pill-chip active" data-income-filter="all">All Inflows</button>
+                    <button class="pill-chip" data-income-filter="recurring">Recurring</button>
+                    <button class="pill-chip" data-income-filter="one-time">One-Time</button>
                 </div>
-                
-                <div class="list-header-actions" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-                    <input type="file" id="importIncomeFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
-                    <button id="importIncomeBtn" class="btn-icon btn-text-icon" title="Import Incomes from .csv, .json, or .xlsx file" style="gap:6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import Incomes <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.xlsx)</span>
-                    </button>
-                    <button id="exportIncomeExcelBtn" class="btn-icon btn-text-icon" title="Export Incomes PowerBI Excel Workbook" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);">📊 Excel</button>
-                    <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon" title="Export Incomes CSV">CSV</button>
-                    <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon" title="Export Incomes JSON">JSON</button>
-                    <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon" title="Export Incomes PDF Report">PDF</button>
-                    <button id="toggleIncomeFiltersBtn" class="btn-icon" title="Show Income Filters" aria-label="Show income filters">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                        </svg>
-                    </button>
-                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        <span>Record Income</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Quick Filter Pills for Incomes -->
-            <div class="category-pills-bar" id="incomePillsBar">
-                <button class="pill-chip active" data-income-filter="all">All Inflows</button>
-                <button class="pill-chip" data-income-filter="recurring">Recurring</button>
-                <button class="pill-chip" data-income-filter="one-time">One-Time</button>
             </div>
 
             <!-- Filter Toolbar Drawer for Incomes -->
-            <div class="filter-toolbar" id="incomeFilterPanel">
+            <div class="filter-toolbar" id="incomeFilterPanel" style="display:none;">
                 <div class="filter-date-group">
                     <div class="date-input-wrap">
                         <span class="filter-label">From</span>
@@ -472,41 +488,54 @@
                     </div>
                 </div>
 
-                <div class="filter-select-group">
-                    <div class="command-search-wrapper" style="max-width:240px; margin:0;">
-                        <input type="text" id="incomeSearchInput" placeholder="Search incomes..." class="command-search-input" style="padding-left:34px; height:38px;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="command-search-icon" style="left:11px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    </div>
+                <select id="incomeFilterFrequency" class="filter-select" title="Filter by Cadence">
+                    <option value="all">All Frequencies</option>
+                    <option value="DAILY">Daily (Wages)</option>
+                    <option value="WEEKLY">Weekly (Wages)</option>
+                    <option value="MONTHLY">Monthly (Salary)</option>
+                    <option value="YEARLY">Yearly</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
 
-                    <select id="incomeFilterFrequency" class="form-input" style="height:38px; padding:0 12px; font-size:13px;" title="Filter by Cadence">
-                        <option value="all">All Frequencies</option>
-                        <option value="DAILY">Daily (Wages)</option>
-                        <option value="WEEKLY">Weekly (Wages)</option>
-                        <option value="MONTHLY">Monthly (Salary)</option>
-                        <option value="YEARLY">Yearly</option>
-                        <option value="CUSTOM">Custom</option>
-                    </select>
+                <select id="incomeFilterSort" class="filter-select" title="Sort Incomes">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="amount-desc">Highest Amount</option>
+                    <option value="amount-asc">Lowest Amount</option>
+                </select>
 
-                    <select id="incomeFilterSort" class="form-input" style="height:38px; padding:0 12px; font-size:13px;" title="Sort Incomes">
-                        <option value="date-desc">Newest First</option>
-                        <option value="date-asc">Oldest First</option>
-                        <option value="amount-desc">Highest Amount</option>
-                        <option value="amount-asc">Lowest Amount</option>
-                    </select>
-
-                    <button id="resetIncomeFiltersBtn" class="btn-icon btn-text-icon" title="Reset Income Filters" style="height:38px;">
-                        Reset
-                    </button>
-                </div>
+                <button type="button" id="resetIncomeFiltersBtn" class="btn-icon btn-text-icon" title="Reset Income Filters">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+                    Reset
+                </button>
             </div>
-            <div class="scroll-area" id="incomeList">
-                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
-                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No income records logged yet</p>
-                    <p style="font-size:12.5px; margin:0 0 12px; color:var(--text-muted);">Track your salary, investments, client retainers, or other inflows.</p>
-                    <button type="button" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; cursor:pointer;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        <span>Record Income</span>
-                    </button>
+
+            <!-- UNIFIED DUAL LEDGER GRID -->
+            <div class="unified-ledger-grid" id="unifiedLedgerGrid">
+                <!-- Outflows Column -->
+                <div class="ledger-column" id="ledgerColExpenses">
+                    <div class="ledger-col-header">
+                        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">💸 Outflows (Expenses)</span>
+                        <span id="colExpenseCount" style="font-size:11.5px; font-weight:700; color:var(--primary);"></span>
+                    </div>
+                    <div class="scroll-area" id="expenseList">
+                        <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading expenses...</p>
+                    </div>
+                </div>
+
+                <!-- Inflows Column -->
+                <div class="ledger-column" id="ledgerColIncomes">
+                    <div class="ledger-col-header">
+                        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#10B981;">💰 Inflows (Earnings)</span>
+                        <span id="colIncomeCount" style="font-size:11.5px; font-weight:700; color:#10B981;"></span>
+                    </div>
+                    <div class="scroll-area" id="incomeList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💰</div>
+                            <div class="empty-state-title">No income records logged yet</div>
+                            <div class="empty-state-sub">Click <strong>+ Inflow</strong> above to track your salary, investments, client retainers, or other inflows.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -563,7 +592,7 @@
                     </label>
                 </div>
 
-                <div id="recurringOptions" hidden class="form-group-box">
+                <div id="recurringOptions" hidden class="form-group-box" style="display: none;">
                     <div class="form-group">
                         <label>Billing Frequency</label>
                         <select id="recurringFrequency">
@@ -574,7 +603,7 @@
                             <option value="CUSTOM">Custom Interval (Days)</option>
                         </select>
                     </div>
-                    <div class="form-group" id="customIntervalWrap" hidden>
+                    <div class="form-group" id="customIntervalWrap" hidden style="display: none;">
                         <label>Interval (Days)</label>
                         <input type="number" id="recurringIntervalDays" min="1" value="1">
                     </div>
@@ -633,13 +662,27 @@
         <div class="modal modal-wide">
             <div class="modal-header">
                 <div>
-                    <h3 style="margin-bottom:2px;">Recurring Subscriptions</h3>
-                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Active subscriptions that renew automatically</p>
+                    <h3 style="margin-bottom:2px;">Recurring Cashflow & Subscriptions</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Active subscriptions and recurring income streams that renew automatically</p>
                 </div>
                 <button class="modal-close" id="closeSubsModalBtn" aria-label="Close">&times;</button>
             </div>
+            <div id="subsCashflowSummary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:16px;">
+                <!-- Injected via loadSubscriptions() -->
+            </div>
+            <div class="subs-tab-bar" style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+                <button type="button" id="subsTabExpensesBtn" class="subs-tab-btn active" onclick="switchSubsModalTab('expenses')">
+                    💳 Outflows (Subscriptions)
+                </button>
+                <button type="button" id="subsTabIncomesBtn" class="subs-tab-btn" onclick="switchSubsModalTab('incomes')">
+                    💵 Inflows (Recurring Income)
+                </button>
+                <button type="button" id="subsTabSavingsBtn" class="subs-tab-btn" onclick="switchSubsModalTab('savings')">
+                    🪙 Chits & Recurring Savings
+                </button>
+            </div>
             <div id="subsModalList" class="subs-modal-list">
-                <!-- Injected via renderSubscriptionsModal() -->
+                <!-- Injected via loadSubscriptions() -->
             </div>
         </div>
     </div>
@@ -753,7 +796,7 @@
                     </label>
                 </div>
 
-                <div id="incomeRecurringOptions" hidden class="form-group-box">
+                <div id="incomeRecurringOptions" hidden class="form-group-box" style="display: none;">
                     <div class="form-group">
                         <label>Payment Frequency</label>
                         <select id="incomeRecurringFrequency">
@@ -764,7 +807,7 @@
                             <option value="CUSTOM">Custom Interval (Days)</option>
                         </select>
                     </div>
-                    <div class="form-group" id="incomeCustomIntervalWrap" hidden>
+                    <div class="form-group" id="incomeCustomIntervalWrap" hidden style="display: none;">
                         <label>Interval (Days)</label>
                         <input type="number" id="incomeRecurringIntervalDays" min="1" value="1">
                     </div>
@@ -799,6 +842,40 @@
                     <label>Target Completion Date (Optional)</label>
                     <input type="date" id="goalTargetDate" class="dark-date">
                 </div>
+                <!-- Recurring Chit / RD / SIP Options -->
+                <div class="form-group flex-row switch-group" style="margin-top: 14px;">
+                    <label class="switch-label" for="goalIsRecurring">
+                        <span class="switch-text">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#F59E0B; flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <span>Recurring Contribution (Chit / RD / SIP)</span>
+                        </span>
+                        <input type="checkbox" id="goalIsRecurring">
+                    </label>
+                </div>
+
+                <div id="goalRecurringFields" hidden class="form-group-box" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Installment Amount</label>
+                            <input type="number" id="goalRecurringAmount" placeholder="1000.00" step="0.01" min="0.01">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Deposit Frequency</label>
+                            <select id="goalFrequency">
+                                <option value="MONTHLY" selected>Monthly (e.g. Monthly Chit)</option>
+                                <option value="WEEKLY">Weekly</option>
+                                <option value="BI_WEEKLY">Bi-Weekly</option>
+                                <option value="DAILY">Daily</option>
+                                <option value="YEARLY">Yearly</option>
+                                <option value="CUSTOM">Custom Interval (Days)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="goalCustomIntervalWrap" hidden style="display: none; margin-top: 12px; margin-bottom: 0;">
+                        <label>Interval (Days)</label>
+                        <input type="number" id="goalRecurringIntervalDays" min="1" value="30" placeholder="e.g. 30">
+                    </div>
+                </div>
                 <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Save Goal</button>
             </form>
         </div>
@@ -822,9 +899,62 @@
         </div>
     </div>
 
+    <!-- MODAL DIALOG: SELECT MONTH & YEAR FOR FINANCIAL REPORT -->
+    <div class="modal-overlay" id="monthlyReportPeriodModal">
+        <div class="modal period-picker-modal" style="max-width: 520px; width: 95%;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">📊</span>
+                    <div>
+                        <h3 style="margin:0; font-size: 17px; font-weight: 700;">Financial Summary & Statement</h3>
+                        <p id="reportInceptionText" style="margin: 2px 0 0; font-size: 11.5px; color: var(--text-muted);">
+                            Account inception: <strong id="reportInceptionVal" style="color: var(--text); font-weight: 700;">Loading...</strong>
+                        </p>
+                    </div>
+                </div>
+                <button class="modal-close" id="closePeriodModalBtn" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="period-picker-body" style="padding: 16px 20px 22px;">
+                <!-- Year Selection Chips -->
+                <div style="margin-bottom: 16px;">
+                    <label class="period-picker-label">ACTIVE YEARS</label>
+                    <div class="period-chips-row" id="reportYearChips"></div>
+                </div>
+
+                <!-- Month Selection Grid -->
+                <div style="margin-bottom: 16px;">
+                    <label class="period-picker-label">SELECT MONTH</label>
+                    <div class="period-months-grid" id="reportMonthGrid"></div>
+                </div>
+
+                <!-- Selected Period Banner -->
+                <div class="period-summary-banner" id="reportPeriodBanner">
+                    <span style="font-size: 16px;">📅</span>
+                    <span style="font-size: 13px; color: var(--text);">Report Period: <strong id="reportSelectedPeriodText" style="color: var(--primary); font-weight: 800;">August 2026</strong></span>
+                </div>
+
+                <!-- Action Buttons matching mobile app -->
+                <div class="period-picker-actions">
+                    <button type="button" id="periodViewReportBtn" class="btn-primary" style="width: 100%; height: 42px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; border-radius: 10px;">
+                        <span>👁️</span> <span>View Financial Statement</span>
+                    </button>
+                    <div class="period-picker-secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <button type="button" id="periodDownloadReportBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
+                            <span>💾</span> <span>Download HTML</span>
+                        </button>
+                        <button type="button" id="periodEmailReportBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
+                            <span>✉️</span> <span>Email Statement</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DIALOG: PREVIEW MONTHLY REPORT -->
     <div class="modal-overlay" id="monthlyReportModal">
-        <div class="modal" style="max-width: 860px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
+        <div class="modal monthly-report-modal" style="max-width: 860px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 20px;">📊</span>
@@ -832,16 +962,31 @@
                 </div>
                 <button class="modal-close" id="closeMonthlyReportModalBtn" aria-label="Close">&times;</button>
             </div>
-            <div style="padding: 12px 16px; background: rgba(var(--primary-rgb), 0.08); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <span style="font-size: 13px; color: var(--text-muted);" id="monthlyReportMeta">Generated Executive Monthly Report</span>
-                <div style="display: flex; gap: 8px;">
-                    <button type="button" id="printReportBtn" class="btn-icon btn-text-icon" title="Print or Save as PDF">🖨️ Print</button>
-                    <button type="button" id="downloadHtmlReportBtn" class="btn-icon btn-text-icon" title="Download Report HTML">💾 Download</button>
-                    <button type="button" id="emailReportBtn" class="btn-primary btn-small" title="Email Report to My Address">✉️ Email Report</button>
+            <div class="monthly-report-toolbar">
+                <div class="monthly-report-meta-group">
+                    <div class="monthly-report-meta" id="monthlyReportMeta">
+                        <span class="meta-label">Executive Statement</span>
+                        <span class="meta-dot">•</span>
+                        <strong class="meta-period">August 2026</strong>
+                    </div>
+                    <button type="button" id="changeReportPeriodBtn" class="btn-icon btn-text-icon change-period-btn" title="Select another Month / Year">
+                        <span>📅</span> <span id="changeReportPeriodBtnLabel">Change Period</span>
+                    </button>
+                </div>
+                <div class="monthly-report-actions">
+                    <button type="button" id="printReportBtn" class="btn-icon btn-text-icon" title="Print or Save as PDF">
+                        <span>🖨️</span><span class="btn-lbl">Print</span>
+                    </button>
+                    <button type="button" id="downloadHtmlReportBtn" class="btn-icon btn-text-icon" title="Download Report HTML">
+                        <span>💾</span><span class="btn-lbl">Download</span>
+                    </button>
+                    <button type="button" id="emailReportBtn" class="btn-primary btn-small monthly-report-email-btn" title="Email Report to My Address">
+                        <span>✉️</span><span class="btn-lbl-full">Email Report</span><span class="btn-lbl-short">Email</span>
+                    </button>
                 </div>
             </div>
-            <div style="flex: 1; min-height: 480px; position: relative;">
-                <iframe id="monthlyReportFrame" style="width: 100%; height: 100%; min-height: 480px; border: none; border-radius: 0 0 16px 16px; background: #fff;" title="Monthly Report Preview"></iframe>
+            <div class="monthly-report-frame-container" style="flex: 1 1 auto; min-height: 280px; position: relative;">
+                <iframe id="monthlyReportFrame" style="width: 100%; height: 100%; min-height: 280px; border: none; border-radius: 0 0 16px 16px; background: #080a07;" title="Monthly Report Preview"></iframe>
             </div>
         </div>
     </div>
@@ -865,6 +1010,7 @@
 
     <script src="js/api.js?v=2.5"></script>
     <script src="js/animated-bg.js?v=2.3"></script>
+    <script src="js/custom-controls.js?v=1.0"></script>
     <script src="js/dashboard.js?v=2.4"></script>
     <script src="js/motion.js?v=1.0"></script>
 </body>

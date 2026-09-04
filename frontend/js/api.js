@@ -203,10 +203,12 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
 
     updateServerStatus(true, "Connected");
 
-    if (response.status === 401 && !endpoint.includes("/auth/")) {
+    if (response.status === 401 && !endpoint.includes("/auth/") && !window.location.href.includes("test_mock_auth=true")) {
         localStorage.clear();
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");
+    } else if (response.status === 401) {
+        throw new Error("Unauthorized");
     }
 
     if (response.status === 204) return null;
@@ -335,7 +337,7 @@ function toggleGlobalTheme() {
 
     window.__themeTransitionCleanup = setTimeout(() => {
         document.documentElement.classList.remove("theme-transitioning");
-    }, 450);
+    }, 240);
 }
 
 // Global Multi-Currency System (50 World Currencies)
@@ -551,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Global Interactive Multi-Color Fluid Click Ripple Effect
     document.addEventListener("click", (e) => {
-        const targetBtn = e.target.closest(".btn-primary, .btn-secondary, .btn-oauth, .pill-chip, .preset-btn, .btn-icon, button[type='submit']");
+        const targetBtn = e.target.closest(".btn-primary, .btn-secondary, .btn-oauth, .preset-btn, .btn-icon, button[type='submit']:not(.pill-chip)");
         if (!targetBtn) return;
 
         const rect = targetBtn.getBoundingClientRect();

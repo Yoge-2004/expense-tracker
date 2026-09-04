@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -15,7 +15,7 @@ import { Colors } from '../../constants/theme';
 interface TabIconProps {
   name: string;
   focused: boolean;
-  color: string;
+  color: any;
   label: string;
   activeColor: string;
 }
@@ -48,6 +48,7 @@ function TabIcon({ name, focused, color, label, activeColor }: TabIconProps) {
 
 export default function TabLayout() {
   const { theme } = useAuth();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = Colors[theme];
   const isLight = theme === 'light';
@@ -101,6 +102,31 @@ export default function TabLayout() {
 
       <Tabs.Screen
         name="add-expense"
+        listeners={() => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace({
+              pathname: '/(tabs)/add-expense',
+              params: {
+                editId: '',
+                editType: '',
+                editDescription: '',
+                editAmount: '',
+                editCategoryId: '',
+                editDate: '',
+                editSource: '',
+                editIsRecurring: '',
+                editFrequency: '',
+                editIntervalDays: '',
+                editName: '',
+                editTargetAmount: '',
+                editCurrentAmount: '',
+                editTargetDate: '',
+                editRecurringAmount: '',
+              },
+            });
+          },
+        })}
         options={{
           title: 'Add Record',
           tabBarIcon: () => (

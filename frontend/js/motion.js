@@ -112,8 +112,8 @@
        ------------------------------------------------------------------- */
     function initTouchFeedback() {
         const pressableSelector = '.btn-primary, .btn-secondary, .btn-oauth, .btn-icon, ' +
-            '.pill-chip, .preset-btn, .card, .metric-card, .perk-item, .float-card, ' +
-            'button, .expense-item, .subscription-card';
+            '.preset-btn, .card, .metric-card, .perk-item, .float-card, ' +
+            'button:not(.pill-chip), .expense-item, .subscription-card';
 
         document.querySelectorAll(pressableSelector).forEach((el) => {
             el.classList.add('touch-pressable');

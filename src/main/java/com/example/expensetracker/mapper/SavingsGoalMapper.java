@@ -39,7 +39,7 @@ public final class SavingsGoalMapper {
             progress = Math.round(progress * 10.0) / 10.0;
         }
 
-        return new SavingsGoalDto(
+        SavingsGoalDto dto = new SavingsGoalDto(
                 goal.getId(),
                 goal.getName(),
                 goal.getTargetAmount(),
@@ -48,6 +48,13 @@ public final class SavingsGoalMapper {
                 goal.getStatus(),
                 progress
         );
+        dto.setIsRecurring(goal.getIsRecurring());
+        dto.setRecurringAmount(goal.getRecurringAmount());
+        dto.setFrequency(goal.getFrequency());
+        dto.setIntervalDays(goal.getIntervalDays());
+        dto.setNextDueDate(goal.getNextDueDate());
+        dto.setEndDate(goal.getEndDate());
+        return dto;
     }
 
     /**
@@ -68,6 +75,12 @@ public final class SavingsGoalMapper {
         goal.setCurrentAmount(request.getCurrentAmount() != null ? request.getCurrentAmount() : BigDecimal.ZERO);
         goal.setTargetDate(request.getTargetDate());
         goal.setStatus(request.getStatus() != null ? request.getStatus() : "IN_PROGRESS");
+        goal.setIsRecurring(request.getIsRecurring() != null ? request.getIsRecurring() : false);
+        goal.setRecurringAmount(request.getRecurringAmount());
+        goal.setFrequency(request.getFrequency());
+        goal.setIntervalDays(request.getIntervalDays());
+        goal.setNextDueDate(request.getNextDueDate());
+        goal.setEndDate(request.getEndDate());
         goal.setUser(user);
         return goal;
     }

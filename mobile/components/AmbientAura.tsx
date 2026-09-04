@@ -95,7 +95,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
   });
 
   return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents={pointerEvents}>
+    <View style={StyleSheet.absoluteFill} pointerEvents={pointerEvents}>
       {/* Orb 1 - Gold/Primary Glow */}
       <Animated.View
         style={[

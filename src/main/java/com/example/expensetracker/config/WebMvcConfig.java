@@ -62,6 +62,27 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 )
                 .setCacheControl(staticCache);
 
+        // Direct root-relative assets (/css/**, /js/**, /assets/**, /images/**, /favicon.ico)
+        registry.addResourceHandler("/css/**")
+                .addResourceLocations("file:frontend/css/", "classpath:/frontend/css/")
+                .setCacheControl(staticCache);
+
+        registry.addResourceHandler("/js/**")
+                .addResourceLocations("file:frontend/js/", "classpath:/frontend/js/")
+                .setCacheControl(staticCache);
+
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("file:frontend/assets/", "classpath:/frontend/assets/")
+                .setCacheControl(staticCache);
+
+        registry.addResourceHandler("/images/**")
+                .addResourceLocations("file:frontend/images/", "classpath:/frontend/images/")
+                .setCacheControl(staticCache);
+
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("file:frontend/favicon.ico", "classpath:/frontend/favicon.ico")
+                .setCacheControl(staticCache);
+
         // Shorter cache for HTML pages themselves — allow revalidation
         CacheControl htmlCache = CacheControl
                 .maxAge(300, TimeUnit.SECONDS)

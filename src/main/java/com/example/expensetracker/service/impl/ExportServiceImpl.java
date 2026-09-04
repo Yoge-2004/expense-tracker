@@ -428,8 +428,9 @@ public class ExportServiceImpl implements ExportService {
 
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
-                sheet.setColumnWidth(i, Math.max(sheet.getColumnWidth(i) + 1400, 3800));
+                sheet.setColumnWidth(i, Math.max(sheet.getColumnWidth(i) + 1600, 4200));
             }
+            sheet.setColumnWidth(4, Math.max(sheet.getColumnWidth(4), 8500));
 
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
@@ -643,8 +644,9 @@ public class ExportServiceImpl implements ExportService {
 
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
-                sheet.setColumnWidth(i, Math.max(sheet.getColumnWidth(i) + 1400, 3800));
+                sheet.setColumnWidth(i, Math.max(sheet.getColumnWidth(i) + 1600, 4200));
             }
+            sheet.setColumnWidth(4, Math.max(sheet.getColumnWidth(4), 8500));
 
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);

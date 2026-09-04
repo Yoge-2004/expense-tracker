@@ -128,7 +128,7 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
     setSaving(true);
     try {
-      await apiRequest(`/expenses/recurring/${subscription.id}/user/${userId}`, {
+      await apiRequest(`/expenses/recurring/${subscription.id}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       });

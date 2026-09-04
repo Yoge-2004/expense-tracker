@@ -85,6 +85,24 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         if (request.getStatus() != null) {
             existing.setStatus(request.getStatus());
         }
+        if (request.getIsRecurring() != null) {
+            existing.setIsRecurring(request.getIsRecurring());
+        }
+        if (request.getRecurringAmount() != null) {
+            existing.setRecurringAmount(request.getRecurringAmount());
+        }
+        if (request.getFrequency() != null) {
+            existing.setFrequency(request.getFrequency());
+        }
+        if (request.getIntervalDays() != null) {
+            existing.setIntervalDays(request.getIntervalDays());
+        }
+        if (request.getNextDueDate() != null) {
+            existing.setNextDueDate(request.getNextDueDate());
+        }
+        if (request.getEndDate() != null) {
+            existing.setEndDate(request.getEndDate());
+        }
 
         SavingsGoal saved = savingsGoalRepository.save(existing);
         return SavingsGoalMapper.toDto(saved);
@@ -135,5 +153,17 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         }
 
         savingsGoalRepository.delete(goal);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<SavingsGoalDto> getRecurringGoals(User user) {
+        return savingsGoalRepository.findByUserAndIsRecurringTrue(user)
+                .stream()
+                .map(SavingsGoalMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

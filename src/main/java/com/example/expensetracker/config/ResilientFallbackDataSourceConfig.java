@@ -59,9 +59,14 @@ public class ResilientFallbackDataSourceConfig {
             primaryDs = null;
         }
 
+        // If primary DB is an H2 database (in-memory test or local file), do not attach a separate fallback DB
+        if (primaryUrl != null && primaryUrl.contains(":h2:")) {
+            return primaryDs;
+        }
+
         // Build Fallback DataSource (Local H2 File DB)
         HikariConfig fallbackConfig = new HikariConfig();
-        fallbackConfig.setJdbcUrl("jdbc:h2:file:./expensetracker_fallback;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL");
+        fallbackConfig.setJdbcUrl("jdbc:h2:file:./expensetracker_fallback;AUTO_SERVER=TRUE;MODE=PostgreSQL");
         fallbackConfig.setDriverClassName("org.h2.Driver");
         fallbackConfig.setUsername("sa");
         fallbackConfig.setPassword("");

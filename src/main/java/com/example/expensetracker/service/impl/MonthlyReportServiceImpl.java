@@ -286,9 +286,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
         if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()) {
-            log.info("Email service disabled or SMTP host not configured. Skipping monthly report email for {}.", user.getEmail());
-            saveReportLog(user, year, month, true, "Email sending disabled - report logged");
-            return;
+            log.warn("Email service disabled or SMTP host not configured (spring.mail.host). Cannot send monthly report email for {}.", user.getEmail());
+            saveReportLog(user, year, month, false, "Email service disabled or SMTP host not configured");
+            throw new IllegalStateException("Email service is not configured. You can download the report instead.");
         }
 
         boolean alreadySent = reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(user, year, month);
@@ -301,7 +301,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         if (mailSender == null) {
             log.warn("JavaMailSender bean unavailable. Skipping monthly report email for {}.", user.getEmail());
             saveReportLog(user, year, month, false, "JavaMailSender bean unavailable");
-            return;
+            throw new IllegalStateException("Email service is unavailable. You can download the report instead.");
         }
 
         try {
@@ -321,6 +321,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         } catch (Exception e) {
             log.error("Failed to send monthly report email to {} for {}/{}", user.getEmail(), month, year, e);
             saveReportLog(user, year, month, false, e.getMessage());
+            throw new IllegalStateException("Unable to send email. You can download the report instead.", e);
         }
     }
 
@@ -357,6 +358,10 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Transactional
     @Override
     public void sendAutomatedMonthlyReports() {
+        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank() || mailSenderProvider.getIfAvailable() == null) {
+            log.debug("Email service is disabled or unconfigured. Automated monthly reports skipped.");
+            return;
+        }
         log.info("Checking database for unsent monthly financial reports...");
         LocalDate lastMonth = LocalDate.now().minusMonths(1);
         int year = lastMonth.getYear();
@@ -534,6 +539,41 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
               .section-title { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #c79a3e; margin: 28px 0 12px; }
               .email-body { padding: 32px; }
               .email-footer { padding: 24px 32px; border-top: 1px solid rgba(236, 231, 216, 0.08); background: #0b0d09; text-align: center; font-size: 12px; color: #6b6558; line-height: 1.6; }
+
+              /* Custom Luxury Scrollbar */
+              html, body {
+                  scrollbar-width: thin !important;
+                  scrollbar-color: rgba(199, 154, 62, 0.45) rgba(11, 13, 9, 0.9) !important;
+              }
+              html::-webkit-scrollbar,
+              body::-webkit-scrollbar,
+              ::-webkit-scrollbar {
+                  width: 7px !important;
+                  height: 7px !important;
+              }
+              html::-webkit-scrollbar-track,
+              body::-webkit-scrollbar-track,
+              ::-webkit-scrollbar-track {
+                  background: #0b0d09 !important;
+                  border-radius: 999px !important;
+              }
+              html::-webkit-scrollbar-thumb,
+              body::-webkit-scrollbar-thumb,
+              ::-webkit-scrollbar-thumb {
+                  background: rgba(199, 154, 62, 0.45) !important;
+                  border-radius: 999px !important;
+                  border: 1.5px solid transparent !important;
+                  background-clip: padding-box !important;
+              }
+              html::-webkit-scrollbar-thumb:hover,
+              body::-webkit-scrollbar-thumb:hover,
+              ::-webkit-scrollbar-thumb:hover {
+                  background: rgba(199, 154, 62, 0.8) !important;
+              }
+              * {
+                  scrollbar-width: thin !important;
+                  scrollbar-color: rgba(199, 154, 62, 0.45) rgba(11, 13, 9, 0.9) !important;
+              }
             </style>
             </head>
             <body>

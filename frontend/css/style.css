@@ -64,6 +64,27 @@
        pills). Deliberately does NOT change with theme — gold stays
        medium-bright in both modes, so dark text keeps working in both. */
     --on-primary: #10120E;
+
+    /* Semantic Metric Cards Palette (Dark Mode) */
+    --metric-inflow: #10B981;
+    --metric-inflow-rgb: 16, 185, 129;
+    --metric-inflow-glow: rgba(16, 185, 129, 0.18);
+
+    --metric-outflow: #EF4444;
+    --metric-outflow-rgb: 239, 68, 68;
+    --metric-outflow-glow: rgba(239, 68, 68, 0.18);
+
+    --metric-netflow: #3B82F6;
+    --metric-netflow-rgb: 59, 130, 246;
+    --metric-netflow-glow: rgba(59, 130, 246, 0.18);
+
+    --metric-savings: #F59E0B;
+    --metric-savings-rgb: 245, 158, 11;
+    --metric-savings-glow: rgba(245, 158, 11, 0.18);
+
+    --metric-subs: #8B5CF6;
+    --metric-subs-rgb: 139, 92, 246;
+    --metric-subs-glow: rgba(139, 92, 246, 0.18);
 }
 
 /* Smooth theme switch — scoped to a class toggled on <html> for ~0.5s
@@ -75,16 +96,35 @@
    lag — but felt laggy because color and background-color changed
    immediately while shadows/borders didn't, so pieces of the UI updated
    out of sync with each other. */
-html.theme-transitioning,
-html.theme-transitioning *,
-html.theme-transitioning *::before,
-html.theme-transitioning *::after {
-    transition: background-color 0.4s var(--ease),
-                color 0.4s var(--ease),
-                border-color 0.4s var(--ease),
-                box-shadow 0.4s var(--ease),
-                fill 0.4s var(--ease),
-                stroke 0.4s var(--ease) !important;
+html.theme-transitioning body,
+html.theme-transitioning .dashboard-layout,
+html.theme-transitioning .top-bar,
+html.theme-transitioning .card,
+html.theme-transitioning .stat-card,
+html.theme-transitioning .unified-ledger-card,
+html.theme-transitioning .modal,
+html.theme-transitioning .filter-panel,
+html.theme-transitioning .insights-banner,
+html.theme-transitioning .insight-metric-card,
+html.theme-transitioning input,
+html.theme-transitioning select,
+html.theme-transitioning textarea,
+html.theme-transitioning button,
+html.theme-transitioning .btn-primary,
+html.theme-transitioning .btn-secondary,
+html.theme-transitioning .btn-icon,
+html.theme-transitioning .preset-btn,
+html.theme-transitioning .pill,
+html.theme-transitioning .tab-btn,
+html.theme-transitioning .stream-pill-btn,
+html.theme-transitioning table,
+html.theme-transitioning tr,
+html.theme-transitioning th,
+html.theme-transitioning td {
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                color 0.15s ease,
+                box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* LIGHT MODE OVERRIDES — Radiant Porcelain Glass & Royal Liquid Gold */
@@ -126,6 +166,27 @@ html.theme-transitioning *::after {
     --glass: blur(28px);
     --shadow-premium: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 0 1px rgba(212, 175, 55, 0.14);
     --shadow-glow: 0 12px 35px -8px rgba(212, 175, 55, 0.28);
+
+    /* Semantic Metric Cards Palette (Light Mode - Accessible High Contrast) */
+    --metric-inflow: #059669;
+    --metric-inflow-rgb: 5, 150, 105;
+    --metric-inflow-glow: rgba(5, 150, 105, 0.15);
+
+    --metric-outflow: #DC2626;
+    --metric-outflow-rgb: 220, 38, 38;
+    --metric-outflow-glow: rgba(220, 38, 38, 0.15);
+
+    --metric-netflow: #2563EB;
+    --metric-netflow-rgb: 37, 99, 235;
+    --metric-netflow-glow: rgba(37, 99, 235, 0.15);
+
+    --metric-savings: #B45309;
+    --metric-savings-rgb: 180, 83, 9;
+    --metric-savings-glow: rgba(180, 83, 9, 0.15);
+
+    --metric-subs: #7C3AED;
+    --metric-subs-rgb: 124, 58, 237;
+    --metric-subs-glow: rgba(124, 58, 237, 0.15);
 }
 
 [data-theme="light"] body {
@@ -152,6 +213,10 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 [data-theme="light"] body::before {
@@ -270,8 +335,13 @@ body {
 
 /* Strict hidden rule to prevent class display rules from overriding hidden attribute */
 [hidden],
+.form-group-box[hidden],
+.form-group-box .form-group[hidden],
 #customIntervalWrap[hidden],
-#recurringOptions[hidden] {
+#recurringOptions[hidden],
+#incomeRecurringOptions[hidden],
+#incomeCustomIntervalWrap[hidden],
+#editSubCustomIntervalWrap[hidden] {
     display: none !important;
 }
 
@@ -653,6 +723,51 @@ input[type="number"]::-webkit-inner-spin-button {
     outline: none !important;
 }
 
+/* Savings Goal Modal Recurring Switch - Amber Theme */
+#savingsGoalModal .switch-label,
+#savingsGoalModal .switch-label:focus,
+#savingsGoalModal .switch-label:focus-visible {
+    outline: none !important;
+}
+
+#savingsGoalModal .switch-label input[type="checkbox"],
+#goalIsRecurring {
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    outline: none !important;
+}
+
+#savingsGoalModal .switch-label input[type="checkbox"]:hover,
+#goalIsRecurring:hover {
+    border-color: rgba(245, 158, 11, 0.7) !important;
+    outline: none !important;
+}
+
+#savingsGoalModal .switch-label input[type="checkbox"]:checked,
+#goalIsRecurring:checked {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%) !important;
+    border-color: #F59E0B !important;
+    box-shadow: 0 2px 12px rgba(245, 158, 11, 0.45) !important;
+    outline: none !important;
+    animation: none !important;
+}
+
+#savingsGoalModal .switch-label input[type="checkbox"]:checked::before,
+#goalIsRecurring:checked::before {
+    transform: translateX(20px) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+#savingsGoalModal .switch-label input[type="checkbox"]:focus,
+#savingsGoalModal .switch-label input[type="checkbox"]:focus-visible,
+#goalIsRecurring:focus,
+#goalIsRecurring:focus-visible {
+    border-color: #F59E0B !important;
+    outline: 2px solid #F59E0B !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25) !important;
+}
+
 #incomeModal .modal-close:focus,
 #incomeModal .modal-close:focus-visible {
     outline: 2px solid #10B981 !important;
@@ -700,14 +815,18 @@ html {
     max-width: 100%;
     color-scheme: dark;
     overscroll-behavior-y: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
 }
 
 html[data-theme="light"] {
     color-scheme: light;
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
 }
 
 html::-webkit-scrollbar {
-    width: 9px;
+    width: 8px;
+    height: 8px;
 }
 
 html::-webkit-scrollbar-track {
@@ -715,16 +834,29 @@ html::-webkit-scrollbar-track {
 }
 
 html::-webkit-scrollbar-thumb {
-    background: rgba(var(--primary-rgb), 0.35);
+    background: rgba(var(--primary-rgb), 0.45);
     border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
     border: 2px solid transparent;
     background-clip: padding-box;
 }
 
-html::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--primary-rgb), 0.55);
-    border: 2px solid transparent;
-    background-clip: padding-box;
+[data-theme="light"] html::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] html::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+[data-theme="light"] html::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.7);
 }
 
 body {
@@ -1089,6 +1221,7 @@ button[type="submit"]:active {
    mobile breakpoints for this selector are untouched and still layer
    on top of this exactly as before. */
 .dashboard-container {
+    width: 100%;
     max-width: 1280px;
     margin: 0 auto;
     padding: 40px 36px 56px;
@@ -1096,7 +1229,14 @@ button[type="submit"]:active {
     height: auto;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    overflow-x: clip;
     animation: cardEntrance 0.5s var(--ease);
+}
+
+.dashboard-container > * {
+    min-width: 0;
+    max-width: 100%;
 }
 
 .top-bar {
@@ -1534,18 +1674,58 @@ button[type="submit"]:active {
     height: auto;
     max-height: 500px;
     overflow-y: auto;
-    padding-right: 8px;
+    overflow-x: hidden !important;
+    padding-right: 6px;
+    width: 100%;
+    box-sizing: border-box;
     scrollbar-width: thin;
-    scrollbar-color: var(--text-muted) transparent;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
 }
 
 .scroll-area::-webkit-scrollbar {
-    width: 6px;
+    width: 7px;
+    height: 7px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
 }
 
 .scroll-area::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 10px;
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+}
+
+.scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+}
+
+[data-theme="light"] .scroll-area {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.7);
+}
+
+#expenseList,
+#incomeList {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 
@@ -1573,7 +1753,7 @@ button[type="submit"]:active {
    .active { display:flex } was fully redundant and dropped. */
 .filter-toolbar {
     gap: 10px;
-    margin-bottom: 16px;
+    margin-bottom: 0;
     flex-wrap: wrap;
     display: flex !important;
     border-radius: 14px;
@@ -1584,13 +1764,19 @@ button[type="submit"]:active {
     opacity: 0;
     pointer-events: none;
     max-height: 0;
-    transition: max-height 0.35s var(--ease), opacity 0.25s var(--ease);
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: max-height 0.35s var(--ease), opacity 0.25s var(--ease),
+                padding 0.35s var(--ease), margin-bottom 0.35s var(--ease);
 }
 
 .filter-toolbar.active {
     opacity: 1;
     pointer-events: all;
     max-height: 700px;
+    padding: 16px;
+    margin-bottom: 16px;
+    overflow: visible;
     animation: filterSlide 0.25s var(--ease) both;
 }
 
@@ -1754,17 +1940,26 @@ body.modal-open {
     transform: scale(0.93) translateY(12px);
     transition: transform 0.35s var(--ease), opacity 0.3s;
     opacity: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.4) rgba(0, 0, 0, 0.2);
 }
 
 .modal::-webkit-scrollbar {
-    width: 6px;
+    width: 7px;
+    height: 7px;
 }
 .modal::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
 }
 .modal::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 3px;
+    background: rgba(var(--primary-rgb), 0.4);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+}
+.modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.65);
 }
 
 .modal h3 {
@@ -2715,15 +2910,22 @@ button[type="submit"]:active {
     border-radius: 14px;
     padding: 0 14px;
     gap: 10px;
-    min-width: 260px;
+    flex: 1 1 220px;
+    min-width: 180px;
+    max-width: 480px;
     height: 44px;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    transition: flex-basis 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .command-search-wrapper:focus-within {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
-    min-width: 320px;
+    flex-basis: 340px;
+    max-width: 560px;
 }
 
 .command-search-input {
@@ -2917,11 +3119,20 @@ button[type="submit"]:active {
     border-color: #10B981 !important;
     color: #10B981 !important;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
+    transform: translateY(-2px) scale(1.03) !important;
 }
 
 #incomePillsBar .pill-chip:hover {
-    border-color: rgba(16, 185, 129, 0.6) !important;
+    border-color: rgba(16, 185, 129, 0.7) !important;
     color: #10B981 !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
+}
+
+#incomePillsBar .pill-chip.active:hover {
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35) !important;
 }
 
 #incomeFilterPanel {
@@ -2939,28 +3150,147 @@ button[type="submit"]:active {
     filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg) !important;
 }
 
-/* CATEGORY PILLS BAR */
-.category-pills-bar {
+/* CATEGORY PILLS WRAPPER & CHIPS SYSTEM */
+.category-pills-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 4px;
+    margin-bottom: 4px;
     display: flex;
+    align-items: center;
     gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    margin-top: 14px;
-    margin-bottom: 8px;
+    box-sizing: border-box;
 }
 
-/* Consolidated from 3 unconditional declarations each of .pill-chip,
-   .pill-chip:hover, and .pill-chip.active. Kept whichever value was
-   already winning per property (padding, border-radius, font-size, and
-   transition each had 2-3 competing values); merged :hover's two
-   declarations since they set non-overlapping properties (color/border/
-   background from one, transform/box-shadow from the other) so both
-   were already applying together, just needlessly split across the
-   file. .pill-chip:hover:not(.active) is a separate, deliberately more
-   specific rule for the non-active hover state and is left as-is. */
+/* Scrollbar completely removed across all browsers */
+.category-pills-bar {
+    flex: 1 1 0%;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 8px 4px 4px;
+    box-sizing: border-box;
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE 10+ */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.category-pills-bar::-webkit-scrollbar {
+    display: none !important; /* Chrome, Safari, Edge */
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* Unique overflow indicator cleanly docked beside pills without overlapping */
+.category-pills-scroll-cue {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px 6px 10px;
+    background: rgba(23, 26, 20, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-accent);
+    border-radius: 999px;
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    white-space: nowrap;
+    user-select: none;
+    transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    height: 32px;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+}
+
+.category-pills-wrapper.has-overflow-right .category-pills-scroll-cue {
+    display: inline-flex;
+}
+
+.category-pills-scroll-cue:hover {
+    filter: brightness(1.15);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 16px var(--primary-glow);
+}
+
+.cue-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
+    animation: cuePulse 1.8s infinite ease-in-out;
+}
+
+[data-theme="light"] .cue-dot {
+    background: #6B5010;
+    box-shadow: 0 0 8px rgba(107, 80, 16, 0.5);
+}
+
+.cue-arrow {
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cuePulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.25); }
+}
+
+[data-theme="light"] .category-pills-scroll-cue {
+    background: rgba(252, 251, 246, 0.95);
+    border-color: rgba(199, 154, 62, 0.45);
+    color: #6B5010;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 10px rgba(199, 154, 62, 0.25);
+}
+
+#incomePillsWrapper .category-pills-scroll-cue {
+    color: #10B981;
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+#incomePillsWrapper .category-pills-scroll-cue .cue-dot {
+    background: #10B981;
+    box-shadow: 0 0 8px #10B981;
+}
+
+[data-theme="light"] #incomePillsWrapper .category-pills-scroll-cue {
+    background: rgba(252, 251, 246, 0.95);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #059669;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+[data-theme="light"] #incomePillsWrapper .category-pills-scroll-cue .cue-dot {
+    background: #059669;
+    box-shadow: 0 0 8px rgba(5, 150, 105, 0.5);
+}
+
 .pill-chip {
-    padding: 6px 16px;
-    border-radius: 100px;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    min-width: max-content !important;
+    width: auto !important;
+    height: 32px !important;
+    padding: 0 16px !important;
+    border-radius: 100px !important;
     background: var(--input-bg);
     border: 1px solid var(--border);
     color: var(--text-muted);
@@ -2968,31 +3298,39 @@ button[type="submit"]:active {
     font-weight: 600;
     letter-spacing: 0.01em;
     cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    z-index: 1;
+    overflow: visible !important;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.2s var(--ease),
+                border-color 0.2s var(--ease),
+                color 0.2s var(--ease);
 }
 
 .pill-chip:hover {
+    z-index: 5;
     color: var(--text-main);
     border-color: var(--border-accent);
     background: rgba(var(--primary-rgb), 0.08);
-    transform: translateY(-2px) scale(1.04);
+    transform: translateY(-2px) scale(1.03);
     box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
 }
 
 .pill-chip.active {
-    background: var(--primary-gradient);
-    color: #fff;
-    border-color: transparent;
-    box-shadow: 0 4px 12px var(--primary-glow);
-    /* "forwards" removed: same animation-lock pattern found repeatedly in
-   Phase 3 -- pillPop's forwards fill-mode permanently overrides
-   transform via the CSS animation cascade layer once it finishes,
-   which silently blocked .pill-chip:hover's translateY/scale for any
-   pill that's also .active (a selected filter). Confirmed via real
-   hover simulation: was stuck at an identity matrix, now animates
-   correctly. */
-    animation: pillPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: var(--primary-gradient) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px var(--primary-glow) !important;
+    transform: translateY(-2px) scale(1.03) !important;
+}
+
+.pill-chip.active:hover {
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 6px 16px var(--primary-glow) !important;
 }
 
 /* BUDGET GRID MATRIX */
@@ -3000,6 +3338,15 @@ button[type="submit"]:active {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 16px;
+}
+
+.budget-grid-matrix .empty-state-compact,
+.savings-grid-matrix .empty-state-compact {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    text-align: center !important;
+    justify-self: center !important;
+    box-sizing: border-box !important;
 }
 
 .btn-text-icon {
@@ -3800,6 +4147,7 @@ button[type="submit"]:active {
     transform: translateY(-8px);
     transition: all 0.25s var(--ease);
     padding: 8px;
+    display: none;
 }
 
 .custom-select-search {
@@ -3820,6 +4168,7 @@ button[type="submit"]:active {
 }
 
 .custom-select-wrapper.open .custom-select-options {
+    display: block;
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
@@ -4267,14 +4616,18 @@ button[type="submit"]:active {
         box-sizing: border-box !important;
     }
 
-    /* Mobile Top Bar & Search Layout Fix */
+    /* Mobile Top Bar & Search Layout Fix - NOT sticky on mobile to free up screen real estate */
     .top-bar {
+        position: static !important;
+        top: auto !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 14px !important;
+        gap: 12px !important;
         padding-top: 8px !important;
-        padding-bottom: 16px !important;
+        padding-bottom: 14px !important;
         margin-bottom: 6px !important;
     }
 
@@ -4306,7 +4659,7 @@ button[type="submit"]:active {
     .command-search-wrapper {
         order: 10 !important;
         width: 100% !important;
-        min-width: 100% !important;
+        min-width: 0 !important;
         max-width: 100% !important;
         flex: 1 1 100% !important;
         height: 44px !important;
@@ -4314,13 +4667,21 @@ button[type="submit"]:active {
         position: relative !important;
         z-index: 50 !important;
         pointer-events: auto !important;
+        box-sizing: border-box !important;
+    }
+
+    .command-search-wrapper:focus-within {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
     }
 
     .command-search-input {
         width: 100% !important;
         pointer-events: auto !important;
-        font-size: 14px !important;
+        font-size: 15px !important;
         padding: 0 8px !important;
+        box-sizing: border-box !important;
     }
 
     .top-bar .add-expense-button,
@@ -4487,6 +4848,9 @@ button[type="submit"]:active {
     background: var(--card-bg);
     position: relative;
     overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     animation: expenseSlideIn 0.35s var(--ease);
     transition: background 0.2s var(--ease), transform 0.2s var(--ease),
                 border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
@@ -4506,7 +4870,7 @@ button[type="submit"]:active {
 .expense-item:hover {
     background: var(--card-bg-hover);
     border-color: var(--border-accent);
-    transform: translateX(4px) scale(1.008);
+    transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 .expense-item:hover::before {
@@ -4629,7 +4993,8 @@ button[type="submit"]:active {
 .pill-chip:hover:not(.active) {
     border-color: var(--primary) !important;
     color: var(--primary) !important;
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
 }
 
 /* ── Export / import buttons ── */
@@ -4994,29 +5359,107 @@ button[type="submit"]:active {
     border: 1px solid var(--border);
     background: var(--input-bg);
     padding: 16px;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 14px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     margin-top: 12px;
-    box-sizing: border-box !important;
+    box-sizing: border-box;
     animation: expandIn 0.25s var(--ease) both;
 }
 
 .form-group-box .form-group {
-    width: 100% !important;
-    margin: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .form-group-box select,
 .form-group-box input {
-    width: 100% !important;
-    height: 44px !important;
-    padding: 0 12px !important;
-    box-sizing: border-box !important;
-    font-size: 14px !important;
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+/* Income modal recurring options emerald styling */
+#incomeModal .form-group-box {
+    border: 1px solid rgba(16, 185, 129, 0.32) !important;
+    background: rgba(16, 185, 129, 0.04) !important;
+}
+
+[data-theme="light"] #incomeModal .form-group-box {
+    border: 1px solid rgba(16, 185, 129, 0.38) !important;
+    background: rgba(16, 185, 129, 0.035) !important;
+}
+
+#incomeModal .form-group-box:focus-within {
+    border-color: rgba(16, 185, 129, 0.65) !important;
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.18) !important;
+}
+
+#incomeModal .form-group-box select,
+#incomeModal .form-group-box input {
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    color: var(--text-main) !important;
+    background: var(--input-bg) !important;
+}
+
+#incomeModal .form-group-box select:hover,
+#incomeModal .form-group-box input:hover {
+    border-color: rgba(16, 185, 129, 0.6) !important;
+}
+
+#incomeModal .form-group-box select:focus,
+#incomeModal .form-group-box input:focus {
+    border-color: #10B981 !important;
+    outline: 2px solid rgba(16, 185, 129, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22), 0 0 14px rgba(16, 185, 129, 0.25) !important;
+}
+
+#incomeCustomIntervalWrap:not([hidden]) {
+    animation: expandIn 0.25s var(--ease) both;
+}
+
+/* Savings Goal modal recurring options amber styling */
+#savingsGoalModal .form-group-box {
+    border: 1px solid rgba(245, 158, 11, 0.32) !important;
+    background: rgba(245, 158, 11, 0.04) !important;
+}
+
+[data-theme="light"] #savingsGoalModal .form-group-box {
+    border: 1px solid rgba(245, 158, 11, 0.38) !important;
+    background: rgba(245, 158, 11, 0.035) !important;
+}
+
+#savingsGoalModal .form-group-box:focus-within {
+    border-color: rgba(245, 158, 11, 0.65) !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.18) !important;
+}
+
+#savingsGoalModal .form-group-box select,
+#savingsGoalModal .form-group-box input {
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: var(--text-main) !important;
+    background: var(--input-bg) !important;
+}
+
+#savingsGoalModal .form-group-box select:hover,
+#savingsGoalModal .form-group-box input:hover {
+    border-color: rgba(245, 158, 11, 0.6) !important;
+}
+
+#savingsGoalModal .form-group-box select:focus,
+#savingsGoalModal .form-group-box input:focus {
+    border-color: #F59E0B !important;
+    outline: 2px solid rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22), 0 0 14px rgba(245, 158, 11, 0.25) !important;
+}
+
+#goalCustomIntervalWrap:not([hidden]) {
+    animation: expandIn 0.25s var(--ease) both;
 }
 
 @keyframes expandIn {
@@ -5214,6 +5657,18 @@ button[type="submit"]:active {
     .pill-chip {
         padding: 6px 12px !important;
         font-size: 12px !important;
+    }
+
+    .command-search-wrapper {
+        height: 42px !important;
+        padding: 0 10px !important;
+        gap: 8px !important;
+        border-radius: 12px !important;
+    }
+
+    .command-search-input {
+        font-size: 14px !important;
+        padding: 0 4px !important;
     }
 
     .modal {
@@ -5557,6 +6012,24 @@ button[type="submit"]:active {
         padding: 24px 20px !important;
     }
 
+    .top-bar-actions {
+        gap: 8px !important;
+        flex-shrink: 1 !important;
+    }
+
+    .command-search-wrapper {
+        width: auto !important;
+        flex: 1 1 180px !important;
+        min-width: 150px !important;
+        max-width: 380px !important;
+        padding: 0 10px !important;
+    }
+
+    .command-search-wrapper:focus-within {
+        flex-basis: 260px !important;
+        max-width: 440px !important;
+    }
+
     .grid-4-metrics {
         gap: 14px !important;
     }
@@ -5582,6 +6055,10 @@ button[type="submit"]:active {
     overflow: hidden;
     box-shadow: 0 12px 32px var(--shadow-color);
     transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .insights-intelligence-panel:hover {
@@ -5657,6 +6134,10 @@ button[type="submit"]:active {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .insight-card-item {
@@ -5670,6 +6151,10 @@ button[type="submit"]:active {
     position: relative;
     overflow: hidden;
     transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .insight-card-item:hover {
@@ -5721,8 +6206,10 @@ button[type="submit"]:active {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
@@ -5737,12 +6224,16 @@ button[type="submit"]:active {
 /* Button & Interactive Micro-Animations */
 .btn-primary:active,
 .btn-secondary:active,
-.btn-icon:active,
-.pill-chip:active {
+.btn-icon:active {
     transform: scale(0.97) !important;
 }
 
-.metric-card,
+.pill-chip:active {
+    transform: translateY(-2px) scale(1.03) !important;
+}
+
+.metric-card {
+}
 
 
 /* ==========================================================================
@@ -5930,9 +6421,9 @@ button[type="submit"]:active {
 
 /* 9. Category Pill Pop & Active Glow */
 @keyframes pillPop {
-    0% { transform: scale(0.94); }
-    50% { transform: scale(1.06); }
-    100% { transform: scale(1); }
+    0% { transform: translateY(-2px) scale(1.03); }
+    50% { transform: translateY(-2px) scale(1.07); }
+    100% { transform: translateY(-2px) scale(1.03); }
 }
 
 
@@ -6598,8 +7089,10 @@ button[type="submit"]:active {
     70% { opacity: 1; transform: translateY(2px) scale(1.01); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-.custom-select-options, .dropdown-menu {
-    animation: dropdownSpringUnroll 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+.custom-select-wrapper.open .custom-select-options,
+.dropdown-menu.open,
+.dropdown-menu.active {
+    animation: dropdownSpringUnroll 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* 91. Dropdown Option Item Cascade */
@@ -6862,7 +7355,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     inset: 0;
     border-radius: 50%;
     border: 1.5px solid var(--primary);
-    animation: 1, 0.3, 1) infinite;
+    animation: radarBeaconPulse 1s cubic-bezier(0.3, 0, 0.3, 1) infinite;
 }
 
 /* 133. Gold Coin Drop Bounce */
@@ -7121,7 +7614,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     inset: -4px;
     border-radius: inherit;
     border: 2px solid var(--primary);
-    animation: 1, 0.3, 1) infinite;
+    animation: rippleConcentric 1s cubic-bezier(0.3, 0, 0.3, 1) infinite;
 }
 
 /* 168. Smooth Page Transition Blur */
@@ -7652,4 +8145,1606 @@ input[type="range"]::-webkit-slider-thumb:hover {
         padding-top: 0 !important;
     }
 
+}
+
+
+/* =========================================================================
+   CUSTOM SELECT & LUXURY CALENDAR DATE PICKER STYLES
+   ========================================================================= */
+
+/* Visually hide native select while keeping it accessible and in DOM flow */
+.custom-select-native {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Base custom select wrapper */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+    user-select: none;
+    font-family: var(--font-body);
+}
+
+.custom-select-wrapper.custom-select-compact {
+    width: auto;
+    min-width: 135px;
+    flex-shrink: 0;
+}
+
+/* Trigger Button */
+.custom-select-trigger {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 14px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: all 0.22s var(--ease);
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.custom-select-compact .custom-select-trigger {
+    min-height: 38px;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 10px;
+}
+
+.custom-select-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.custom-select-label.placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.custom-select-arrow {
+    width: 15px;
+    height: 15px;
+    transition: transform 0.28s var(--ease);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.custom-select-trigger:hover {
+    border-color: var(--primary);
+}
+
+.custom-select-wrapper.open .custom-select-trigger {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.18);
+}
+
+.custom-select-wrapper.open .custom-select-arrow {
+    transform: rotate(180deg);
+    color: var(--primary);
+}
+
+/* Emerald variant for Income */
+.custom-select-emerald .custom-select-trigger:hover,
+.custom-select-emerald.open .custom-select-trigger {
+    border-color: #10B981 !important;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18) !important;
+}
+
+.custom-select-emerald.open .custom-select-arrow {
+    color: #10B981 !important;
+}
+
+/* Options dropdown container */
+.custom-select-options {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 2500;
+    max-height: 250px;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: all 0.22s var(--ease);
+    padding: 6px;
+    display: none;
+    box-sizing: border-box;
+}
+
+.custom-select-wrapper.drop-up .custom-select-options {
+    top: auto;
+    bottom: calc(100% + 6px);
+    transform: translateY(6px);
+}
+
+.custom-select-wrapper.open .custom-select-options {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Search wrap inside dropdown */
+.custom-select-search-wrap {
+    padding: 2px 2px 6px 2px;
+}
+
+.custom-select-search {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.custom-select-search:focus {
+    border-color: var(--primary);
+}
+
+.custom-select-emerald .custom-select-search:focus {
+    border-color: #10B981;
+}
+
+/* Options list */
+.custom-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.custom-option {
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: all 0.18s var(--ease);
+}
+
+.custom-option-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-option-check {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.18s var(--ease);
+    flex-shrink: 0;
+}
+
+.custom-option:hover {
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary);
+    transform: translateX(3px);
+}
+
+.custom-option.selected {
+    background: var(--primary-gradient);
+    color: var(--on-primary, #10120E);
+    font-weight: 700;
+}
+
+.custom-option.selected .custom-option-check {
+    opacity: 1;
+    transform: scale(1);
+    stroke: var(--on-primary, #10120E);
+}
+
+.custom-option.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.custom-option-no-match {
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Emerald option hover & selected */
+.custom-select-emerald .custom-option:hover {
+    background: rgba(16, 185, 129, 0.14) !important;
+    color: #10B981 !important;
+}
+
+.custom-select-emerald .custom-option.selected {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+    color: #FFFFFF !important;
+}
+
+.custom-select-emerald .custom-option.selected .custom-option-check {
+    stroke: #FFFFFF !important;
+}
+
+/* Amber variant for Savings Goal */
+.custom-select-amber .custom-select-trigger:hover,
+.custom-select-amber.open .custom-select-trigger {
+    border-color: #F59E0B !important;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18) !important;
+}
+
+.custom-select-amber.open .custom-select-arrow {
+    color: #F59E0B !important;
+}
+
+.custom-select-amber .custom-option:hover {
+    background: rgba(245, 158, 11, 0.14) !important;
+    color: #F59E0B !important;
+}
+
+.custom-select-amber .custom-option.selected {
+    background: linear-gradient(135deg, #F59E0B, #D97706) !important;
+    color: #FFFFFF !important;
+}
+
+.custom-select-amber .custom-option.selected .custom-option-check {
+    stroke: #FFFFFF !important;
+}
+
+/* Scrollbar for custom options */
+.custom-select-options {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+.custom-select-options::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-select-options::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+.custom-select-options::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+.custom-select-options::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+}
+
+/* =========================================================================
+   CUSTOM CALENDAR DATE PICKER STYLES
+   ========================================================================= */
+
+.custom-datepicker-input {
+    cursor: pointer !important;
+}
+
+.custom-calendar-popover {
+    width: 324px;
+    max-height: calc(100vh - 24px);
+    overflow: visible;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(var(--primary-rgb), 0.15);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    padding: 16px 18px;
+    user-select: none;
+    font-family: var(--font-body);
+    box-sizing: border-box;
+    z-index: 4500;
+    animation: dropdownSpringUnroll 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.custom-calendar-popover.cal-emerald {
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(16, 185, 129, 0.25);
+}
+
+.cal-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 12px !important;
+}
+
+.cal-nav-btn {
+    width: 32px !important;
+    height: 32px !important;
+    flex-shrink: 0 !important;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.cal-nav-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: scale(1.05);
+}
+
+.cal-emerald .cal-nav-btn:hover {
+    border-color: #10B981;
+    color: #10B981;
+}
+
+.cal-selectors-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+.cal-selectors-wrap .custom-select-wrapper {
+    position: relative !important;
+    min-width: 0 !important;
+}
+
+.cal-selectors-wrap .custom-select-wrapper[data-target-id="calMonthSelect"] {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    max-width: 125px !important;
+}
+
+.cal-selectors-wrap .custom-select-wrapper[data-target-id="calYearSelect"] {
+    width: 76px !important;
+    min-width: 76px !important;
+    flex-shrink: 0 !important;
+}
+
+.cal-selectors-wrap .custom-select-trigger {
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 2px 20px 2px 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    border-radius: 9px !important;
+    background: var(--input-bg);
+}
+
+.cal-selectors-wrap .custom-select-trigger .custom-select-label {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: block !important;
+}
+
+.cal-selectors-wrap .custom-select-options {
+    position: absolute !important;
+    top: calc(100% + 4px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    max-height: 160px !important;
+    z-index: 5000 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(var(--primary-rgb), 0.18) !important;
+}
+
+.cal-emerald .cal-selectors-wrap .custom-select-options {
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(16, 185, 129, 0.25) !important;
+}
+
+.cal-selectors-wrap .custom-option {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.cal-selectors-wrap .custom-select-search {
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+.cal-select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 5px 22px 5px 8px;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s var(--ease);
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C79A3E' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 7px center;
+}
+
+.cal-select:hover,
+.cal-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.18);
+}
+
+.cal-select-month {
+    flex: 1;
+    max-width: 118px;
+}
+
+.cal-select-year {
+    width: 80px;
+    font-family: var(--font-mono);
+}
+
+.cal-select option {
+    background: #171A14;
+    color: #ECE7D8;
+    padding: 6px;
+    font-weight: 500;
+}
+
+.cal-emerald .cal-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2310B981' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+
+.cal-emerald .cal-select:hover,
+.cal-emerald .cal-select:focus {
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.cal-weekday {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 0;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.cal-day-cell {
+    aspect-ratio: 1 / 1;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.18s var(--ease);
+    outline: none;
+}
+
+.cal-day-cell:hover {
+    background: rgba(var(--primary-rgb), 0.15);
+    color: var(--primary);
+    transform: scale(1.08);
+}
+
+.cal-emerald .cal-day-cell:hover {
+    background: rgba(16, 185, 129, 0.18);
+    color: #10B981;
+}
+
+.cal-day-cell.cal-day-other {
+    color: var(--text-muted);
+    opacity: 0.35;
+}
+
+.cal-day-cell.cal-day-today {
+    border: 1.5px solid var(--primary);
+    font-weight: 800;
+}
+
+.cal-emerald .cal-day-cell.cal-day-today {
+    border-color: #10B981;
+}
+
+.cal-day-cell.cal-day-selected {
+    background: var(--primary-gradient) !important;
+    color: var(--on-primary, #10120E) !important;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.4);
+    transform: scale(1.04);
+}
+
+.cal-emerald .cal-day-cell.cal-day-selected {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45);
+}
+
+.cal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.cal-footer-left {
+    display: flex;
+    gap: 6px;
+}
+
+.cal-btn-action {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.cal-btn-action:hover {
+    border-color: var(--primary);
+    color: var(--text-main);
+}
+
+.cal-emerald .cal-btn-action:hover {
+    border-color: #10B981;
+    color: #10B981;
+}
+
+.cal-btn-done {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    background: var(--primary-gradient);
+    color: var(--on-primary, #10120E);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.cal-emerald .cal-btn-done {
+    background: linear-gradient(135deg, #10B981, #059669);
+    color: #FFFFFF;
+}
+
+.cal-btn-done:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+/* Mobile responsive / centered modal mode for calendar */
+.cal-mobile-modal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(340px, calc(100vw - 24px)) !important;
+    max-height: calc(100vh - 24px) !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    z-index: 4500 !important;
+}
+
+/* Mobile Profile Menu Clamping - prevents left overflow */
+@media (max-width: 768px) {
+    .profile-menu {
+        position: fixed !important;
+        top: 64px !important;
+        right: 16px !important;
+        left: auto !important;
+        width: min(300px, calc(100vw - 32px)) !important;
+        max-width: calc(100vw - 32px) !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        transform-origin: top right !important;
+    }
+}
+
+.custom-calendar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 4400 !important;
+}
+
+/* Light theme overrides */
+[data-theme="light"] .custom-calendar-popover {
+    background: #FCFBF6;
+    border-color: rgba(26, 29, 23, 0.12);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.2);
+}
+
+[data-theme="light"] .cal-nav-btn {
+    background: #F4F1EA;
+    border-color: rgba(26, 29, 23, 0.12);
+}
+
+[data-theme="light"] .cal-btn-action {
+    background: #F4F1EA;
+    border-color: rgba(26, 29, 23, 0.12);
+}
+
+[data-theme="light"] .cal-select {
+    background-color: #F4F1EA;
+    border-color: rgba(26, 29, 23, 0.12);
+    color: #10120E;
+}
+
+[data-theme="light"] .cal-select option {
+    background: #FCFBF6;
+    color: #10120E;
+}
+
+/* Income Emoji Box & Subscriptions Modal Tabs */
+.income-emoji-box {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.income-emoji-box:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+}
+
+.subs-tab-btn {
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.subs-tab-btn:hover {
+    color: var(--text-main);
+    border-color: var(--border-accent);
+}
+.subs-tab-btn.active {
+    background: var(--primary);
+    color: #14120C !important;
+    border-color: var(--primary);
+    font-weight: 700;
+}
+.subs-tab-btn.active.emerald {
+    background: #10B981 !important;
+    color: #FFFFFF !important;
+    border-color: #10B981 !important;
+}
+
+/* ================== SEMANTIC METRIC CARDS SYSTEM ================== */
+.metric-card.metric-card-inflow,
+[data-theme="light"] .metric-card.metric-card-inflow {
+    border-left: 4px solid var(--metric-inflow) !important;
+}
+.metric-card.metric-card-inflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-inflow-glow), 0 0 0 1px var(--metric-inflow);
+}
+.metric-card.metric-card-inflow .card-label {
+    color: var(--metric-inflow) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-inflow .metric-value {
+    color: var(--metric-inflow) !important;
+}
+
+.metric-card.metric-card-outflow,
+[data-theme="light"] .metric-card.metric-card-outflow {
+    border-left: 4px solid var(--metric-outflow) !important;
+}
+.metric-card.metric-card-outflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-outflow-glow), 0 0 0 1px var(--metric-outflow);
+}
+.metric-card.metric-card-outflow .card-label {
+    color: var(--metric-outflow) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-outflow .metric-value {
+    color: var(--metric-outflow) !important;
+}
+
+.metric-card.metric-card-netflow,
+[data-theme="light"] .metric-card.metric-card-netflow {
+    border-left: 4px solid var(--metric-netflow) !important;
+}
+.metric-card.metric-card-netflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-netflow-glow), 0 0 0 1px var(--metric-netflow);
+}
+.metric-card.metric-card-netflow .card-label {
+    color: var(--metric-netflow) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-netflow .metric-value {
+    color: var(--metric-netflow) !important;
+}
+
+.metric-card.metric-card-savings,
+[data-theme="light"] .metric-card.metric-card-savings {
+    border-left: 4px solid var(--metric-savings) !important;
+}
+.metric-card.metric-card-savings:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-savings-glow), 0 0 0 1px var(--metric-savings);
+}
+.metric-card.metric-card-savings .card-label {
+    color: var(--metric-savings) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-savings .metric-value {
+    color: var(--metric-savings) !important;
+}
+
+.metric-card.metric-card-subs,
+[data-theme="light"] .metric-card.metric-card-subs {
+    border-left: 4px solid var(--metric-subs) !important;
+}
+.metric-card.metric-card-subs:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-subs-glow), 0 0 0 1px var(--metric-subs);
+}
+.metric-card.metric-card-subs .card-label {
+    color: var(--metric-subs) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-subs .metric-value {
+    color: var(--metric-subs) !important;
+}
+
+.badge-subs {
+    background: rgba(var(--metric-subs-rgb), 0.12);
+    color: var(--metric-subs);
+    border: 1px solid rgba(var(--metric-subs-rgb), 0.25);
+}
+
+.subs-link-action,
+.metric-card-subs .link-action,
+[data-theme="light"] .subs-link-action,
+[data-theme="light"] .metric-card-subs .link-action {
+    color: var(--metric-subs) !important;
+}
+.subs-link-action:hover,
+.metric-card-subs .link-action:hover,
+[data-theme="light"] .subs-link-action:hover,
+[data-theme="light"] .metric-card-subs .link-action:hover {
+    color: var(--metric-subs) !important;
+    filter: brightness(1.15);
+    text-decoration: underline;
+}
+
+/* Metric card status badge colors harmonized to each card's vertical stripe */
+.metric-card-inflow .status-badge,
+.badge-inflow {
+    background: rgba(var(--metric-inflow-rgb), 0.12) !important;
+    color: var(--metric-inflow) !important;
+    border: 1px solid rgba(var(--metric-inflow-rgb), 0.25) !important;
+}
+
+.metric-card-outflow .status-badge,
+.badge-outflow {
+    background: rgba(var(--metric-outflow-rgb), 0.12) !important;
+    color: var(--metric-outflow) !important;
+    border: 1px solid rgba(var(--metric-outflow-rgb), 0.25) !important;
+}
+
+.metric-card-netflow .status-badge,
+.badge-netflow {
+    background: rgba(var(--metric-netflow-rgb), 0.12) !important;
+    color: var(--metric-netflow) !important;
+    border: 1px solid rgba(var(--metric-netflow-rgb), 0.25) !important;
+}
+
+.metric-card-savings .status-badge,
+.badge-savings {
+    background: rgba(var(--metric-savings-rgb), 0.12) !important;
+    color: var(--metric-savings) !important;
+    border: 1px solid rgba(var(--metric-savings-rgb), 0.25) !important;
+}
+
+.metric-card-subs .status-badge,
+.badge-subs {
+    background: rgba(var(--metric-subs-rgb), 0.12) !important;
+    color: var(--metric-subs) !important;
+    border: 1px solid rgba(var(--metric-subs-rgb), 0.25) !important;
+}
+
+/* Responsive Mobile Protection for Smart Financial Insights Panel */
+@media (max-width: 768px) {
+    .insights-intelligence-panel {
+        padding: 16px 14px !important;
+        border-radius: 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .insights-panel-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    .insights-panel-title-wrap {
+        width: 100% !important;
+    }
+
+    .insights-panel-heading {
+        font-size: 16px !important;
+        word-break: break-word !important;
+    }
+
+    .insights-cards-grid {
+        grid-template-columns: 1fr !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        gap: 10px !important;
+        box-sizing: border-box !important;
+    }
+
+    .insight-card-item {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        padding: 14px 14px !important;
+    }
+
+    .savings-grid-matrix {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
+/* =========================================================================
+   MONTHLY REPORT MODAL, RESPONSIVE TOOLBAR & LUXURY SCROLLBAR
+   ========================================================================= */
+.monthly-report-modal {
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 20px !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.4) rgba(0, 0, 0, 0.2);
+}
+
+.monthly-report-modal .modal-header {
+    padding: 16px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.monthly-report-toolbar {
+    padding: 10px 18px;
+    background: rgba(var(--primary-rgb), 0.07);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.monthly-report-meta-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.monthly-report-meta {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.35;
+}
+
+.monthly-report-meta .meta-period {
+    color: var(--primary, #c79a3e);
+    font-weight: 700;
+}
+
+.monthly-report-meta .meta-dot {
+    opacity: 0.5;
+}
+
+.change-period-btn {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 11.5px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.monthly-report-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.monthly-report-actions .btn-text-icon,
+.monthly-report-actions .monthly-report-email-btn {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    border-radius: 10px;
+    box-sizing: border-box;
+    transition: all 0.2s var(--ease);
+}
+
+.monthly-report-email-btn .btn-lbl-short {
+    display: none;
+}
+
+.monthly-report-frame-container {
+    flex: 1 1 auto;
+    min-height: 480px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0 0 20px 20px;
+    background: #080a07;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.4) rgba(0, 0, 0, 0.2);
+}
+
+.monthly-report-frame-container::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+.monthly-report-frame-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+.monthly-report-frame-container::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.4);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+}
+.monthly-report-frame-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.65);
+}
+
+#monthlyReportFrame {
+    width: 100%;
+    height: 100%;
+    min-height: 480px;
+    border: none;
+    display: block;
+}
+
+/* Light theme overrides for monthly report modal scrollbars */
+[data-theme="light"] .monthly-report-modal,
+[data-theme="light"] .monthly-report-frame-container {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-track,
+[data-theme="light"] .modal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-thumb,
+[data-theme="light"] .modal::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+/* Smaller Devices & Mobile Optimization for Monthly Report */
+@media (max-width: 640px) {
+    .monthly-report-modal {
+        max-height: 94vh !important;
+        width: 96% !important;
+        margin: auto !important;
+    }
+
+    .monthly-report-modal .modal-header {
+        padding: 12px 14px !important;
+    }
+
+    .monthly-report-modal .modal-header h3 {
+        font-size: 15px !important;
+    }
+
+    .monthly-report-toolbar {
+        padding: 8px 10px !important;
+        gap: 8px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        overflow-x: hidden !important;
+    }
+
+    .monthly-report-meta-group {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .monthly-report-meta {
+        font-size: 12px !important;
+        line-height: 1.3 !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        text-align: left !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        word-break: break-word !important;
+    }
+
+    .change-period-btn {
+        height: 28px !important;
+        padding: 0 8px !important;
+        font-size: 11px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .monthly-report-actions {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1.25fr !important;
+        gap: 6px !important;
+    }
+
+    .monthly-report-actions button {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 6px !important;
+        font-size: 11.5px !important;
+        height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        box-sizing: border-box !important;
+    }
+
+    .monthly-report-frame-container {
+        min-height: 380px !important;
+    }
+
+    #monthlyReportFrame {
+        min-height: 380px !important;
+    }
+}
+
+@media (max-width: 440px) {
+    .monthly-report-meta {
+        font-size: 11px !important;
+        gap: 4px !important;
+    }
+
+    .monthly-report-meta .meta-label {
+        display: none !important;
+    }
+
+    .monthly-report-meta .meta-dot {
+        display: none !important;
+    }
+
+    .monthly-report-meta .meta-period {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+    }
+
+    .monthly-report-email-btn .btn-lbl-full {
+        display: none !important;
+    }
+    .monthly-report-email-btn .btn-lbl-short {
+        display: inline !important;
+    }
+
+    .monthly-report-actions {
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 4px !important;
+    }
+
+    .monthly-report-actions button {
+        padding: 0 3px !important;
+        font-size: 11px !important;
+        gap: 3px !important;
+    }
+}
+
+/* =========================================================================
+   MONTHLY REPORT PERIOD PICKER MODAL (MONTH & YEAR SELECTOR)
+   ========================================================================= */
+.period-picker-modal {
+    border-radius: 22px !important;
+    background: var(--card-bg, #161814) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(var(--primary-rgb), 0.15) !important;
+    max-height: calc(100vh - 32px) !important;
+    max-height: calc(100dvh - 32px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+
+.period-picker-modal .modal-header {
+    padding: 16px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--card-bg, #161814);
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.period-picker-modal::-webkit-scrollbar {
+    width: 6px;
+}
+.period-picker-modal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+.period-picker-modal::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+.period-picker-modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.75);
+}
+
+.period-picker-body {
+    padding: 16px 20px 22px;
+    flex: 1 1 auto;
+    overflow-y: visible;
+}
+
+.period-picker-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.period-chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.period-chip {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--input-bg, rgba(255, 255, 255, 0.04));
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+    font-family: inherit;
+}
+
+.period-chip:hover:not(.disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.period-chip.active {
+    background: var(--primary-gradient, var(--primary)) !important;
+    color: var(--on-primary, #10120E) !important;
+    font-weight: 800;
+    border-color: var(--primary) !important;
+    box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.35);
+}
+
+.period-chip.disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.period-months-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.period-month-chip {
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--input-bg, rgba(255, 255, 255, 0.04));
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+    font-family: inherit;
+}
+
+.period-month-chip:hover:not(.disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.period-month-chip.active {
+    background: var(--primary-gradient, var(--primary)) !important;
+    color: var(--on-primary, #10120E) !important;
+    font-weight: 800;
+    border-color: var(--primary) !important;
+    box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.35);
+}
+
+.period-month-chip.disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: transparent;
+    border-color: rgba(150, 150, 150, 0.15);
+}
+
+.period-summary-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    background: rgba(var(--primary-rgb), 0.09);
+    border: 1px solid rgba(var(--primary-rgb), 0.24);
+    margin: 18px 0;
+}
+
+/* Light theme overrides */
+[data-theme="light"] .period-picker-modal {
+    background: #FCFBF6 !important;
+    border-color: rgba(26, 29, 23, 0.12) !important;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.2) !important;
+}
+[data-theme="light"] .period-picker-modal .modal-header {
+    background: #FCFBF6 !important;
+}
+[data-theme="light"] .period-picker-modal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] .period-picker-modal::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+[data-theme="light"] .period-chip,
+[data-theme="light"] .period-month-chip {
+    background: #F4F1EA;
+    border-color: rgba(26, 29, 23, 0.12);
+    color: #10120E;
+}
+[data-theme="light"] .period-summary-banner {
+    background: rgba(199, 154, 62, 0.1);
+    border-color: rgba(199, 154, 62, 0.25);
+}
+
+@media (max-width: 640px) {
+    .period-picker-modal {
+        width: 95% !important;
+        max-height: calc(100dvh - 20px) !important;
+        margin: auto !important;
+        border-radius: 18px !important;
+    }
+    .period-picker-modal .modal-header {
+        padding: 12px 14px !important;
+    }
+    .period-picker-modal .modal-header h3 {
+        font-size: 15px !important;
+    }
+    .period-picker-body {
+        padding: 12px 14px 18px !important;
+    }
+    .period-months-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+    }
+    .period-month-chip {
+        padding: 8px 3px !important;
+        font-size: 12px !important;
+    }
+    .period-chip {
+        padding: 6px 13px !important;
+        font-size: 12px !important;
+    }
+    .period-summary-banner {
+        margin: 12px 0 !important;
+        padding: 8px 12px !important;
+    }
+    .period-picker-actions button {
+        height: 38px !important;
+        font-size: 12.5px !important;
+    }
+    .period-picker-secondary-actions {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+        margin-top: 8px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .period-picker-modal {
+        max-height: calc(100dvh - 16px) !important;
+    }
+}
+
+/* ── Income Table Container & Custom Luxury Scrollbar ── */
+.income-table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 12px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+
+.income-table-container::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.income-table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+
+.income-table-container::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+}
+
+.income-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+}
+
+[data-theme="light"] .income-table-container {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.7);
+}
+
+.income-table-container .income-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+
+/* ==========================================================================
+   UNIFIED LEDGER CONTAINER & STREAM TABS
+   ========================================================================== */
+.unified-ledger-card {
+    padding: 24px;
+    margin-top: 24px;
+    transition: all 0.3s ease;
+}
+
+.ledger-stream-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--input-bg, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin: 12px 0 12px;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-wrap: nowrap;
+    box-sizing: border-box;
+}
+
+.ledger-stream-tabs::-webkit-scrollbar { display: none; }
+
+.stream-pill-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.stream-pill-btn:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.stream-pill-btn.active {
+    background: var(--card-bg, rgba(255, 255, 255, 0.08));
+    color: var(--text-main);
+    font-weight: 700;
+    border-color: var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stream-badge-count {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.unified-ledger-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+    .unified-ledger-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.unified-ledger-grid.view-expenses {
+    grid-template-columns: 1fr;
+}
+.unified-ledger-grid.view-expenses #ledgerColIncomes {
+    display: none !important;
+}
+
+.unified-ledger-grid.view-incomes {
+    grid-template-columns: 1fr;
+}
+.unified-ledger-grid.view-incomes #ledgerColExpenses {
+    display: none !important;
+}
+
+.ledger-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ledger-col-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
 }

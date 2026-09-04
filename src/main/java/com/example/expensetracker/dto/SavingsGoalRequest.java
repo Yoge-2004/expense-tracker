@@ -34,6 +34,24 @@ public class SavingsGoalRequest {
     @Schema(description = "Lifecycle status (IN_PROGRESS, COMPLETED, PAUSED)", example = "IN_PROGRESS")
     private String status = "IN_PROGRESS";
 
+    @Schema(description = "Whether this savings goal has recurring deposits/chits", example = "true")
+    private Boolean isRecurring = false;
+
+    @Schema(description = "Recurring installment deposit amount", example = "5000.00")
+    private BigDecimal recurringAmount;
+
+    @Schema(description = "Installment frequency (DAILY, WEEKLY, BI_WEEKLY, MONTHLY, YEARLY, CUSTOM)", example = "MONTHLY")
+    private String frequency;
+
+    @Schema(description = "Interval in days if custom cadence", example = "30")
+    private Integer intervalDays;
+
+    @Schema(description = "Next scheduled deposit due date", example = "2026-04-01")
+    private LocalDate nextDueDate;
+
+    @Schema(description = "Optional end date for recurring contributions", example = "2027-12-31")
+    private LocalDate endDate;
+
     /**
      * Default constructor.
      */
@@ -105,5 +123,52 @@ public class SavingsGoalRequest {
     /** @param status Lifecycle status */
     public void setStatus(String status) {
         this.status = status;
+    }
+    public Boolean getIsRecurring() {
+        return isRecurring != null ? isRecurring : false;
+    }
+
+    public void setIsRecurring(Boolean recurring) {
+        isRecurring = recurring != null ? recurring : false;
+    }
+
+    public BigDecimal getRecurringAmount() {
+        return recurringAmount;
+    }
+
+    public void setRecurringAmount(BigDecimal recurringAmount) {
+        this.recurringAmount = recurringAmount;
+    }
+
+    public String getFrequency() {
+        return frequency;
+    }
+
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
+    }
+
+    public LocalDate getNextDueDate() {
+        return nextDueDate;
+    }
+
+    public void setNextDueDate(LocalDate nextDueDate) {
+        this.nextDueDate = nextDueDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
     }
 }

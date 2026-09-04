@@ -726,10 +726,11 @@ public class ExpenseController {
                 ))
         )
     })
-    @PutMapping("/recurring/{recId}")
+    @PutMapping({"/recurring/{recId}", "/recurring/{recId}/user/{userId}"})
     public ResponseEntity<?> updateSubscription(
             @Parameter(description = "ID of the recurring expense subscription to update.", required = true, example = "3")
             @PathVariable Long recId,
+            @PathVariable(value = "userId", required = false) Long userId,
             @org.springframework.web.bind.annotation.RequestBody Map<String, Object> updates) {
         RecurringExpense rec = recurringRepository.findById(recId)
                 .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
@@ -790,10 +791,11 @@ public class ExpenseController {
                 ))
         )
     })
-    @DeleteMapping("/recurring/{recId}")
+    @DeleteMapping({"/recurring/{recId}", "/recurring/{recId}/user/{userId}"})
     public ResponseEntity<?> deleteSubscription(
             @Parameter(description = "ID of the recurring expense subscription to cancel.", required = true, example = "3")
-            @PathVariable Long recId) {
+            @PathVariable Long recId,
+            @PathVariable(value = "userId", required = false) Long userId) {
         recurringRepository.deleteById(recId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Subscription cancelled successfully"));
     }

@@ -23,7 +23,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError } from '../services/api';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -457,12 +457,13 @@ export default function ForgotPasswordScreen() {
 
           {/* Footer Back to Login Link */}
           <View style={styles.footer}>
-            <Link href="/login" asChild>
-              <TouchableOpacity style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={16} color={c.primary} />
-                <Text style={[styles.backText, { color: c.primary }]} numberOfLines={1}>Back to Sign In</Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity
+              onPress={() => router.replace('/login')}
+              style={StyleSheet.flatten([styles.backBtn])}
+            >
+              <Ionicons name="arrow-back" size={16} color={c.primary} />
+              <Text style={[styles.backText, { color: c.primary }]} numberOfLines={1}>Back to Sign In</Text>
+            </TouchableOpacity>
           </View>
         </Animated.View>
       </ScrollView>

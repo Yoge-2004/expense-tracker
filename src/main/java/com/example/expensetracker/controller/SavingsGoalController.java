@@ -184,4 +184,20 @@ public class SavingsGoalController {
         savingsGoalService.deleteGoal(goalId, user);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Retrieves all recurring savings goals (chits, recurring deposits, SIPs) configured by the user.
+     *
+     * @param userId user identifier
+     * @return list of recurring savings goals
+     */
+    @Operation(summary = "Get recurring savings goals", description = "Retrieves all recurring savings goals and chits for the user.")
+    @GetMapping("/recurring/user/{userId}")
+    public ResponseEntity<List<SavingsGoalDto>> getRecurringGoals(
+            @Parameter(description = "ID of the authenticated user", required = true, example = "1")
+            @PathVariable Long userId) {
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return ResponseEntity.ok(savingsGoalService.getRecurringGoals(user));
+    }
 }

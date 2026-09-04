@@ -63,13 +63,60 @@ export default function AddExpenseScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
+    editType?: "expense" | "income" | "savings" | "budget";
     editId?: string;
     editDescription?: string;
     editAmount?: string;
     editCategoryId?: string;
     editDate?: string;
+    // Income fields
+    editSource?: string;
+    editIsRecurring?: string;
+    editFrequency?: string;
+    editIntervalDays?: string;
+    // Savings fields
+    editName?: string;
+    editTargetAmount?: string;
+    editCurrentAmount?: string;
+    editTargetDate?: string;
+    editRecurringAmount?: string;
   }>();
-  const isEditMode = !!params.editId;
+  const isEditMode = Boolean(params.editId && params.editId !== "undefined" && params.editId !== "");
+
+  const resetToAddNew = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.setParams({
+      editId: "",
+      editType: "",
+      editDescription: "",
+      editAmount: "",
+      editCategoryId: "",
+      editDate: "",
+      editSource: "",
+      editIsRecurring: "",
+      editFrequency: "",
+      editIntervalDays: "",
+      editName: "",
+      editTargetAmount: "",
+      editCurrentAmount: "",
+      editTargetDate: "",
+      editRecurringAmount: "",
+    });
+    setDescription("");
+    setAmount("");
+    setExpenseDate(new Date().toISOString().split("T")[0]);
+    setIsRecurring(false);
+    setIncomeSource("");
+    setIncomeAmount("");
+    setIncomeDate(new Date().toISOString().split("T")[0]);
+    setIncomeDesc("");
+    setIncomeIsRecurring(false);
+    setGoalName("");
+    setGoalTargetAmount("");
+    setGoalInitialAmount("");
+    setGoalIsRecurring(false);
+    setErrors({});
+  };
   const currSymbol = getCurrencySymbol(currency);
   const isLight = theme === 'light';
   const c = Colors[theme];
@@ -96,6 +143,10 @@ export default function AddExpenseScreen() {
   const defaultTargetDate = new Date();
   defaultTargetDate.setMonth(defaultTargetDate.getMonth() + 6);
   const [goalTargetDate, setGoalTargetDate] = useState(defaultTargetDate.toISOString().split('T')[0]);
+  const [goalIsRecurring, setGoalIsRecurring] = useState(false);
+  const [goalRecurringAmount, setGoalRecurringAmount] = useState('');
+  const [goalFrequency, setGoalFrequency] = useState('MONTHLY');
+  const [goalIntervalDays, setGoalIntervalDays] = useState('30');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,12 +212,57 @@ export default function AddExpenseScreen() {
   useEffect(() => {
     loadCategories();
     if (isEditMode) {
-      if (params.editDescription) setDescription(params.editDescription);
-      if (params.editAmount) setAmount(params.editAmount);
-      if (params.editCategoryId) setCategoryId(Number(params.editCategoryId));
-      if (params.editDate) setExpenseDate(params.editDate);
+      if (params.editType) {
+        setActiveTab(params.editType as any);
+      }
+      const type = params.editType || "expense";
+      if (type === "expense") {
+        setActiveTab("expense");
+        if (params.editDescription) setDescription(params.editDescription);
+        if (params.editAmount) setAmount(params.editAmount);
+        if (params.editCategoryId) setCategoryId(Number(params.editCategoryId));
+        if (params.editDate) setExpenseDate(params.editDate);
+      } else if (type === "income") {
+        setActiveTab("income");
+        if (params.editSource) setIncomeSource(params.editSource);
+        if (params.editAmount) setIncomeAmount(params.editAmount);
+        if (params.editDate) setIncomeDate(params.editDate);
+        if (params.editDescription) setIncomeDesc(params.editDescription);
+        if (params.editIsRecurring !== undefined) {
+          setIncomeIsRecurring(params.editIsRecurring === "true" || params.editIsRecurring === "1");
+        }
+        if (params.editFrequency) setIncomeFrequency(params.editFrequency as any);
+        if (params.editIntervalDays) setIncomeIntervalDays(params.editIntervalDays);
+      } else if (type === "savings") {
+        setActiveTab("savings");
+        if (params.editName) setGoalName(params.editName);
+        if (params.editTargetAmount) setGoalTargetAmount(params.editTargetAmount);
+        if (params.editCurrentAmount) setGoalInitialAmount(params.editCurrentAmount);
+        if (params.editTargetDate) setGoalTargetDate(params.editTargetDate);
+        if (params.editIsRecurring !== undefined) {
+          setGoalIsRecurring(params.editIsRecurring === "true" || params.editIsRecurring === "1");
+        }
+        if (params.editRecurringAmount) setGoalRecurringAmount(params.editRecurringAmount);
+        if (params.editFrequency) setGoalFrequency(params.editFrequency);
+        if (params.editIntervalDays) setGoalIntervalDays(params.editIntervalDays);
+      }
+    } else {
+      setDescription("");
+      setAmount("");
+      setExpenseDate(new Date().toISOString().split("T")[0]);
+      setIsRecurring(false);
+      setIncomeSource("");
+      setIncomeAmount("");
+      setIncomeDate(new Date().toISOString().split("T")[0]);
+      setIncomeDesc("");
+      setIncomeIsRecurring(false);
+      setGoalName("");
+      setGoalTargetAmount("");
+      setGoalInitialAmount("");
+      setGoalIsRecurring(false);
+      setErrors({});
     }
-  }, [userId, params.editId]);
+  }, [userId, params.editId, params.editType]);
 
   const toggleRecurring = (val: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -245,7 +341,7 @@ export default function AddExpenseScreen() {
         });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert('Updated', 'Expense updated successfully.', [
-          { text: 'OK', onPress: () => router.replace('/(tabs)') },
+          { text: 'OK', onPress: () => { resetToAddNew(); router.replace('/(tabs)'); } },
         ]);
       } else {
         const payload: any = {
@@ -304,28 +400,41 @@ export default function AddExpenseScreen() {
     }
     setIsSubmitting(true);
     try {
-      await apiRequest(`/incomes/user/${userId}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          source: incomeSource.trim(),
-          amount: numAmt,
-          incomeDate: incomeDate,
-          description: incomeDesc.trim(),
-          isRecurring: incomeIsRecurring,
-          frequency: incomeIsRecurring ? incomeFrequency : null,
-          intervalDays: incomeIsRecurring && incomeFrequency === 'CUSTOM' ? (parseInt(incomeIntervalDays) || 1) : null,
-        }),
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert('💰 Recorded!', 'Income stream logged successfully.', [
-        { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
-      ]);
-      setIncomeSource('');
-      setIncomeAmount('');
-      setIncomeDesc('');
+      const payload = {
+        source: incomeSource.trim(),
+        amount: numAmt,
+        incomeDate: incomeDate,
+        description: incomeDesc.trim(),
+        isRecurring: incomeIsRecurring,
+        frequency: incomeIsRecurring ? incomeFrequency : null,
+        intervalDays: incomeIsRecurring && incomeFrequency === "CUSTOM" ? (parseInt(incomeIntervalDays, 10) || 1) : null,
+      };
+
+      if (isEditMode && params.editType === "income" && params.editId) {
+        await apiRequest(`/incomes/${params.editId}/user/${userId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        showAlert("Updated!", "Income stream updated successfully.", [
+          { text: "View Dashboard", onPress: () => router.replace("/(tabs)") },
+        ]);
+      } else {
+        await apiRequest(`/incomes/user/${userId}`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        showAlert("Recorded!", "Income stream logged successfully.", [
+          { text: "View Dashboard", onPress: () => router.replace("/(tabs)") },
+        ]);
+      }
+      setIncomeSource("");
+      setIncomeAmount("");
+      setIncomeDesc("");
       setIncomeIsRecurring(false);
-      setIncomeFrequency('MONTHLY');
-      setIncomeIntervalDays('1');
+      setIncomeFrequency("MONTHLY");
+      setIncomeIntervalDays("1");
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not save income record.';
       showAlert('Save Error', msg);
@@ -349,24 +458,50 @@ export default function AddExpenseScreen() {
       return;
     }
     const numCurrent = parseFloat(goalInitialAmount || '0') || 0;
+    const numRecurring = goalIsRecurring ? parseFloat(goalRecurringAmount || '0') || 0 : 0;
+    if (goalIsRecurring && numRecurring <= 0) {
+      showAlert('Validation Error', 'Please specify a valid positive installment amount for your Chit/RD.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await apiRequest(`/savings/goals/user/${userId}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: goalName.trim(),
-          targetAmount: numTarget,
-          currentAmount: numCurrent,
-          targetDate: goalTargetDate,
-        }),
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert('🎯 Goal Created!', 'Savings milestone configured successfully.', [
-        { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
-      ]);
-      setGoalName('');
-      setGoalTargetAmount('');
-      setGoalInitialAmount('');
+      const payload = {
+        name: goalName.trim(),
+        targetAmount: numTarget,
+        currentAmount: numCurrent,
+        targetDate: goalTargetDate,
+        isRecurring: goalIsRecurring,
+        recurringAmount: goalIsRecurring ? numRecurring : null,
+        frequency: goalIsRecurring ? goalFrequency : null,
+        intervalDays: goalIsRecurring && goalFrequency === "CUSTOM" ? parseInt(goalIntervalDays, 10) || 30 : null,
+        nextDueDate: goalIsRecurring ? new Date().toISOString().split("T")[0] : null,
+      };
+
+      if (isEditMode && params.editType === "savings" && params.editId) {
+        await apiRequest(`/savings/goals/${params.editId}/user/${userId}`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        showAlert("Goal Updated!", "Savings milestone updated successfully.", [
+          { text: "View Dashboard", onPress: () => router.replace("/(tabs)") },
+        ]);
+      } else {
+        await apiRequest(`/savings/goals/user/${userId}`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        showAlert("Goal Configured!", goalIsRecurring ? "Recurring Chit / RD plan activated successfully." : "Savings milestone configured successfully.", [
+          { text: "View Dashboard", onPress: () => router.replace("/(tabs)") },
+        ]);
+      }
+      setGoalName("");
+      setGoalTargetAmount("");
+      setGoalInitialAmount("");
+      setGoalIsRecurring(false);
+      setGoalRecurringAmount("");
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not save savings goal.';
       showAlert('Save Error', msg);
@@ -459,13 +594,51 @@ export default function AddExpenseScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Top Header */}
-        <View style={styles.header}>
-          <Text style={[styles.pageTitle, { color: c.text }]}>
-            {isEditMode ? 'Edit Transaction' : 'Record Outflow'}
-          </Text>
-          <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>
-            {isEditMode ? 'Update transaction details' : 'Log a purchase or set category budget limits'}
-          </Text>
+        <View style={[styles.header, isEditMode && { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
+          <View style={{ flex: 1, paddingRight: isEditMode ? 12 : 0 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text style={[styles.pageTitle, { color: c.text }]}>
+                {isEditMode
+                  ? params.editType === "income"
+                    ? "Edit Inflow"
+                    : params.editType === "savings"
+                    ? "Edit Milestone"
+                    : "Edit Expense"
+                  : "Record Outflow"}
+              </Text>
+              {isEditMode && (
+                <View style={{ backgroundColor: "rgba(245, 158, 11, 0.15)", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: "#F59E0B" }}>
+                  <Text style={{ color: "#F59E0B", fontSize: 11, fontWeight: "700" }}>EDITING</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>
+              {isEditMode
+                ? "Update existing transaction or plan details"
+                : "Log a purchase, inflow or set category budget limits"}
+            </Text>
+          </View>
+
+          {isEditMode && (
+            <TouchableOpacity
+              onPress={resetToAddNew}
+              activeOpacity={0.8}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                backgroundColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.08)",
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: c.border,
+              }}
+            >
+              <Ionicons name="add-circle" size={16} color={c.primary} />
+              <Text style={{ fontSize: 12.5, fontWeight: "700", color: c.primary }}>+ Add New</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Tab Switcher: Expense vs Income vs Savings vs Budget */}
@@ -730,7 +903,7 @@ export default function AddExpenseScreen() {
                   <ActivityIndicator size="small" color="#FFF" />
                 ) : (
                   <View style={styles.submitBtnInner}>
-                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>Record Inflow</Text>
+                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>{isEditMode && params.editType === "income" ? "Update Inflow" : "Record Inflow"}</Text>
                     <Ionicons name="arrow-down-circle" size={20} color="#FFF" />
                   </View>
                 )}
@@ -812,6 +985,129 @@ export default function AddExpenseScreen() {
                 </TouchableOpacity>
               </View>
 
+              {/* Recurring Chit / RD Switch */}
+              <View style={[styles.recurringToggleRow, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                <View style={styles.recurringToggleLeft}>
+                  <Ionicons name="shield-checkmark" size={20} color={goalIsRecurring ? '#F59E0B' : c.textMuted} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.recurringTitle, { color: c.text }]}>Recurring Chit / Deposit</Text>
+                    <Text style={[styles.recurringSub, { color: c.textMuted }]}>
+                      Automate installment tracking for chits, RDs, or SIPs
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    const nextVal = !goalIsRecurring;
+                    setGoalIsRecurring(nextVal);
+                    if (nextVal && !goalRecurringAmount && goalTargetAmount) {
+                      setGoalRecurringAmount(String(Math.round(parseFloat(goalTargetAmount) / 12) || ''));
+                    }
+                  }}
+                  style={[
+                    styles.togglePill,
+                    {
+                      backgroundColor: goalIsRecurring ? '#F59E0B' : c.card,
+                      borderColor: goalIsRecurring ? '#F59E0B' : c.border,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.toggleKnob,
+                      {
+                        backgroundColor: goalIsRecurring ? '#FFF' : c.textMuted,
+                        transform: [{ translateX: goalIsRecurring ? 18 : 2 }],
+                      },
+                    ]}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {/* Recurring Installment Configuration Panel */}
+              {goalIsRecurring && (
+                <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: '#F59E0B40' }]}>
+                  <View style={styles.fieldGroup}>
+                    <Text style={[styles.fieldLabel, { color: '#F59E0B' }]}>Installment Amount ({currSymbol})</Text>
+                    <View style={[styles.amountInputWrap, { backgroundColor: c.card, borderColor: c.border }]}>
+                      <Text style={[styles.currencyPrefix, { color: '#F59E0B' }]}>{currSymbol}</Text>
+                      <TextInput
+                        style={[styles.amountInput, { color: c.text }]}
+                        placeholder="1000.00"
+                        placeholderTextColor={c.textMuted}
+                        keyboardType="decimal-pad"
+                        value={goalRecurringAmount}
+                        onChangeText={setGoalRecurringAmount}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.fieldGroup}>
+                    <Text style={[styles.recurringBoxLabel, { color: c.textMuted }]}>DEPOSIT FREQUENCY</Text>
+                    <View style={styles.freqRow}>
+                      {['MONTHLY', 'WEEKLY', 'BI_WEEKLY', 'YEARLY', 'CUSTOM'].map((freq) => {
+                        const isSel = goalFrequency === freq;
+                        return (
+                          <TouchableOpacity
+                            key={freq}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                              setGoalFrequency(freq);
+                            }}
+                            style={[
+                              styles.freqChip,
+                              {
+                                backgroundColor: isSel ? '#F59E0B' : c.card,
+                                borderColor: isSel ? '#F59E0B' : c.border,
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.freqChipText,
+                                {
+                                  color: isSel ? '#FFF' : c.textMuted,
+                                  fontWeight: isSel ? '800' : '600',
+                                  fontSize: 11,
+                                },
+                              ]}
+                            >
+                              {freq.replace('_', ' ')}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  {goalFrequency === 'CUSTOM' && (
+                    <View style={[styles.fieldGroup, { marginTop: 12 }]}>
+                      <Text style={[styles.recurringBoxLabel, { color: c.textMuted }]}>CUSTOM INTERVAL (DAYS)</Text>
+                      <TextInput
+                        style={[
+                          styles.textInput,
+                          styles.customDaysInput,
+                          {
+                            backgroundColor: c.card,
+                            borderColor: c.border,
+                            color: c.text,
+                          },
+                        ]}
+                        placeholder="e.g. 30"
+                        placeholderTextColor={c.textMuted}
+                        keyboardType="number-pad"
+                        value={goalIntervalDays}
+                        onChangeText={setGoalIntervalDays}
+                      />
+                    </View>
+                  )}
+                </View>
+              )}
+
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={handleSaveSavingsGoal}
@@ -822,7 +1118,7 @@ export default function AddExpenseScreen() {
                   <ActivityIndicator size="small" color="#FFF" />
                 ) : (
                   <View style={styles.submitBtnInner}>
-                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>Configure Milestone</Text>
+                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>{isEditMode && params.editType === "savings" ? "Update Milestone" : (goalIsRecurring ? "Activate Recurring Plan" : "Configure Milestone")}</Text>
                     <Ionicons name="flag" size={20} color="#FFF" />
                   </View>
                 )}
