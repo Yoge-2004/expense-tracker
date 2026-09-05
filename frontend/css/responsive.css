@@ -1,4 +1,9 @@
-/* ==========================================================================\n   EXPENSE TRACKER — RESPONSIVE.CSS\n   Module: Responsive Breakpoints & Mobile Optimization\n   ========================================================================== */\n\n/* ================== 8. MOBILE RESPONSIVE ================== */
+/* ==========================================================================
+   EXPENSE TRACKER — RESPONSIVE.CSS
+   Module: Responsive Breakpoints & Mobile Optimization
+   ========================================================================== */
+
+/* ================== 8. MOBILE RESPONSIVE ================== */
 @media (max-width: 900px) {
     body {
         height: auto;

@@ -1,4 +1,9 @@
-/* ==========================================================================\n   EXPENSE TRACKER — TABLES.CSS\n   Module: Tables, Streams, Ledger, Categories & Filters\n   ========================================================================== */\n\n    /* .card-header (e.g. "Budget Governance / Monthly Category Limits" next
+/* ==========================================================================
+   EXPENSE TRACKER — TABLES.CSS
+   Module: Tables, Streams, Ledger, Categories & Filters
+   ========================================================================== */
+
+    /* .card-header (e.g. "Budget Governance / Monthly Category Limits" next
        to the "+ New Budget" button) has no wrap behavior at all, and on
        narrow screens the button's fixed width leaves too little room for
        the heading, forcing it to wrap into a tall multi-line block that

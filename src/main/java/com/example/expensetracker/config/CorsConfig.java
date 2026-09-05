@@ -21,13 +21,26 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * variables (e.g. {@code CORS_ALLOWED_ORIGINS}) while supporting local development environments.</p>
  * 
  * @author Yogeshwaran
- * @version 2.0
+ * @version 2.1
  */
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.allowed-origins:null,https://*.netlify.app,https://*.hf.space,http://127.0.0.1:5500,http://localhost:5500,http://localhost:3000,http://localhost:8080,http://127.0.0.1:8080,http://localhost:63342,http://127.0.0.1:63342,http://localhost:*,http://127.0.0.1:*,http://192.168.*:*,http://10.*:*,http://172.*:*}")
+    @Value("${app.cors.allowed-origins:https://*.netlify.app,https://cozy-narwhal-3099ad.netlify.app,https://*.hf.space,http://127.0.0.1:5500,http://localhost:5500,http://localhost:3000,http://localhost:8080,http://127.0.0.1:8080,http://localhost:63342,http://127.0.0.1:63342,http://localhost:*,http://127.0.0.1:*,http://192.168.*:*,http://10.*:*,http://172.*:*,exp://*:*}")
     private String[] allowedOrigins;
+
+    private List<String> getCleanOrigins() {
+        if (allowedOrigins == null) {
+            return List.of("https://*.netlify.app", "https://*.hf.space", "http://localhost:*", "http://127.0.0.1:*");
+        }
+        List<String> cleaned = Arrays.stream(allowedOrigins)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty() && !"null".equalsIgnoreCase(s))
+                .toList();
+        return cleaned.isEmpty()
+                ? List.of("https://*.netlify.app", "https://*.hf.space", "http://localhost:*", "http://127.0.0.1:*")
+                : cleaned;
+    }
 
     /**
      * Configures Spring Security CORS filter with explicit allowed origin patterns.
@@ -35,8 +48,9 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        
-        config.setAllowedOriginPatterns(List.of("*"));
+        List<String> origins = getCleanOrigins();
+
+        config.setAllowedOriginPatterns(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type", "Content-Disposition"));
@@ -56,8 +70,10 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
+                List<String> origins = getCleanOrigins();
+
                 registry.addMapping("/**")
-                        .allowedOriginPatterns("*")
+                        .allowedOriginPatterns(origins.toArray(new String[0]))
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency")
                         .exposedHeaders("Authorization", "Content-Type", "Content-Disposition")

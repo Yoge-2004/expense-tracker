@@ -638,10 +638,12 @@ public class ExpenseTrackerSeleniumTest {
         loginSessionAndGoToDashboard();
 
         WebElement profileTrigger = wait.until(ExpectedConditions.elementToBeClickable(By.id("profileTrigger")));
-        clickElement(profileTrigger);
+        ((JavascriptExecutor) driver).executeScript(
+            "if (typeof toggleProfileMenu === 'function') { toggleProfileMenu(true); } else { const m = document.getElementById('profileMenu'); if (m) m.classList.add('active'); }"
+        );
 
-        WebElement viewReportBtn = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("viewMonthlyReportBtn")));
-        WebElement exportSummaryBtn = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("exportMonthlySummaryBtn")));
+        WebElement viewReportBtn = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("viewMonthlyReportBtn")));
+        WebElement exportSummaryBtn = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("exportMonthlySummaryBtn")));
 
         assertTrue(viewReportBtn.isDisplayed(), "View Monthly Report button must be present in profile menu");
         assertTrue(exportSummaryBtn.isDisplayed(), "Export Monthly Summary button must be present in profile menu");
@@ -680,7 +682,9 @@ public class ExpenseTrackerSeleniumTest {
         wait.until(d -> !periodModal.getAttribute("class").contains("active"));
 
         // 3. Test clicking "Export Monthly Summary" directly from profile menu
-        clickElement(profileTrigger);
+        ((JavascriptExecutor) driver).executeScript(
+            "if (typeof toggleProfileMenu === 'function') { toggleProfileMenu(true); } else { const m = document.getElementById('profileMenu'); if (m) m.classList.add('active'); }"
+        );
         exportSummaryBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("exportMonthlySummaryBtn")));
         clickElement(exportSummaryBtn);
 

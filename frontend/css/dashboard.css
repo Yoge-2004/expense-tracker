@@ -1,4 +1,9 @@
-/* ==========================================================================\n   EXPENSE TRACKER — DASHBOARD.CSS\n   Module: Dashboard Layout & Navigation (Shell, Topbar, Search, Profile Menu)\n   ========================================================================== */\n\n/* ================== 6. DASHBOARD ================== */
+/* ==========================================================================
+   EXPENSE TRACKER — DASHBOARD.CSS
+   Module: Dashboard Layout & Navigation (Shell, Topbar, Search, Profile Menu)
+   ========================================================================== */
+
+/* ================== 6. DASHBOARD ================== */
 /* Consolidated from 3 separate unconditional declarations (was lines
    ~717/847/1547): max-width, padding, and gap each had two different
    competing values (1200px vs 1280px, 30px 24px vs 40px 36px 56px, 32px

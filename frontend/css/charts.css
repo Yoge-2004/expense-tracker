@@ -1,4 +1,9 @@
-/* ==========================================================================\n   EXPENSE TRACKER — CHARTS.CSS\n   Module: Charts & Budget Progress Bars\n   ========================================================================== */\n\n/* ================== 7. BUDGET PROGRESS BARS ================== */
+/* ==========================================================================
+   EXPENSE TRACKER — CHARTS.CSS
+   Module: Charts & Budget Progress Bars
+   ========================================================================== */
+
+/* ================== 7. BUDGET PROGRESS BARS ================== */
 /* Consolidated from 3 declarations. Same animation-lock bug found
    repeatedly in the Phase 3 cleanup: expenseSlideIn's "both" fill-mode
    permanently overrides transform via the CSS animation cascade layer

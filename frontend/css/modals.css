@@ -1,4 +1,9 @@
-/* ==========================================================================\n   EXPENSE TRACKER — MODALS.CSS\n   Module: Modals, Dialogs & Curved Modal Interfaces\n   ========================================================================== */\n\n/* Consolidated from 3 unconditional declarations of .modal-overlay. The
+/* ==========================================================================
+   EXPENSE TRACKER — MODALS.CSS
+   Module: Modals, Dialogs & Curved Modal Interfaces
+   ========================================================================== */
+
+/* Consolidated from 3 unconditional declarations of .modal-overlay. The
    base rule's own backdrop-filter (blur(12px) saturate(160%), from the
    3rd declaration) was actually dead code: .modal-overlay.active (2
    classes) and .modal-overlay:not(.active) (also 2 selectors, plus

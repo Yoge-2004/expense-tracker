@@ -1,4 +1,9 @@
-/* ==========================================================================\n   EXPENSE TRACKER — COMPONENTS.CSS\n   Module: Components (Buttons, Cards, Badges, Custom Select & Datepicker)\n   ========================================================================== */\n\n/* ================== 3. COMPONENTS ================== */
+/* ==========================================================================
+   EXPENSE TRACKER — COMPONENTS.CSS
+   Module: Components (Buttons, Cards, Badges, Custom Select & Datepicker)
+   ========================================================================== */
+
+/* ================== 3. COMPONENTS ================== */
 .btn-primary,
 button[type="submit"] {
     width: 100%;

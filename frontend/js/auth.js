@@ -69,8 +69,10 @@ function isGoogleSignInConfigured() {
         !GOOGLE_CLIENT_ID.startsWith("YOUR_");
 }
 
+let isGoogleInitialized = false;
+
 function initGoogleSignIn() {
-    if (!isGoogleSignInConfigured() || !window.google?.accounts?.id) return;
+    if (isGoogleInitialized || !isGoogleSignInConfigured() || !window.google?.accounts?.id) return;
     try {
         google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
@@ -78,6 +80,7 @@ function initGoogleSignIn() {
             auto_select: false,
             cancel_on_tap_outside: true
         });
+        isGoogleInitialized = true;
 
         const realButtons = document.querySelectorAll("#googleRealButton, .google-real-btn");
         realButtons.forEach(btnContainer => {
@@ -140,7 +143,9 @@ function handleGoogleOAuth() {
     }
 
     try {
-        initGoogleSignIn();
+        if (!isGoogleInitialized) {
+            initGoogleSignIn();
+        }
         google.accounts.id.prompt((notification) => {
             if (notification.isNotDisplayed()) {
                 const reason = notification.getNotDisplayedReason?.() || "origin_or_cookies";
@@ -165,16 +170,18 @@ function handleGoogleOAuth() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    initGoogleSignIn();
-    let attempts = 0;
-    const interval = setInterval(() => {
-        attempts++;
-        if (window.google?.accounts?.id) {
-            initGoogleSignIn();
-            clearInterval(interval);
-        } else if (attempts > 15) {
-            clearInterval(interval);
-        }
-    }, 250);
+    if (window.google?.accounts?.id) {
+        initGoogleSignIn();
+    } else {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            if (window.google?.accounts?.id) {
+                initGoogleSignIn();
+                clearInterval(interval);
+            } else if (attempts > 15) {
+                clearInterval(interval);
+            }
+        }, 250);
+    }
 });
-
