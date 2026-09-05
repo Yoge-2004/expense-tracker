@@ -5,15 +5,15 @@
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-@import url("variables.css?v=4.1");
-@import url("base.css?v=4.1");
-@import url("components.css?v=4.1");
-@import url("auth.css?v=4.1");
-@import url("dashboard.css?v=4.1");
-@import url("metrics.css?v=4.1");
-@import url("tables.css?v=4.1");
-@import url("charts.css?v=4.1");
-@import url("modals.css?v=4.1");
-@import url("reports.css?v=4.1");
-@import url("animations.css?v=4.1");
-@import url("responsive.css?v=4.1");
+@import url("variables.css");
+@import url("base.css");
+@import url("components.css");
+@import url("auth.css");
+@import url("dashboard.css");
+@import url("metrics.css");
+@import url("tables.css");
+@import url("charts.css");
+@import url("modals.css");
+@import url("reports.css");
+@import url("animations.css");
+@import url("responsive.css");
