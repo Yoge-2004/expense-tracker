@@ -292,9 +292,11 @@ public class UserController {
 
         if (!verified) {
             log.warn("Account deletion denied for userId={}: Invalid or missing credentials confirmation", userId);
-            throw new BadCredentialsException(
-                    "Invalid or missing password confirmation. Account deletion requires re-authentication."
-            );
+            boolean hasPassword = request != null && request.getPassword() != null && !request.getPassword().isBlank();
+            String errorMsg = hasPassword
+                    ? "Incorrect password. Account deletion requires valid password confirmation."
+                    : "Invalid or missing password confirmation. Account deletion requires re-authentication.";
+            throw new BadCredentialsException(errorMsg);
         }
 
         userService.deleteUser(userId);

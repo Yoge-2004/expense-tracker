@@ -203,7 +203,11 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
 
     updateServerStatus(true, "Connected");
 
-    if (response.status === 401 && !endpoint.includes("/auth/") && !window.location.href.includes("test_mock_auth=true")) {
+    const isDeleteAccount = method === "DELETE" && endpoint.includes("/users/");
+    const isVerifyPin = endpoint.includes("/verify-security-pin");
+    const shouldSkipAuthRedirect = options.skipAuthRedirect === true || isDeleteAccount || isVerifyPin;
+
+    if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect && !window.location.href.includes("test_mock_auth=true")) {
         localStorage.clear();
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");
@@ -238,7 +242,7 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         if (!msg || msg.trim().toLowerCase() === "unauthorized" || msg.trim().toLowerCase() === "bad credentials") {
             const statusMessages = {
                 400: "That request wasn't valid. Please check your input and try again.",
-                401: "Invalid email or password. Please check your credentials and try again.",
+                401: isDeleteAccount ? "Incorrect password. Account deletion requires valid password confirmation." : "Invalid email or password. Please check your credentials and try again.",
                 403: "You don't have permission to do that.",
                 404: "The requested resource couldn't be found.",
                 409: "This conflicts with existing data.",

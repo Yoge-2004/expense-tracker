@@ -3025,7 +3025,8 @@ elements.confirmDeleteAccountBtn.addEventListener("click", async () => {
     try {
         await apiRequest(`/users/${userId}`, {
             method: "DELETE",
-            body: JSON.stringify({ password: password })
+            body: JSON.stringify({ password: password }),
+            skipAuthRedirect: true
         });
         localStorage.clear();
         window.location.href = "index.html";
@@ -3034,6 +3035,10 @@ elements.confirmDeleteAccountBtn.addEventListener("click", async () => {
         elements.confirmDeleteAccountBtn.classList.remove("btn-loading");
         elements.confirmDeleteAccountBtn.style.opacity = "1";
         elements.confirmDeleteAccountBtn.style.pointerEvents = "auto";
+        if (elements.deletePasswordInput) {
+            elements.deletePasswordInput.value = "";
+            elements.deletePasswordInput.focus();
+        }
     }
 });
 

@@ -170,12 +170,14 @@ export default function ProfileScreen() {
       await apiRequest(`/users/${userId}`, {
         method: 'DELETE',
         body: JSON.stringify({ password: deletePassword.trim() }),
-      });
+        skipAuthRedirect: true,
+      } as any);
       setShowDeleteModal(false);
       setDeleteConfirmText('');
       setDeletePassword('');
       logout();
     } catch (err: any) {
+      setDeletePassword('');
       const msg = err instanceof ApiError ? err.message : 'Could not delete account.';
       showAlert('Deletion Error', msg, undefined, 'error');
     } finally {

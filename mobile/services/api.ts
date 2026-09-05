@@ -355,8 +355,11 @@ export async function apiRequest(
   if (!response.ok) {
     const { message, code, validationErrors, payload } = extractErrorDetails(text, response.status);
 
-    // Auto purge session on unauthenticated 401 (unless logging in)
-    if (response.status === 401 && !endpoint.includes('/auth/login')) {
+    // Auto purge session on unauthenticated 401 (unless logging in or re-authenticating/deleting account)
+    const isDeleteAccount = method === "DELETE" && endpoint.includes("/users/");
+    const isLoginOrVerify = endpoint.includes("/auth/login") || endpoint.includes("/verify-security-pin");
+    const shouldSkipPurge = (options as any)?.skipAuthRedirect || isDeleteAccount || isLoginOrVerify;
+    if (response.status === 401 && !shouldSkipPurge) {
       await clearSession();
     }
 
