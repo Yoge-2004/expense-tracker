@@ -29,7 +29,7 @@ public class SyncController {
     private final FileDbSyncService syncService;
     private final RateLimiterService rateLimiterService;
 
-    @Value("${app.sync.secret-key:expense-tracker-auto-sync-secret-key-2026}")
+    @Value("${app.sync.secret-key:}")
     private String syncSecretKey;
 
     public SyncController(FileDbSyncService syncService, RateLimiterService rateLimiterService) {
@@ -37,34 +37,66 @@ public class SyncController {
         this.rateLimiterService = rateLimiterService;
     }
 
-    private ResponseEntity<Map<String, Object>> validateSyncAccess(String syncToken, HttpServletRequest request) {
+    private String resolveClientIp(HttpServletRequest request) {
         String clientIp = request != null ? request.getHeader("X-Forwarded-For") : null;
         if (clientIp == null || clientIp.isBlank()) {
-            clientIp = request != null ? request.getRemoteAddr() : "127.0.0.1";
-        } else {
-            clientIp = clientIp.split(",")[0].trim();
+            return request != null ? request.getRemoteAddr() : "127.0.0.1";
         }
+        return clientIp.split(",")[0].trim();
+    }
 
+    private ResponseEntity<Map<String, Object>> rateLimit(String clientIp) {
         if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
             log.warn("Rate limit exceeded for sync requests from IP: {}", clientIp);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("status", "error", "message", "Too many sync requests. Please try again later."));
         }
+        return null;
+    }
 
-        // Allow if valid X-Sync-Token is provided
-        if (syncToken != null && syncToken.equals(syncSecretKey)) {
-            return null;
-        }
-
-        // Allow if caller has authenticated session
+    private boolean hasAuthenticatedSession() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-            return null;
-        }
+        return auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken);
+    }
 
-        log.warn("Unauthorized sync attempt from IP: {}", clientIp);
+    private boolean hasValidSyncToken(String syncToken) {
+        return syncSecretKey != null && !syncSecretKey.isBlank()
+                && syncToken != null && !syncToken.isBlank()
+                && syncToken.equals(syncSecretKey);
+    }
+
+    /**
+     * Local File ↔ DB sync remains available to authenticated users because it
+     * operates on the application's local synchronization workflow. External
+     * automation can also authenticate with the dedicated sync token.
+     */
+    private ResponseEntity<Map<String, Object>> validateLocalSyncAccess(String syncToken, HttpServletRequest request) {
+        String clientIp = resolveClientIp(request);
+        ResponseEntity<Map<String, Object>> rateLimitError = rateLimit(clientIp);
+        if (rateLimitError != null) return rateLimitError;
+
+        if (hasValidSyncToken(syncToken) || hasAuthenticatedSession()) return null;
+
+        log.warn("Unauthorized local sync attempt from IP: {}", clientIp);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("status", "error", "message", "Unauthorized: Valid X-Sync-Token header or authenticated session required."));
+                .body(Map.of("status", "error", "message", "Unauthorized: valid sync token or authenticated session required."));
+    }
+
+    /**
+     * Hugging Face backup controls are restricted to the dedicated sync secret.
+     * This keeps ordinary user JWTs from triggering overwrite/pull operations
+     * against the shared backup channel while preserving scheduled automation.
+     */
+    private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {
+        String clientIp = resolveClientIp(request);
+        ResponseEntity<Map<String, Object>> rateLimitError = rateLimit(clientIp);
+        if (rateLimitError != null) return rateLimitError;
+
+        if (hasValidSyncToken(syncToken)) return null;
+
+        log.warn("Unauthorized HF sync attempt from IP: {}", clientIp);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("status", "error", "message", "Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
     }
 
     @Operation(summary = "Trigger File to DB Sync")
@@ -73,10 +105,8 @@ public class SyncController {
     public ResponseEntity<Map<String, Object>> syncFileToDb(
             @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
             HttpServletRequest request) {
-        ResponseEntity<Map<String, Object>> accessError = validateSyncAccess(syncToken, request);
-        if (accessError != null) {
-            return accessError;
-        }
+        ResponseEntity<Map<String, Object>> accessError = validateLocalSyncAccess(syncToken, request);
+        if (accessError != null) return accessError;
 
         log.info("Authorized file-to-db sync requested");
         Map<String, Object> result = syncService.syncFileToDb();
@@ -90,10 +120,8 @@ public class SyncController {
     public ResponseEntity<Map<String, Object>> syncDbToFile(
             @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
             HttpServletRequest request) {
-        ResponseEntity<Map<String, Object>> accessError = validateSyncAccess(syncToken, request);
-        if (accessError != null) {
-            return accessError;
-        }
+        ResponseEntity<Map<String, Object>> accessError = validateLocalSyncAccess(syncToken, request);
+        if (accessError != null) return accessError;
 
         log.info("Authorized db-to-file sync requested");
         Map<String, Object> result = syncService.syncDbToFile();
@@ -108,10 +136,8 @@ public class SyncController {
     public ResponseEntity<Map<String, Object>> pushToHuggingFace(
             @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
             HttpServletRequest request) {
-        ResponseEntity<Map<String, Object>> accessError = validateSyncAccess(syncToken, request);
-        if (accessError != null) {
-            return accessError;
-        }
+        ResponseEntity<Map<String, Object>> accessError = validateHfSyncAccess(syncToken, request);
+        if (accessError != null) return accessError;
 
         log.info("Authorized Push JSON backup to Hugging Face Spaces requested");
         syncService.syncDbToFile();
@@ -127,10 +153,8 @@ public class SyncController {
     public ResponseEntity<Map<String, Object>> pullFromHuggingFace(
             @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
             HttpServletRequest request) {
-        ResponseEntity<Map<String, Object>> accessError = validateSyncAccess(syncToken, request);
-        if (accessError != null) {
-            return accessError;
-        }
+        ResponseEntity<Map<String, Object>> accessError = validateHfSyncAccess(syncToken, request);
+        if (accessError != null) return accessError;
 
         log.info("Authorized Pull JSON backup from Hugging Face Spaces requested");
         Map<String, Object> downloadResult = syncService.downloadJsonBackupFromHuggingFace();
