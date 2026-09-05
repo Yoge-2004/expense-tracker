@@ -296,4 +296,32 @@ class ExportServiceImplTest {
             assertThat(subBanner).contains("€");
         }
     }
+    @Test
+    @DisplayName("exportExpensesToCsv sanitizes formula injection characters (=, +, -, @, %, tab, cr)")
+    void exportExpensesToCsv_sanitizesFormulaInjection() {
+        Category formulaCat = new Category();
+        formulaCat.setId(2L);
+        formulaCat.setName("@SUM(1,2)");
+        formulaCat.setUser(sampleUser);
+
+        Expense formulaExpense = new Expense();
+        formulaExpense.setId(99L);
+        formulaExpense.setAmount(new BigDecimal("100.00"));
+        formulaExpense.setDescription("=cmd|' /C calc'!A0");
+        formulaExpense.setExpenseDate(LocalDate.of(2026, 8, 15));
+        formulaExpense.setCategory(formulaCat);
+        formulaExpense.setUser(sampleUser);
+
+        when(expenseRepository.findByUser(sampleUser)).thenReturn(List.of(formulaExpense));
+
+        byte[] bytes = exportService.exportExpensesToCsv(sampleUser);
+        assertThat(bytes).isNotNull();
+        String csv = new String(bytes, StandardCharsets.UTF_8);
+
+        // Verify that dangerous prefix characters are escaped with a leading single quote (')
+        assertThat(csv).contains("\"'@SUM(1,2)\"");
+        assertThat(csv).contains("\"'=cmd|' /C calc'!A0\"");
+        assertThat(csv).doesNotContain("\"=cmd");
+        assertThat(csv).doesNotContain("\"@SUM");
+    }
 }

@@ -4271,14 +4271,23 @@ async function exportMonthlyCsv(year = selectedReportYear, month = selectedRepor
             return d && d >= startDate && d <= endDate;
         });
 
+        const sanitizeCsvCell = (val) => {
+            if (val === null || val === undefined) return '""';
+            let str = String(val);
+            if (/^[=+\-@\t\r%]/.test(str)) {
+                str = "'" + str;
+            }
+            return '"' + str.replace(/"/g, '""') + '"';
+        };
+
         let csv = "Type,Date,Description,Category/Source,Amount,Payment Method\n";
         monthlyExpenses.forEach(e => {
             const catName = getCategoryName(e.categoryId) || "Uncategorized";
-            csv += `Expense,${e.expenseDate || e.date || ""},"${(e.description || "").replace(/"/g, '""')}",${catName},${e.amount || 0},${e.paymentMethod || "CASH"}\n`;
+            csv += `Expense,${e.expenseDate || e.date || ""},${sanitizeCsvCell(e.description || "")},${sanitizeCsvCell(catName)},${e.amount || 0},${sanitizeCsvCell(e.paymentMethod || "CASH")}\n`;
         });
         monthlyIncomes.forEach(i => {
             const catName = i.source || "Income";
-            csv += `Income,${i.incomeDate || i.date || ""},"${(i.description || i.source || "").replace(/"/g, '""')}",${catName},${i.amount || 0},${i.paymentMethod || "CASH"}\n`;
+            csv += `Income,${i.incomeDate || i.date || ""},${sanitizeCsvCell(i.description || i.source || "")},${sanitizeCsvCell(catName)},${i.amount || 0},${sanitizeCsvCell(i.paymentMethod || "CASH")}\n`;
         });
 
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

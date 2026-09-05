@@ -2383,6 +2383,13 @@ public class ExportServiceImpl implements ExportService {
 
     private String escapeCsv(String value) {
         if (value == null) return "";
-        return value.replace("\"", "\"\"");
+        String sanitized = value;
+        if (!sanitized.isEmpty()) {
+            char firstChar = sanitized.charAt(0);
+            if (firstChar == '=' || firstChar == '+' || firstChar == '-' || firstChar == '@' || firstChar == '\t' || firstChar == '\r' || firstChar == '%') {
+                sanitized = "'" + sanitized;
+            }
+        }
+        return sanitized.replace("\"", "\"\"");
     }
 }
