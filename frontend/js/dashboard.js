@@ -120,6 +120,7 @@ const elements = {
     // Delete Account Elements
     deleteAccountBtn: document.getElementById("deleteAccountBtn"),
     deleteAccountModal: document.getElementById("deleteAccountModal"),
+    deletePasswordInput: document.getElementById("deletePasswordInput"),
     deleteConfirmInput: document.getElementById("deleteConfirmInput"),
     confirmDeleteAccountBtn: document.getElementById("confirmDeleteAccountBtn"),
     cancelDeleteAccountBtn: document.getElementById("cancelDeleteAccountBtn")
@@ -2960,27 +2961,42 @@ window.cancelSubscription = async (id, event) => {
 
 // --- 8. DELETE ACCOUNT ---
 
+function checkDeleteBtnState() {
+    const isTextValid = elements.deleteConfirmInput && elements.deleteConfirmInput.value.trim() === "DELETE";
+    const isPassValid = !elements.deletePasswordInput || elements.deletePasswordInput.value.length > 0;
+    const isValid = isTextValid && isPassValid;
+    elements.confirmDeleteAccountBtn.style.opacity = isValid ? "1" : "0.5";
+    elements.confirmDeleteAccountBtn.style.pointerEvents = isValid ? "auto" : "none";
+}
+
 // Open the delete account confirmation modal
 elements.deleteAccountBtn.addEventListener("click", (e) => {
     e.preventDefault();
     toggleProfileMenu(false);
+    if (elements.deletePasswordInput) elements.deletePasswordInput.value = "";
     elements.deleteConfirmInput.value = "";
     elements.confirmDeleteAccountBtn.style.opacity = "0.5";
     elements.confirmDeleteAccountBtn.style.pointerEvents = "none";
     openModal(elements.deleteAccountModal);
-    setTimeout(() => elements.deleteConfirmInput.focus(), 150);
+    setTimeout(() => {
+        if (elements.deletePasswordInput) {
+            elements.deletePasswordInput.focus();
+        } else {
+            elements.deleteConfirmInput.focus();
+        }
+    }, 150);
 });
 
-// Enable the confirm button only when user types "DELETE"
-elements.deleteConfirmInput.addEventListener("input", () => {
-    const isValid = elements.deleteConfirmInput.value.trim() === "DELETE";
-    elements.confirmDeleteAccountBtn.style.opacity = isValid ? "1" : "0.5";
-    elements.confirmDeleteAccountBtn.style.pointerEvents = isValid ? "auto" : "none";
-});
+// Enable the confirm button only when user enters password and types "DELETE"
+elements.deleteConfirmInput.addEventListener("input", checkDeleteBtnState);
+if (elements.deletePasswordInput) {
+    elements.deletePasswordInput.addEventListener("input", checkDeleteBtnState);
+}
 
 // Close modal on cancel
 elements.cancelDeleteAccountBtn.addEventListener("click", () => {
     closeModal(elements.deleteAccountModal);
+    if (elements.deletePasswordInput) elements.deletePasswordInput.value = "";
     elements.deleteConfirmInput.value = "";
 });
 
@@ -2988,19 +3004,29 @@ elements.cancelDeleteAccountBtn.addEventListener("click", () => {
 elements.deleteAccountModal.addEventListener("click", (e) => {
     if (e.target === elements.deleteAccountModal) {
         closeModal(elements.deleteAccountModal);
+        if (elements.deletePasswordInput) elements.deletePasswordInput.value = "";
         elements.deleteConfirmInput.value = "";
     }
 });
 
-// Confirm deletion — calls DELETE /api/users/{userId}
+// Confirm deletion — calls DELETE /api/users/{userId} with password confirmation
 elements.confirmDeleteAccountBtn.addEventListener("click", async () => {
+    const password = elements.deletePasswordInput ? elements.deletePasswordInput.value : "";
+    if (!password) {
+        showToast("Please enter your current password to confirm deletion.", "warning");
+        elements.deletePasswordInput?.focus();
+        return;
+    }
     if (elements.deleteConfirmInput.value.trim() !== "DELETE") return;
 
     elements.confirmDeleteAccountBtn.classList.add("btn-loading");
     elements.confirmDeleteAccountBtn.style.pointerEvents = "none";
 
     try {
-        await apiRequest(`/users/${userId}`, { method: "DELETE" });
+        await apiRequest(`/users/${userId}`, {
+            method: "DELETE",
+            body: JSON.stringify({ password: password })
+        });
         localStorage.clear();
         window.location.href = "index.html";
     } catch (err) {

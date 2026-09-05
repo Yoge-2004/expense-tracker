@@ -46,6 +46,8 @@ class UserControllerTest {
     @MockitoBean CustomUserDetailsService customUserDetailsService;
     @MockitoBean JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean com.example.expensetracker.security.UserSecurity userSecurity;
+    @MockitoBean org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    @MockitoBean com.example.expensetracker.security.GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -63,11 +65,18 @@ class UserControllerTest {
 
     @Test
     @WithMockUser
-    @DisplayName("DELETE /api/users/{userId} → 204 No Content on successful deletion")
+    @DisplayName("DELETE /api/users/{userId} → 204 No Content on successful deletion with valid password")
     void deleteAccount_existingUser_returns204() throws Exception {
+        com.example.expensetracker.model.User user = new com.example.expensetracker.model.User();
+        user.setId(1L);
+        user.setPassword("encodedPassword");
+        when(userService.findById(1L)).thenReturn(java.util.Optional.of(user));
+        when(passwordEncoder.matches("Password123!", "encodedPassword")).thenReturn(true);
         doNothing().when(userService).deleteUser(1L);
 
-        mockMvc.perform(delete("/api/users/1"))
+        mockMvc.perform(delete("/api/users/1")
+                        .contentType("application/json")
+                        .content("{\"password\":\"Password123!\"}"))
                 .andExpect(status().isNoContent());
 
         verify(userService, times(1)).deleteUser(1L);
@@ -75,12 +84,46 @@ class UserControllerTest {
 
     @Test
     @WithMockUser
+    @DisplayName("DELETE /api/users/{userId} → 401 Unauthorized when password confirmation is missing")
+    void deleteAccount_missingPassword_returns401() throws Exception {
+        com.example.expensetracker.model.User user = new com.example.expensetracker.model.User();
+        user.setId(1L);
+        when(userService.findById(1L)).thenReturn(java.util.Optional.of(user));
+
+        mockMvc.perform(delete("/api/users/1"))
+                .andExpect(status().isUnauthorized());
+
+        verify(userService, never()).deleteUser(any());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("DELETE /api/users/{userId} → 401 Unauthorized when password is wrong")
+    void deleteAccount_incorrectPassword_returns401() throws Exception {
+        com.example.expensetracker.model.User user = new com.example.expensetracker.model.User();
+        user.setId(1L);
+        user.setPassword("encodedPassword");
+        when(userService.findById(1L)).thenReturn(java.util.Optional.of(user));
+        when(passwordEncoder.matches("WrongPass", "encodedPassword")).thenReturn(false);
+
+        mockMvc.perform(delete("/api/users/1")
+                        .contentType("application/json")
+                        .content("{\"password\":\"WrongPass\"}"))
+                .andExpect(status().isUnauthorized());
+
+        verify(userService, never()).deleteUser(any());
+    }
+
+    @Test
+    @WithMockUser
     @DisplayName("DELETE /api/users/{userId} → 400 Bad Request when user not found")
     void deleteAccount_userNotFound_returns400() throws Exception {
         doThrow(new IllegalArgumentException("User not found"))
-                .when(userService).deleteUser(99L);
+                .when(userService).findById(99L);
 
-        mockMvc.perform(delete("/api/users/99"))
+        mockMvc.perform(delete("/api/users/99")
+                        .contentType("application/json")
+                        .content("{\"password\":\"Password123!\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("User not found"));
     }
@@ -163,10 +206,30 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/users/suggest-usernames → 200 OK with suggestions")
-    void suggestUsernames_checksDb_returns200() throws Exception {
-        mockMvc.perform(get("/api/users/suggest-usernames?base=john"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.suggestions").isArray());
+    @WithMockUser
+    @DisplayName("POST /api/users/{userId}/verify-security-pin → 400 Bad Request when user not found")
+    void verifySecurityPin_userNotFound_returns400() throws Exception {
+        when(userService.verifySecurityPin(99L, "123456"))
+                .thenThrow(new IllegalArgumentException("User not found"));
+
+        mockMvc.perform(post("/api/users/99/verify-security-pin")
+                        .contentType("application/json")
+                        .content("{\"securityPin\":\"123456\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("User not found"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("POST /api/users/{userId}/verify-security-pin → 409 Conflict when PIN is locked")
+    void verifySecurityPin_locked_returns409() throws Exception {
+        when(userService.verifySecurityPin(1L, "123456"))
+                .thenThrow(new IllegalStateException("Security PIN verification temporarily locked"));
+
+        mockMvc.perform(post("/api/users/1/verify-security-pin")
+                        .contentType("application/json")
+                        .content("{\"securityPin\":\"123456\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Security PIN verification temporarily locked"));
     }
 }

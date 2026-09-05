@@ -1053,8 +1053,12 @@
                 <h3 style="color:#A23E32;">Delete Account Permanently</h3>
             </div>
             <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">
-                This action is destructive and permanent. Type <strong>DELETE</strong> below to confirm.
+                This action is destructive and permanent. Enter your password and type <strong>DELETE</strong> below to confirm.
             </p>
+            <div class="form-group" style="margin-top: 14px; margin-bottom: 8px; text-align: left;">
+                <label for="deletePasswordInput" style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px;">Current Password</label>
+                <input type="password" id="deletePasswordInput" class="field-input" placeholder="Enter your current password" autocomplete="current-password">
+            </div>
             <div class="form-group" style="margin-top: 14px; margin-bottom: 8px; text-align: left;">
                 <label for="deleteConfirmInput" style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px;">Confirmation</label>
                 <input type="text" id="deleteConfirmInput" class="field-input delete-confirm-field" placeholder="Type DELETE to confirm" autocomplete="off" spellcheck="false" autocapitalize="characters">
@@ -1069,7 +1073,7 @@
     <script src="js/api.js?v=2.7"></script>
     <script src="js/animated-bg.js?v=2.3"></script>
     <script src="js/custom-controls.js?v=1.0"></script>
-    <script src="js/dashboard.js?v=2.8"></script>
+    <script src="js/dashboard.js?v=2.9"></script>
     <script src="js/motion.js?v=1.0"></script>
 </body>
 </html>

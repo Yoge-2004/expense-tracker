@@ -5,7 +5,6 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import org.springframework.beans.factory.annotation.Autowired;
 
-
 /**
  * Step definitions for {@code users.feature}.
  *
@@ -20,7 +19,7 @@ public class UserSteps {
         this.ctx = ctx;
     }
 
-    // ─── Given steps ──────────────────────────────────────────────────────
+    // ─── Given steps ──────────────────────────────────────────────────────────
 
     @Given("I have noted my email and password")
     public void iHaveNotedMyEmailAndPassword() {
@@ -28,14 +27,38 @@ public class UserSteps {
         // this step exists purely for readability in the feature file.
     }
 
-    // ─── Delete account steps ─────────────────────────────────────────────
+    // ─── Delete account steps ─────────────────────────────────────────────────
 
     @When("I delete my account")
     public void iDeleteMyAccount() {
-        System.out.println("DEBUG: UserSteps.ctx is " + (ctx == null ? "NULL" : "NOT NULL"));
         ctx.setLastResponse(
                 ctx.request()
                         .header("Authorization", "Bearer " + ctx.getAuthToken())
+                        .contentType("application/json")
+                        .body("{\"password\":\"" + ctx.getUserPassword() + "\"}")
+                        .when()
+                        .delete("/api/users/" + ctx.getUserId())
+        );
+    }
+
+    @When("I delete my account without a password")
+    public void iDeleteMyAccountWithoutPassword() {
+        ctx.setLastResponse(
+                ctx.request()
+                        .header("Authorization", "Bearer " + ctx.getAuthToken())
+                        .contentType("application/json")
+                        .when()
+                        .delete("/api/users/" + ctx.getUserId())
+        );
+    }
+
+    @When("I delete my account with wrong password {string}")
+    public void iDeleteMyAccountWithWrongPassword(String wrongPassword) {
+        ctx.setLastResponse(
+                ctx.request()
+                        .header("Authorization", "Bearer " + ctx.getAuthToken())
+                        .contentType("application/json")
+                        .body("{\"password\":\"" + wrongPassword + "\"}")
                         .when()
                         .delete("/api/users/" + ctx.getUserId())
         );

@@ -1,9 +1,12 @@
 package com.example.expensetracker.controller;
 
+import com.example.expensetracker.dto.DeleteAccountRequest;
 import com.example.expensetracker.dto.ErrorResponse;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
+import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.RateLimited;
+import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -36,16 +41,23 @@ public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
-    private final com.example.expensetracker.security.UserSecurity userSecurity;
+    private final UserSecurity userSecurity;
+    private final PasswordEncoder passwordEncoder;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
-    public UserController(UserService userService, UserRepository userRepository,
-                          com.example.expensetracker.security.UserSecurity userSecurity) {
+    public UserController(UserService userService,
+                          UserRepository userRepository,
+                          UserSecurity userSecurity,
+                          PasswordEncoder passwordEncoder,
+                          GoogleIdTokenVerifier googleIdTokenVerifier) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.userSecurity = userSecurity;
+        this.passwordEncoder = passwordEncoder;
+        this.googleIdTokenVerifier = googleIdTokenVerifier;
     }
 
-    // ─── GET /api/users/check-username ───────────────────────────────────────────
+    // ─── GET /api/users/check-username ─────────────────────────────────────────
 
     @Operation(
         summary = "Check username availability",
@@ -82,7 +94,7 @@ public class UserController {
         return ResponseEntity.ok(res);
     }
 
-    // ─── GET /api/users/suggest-usernames ────────────────────────────────────────
+    // ─── GET /api/users/suggest-usernames ──────────────────────────────────────
 
     @Operation(
         summary = "Generate username suggestions",
@@ -124,7 +136,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // ─── GET /api/users/{userId} ─────────────────────────────────────────────────
+    // ─── GET /api/users/{userId} ───────────────────────────────────────────────
 
     @Operation(
         summary = "Get user profile",
@@ -153,7 +165,7 @@ public class UserController {
         return ResponseEntity.ok(map);
     }
 
-    // ─── PUT /api/users/{userId}/security-pin ─────────────────────────────────────
+    // ─── PUT /api/users/{userId}/security-pin ──────────────────────────────────
 
     @Operation(
         summary = "Set or update 6-digit Security PIN",
@@ -183,7 +195,7 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Security PIN updated successfully"));
     }
 
-    // ─── POST /api/users/{userId}/verify-security-pin ────────────────────────────
+    // ─── POST /api/users/{userId}/verify-security-pin ──────────────────────────
 
     @Operation(
         summary = "Verify 6-digit Security PIN",
@@ -223,12 +235,13 @@ public class UserController {
         return ResponseEntity.ok(Map.of("valid", true, "message", "Security PIN verified successfully."));
     }
 
-    // ─── DELETE /api/users/{userId} ──────────────────────────────────────────────
+    // ─── DELETE /api/users/{userId} ────────────────────────────────────────────
 
     @Operation(
         summary = "Delete account",
         description = """
             Permanently deletes a user account and all data associated with it.
+            Requires re-authentication with current password, Security PIN, or Google ID token.
             """
     )
     @ApiResponses({
@@ -236,22 +249,59 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "No user found with the given ID",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
+        @ApiResponse(responseCode = "401", description = "Missing or invalid password confirmation",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "Access denied (IDOR protection)",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "429", description = "Too many account deletion attempts",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{userId}")
+    @RateLimited(key = "delete-account", maxRequests = 5, windowSeconds = 300, message = "Too many account deletion attempts. Please try again in %d seconds.")
     public ResponseEntity<Void> deleteAccount(
             @Parameter(description = "Database ID of the user account to permanently delete.", required = true, example = "1")
-            @PathVariable Long userId) {
+            @PathVariable Long userId,
+            @RequestBody(required = false) DeleteAccountRequest request) {
         log.info("Received request to permanently delete account for userId={}", userId);
         userSecurity.validateUserAccess(userId);
+
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        boolean verified = false;
+        if (request != null) {
+            if (request.getPassword() != null && !request.getPassword().isBlank()) {
+                verified = passwordEncoder.matches(request.getPassword(), user.getPassword());
+            } else if (request.getSecurityPin() != null && !request.getSecurityPin().isBlank()) {
+                verified = userService.verifySecurityPin(userId, request.getSecurityPin().trim());
+            } else if (request.getGoogleIdToken() != null && !request.getGoogleIdToken().isBlank()) {
+                try {
+                    GoogleIdTokenVerifier.VerifiedIdentity identity =
+                            googleIdTokenVerifier.verify(request.getGoogleIdToken());
+                    verified = identity.email() != null && identity.email().equalsIgnoreCase(user.getEmail());
+                } catch (Exception e) {
+                    log.warn("Google ID token verification failed during account deletion for userId={}: {}", userId, e.getMessage());
+                    verified = false;
+                }
+            }
+        }
+
+        if (!verified) {
+            log.warn("Account deletion denied for userId={}: Invalid or missing credentials confirmation", userId);
+            throw new BadCredentialsException(
+                    "Invalid or missing password confirmation. Account deletion requires re-authentication."
+            );
+        }
+
         userService.deleteUser(userId);
         log.info("Account userId={} permanently deleted", userId);
         return ResponseEntity.noContent().build();
     }
 
-    // ─── PUT /api/users/{userId}/currency ────────────────────────────────────────
+    // ─── PUT /api/users/{userId}/currency ──────────────────────────────────────
 
     @Operation(
         summary = "Update currency preference",

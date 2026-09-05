@@ -129,6 +129,7 @@ export default function ProfileScreen() {
   // Delete account typed confirmation state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const currItem = WORLD_CURRENCIES.find((item) => item.code === currency);
@@ -160,13 +161,18 @@ export default function ProfileScreen() {
    * Executes permanent account deletion once confirmation text matches "DELETE".
    */
   const handleExecuteDeleteAccount = async () => {
-    if (deleteConfirmText.trim() !== 'DELETE') {
+    if (deleteConfirmText.trim() !== 'DELETE' || !deletePassword.trim()) {
       return;
     }
     setIsDeletingAccount(true);
     try {
-      await apiRequest(`/users/${userId}`, { method: 'DELETE' });
+      await apiRequest(`/users/${userId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ password: deletePassword.trim() }),
+      });
       setShowDeleteModal(false);
+      setDeleteConfirmText('');
+      setDeletePassword('');
       logout();
     } catch (err: any) {
       const msg = err instanceof ApiError ? err.message : 'Could not delete account.';
@@ -585,12 +591,16 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Delete Account Modal (Requires Typing "DELETE") */}
+      {/* Delete Account Modal (Requires Password & Typing "DELETE") */}
       <Modal
         visible={showDeleteModal}
         animationType="fade"
         transparent={true}
-        onRequestClose={() => setShowDeleteModal(false)}
+        onRequestClose={() => {
+          setShowDeleteModal(false);
+          setDeleteConfirmText('');
+          setDeletePassword('');
+        }}
       >
         <View style={styles.modalBackdrop}>
           <View style={[styles.deleteModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -602,6 +612,19 @@ export default function ProfileScreen() {
             <Text style={[styles.deleteModalDesc, { color: c.textMuted }]}>
               This action cannot be undone. All your expenses, budgets, recurring subscriptions, and categories will be permanently erased.
             </Text>
+
+            <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>
+              Enter your current account password:
+            </Text>
+
+            <TextInput
+              style={[styles.deleteInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, marginBottom: 12 }]}
+              placeholder="Current Password"
+              placeholderTextColor={c.textMuted}
+              secureTextEntry={true}
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+            />
 
             <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>
               To confirm, type <Text style={{ color: c.accent, fontWeight: '900' }}>DELETE</Text> below:
@@ -619,7 +642,11 @@ export default function ProfileScreen() {
             <View style={styles.deleteBtnRow}>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => setShowDeleteModal(false)}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                  setDeletePassword('');
+                }}
                 style={[styles.cancelBtn, { borderColor: c.border }]}
               >
                 <Text style={[styles.cancelBtnText, { color: c.text }]}>Cancel</Text>
@@ -627,13 +654,13 @@ export default function ProfileScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.8}
-                disabled={deleteConfirmText.trim() !== 'DELETE' || isDeletingAccount}
+                disabled={deleteConfirmText.trim() !== 'DELETE' || !deletePassword.trim() || isDeletingAccount}
                 onPress={handleExecuteDeleteAccount}
                 style={[
                   styles.confirmDeleteBtn,
                   {
-                    backgroundColor: deleteConfirmText.trim() === 'DELETE' ? c.accent : c.inputBg,
-                    opacity: deleteConfirmText.trim() === 'DELETE' ? 1 : 0.45,
+                    backgroundColor: (deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0) ? c.accent : c.inputBg,
+                    opacity: (deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0) ? 1 : 0.45,
                   },
                 ]}
               >

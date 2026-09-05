@@ -6,16 +6,29 @@ Feature: User Account Management API
   Background:
     Given I am a registered and authenticated user
 
-  # ─── Delete Account ──────────────────────────────────────────────────────
+  # ─── Delete Account ──────────────────────────────────────────────────────────
 
   Scenario: Delete own user account successfully
     Calls DELETE /api/users/{userId} with the authenticated user's own ID.
-    Expects HTTP 204 No Content. The service performs a three-step cascading
-    delete: (1) all user's Expense records, (2) all user-created Category
-    records, (3) the User record itself.
+    Expects HTTP 204 No Content. The service performs a cascading
+    delete of all user expenses, incomes, goals, budgets, categories, and the User record itself.
 
     When I delete my account
     Then the response status code should be 204
+
+  Scenario: Delete account fails without password confirmation
+    Calls DELETE /api/users/{userId} without providing password credentials.
+    Expects HTTP 401 Unauthorized because destructive operations require re-authentication.
+
+    When I delete my account without a password
+    Then the response status code should be 401
+
+  Scenario: Delete account fails with incorrect password
+    Calls DELETE /api/users/{userId} with an incorrect password.
+    Expects HTTP 401 Unauthorized.
+
+    When I delete my account with wrong password "WrongPassword123!"
+    Then the response status code should be 401
 
   Scenario: Deleted user cannot login again
     Deletes the authenticated user's account then immediately attempts to
