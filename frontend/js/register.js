@@ -67,7 +67,7 @@ async function doSendOtp() {
         document.getElementById('reg-name').classList.add('is-invalid');
         return;
     }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email || !/^\s*[^\s@]+@[^\s@]+\.[^\s@]+\s*$/.test(email)) {
         showToast('Please enter a valid email address.', 'error');
         document.getElementById('reg-email').classList.add('is-invalid');
         return;
@@ -197,4 +197,64 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             }
         }
     }
+});
+
+// The legacy registration page keeps its progress indicator in an inline script.
+// Synchronize the optional 6-digit Security PIN with that indicator after the page
+// initialization has completed, without changing the registration/API workflow.
+document.addEventListener('DOMContentLoaded', () => {
+    const pinInput = document.getElementById('reg-security-pin');
+    const bar = document.getElementById('stepBar');
+    const dot6 = document.getElementById('dot6');
+
+    if (!pinInput || !bar || !dot6 || typeof window.updateFormState !== 'function') return;
+
+    const syncPinProgress = () => {
+        const nameInput = document.getElementById('reg-name');
+        const userInput = document.getElementById('reg-username');
+        const emailInput = document.getElementById('reg-email');
+        const currencyInput = document.getElementById('reg-currency');
+        const passInput = document.getElementById('reg-password');
+
+        const nameValid = !!nameInput && nameInput.value.trim().length >= 2;
+        const userValid = !!userInput && userInput.value.trim().length >= 3 && /^[a-zA-Z0-9_.-]+$/.test(userInput.value.trim());
+        const emailValid = !!emailInput && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim());
+        const currencyValid = !!currencyInput?.value;
+        const password = passInput?.value || '';
+        const passwordScore = [
+            password.length >= 8,
+            /[A-Z]/.test(password) && /[a-z]/.test(password),
+            /[0-9]/.test(password),
+            /[^A-Za-z0-9]/.test(password),
+        ].filter(Boolean).length;
+        const passwordValid = passwordScore >= 3;
+        const pinValid = /^[0-9]{6}$/.test(pinInput.value.trim());
+
+        const completedRequiredFields = [nameValid, userValid, emailValid, currencyValid, passwordValid]
+            .filter(Boolean).length;
+        const completedFields = completedRequiredFields + (pinValid ? 1 : 0);
+
+        dot6.classList.toggle('step-dot-done', pinValid);
+        bar.style.width = `${(completedFields / 6) * 100}%`;
+    };
+
+    [
+        document.getElementById('reg-name'),
+        document.getElementById('reg-username'),
+        document.getElementById('reg-email'),
+        document.getElementById('reg-password'),
+        document.getElementById('reg-currency'),
+        pinInput,
+    ].filter(Boolean).forEach((el) => {
+        el.addEventListener('input', syncPinProgress);
+        el.addEventListener('change', syncPinProgress);
+    });
+
+    const originalUpdateFormState = window.updateFormState;
+    window.updateFormState = function (...args) {
+        originalUpdateFormState.apply(this, args);
+        syncPinProgress();
+    };
+
+    syncPinProgress();
 });
