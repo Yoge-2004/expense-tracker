@@ -100,35 +100,28 @@
    lag — but felt laggy because color and background-color changed
    immediately while shadows/borders didn't, so pieces of the UI updated
    out of sync with each other. */
-html.theme-transitioning body,
-html.theme-transitioning .dashboard-layout,
-html.theme-transitioning .top-bar,
-html.theme-transitioning .card,
-html.theme-transitioning .stat-card,
-html.theme-transitioning .unified-ledger-card,
-html.theme-transitioning .modal,
-html.theme-transitioning .filter-panel,
-html.theme-transitioning .insights-banner,
-html.theme-transitioning .insight-metric-card,
-html.theme-transitioning input,
-html.theme-transitioning select,
-html.theme-transitioning textarea,
-html.theme-transitioning button,
-html.theme-transitioning .btn-primary,
-html.theme-transitioning .btn-secondary,
-html.theme-transitioning .btn-icon,
-html.theme-transitioning .preset-btn,
-html.theme-transitioning .pill,
-html.theme-transitioning .tab-btn,
-html.theme-transitioning .stream-pill-btn,
-html.theme-transitioning table,
-html.theme-transitioning tr,
-html.theme-transitioning th,
-html.theme-transitioning td {
-    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                color 0.15s ease,
-                box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+body,
+.dashboard-layout,
+.top-bar,
+.card,
+.stat-card,
+.unified-ledger-card,
+.metric-card,
+.modal,
+.filter-panel,
+.insights-banner,
+.insight-metric-card,
+.auth-card,
+.auth-form-section,
+.auth-hero,
+.float-card,
+.perk-item,
+.recent-transactions,
+.profile-menu {
+    transition: background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s ease,
+                box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* LIGHT MODE OVERRIDES — Radiant Porcelain Glass & Royal Liquid Gold */
@@ -194,14 +187,8 @@ html.theme-transitioning td {
 }
 
 [data-theme="light"] body {
-    background-color: #EEF1F6 !important;
-    background-image:
-        radial-gradient(at 0% 0%, rgba(212, 175, 55, 0.14) 0px, transparent 45%),
-        radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 40%),
-        radial-gradient(at 50% 100%, rgba(245, 158, 11, 0.08) 0px, transparent 45%),
-        radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.045) 1px, transparent 0) !important;
-    background-size: 100% 100%, 100% 100%, 100% 100%, 26px 26px !important;
-    background-attachment: fixed !important;
+    background-color: var(--bg-dark) !important;
+    background-image: none !important;
     color: var(--text-main) !important;
 }
 

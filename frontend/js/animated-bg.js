@@ -15,7 +15,7 @@
         if (!canvas) {
             canvas = document.createElement('canvas');
             canvas.className = 'animated-mesh-canvas';
-            canvas.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; opacity:0.95;';
+            canvas.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; opacity:0.95; transition: opacity 0.3s ease;';
             document.body.insertBefore(canvas, document.body.firstChild);
         }
 
