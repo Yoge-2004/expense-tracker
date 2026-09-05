@@ -619,7 +619,7 @@ function renderFinancialInsights(expenses) {
                 <span class="insight-card-label">Category Concentration</span>
             </div>
             <div class="insight-card-content">
-                <strong>${topCat}</strong> is your primary driver, taking <strong>${topCatPct}%</strong> (<strong>${formatCurrency(topCatAmt)}</strong>) of all recorded spend.
+                <strong>${escapeHtml(topCat)}</strong> is your primary driver, taking <strong>${topCatPct}%</strong> (<strong>${formatCurrency(topCatAmt)}</strong>) of all recorded spend.
             </div>
         </div>
 
@@ -750,7 +750,7 @@ async function loadBudgets() {
                             <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
                             <div style="min-width:0; flex:1;">
                                 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                    <span style="font-size:14px; font-weight:700; color:var(--text-main); line-height:1.2;">${b.categoryName}</span>
+                                    <span style="font-size:14px; font-weight:700; color:var(--text-main); line-height:1.2;">${escapeHtml(b.categoryName)}</span>
                                     <span class="status-badge badge-neutral" style="font-size:9px; padding:2px 7px; font-weight:700; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase;">${periodLabel}</span>
                                 </div>
                                 <div style="font-size:12px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; line-height:1.3;">
@@ -760,7 +760,7 @@ async function loadBudgets() {
                         </div>
                         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                             <span style="font-size:13px; font-weight:800; color:${barColor}; margin-right:2px;">${(b.percentage || 0).toFixed(0)}%</span>
-                            <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}', ${b.intervalDays || 30})" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                            <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${escapeHtml(b.categoryName).replace(/'/g, "\\'")}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}', ${b.intervalDays || 30})" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                             </button>
                             <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0}, event)" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
@@ -828,7 +828,7 @@ function syncBudgetPeriodVisibility() {
 }
 
 elements.addBudgetBtn.addEventListener("click", () => {
-    budgetCategorySelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+    budgetCategorySelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
     if (window.syncCustomSelect) window.syncCustomSelect(budgetCategorySelect);
     setBudgetForm.reset();
     if (budgetPeriod) {
@@ -1480,10 +1480,10 @@ function renderList(expenses) {
                 <span style="font-size:18px;">${getCategoryEmoji(catName)}</span>
             </div>
             <div class="expense-info" style="flex:1; min-width:0;">
-                <h4 class="expense-title">${exp.description}</h4>
+                <h4 class="expense-title">${escapeHtml(exp.description || "")}</h4>
                 <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
                     <span>${formatDate(exp.expenseDate)}</span>
-                    <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${catName}</span>
+                    <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${escapeHtml(catName)}</span>
                     ${isRecurring ? '<span style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; font-weight:600; color:var(--accent); background:rgba(162,62,50,0.08); padding:2px 8px; border-radius:3px; border:1px solid rgba(162,62,50,0.35);">⟳ RECURRING</span>' : ''}
                 </div>
             </div>
@@ -1519,7 +1519,7 @@ function populateCategoryDropdown(categories) {
         elements.categorySelect.innerHTML = '<option value="" disabled selected>No categories found</option>';
         return;
     }
-    const opts = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    const opts = categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     elements.categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>' + opts;
     if (window.syncCustomSelect) window.syncCustomSelect(elements.categorySelect);
 }
@@ -1527,7 +1527,7 @@ function populateCategoryDropdown(categories) {
 function populateFilterDropdowns(categories, expenses) {
     if (categories && categories.length > 0) {
         const currentVal = elements.filterCategory ? elements.filterCategory.value : "all";
-        const catOpts = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        const catOpts = categories.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
         elements.filterCategory.innerHTML = '<option value="all">All Categories</option>' + catOpts;
         if (window.syncCustomSelect) window.syncCustomSelect(elements.filterCategory);
         if (categories.some(c => c.name === currentVal)) {
@@ -1556,7 +1556,7 @@ function renderCategoryPills(categories) {
     const catChips = (categories || []).map(cat => {
         const icon = getCategoryEmoji(cat.name);
         const isActive = currentSelectedCat.toLowerCase() === cat.name.toLowerCase();
-        return `<button class="pill-chip ${isActive ? 'active' : ''}" data-category="${cat.name}">${icon} ${cat.name}</button>`;
+        return `<button class="pill-chip ${isActive ? 'active' : ''}" data-category="${escapeHtml(cat.name)}">${icon} ${escapeHtml(cat.name)}</button>`;
     }).join("");
 
     pillsBar.innerHTML = allChip + catChips;
@@ -1807,8 +1807,8 @@ async function renderManageCategoriesList() {
         const inUse = usedCategoryIds.has(cat.id);
         return `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px;">
-                <span style="font-size:14px; color:var(--text-main);">${cat.name}</span>
-                <button type="button" class="btn-icon" data-delete-category="${cat.id}" data-category-name="${cat.name}"
+                <span style="font-size:14px; color:var(--text-main);">${escapeHtml(cat.name)}</span>
+                <button type="button" class="btn-icon" data-delete-category="${cat.id}" data-category-name="${escapeHtml(cat.name)}"
                     ${inUse ? 'disabled title="This category is used by one or more expenses and can\'t be deleted"' : 'title="Delete category"'}
                     style="${inUse ? 'opacity:0.4; cursor:not-allowed;' : 'color:var(--danger, #C0392B);'}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -2707,18 +2707,18 @@ function renderSubsModalContent() {
             return `
             <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
                 <div style="flex:1; min-width:0;">
-                    <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sub.description}</div>
+                    <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sub.description)}</div>
                     <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
                         <span>Next: <span style="color:var(--accent); font-weight:600;">${formatDate(sub.nextDueDate)}</span></span>
                         <span style="opacity:0.4;">•</span>
                         <span style="font-weight:600; color:var(--text-main);">${formatCurrency(sub.amount)}</span>
                         <span style="opacity:0.4;">•</span>
                         <span style="background:rgba(var(--ink-rgb),0.06); color:${freqColor}; border:1px solid var(--border); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">${freqLabel}</span>
-                        <span style="opacity:0.7; font-size:11px; color:var(--text-muted);">${sub.categoryName || 'General'}</span>
+                        <span style="opacity:0.7; font-size:11px; color:var(--text-muted);">${escapeHtml(sub.categoryName || 'General')}</span>
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="openEditSubscription(${sub.id}, '${sub.description.replace(/'/g, "\\'")}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
+                    <button onclick="openEditSubscription(${sub.id}, '${escapeHtml(sub.description).replace(/'/g, "\\'")}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
                     <button onclick="cancelSubscription(${sub.id}, event)" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
@@ -2875,7 +2875,7 @@ const editSubForm = document.getElementById("editSubForm");
 window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTHLY', intervalDays = 1) => {
     const editSubCatSelect = document.getElementById("editSubCategory");
     if (editSubCatSelect && allCategories && allCategories.length > 0) {
-        editSubCatSelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+        editSubCatSelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
         if (window.syncCustomSelect) window.syncCustomSelect(editSubCatSelect);
     }
     document.getElementById("editSubId").value = id;

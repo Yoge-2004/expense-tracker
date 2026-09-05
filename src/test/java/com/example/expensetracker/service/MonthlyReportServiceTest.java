@@ -185,4 +185,57 @@ class MonthlyReportServiceTest {
         org.junit.jupiter.api.Assertions.assertTrue(ex.getMessage().contains("Email service is not configured"));
         verify(mailSenderProvider, never()).getIfAvailable();
     }
+
+    @Test
+    @DisplayName("generateMonthlyReportHtml → Escapes malicious HTML payloads to prevent Stored XSS")
+    void generateMonthlyReportHtml_escapesMaliciousPayloads() {
+        testUser.setName("<script>alert('pwned')</script>");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+
+        Category cat = new Category();
+        cat.setName("<b onmouseover=alert(1)>MaliciousCat</b>");
+
+        Expense exp = new Expense();
+        exp.setId(101L);
+        exp.setUser(testUser);
+        exp.setCategory(cat);
+        exp.setAmount(new BigDecimal("150.00"));
+        exp.setDescription("<img src=x onerror=alert('xss')>");
+        exp.setExpenseDate(LocalDate.of(2026, 8, 15));
+
+        Income inc = new Income();
+        inc.setId(201L);
+        inc.setUser(testUser);
+        inc.setSource("<svg onload=alert(2)>");
+        inc.setDescription("<iframe src='evil.com'></iframe>");
+        inc.setAmount(new BigDecimal("500.00"));
+        inc.setIncomeDate(LocalDate.of(2026, 8, 1));
+
+        SavingsGoal goal = new SavingsGoal();
+        goal.setId(301L);
+        goal.setUser(testUser);
+        goal.setName("<style>body{display:none}</style>");
+        goal.setTargetAmount(new BigDecimal("1000.00"));
+        goal.setCurrentAmount(new BigDecimal("300.00"));
+
+        when(expenseRepository.findByUserAndExpenseDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(exp));
+        when(incomeRepository.findByUserAndIncomeDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(inc));
+        when(savingsGoalRepository.findByUser(testUser)).thenReturn(List.of(goal));
+        when(budgetRepository.findByUser(testUser)).thenReturn(Collections.emptyList());
+
+        String html = service.generateMonthlyReportHtml(1L, 2026, 8);
+
+        assertNotNull(html);
+        assertFalse(html.contains("<script>alert('pwned')</script>"), "User name must be escaped");
+        assertTrue(html.contains("&lt;script&gt;alert(&#39;pwned&#39;)&lt;/script&gt;") || html.contains("&lt;script&gt;alert('pwned')&lt;/script&gt;"));
+
+        assertFalse(html.contains("<img src=x onerror=alert('xss')>"), "Expense description must be escaped");
+        assertTrue(html.contains("&lt;img src=x onerror=alert(&#39;xss&#39;)&gt;") || html.contains("&lt;img src=x onerror=alert('xss')&gt;"));
+
+        assertFalse(html.contains("<svg onload=alert(2)>"), "Income source must be escaped");
+        assertFalse(html.contains("<iframe src='evil.com'></iframe>"), "Income description must be escaped");
+        assertFalse(html.contains("<style>body{display:none}</style>"), "Savings goal name must be escaped");
+    }
 }

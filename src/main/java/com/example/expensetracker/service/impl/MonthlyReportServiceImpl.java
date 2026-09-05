@@ -32,6 +32,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
+
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -306,7 +308,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
         try {
             MonthlyReportDto report = generateMonthlyReport(userId, year, month);
-            String htmlContent = buildMonthlyReportHtml(user.getName(), report);
+            String htmlContent = buildMonthlyReportHtml(escapeHtml(user.getName()), report);
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -335,7 +337,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
         MonthlyReportDto report = generateMonthlyReport(userId, year, month);
-        return buildMonthlyReportHtml(user.getName(), report);
+        return buildMonthlyReportHtml(escapeHtml(user.getName()), report);
     }
 
     private void saveReportLog(User user, int year, int month, boolean success, String errorMsg) {
@@ -387,6 +389,10 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.", sentCount, month, year);
     }
 
+    private String escapeHtml(String text) {
+        return text != null ? HtmlUtils.htmlEscape(text) : "";
+    }
+
     /**
      * Renders responsive HTML financial report including cash flow summary, category breakdown,
      * budget limits, income inflows, and savings goals milestones.
@@ -403,7 +409,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <span style="display: inline-block; background: rgba(199, 154, 62, 0.12); color: #c79a3e; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">%.1f%%</span>
                     </td>
                 </tr>
-                """.formatted(c.getCategoryName(), report.getCurrency(), c.getTotalAmount(), c.getPercentage()));
+                """.formatted(escapeHtml(c.getCategoryName()), report.getCurrency(), c.getTotalAmount(), c.getPercentage()));
         }
 
         // Budgets
@@ -426,7 +432,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <span>Limit: <strong>%s %s</strong></span>
                     </div>
                 </div>
-                """.formatted(b.getCategoryName(), badgeColor, badgeText, b.getUsagePercentage(), badgeColor, barWidth, report.getCurrency(), b.getSpentAmount(), report.getCurrency(), b.getLimitAmount()));
+                """.formatted(escapeHtml(b.getCategoryName()), badgeColor, badgeText, b.getUsagePercentage(), badgeColor, barWidth, report.getCurrency(), b.getSpentAmount(), report.getCurrency(), b.getLimitAmount()));
         }
 
         // Savings Goals
@@ -452,7 +458,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         </div>
                     </div>
                     """.formatted(
-                        g.getName(),
+                        escapeHtml(g.getName()),
                         badgeColor,
                         badgeText,
                         badgeColor,
@@ -479,8 +485,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     </tr>
                     """.formatted(
                         inc.getIncomeDate() != null ? inc.getIncomeDate().toString() : "—",
-                        inc.getDescription() != null && !inc.getDescription().isBlank() ? inc.getDescription() : "Income Inflow",
-                        inc.getSource() != null ? inc.getSource() : "General",
+                        escapeHtml(inc.getDescription() != null && !inc.getDescription().isBlank() ? inc.getDescription() : "Income Inflow"),
+                        escapeHtml(inc.getSource() != null ? inc.getSource() : "General"),
                         report.getCurrency(),
                         inc.getAmount()
                     ));
@@ -495,7 +501,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     <div style="padding: 10px 14px; background: rgba(199, 154, 62, 0.06); border-left: 3px solid #c79a3e; border-radius: 0 8px 8px 0; margin-bottom: 8px; font-size: 13px; color: #ece7d8; line-height: 1.5;">
                         %s
                     </div>
-                    """.formatted(insight));
+                    """.formatted(escapeHtml(insight)));
             }
         }
 
@@ -512,8 +518,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     </tr>
                     """.formatted(
                         exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "—",
-                        exp.getDescription() != null && !exp.getDescription().isBlank() ? exp.getDescription() : "General Expense",
-                        exp.getCategoryName() != null ? exp.getCategoryName() : "General",
+                        escapeHtml(exp.getDescription() != null && !exp.getDescription().isBlank() ? exp.getDescription() : "General Expense"),
+                        escapeHtml(exp.getCategoryName() != null ? exp.getCategoryName() : "General"),
                         report.getCurrency(),
                         exp.getAmount()
                     ));
