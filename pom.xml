@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.6</version>
+		<version>4.1.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -98,7 +98,7 @@
 		<dependency>
 			<groupId>org.xerial</groupId>
 			<artifactId>sqlite-jdbc</artifactId>
-			<version>3.45.2.0</version>
+			<version>3.53.4.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate.orm</groupId>
@@ -107,12 +107,12 @@
 		<dependency>
 			<groupId>com.github.librepdf</groupId>
 			<artifactId>openpdf</artifactId>
-			<version>2.0.3</version>
+			<version>3.0.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
-			<version>5.4.0</version>
+			<version>5.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -123,10 +123,10 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>3.0.3</version>
+			<version>3.1.0</version>
 		</dependency>
 
-		<!-- ── Test ──────────────────────────────────────────────── -->
+		<!-- ── Test ──────────────────────────────────────────────────────── -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -147,19 +147,19 @@
 		<dependency>
 			<groupId>io.cucumber</groupId>
 			<artifactId>cucumber-java</artifactId>
-			<version>7.34.3</version>
+			<version>7.34.7</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.cucumber</groupId>
 			<artifactId>cucumber-spring</artifactId>
-			<version>7.34.3</version>
+			<version>7.34.7</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.cucumber</groupId>
 			<artifactId>cucumber-junit-platform-engine</artifactId>
-			<version>7.34.3</version>
+			<version>7.34.7</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -172,7 +172,7 @@
 		<dependency>
 			<groupId>io.rest-assured</groupId>
 			<artifactId>rest-assured</artifactId>
-			<version>6.0.0</version>
+			<version>6.0.1</version>
 			<scope>test</scope>
 			<exclusions>
 				<exclusion>
@@ -193,13 +193,13 @@
 		<dependency>
 			<groupId>org.apache.groovy</groupId>
 			<artifactId>groovy</artifactId>
-			<version>5.0.6</version>
+			<version>5.0.8</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.groovy</groupId>
 			<artifactId>groovy-json</artifactId>
-			<version>5.0.6</version>
+			<version>5.0.8</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -207,19 +207,19 @@
 		<dependency>
 			<groupId>org.seleniumhq.selenium</groupId>
 			<artifactId>selenium-java</artifactId>
-			<version>4.29.0</version>
+			<version>4.48.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.seleniumhq.selenium</groupId>
 			<artifactId>htmlunit3-driver</artifactId>
-			<version>4.28.0</version>
+			<version>4.48.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.github.bonigarcia</groupId>
 			<artifactId>webdrivermanager</artifactId>
-			<version>5.9.3</version>
+			<version>6.3.4</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -229,6 +229,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.16.0</version>
 				<configuration>
 					<annotationProcessorPaths>
 						<path>
@@ -248,6 +249,21 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.6.0</version>
+				<configuration>
+					<!-- Include both standard *Test classes and Cucumber suites -->
+					<includes>
+						<include>**/*Test.java</include>
+						<include>**/*Tests.java</include>
+						<include>**/CucumberTestRunner.java</include>
+					</includes>
+					<!-- Enable preview features if Java 26 preview features are needed -->
+					<argLine>-XX:+EnableDynamicAgentLoading -Dfile.encoding=UTF-8</argLine>
 				</configuration>
 			</plugin>
 		</plugins>

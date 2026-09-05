@@ -2,6 +2,8 @@ package com.example.expensetracker.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -22,6 +24,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class HomeController {
 
+    private static final Logger log = LoggerFactory.getLogger(HomeController.class);
+
     @Operation(
         summary = "Redirect to API documentation",
         description = "Redirects any request to the bare API root to /swagger-ui.html, so visitors land on interactive API documentation instead of an empty response."
@@ -29,6 +33,7 @@ public class HomeController {
     @ApiResponse(responseCode = "302", description = "Redirects to /swagger-ui.html")
     @GetMapping("/")
     public String index() {
+        log.debug("Redirecting root request (/) to Swagger UI (/swagger-ui.html)");
         return "redirect:/swagger-ui.html";
     }
 }

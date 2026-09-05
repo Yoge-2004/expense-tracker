@@ -1,131 +1,134 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.ErrorResponse;
-import com.example.expensetracker.service.UserService;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.repository.UserRepository;
+import com.example.expensetracker.security.RateLimited;
+import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+import java.util.HashMap;
+
 @Tag(
-    name        = "Users",
+    name        = "User Management",
     description = """
-        Manages user account-level operations.
-
-        Currently exposes a single endpoint for **permanent account deletion**.
-        Deletion is cascading — all data owned by the user (expenses and personal
-        categories) is removed before the account itself is deleted, ensuring no
-        orphaned records remain in the database.
-
-        All endpoints require a valid **JWT Bearer token**.
+        User account lookup, profile management, and cascading account deletion.
         """
 )
-@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserService userService;
-    private final com.example.expensetracker.repository.UserRepository userRepository;
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
-    public UserController(UserService userService, com.example.expensetracker.repository.UserRepository userRepository) {
+    private final UserService userService;
+    private final UserRepository userRepository;
+    private final com.example.expensetracker.security.UserSecurity userSecurity;
+
+    public UserController(UserService userService, UserRepository userRepository,
+                          com.example.expensetracker.security.UserSecurity userSecurity) {
         this.userService = userService;
         this.userRepository = userRepository;
+        this.userSecurity = userSecurity;
     }
 
-    private static final java.util.List<String> RANDOM_TAGS = java.util.List.of(
-            "pro", "hq", "dev", "app", "hub", "zone", "box", "net", "lab", "zen", "prime", "max", "core", "flow", "star", "link", "fin", "tech", "vault"
-    );
-
-    private static final java.util.List<String> RANDOM_ADJECTIVES = java.util.List.of(
-            "cool", "swift", "hyper", "super", "smart", "ultra", "epic", "bright", "fast", "elite", "prime", "neo", "pure", "nova", "apex", "grand", "star"
-    );
-
-    // ─── GET /api/users/suggest-usernames ─────────────────────────────────
+    // ─── GET /api/users/check-username ───────────────────────────────────────────
 
     @Operation(
-        summary = "Suggest available usernames",
-        description = """
-            Generates three unique, currently-available username suggestions based
-            on a user-supplied base string (typically their full name, entered
-            during signup before they've chosen a username of their own).
-
-            **Generation strategy:** each candidate is built by randomly applying
-            one of three patterns to the sanitised base — a numeric suffix
-            (`alex_842`), a themed tag suffix (`alex.zone`), or an adjective
-            prefix (`swift_alex`) — and checked against the database for
-            collisions against both existing usernames and emails before being
-            added to the result. Generation retries up to 25 times to fill three
-            unique slots; if collisions exhaust those attempts, a guaranteed
-            fallback (`prefix_<random 4-digit number>`) fills any remaining slots.
-
-            Deliberately requires no authentication (see the empty
-            `@SecurityRequirements` override below) — this runs during signup,
-            before the user has an account or JWT to authenticate with.
-            """
+        summary = "Check username availability",
+        description = "Returns whether a username is available, valid, or already taken in real time."
     )
-    @ApiResponse(responseCode = "200", description = "Always returns exactly three unique, currently-available username suggestions")
-    @io.swagger.v3.oas.annotations.security.SecurityRequirements
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Availability status returned"),
+        @ApiResponse(responseCode = "400", description = "Username query parameter is empty")
+    })
+    @GetMapping("/check-username")
+    public ResponseEntity<Map<String, Object>> checkUsername(
+            @RequestParam(required = false) String username) {
+        if (username == null || username.trim().isEmpty()) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("available", false);
+            err.put("message", "Username cannot be empty");
+            return ResponseEntity.badRequest().body(err);
+        }
+
+        String trimmed = username.trim();
+        boolean validFormat = trimmed.matches("^[a-zA-Z0-9_]{3,30}$");
+        if (!validFormat) {
+            Map<String, Object> invalid = new HashMap<>();
+            invalid.put("available", false);
+            invalid.put("message", "Username must be 3-30 alphanumeric characters or underscores");
+            return ResponseEntity.ok(invalid);
+        }
+
+        boolean exists = userRepository.findByUsernameIgnoreCase(trimmed).isPresent();
+        Map<String, Object> res = new HashMap<>();
+        res.put("available", !exists);
+        res.put("username", trimmed);
+        res.put("message", exists ? "Username is already taken" : "Username is available!");
+        return ResponseEntity.ok(res);
+    }
+
+    // ─── GET /api/users/suggest-usernames ────────────────────────────────────────
+
+    @Operation(
+        summary = "Generate username suggestions",
+        description = "Generates 4 unique, creative username suggestions based on a name or keyword."
+    )
     @GetMapping("/suggest-usernames")
-    public ResponseEntity<java.util.Map<String, Object>> suggestUsernames(
-            @Parameter(description = "Base string to derive suggestions from — typically the user's name, lowercased and stripped of non-alphanumeric characters internally.", example = "Yogeshwaran")
-            @RequestParam(defaultValue = "user") String base) {
+    public ResponseEntity<Map<String, Object>> suggestUsernames(
+            @RequestParam(required = false, defaultValue = "user") String base) {
+        String clean = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        if (clean.isEmpty()) clean = "user";
 
-        String prefix = base.trim().toLowerCase().replaceAll("[^a-z0-9]", "");
-        if (prefix.isBlank()) prefix = "user";
-
-        java.util.Random rnd = new java.util.Random();
         java.util.Set<String> uniqueSuggestions = new java.util.LinkedHashSet<>();
+        java.util.Random rand = new java.util.Random();
 
-        int attempts = 0;
-        while (uniqueSuggestions.size() < 3 && attempts < 25) {
-            attempts++;
-            String candidate;
-            int type = (uniqueSuggestions.size() + attempts) % 3;
-
-            if (type == 0) {
-                // Random numeric suffix (e.g. alex_842, alex95)
-                candidate = prefix + "_" + (100 + rnd.nextInt(900));
-            } else if (type == 1) {
-                // Random tag suffix (e.g. alex.zone, alex_hub)
-                String tag = RANDOM_TAGS.get(rnd.nextInt(RANDOM_TAGS.size()));
-                candidate = (rnd.nextBoolean() ? prefix + "." + tag : prefix + "_" + tag);
-            } else {
-                // Random adjective prefix (e.g. swift_alex, nova_alex)
-                String adj = RANDOM_ADJECTIVES.get(rnd.nextInt(RANDOM_ADJECTIVES.size()));
-                candidate = adj + "_" + prefix;
-            }
-
-            // Verify non-existence in DB
-            if (!userRepository.existsByUsernameIgnoreCase(candidate) && !userRepository.existsByEmail(candidate)) {
+        String[] prefixes = {"iam", "the", "real", "hey", "go"};
+        for (String p : prefixes) {
+            if (uniqueSuggestions.size() >= 4) break;
+            String candidate = (p + "_" + clean).replaceAll("[^a-zA-Z0-9_]", "");
+            if (candidate.length() > 30) candidate = candidate.substring(0, 30);
+            if (!userRepository.findByUsernameIgnoreCase(candidate).isPresent()) {
                 uniqueSuggestions.add(candidate);
             }
         }
 
-        // Guaranteed fallback if DB had collisions
-        while (uniqueSuggestions.size() < 3) {
-            uniqueSuggestions.add(prefix + "_" + (1000 + rnd.nextInt(9000)));
+        int attempts = 0;
+        while (uniqueSuggestions.size() < 4 && attempts < 20) {
+            attempts++;
+            int num = 100 + rand.nextInt(900);
+            String candidate = clean + num;
+            if (candidate.length() > 30) candidate = candidate.substring(0, 30);
+            if (!userRepository.findByUsernameIgnoreCase(candidate).isPresent()) {
+                uniqueSuggestions.add(candidate);
+            }
         }
 
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        log.info("Generated {} username suggestions for base='{}'", uniqueSuggestions.size(), base);
+        Map<String, Object> response = new HashMap<>();
         response.put("suggestions", new java.util.ArrayList<>(uniqueSuggestions));
         return ResponseEntity.ok(response);
     }
 
-    // ─── GET /api/users/{userId} ───────────────────────────────────────────
+    // ─── GET /api/users/{userId} ─────────────────────────────────────────────────
 
     @Operation(
         summary = "Get user profile",
-        description = "Returns the authenticated user's basic profile fields — id, display name, email, and preferred currency — used by the dashboard for the welcome greeting and currency formatting on initial load."
+        description = "Returns the user's basic profile fields — id, name, email, currency, and whether a Security PIN is set."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Profile returned successfully"),
@@ -134,76 +137,121 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/{userId}")
-    public ResponseEntity<java.util.Map<String, Object>> getUserProfile(
+    public ResponseEntity<Map<String, Object>> getUserProfile(
             @Parameter(description = "Database ID of the user whose profile to fetch.", required = true, example = "1")
             @PathVariable Long userId) {
+        log.info("Received request for user profile: userId={}", userId);
+        userSecurity.validateUserAccess(userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        Map<String, Object> map = new HashMap<>();
         map.put("id", user.getId());
         map.put("name", user.getName());
         map.put("email", user.getEmail());
         map.put("currency", user.getCurrency());
+        map.put("hasSecurityPin", user.hasSecurityPin());
         return ResponseEntity.ok(map);
     }
 
-    // ─── DELETE /api/users/{userId} ───────────────────────────────────────
+    // ─── PUT /api/users/{userId}/security-pin ─────────────────────────────────────
+
+    @Operation(
+        summary = "Set or update 6-digit Security PIN",
+        description = "Sets or updates the user's 6-digit Security PIN for zero-email account recovery and biometrics."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Security PIN updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid PIN format or user not found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "429", description = "Too many attempts (rate limit exceeded)",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PutMapping("/{userId}/security-pin")
+    @RateLimited(key = "update-pin", maxRequests = 10, windowSeconds = 300, message = "Too many PIN update attempts. Please try again in %d seconds.")
+    public ResponseEntity<Map<String, String>> updateSecurityPin(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> body) {
+        String pin = body.get("securityPin");
+        log.info("Request to update Security PIN for userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+        if (pin == null || !pin.trim().matches("^[0-9]{6}$")) {
+            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits.");
+        }
+        userService.updateSecurityPin(userId, pin.trim());
+        return ResponseEntity.ok(Map.of("message", "Security PIN updated successfully"));
+    }
+
+    // ─── POST /api/users/{userId}/verify-security-pin ────────────────────────────
+
+    @Operation(
+        summary = "Verify 6-digit Security PIN",
+        description = "Verifies the provided 6-digit Security PIN against the user's stored hash. Rate-limited to prevent brute forcing."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "PIN verification succeeded"),
+        @ApiResponse(responseCode = "400", description = "Invalid PIN format or user not found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Incorrect Security PIN",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "Access is denied (IDOR protection)",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "429", description = "Too many requests (rate limit exceeded)",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/{userId}/verify-security-pin")
+    @RateLimited(key = "verify-pin", maxRequests = 5, windowSeconds = 300, message = "Too many PIN verification attempts. Please try again in %d seconds.")
+    public ResponseEntity<Map<String, Object>> verifySecurityPin(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> body) {
+        log.info("Request to verify Security PIN for userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+        String pin = body.get("securityPin");
+        if (pin == null || !pin.trim().matches("^[0-9]{6}$")) {
+            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits.");
+        }
+        boolean valid = userService.verifySecurityPin(userId, pin.trim());
+        if (!valid) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("valid", false, "message", "Invalid security PIN."));
+        }
+        return ResponseEntity.ok(Map.of("valid", true, "message", "Security PIN verified successfully."));
+    }
+
+    // ─── DELETE /api/users/{userId} ──────────────────────────────────────────────
 
     @Operation(
         summary = "Delete account",
         description = """
             Permanently deletes a user account and all data associated with it.
-
-            **Deletion order (three-step cascade inside a single transaction):**
-            1. All `Expense` records owned by the user are deleted first.
-            2. All user-created `Category` records (personal categories) are deleted.
-            3. The `User` record itself is deleted last.
-
-            **What is NOT deleted:**
-            - Global (system-seeded) categories — these have `user_id = NULL`
-              and are shared across all users.
-            - `RecurringExpense` records are not explicitly cascaded in this flow;
-              they should be cancelled via `DELETE /api/expenses/recurring/{recId}`
-              before deleting the account.
-
-            ⚠️ **This action is irreversible.** There is no soft-delete or recycle bin.
-            Once confirmed, the account and all its financial records are permanently gone.
-
-            **After deletion:**
-            Any JWT token issued to this user before deletion will be rejected on the next
-            protected request because Spring Security can no longer load the UserDetails
-            for the deleted email.
             """
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Account and all associated data permanently deleted — no body returned"),
+        @ApiResponse(responseCode = "204", description = "Account and all associated data permanently deleted"),
         @ApiResponse(responseCode = "400", description = "No user found with the given ID",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(name = "user-delete-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"User not found\", \"path\": \"/api/users/99\" }"
-                ))
-        ),
-        @ApiResponse(responseCode = "401", description = "JWT token missing or invalid — request rejected before reaching the controller",
+                schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = ErrorResponse.class),
-                examples = @ExampleObject(name = "user-delete-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/users/1\" }"
-                ))
-        )
+                schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteAccount(
-            @Parameter(
-                description = "Database ID of the user account to permanently delete.",
-                required = true, example = "1"
-            )
+            @Parameter(description = "Database ID of the user account to permanently delete.", required = true, example = "1")
             @PathVariable Long userId) {
+        log.info("Received request to permanently delete account for userId={}", userId);
+        userSecurity.validateUserAccess(userId);
         userService.deleteUser(userId);
+        log.info("Account userId={} permanently deleted", userId);
         return ResponseEntity.noContent().build();
     }
 
-    // ─── PUT /api/users/{userId}/currency ─────────────────────────────────
+    // ─── PUT /api/users/{userId}/currency ────────────────────────────────────────
 
     @Operation(
         summary = "Update currency preference",
@@ -216,15 +264,19 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{userId}/currency")
-    public ResponseEntity<java.util.Map<String, String>> updateCurrency(
+    public ResponseEntity<Map<String, String>> updateCurrency(
             @PathVariable Long userId,
-            @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> body) {
+            @RequestBody Map<String, String> body) {
         String currency = body.get("currency");
+        log.info("Received request to update currency for userId={} to {}", userId, currency);
+        userSecurity.validateUserAccess(userId);
         if (currency == null || currency.isBlank() || currency.length() != 3) {
+            log.warn("Invalid currency format '{}' for userId={}", currency, userId);
             return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("message", "currency must be a 3-letter ISO 4217 code"));
+                    .body(Map.of("message", "currency must be a 3-letter ISO 4217 code"));
         }
         userService.updateCurrency(userId, currency.toUpperCase());
-        return ResponseEntity.ok(java.util.Map.of("currency", currency.toUpperCase()));
+        log.info("Currency preference updated for userId={} to {}", userId, currency.toUpperCase());
+        return ResponseEntity.ok(Map.of("currency", currency.toUpperCase()));
     }
 }

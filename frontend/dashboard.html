@@ -98,8 +98,10 @@
                             </div>
                         </div>
                         <a href="#" id="viewMonthlyReportBtn">📊 View Monthly Report</a>
-                        <a href="#" id="sendMonthlyReportBtn">✉️ Email Monthly Report</a>
+                        <a href="#" id="exportMonthlySummaryBtn">📥 Export Monthly Summary</a>
+                        <a href="#" id="sendMonthlyReportBtn" style="display: none;">✉️ Email Monthly Report</a>
                         <a href="#" id="manageSubsBtn">🔄 Subscriptions</a>
+                        <a href="#" id="securityPinBtn">🔒 Security PIN</a>
                         <a href="#" id="logoutBtn">🚪 Logout</a>
                         <a href="#" id="deleteAccountBtn" style="color: #A23E32;">⚠️ Delete Account</a>
                     </div>
@@ -533,7 +535,7 @@
                         <div class="empty-state">
                             <div class="empty-state-icon">💰</div>
                             <div class="empty-state-title">No income records logged yet</div>
-                            <div class="empty-state-sub">Click <strong>+ Inflow</strong> above to track your salary, investments, client retainers, or other inflows.</div>
+                            <div class="empty-state-sub">Click <strong>Record Income</strong> above to track your salary, investments, client retainers, or other inflows.</div>
                         </div>
                     </div>
                 </div>
@@ -637,22 +639,53 @@
                         <option value="MONTHLY">Monthly</option>
                         <option value="WEEKLY">Weekly</option>
                         <option value="YEARLY">Yearly</option>
-                        <option value="CUSTOM">Custom Date Range</option>
+                        <option value="CUSTOM">Custom Interval (Days)</option>
                     </select>
                 </div>
                 <div class="form-group" id="customBudgetDates" style="display:none;">
-                    <div style="display:flex; gap:12px;">
-                        <div style="flex:1;">
-                            <label style="font-size:12px;">Start Date</label>
+                    <div style="margin-bottom: 10px;">
+                        <label>Number of Days</label>
+                        <input type="number" id="budgetIntervalDays" min="1" value="30" placeholder="e.g. 30">
+                    </div>
+                    <div class="budget-date-row" style="display:flex; gap:12px; width:100%; box-sizing:border-box;">
+                        <div class="budget-date-col" style="flex:1; min-width:0; box-sizing:border-box;">
+                            <label style="font-size:12px;">Start Date (Optional)</label>
                             <input type="date" id="budgetStartDate" class="dark-date">
                         </div>
-                        <div style="flex:1;">
-                            <label style="font-size:12px;">End Date</label>
+                        <div class="budget-date-col" style="flex:1; min-width:0; box-sizing:border-box;">
+                            <label style="font-size:12px;">End Date (Optional)</label>
                             <input type="date" id="budgetEndDate" class="dark-date">
                         </div>
                     </div>
                 </div>
                 <button type="submit" class="btn-primary" style="margin-top:16px;">Save Budget</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DIALOG: SECURITY PIN SETUP & RECOVERY -->
+    <div class="modal-overlay" id="securityPinModal">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>Security PIN 🔒</h3>
+                <button class="modal-close" id="closeSecurityPinModalBtn" aria-label="Close">&times;</button>
+            </div>
+            <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                Your 6-digit numeric Security PIN enables <strong>instant account recovery</strong> without requiring email OTP.
+            </p>
+            <div id="pinStatusIndicator" style="margin-bottom: 14px; padding: 8px 12px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                <!-- Injected dynamically -->
+            </div>
+            <form id="securityPinForm">
+                <div class="form-group">
+                    <label>New 6-Digit PIN</label>
+                    <input type="password" id="newSecurityPin" maxlength="6" inputmode="numeric" placeholder="••••••" required style="letter-spacing: 4px; font-size: 16px;">
+                </div>
+                <div class="form-group">
+                    <label>Confirm 6-Digit PIN</label>
+                    <input type="password" id="confirmSecurityPin" maxlength="6" inputmode="numeric" placeholder="••••••" required style="letter-spacing: 4px; font-size: 16px;">
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top: 14px; width: 100%;">Save Security PIN</button>
             </form>
         </div>
     </div>
@@ -904,11 +937,11 @@
         <div class="modal period-picker-modal" style="max-width: 520px; width: 95%;">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 24px;">📊</span>
+                    <span id="periodModalIcon" style="font-size: 24px;">📊</span>
                     <div>
-                        <h3 style="margin:0; font-size: 17px; font-weight: 700;">Financial Summary & Statement</h3>
+                        <h3 id="periodModalTitle" style="margin:0; font-size: 17px; font-weight: 700;">Financial Summary & Statement</h3>
                         <p id="reportInceptionText" style="margin: 2px 0 0; font-size: 11.5px; color: var(--text-muted);">
-                            Account inception: <strong id="reportInceptionVal" style="color: var(--text); font-weight: 700;">Loading...</strong>
+                            <span id="periodModalSubtitle">Account inception:</span> <strong id="reportInceptionVal" style="color: var(--text); font-weight: 700;">Loading...</strong>
                         </p>
                     </div>
                 </div>
@@ -934,17 +967,36 @@
                     <span style="font-size: 13px; color: var(--text);">Report Period: <strong id="reportSelectedPeriodText" style="color: var(--primary); font-weight: 800;">August 2026</strong></span>
                 </div>
 
-                <!-- Action Buttons matching mobile app -->
+                <!-- Action Buttons: Distinct View Mode vs Export Mode -->
                 <div class="period-picker-actions">
-                    <button type="button" id="periodViewReportBtn" class="btn-primary" style="width: 100%; height: 42px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; border-radius: 10px;">
-                        <span>👁️</span> <span>View Financial Statement</span>
-                    </button>
-                    <div class="period-picker-secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                        <button type="button" id="periodDownloadReportBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
-                            <span>💾</span> <span>Download HTML</span>
+                    <!-- VIEW MODE ACTIONS -->
+                    <div id="periodViewModeActions">
+                        <button type="button" id="periodViewReportBtn" class="btn-primary" style="width: 100%; height: 42px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; border-radius: 10px;">
+                            <span>👁️</span> <span>View Financial Statement</span>
                         </button>
-                        <button type="button" id="periodEmailReportBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
-                            <span>✉️</span> <span>Email Statement</span>
+                        <button type="button" id="periodSwitchToExportBtn" class="btn-switch-mode" style="margin-top: 10px; width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--primary); background: transparent; border: 1px dashed var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                            <span>📥</span> <span>Need to download files? Switch to Export Options</span>
+                        </button>
+                    </div>
+
+                    <!-- EXPORT MODE ACTIONS -->
+                    <div id="periodExportModeActions" style="display: none;">
+                        <button type="button" id="periodDownloadReportBtn" class="btn-primary" style="width: 100%; height: 42px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; border-radius: 10px;">
+                            <span>📄</span> <span>Download HTML Statement</span>
+                        </button>
+                        <div class="period-picker-secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <button type="button" id="periodExportCsvBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
+                                <span>📑</span> <span>Export CSV</span>
+                            </button>
+                            <button type="button" id="periodExportJsonBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
+                                <span>📦</span> <span>Export JSON</span>
+                            </button>
+                        </div>
+                        <button type="button" id="periodEmailReportBtn" class="btn-icon btn-text-icon" style="margin-top: 10px; width: 100%; height: 38px; font-weight: 600; display: none; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
+                            <span>✉️</span> <span>Email Statement to Me</span>
+                        </button>
+                        <button type="button" id="periodSwitchToViewBtn" class="btn-switch-mode" style="margin-top: 10px; width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--text-muted); background: transparent; border: 1px dashed var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                            <span>👁️</span> <span>Preview in browser instead</span>
                         </button>
                     </div>
                 </div>
@@ -1000,10 +1052,13 @@
             <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">
                 This action is destructive and permanent. Type <strong>DELETE</strong> below to confirm.
             </p>
-            <input type="text" id="deleteConfirmInput" class="field-input" placeholder="Type DELETE to confirm">
+            <div class="form-group" style="margin-top: 14px; margin-bottom: 8px; text-align: left;">
+                <label for="deleteConfirmInput" style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px;">Confirmation</label>
+                <input type="text" id="deleteConfirmInput" class="field-input delete-confirm-field" placeholder="Type DELETE to confirm" autocomplete="off" spellcheck="false" autocapitalize="characters">
+            </div>
             <div style="display:flex; gap:12px; margin-top:20px;">
                 <button type="button" id="cancelDeleteAccountBtn" class="btn-secondary" style="flex:1;">Cancel</button>
-                <button type="button" id="confirmDeleteAccountBtn" class="btn-danger" style="flex:1;">Delete Account</button>
+                <button type="button" id="confirmDeleteAccountBtn" class="btn-danger" style="flex:1; opacity:0.5; pointer-events:none;">Delete Account</button>
             </div>
         </div>
     </div>

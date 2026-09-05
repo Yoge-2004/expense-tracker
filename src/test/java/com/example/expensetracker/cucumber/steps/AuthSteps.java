@@ -84,7 +84,7 @@ public class AuthSteps {
         ctx.setUserUsername(username);
     }
 
-    // ─── Registration steps ────────────────────────────────────────────────
+    // ─── Registration steps ───────────────────────────────────────────────
 
     @Given("a user is registered with email {string} and password {string}")
     public void aUserIsRegistered(String email, String password) {
@@ -142,6 +142,23 @@ public class AuthSteps {
         body.put("password", password);
         // name key intentionally omitted — Jackson deserializes this as null,
         // exercising a different code path than an explicit empty string.
+
+        ctx.setLastResponse(
+                ctx.request()
+                        .contentType(ContentType.JSON)
+                        .body(body)
+                        .when()
+                        .post("/api/auth/register")
+        );
+    }
+
+    @When("I register without a username field, with name {string}, email {string}, and password {string}")
+    public void iRegisterWithoutUsernameField(String name, String email, String password) {
+        Map<String, String> body = new HashMap<>();
+        body.put("name",     name);
+        body.put("email",    email);
+        body.put("password", password);
+        // username key intentionally omitted
 
         ctx.setLastResponse(
                 ctx.request()

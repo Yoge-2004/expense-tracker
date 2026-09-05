@@ -1,0 +1,2006 @@
+/* ==========================================================================\n   EXPENSE TRACKER — ANIMATIONS.CSS\n   Module: Animations, Keyframes & Micro-Interactions Suite\n   ========================================================================== */\n\n/* ================== 10. ANIMATIONS & TRANSITIONS ================== */
+
+/* --- Keyframes --- */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px) scaleY(0.95); }
+    to   { opacity: 1; transform: translateY(0)   scaleY(1); }
+}
+
+@keyframes cardEntrance {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expenseSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes progressGrow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+@keyframes avatarPulse {
+    0%, 100% { box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3); }
+    50%       { box-shadow: 0 4px 22px rgba(var(--primary-rgb), 0.6); }
+}
+
+@keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+}
+
+@keyframes ripple {
+    to { transform: scale(4); opacity: 0; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-5px); }
+    40%       { transform: translateX(5px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes spin-centered {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* --- Dashboard entrance --- */
+
+
+/* --- Cards --- */
+
+
+.grid-stats .card:nth-child(1) { animation-delay: 0.05s; }
+.grid-stats .card:nth-child(2) { animation-delay: 0.12s; }
+
+/* --- Primary & submit buttons: press + shine --- */
+.btn-primary,
+button[type="submit"] {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s;
+}
+
+.btn-primary::after,
+button[type="submit"]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+    background-size: 200% 100%;
+    background-position: -200% center;
+    transition: background-position 0.5s ease;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.btn-primary:hover::after,
+button[type="submit"]:hover::after {
+    background-position: 200% center;
+}
+
+.btn-primary:hover,
+button[type="submit"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px var(--accent-glow);
+    filter: brightness(1.08);
+}
+
+.btn-primary:active,
+button[type="submit"]:active {
+    transform: translateY(0) scale(0.97);
+    box-shadow: 0 4px 12px var(--accent-glow);
+    filter: brightness(0.96);
+    transition-duration: 0.08s;
+}
+
+/* Ripple layer for primary button clicks */
+.btn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(0);
+    pointer-events: none;
+    animation: ripple 0.55s linear;
+}
+
+/* --- Icon buttons --- */
+
+
+.btn-icon:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.18) !important;
+}
+
+.btn-icon:active {
+    transform: scale(0.91) !important;
+    transition-duration: 0.08s !important;
+}
+
+/* --- Edit / Delete buttons: hover-lift + active-press motion
+   (base colors are set where these classes are first defined, above) --- */
+.btn-edit,
+
+
+
+
+.btn-edit:active {
+    transform: scale(0.93) !important;
+    transition-duration: 0.08s !important;
+}
+
+/* Consolidated from 2 declarations -- transform had scale(1.05) vs
+   translateY(-2px) scale(1.08) !important (the latter was winning). */
+.btn-edit:hover {
+    background: var(--primary);
+    color: var(--on-primary);
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Consolidated from 2 declarations, same shape as .btn-edit:hover above. */
+.btn-delete:hover {
+    background: var(--accent);
+    color: var(--on-primary);
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.35);
+}
+
+.btn-delete:active {
+    transform: scale(0.93) !important;
+    transition-duration: 0.08s !important;
+}
+
+/* Shake on .shake class (add/remove via JS on error) */
+.btn-delete.shake { animation: shake 0.4s var(--ease); }
+
+/* --- Expense list items --- */
+
+
+/* Stagger each item */
+.expense-item:nth-child(1)  { animation-delay: 0.04s; }
+.expense-item:nth-child(2)  { animation-delay: 0.08s; }
+.expense-item:nth-child(3)  { animation-delay: 0.12s; }
+.expense-item:nth-child(4)  { animation-delay: 0.16s; }
+.expense-item:nth-child(5)  { animation-delay: 0.20s; }
+.expense-item:nth-child(6)  { animation-delay: 0.24s; }
+.expense-item:nth-child(7)  { animation-delay: 0.28s; }
+.expense-item:nth-child(8)  { animation-delay: 0.32s; }
+.expense-item:nth-child(9)  { animation-delay: 0.36s; }
+.expense-item:nth-child(10) { animation-delay: 0.40s; }
+
+/* (Progress bar entrance — merged into .budget-bar-fill above.) */
+
+/* --- Modals --- */
+
+
+
+
+/* --- Profile menu --- */
+
+
+/* --- Avatar --- */
+
+.user-profile:hover .avatar {
+    transform: scale(1.1);
+    animation: avatarPulse 1.6s ease-in-out infinite;
+}
+
+/* --- Inputs: glow on focus --- */
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+    transition: border-color 0.2s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+/* (Duplicate focus glow removed — see .command-search-wrapper:focus-within above.) */
+
+/* --- Filter panel slide-down --- */
+
+
+/* --- Budget items entrance --- */
+
+
+.budget-item:nth-child(1) { animation-delay: 0.05s; }
+.budget-item:nth-child(2) { animation-delay: 0.10s; }
+.budget-item:nth-child(3) { animation-delay: 0.15s; }
+.budget-item:nth-child(4) { animation-delay: 0.20s; }
+.budget-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* --- Loading spinner state on confirm-delete button --- */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin-centered 0.7s linear infinite;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* --- Theme toggle smooth icon swap --- */
+.sun-icon, .moon-icon {
+    transition: opacity 0.3s var(--ease), transform 0.35s var(--ease);
+}
+
+/* ================== HIGH-IMPACT PROMINENT ANIMATIONS ================== */
+
+@keyframes staggeredSlideIn {
+    0% {
+        opacity: 0;
+        transform: perspective(1000px) rotateX(12deg) translateY(45px) scale(0.94);
+    }
+    70% {
+        opacity: 0.9;
+        transform: perspective(1000px) rotateX(-2deg) translateY(-4px) scale(1.01);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1);
+    }
+}
+
+@keyframes modalElasticIn {
+    0% {
+        opacity: 0;
+        transform: perspective(1000px) scale(0.8) translateY(30px);
+    }
+    50% {
+        opacity: 1;
+        transform: perspective(1000px) scale(1.06) translateY(-8px);
+    }
+    75% {
+        transform: perspective(1000px) scale(0.98) translateY(2px);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(1000px) scale(1) translateY(0);
+    }
+}
+
+@keyframes pulseGlowRing {
+    0% {
+        box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4), 0 10px 25px -5px rgba(var(--primary-rgb), 0.3);
+    }
+    70% {
+        box-shadow: 0 0 0 16px rgba(var(--highlight-rgb), 0), 0 20px 40px -5px rgba(var(--primary-rgb), 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--highlight-rgb), 0), 0 10px 25px -5px rgba(var(--primary-rgb), 0.3);
+    }
+}
+
+@keyframes floatElement {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-8px) rotate(0.5deg);
+    }
+}
+
+@keyframes shimmerSweep {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes pulseBadge {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.85;
+    }
+}
+
+/* Staggered Card Entrance Cascades */
+.grid > *:nth-child(1), .grid-4-metrics > *:nth-child(1), .grid-analytics > *:nth-child(1) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.grid > *:nth-child(2), .grid-4-metrics > *:nth-child(2), .grid-analytics > *:nth-child(2) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s both;
+}
+
+.grid > *:nth-child(3), .grid-4-metrics > *:nth-child(3), .grid-analytics > *:nth-child(3) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.3s both;
+}
+
+.grid > *:nth-child(4), .grid-4-metrics > *:nth-child(4), .grid-analytics > *:nth-child(4) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.45s both;
+}
+
+/* Prominent Stat Card Hover Scaling & Lift */
+.stat-card, .metric-card {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease !important;
+}
+
+.stat-card:hover {
+    transform: translateY(-10px) scale(1.025) rotate(0.5deg) !important;
+    box-shadow: 0 20px 45px -10px rgba(var(--primary-rgb), 0.45), 0 0 25px rgba(178, 138, 50, 0.3) !important;
+    border-color: rgba(var(--primary-rgb), 0.6) !important;
+}
+
+.stat-card.active, .stat-card.hero, .metric-card-glow {
+    animation: pulseGlowRing 3s ease-in-out infinite;
+}
+
+/* Prominent Card & Panel Styles */
+
+
+/* Interactive Buttons */
+.btn-primary, .btn-submit {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background 0.3s ease !important;
+}
+
+.btn-primary:hover, .btn-submit:hover {
+    transform: translateY(-3px) scale(1.03) !important;
+    box-shadow: 0 12px 30px -4px rgba(var(--primary-rgb), 0.6) !important;
+}
+
+.btn-primary:active, .btn-submit:active {
+    transform: translateY(1px) scale(0.97) !important;
+}
+
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: skewX(-20deg);
+}
+
+.btn-primary:hover::after {
+    animation: shimmerSweep 0.9s ease-in-out;
+}
+
+/* (Elastic modal entrance removed: .modal.active .modal-content never
+   matched real markup. .modal-overlay.active .modal already animates
+   in via modalSpringIn — see keyframes near its declaration below.) */
+
+/* (Table Row Highlights & Slide — removed: .expense-row/tbody tr never matched
+   real markup; .expense-item already has working hover treatment elsewhere.) */
+
+/* Status Badges Pulsing */
+.badge, .status-badge {
+    transition: transform 0.25s ease !important;
+}
+
+.badge:hover, .status-badge:hover {
+    animation: pulseBadge 1.2s ease-in-out infinite;
+}
+
+/* --- Reduce motion for accessibility --- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* =============================================================================
+   10. SMART FINANCIAL INSIGHTS INTELLIGENCE PANEL
+============================================================================= */
+.insights-intelligence-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 12px 32px var(--shadow-color);
+    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.insights-intelligence-panel:hover {
+    border-color: rgba(var(--primary-rgb), 0.35);
+    box-shadow: 0 16px 40px var(--shadow-color), 0 0 24px var(--primary-glow);
+}
+
+.insights-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.insights-panel-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.insights-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.12);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
+    padding: 4px 10px;
+    border-radius: 999px;
+    width: fit-content;
+}
+
+.insights-panel-heading {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+}
+
+.insights-panel-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 10px currentColor;
+    animation: pulseDotAnim 2s infinite ease-in-out;
+}
+
+@keyframes pulseDotAnim {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+.insights-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.insight-card-item {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.insight-card-item:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    background: var(--card-bg-hover);
+}
+
+.insight-card-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.insight-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.insight-card-label {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.insight-card-content {
+    font-size: 13.5px;
+    color: var(--text-main);
+    line-height: 1.5;
+}
+
+.insight-card-content strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* =============================================================================
+   11. AMBIENT ANIMATED BACKGROUND & MICRO-ANIMATIONS
+============================================================================= */
+.hero-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    background: radial-gradient(circle at 10% 20%, rgba(var(--primary-rgb), 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(76, 122, 120, 0.06) 0%, transparent 50%);
+}
+
+
+
+
+
+/* Button & Interactive Micro-Animations */
+.btn-primary:active,
+.btn-secondary:active,
+.btn-icon:active {
+    transform: scale(0.97) !important;
+}
+
+.pill-chip:active {
+    transform: translateY(-2px) scale(1.03) !important;
+}
+
+.metric-card {
+}
+
+
+/* ==========================================================================
+   SUPER-CHARGED 17+ ANIMATIONS SYSTEM (60FPS HARDWARE-ACCELERATED)
+   ========================================================================== */
+
+/* 1. Cascade Entry Animation on Page Load */
+@keyframes cascadeFadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-cascade {
+    animation: cascadeFadeUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.delay-1 { animation-delay: 0.05s !important; }
+.delay-2 { animation-delay: 0.10s !important; }
+.delay-3 { animation-delay: 0.15s !important; }
+.delay-4 { animation-delay: 0.20s !important; }
+.delay-5 { animation-delay: 0.25s !important; }
+.delay-6 { animation-delay: 0.30s !important; }
+.delay-7 { animation-delay: 0.35s !important; }
+.delay-8 { animation-delay: 0.40s !important; }
+
+/* 2. Interactive Card 3D Magnetic Elevation & Luminous Glow */
+.metric-card,
+.card,
+.auth-card,
+.smart-intelligence-card {
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                box-shadow 0.3s cubic-bezier(0.25, 1, 0.5, 1), 
+                border-color 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    will-change: transform, box-shadow;
+}
+
+/* 3. Transaction Item Staggered Slide & Scale-In */
+@keyframes itemSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-14px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+
+
+/* 4. Progress Bar & Step Bar Shimmer Wave */
+@keyframes shimmerSweep {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.budget-bar-fill,
+
+
+.budget-bar-fill::after,
+.step-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    background-size: 200% 100%;
+    animation: shimmerSweep 2.8s infinite linear;
+}
+
+/* 5. Live Server Status Beacon & Breathing Neon Halo */
+@keyframes liveHaloPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 122, 120, 0.75);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 122, 120, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 122, 120, 0);
+    }
+}
+
+.server-status-badge .status-dot.online,
+.live-pulse-dot {
+    animation: liveHaloPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+/* 6. Expanding Click Fluid Ripple */
+.ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, rgba(var(--primary-rgb), 0.25) 70%, transparent 100%);
+    transform: scale(0);
+    animation: rippleExpand 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes rippleExpand {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* 7. Elastic Spring Modal Entrance & Backdrop Blur Fade */
+@keyframes modalSpringIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.88) translateY(24px);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(1.02) translateY(-4px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-overlay.active {
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+/* Consolidated: this was declared 4 times total (2 already merged into
+   the .modal rule above using the plain "modalIn" keyframe, which is
+   why that keyframe was dead -- this pair's !important animation value
+   was always winning instead). Kept modalSpringIn (entrance bounce) +
+   modalBorderGlow (a subtle glow while the dialog is open, not an
+   always-on-forever animation like the ones cut in the previous
+   animation pass, since it only runs while a modal is actually visible). */
+.modal-overlay.active .modal {
+    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               modalBorderGlow 4s ease-in-out infinite alternate;
+}
+
+.modal-overlay.active#incomeModal .modal,
+#incomeModal.active .modal {
+    animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               emeraldModalBorderGlow 4s ease-in-out infinite alternate !important;
+}
+
+/* 8. Toast Slide In & Progress Timer Line */
+@keyframes toastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(120%) scale(0.9);
+    }
+    70% {
+        transform: translateX(-8px) scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes toastTimerLine {
+    0% { width: 100%; }
+    100% { width: 0%; }
+}
+
+.toast {
+    animation: toastSlideIn 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.6);
+    animation: toastTimerLine 3.5s linear forwards;
+}
+
+/* 9. Category Pill Pop & Active Glow */
+@keyframes pillPop {
+    0% { transform: translateY(-2px) scale(1.03); }
+    50% { transform: translateY(-2px) scale(1.07); }
+    100% { transform: translateY(-2px) scale(1.03); }
+}
+
+
+
+/* 10. Number Counter Flash / Glow on Change */
+@keyframes numberGlow {
+    0% { color: var(--primary); text-shadow: 0 0 16px rgba(var(--primary-rgb), 0.8); }
+    100% { color: var(--text-main); text-shadow: none; }
+}
+
+.number-updated {
+    animation: numberGlow 0.75s ease-out;
+}
+
+/* 11. Form Input Radiant Focus Halo & Icon Nudge */
+@keyframes iconNudge {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.08); }
+}
+
+.input-wrapper {
+    transition: none;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.input-wrapper:focus-within {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+
+
+/* 12. Multi-Ring Dual Speed Action Spinner */
+@keyframes dualSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spinner-sm {
+    border-width: 2.5px;
+    border-top-color: currentColor;
+    border-right-color: transparent;
+    animation: dualSpin 0.7s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite !important;
+}
+
+/* 13. 1-Tap Date Preset Energetic Flash */
+@keyframes presetActiveFlash {
+    0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.8); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0); }
+    100% { transform: scale(1); }
+}
+
+.preset-btn.active {
+    animation: presetActiveFlash 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 14. Validation Error Harmonic Shake */
+@keyframes errorHarmonicShake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-8px) rotate(-1deg); }
+    30% { transform: translateX(7px) rotate(1deg); }
+    45% { transform: translateX(-5px); }
+    60% { transform: translateX(4px); }
+    75% { transform: translateX(-2px); }
+}
+
+.shake,
+.is-invalid {
+    animation: errorHarmonicShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* 15. Dropdown Menu Accordion Unfurl */
+@keyframes dropdownUnfurl {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px) scaleY(0.92);
+        transform-origin: top center;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        transform-origin: top center;
+    }
+}
+
+.custom-select-wrapper.open .custom-select-options,
+.profile-menu.active {
+    animation: dropdownUnfurl 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 16. Empty State Floating Bobbing Illustration */
+@keyframes gentleFloatBob {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-9px) rotate(1.5deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+.empty-state svg,
+.empty-state-icon,
+.floating-element {
+    animation: gentleFloatBob 4s ease-in-out infinite;
+    display: inline-block;
+    will-change: transform;
+}
+
+/* 17. Button Magnetic Pulse on Hover */
+@keyframes btnPulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.5); }
+    70% { box-shadow: 0 0 0 12px rgba(var(--primary-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
+}
+
+.btn-primary:hover,
+#openModalBtn:hover {
+    animation: btnPulseGlow 1.8s infinite;
+}
+
+/* ==========================================================================
+   ADDITIONAL 22 ADVANCED MICRO-ANIMATIONS (TOTAL 39+ SYSTEM)
+   ========================================================================== */
+
+/* 18. Particle Sparkle Burst on Action */
+@keyframes sparkleBurst {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    50% { opacity: 0.9; }
+    100% { transform: scale(1.6) rotate(180deg); opacity: 0; }
+}
+
+.sparkle-burst {
+    position: absolute;
+    pointer-events: none;
+    animation: sparkleBurst 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 19. Budget Goal Confetti Flutter */
+@keyframes confettiFlutter {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+}
+
+.confetti-particle {
+    position: absolute;
+    width: 6px;
+    height: 10px;
+    border-radius: 2px;
+    animation: confettiFlutter 1.4s ease-out forwards;
+    pointer-events: none;
+}
+
+/* 20. Glossy Holographic Card Light Sweep */
+@keyframes glossySweep {
+    0% { transform: translateX(-120%) rotate(25deg); opacity: 0; }
+    40% { opacity: 0.25; }
+    100% { transform: translateX(220%) rotate(25deg); opacity: 0; }
+}
+
+.metric-card::before,
+.insight-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--primary-rgb), 0.18),
+        transparent
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.metric-card:hover::before,
+.insight-card:hover::before {
+    animation: glossySweep 0.95s cubic-bezier(0.2, 0.8, 0.4, 1);
+}
+
+/* 21. Neon Ambient Glowing Border on Open Modals */
+@keyframes modalBorderGlow {
+    0%, 100% {
+        border-color: rgba(var(--primary-rgb), 0.4);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--primary-rgb), 0.25);
+    }
+    50% {
+        border-color: rgba(76, 122, 120, 0.6);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(76, 122, 120, 0.4);
+    }
+}
+
+
+
+/* 22. Chart Container Hover Lift & Canvas Glow */
+@keyframes chartSegmentPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1.01); }
+}
+
+.chart-wrapper:hover,
+.trend-chart-wrapper:hover {
+    filter: drop-shadow(0 8px 18px rgba(var(--primary-rgb), 0.15));
+    transition: filter 0.3s ease;
+}
+
+/* 23. Sliding Underline / Active Tab Indicator */
+@keyframes tabSlideIndicator {
+    0% { transform: scaleX(0.4); opacity: 0; }
+    100% { transform: scaleX(1); opacity: 1; }
+}
+
+
+
+/* 24. Skeleton Loading Shimmer Wave */
+@keyframes skeletonShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-loading {
+    background: linear-gradient(90deg, var(--input-bg) 25%, rgba(var(--primary-rgb), 0.08) 50%, var(--input-bg) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.8s infinite linear;
+    border-radius: 8px;
+}
+
+/* 25. Animated SVG Stroke Draw for Checkmarks */
+@keyframes strokeDrawCheck {
+    0% { stroke-dashoffset: 50; }
+    100% { stroke-dashoffset: 0; }
+}
+
+.svg-check-draw path {
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+    animation: strokeDrawCheck 0.45s ease-out forwards;
+}
+
+/* 26. Delete Warning Pulse Shockwave */
+@keyframes deleteWarningPulse {
+    0% { box-shadow: 0 0 0 0 rgba(162, 62, 50, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(162, 62, 50, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(162, 62, 50, 0); }
+}
+
+.btn-delete:hover,
+#deleteAccountBtn:hover {
+    animation: deleteWarningPulse 1.2s infinite;
+}
+
+/* 29. Form Button Submit Success Morph */
+@keyframes btnSuccessMorph {
+    0% { transform: scale(0.96); background: var(--primary); }
+    50% { transform: scale(1.04); background: #27ae60; box-shadow: 0 0 20px rgba(39, 174, 96, 0.6); }
+    100% { transform: scale(1); background: #27ae60; }
+}
+
+.btn-success-morph {
+    animation: btnSuccessMorph 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* 30. Smooth Accordion Filter Drawer Slide */
+@keyframes filterDrawerSlide {
+    0% { opacity: 0; transform: translateY(-12px); max-height: 0; }
+    100% { opacity: 1; transform: translateY(0); max-height: 600px; }
+}
+
+.filter-panel.active {
+    animation: filterDrawerSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 31. Interactive Magnetic Avatar Float & Glow */
+@keyframes avatarGlow {
+    0%, 100% { box-shadow: 0 0 0 2px var(--border); }
+    50% { box-shadow: 0 0 0 3px var(--primary), 0 0 14px rgba(var(--primary-rgb), 0.4); }
+}
+
+.avatar:hover {
+    transform: scale(1.08) rotate(3deg);
+    animation: avatarGlow 2s infinite ease-in-out;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 33. Sync & Refresh Icon Spin */
+@keyframes syncRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.btn-icon:hover svg,
+.btn-text-icon:hover svg {
+    transform: rotate(15deg) scale(1.1);
+    transition: transform 0.25s ease;
+}
+
+/* 34. Dynamic Shadow Lift on Cards */
+@keyframes floatLift {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.float-card-1, .perk-item:nth-child(1) { animation: cardFloat1 5s ease-in-out infinite !important; }
+.float-card-2, .perk-item:nth-child(2) { animation: cardFloat2 6s ease-in-out infinite -1.5s !important; }
+.float-card-3, .perk-item:nth-child(3) { animation: cardFloat3 4.5s ease-in-out infinite -3s !important; }
+.float-card-4, .perk-item:nth-child(4) { animation: cardFloat4 5.5s ease-in-out infinite -4.2s !important; }
+
+/* 35. Tooltip Elastic Pop */
+@keyframes tooltipElasticPop {
+    0% { transform: scale(0.8) translateY(6px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+[title]:hover::after {
+    animation: tooltipElasticPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 36. Field Verified Flash */
+@keyframes validFieldFlash {
+    0% { border-color: var(--border); }
+    50% { border-color: #27ae60; box-shadow: 0 0 10px rgba(39, 174, 96, 0.35); }
+    100% { border-color: rgba(39, 174, 96, 0.5); }
+}
+
+.is-valid {
+    animation: validFieldFlash 0.4s ease-out forwards;
+}
+
+/* 37. Presets Bar Glide In */
+@keyframes presetsGlideIn {
+    0% { transform: translateX(-15px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.filter-quick-presets {
+    animation: presetsGlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 38. Smart Intelligence Star Accent Pulse */
+@keyframes pulseSparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+    50% { transform: scale(1.25) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 6px var(--primary)); }
+}
+
+.insights-badge svg {
+    animation: pulseSparkle 2.5s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   EXTENDED 100+ ADVANCED ANIMATION & MICRO-INTERACTION SUITE (40 TO 145+)
+   ========================================================================== */
+
+/* 40. Theme Shift Radial Glow */
+@keyframes themeShiftGlow {
+    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.6); }
+    70% { box-shadow: 0 0 0 24px rgba(var(--primary-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
+}
+.theme-toggle-btn:active, #themeToggle:active {
+    animation: themeShiftGlow 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 41. Ambient Mesh Breathe */
+@keyframes ambientMeshBreathe {
+    0%, 100% { transform: scale(1); opacity: 0.88; }
+    50% { transform: scale(1.04); opacity: 1; }
+}
+.animated-mesh-canvas {
+    animation: ambientMeshBreathe 14s ease-in-out infinite alternate;
+}
+
+/* 44. Sunburst Expanding Pulse */
+@keyframes sunburstPulse {
+    0% { transform: rotate(0deg) scale(0.95); opacity: 0.8; }
+    50% { transform: rotate(180deg) scale(1.1); opacity: 1; filter: drop-shadow(0 0 8px #f39c12); }
+    100% { transform: rotate(360deg) scale(0.95); opacity: 0.8; }
+}
+.sun-icon {
+    animation: sunburstPulse 12s linear infinite;
+}
+
+/* 45. Moonlight Soft Shimmer */
+@keyframes moonlightShimmer {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+    50% { transform: scale(1.15) rotate(-10deg); opacity: 1; filter: drop-shadow(0 0 10px #74b9ff); }
+}
+.moon-icon {
+    animation: moonlightShimmer 4s ease-in-out infinite;
+}
+
+/* 52. Liquid Glow Undulation */
+
+
+
+/* 53. Card 3D Parallax Tilt */
+@keyframes card3DTilt {
+    0%, 100% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg); }
+    50% { transform: perspective(1000px) rotateX(1.5deg) rotateY(-1.5deg); }
+}
+.float-card:hover {
+    animation: card3DTilt 2.5s ease-in-out infinite alternate;
+}
+
+/* 56. Surface Elastic Spring Pop-In */
+@keyframes surfaceElasticPop {
+    0% { transform: scale(0.88) translateY(20px); opacity: 0; }
+    70% { transform: scale(1.02) translateY(-3px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.animate-surface-pop {
+    animation: surfaceElasticPop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 58. Card Magnetic Elevation Lift */
+.metric-card, .float-card, .perk-item, .card {
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease !important;
+}
+
+/* 60. Card Depth Multi-Shadow Expansion */
+@keyframes multiShadowExpand {
+    0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); }
+    50% { box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.3), 0 0 16px rgba(var(--primary-rgb), 0.15); }
+}
+
+/* 61. Bento Tile Cascade Stagger */
+@keyframes bentoCascade {
+    0% { opacity: 0; transform: translateY(30px) scale(0.96); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.bento-grid > *:nth-child(1) { animation: bentoCascade 0.5s ease 0.05s both; }
+.bento-grid > *:nth-child(2) { animation: bentoCascade 0.5s ease 0.10s both; }
+.bento-grid > *:nth-child(3) { animation: bentoCascade 0.5s ease 0.15s both; }
+.bento-grid > *:nth-child(4) { animation: bentoCascade 0.5s ease 0.20s both; }
+.bento-grid > *:nth-child(5) { animation: bentoCascade 0.5s ease 0.25s both; }
+.bento-grid > *:nth-child(6) { animation: bentoCascade 0.5s ease 0.30s both; }
+
+/* 62. Accordion Drawer Spring Slide */
+@keyframes accordionSpring {
+    0% { max-height: 0; opacity: 0; transform: scaleY(0.9); }
+    70% { max-height: 500px; opacity: 1; transform: scaleY(1.02); }
+    100% { max-height: 800px; opacity: 1; transform: scaleY(1); }
+}
+
+/* 63. 3D Card Flip Transition */
+@keyframes cardFlip3D {
+    0% { transform: perspective(800px) rotateY(0deg); }
+    50% { transform: perspective(800px) rotateY(90deg); opacity: 0.5; }
+    100% { transform: perspective(800px) rotateY(0deg); opacity: 1; }
+}
+
+/* 64. Rubber Band Attention Notice */
+@keyframes rubberBandNotice {
+    0% { transform: scale3d(1, 1, 1); }
+    30% { transform: scale3d(1.15, 0.85, 1); }
+    40% { transform: scale3d(0.85, 1.15, 1); }
+    50% { transform: scale3d(1.08, 0.92, 1); }
+    65% { transform: scale3d(0.96, 1.04, 1); }
+    75% { transform: scale3d(1.02, 0.98, 1); }
+    100% { transform: scale3d(1, 1, 1); }
+}
+.badge-urgent, .overbudget-alert {
+    animation: rubberBandNotice 1.2s ease;
+}
+
+/* 65. Smooth Directional Slide-In Fade */
+@keyframes slideRightFade {
+    from { opacity: 0; transform: translateX(-24px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* 66. Card Stack Fan-Out */
+.stacked-cards:hover > *:nth-child(1) { transform: translateY(-4px) rotate(-1deg); }
+.stacked-cards:hover > *:nth-child(2) { transform: translateY(-8px) rotate(1deg); }
+.stacked-cards:hover > *:nth-child(3) { transform: translateY(-12px) rotate(-1.5deg); }
+
+/* 67. Golden Pulse Highlight on Edit */
+@keyframes goldPulseHighlight {
+    0% { background-color: rgba(var(--primary-rgb), 0.35); }
+    100% { background-color: transparent; }
+}
+.row-highlight {
+    animation: goldPulseHighlight 1.8s ease-out forwards;
+}
+
+/* 70. Gradient Angle Rotation */
+@keyframes gradientAngleRotate {
+    0% { filter: hue-rotate(0deg); }
+    50% { filter: hue-rotate(15deg); }
+    100% { filter: hue-rotate(0deg); }
+}
+.btn-primary:hover {
+    animation: gradientAngleRotate 3s infinite alternate ease-in-out !important;
+}
+
+/* 71. Button Click Concentric Ripple */
+@keyframes rippleConcentric {
+    0% { transform: scale(0); opacity: 0.6; }
+    100% { transform: scale(3.5); opacity: 0; }
+}
+.btn-ripple-effect {
+    position: relative;
+    overflow: hidden;
+}
+.btn-ripple-effect::after {
+    content: '';
+    position: absolute;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    pointer-events: none;
+}
+.btn-ripple-effect:active::after {
+    animation: rippleConcentric 0.5s ease-out;
+}
+
+/* 72. Button Press Spring Rebound */
+.btn-primary:active, .btn-secondary:active, .btn-oauth:active {
+    transform: scale(0.96) translateY(1px) !important;
+    transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 73. Submission Success Morph */
+@keyframes successMorphCheck {
+    0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+    70% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.success-icon-morph {
+    animation: successMorphCheck 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 74. Danger Action Shake Error */
+@keyframes shakeErrorAction {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+.shake-error {
+    animation: shakeErrorAction 0.45s ease-in-out;
+}
+
+/* 75. Button Neon Perimeter Laser Scan */
+@keyframes laserScanPerimeter {
+    0% { clip-path: inset(0 0 95% 0); }
+    25% { clip-path: inset(0 0 0 95%); }
+    50% { clip-path: inset(95% 0 0 0); }
+    75% { clip-path: inset(0 95% 0 0); }
+    100% { clip-path: inset(0 0 95% 0); }
+}
+
+/* 76. Button Underglow Floating Hover */
+@keyframes floatUnderglow {
+    0%, 100% { box-shadow: 0 8px 20px -4px rgba(var(--primary-rgb), 0.35); }
+    50% { box-shadow: 0 14px 30px -2px rgba(var(--primary-rgb), 0.55); }
+}
+.btn-floating-glow:hover {
+    animation: floatUnderglow 2s ease-in-out infinite;
+}
+
+/* 77. Action Arrow Micro Nudge */
+@keyframes arrowNudgeRight {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(5px); }
+}
+.btn-primary:hover svg, button[type="submit"]:hover svg {
+    animation: arrowNudgeRight 1s ease-in-out infinite;
+}
+
+/* 78. Laser Underline Expansion */
+@keyframes laserUnderlineExpand {
+    0% { width: 0%; opacity: 0; }
+    100% { width: 100%; opacity: 1; }
+}
+.nav-tab.active::after, .tab-btn.active::after {
+    animation: laserUnderlineExpand 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 79. Elastic Scale Chip Tap */
+@keyframes chipScaleTap {
+    0% { transform: scale(0.92); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+.suggestion-chip:active, .currency-chip:active {
+    animation: chipScaleTap 0.3s ease;
+}
+
+/* 81. Ghost Button Glass Fill Hover */
+.btn-ghost, .btn-secondary {
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
+}
+.btn-ghost:hover, .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(var(--primary-rgb), 0.4) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 82. Reload Sync Spinner */
+@keyframes spinReload360 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.spin-action {
+    animation: spinReload360 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 84. Button Pill Width Expansion */
+@keyframes pillMorphExpand {
+    0% { max-width: 120px; }
+    100% { max-width: 220px; }
+}
+
+/* 85. Input Focus Aura Halo */
+.form-input:focus, select:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22) !important;
+    border-color: var(--primary) !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* 86. Floating Label Smooth Ascension */
+@keyframes labelFloatUp {
+    0% { transform: translateY(0); font-size: 14px; opacity: 0.6; }
+    100% { transform: translateY(-22px); font-size: 11px; opacity: 1; color: var(--primary); }
+}
+
+/* 87. Input Prefix Icon Bounce — Preserves vertical centering */
+.form-group:focus-within .input-icon,
+.input-wrapper:focus-within .input-icon,
+.input-wrapper:focus-within > svg.input-icon {
+    color: var(--primary) !important;
+    transform: translateY(-50%) scale(1.05) !important;
+    transition: transform 0.2s ease, color 0.2s ease !important;
+}
+
+/* 88. Form Input Jiggle on Invalid */
+@keyframes inputShakeInvalid {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+.input-error {
+    animation: inputShakeInvalid 0.35s ease-in-out;
+    border-color: var(--danger) !important;
+}
+
+/* 89. Input Emerald Verification Glow */
+@keyframes emeraldGlowSuccess {
+    0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.5); }
+    100% { box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.2); }
+}
+.input-valid {
+    animation: emeraldGlowSuccess 0.4s ease-out forwards;
+    border-color: #27ae60 !important;
+}
+
+/* 90. Dropdown Spring Unfold */
+@keyframes dropdownSpringUnroll {
+    0% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    70% { opacity: 1; transform: translateY(2px) scale(1.01); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.custom-select-wrapper.open .custom-select-options,
+.dropdown-menu.open,
+.dropdown-menu.active {
+    animation: dropdownSpringUnroll 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 91. Dropdown Option Item Cascade */
+@keyframes optionCascadeSlide {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.custom-select-option {
+    animation: optionCascadeSlide 0.2s ease forwards;
+}
+
+/* 92. Checkbox Elastic Tick Pop */
+@keyframes checkmarkDrawPop {
+    0% { transform: scale(0) rotate(-45deg); }
+    70% { transform: scale(1.25) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+input[type="checkbox"]:checked {
+    animation: checkmarkDrawPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 93. Radio Selection Expanding Ring */
+@keyframes radioRingPulse {
+    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.6); }
+    100% { box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0); }
+}
+input[type="radio"]:checked {
+    animation: radioRingPulse 0.4s ease-out;
+}
+
+/* 94. Toggle Switch Glide */
+.theme-switch-slider, .toggle-slider {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease !important;
+}
+
+/* 95. Slider Range Thumb Scale Pop */
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.3) !important;
+    box-shadow: 0 0 12px var(--primary) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* 96. OTP Box Active Golden Pulse */
+@keyframes otpBoxPulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--primary), 0 0 10px rgba(var(--primary-rgb), 0.2); }
+    50% { box-shadow: 0 0 0 3.5px var(--primary), 0 0 18px rgba(var(--primary-rgb), 0.45); }
+}
+.otp-input:focus {
+    animation: otpBoxPulse 1.8s ease-in-out infinite !important;
+}
+
+/* 97. Password Eye Blink Micro-Action */
+@keyframes eyeBlink {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.1); }
+}
+.password-toggle:active svg {
+    animation: eyeBlink 0.2s ease;
+}
+
+/* 98. Clear Search Input Spin */
+@keyframes clearBtnSpin {
+    0% { transform: scale(0) rotate(-90deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.search-clear-btn {
+    animation: clearBtnSpin 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 99. Search Bar Stretch on Focus */
+/* 100. Step Progress Bar Gleam Stream */
+@keyframes stepBarGleam {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+.step-progress-fill {
+    background: linear-gradient(90deg, var(--primary) 0%, #fff 50%, var(--primary) 100%);
+    background-size: 200% 100%;
+    animation: stepBarGleam 2.8s infinite linear;
+}
+
+/* 101. Chart Bar Vertical Growth */
+@keyframes chartBarGrowVertical {
+    0% { transform: scaleY(0); transform-origin: bottom; }
+    100% { transform: scaleY(1); transform-origin: bottom; }
+}
+.chart-bar-animated {
+    animation: chartBarGrowVertical 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 102. Donut Segment Radial Pop */
+@keyframes donutPopOut {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.06); filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); }
+}
+
+/* 103. Chart Area Glow Wave */
+@keyframes chartGlowWave {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.85; filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4)); }
+}
+
+/* 104. Chart Tooltip Elastic Glide */
+.chartjs-tooltip {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* 105. Gauge Needle Deflection */
+@keyframes needleDeflection {
+    0% { transform: rotate(-90deg); }
+    70% { transform: rotate(15deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* 106. Trend Line Sparkle Runner */
+@keyframes sparkLineTravel {
+    0% { offset-distance: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+}
+
+/* 107. Stat Counter Ticker Flip */
+@keyframes counterNumberRoll {
+    0% { transform: translateY(12px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.metric-value, .stat-value {
+    animation: counterNumberRoll 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 109. Financial Health Breathing Gauge */
+@keyframes healthGaugePulse {
+    0%, 100% { stroke-dasharray: 280, 300; stroke: var(--primary); }
+    50% { stroke-dasharray: 290, 300; stroke: var(--accent); }
+}
+
+/* 112. Chart Grid Lines Entrance */
+@keyframes gridLinesFade {
+    0% { opacity: 0; stroke-dashoffset: 100; }
+    100% { opacity: 1; stroke-dashoffset: 0; }
+}
+
+/* 113. Heatmap Calendar Day Cell Pop */
+.calendar-heatmap-day {
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+.calendar-heatmap-day:hover {
+    transform: scale(1.4) !important;
+    z-index: 10;
+    filter: drop-shadow(0 2px 8px rgba(var(--primary-rgb), 0.5));
+}
+
+/* 115. Metric Number Micro Bounce */
+@keyframes metricUpdateBounce {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.18); color: var(--primary); }
+    100% { transform: scale(1); }
+}
+.metric-updated {
+    animation: metricUpdateBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 117. Live Radar Status Beacon Pulse */
+@keyframes radarBeaconPulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+}
+.status-dot {
+    animation: radarBeaconPulse 2s infinite !important;
+}
+
+/* 119. Category Filter Pill Click Bounce */
+@keyframes pillTapBounce {
+    0% { transform: scale(0.92); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+.category-pill:active, .filter-chip:active {
+    animation: pillTapBounce 0.25s ease;
+}
+
+/* 120. Filter Chip Selected Halo */
+.filter-chip.active, .category-pill.active {
+    box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.35) !important;
+    transform: translateY(-1px) scale(1.02) !important;
+    transition: all 0.25s ease !important;
+}
+
+/* 121. Overdue Reminder Bell Wiggle */
+@keyframes bellWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    20%, 60% { transform: rotate(14deg); }
+    40%, 80% { transform: rotate(-14deg); }
+}
+.reminder-bell-active svg {
+    animation: bellWiggle 1.5s ease-in-out infinite;
+    transform-origin: top center;
+}
+
+/* 122. Currency Pill Glowing Ring */
+.currency-option:hover, .currency-option.selected {
+    box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.3) !important;
+    border-color: var(--primary) !important;
+}
+
+/* 123. Transaction Tag Slide-In */
+@keyframes tagSlideIn {
+    0% { opacity: 0; transform: scale(0.8) translateX(10px); }
+    100% { opacity: 1; transform: scale(1) translateX(0); }
+}
+.transaction-tag {
+    animation: tagSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 125. Notification Counter Pop-In */
+@keyframes badgePopIn {
+    0% { transform: scale(0); opacity: 0; }
+    80% { transform: scale(1.25); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.notification-badge {
+    animation: badgePopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 126. Verified User Stroke Draw */
+@keyframes checkDrawStroke {
+    0% { stroke-dashoffset: 50; }
+    100% { stroke-dashoffset: 0; }
+}
+.verified-icon path {
+    stroke-dasharray: 50;
+    animation: checkDrawStroke 0.6s ease-out forwards;
+}
+
+/* 127. Unread Alert Glowing Dot */
+@keyframes unreadDotPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; box-shadow: 0 0 8px #e74c3c; }
+}
+.unread-indicator {
+    animation: unreadDotPulse 1.8s ease-in-out infinite;
+}
+
+/* 128. Step Circle Ring Expansion */
+@keyframes stepRingGlow {
+    0%, 100% { box-shadow: 0 0 0 2px var(--primary); }
+    50% { box-shadow: 0 0 0 6px rgba(var(--primary-rgb), 0.35); }
+}
+.step-number.active, .step-item.active .step-number {
+    animation: stepRingGlow 2s ease-in-out infinite;
+}
+
+/* 131. Concentric Radar Ping */
+
+.radar-ping::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--primary);
+    animation: radarBeaconPulse 1s cubic-bezier(0.3, 0, 0.3, 1) infinite;
+}
+
+/* 133. Gold Coin Drop Bounce */
+@keyframes coinDropBounce {
+    0% { transform: translateY(-40px) rotateY(0deg); opacity: 0; }
+    60% { transform: translateY(4px) rotateY(360deg); opacity: 1; }
+    80% { transform: translateY(-6px) rotateY(540deg); }
+    100% { transform: translateY(0) rotateY(720deg); opacity: 1; }
+}
+.coin-animation {
+    animation: coinDropBounce 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 134. Receipt Paper Print Slide */
+@keyframes receiptSlideDown {
+    0% { transform: translateY(-100%); opacity: 0; }
+    70% { transform: translateY(8px); opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.receipt-card {
+    animation: receiptSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 136. Piggy Bank Gentle Wobble */
+@keyframes piggyBankWobble {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-5deg) scale(1.05); }
+    75% { transform: rotate(5deg) scale(1.05); }
+}
+.piggy-bank-icon:hover {
+    animation: piggyBankWobble 0.6s ease-in-out;
+}
+
+/* 137. 3D Bill Folding Effect */
+@keyframes billFold3D {
+    0% { transform: perspective(600px) rotateX(-20deg); opacity: 0; }
+    100% { transform: perspective(600px) rotateX(0deg); opacity: 1; }
+}
+.recurring-bill-card {
+    animation: billFold3D 0.5s ease-out;
+}
+
+/* 141. 5-Star Sparkle Cascade */
+@keyframes starCascade {
+    0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+    60% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.star-rating svg:nth-child(1) { animation: starCascade 0.3s ease 0.05s both; }
+.star-rating svg:nth-child(2) { animation: starCascade 0.3s ease 0.10s both; }
+.star-rating svg:nth-child(3) { animation: starCascade 0.3s ease 0.15s both; }
+.star-rating svg:nth-child(4) { animation: starCascade 0.3s ease 0.20s both; }
+.star-rating svg:nth-child(5) { animation: starCascade 0.3s ease 0.25s both; }
+
+/* 142. Level-Up Golden Aura Sweep */
+@keyframes levelUpSweep {
+    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.8); }
+    50% { box-shadow: 0 0 30px 10px rgba(var(--primary-rgb), 0.4); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
+}
+.level-up-card {
+    animation: levelUpSweep 2s ease-out;
+}
+
+/* 143. Cloud Sync Continuous Smooth Spin */
+@keyframes syncSpinSmooth {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.sync-spin-icon {
+    animation: syncSpinSmooth 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 144. Pull-to-Refresh Spring Snap */
+@keyframes pullRefreshSpring {
+    0% { transform: translateY(-40px); }
+    70% { transform: translateY(12px); }
+    100% { transform: translateY(0); }
+}
+
+/* 145. Item Delete Disintegrate Fade */
+@keyframes deleteDisintegrate {
+    0% { opacity: 1; transform: scale(1) translateX(0); max-height: 80px; }
+    50% { opacity: 0.4; transform: scale(0.9) translateX(30px); }
+    100% { opacity: 0; transform: scale(0.6) translateX(80px); max-height: 0; padding: 0; margin: 0; }
+}
+.item-deleting {
+    animation: deleteDisintegrate 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    pointer-events: none;
+}
+
+/* 146. Export Paper Plane Fly-Out */
+@keyframes paperPlaneFly {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+    50% { transform: translate(40px, -30px) rotate(15deg) scale(0.8); opacity: 0.8; }
+    100% { transform: translate(120px, -80px) rotate(35deg) scale(0.2); opacity: 0; }
+}
+.export-flying svg {
+    animation: paperPlaneFly 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 147. Download Arrow Downward Bounce */
+@keyframes downloadArrowBounce {
+    0%, 100% { transform: translateY(0); }
+    40% { transform: translateY(6px); }
+    60% { transform: translateY(2px); }
+    80% { transform: translateY(5px); }
+}
+.btn-download:hover svg {
+    animation: downloadArrowBounce 0.8s ease;
+}
+
+/* 148. Modal Cinematic Blur Backdrop */
+@keyframes modalBackdropBlurFade {
+    0% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+    100% { opacity: 1; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+}
+.modal-overlay.active, .modal.active {
+    animation: modalBackdropBlurFade 0.35s ease forwards !important;
+}
+
+/* 149. Modal Dialog 3D Elastic Pop */
+@keyframes modal3DElasticPop {
+    0% { opacity: 0; transform: scale(0.85) translateY(30px) perspective(600px) rotateX(10deg); }
+    70% { opacity: 1; transform: scale(1.02) translateY(-4px) perspective(600px) rotateX(-2deg); }
+    100% { opacity: 1; transform: scale(1) translateY(0) perspective(600px) rotateX(0deg); }
+}
+.modal-content, .modal-dialog {
+    animation: modal3DElasticPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* 150. Toast Notification Spring Slide-In */
+@keyframes toastSpringSlide {
+    0% { opacity: 0; transform: translateX(120%) scale(0.9); }
+    70% { opacity: 1; transform: translateX(-8px) scale(1.02); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+.toast {
+    animation: toastSpringSlide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* ==========================================================================
+   GLOBAL INTERACTION & CASCADE ANIMATIONS ACROSS ALL PAGES
+   ========================================================================== */
+
+/* Universal Stagger Delays for Grid/List Elements */
+.stagger-1, .cascade-1 { animation-delay: 0.05s !important; }
+.stagger-2, .cascade-2 { animation-delay: 0.10s !important; }
+.stagger-3, .cascade-3 { animation-delay: 0.15s !important; }
+.stagger-4, .cascade-4 { animation-delay: 0.20s !important; }
+.stagger-5, .cascade-5 { animation-delay: 0.25s !important; }
+.stagger-6, .cascade-6 { animation-delay: 0.30s !important; }
+.stagger-7, .cascade-7 { animation-delay: 0.35s !important; }
+.stagger-8, .cascade-8 { animation-delay: 0.40s !important; }
+.stagger-9, .cascade-9 { animation-delay: 0.45s !important; }
+.stagger-10, .cascade-10 { animation-delay: 0.50s !important; }
+
+/* Interactive Hover Vibrancy for Table Rows & Lists */
+.table tbody tr, .transaction-item, .activity-item, .budget-item, .debt-item {
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.22s ease, box-shadow 0.22s ease !important;
+}
+.table tbody tr:hover, .transaction-item:hover, .activity-item:hover, .budget-item:hover, .debt-item:hover {
+    transform: scale(1.01) translateX(4px) !important;
+    background: rgba(var(--primary-rgb), 0.08) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Glass Card 3D Depth on Hover */
+.card, .metric-card, .chart-card, .transactions-card, .budget-card, .float-card, .perk-item {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease !important;
+}
+.chart-card:hover, .transactions-card:hover, .budget-card:hover {
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 16px 36px -10px rgba(var(--primary-rgb), 0.25), 0 0 16px rgba(var(--primary-rgb), 0.10) !important;
+}
+
+/* Navigation Links Dynamic Underline */
+.nav-link, .sidebar-nav a, .tab-btn {
+    position: relative;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.nav-link:hover, .sidebar-nav a:hover, .tab-btn:hover {
+    transform: translateX(4px) !important;
+    color: var(--primary) !important;
+}
+
+/* Category & Filter Pill Spring Scale */
+.category-pill, .filter-chip, .suggestion-chip, .currency-chip {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.category-pill:hover, .filter-chip:hover, .suggestion-chip:hover, .currency-chip:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.22) !important;
+}
+
+/* Form Input Glowing Micro-Interactions */
+.form-input, select {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.form-input:hover {
+    border-color: rgba(var(--primary-rgb), 0.5) !important;
+}
+
+/* 155. Dynamic Metric Counter 3D Flip */
+@keyframes metricCounterFlip {
+    0% { transform: perspective(400px) rotateX(-90deg); opacity: 0; }
+    70% { transform: perspective(400px) rotateX(10deg); opacity: 1; }
+    100% { transform: perspective(400px) rotateX(0deg); opacity: 1; }
+}
+.metric-flip-in {
+    animation: metricCounterFlip 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 157. Interactive Cyber Button Glow */
+@keyframes cyberButtonGlow {
+    0%, 100% { box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.3); }
+    50% { box-shadow: 0 8px 30px rgba(var(--primary-rgb), 0.6), 0 0 16px var(--primary); }
+}
+.btn-cyber-glow:hover {
+    animation: cyberButtonGlow 1.5s ease-in-out infinite;
+}
+
+/* 158. Neon Icon Sweep */
+@keyframes neonIconSweep {
+    0%, 100% { transform: scale(1) rotate(0deg); color: var(--text-main); }
+    50% { transform: scale(1.2) rotate(8deg); color: var(--primary); filter: drop-shadow(0 0 8px var(--primary)); }
+}
+.perk-icon:hover svg, .float-card-icon:hover svg {
+    animation: neonIconSweep 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 159. Aurora Light Cascade */
+@keyframes auroraLightCascade {
+    0% { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+.cascade-item {
+    animation: auroraLightCascade 0.4s ease forwards;
+}
+
+/* 163. Spring Accordion Reveal */
+@keyframes springAccordionReveal {
+    0% { opacity: 0; transform: scaleY(0.85); transform-origin: top; }
+    100% { opacity: 1; transform: scaleY(1); transform-origin: top; }
+}
+.accordion-reveal {
+    animation: springAccordionReveal 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 166. Fluid Wave Ripple Button */
+
+.fluid-ripple::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    border: 2px solid var(--primary);
+    animation: rippleConcentric 1s cubic-bezier(0.3, 0, 0.3, 1) infinite;
+}
+
+/* 168. Smooth Page Transition Blur */
+@keyframes pageTransitionBlur {
+    0% { opacity: 0; filter: blur(8px); transform: scale(0.98); }
+    100% { opacity: 1; filter: blur(0px); transform: scale(1); }
+}
+.page-fade-enter {
+    animation: pageTransitionBlur 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 170. Starburst Achievement Burst */
+@keyframes starburstAchievement {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    60% { transform: scale(1.3) rotate(180deg); opacity: 1; }
+    100% { transform: scale(1) rotate(360deg); opacity: 1; }
+}
+.starburst-burst {
+    animation: starburstAchievement 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+

@@ -2,6 +2,8 @@ package com.example.expensetracker.exception;
 
 import com.example.expensetracker.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -20,16 +22,6 @@ import java.util.NoSuchElementException;
  * exception type, wraps it in a standardised {@link ErrorResponse}, and returns
  * an appropriate HTTP status code to the client.</p>
  *
- * <p>Exception types handled:</p>
- * <ul>
- *   <li>{@link IllegalArgumentException} — {@code 400 Bad Request}</li>
- *   <li>{@link NoSuchElementException} — {@code 404 Not Found}</li>
- *   <li>{@link BadCredentialsException} / {@link InternalAuthenticationServiceException}
- *       — {@code 401 Unauthorized}</li>
- *   <li>{@link MethodArgumentNotValidException} — {@code 400 Bad Request} (validation errors)</li>
- *   <li>{@link Exception} (catch-all) — {@code 500 Internal Server Error}</li>
- * </ul>
- *
  * @author Yogeshwaran
  * @version 1.0
  * @see ErrorResponse
@@ -37,21 +29,17 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     /**
      * Handles {@link IllegalArgumentException} thrown when invalid input is provided.
-     *
-     * <p>Common causes include: duplicate email during registration, invalid category ID,
-     * category ownership violations, or missing required entities.</p>
-     *
-     * @param ex      the thrown {@link IllegalArgumentException}
-     * @param request the current HTTP request (used to populate the {@code path} field)
-     * @return a {@code 400 Bad Request} response with an {@link ErrorResponse} body
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex,
             HttpServletRequest request) {
 
+        log.warn("Bad request at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -65,18 +53,14 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles {@link IllegalStateException}, used for operations that are valid
-     * requests but conflict with the resource's current state — e.g. attempting
-     * to delete a category that's still referenced by existing expenses.
-     *
-     * @param ex      the thrown {@link IllegalStateException}
-     * @param request the current HTTP request (used to populate the {@code path} field)
-     * @return a {@code 409 Conflict} response with an {@link ErrorResponse} body
+     * requests but conflict with the resource's current state.
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(
             IllegalStateException ex,
             HttpServletRequest request) {
 
+        log.warn("Conflict at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
@@ -90,18 +74,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles {@link NoSuchElementException} thrown when a requested resource is not found.
-     *
-     * <p>Typically occurs when an optional value is unwrapped without a fallback.</p>
-     *
-     * @param ex      the thrown {@link NoSuchElementException}
-     * @param request the current HTTP request
-     * @return a {@code 404 Not Found} response with an {@link ErrorResponse} body
      */
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(
             NoSuchElementException ex,
             HttpServletRequest request) {
 
+        log.warn("Resource not found at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
@@ -115,10 +94,6 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles {@link DatabaseUnavailableException} and Spring/JDBC DB connectivity failures.
-     *
-     * @param ex      the database exception
-     * @param request the current HTTP request
-     * @return a {@code 503 Service Unavailable} response
      */
     @ExceptionHandler({
         DatabaseUnavailableException.class,
@@ -131,6 +106,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
 
+        log.error("Database unavailable at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.SERVICE_UNAVAILABLE.value(),
@@ -144,11 +120,6 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles authentication failures such as wrong credentials, locked, or disabled accounts.
-     * Checks if the underlying root cause is a database connectivity issue.
-     *
-     * @param ex      the authentication-related exception
-     * @param request the current HTTP request
-     * @return a {@code 401 Unauthorized} or {@code 503 Service Unavailable} response
      */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
@@ -171,6 +142,7 @@ public class GlobalExceptionHandler {
                 ? ex.getMessage()
                 : "Invalid email/username or password";
 
+        log.warn("Authentication failed at '{}': {}", request.getRequestURI(), message);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
@@ -183,11 +155,29 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles rate limit violations across throttled endpoints.
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(
+            RateLimitExceededException ex,
+            HttpServletRequest request) {
+
+        log.warn("Rate limit exceeded at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(response);
+    }
+
+    /**
      * Catch-all handler for any unhandled exceptions not covered by more specific handlers.
-     *
-     * @param ex      the unhandled exception
-     * @param request the current HTTP request
-     * @return a {@code 500 Internal Server Error} response with an {@link ErrorResponse} body
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(
@@ -206,6 +196,7 @@ public class GlobalExceptionHandler {
             rootCause = rootCause.getCause();
         }
 
+        log.error("Unhandled exception at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -219,13 +210,6 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles validation failures triggered by {@code @Valid} on request body parameters.
-     *
-     * <p>Extracts the first field-level validation error from the binding result and
-     * returns it as a human-readable message in the error response.</p>
-     *
-     * @param ex      the {@link MethodArgumentNotValidException} containing binding errors
-     * @param request the current HTTP request
-     * @return a {@code 400 Bad Request} response with the first validation error message
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationError(
@@ -239,6 +223,7 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("Validation error");
 
+        log.warn("Validation error at '{}': {}", request.getRequestURI(), message);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -252,16 +237,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles malformed or unparseable HTTP request payloads (e.g. invalid JSON syntax).
-     *
-     * @param ex the {@link org.springframework.http.converter.HttpMessageNotReadableException}
-     * @param request the current HTTP request
-     * @return a {@code 400 Bad Request} response
      */
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMessageNotReadable(
             org.springframework.http.converter.HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
+        log.warn("Malformed JSON payload at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -274,17 +256,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles URL path variable or query parameter type mismatches (e.g. passing text for a Long ID).
-     *
-     * @param ex the {@link org.springframework.web.method.annotation.MethodArgumentTypeMismatchException}
-     * @param request the current HTTP request
-     * @return a {@code 400 Bad Request} response
+     * Handles URL path variable or query parameter type mismatches.
      */
     @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(
             org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex,
             HttpServletRequest request) {
 
+        log.warn("Type mismatch at '{}': parameter '{}' with value '{}'", request.getRequestURI(), ex.getName(), ex.getValue());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -298,16 +277,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles access denied / authorization rejections from Spring Security.
-     *
-     * @param ex the {@link org.springframework.security.access.AccessDeniedException}
-     * @param request the current HTTP request
-     * @return a {@code 403 Forbidden} response
      */
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(
             org.springframework.security.access.AccessDeniedException ex,
             HttpServletRequest request) {
 
+        log.warn("Access denied at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.FORBIDDEN.value(),
@@ -321,16 +297,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles oversized file upload attempts exceeding configured multipart boundaries.
-     *
-     * @param ex the {@link org.springframework.web.multipart.MaxUploadSizeExceededException}
-     * @param request the current HTTP request
-     * @return a {@code 413 Payload Too Large} response
      */
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
     public ResponseEntity<ErrorResponse> handleMaxUploadSize(
             org.springframework.web.multipart.MaxUploadSizeExceededException ex,
             HttpServletRequest request) {
 
+        log.warn("Max upload size exceeded at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.PAYLOAD_TOO_LARGE.value(),

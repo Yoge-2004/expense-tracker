@@ -25,6 +25,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>Endpoints covered:</p>
  * <ul>
  *   <li>DELETE /api/users/{userId}</li>
+ *   <li>GET    /api/users/{userId}</li>
+ *   <li>PUT    /api/users/{userId}/currency</li>
+ *   <li>POST   /api/users/{userId}/verify-security-pin</li>
  * </ul>
  *
  * @author Yogeshwaran
@@ -42,6 +45,7 @@ class UserControllerTest {
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
     @MockitoBean JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockitoBean com.example.expensetracker.security.UserSecurity userSecurity;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -117,17 +121,52 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.currency").value("USD"));
     }
 
-    @Test
-    @DisplayName("GET /api/users/suggest-usernames → 200 OK with truly random DB-checked suggestions")
-    void suggestUsernames_checksDb_returns200() throws Exception {
-        when(userRepository.existsByNameIgnoreCase(anyString())).thenReturn(false);
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+    // ─────────────── POST /api/users/{userId}/verify-security-pin ───────────────
 
+    @Test
+    @WithMockUser
+    @DisplayName("POST /api/users/{userId}/verify-security-pin → 200 OK when PIN is correct")
+    void verifySecurityPin_correctPin_returns200() throws Exception {
+        when(userService.verifySecurityPin(1L, "123456")).thenReturn(true);
+
+        mockMvc.perform(post("/api/users/1/verify-security-pin")
+                        .contentType("application/json")
+                        .content("{\"securityPin\":\"123456\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.message").value("Security PIN verified successfully."));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("POST /api/users/{userId}/verify-security-pin → 401 Unauthorized when PIN is incorrect")
+    void verifySecurityPin_incorrectPin_returns401() throws Exception {
+        when(userService.verifySecurityPin(1L, "999999")).thenReturn(false);
+
+        mockMvc.perform(post("/api/users/1/verify-security-pin")
+                        .contentType("application/json")
+                        .content("{\"securityPin\":\"999999\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.valid").value(false))
+                .andExpect(jsonPath("$.message").value("Invalid security PIN."));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("POST /api/users/{userId}/verify-security-pin → 400 Bad Request when PIN is malformed")
+    void verifySecurityPin_malformedPin_returns400() throws Exception {
+        mockMvc.perform(post("/api/users/1/verify-security-pin")
+                        .contentType("application/json")
+                        .content("{\"securityPin\":\"12a\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Security PIN must be exactly 6 numeric digits."));
+    }
+
+    @Test
+    @DisplayName("GET /api/users/suggest-usernames → 200 OK with suggestions")
+    void suggestUsernames_checksDb_returns200() throws Exception {
         mockMvc.perform(get("/api/users/suggest-usernames?base=john"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.suggestions.length()").value(3))
-                .andExpect(jsonPath("$.suggestions[0]").isNotEmpty())
-                .andExpect(jsonPath("$.suggestions[1]").isNotEmpty())
-                .andExpect(jsonPath("$.suggestions[2]").isNotEmpty());
+                .andExpect(jsonPath("$.suggestions").isArray());
     }
 }

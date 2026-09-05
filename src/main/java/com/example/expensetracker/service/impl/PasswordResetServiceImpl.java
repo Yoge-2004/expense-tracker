@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -35,17 +35,9 @@ import java.time.temporal.ChronoUnit;
  *   #OTP_TTL_MINUTES} minutes and allows at most {@value #MAX_ATTEMPTS}
  *   verification attempts before being rejected outright, even if the
  *   correct code is later supplied.</li>
- *   <li><b>Graceful degradation without SMTP:</b> if {@code app.mail.enabled}
- *   is false or {@code spring.mail.host} isn't configured (common in local
- *   dev or a fresh deployment), the OTP is logged instead of emailed rather
- *   than throwing — signup/reset flows keep working, just without real email
- *   delivery. If mail is enabled but no {@link JavaMailSender} bean is
- *   actually available, the failure is logged and swallowed rather than
- *   propagated, so a misconfigured mail server doesn't break the OTP flow
- *   for the caller.</li>
- *   <li><b>Test hook:</b> {@link OtpDeliveryListener}, if a bean is present,
- *   is notified of every OTP issued — this exists so automated tests can
- *   capture the generated code without needing to read real email.</li>
+ *   <li><b>Zero-Email Recovery via 6-Digit Security PIN:</b> users can recover
+ *   their account directly using their 6-digit Security PIN without requiring
+ *   external SMTP/email delivery. Includes brute-force lockout protection (5 attempts).</li>
  * </ul>
  */
 @Service
@@ -91,6 +83,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         User user = userRepository.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
 
+        log.info("Generating password reset OTP for email={}", user.getEmail());
+
         // Invalidate any still-open PASSWORD_RESET code before issuing a new one.
         otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
                 .ifPresent(existing -> {
@@ -114,44 +108,72 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public void resetPassword(String email, String otp, String newPassword) {
         if (email == null || email.isBlank() || otp == null || otp.isBlank()) {
-            throw new BadCredentialsException("Invalid or expired code.");
+            throw new BadCredentialsException("Invalid or expired code or PIN.");
+        }
+
+        // HARDENING: Completely reject deprecated backdoor strings
+        if ("BYPASS".equalsIgnoreCase(otp.trim())) {
+            log.warn("Security violation: Rejected deprecated BYPASS token attempt for email={}", email);
+            throw new BadCredentialsException("Invalid verification code or Security PIN.");
         }
 
         User user = userRepository.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
 
-        if ("BYPASS".equalsIgnoreCase(otp)) {
-            user.setPassword(passwordEncoder.encode(newPassword));
+        // Check brute-force lockout for Security PIN / OTP recovery
+        if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
+            long minutesRemaining = java.time.Duration.between(LocalDateTime.now(), user.getPinLockedUntil()).toMinutes() + 1;
+            log.warn("Recovery attempt blocked for locked account email={}, minutesRemaining={}", user.getEmail(), minutesRemaining);
+            throw new BadCredentialsException("Account recovery temporarily locked due to too many failed attempts. Please try again in " + minutesRemaining + " minute(s).");
+        }
+
+        String inputCode = otp.trim();
+        boolean verified = false;
+
+        // 1. Verify against user's 6-digit Security PIN (works in zero-email environments)
+        if (user.getSecurityPinHash() != null && passwordEncoder.matches(inputCode, user.getSecurityPinHash())) {
+            verified = true;
+            user.setFailedPinAttempts(0);
+            user.setPinLockedUntil(null);
+            log.info("Password reset authorized via 6-digit Security PIN for email={}", user.getEmail());
+        }
+
+        // 2. Verify against unexpired, unused Email OTP if PIN didn't match
+        if (!verified) {
+            Optional<PasswordResetOtp> recordOpt = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET");
+            if (recordOpt.isPresent()) {
+                PasswordResetOtp record = recordOpt.get();
+                if (!record.getExpiresAt().isBefore(LocalDateTime.now()) && record.getAttempts() < MAX_ATTEMPTS) {
+                    if (passwordEncoder.matches(inputCode, record.getOtpHash())) {
+                        verified = true;
+                        record.setUsed(true);
+                        otpRepository.save(record);
+                        user.setFailedPinAttempts(0);
+                        user.setPinLockedUntil(null);
+                        log.info("Password reset authorized via Email OTP for email={}", user.getEmail());
+                    } else {
+                        record.setAttempts(record.getAttempts() + 1);
+                        otpRepository.save(record);
+                    }
+                }
+            }
+        }
+
+        // 3. If neither matched, increment failed attempts and lockout after threshold
+        if (!verified) {
+            int failed = user.getFailedPinAttempts() + 1;
+            user.setFailedPinAttempts(failed);
+            if (failed >= 5) {
+                user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
+                log.warn("Account recovery locked for 15 minutes due to 5 consecutive failed attempts for email={}", user.getEmail());
+            }
             userRepository.save(user);
-            return;
+            throw new BadCredentialsException("Invalid verification code or Security PIN.");
         }
-
-        PasswordResetOtp record = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
-                .orElseThrow(() -> new BadCredentialsException("Invalid or expired code."));
-
-        if (record.getExpiresAt().isBefore(LocalDateTime.now())) {
-            record.setUsed(true);
-            otpRepository.save(record);
-            throw new BadCredentialsException("Invalid or expired code.");
-        }
-
-        if (record.getAttempts() >= MAX_ATTEMPTS) {
-            record.setUsed(true);
-            otpRepository.save(record);
-            throw new BadCredentialsException("Too many incorrect attempts. Please request a new code.");
-        }
-
-        if (!passwordEncoder.matches(otp, record.getOtpHash())) {
-            record.setAttempts(record.getAttempts() + 1);
-            otpRepository.save(record);
-            throw new BadCredentialsException("Invalid or expired code.");
-        }
-
-        record.setUsed(true);
-        otpRepository.save(record);
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        log.info("Password reset successfully applied for email={}", user.getEmail());
     }
 
     @Override
@@ -164,6 +186,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         if (userRepository.existsByEmail(email)) {
             return false;
         }
+
+        log.info("Generating signup OTP for email={}", email);
 
         // Invalidate any still-open SIGNUP OTP for this email before issuing a new one.
         otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
@@ -220,6 +244,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         // Mark as used — the register endpoint completes the account creation.
         record.setUsed(true);
         otpRepository.save(record);
+        log.info("Signup OTP verified successfully for email={}", email);
     }
 
     private String generateOtp() {
@@ -234,7 +259,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()) {
-            log.info("[Email Delivery Disabled] {} OTP for {}: {}", purpose, user.getEmail(), otp);
+            log.info("[Email Delivery Disabled] Generated {} OTP for email={} (masked for security)", purpose, user.getEmail());
             return;
         }
 
@@ -246,87 +271,57 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
-            if (mimeMessage != null) {
-                try {
-                    MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
-                    helper.setTo(user.getEmail());
-                    String subject = "SIGNUP".equals(purpose)
-                            ? "Verify your ExpenseTracker PRO account"
-                            : "Reset your ExpenseTracker PRO password";
-                    helper.setSubject(subject);
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setTo(user.getEmail());
+            helper.setSubject("PASSWORD_RESET".equals(purpose)
+                    ? "Expense Tracker — Password Reset Code"
+                    : "Expense Tracker — Verify Your Email");
 
-                    String htmlBody = buildHtmlEmailContent(user.getName(), otp, purpose);
-                    helper.setText(htmlBody, true);
-                } catch (Exception helperEx) {
-                    log.warn("Could not set full HTML headers on MimeMessage: {}", helperEx.getMessage());
+            String htmlBody = buildOtpHtml(user.getName(), otp, purpose);
+            helper.setText(htmlBody, true);
+
+            try {
+                if (configuredMailHost != null && !configuredMailHost.isBlank()) {
+                    helper.setFrom("noreply@" + configuredMailHost);
                 }
-                mailSender.send(mimeMessage);
-                log.info("Sent {} HTML OTP email to {}", purpose, user.getEmail());
+            } catch (Exception ignored) {
+                // Keep default if setFrom fails
             }
+
+            mailSender.send(mimeMessage);
+            log.info("Successfully dispatched {} OTP email to {}", purpose, user.getEmail());
+        } catch (MailException e) {
+            log.error("Failed to deliver {} OTP email to {}: {}", purpose, user.getEmail(), e.getMessage());
         } catch (Exception e) {
-            log.error("Failed to send {} HTML email to {}", purpose, user.getEmail(), e);
+            log.error("Unexpected error constructing {} email for {}: {}", purpose, user.getEmail(), e.getMessage(), e);
         }
     }
 
-    private String buildHtmlEmailContent(String name, String otp, String purpose) {
-        boolean isSignup = "SIGNUP".equals(purpose);
-        String title = isSignup ? "Verify Your Account" : "Password Reset Request";
-        String subtitle = isSignup
-                ? "Enter the code below on the registration page to activate your ExpenseTracker Pro account."
-                : "Enter the code below to securely reset your ExpenseTracker Pro account password.";
+    private String buildOtpHtml(String recipientName, String otp, String purpose) {
+        String headline = "PASSWORD_RESET".equals(purpose)
+                ? "Password Reset Verification"
+                : "Confirm Your Email Address";
+        String instructions = "PASSWORD_RESET".equals(purpose)
+                ? "Use this single-use verification code to set a new password. It expires in <b>10 minutes</b>."
+                : "Enter this verification code on the registration page to complete your signup. It expires in <b>10 minutes</b>.";
 
         return """
             <!DOCTYPE html>
             <html>
-            <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              body { margin: 0; padding: 0; background-color: #0d0f0b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ece7d8; }
-              .email-container { max-width: 560px; margin: 30px auto; background: #171a14; border: 1px solid rgba(236, 231, 216, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-              .email-header { padding: 32px 32px 20px; text-align: center; border-bottom: 1px solid rgba(236, 231, 216, 0.08); background: linear-gradient(180deg, rgba(199, 154, 62, 0.1) 0%%, rgba(23, 26, 20, 0) 100%%); }
-              .brand-badge { display: inline-block; background: rgba(199, 154, 62, 0.15); border: 1px solid rgba(199, 154, 62, 0.3); border-radius: 999px; padding: 6px 18px; font-size: 13px; font-weight: 800; color: #c79a3e; letter-spacing: 0.5px; }
-              .email-body { padding: 32px; }
-              .greeting { font-size: 20px; font-weight: 700; color: #ece7d8; margin-bottom: 10px; }
-              .subtext { font-size: 14px; line-height: 1.6; color: #a8a395; margin-bottom: 26px; }
-              .otp-card { background: #10120e; border: 1.5px dashed #c79a3e; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 26px; }
-              .otp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #a8a395; font-weight: 700; margin-bottom: 8px; }
-              .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #c79a3e; }
-              .ttl-badge { display: inline-block; font-size: 12px; font-weight: 600; color: #c9932e; margin-top: 10px; background: rgba(201, 147, 46, 0.12); padding: 4px 12px; border-radius: 8px; }
-              .security-note { font-size: 13px; color: #a8a395; line-height: 1.5; padding: 14px 16px; background: rgba(236, 231, 216, 0.04); border-radius: 12px; border-left: 3px solid #c79a3e; }
-              .email-footer { padding: 24px 32px; border-top: 1px solid rgba(236, 231, 216, 0.08); background: #10120e; text-align: center; font-size: 12px; color: #6b6558; line-height: 1.5; }
-            </style>
-            </head>
-            <body>
-              <div class="email-container">
-                <div class="email-header">
-                  <div class="brand-badge">💎 ExpenseTracker PRO</div>
+            <head><meta charset="utf-8"></head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0e1117; color: #e6edf3; padding: 40px 20px;">
+              <div style="max-width: 480px; margin: 0 auto; background: #161b22; border-radius: 12px; padding: 32px; border: 1px solid #30363d;">
+                <h2 style="color: #58a6ff; margin-top: 0;">Expense Tracker</h2>
+                <h3 style="color: #f0f6fc;">%s</h3>
+                <p style="color: #8b949e;">Hello %s,</p>
+                <p style="color: #8b949e;">%s</p>
+                <div style="background: #0d1117; border-radius: 8px; padding: 18px; text-align: center; margin: 24px 0; border: 1px solid #21262d;">
+                  <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #7ee787;">%s</span>
                 </div>
-                <div class="email-body">
-                  <div class="greeting">Hi %s,</div>
-                  <div class="subtext">%s</div>
-                  <div class="otp-card">
-                    <div class="otp-label">%s</div>
-                    <div class="otp-code">%s</div>
-                    <div class="ttl-badge">⏳ Expires in %d minutes</div>
-                  </div>
-                  <div class="security-note">
-                    <strong>Security Notice:</strong> If you did not request this verification code, you can safely ignore this email. Never share your 6-digit code with anyone.
-                  </div>
-                </div>
-                <div class="email-footer">
-                  ExpenseTracker Pro · Smart Financial Intelligence<br>
-                  This is an automated message, please do not reply directly to this email.
-                </div>
+                <p style="color: #8b949e; font-size: 13px;">If you didn't request this code, you can safely ignore this email.</p>
               </div>
             </body>
             </html>
-            """.formatted(
-                name != null ? name : "User",
-                subtitle,
-                title,
-                otp,
-                OTP_TTL_MINUTES
-            );
+            """.formatted(headline, recipientName != null ? recipientName : "there", instructions, otp);
     }
 }

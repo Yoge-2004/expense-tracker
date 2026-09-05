@@ -86,6 +86,8 @@ public class MonthlyReportDto {
     public MonthlyReportDto() {}
 
     /** @return Total income inflow */
+    public BigDecimal getTotalInflow() { return totalIncome; }
+    public BigDecimal getNetSavings() { return netCashFlow; }
     public BigDecimal getTotalIncome() { return totalIncome; }
     /** @param totalIncome Total income inflow */
     public void setTotalIncome(BigDecimal totalIncome) { this.totalIncome = totalIncome; }

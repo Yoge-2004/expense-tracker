@@ -26,8 +26,18 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
 
     } catch (error) {
         showToast(error.message, "error");
+        const emailEl = document.getElementById("email");
+        const passEl = document.getElementById("password");
+        if (emailEl) emailEl.classList.add("is-invalid");
+        if (passEl) passEl.classList.add("is-invalid");
         if (submitBtn) submitBtn.disabled = false;
     }
+});
+
+["email", "password"].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", () => {
+        document.getElementById(id)?.classList.remove("is-invalid");
+    });
 });
 
 // Visual Feedback for Google Sign-In button

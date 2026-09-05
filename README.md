@@ -10,7 +10,7 @@ pinned: false
 
 # 💰 Expense Tracker System
 
-A RESTful personal finance management API built with **Spring Boot 4**, **Spring Security (JWT)**, and **H2/JPA**. Track daily expenses, manage category budgets, and configure recurring monthly subscriptions — with a clean dark-themed frontend and Expo React Native mobile app.
+A RESTful personal finance management API built with **Spring Boot 4.1.1**, **Spring Security (JWT)**, and **H2/JPA/SQLite/PostgreSQL**. Track daily expenses, manage category budgets, configure recurring monthly subscriptions, log multiple income streams, monitor savings goals, and schedule automated reports — with a clean dark-themed frontend and Expo React Native mobile app.
 
 ---
 
@@ -19,6 +19,7 @@ A RESTful personal finance management API built with **Spring Boot 4**, **Spring
 - [Screenshots](#-screenshots)
 - [Tech Stack](#-tech-stack)
 - [Mobile App (Expo React Native)](#-mobile-app-expo-react-native)
+- [Database Persistence & Hugging Face Hub Sync](#-database-persistence--hugging-face-hub-sync)
 - [Neon DB & Compute Hours Protection](#-neon-db--compute-hours-protection)
 - [Docker & Containerization](#-docker--containerization)
 - [Hugging Face Spaces & Netlify Deployment](#-hugging-face-spaces--netlify-deployment)
@@ -67,18 +68,19 @@ Record a new expense by entering a description, amount (₹), category, and date
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Language | Java 26 |
-| Framework | Spring Boot 4.0.6 |
-| Security | Spring Security + JWT (JJWT) + Google OAuth |
-| Persistence | Spring Data JPA + Hibernate 7 |
-| Database | H2 (in-memory, dev/test), SQLite JDBC, PostgreSQL (Neon) |
-| Mobile | React Native 0.81, Expo 54, Expo Router 6 |
-| Documentation | SpringDoc OpenAPI 3.0 (Swagger UI) |
-| Unit Tests | JUnit 5 + Mockito + MockMvc (`@WebMvcTest`) |
-| BDD Tests | Cucumber 7 + RestAssured 5 |
-| Build | Maven 3 |
+| Layer | Technology | Version |
+|---|---|---|
+| Language | Java OpenJDK | 26 |
+| Framework | Spring Boot | 4.1.1 |
+| Security | Spring Security + JJWT + Google OAuth | 4.1.1 / 0.12.6 |
+| Persistence | Spring Data JPA + Hibernate ORM | 7.4.5.Final |
+| Primary Database | H2 (in-memory dev/test), SQLite JDBC, PostgreSQL (Neon) | SQLite 3.53.4.0 |
+| Export & Reporting | OpenPDF (PDF reports) & Apache POI (Excel) | OpenPDF 3.0.5, POI 5.5.1 |
+| Mobile | React Native, Expo, Expo Router | Expo 54, React Native 0.81 |
+| Documentation | SpringDoc OpenAPI (Swagger UI) | 3.1.0 |
+| Unit Tests | JUnit 5 + Mockito + MockMvc (`@WebMvcTest`) | JUnit 6.0.3 / Mockito 5.14.2 |
+| BDD & E2E Tests | Cucumber + REST-Assured + Selenium / HtmlUnit | Cucumber 7.34.7, REST-Assured 6.0.1, Selenium 4.48.0 |
+| Build Tool | Apache Maven | Maven 3.9+ (Compiler 3.16.0, Surefire 3.6.0) |
 
 ---
 
@@ -97,6 +99,29 @@ npx expo start
 - **Expo Go App**: Scan the QR code shown in the terminal with the Expo Go app (Android) or Camera app (iOS).
 - **Web Preview**: Press `w` in terminal or open `http://localhost:8081`.
 - **Tunnel Mode**: `npx expo start --tunnel` (for testing across different networks).
+
+---
+
+## 🔄 Database Persistence & Hugging Face Hub Sync
+
+Because containerized hosting services like Hugging Face Spaces have ephemeral local filesystems on restart, Expense Tracker provides an automated bidirectional database persistence service via `FileDbSyncService`.
+
+### 1. Dual Backup Mechanism
+- **`expense_tracker.db`**: Full SQLite binary database containing all tables, relations, and schemas.
+- **`expenses_sync.json`**: Portable JSON snapshot containing formatted expense records and category mappings.
+
+### 2. Hugging Face Hub Commit API Integration
+When `HF_SYNC_ENABLED=true` is set with a write token:
+- On startup, the application queries the Hugging Face Spaces repository (`Yoge-2004/expense-tracker-backend`) and pulls both `expenses_sync.json` and `expense_tracker.db` using redirect-aware HTTP streams (`resolve/main/{file}`).
+- Changes are committed directly back to the Space repository using the Hugging Face Hub NDJSON Commit protocol (`application/x-ndjson`), ensuring all data updates survive container lifecycles and cold starts.
+- Automatic scheduled push runs every 6 hours (`@Scheduled(cron = "0 0 */6 * * *")`).
+
+### 3. Manual Sync Endpoints
+Administrators and users can manually trigger sync cycles at any time:
+- `POST /api/sync/file-to-db` — Imports records from local JSON snapshot into active database.
+- `POST /api/sync/db-to-file` — Dumps active database records to local JSON snapshot.
+- `POST /api/sync/push-to-hf` — Commits local JSON and SQLite snapshots to Hugging Face Spaces.
+- `POST /api/sync/pull-from-hf` — Pulls latest snapshots from Hugging Face Spaces and reloads into DB.
 
 ---
 
@@ -121,18 +146,18 @@ spring.datasource.hikari.max-lifetime=600000
 
 ## 🐳 Docker & Containerization
 
-The backend is containerized using a multi-stage `Dockerfile` configured to build and run an executable JAR on port `7860` (optimized for Hugging Face Spaces).
+The backend is containerized using a production-grade `Dockerfile` configured to run as non-root user (`UID 1000`) on port `7860` (optimized for Hugging Face Spaces).
 
 ### 1. Build the JAR Locally
 
-Compile and package the Spring Boot application on your host machine:
+Compile and package the Spring Boot executable fat JAR:
 ```bash
 ./mvnw clean package -DskipTests
 ```
 
 ### 2. Build the Docker Image
 
-Build the container image using the packaged JAR:
+Build the container image using the pre-compiled JAR and backup database:
 ```bash
 docker build -t expense-tracker-backend .
 ```
@@ -146,6 +171,9 @@ docker run -p 7860:7860 \
   -e SPRING_DATASOURCE_USERNAME="your_username" \
   -e SPRING_DATASOURCE_PASSWORD="your_password" \
   -e JWT_SECRET="your_jwt_secret_key" \
+  -e HF_TOKEN="hf_your_huggingface_write_token" \
+  -e HF_SPACE_REPO="Yoge-2004/expense-tracker-backend" \
+  -e HF_SYNC_ENABLED="true" \
   -e CORS_ALLOWED_ORIGINS="http://localhost:5500,http://127.0.0.1:5500" \
   expense-tracker-backend
 ```
@@ -155,7 +183,7 @@ docker run -p 7860:7860 \
 ## 🚀 Hugging Face Spaces & Netlify Deployment
 
 ### Hugging Face Spaces (Backend Container)
-- Deployed via multi-stage `Dockerfile` (Maven build + JRE runtime) on port `7860`.
+- Deployed via `Dockerfile` on Eclipse Temurin OpenJDK 26 JRE runtime on port `7860`.
 - Includes persistent `expense_tracker.db` SQLite fallback and `expenses_sync.json` auto-sync.
 
 ### Netlify (Web Frontend)
@@ -187,6 +215,9 @@ The application can be configured in production (such as on Hugging Face Spaces 
 | `SPRING_H2_CONSOLE_ENABLED` | `true` | Enables/disables the web-based H2 database console | `false` |
 | `CORS_ALLOWED_ORIGINS` | `http://127.0.0.1:5500,http://localhost:5500,http://localhost:3000` | Comma-separated client URLs permitted for CORS access | `https://cozy-narwhal-3099ad.netlify.app` |
 | `JWT_SECRET` | *(default secure hex)* | 256-bit hex key to sign and verify JSON Web Tokens | `d3f9b2...` *(generate a secure random 64-character hex string)* |
+| `HF_TOKEN` | *(empty)* | Hugging Face user access token with write scope for Space commit API | `hf_xxxxxxxxxxxxxxxxxxxx` |
+| `HF_SPACE_REPO` | `Yoge-2004/expense-tracker-backend` | Hugging Face target Space repository identifier | `Yoge-2004/expense-tracker-backend` |
+| `HF_SYNC_ENABLED` | `false` | Enables/disables automated Hugging Face Spaces push and pull | `true` |
 
 ---
 
@@ -198,19 +229,19 @@ expense-tracker/
 ├── mobile/                      # Expo React Native mobile application
 │   ├── app/                     # Expo Router screens (login, register, tabs)
 │   ├── context/                 # AuthContext & Theme Provider
-│   └── services/                # API service layer with 503 error handling
+│   └── services/                # API service layer with error handling
 ├── screenshots/                 # UI screenshots (register, login, dashboard, add_expense)
 ├── src/
 │   ├── main/
 │   │   ├── java/com/example/expensetracker/
-│   │   │   ├── config/          # SecurityConfig, SwaggerConfig, CorsConfig
-│   │   │   ├── controller/      # REST controllers (Auth, Expense, Category, Sync, Health, User)
+│   │   │   ├── config/          # SecurityConfig, SwaggerConfig, CorsConfig, Initializers
+│   │   │   ├── controller/      # REST controllers (Auth, Expense, Category, Income, Savings, Sync, User)
 │   │   │   ├── dto/             # Request/Response DTOs with @Schema annotations
 │   │   │   ├── exception/       # GlobalExceptionHandler
 │   │   │   ├── mapper/          # Entity ↔ DTO mappers
-│   │   │   ├── model/           # JPA entities
+│   │   │   ├── model/           # JPA entities (User, Expense, Income, SavingsGoal, etc.)
 │   │   │   ├── repository/      # Spring Data JPA repositories
-│   │   │   ├── scheduler/       # Recurring expense scheduler
+│   │   │   ├── scheduler/       # Recurring scheduler (Expenses, Incomes, Savings)
 │   │   │   └── service/         # Business logic & FileDbSyncService
 │   │   └── resources/
 │   │       ├── application.properties
@@ -218,19 +249,19 @@ expense-tracker/
 │   │       └── data.sql         # Seeds global categories on startup
 │   └── test/
 │       ├── java/com/example/expensetracker/
-│       │   ├── controller/      # JUnit @WebMvcTest tests (54 tests)
+│       │   ├── controller/      # JUnit @WebMvcTest tests
+│       │   ├── service/         # Service layer unit tests
 │       │   └── cucumber/        # Cucumber runner, config, step definitions
-│       │       ├── context/     # ScenarioContext (@ScenarioScope)
-│       │       └── steps/       # Step definition classes (7 files)
 │       └── resources/
-│           ├── features/        # Gherkin .feature files (71 scenarios)
+│           ├── features/        # Gherkin .feature integration suites
 │           ├── cucumber.properties
 │           └── application.properties  # Test-specific overrides
-├── Dockerfile                   # Multi-stage Dockerfile for HF Spaces
+├── Dockerfile                   # Production Dockerfile for HF Spaces (Port 7860)
 ├── netlify.toml                 # Netlify deployment configuration
-├── expense_tracker.db           # SQLite database file
-├── run-tests.sh                 # Convenience script (colour output)
-└── pom.xml
+├── expense_tracker.db           # SQLite database backup snapshot
+├── expenses_sync.json           # JSON portable snapshot
+├── run-tests.sh                 # Convenience test script (colour output)
+└── pom.xml                      # Project Object Model dependencies
 ```
 
 ---
@@ -239,22 +270,22 @@ expense-tracker/
 
 ### Prerequisites
 
-- **Java 17+** (project targets Java 26; Java 17–26 all work)
-- **Maven 3.8+**
+- **Java 17+** (project targets Java 26; Java 17–26 supported)
+- **Maven 3.8+** (or use included `./mvnw`)
 
-### Clone & run
+### Clone & Run
 
 ```bash
 git clone https://github.com/Yoge-2004/expense-tracker.git
 cd expense-tracker
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
-The application starts on **port 8080** with an in-memory H2 database.
+The application starts on **port 8080** with an in-memory H2 database by default.
 Global expense categories (Food, Transport, Utilities, Entertainment, Health)
-are seeded automatically from `data.sql`.
+are seeded automatically.
 
-### H2 console (dev only)
+### H2 Console (Dev Only)
 
 ```
 URL:      http://localhost:8080/h2-console
@@ -277,7 +308,7 @@ Full interactive API documentation is auto-generated by SpringDoc OpenAPI.
 
 1. Call **`POST /api/auth/register`** to create an account.
 2. Call **`POST /api/auth/login`** — copy the `token` from the response.
-3. Click the **Authorize 🔒** button (top-right of the Swagger UI page).
+3. Click the **Authorize 🔓** button (top-right of the Swagger UI page).
 4. Paste the token (without the `Bearer ` prefix) and click **Authorize**.
 5. All subsequent requests will include `Authorization: Bearer <token>` automatically.
 
@@ -285,167 +316,36 @@ Full interactive API documentation is auto-generated by SpringDoc OpenAPI.
 
 ## 🧪 Running Tests
 
-The project has two test suites that run independently:
+The project includes an extensive test suite:
 
-| Suite | Type | Files | Count |
-|---|---|---|---|
-| JUnit `@WebMvcTest` | Unit (mocked service layer) | `*ControllerTest.java` | 54 tests |
-| Cucumber BDD | Integration (full Spring Boot + H2) | `*.feature` files | 71 scenarios |
+| Suite | Type | Description |
+|---|---|---|
+| JUnit `@WebMvcTest` | Unit / Controller | Controller unit tests with mocked service layer |
+| Service Unit Tests | Unit / Business Logic | In-depth testing of business services, sync, and exports |
+| Cucumber BDD | Integration | Full end-to-end Gherkin feature scenarios against test DB |
 
 ---
 
 ### 1. From the Terminal (Maven)
 
-#### Run everything
-
+#### Run all tests
 ```bash
-mvn test
+./mvnw test
 ```
 
-#### Run JUnit unit tests only
-
+#### Run fast unit & service tests (excluding browser/selenium)
 ```bash
-mvn test -Dtest="*Test"
+./mvnw test -Dtest="!*Selenium*,!CucumberTestRunner"
 ```
 
 #### Run Cucumber BDD tests only
-
 ```bash
-mvn test -Dtest=CucumberTestRunner
+./mvnw test -Dtest=CucumberTestRunner
 ```
 
-#### Run a single JUnit test class
-
+#### Run a single test class
 ```bash
-mvn test -Dtest=AuthControllerTest
-```
-
-#### Run a single JUnit test method
-
-```bash
-mvn test -Dtest="AuthControllerTest#login_validCredentials_returns200WithToken"
-```
-
-#### Run the convenience script (colour output + summary)
-
-```bash
-chmod +x run-tests.sh
-./run-tests.sh
-```
-
----
-
-### 2. From IntelliJ IDEA
-
-#### Running JUnit tests
-
-**Run a single test method:**
-1. Open any `*ControllerTest.java` file (e.g. `AuthControllerTest`).
-2. Click the green **▶ Run** gutter icon next to any `@Test` method.
-3. Select **Run 'methodName()'** from the context menu.
-
-**Run an entire test class:**
-1. Open the test class file.
-2. Click the green **▶ Run** gutter icon next to the `class` declaration.
-3. Or right-click the class name → **Run 'ClassName'**.
-
-**Run all JUnit tests at once:**
-1. In the **Project** panel, right-click `src/test/java`.
-2. Select **Run 'All Tests'**.
-
-**Run via Maven tool window:**
-1. Open **View → Tool Windows → Maven**.
-2. Expand **expense-tracker → Lifecycle**.
-3. Double-click **test**.
-
-> **Tip:** Press `Ctrl+Shift+F10` (Windows/Linux) or `Ctrl+Shift+R` (macOS) while
-> the cursor is inside any test method to run it instantly.
-
----
-
-#### Running Cucumber BDD tests
-
-**Option A — Run from the Runner class:**
-1. Open `src/test/java/.../cucumber/CucumberTestRunner.java`.
-2. Click the green **▶ Run** gutter icon next to the `class` declaration.
-3. Select **Run 'CucumberTestRunner'**.
-
-**Option B — Run a single `.feature` file:**
-1. Install the **Cucumber for Java** plugin:
-   `File → Settings → Plugins → search "Cucumber for Java" → Install`.
-2. Open any `.feature` file (e.g. `src/test/resources/features/auth.feature`).
-3. Click the green **▶ Run** gutter icon next to any `Scenario:` line.
-4. Select **Run 'Scenario name'**.
-
-**Option C — Run all feature files:**
-1. Right-click the `src/test/resources/features/` folder.
-2. Select **Run 'All Features in: features'**
-   *(available after installing the Cucumber for Java plugin).*
-
-**Option D — Run via Maven Run Configuration:**
-1. Go to **Run → Edit Configurations → + → Maven**.
-2. Set **Working directory** to the project root.
-3. Set **Command line** to: `test -Dtest=CucumberTestRunner`
-4. Click **OK**, then **▶ Run**.
-
-> **Tip:** After installing the Cucumber for Java plugin, press `Ctrl+Shift+F10`
-> while the cursor is on a `Scenario:` line to run that scenario directly.
-
----
-
-### 3. From VS Code
-
-#### Prerequisites — install these extensions:
-- **Extension Pack for Java** (Microsoft)
-- **Cucumber (Gherkin) Full Support** (Alexander Krechik)
-- **Test Runner for Java** (Microsoft)
-
-#### Running JUnit tests
-
-1. Open the **Testing** panel from the left sidebar (⚗️ beaker icon).
-2. The test tree shows all `@Test` methods grouped by class.
-3. Click **▶** next to any method, class, or the root to run tests at that level.
-
-#### Running Cucumber BDD tests
-
-**Via Maven:**
-1. Open the integrated terminal: `` Ctrl+` ``.
-2. Run: `mvn test -Dtest=CucumberTestRunner`
-
-**Via the Gherkin extension:**
-1. Open any `.feature` file.
-2. A **▶ Run Scenario** CodeLens link appears above each `Scenario:`.
-3. Click it to run that specific scenario.
-
----
-
-## 📊 Test Reports
-
-After any test run, reports are written to:
-
-```
-target/
-├── surefire-reports/           # JUnit XML reports (one file per test class)
-│   ├── TEST-AuthControllerTest.xml
-│   ├── TEST-CategoryControllerTest.xml
-│   └── ...
-└── cucumber-reports/
-    ├── report.html             # ← Open this in a browser for BDD results
-    ├── report.json             # Machine-readable (for CI tools)
-    └── report.xml             # JUnit XML format for IDE import
-```
-
-Open the Cucumber HTML report:
-
-```bash
-# macOS
-open target/cucumber-reports/report.html
-
-# Linux
-xdg-open target/cucumber-reports/report.html
-
-# Windows
-start target/cucumber-reports/report.html
+./mvnw test -Dtest=SyncControllerTest
 ```
 
 ---
@@ -458,9 +358,11 @@ start target/cucumber-reports/report.html
 | `POST` | `/api/auth/register` | ❌ | Create a new user account |
 | `POST` | `/api/auth/login` | ❌ | Authenticate and receive a JWT token |
 | `POST` | `/api/auth/oauth/google` | ❌ | Google OAuth authentication |
-| `PUT` | `/api/auth/reset-password` | ❌ | Reset password by email |
-| `POST` | `/api/sync/file-to-db` | ❌ | Sync JSON file to DB |
-| `POST` | `/api/sync/db-to-file` | ❌ | Backup DB to JSON file |
+| `PUT` | `/api/auth/reset-password` | ❌ | Reset password with OTP email verification |
+| `POST` | `/api/sync/file-to-db` | ❌ | Sync JSON file to database |
+| `POST` | `/api/sync/db-to-file` | ❌ | Export database to JSON file |
+| `POST` | `/api/sync/push-to-hf` | ❌ | Push SQLite & JSON snapshots to Hugging Face Spaces |
+| `POST` | `/api/sync/pull-from-hf` | ❌ | Pull latest database snapshots from Hugging Face Spaces |
 | `POST` | `/api/expenses/user/{userId}` | ✅ | Record a new expense |
 | `GET` | `/api/expenses/user/{userId}` | ✅ | List all expenses for a user |
 | `PUT` | `/api/expenses/{id}/user/{userId}` | ✅ | Update an expense |
@@ -473,14 +375,18 @@ start target/cucumber-reports/report.html
 | `POST` | `/api/expenses/budget/user/{userId}` | ✅ | Set a category budget limit |
 | `GET` | `/api/expenses/budget/status/user/{userId}` | ✅ | View budget utilisation |
 | `DELETE` | `/api/expenses/budget/{budgetId}` | ✅ | Delete a budget limit |
-| `POST` | `/api/expenses/recurring/user/{userId}` | ✅ | Add a recurring subscription |
-| `GET` | `/api/expenses/recurring/user/{userId}` | ✅ | List active subscriptions |
-| `PUT` | `/api/expenses/recurring/{recId}` | ✅ | Update a subscription |
-| `DELETE` | `/api/expenses/recurring/{recId}` | ✅ | Cancel a subscription |
+| `POST` | `/api/expenses/recurring/user/{userId}` | ✅ | Add a recurring expense |
+| `GET` | `/api/expenses/recurring/user/{userId}` | ✅ | List active recurring expenses |
+| `POST` | `/api/incomes/user/{userId}` | ✅ | Record a new income stream |
+| `GET` | `/api/incomes/user/{userId}` | ✅ | List user income entries |
+| `GET` | `/api/incomes/user/{userId}/cashflow` | ✅ | Compute monthly cash flow summary |
+| `POST` | `/api/savings/goals/user/{userId}` | ✅ | Create a savings goal (SIP, Chit, FD) |
+| `GET` | `/api/savings/goals/user/{userId}` | ✅ | List user savings goals |
+| `POST` | `/api/savings/goals/{goalId}/deposit/user/{userId}` | ✅ | Deposit into savings goal |
 | `POST` | `/api/categories/user/{userId}` | ✅ | Create a personal category |
 | `GET` | `/api/categories/user/{userId}` | ✅ | List personal categories |
 | `GET` | `/api/categories/global` | ✅ | List system-wide categories |
-| `DELETE` | `/api/users/{userId}` | ✅ | Delete account (cascade) |
+| `DELETE` | `/api/users/{userId}` | ✅ | Delete account (cascade delete all data) |
 
 > ✅ = requires `Authorization: Bearer <token>` header  
 > ❌ = public endpoint, no token needed

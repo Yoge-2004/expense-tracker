@@ -18,6 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,10 +51,13 @@ import java.util.List;
 @RequestMapping("/api/incomes")
 public class IncomeController {
 
+    private static final Logger log = LoggerFactory.getLogger(IncomeController.class);
+
     private final IncomeService incomeService;
     private final UserService userService;
     private final ExportService exportService;
     private final ImportService importService;
+    private final com.example.expensetracker.security.UserSecurity userSecurity;
 
     /**
      * Constructs {@link IncomeController} with required services.
@@ -61,15 +66,18 @@ public class IncomeController {
      * @param userService the user service
      * @param exportService the export service
      * @param importService the import service
+     * @param userSecurity the user security component
      */
     public IncomeController(IncomeService incomeService,
                             UserService userService,
                             ExportService exportService,
-                            ImportService importService) {
+                            ImportService importService,
+                            com.example.expensetracker.security.UserSecurity userSecurity) {
         this.incomeService = incomeService;
         this.userService = userService;
         this.exportService = exportService;
         this.importService = importService;
+        this.userSecurity = userSecurity;
     }
 
     /**
@@ -91,9 +99,13 @@ public class IncomeController {
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
             @Valid @RequestBody IncomeRequest request) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to create income for userId={}: amount={}, source={}, date={}, recurring={}",
+                userId, request.getAmount(), request.getSource(), request.getIncomeDate(), request.getIsRecurring());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         IncomeDto created = incomeService.createIncome(request, user);
+        log.info("Income successfully created with id={} for userId={}", created.getId(), userId);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -114,9 +126,13 @@ public class IncomeController {
     public ResponseEntity<List<IncomeDto>> getUserIncomes(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.debug("Fetching income list for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(incomeService.getUserIncomes(user));
+        List<IncomeDto> incomes = incomeService.getUserIncomes(user);
+        log.info("Fetched {} income records for userId={}", incomes.size(), userId);
+        return ResponseEntity.ok(incomes);
     }
 
     /**
@@ -141,9 +157,14 @@ public class IncomeController {
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
             @Valid @RequestBody IncomeRequest request) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to update income id={} for userId={}: amount={}, source={}",
+                incomeId, userId, request.getAmount(), request.getSource());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(incomeService.updateIncome(incomeId, request, user));
+        IncomeDto updated = incomeService.updateIncome(incomeId, request, user);
+        log.info("Income id={} updated successfully for userId={}", incomeId, userId);
+        return ResponseEntity.ok(updated);
     }
 
     /**
@@ -165,9 +186,12 @@ public class IncomeController {
             @PathVariable Long incomeId,
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to delete income id={} for userId={}", incomeId, userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         incomeService.deleteIncome(incomeId, user);
+        log.info("Income id={} deleted successfully for userId={}", incomeId, userId);
         return ResponseEntity.noContent().build();
     }
 
@@ -194,6 +218,7 @@ public class IncomeController {
             @RequestParam(required = false) Integer year,
             @Parameter(description = "Month (1-12, defaults to current month)", example = "8")
             @RequestParam(required = false) Integer month) {
+        userSecurity.validateUserAccess(userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -201,20 +226,27 @@ public class IncomeController {
         int targetYear = (year != null) ? year : now.getYear();
         int targetMonth = (month != null) ? month : now.getMonthValue();
 
-        return ResponseEntity.ok(incomeService.getCashFlowSummary(user, targetYear, targetMonth));
+        log.info("Generating cash flow summary for userId={}, period={}-{}", userId, targetYear, String.format("%02d", targetMonth));
+        CashFlowSummaryDto summary = incomeService.getCashFlowSummary(user, targetYear, targetMonth);
+        log.info("Cash flow summary generated for userId={}: totalIncome={}, totalExpense={}, netSavings={}, savingsRate={}%",
+                userId, summary.getTotalIncome(), summary.getTotalExpense(), summary.getNetSavings(), summary.getSavingsRate());
+        return ResponseEntity.ok(summary);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
     //  EXPORT & IMPORT (CSV, JSON, PDF, EXCEL)
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
 
     @Operation(summary = "Export incomes to CSV", description = "Generates a downloadable CSV containing all recorded income entries.")
     @GetMapping("/user/{userId}/export/csv")
     public ResponseEntity<byte[]> exportCsv(
             @Parameter(description = "User ID", required = true) @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting incomes to CSV for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         byte[] bytes = exportService.exportIncomesToCsv(user);
+        log.info("Incomes CSV export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.csv\"")
                 .contentType(MediaType.parseMediaType("text/csv"))
@@ -225,9 +257,12 @@ public class IncomeController {
     @GetMapping("/user/{userId}/export/json")
     public ResponseEntity<byte[]> exportJson(
             @Parameter(description = "User ID", required = true) @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting incomes to JSON for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         byte[] bytes = exportService.exportIncomesToJson(user);
+        log.info("Incomes JSON export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.json\"")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -241,10 +276,13 @@ public class IncomeController {
             @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting incomes to PDF for userId={}, currencyParam={}, currencyHeader={}", userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportIncomesToPdf(user, preferredCurrency);
+        log.info("Incomes PDF export generated for userId={}, preferredCurrency={}, byteCount={}", userId, preferredCurrency, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -258,10 +296,13 @@ public class IncomeController {
             @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting incomes to Excel for userId={}, currencyParam={}, currencyHeader={}", userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportIncomesToExcel(user, preferredCurrency);
+        log.info("Incomes Excel export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -273,9 +314,13 @@ public class IncomeController {
     public ResponseEntity<?> importCsv(
             @Parameter(description = "User ID", required = true) @PathVariable Long userId,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Importing incomes from CSV for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(importService.importIncomesFromCsv(file, user));
+        Object result = importService.importIncomesFromCsv(file, user);
+        log.info("CSV income import completed for userId={}", userId);
+        return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Import incomes from JSON file", description = "Uploads a JSON array of income objects.")
@@ -283,9 +328,13 @@ public class IncomeController {
     public ResponseEntity<?> importJson(
             @Parameter(description = "User ID", required = true) @PathVariable Long userId,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Importing incomes from JSON for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(importService.importIncomesFromJson(file, user));
+        Object result = importService.importIncomesFromJson(file, user);
+        log.info("JSON income import completed for userId={}", userId);
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -300,8 +349,12 @@ public class IncomeController {
     public ResponseEntity<?> importExcel(
             @Parameter(description = "User ID", required = true) @PathVariable Long userId,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Importing incomes from Excel for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(importService.importIncomesFromExcel(file, user));
+        Object result = importService.importIncomesFromExcel(file, user);
+        log.info("Excel income import completed for userId={}", userId);
+        return ResponseEntity.ok(result);
     }
 }

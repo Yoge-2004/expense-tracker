@@ -1,0 +1,1086 @@
+/* ==========================================================================\n   EXPENSE TRACKER — DASHBOARD.CSS\n   Module: Dashboard Layout & Navigation (Shell, Topbar, Search, Profile Menu)\n   ========================================================================== */\n\n/* ================== 6. DASHBOARD ================== */
+/* Consolidated from 3 separate unconditional declarations (was lines
+   ~717/847/1547): max-width, padding, and gap each had two different
+   competing values (1200px vs 1280px, 30px 24px vs 40px 36px 56px, 32px
+   vs 24px) with the later one silently winning either way. Kept the
+   values that were actually winning so there's no visual change --
+   mobile breakpoints for this selector are untouched and still layer
+   on top of this exactly as before. */
+.dashboard-container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 36px 56px;
+    gap: 24px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow-x: clip;
+    animation: cardEntrance 0.5s var(--ease);
+}
+
+.dashboard-container > * {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0 16px;
+    margin-bottom: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(16, 18, 14, 0.88) !important;
+    border-bottom: 1px solid rgba(var(--ink-rgb), 0.08) !important;
+    transition: background 0.3s, border-color 0.3s;
+}
+[data-theme="light"] .top-bar {
+    background: rgba(238, 241, 246, 0.92) !important;
+    border-bottom-color: rgba(199, 154, 62, 0.20) !important;
+}
+
+.user-profile {
+    position: relative;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: 0.3s;
+    z-index: 500;
+}
+
+.user-profile:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Consolidated from 4 separate unconditional declarations of .avatar
+   scattered across this file (was lines ~749/1736/3152/3740), each
+   setting a different, sometimes conflicting subset of the same
+   properties. Concretely: three separate `transition:` declarations
+   existed for the same element, and since `transition` fully replaces
+   rather than merges, only the LAST one in the file actually applied --
+   `transition: box-shadow 0.2s` -- silently dropping the intended
+   `transform` transition, so hovering the avatar (which scales it via
+   .user-profile:hover .avatar) snapped instantly instead of animating
+   smoothly. Also 3 separate box-shadow values and 3 font-weight values
+   were fighting the same way. This keeps the values that were actually
+   winning the cascade (so no visual change there) and restores the
+   transform transition that was supposed to apply. */
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    color: var(--on-primary);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 16px;
+    line-height: 1;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3), 0 4px 12px rgba(var(--primary-rgb), 0.2);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+
+/* Consolidated from 3 unconditional declarations of .profile-menu, 2 of
+   .profile-menu.active, and 3 total across .profile-menu a /
+   .profile-menu a:hover. Two things worth noting: (1) .profile-menu.active
+   had its "animation" property set twice with different keyframe names
+   (slideDown, then menuDown) -- animation is a non-merging shorthand, so
+   only the later one (menuDown) ever actually played; slideDown was
+   entirely dead. (2) .profile-menu a's transition list didn't include
+   transform even though :hover sets translateX(3px) -- same narrowed-
+   transition pattern found repeatedly elsewhere in this cleanup -- so
+   that slide was snapping instantly instead of easing in. Fixed both. */
+.profile-menu {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    min-width: 260px;
+    max-width: 320px;
+    width: max-content;
+    background: rgba(23, 26, 20, 0.95);
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
+    border: 1px solid rgba(var(--ink-rgb), 0.08);
+    border-radius: 16px;
+    flex-direction: column;
+    overflow: visible;
+    z-index: 2000;
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
+    transform-origin: top right;
+    transition: opacity 0.2s var(--ease), transform 0.25s var(--ease);
+    opacity: 0;
+    transform: scale(0.95) translateY(-6px);
+    display: flex !important;
+    pointer-events: none;
+}
+
+.profile-menu.active {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: all;
+    animation: menuDown 0.2s var(--ease) both;
+}
+
+.profile-menu a {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.18s var(--ease), color 0.18s var(--ease),
+                padding-left 0.18s var(--ease), transform 0.18s var(--ease);
+}
+
+.profile-menu a:hover {
+    background: rgba(var(--primary-rgb), 0.08);
+    padding-left: 26px;
+    transform: translateX(3px);
+}
+
+.profile-menu a:last-child {
+    border-radius: 0 0 15px 15px;
+    border-bottom: none;
+}
+
+.grid-stats {
+    display: grid;
+    grid-template-columns: minmax(260px, 310px) minmax(0, 1fr);
+    gap: 20px;
+}
+
+/* Consolidated from 4 unconditional declarations of .card and 3 of
+   .card:hover. .card's transition itself was never missing a needed
+   property (unlike .avatar/.link-action/.metric-card elsewhere in this
+   cleanup) -- but a real bug was found here anyway, of a different
+   kind: cardEntrance's "both" fill-mode was never removed. CSS
+   animations, while filled via "both"/"forwards", override transform
+   from ANY normal (non-!important) stylesheet declaration regardless of
+   specificity -- so .card:hover's transform (translateY/scale) could
+   NEVER actually apply, permanently, for the entire life of the page
+   after the entrance animation finished playing. Confirmed by
+   forcibly clearing the animation at runtime and re-testing hover --
+   went from a stuck 3D identity matrix to the correct 2D
+   scale+translate the instant the fill-mode stopped locking it in.
+   Dropped "both" (plain default fill-mode is "none", which only
+   applies the animation's keyframe styles while it's actually
+   playing) so the entrance animation still runs once on load exactly
+   as before, but stops overriding transform once it's done. */
+.card {
+    background: var(--card-bg);
+    backdrop-filter: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+    animation: cardEntrance 0.5s var(--ease);
+    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+/* .card:hover and .metric-card:hover share the same lift/shadow but
+   differ in border-color intensity. Determined by measuring actual
+   getComputedStyle() under a real simulated hover in a browser rather
+   than by manual cascade tracing -- this selector web (.card,
+   .metric-card, .stat-card, .chart-card, .transactions-card,
+   .budget-card all sharing overlapping compound hover selectors
+   elsewhere in this file) proved too easy to get wrong by eye, which is
+   exactly what happened on the first attempt at this consolidation. */
+.card:hover,
+.metric-card:hover {
+    /* !important restored: this needs to keep beating .insight-card:hover
+       / .trend-card:hover (equal specificity, separate rule elsewhere in
+       this file) the same way the original pre-consolidation declaration
+       did. Confirmed removing it let .insight-card:hover's translateY(-3px)
+       win over this rule's -4px for elements with both classes -- a real
+       behavior change from dropping !important without checking for this
+       specific sibling-selector interaction first. */
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 16px 36px -10px rgba(var(--primary-rgb), 0.25), 0 0 16px rgba(var(--primary-rgb), 0.10) !important;
+}
+.card:hover {
+    border-color: rgba(var(--primary-rgb), 0.45) !important;
+}
+.metric-card:hover {
+    border-color: rgba(var(--primary-rgb), 0.6) !important;
+}
+
+.card-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.card-value {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-size: 36px;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+/* Top Bar Action Buttons */
+.top-bar .add-expense-button,
+.top-bar .add-income-button {
+    width: auto !important;
+    height: 40px !important;
+    padding: 0 16px !important;
+    font-size: 13.5px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+}
+
+/* Income Action Buttons — Emerald theme with high-contrast white text */
+.add-income-button,
+#openIncomeModalBtn,
+#addIncomeTableBtn,
+#incomeForm button[type="submit"] {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(16, 185, 129, 0.5) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.25s var(--ease) !important;
+}
+
+.add-income-button span,
+#openIncomeModalBtn span,
+#addIncomeTableBtn span,
+#incomeForm button[type="submit"] span {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+.add-income-button svg,
+#openIncomeModalBtn svg,
+#addIncomeTableBtn svg,
+#incomeForm button[type="submit"] svg {
+    stroke: #FFFFFF !important;
+    color: #FFFFFF !important;
+}
+
+.add-income-button:hover,
+#openIncomeModalBtn:hover,
+#addIncomeTableBtn:hover,
+#incomeForm button[type="submit"]:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.5) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+    color: #FFFFFF !important;
+}
+
+.add-income-button:active,
+#openIncomeModalBtn:active,
+#addIncomeTableBtn:active,
+#incomeForm button[type="submit"]:active {
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+}
+.section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.section-meta { color: var(--text-muted); font-size: 12px; }
+.trend-card { min-height: 330px; }
+.trend-chart-wrapper { position: relative; height: 260px; width: 100%; margin-top: 4px; }
+.chart-card { min-height: 284px; }
+
+.recent-transactions { padding: 22px; }
+.list-header h3 { font-size: 18px; letter-spacing: -.35px; }
+.expense-meta { color: var(--text-muted); font-size: 12px; }
+
+@media (max-width: 900px) {
+    .dashboard-container { padding: 24px 16px 36px; gap: 16px; }
+    .top-bar { align-items: flex-start; }
+    .top-bar-actions { gap: 8px; }
+    .grid-stats { display: grid; }
+    .summary-stack { grid-template-columns: 1fr 1fr; }
+    .metric-card { min-height: 110px; padding: 16px; }
+    .chart-card, .trend-card { min-height: 280px; }
+    .chart-wrapper, .trend-chart-wrapper { height: 220px; }
+    .card { border-radius: 16px; padding: 18px; }
+}
+
+@media (max-width: 480px) {
+    .dashboard-heading h2 { font-size: 26px; }
+    .top-bar-actions .btn-icon:not(.theme-toggle-btn) { width: 34px; height: 34px; }
+    .metric-card-glow .metric-value { font-size: 22px; }
+    .section-meta { display: none; }
+    .expense-item { align-items: flex-start; gap: 12px; }
+    .expense-item > div:last-child { gap: 5px !important; }
+    .expense-amount { font-size: 14px; margin-right: 2px !important; }
+
+/* ================== UI UPGRADE LAYER — Premium Enhancements ================== */
+
+/* ── Animated metric counter numbers ── */
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ── Shimmer / skeleton loading ── */
+@keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position: 600px 0; }
+}
+.skeleton {
+    border-radius: 8px;
+    background: linear-gradient(
+        90deg,
+        var(--input-bg) 25%,
+        rgba(255,255,255,0.04) 50%,
+        var(--input-bg) 75%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 1.6s infinite linear;
+}
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+}
+.skeleton-text.wide { width: 80%; }
+.skeleton-text.mid  { width: 55%; }
+.skeleton-text.short { width: 35%; }
+.skeleton-value {
+    height: 28px;
+    width: 60%;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.skeleton-row {
+    height: 64px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+}
+
+/* ── Enhanced metric cards ── */
+
+.metric-card-glow::after {
+    display: none !important;
+}
+
+/* ── Transaction row improvements ── */
+/* Consolidated from 4 unconditional declarations of .expense-item and 4
+   of .expense-item:hover, plus three real bugs found along the way:
+   (1) the last .expense-item:hover declaration had a dangling
+   ".expense-item," on its own line before it -- valid CSS (blank lines
+   are just whitespace), so this was silently applying hover-only
+   styling (including a !important background) to every expense item
+   unconditionally, hovered or not. (2) the winning transition list
+   dropped box-shadow even though :hover sets one -- same narrowed-
+   transition pattern found repeatedly elsewhere in this cleanup.
+   (3) expenseSlideIn's "both" fill-mode -- same animation-cascade-lock
+   issue as cardEntrance/itemSlideIn found earlier: it permanently
+   overrides transform once the entrance animation finishes, blocking
+   :hover's translateX/scale from ever applying. All three fixed. */
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card-bg);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    animation: expenseSlideIn 0.35s var(--ease);
+    transition: background 0.2s var(--ease), transform 0.2s var(--ease),
+                border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.expense-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary-gradient);
+    border-radius: 14px 0 0 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.expense-item:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.expense-item:hover::before {
+    opacity: 1;
+}
+
+/* ── Category color dot chips ── */
+.cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── Improved modal backdrop ── */
+/* NOTE: Only add visual enhancements here. The show/hide logic (opacity,
+   pointer-events, position, z-index) lives in the original rules above. */
+
+[data-theme="light"] .modal {
+    background: rgba(255, 255, 255, 0.97) !important;
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.12),
+                0 0 0 1px rgba(var(--primary-rgb), 0.12);
+}
+[data-theme="light"] .modal-overlay {
+    background: rgba(240, 244, 251, 0.7);
+}
+
+/* ── Modal header gradient line ── */
+.modal-header {
+    position: relative;
+}
+.modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    opacity: 0.4;
+}
+
+
+/* ── Top bar glassmorphism ── */
+.top-bar {
+    background: rgba(16, 18, 14, 0.7) !important;
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
+    border-bottom: 1px solid rgba(var(--ink-rgb), 0.06) !important;
+    transition: background 0.3s;
+}
+[data-theme="light"] .top-bar {
+    background: rgba(238, 241, 246, 0.90) !important;
+    border-bottom-color: rgba(199, 154, 62, 0.20) !important;
+}
+
+/* ── Command search glow on focus ── */
+.command-search-wrapper:focus-within {
+    border-color: rgba(var(--primary-rgb), 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.10), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Budget progress bars ── */
+.budget-bar-track {
+    height: 6px;
+    border-radius: 100px;
+    background: var(--input-bg);
+    overflow: hidden;
+    position: relative;
+    margin-top: 10px;
+}
+.budget-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left;
+    animation: progressGrow 0.9s var(--ease) both;
+    position: relative;
+}
+
+.budget-bar-fill.warning {
+    background: var(--warning) !important;
+}
+
+.budget-bar-fill.danger {
+    background: var(--accent) !important;
+}
+
+/* ── Profile menu glassmorphism ── */
+/* NOTE: opacity/pointer-events/transform show-hide lives in original rules.
+   Only add visual surface enhancements here. */
+
+@keyframes menuDown {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+[data-theme="light"] .profile-menu {
+    background: var(--card-bg) !important;
+    border-color: var(--border) !important;
+    box-shadow: 0 20px 50px -10px rgba(30, 27, 21, 0.1) !important;
+}
+
+/* ── Avatar with gradient ring ── */
+.avatar:hover {
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.5), 0 6px 20px rgba(var(--primary-rgb), 0.25);
+}
+
+/* ── Brand badge live pulse ── */
+
+
+/* ── Category pills improved ── */
+
+.pill-chip:hover:not(.active) {
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
+}
+
+/* ── Export / import buttons ── */
+
+
+/* ── Section heading dividers ── */
+.section-heading,
+.list-header,
+.card-header {
+    position: relative;
+}
+
+/* ── Toast improvements ── */
+.toast {
+    border-radius: 14px !important;
+    backdrop-filter: blur(12px) !important;
+    border-left-width: 3px !important;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4) !important;
+    animation: toastIn 0.35s var(--ease) both !important;
+}
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(100%) scale(0.9); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.toast.leaving {
+    animation: toastOut 0.3s var(--ease) both !important;
+    /* Defense in depth: even if a toast is never removed from the DOM for any
+       reason, it must not be able to intercept clicks on real UI beneath it. */
+    pointer-events: none !important;
+}
+@keyframes toastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(120%); }
+}
+
+/* ── Server status badge ── */
+.server-status-badge {
+    border-radius: 9999px !important;
+    backdrop-filter: blur(16px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+    padding: 5px 12px;
+}
+.server-status-badge.online {
+    background: rgba(var(--success-rgb), 0.12) !important;
+    border: 1px solid rgba(var(--success-rgb), 0.3) !important;
+    color: var(--success) !important;
+}
+.server-status-badge.offline {
+    background: rgba(var(--accent-rgb), 0.12) !important;
+    border: 1px solid rgba(var(--accent-rgb), 0.3) !important;
+    color: var(--danger) !important;
+}
+
+/* This block is desktop-only styling (the 80px left padding is the
+   2-column split-screen layout's indent) but was unscoped and !important,
+   so on mobile it silently beat the @media (max-width: 900px) .auth-hero
+   rule above — which sets min-height: auto and overflow: visible so the
+   hero stacks normally in the page's flow. With this forcing
+   min-height: 100vh !important back on regardless of width, the hero
+   panel was padded out to a full screen height of mostly-empty background
+   even though its actual content (headline/subline/perks) is far shorter,
+   leaving a large blank gap above/below the visible content as the page
+   scrolled. Scoping to desktop widths restores the mobile fix. */
+@media (min-width: 901px) {
+.auth-hero {
+    background: transparent !important;
+    position: relative !important;
+    top: auto !important;
+    align-self: stretch !important;
+    overflow: visible !important;
+    overscroll-behavior: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: clamp(28px, 4vh, 48px) clamp(32px, 3.5vw, 48px) clamp(24px, 3vh, 40px) clamp(40px, 5vw, 80px) !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+}
+
+.auth-hero::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+.auth-hero::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.08) 0%, transparent 70%);
+    top: 0;
+    right: 0;
+    pointer-events: none;
+}
+.auth-hero::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--highlight-rgb), 0.06) 0%, transparent 70%);
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+}
+}
+
+/* ── Auth card improvements ── */
+
+[data-theme="light"] .auth-card {
+    background: var(--card-bg) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+    padding: 48px 40px !important;
+    box-sizing: border-box !important;
+}
+
+/* ── Floating card orbits on auth hero ── */
+.float-card, .perk-item {
+    background: rgba(23, 26, 20, 0.52) !important;
+    border-radius: 18px !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+    border: 1px solid rgba(236, 231, 216, 0.12) !important;
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.38) !important;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s, border-color 0.3s;
+}
+.float-card:hover, .perk-item:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.5) !important;
+    border-color: rgba(199, 154, 62, 0.35) !important;
+}
+
+/* ── Insight card chart area ── */
+.insight-card, .trend-card {
+    transition: transform 0.3s var(--ease), box-shadow 0.3s;
+}
+.insight-card:hover, .trend-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Budget card hover ── */
+
+.budget-item:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    background: var(--card-bg-hover);
+}
+
+/* ── Status badges improved ── */
+
+/* Consolidated: each of these 4 badges was declared twice (opacity
+   0.15/0.3 vs 0.12/0.25, the later -- lower-opacity -- pair was
+   winning). Also .badge-warning's first declaration used a hardcoded
+   rgba(179,127,34,...) instead of the --warning-rgb token its 3
+   siblings all use -- currently harmless since it was already losing
+   to the later block, but inconsistent and worth cleaning up while
+   here. */
+.badge-primary {
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary);
+    border: 1px solid rgba(var(--primary-rgb), 0.25);
+}
+.badge-warning {
+    background: rgba(var(--warning-rgb), 0.12);
+    color: var(--warning);
+    border: 1px solid rgba(var(--warning-rgb), 0.25);
+}
+.badge-success {
+    background: rgba(var(--success-rgb), 0.12);
+    color: var(--success);
+    border: 1px solid rgba(var(--success-rgb), 0.25);
+}
+.badge-accent {
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+}
+.badge-danger {
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--danger);
+    border: 1px solid rgba(var(--accent-rgb), 0.25);
+}
+.badge-neutral {
+    background: rgba(var(--ink-rgb), 0.06);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+/* ── Form controls in modal ── */
+#addExpenseForm .form-group input,
+#addExpenseForm .form-group select,
+#addBudgetForm .form-group input,
+#addBudgetForm .form-group select {
+    transition: all 0.25s var(--ease);
+}
+#addExpenseForm .form-group input:focus,
+#addExpenseForm .form-group select:focus,
+#addBudgetForm .form-group input:focus,
+#addBudgetForm .form-group select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12) !important;
+    outline: none;
+}
+
+/* ── Pro tag badge ── */
+
+
+/* ── Register step indicator ── */
+/* ── Smooth scroll area ── */
+.scroll-area, .scroll-area-modal {
+    scroll-behavior: smooth;
+}
+
+/* ── Loading overlay improvements ── */
+
+.app-loading .spinner {
+    width: 28px !important;
+    height: 28px !important;
+    border-width: 3px !important;
+    border-top-color: var(--primary) !important;
+}
+
+/* ── Delete button ── */
+.btn-danger {
+    background: var(--danger-gradient) !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.3) !important;
+    transition: all 0.25s var(--ease) !important;
+}
+.btn-danger:hover {
+    filter: brightness(1.1) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.4) !important;
+}
+
+/* ── Filter panel improved ── */
+
+@keyframes filterSlide {
+    from { opacity: 0; transform: translateY(-8px); max-height: 0; }
+    to   { opacity: 1; transform: translateY(0); max-height: 700px; }
+}
+
+/* ── Analytics card gradient headers ── */
+.section-title {
+    background: linear-gradient(135deg, var(--text-main) 0%, var(--text-muted) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-top: 2px;
+}
+
+/* ── Fancy link action ── */
+
+.link-action:hover {
+    gap: 8px;
+    opacity: 1;
+}
+
+/* ── Subscription row ── */
+/* Consolidated from 2 declarations. Same two bugs as .card/.metric-card
+   found earlier in this cleanup: the winning transition list dropped
+   border-color even though .sub-row:hover changes it (restored), and
+   the entrance animation used "both" fill-mode, which -- per the
+   cardEntrance investigation above -- permanently locks transform via
+   the CSS animation cascade layer once the animation finishes,
+   blocking .sub-row:hover's translateX(4px) from ever applying.
+   Dropped "both" here too. */
+.sub-row {
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+    animation: itemSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.sub-row:hover {
+    border-color: var(--border-accent);
+    background: var(--card-bg-hover);
+    transform: translateX(4px);
+}
+
+/* ── Date input dark styling ── */
+.dark-date::-webkit-calendar-picker-indicator {
+    filter: invert(0.7) brightness(1.5);
+    cursor: pointer;
+}
+[data-theme="light"] .dark-date::-webkit-calendar-picker-indicator {
+    filter: none;
+}
+
+/* ── Category Action Buttons (Add + & Manage ✎) ── */
+#addCategoryBtn,
+#manageCategoriesBtn {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease) !important;
+}
+
+#addCategoryBtn {
+    background: var(--primary-gradient) !important;
+    color: #14120C !important;
+    border: none !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px var(--primary-glow) !important;
+}
+
+#addCategoryBtn:hover {
+    transform: translateY(-2px) scale(1.04) !important;
+    box-shadow: 0 6px 20px var(--primary-glow) !important;
+}
+
+#manageCategoriesBtn {
+    background: var(--input-bg) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border) !important;
+}
+
+#manageCategoriesBtn:hover {
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
+    background: var(--card-bg-hover) !important;
+    transform: translateY(-2px) scale(1.04) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+#addCategoryBtn:active,
+#manageCategoriesBtn:active {
+    transform: scale(0.96) !important;
+}
+
+/* ── Form group box for recurring ── */
+.form-group-box {
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 12px;
+    box-sizing: border-box;
+    animation: expandIn 0.25s var(--ease) both;
+}
+
+.form-group-box .form-group {
+    width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group-box select,
+.form-group-box input {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+/* Income modal recurring options emerald styling */
+#incomeModal .form-group-box {
+    border: 1px solid rgba(16, 185, 129, 0.32) !important;
+    background: rgba(16, 185, 129, 0.04) !important;
+}
+
+[data-theme="light"] #incomeModal .form-group-box {
+    border: 1px solid rgba(16, 185, 129, 0.38) !important;
+    background: rgba(16, 185, 129, 0.035) !important;
+}
+
+#incomeModal .form-group-box:focus-within {
+    border-color: rgba(16, 185, 129, 0.65) !important;
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.18) !important;
+}
+
+#incomeModal .form-group-box select,
+#incomeModal .form-group-box input {
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    color: var(--text-main) !important;
+    background: var(--input-bg) !important;
+}
+
+#incomeModal .form-group-box select:hover,
+#incomeModal .form-group-box input:hover {
+    border-color: rgba(16, 185, 129, 0.6) !important;
+}
+
+#incomeModal .form-group-box select:focus,
+#incomeModal .form-group-box input:focus {
+    border-color: #10B981 !important;
+    outline: 2px solid rgba(16, 185, 129, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22), 0 0 14px rgba(16, 185, 129, 0.25) !important;
+}
+
+#incomeCustomIntervalWrap:not([hidden]) {
+    animation: expandIn 0.25s var(--ease) both;
+}
+
+/* Savings Goal modal recurring options amber styling */
+#savingsGoalModal .form-group-box {
+    border: 1px solid rgba(245, 158, 11, 0.32) !important;
+    background: rgba(245, 158, 11, 0.04) !important;
+}
+
+[data-theme="light"] #savingsGoalModal .form-group-box {
+    border: 1px solid rgba(245, 158, 11, 0.38) !important;
+    background: rgba(245, 158, 11, 0.035) !important;
+}
+
+#savingsGoalModal .form-group-box:focus-within {
+    border-color: rgba(245, 158, 11, 0.65) !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.18) !important;
+}
+
+#savingsGoalModal .form-group-box select,
+#savingsGoalModal .form-group-box input {
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: var(--text-main) !important;
+    background: var(--input-bg) !important;
+}
+
+#savingsGoalModal .form-group-box select:hover,
+#savingsGoalModal .form-group-box input:hover {
+    border-color: rgba(245, 158, 11, 0.6) !important;
+}
+
+#savingsGoalModal .form-group-box select:focus,
+#savingsGoalModal .form-group-box input:focus {
+    border-color: #F59E0B !important;
+    outline: 2px solid rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22), 0 0 14px rgba(245, 158, 11, 0.25) !important;
+}
+
+#goalCustomIntervalWrap:not([hidden]) {
+    animation: expandIn 0.25s var(--ease) both;
+}
+
+@keyframes expandIn {
+    from { opacity: 0; transform: scaleY(0.9); }
+    to   { opacity: 1; transform: scaleY(1); }
+}
+
+/* ── Empty state illustration ── */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+}
+.empty-state-icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+.empty-state-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+.empty-state-sub {
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+    max-height: calc(100vh - 24px) !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    z-index: 4500 !important;
+}
+
+/* Mobile Profile Menu Clamping - prevents left overflow */
+@media (max-width: 768px) {
+    .profile-menu {
+        position: fixed !important;
+        top: 64px !important;
+        right: 16px !important;
+        left: auto !important;
+        width: min(300px, calc(100vw - 32px)) !important;
+        max-width: calc(100vw - 32px) !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        transform-origin: top right !important;
+    }
+}
+
+.custom-calendar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 4400 !important;
+}
+

@@ -9,7 +9,8 @@
  */
 
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, useWindowDimensions, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, {
   Path,
   Circle,
@@ -447,17 +448,25 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = ({ expenses }) => {
 
 interface BudgetVsActualProps {
   budgets: Array<{
+    budgetId?: number;
+    categoryId: number;
     categoryName: string;
     limit: number;
     spent: number;
     percentage?: number;
+    period?: string;
+    intervalDays?: number;
+    startDate?: string;
+    endDate?: string;
   }>;
+  onEditBudget?: (budget: any) => void;
+  onDeleteBudget?: (budget: any) => void;
 }
 
 /**
  * Renders category-level limit vs actual spend comparisons with over-budget alerts.
  */
-export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = ({ budgets }) => {
+export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = ({ budgets, onEditBudget, onDeleteBudget }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -480,7 +489,7 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = ({ budgets }) 
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Active category spending caps and utilization</Text>
 
       <View style={styles.budgetList}>
-        {safeBudgets.slice(0, 6).map((b, i) => {
+        {safeBudgets.slice(0, 8).map((b, i) => {
           const limit = Math.max(1, Number(b.limit || 0));
           const spent = Math.max(0, Number(b.spent || 0));
           const pct = Math.min(Math.round((spent / limit) * 100), 200);
@@ -492,12 +501,43 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = ({ budgets }) 
           return (
             <View key={i} style={styles.budgetRow}>
               <View style={styles.budgetMeta}>
-                <Text style={[styles.budgetName, { color: c.text }]}>
-                  {getCategoryEmoji(b.categoryName)} {b.categoryName}
-                </Text>
-                <Text style={[styles.budgetFigures, { color: isOver ? c.accent : c.textMuted }]}>
-                  {currSym}{Math.round(spent).toLocaleString('en-IN')} / {currSym}{Math.round(limit).toLocaleString('en-IN')}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                  <Text style={[styles.budgetName, { color: c.text }]} numberOfLines={1}>
+                    {getCategoryEmoji(b.categoryName)} {b.categoryName}
+                  </Text>
+                  {b.period && (
+                    <View style={{ backgroundColor: c.inputBg, paddingHorizontal: 5, paddingVertical: 1.5, borderRadius: 4, borderWidth: 1, borderColor: c.border }}>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: c.textMuted }}>
+                        {b.period === 'CUSTOM' ? `${b.intervalDays || 30}d` : b.period}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={[styles.budgetFigures, { color: isOver ? c.accent : c.textMuted }]}>
+                    {currSym}{Math.round(spent).toLocaleString('en-IN')} / {currSym}{Math.round(limit).toLocaleString('en-IN')}
+                  </Text>
+                  {onEditBudget && (
+                    <TouchableOpacity
+                      onPress={() => onEditBudget(b)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityLabel="Edit Budget"
+                      style={{ padding: 2 }}
+                    >
+                      <Ionicons name="pencil" size={14} color={c.textMuted} />
+                    </TouchableOpacity>
+                  )}
+                  {onDeleteBudget && (
+                    <TouchableOpacity
+                      onPress={() => onDeleteBudget(b)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityLabel="Delete Budget"
+                      style={{ padding: 2 }}
+                    >
+                      <Ionicons name="trash-outline" size={14} color={c.accent} />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
 
               <View style={[styles.budgetTrack, { backgroundColor: c.trackBg }]}>

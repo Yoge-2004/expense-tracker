@@ -44,6 +44,7 @@ class ReportControllerTest {
     @MockitoBean private UserService userService;
     @MockitoBean private JwtService jwtService;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
+    @MockitoBean private com.example.expensetracker.security.UserSecurity userSecurity;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach

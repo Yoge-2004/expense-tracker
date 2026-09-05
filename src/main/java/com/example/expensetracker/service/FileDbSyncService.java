@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -33,34 +34,26 @@ import java.util.*;
 
 /**
  * Service that manages two-way data synchronisation between the running
- * database and a local JSON snapshot file ({@code expenses_sync.json}), and
- * optionally pushes/pulls that JSON backup to Hugging Face Hub persistent
- * storage so the data survives Hugging Face Spaces container restarts.
+ * database and local snapshot files ({@code expenses_sync.json} and {@code expense_tracker.db}),
+ * and pushes/pulls data backups to Hugging Face Spaces repository so data survives container restarts.
  *
  * <h3>Sync Responsibilities</h3>
  * <ol>
- *   <li><b>HF → Local File</b>: On startup, downloads {@code expenses_sync.json}
- *       from the HF Space git repository (if it exists and is non-empty) to
- *       seed the local file system before the first File → DB import.</li>
- *   <li><b>File → DB</b>: On startup and hourly, reads {@code expenses_sync.json}
- *       and imports any missing expense records into the active database.</li>
- *   <li><b>DB → File</b>: Exports all expense records from the DB back to the
- *       JSON snapshot, keeping the file as the source-of-truth replica.</li>
- *   <li><b>File → HF Spaces</b>: If {@code hf.sync.enabled=true},
- *       uploads {@code expenses_sync.json} to the HF Hub repository via the
- *       Hugging Face Hub REST API every 6 hours and on demand.</li>
+ *   <li><b>HF → Local Files</b>: On startup, downloads {@code expenses_sync.json} and
+ *       {@code expense_tracker.db} from the HF Space git repository if they exist.</li>
+ *   <li><b>File → DB</b>: Reads {@code expenses_sync.json} and imports missing expense records
+ *       into the active database.</li>
+ *   <li><b>DB → File</b>: Exports all expense records from the DB back to the JSON snapshot.</li>
+ *   <li><b>Files → HF Spaces</b>: If {@code hf.sync.enabled=true} (or on manual trigger),
+ *       uploads {@code expenses_sync.json} and {@code expense_tracker.db} via the Hugging Face Hub
+ *       Commit API using application/x-ndjson.</li>
  * </ol>
- *
- * <h3>Why JSON instead of SQLite?</h3>
- * <p>Production uses <b>Neon PostgreSQL</b> — no SQLite database file is ever
- * created on the container. The JSON export is a portable, database-agnostic
- * backup that works regardless of which RDBMS is active.</p>
  *
  * <h3>Configuration Properties</h3>
  * <ul>
- *   <li>{@code hf.token} — HF Access Token with write permissions (secret)</li>
- *   <li>{@code hf.space.repo} — HF repo ID, e.g. {@code user/space-name}</li>
- *   <li>{@code hf.sync.enabled} — Enables/disables the HF push/pull (default false)</li>
+ *   <li>{@code hf.token} — HF Access Token with write permissions</li>
+ *   <li>{@code hf.space.repo} — HF repo ID, e.g. {@code Yoge-2004/expense-tracker-backend}</li>
+ *   <li>{@code hf.sync.enabled} — Enables/disables the HF push/pull</li>
  * </ul>
  */
 @Service
@@ -68,6 +61,7 @@ public class FileDbSyncService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileDbSyncService.class);
     private static final String SYNC_FILE_PATH = "expenses_sync.json";
+    private static final String DB_FILE_PATH = "expense_tracker.db";
 
     /** HF Hub Commit API endpoint: POST /api/spaces/{repoId}/commit/main */
     private static final String HF_COMMIT_URL = "https://huggingface.co/api/spaces/%s/commit/main";
@@ -78,7 +72,7 @@ public class FileDbSyncService {
     @Value("${hf.token:}")
     private String hfToken;
 
-    @Value("${hf.space.repo:yoge-2004/expense-tracker-backend}")
+    @Value("${hf.space.repo:Yoge-2004/expense-tracker-backend}")
     private String hfSpaceRepo;
 
     @Value("${hf.sync.enabled:false}")
@@ -101,13 +95,6 @@ public class FileDbSyncService {
 
     /**
      * Triggered when the Spring application context is fully ready.
-     * <ol>
-     *   <li>If HF sync is enabled, downloads the latest JSON backup from HF Spaces
-     *       (restores data after container restart).</li>
-     *   <li>Imports any records from the JSON file into the database.</li>
-     *   <li>Exports the full database back to the JSON file.</li>
-     *   <li>Pushes the updated JSON to HF Spaces for persistence.</li>
-     * </ol>
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onStartup() {
@@ -137,13 +124,13 @@ public class FileDbSyncService {
     }
 
     /**
-     * Scheduled HF Spaces JSON backup push every 6 hours.
+     * Scheduled HF Spaces backup push every 6 hours.
      * Only executes when {@code hf.sync.enabled=true}.
      */
     @Scheduled(cron = "0 0 */6 * * *")
     public void scheduledHfPush() {
         if (hfSyncEnabled) {
-            logger.info("Running scheduled Hugging Face Spaces JSON backup sync…");
+            logger.info("Running scheduled Hugging Face Spaces backup sync…");
             syncDbToFile();
             pushJsonBackupToHuggingFace();
         }
@@ -235,10 +222,11 @@ public class FileDbSyncService {
      *
      * @return a result map with {@code status}, {@code exportedCount} or {@code message}
      */
+    @Transactional(readOnly = true)
     public synchronized Map<String, Object> syncDbToFile() {
         Map<String, Object> result = new HashMap<>();
         try {
-            List<Expense> allExpenses = expenseRepository.findAll();
+            List<Expense> allExpenses = expenseRepository.findAllWithCategoryAndUser();
             List<Map<String, Object>> exportData = new ArrayList<>();
             for (Expense exp : allExpenses) {
                 Map<String, Object> map = new LinkedHashMap<>();
@@ -267,12 +255,8 @@ public class FileDbSyncService {
     }
 
     /**
-     * Downloads {@code expenses_sync.json} from the Hugging Face Space git
-     * repository and writes it to the local filesystem. This restores data
-     * after a container restart (HF Spaces ephemeral storage is wiped).
-     *
-     * <p>Only downloads if the local file doesn't exist or is empty/contains
-     * only an empty JSON array ({@code []}).</p>
+     * Downloads {@code expenses_sync.json} and {@code expense_tracker.db} from the
+     * Hugging Face Space git repository if available and writes them to the local filesystem.
      *
      * @return a result map with {@code status} and details
      */
@@ -286,87 +270,80 @@ public class FileDbSyncService {
             return result;
         }
 
-        // Check if local file already has meaningful data
-        File localFile = new File(SYNC_FILE_PATH);
-        if (localFile.exists() && localFile.length() > 4) {
-            try {
-                String content = Files.readString(localFile.toPath()).trim();
-                if (!content.equals("[]") && !content.isEmpty()) {
-                    logger.info("Local {} already has data ({} bytes). Skipping HF download.",
-                            SYNC_FILE_PATH, localFile.length());
-                    result.put("status", "skipped");
-                    result.put("message", "Local file already has data.");
-                    return result;
-                }
-            } catch (IOException ignored) {
-                // Fall through to download
-            }
-        }
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
 
+        int downloadedFiles = 0;
+        int totalBytes = 0;
+
+        // 1. Download expenses_sync.json
         try {
-            String downloadUrl = String.format(HF_DOWNLOAD_URL, hfSpaceRepo, SYNC_FILE_PATH);
-
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(30))
-                    .followRedirects(HttpClient.Redirect.NORMAL)
-                    .build();
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(downloadUrl))
+            String jsonDownloadUrl = String.format(HF_DOWNLOAD_URL, hfSpaceRepo, SYNC_FILE_PATH);
+            HttpRequest jsonRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(jsonDownloadUrl))
                     .header("Authorization", "Bearer " + hfToken)
                     .GET()
                     .timeout(Duration.ofSeconds(60))
                     .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            int statusCode = response.statusCode();
-
-            if (statusCode >= 200 && statusCode < 300) {
-                String body = response.body().trim();
+            HttpResponse<String> jsonResponse = client.send(jsonRequest, HttpResponse.BodyHandlers.ofString());
+            if (jsonResponse.statusCode() >= 200 && jsonResponse.statusCode() < 300) {
+                String body = jsonResponse.body().trim();
                 if (body.length() > 4 && !body.equals("[]")) {
-                    // Validate it's proper JSON before writing
                     objectMapper.readValue(body, new TypeReference<List<Map<String, Object>>>() {});
                     Files.writeString(Path.of(SYNC_FILE_PATH), body,
                             StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                     logger.info("Downloaded {} from HF Spaces ({} bytes).", SYNC_FILE_PATH, body.length());
-                    result.put("status", "success");
-                    result.put("bytesDownloaded", body.length());
-                } else {
-                    logger.info("HF Spaces {} is empty. Nothing to restore.", SYNC_FILE_PATH);
-                    result.put("status", "skipped");
-                    result.put("message", "Remote file is empty.");
+                    downloadedFiles++;
+                    totalBytes += body.length();
                 }
-            } else if (statusCode == 404) {
-                logger.info("{} not found on HF Spaces. First-time deployment.", SYNC_FILE_PATH);
-                result.put("status", "skipped");
-                result.put("message", "File not found on HF Spaces (first deployment).");
             } else {
-                logger.error("HF download failed. HTTP {}: {}", statusCode, response.body());
-                result.put("status", "error");
-                result.put("httpStatus", statusCode);
-                result.put("message", response.body());
+                logger.info("HF Spaces {} returned status {}.", SYNC_FILE_PATH, jsonResponse.statusCode());
             }
-        } catch (IOException | InterruptedException e) {
-            logger.error("Exception during HF Spaces JSON download", e);
-            result.put("status", "error");
-            result.put("message", e.getMessage());
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            logger.warn("Error downloading {}: {}", SYNC_FILE_PATH, e.getMessage());
+        }
+
+        // 2. Download expense_tracker.db if present
+        try {
+            String dbDownloadUrl = String.format(HF_DOWNLOAD_URL, hfSpaceRepo, DB_FILE_PATH);
+            HttpRequest dbRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(dbDownloadUrl))
+                    .header("Authorization", "Bearer " + hfToken)
+                    .GET()
+                    .timeout(Duration.ofSeconds(60))
+                    .build();
+
+            HttpResponse<byte[]> dbResponse = client.send(dbRequest, HttpResponse.BodyHandlers.ofByteArray());
+            if (dbResponse.statusCode() >= 200 && dbResponse.statusCode() < 300 && dbResponse.body().length > 0) {
+                Files.write(Path.of(DB_FILE_PATH), dbResponse.body(),
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                logger.info("Downloaded {} from HF Spaces ({} bytes).", DB_FILE_PATH, dbResponse.body().length);
+                downloadedFiles++;
+                totalBytes += dbResponse.body().length;
+            } else {
+                logger.info("HF Spaces {} returned status {}.", DB_FILE_PATH, dbResponse.statusCode());
             }
+        } catch (Exception e) {
+            logger.warn("Error downloading {}: {}", DB_FILE_PATH, e.getMessage());
+        }
+
+        if (downloadedFiles > 0) {
+            result.put("status", "success");
+            result.put("bytesDownloaded", totalBytes);
+            result.put("filesDownloaded", downloadedFiles);
+        } else {
+            result.put("status", "skipped");
+            result.put("message", "No remote files were downloaded.");
         }
         return result;
     }
 
     /**
-     * Uploads the local {@code expenses_sync.json} file to the Hugging Face
-     * Hub repository configured by {@code hf.space.repo}.
-     *
-     * <p>Uses the HF Hub Commit API to commit the JSON backup file to the
-     * Space's git repository. This ensures the data snapshot persists across
-     * container restarts.</p>
-     *
-     * <p>Before uploading, calls {@code syncDbToFile()} to ensure the JSON
-     * export is fresh.</p>
+     * Uploads the local {@code expenses_sync.json} and {@code expense_tracker.db} (if present)
+     * to the Hugging Face Hub repository configured by {@code hf.space.repo} using NDJSON commit API.
      *
      * @return a result map with {@code status}, {@code httpStatus} or {@code message}
      */
@@ -374,29 +351,66 @@ public class FileDbSyncService {
         Map<String, Object> result = new HashMap<>();
 
         if (hfToken == null || hfToken.isBlank()) {
-            logger.warn("HF_TOKEN is not set. Skipping HF JSON backup push.");
+            logger.warn("HF_TOKEN is not set. Skipping HF backup push.");
             result.put("status", "skipped");
             result.put("message", "HF_TOKEN environment variable is not configured.");
             return result;
         }
 
         File syncFile = new File(SYNC_FILE_PATH);
-        if (!syncFile.exists() || syncFile.length() == 0) {
-            logger.warn("JSON sync file not found or empty at {}. Skipping HF push.", SYNC_FILE_PATH);
+        File dbFile = new File(DB_FILE_PATH);
+
+        if ((!syncFile.exists() || syncFile.length() == 0) && (!dbFile.exists() || dbFile.length() == 0)) {
+            logger.warn("No sync files found to upload. Skipping HF push.");
             result.put("status", "skipped");
-            result.put("message", "JSON sync file not found or empty: " + SYNC_FILE_PATH);
+            result.put("message", "Sync file not found or empty.");
             return result;
         }
 
         try {
-            byte[] fileBytes = Files.readAllBytes(syncFile.toPath());
-            String base64Content = Base64.getEncoder().encodeToString(fileBytes);
+            StringBuilder ndjson = new StringBuilder();
+            // 1. Commit header
+            Map<String, Object> headerObj = Map.of(
+                    "key", "header",
+                    "value", Map.of("summary", "Automated data backup from Expense Tracker")
+            );
+            ndjson.append(objectMapper.writeValueAsString(headerObj)).append("\n");
+
+            int totalUploadedBytes = 0;
+
+            // 2. Add expenses_sync.json if present
+            if (syncFile.exists() && syncFile.length() > 0) {
+                byte[] jsonBytes = Files.readAllBytes(syncFile.toPath());
+                String base64Json = Base64.getEncoder().encodeToString(jsonBytes);
+                Map<String, Object> fileObj = Map.of(
+                        "key", "file",
+                        "value", Map.of(
+                                "content", base64Json,
+                                "encoding", "base64",
+                                "path", SYNC_FILE_PATH
+                        )
+                );
+                ndjson.append(objectMapper.writeValueAsString(fileObj)).append("\n");
+                totalUploadedBytes += jsonBytes.length;
+            }
+
+            // 3. Add expense_tracker.db if present
+            if (dbFile.exists() && dbFile.length() > 0) {
+                byte[] dbBytes = Files.readAllBytes(dbFile.toPath());
+                String base64Db = Base64.getEncoder().encodeToString(dbBytes);
+                Map<String, Object> dbObj = Map.of(
+                        "key", "file",
+                        "value", Map.of(
+                                "content", base64Db,
+                                "encoding", "base64",
+                                "path", DB_FILE_PATH
+                        )
+                );
+                ndjson.append(objectMapper.writeValueAsString(dbObj)).append("\n");
+                totalUploadedBytes += dbBytes.length;
+            }
 
             String uploadUrl = String.format(HF_COMMIT_URL, hfSpaceRepo);
-            String jsonPayload = String.format(
-                "{\"summary\":\"Automated JSON data backup (%d bytes)\",\"operations\":[{\"operation\":\"uploadOrUpdate\",\"path\":\"%s\",\"content\":\"%s\"}]}",
-                fileBytes.length, SYNC_FILE_PATH, base64Content
-            );
 
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(30))
@@ -405,8 +419,8 @@ public class FileDbSyncService {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(uploadUrl))
                     .header("Authorization", "Bearer " + hfToken)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .header("Content-Type", "application/x-ndjson")
+                    .POST(HttpRequest.BodyPublishers.ofString(ndjson.toString(), StandardCharsets.UTF_8))
                     .timeout(Duration.ofSeconds(120))
                     .build();
 
@@ -414,20 +428,20 @@ public class FileDbSyncService {
 
             int statusCode = response.statusCode();
             if (statusCode >= 200 && statusCode < 300) {
-                logger.info("JSON backup successfully pushed to HF Spaces ({} bytes, HTTP {}).",
-                        fileBytes.length, statusCode);
+                logger.info("Backup successfully pushed to HF Spaces ({} bytes, HTTP {}).",
+                        totalUploadedBytes, statusCode);
                 result.put("status", "success");
                 result.put("httpStatus", statusCode);
-                result.put("bytesUploaded", fileBytes.length);
+                result.put("bytesUploaded", totalUploadedBytes);
                 result.put("destination", uploadUrl);
             } else {
-                logger.error("HF JSON push failed. HTTP {}: {}", statusCode, response.body());
+                logger.error("HF backup push failed. HTTP {}: {}", statusCode, response.body());
                 result.put("status", "error");
                 result.put("httpStatus", statusCode);
                 result.put("message", response.body());
             }
         } catch (IOException | InterruptedException e) {
-            logger.error("Exception during HF Spaces JSON backup push", e);
+            logger.error("Exception during HF Spaces backup push", e);
             result.put("status", "error");
             result.put("message", e.getMessage());
             if (e instanceof InterruptedException) {
@@ -437,4 +451,3 @@ public class FileDbSyncService {
         return result;
     }
 }
-

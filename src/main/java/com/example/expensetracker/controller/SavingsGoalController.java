@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -45,18 +47,24 @@ import java.util.List;
 @RequestMapping("/api/savings/goals")
 public class SavingsGoalController {
 
+    private static final Logger log = LoggerFactory.getLogger(SavingsGoalController.class);
+
     private final SavingsGoalService savingsGoalService;
     private final UserService userService;
+    private final com.example.expensetracker.security.UserSecurity userSecurity;
 
     /**
      * Constructs {@link SavingsGoalController} with required services.
      *
      * @param savingsGoalService the savings goal service
      * @param userService the user service
+     * @param userSecurity the user security component
      */
-    public SavingsGoalController(SavingsGoalService savingsGoalService, UserService userService) {
+    public SavingsGoalController(SavingsGoalService savingsGoalService, UserService userService,
+                                 com.example.expensetracker.security.UserSecurity userSecurity) {
         this.savingsGoalService = savingsGoalService;
         this.userService = userService;
+        this.userSecurity = userSecurity;
     }
 
     /**
@@ -78,9 +86,13 @@ public class SavingsGoalController {
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
             @Valid @RequestBody SavingsGoalRequest request) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to create savings goal for userId={}: name={}, targetAmount={}, targetDate={}",
+                userId, request.getName(), request.getTargetAmount(), request.getTargetDate());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         SavingsGoalDto created = savingsGoalService.createGoal(request, user);
+        log.info("Savings goal created with id={} for userId={}", created.getId(), userId);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -101,9 +113,13 @@ public class SavingsGoalController {
     public ResponseEntity<List<SavingsGoalDto>> getUserGoals(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.debug("Fetching savings goals for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(savingsGoalService.getUserGoals(user));
+        List<SavingsGoalDto> goals = savingsGoalService.getUserGoals(user);
+        log.info("Retrieved {} savings goals for userId={}", goals.size(), userId);
+        return ResponseEntity.ok(goals);
     }
 
     /**
@@ -128,9 +144,14 @@ public class SavingsGoalController {
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
             @Valid @RequestBody SavingsGoalRequest request) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to update savings goal id={} for userId={}: name={}, targetAmount={}",
+                goalId, userId, request.getName(), request.getTargetAmount());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(savingsGoalService.updateGoal(goalId, request, user));
+        SavingsGoalDto updated = savingsGoalService.updateGoal(goalId, request, user);
+        log.info("Savings goal id={} updated successfully for userId={}", goalId, userId);
+        return ResponseEntity.ok(updated);
     }
 
     /**
@@ -155,9 +176,15 @@ public class SavingsGoalController {
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
             @Valid @RequestBody SavingsDepositRequest request) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received deposit contribution to savings goal id={} for userId={}: depositAmount={}",
+                goalId, userId, request.getAmount());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(savingsGoalService.depositToGoal(goalId, request.getAmount(), user));
+        SavingsGoalDto updated = savingsGoalService.depositToGoal(goalId, request.getAmount(), user);
+        log.info("Deposit applied to savings goal id={} for userId={}, newSavedAmount={}, status={}",
+                goalId, userId, updated.getCurrentAmount(), updated.getStatus());
+        return ResponseEntity.ok(updated);
     }
 
     /**
@@ -179,9 +206,12 @@ public class SavingsGoalController {
             @PathVariable Long goalId,
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to delete savings goal id={} for userId={}", goalId, userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         savingsGoalService.deleteGoal(goalId, user);
+        log.info("Savings goal id={} deleted successfully for userId={}", goalId, userId);
         return ResponseEntity.noContent().build();
     }
 
@@ -196,8 +226,12 @@ public class SavingsGoalController {
     public ResponseEntity<List<SavingsGoalDto>> getRecurringGoals(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.debug("Fetching recurring savings goals for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return ResponseEntity.ok(savingsGoalService.getRecurringGoals(user));
+        List<SavingsGoalDto> goals = savingsGoalService.getRecurringGoals(user);
+        log.info("Retrieved {} recurring savings goals for userId={}", goals.size(), userId);
+        return ResponseEntity.ok(goals);
     }
 }

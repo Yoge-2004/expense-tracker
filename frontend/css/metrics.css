@@ -1,0 +1,221 @@
+/* ==========================================================================\n   EXPENSE TRACKER — METRICS.CSS\n   Module: Financial Metrics Matrix & Semantic Metric Cards\n   ========================================================================== */\n\n/* Dashboard visual hierarchy */
+
+
+/* Large monitors / 4K — the container was hard-capped at 1280px regardless
+   of viewport, leaving huge unused margins on wide screens. Scale up in
+   tiers rather than stretching to the full physical width, which would
+   make text lines uncomfortably long to read. */
+@media (min-width: 1920px) {
+    .dashboard-container { max-width: 1600px; padding: 48px 48px 64px; }
+}
+@media (min-width: 2560px) {
+    .dashboard-container { max-width: 1900px; padding: 56px 56px 72px; }
+    .grid-4-metrics { gap: 28px; }
+    .grid-analytics { gap: 28px; }
+}
+.top-bar { padding: 4px 0 16px; margin-bottom: 4px; }
+.dashboard-heading h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -1px; }
+.dashboard-heading p { margin-top: 10px; }
+.top-bar-actions { display: flex; gap: 12px; align-items: center; }
+
+.summary-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.summary-stack .add-expense-button { grid-column: 1 / -1; min-height: 58px; }
+.summary-card-primary {
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.18) 0%, rgba(178, 138, 50, 0.1) 100%);
+    border: 1px solid var(--border-accent);
+    box-shadow: 0 10px 30px -10px var(--primary-glow);
+}
+
+/* The primary/hero metric (Total Outflow) gets the display serif treatment
+   its number deserves; the other three stay in the mono data face. */
+.metric-card-glow .metric-value {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+/* ================== SEMANTIC METRIC CARDS SYSTEM ================== */
+.metric-card.metric-card-inflow,
+[data-theme="light"] .metric-card.metric-card-inflow {
+    border-left: 4px solid var(--metric-inflow) !important;
+}
+.metric-card.metric-card-inflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-inflow-glow), 0 0 0 1px var(--metric-inflow);
+}
+.metric-card.metric-card-inflow .card-label {
+    color: var(--metric-inflow) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-inflow .metric-value {
+    color: var(--metric-inflow) !important;
+}
+
+.metric-card.metric-card-outflow,
+[data-theme="light"] .metric-card.metric-card-outflow {
+    border-left: 4px solid var(--metric-outflow) !important;
+}
+.metric-card.metric-card-outflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-outflow-glow), 0 0 0 1px var(--metric-outflow);
+}
+.metric-card.metric-card-outflow .card-label {
+    color: var(--metric-outflow) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-outflow .metric-value {
+    color: var(--metric-outflow) !important;
+}
+
+.metric-card.metric-card-netflow,
+[data-theme="light"] .metric-card.metric-card-netflow {
+    border-left: 4px solid var(--metric-netflow) !important;
+}
+.metric-card.metric-card-netflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-netflow-glow), 0 0 0 1px var(--metric-netflow);
+}
+.metric-card.metric-card-netflow .card-label {
+    color: var(--metric-netflow) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-netflow .metric-value {
+    color: var(--metric-netflow) !important;
+}
+
+.metric-card.metric-card-savings,
+[data-theme="light"] .metric-card.metric-card-savings {
+    border-left: 4px solid var(--metric-savings) !important;
+}
+.metric-card.metric-card-savings:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-savings-glow), 0 0 0 1px var(--metric-savings);
+}
+.metric-card.metric-card-savings .card-label {
+    color: var(--metric-savings) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-savings .metric-value {
+    color: var(--metric-savings) !important;
+}
+
+.metric-card.metric-card-subs,
+[data-theme="light"] .metric-card.metric-card-subs {
+    border-left: 4px solid var(--metric-subs) !important;
+}
+.metric-card.metric-card-subs:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-subs-glow), 0 0 0 1px var(--metric-subs);
+}
+.metric-card.metric-card-subs .card-label {
+    color: var(--metric-subs) !important;
+    font-weight: 700;
+}
+.metric-card.metric-card-subs .metric-value {
+    color: var(--metric-subs) !important;
+}
+
+.badge-subs {
+    background: rgba(var(--metric-subs-rgb), 0.12);
+    color: var(--metric-subs);
+    border: 1px solid rgba(var(--metric-subs-rgb), 0.25);
+}
+
+.subs-link-action,
+.metric-card-subs .link-action,
+[data-theme="light"] .subs-link-action,
+[data-theme="light"] .metric-card-subs .link-action {
+    color: var(--metric-subs) !important;
+}
+.subs-link-action:hover,
+.metric-card-subs .link-action:hover,
+[data-theme="light"] .subs-link-action:hover,
+[data-theme="light"] .metric-card-subs .link-action:hover {
+    color: var(--metric-subs) !important;
+    filter: brightness(1.15);
+    text-decoration: underline;
+}
+
+/* Metric card status badge colors harmonized to each card's vertical stripe */
+.metric-card-inflow .status-badge,
+.badge-inflow {
+    background: rgba(var(--metric-inflow-rgb), 0.12) !important;
+    color: var(--metric-inflow) !important;
+    border: 1px solid rgba(var(--metric-inflow-rgb), 0.25) !important;
+}
+
+.metric-card-outflow .status-badge,
+.badge-outflow {
+    background: rgba(var(--metric-outflow-rgb), 0.12) !important;
+    color: var(--metric-outflow) !important;
+    border: 1px solid rgba(var(--metric-outflow-rgb), 0.25) !important;
+}
+
+.metric-card-netflow .status-badge,
+.badge-netflow {
+    background: rgba(var(--metric-netflow-rgb), 0.12) !important;
+    color: var(--metric-netflow) !important;
+    border: 1px solid rgba(var(--metric-netflow-rgb), 0.25) !important;
+}
+
+.metric-card-savings .status-badge,
+.badge-savings {
+    background: rgba(var(--metric-savings-rgb), 0.12) !important;
+    color: var(--metric-savings) !important;
+    border: 1px solid rgba(var(--metric-savings-rgb), 0.25) !important;
+}
+
+.metric-card-subs .status-badge,
+.badge-subs {
+    background: rgba(var(--metric-subs-rgb), 0.12) !important;
+    color: var(--metric-subs) !important;
+    border: 1px solid rgba(var(--metric-subs-rgb), 0.25) !important;
+}
+
+/* Responsive Mobile Protection for Smart Financial Insights Panel */
+@media (max-width: 768px) {
+    .insights-intelligence-panel {
+        padding: 16px 14px !important;
+        border-radius: 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .insights-panel-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    .insights-panel-title-wrap {
+        width: 100% !important;
+    }
+
+    .insights-panel-heading {
+        font-size: 16px !important;
+        word-break: break-word !important;
+    }
+
+    .insights-cards-grid {
+        grid-template-columns: 1fr !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        gap: 10px !important;
+        box-sizing: border-box !important;
+    }
+
+    .insight-card-item {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        padding: 14px 14px !important;
+    }
+
+    .savings-grid-matrix {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+

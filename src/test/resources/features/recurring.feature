@@ -6,7 +6,7 @@ Feature: Recurring Expense (Subscription) API
   Background:
     Given I am a registered and authenticated user
 
-  # ─── Add Recurring Expense ────────────────────────────────────────────────
+  # ─── Add Recurring Expense ───────────────────────────────────────────────
 
   Scenario: Register a new monthly subscription successfully
     Registers a ₹649 Netflix Premium subscription starting 2025-06-01 under
@@ -37,14 +37,13 @@ Feature: Recurring Expense (Subscription) API
     Then the response status code should be 400
 
   Scenario: Add recurring expense fails for unknown user id
-    Attempts to register a subscription under userId 999999 which does not exist.
-    The controller calls userService.findById and throws IllegalArgumentException
-    ("User not found") which GlobalExceptionHandler maps to HTTP 400.
+    Attempts to register a subscription under userId 999999 which does not match
+    the authenticated user. IDOR security validation rejects the request with HTTP 403.
 
     When I add a recurring expense of 199.00 for "App Sub" starting "2025-06-01" under category 4 for user id 999999
-    Then the response status code should be 400
+    Then the response status code should be 403
 
-  # ─── Get Subscriptions ────────────────────────────────────────────────────
+  # ─── Get Subscriptions ───────────────────────────────────────────────────
 
   Scenario: Retrieve all active subscriptions for the authenticated user
     Seeds two subscriptions (Netflix Premium and Spotify) then calls

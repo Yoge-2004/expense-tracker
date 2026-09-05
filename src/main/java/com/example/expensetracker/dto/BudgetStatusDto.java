@@ -32,8 +32,11 @@ public class BudgetStatusDto {
     private double percentage;
 
     private String period;
+    private Integer intervalDays;
     private LocalDate startDate;
     private LocalDate endDate;
+
+    public BudgetStatusDto() {}
 
     public BudgetStatusDto(String categoryName, BigDecimal limit, BigDecimal spent, double percentage) {
         this.categoryName = categoryName;
@@ -43,6 +46,10 @@ public class BudgetStatusDto {
     }
 
     public BudgetStatusDto(Long budgetId, Long categoryId, String categoryName, BigDecimal limit, BigDecimal spent, double percentage, String period, LocalDate startDate, LocalDate endDate) {
+        this(budgetId, categoryId, categoryName, limit, spent, percentage, period, null, startDate, endDate);
+    }
+
+    public BudgetStatusDto(Long budgetId, Long categoryId, String categoryName, BigDecimal limit, BigDecimal spent, double percentage, String period, Integer intervalDays, LocalDate startDate, LocalDate endDate) {
         this.budgetId     = budgetId;
         this.categoryId   = categoryId;
         this.categoryName = categoryName;
@@ -50,6 +57,7 @@ public class BudgetStatusDto {
         this.spent        = spent;
         this.percentage   = percentage;
         this.period       = period;
+        this.intervalDays = intervalDays;
         this.startDate    = startDate;
         this.endDate      = endDate;
     }
@@ -68,6 +76,8 @@ public class BudgetStatusDto {
     public void setPercentage(double p) { this.percentage = p; }
     public String getPeriod() { return period; }
     public void setPeriod(String period) { this.period = period; }
+    public Integer getIntervalDays() { return intervalDays; }
+    public void setIntervalDays(Integer intervalDays) { this.intervalDays = intervalDays; }
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getEndDate() { return endDate; }

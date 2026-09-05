@@ -6,7 +6,7 @@ Feature: User Account Management API
   Background:
     Given I am a registered and authenticated user
 
-  # ─── Delete Account ───────────────────────────────────────────────────────
+  # ─── Delete Account ──────────────────────────────────────────────────────
 
   Scenario: Delete own user account successfully
     Calls DELETE /api/users/{userId} with the authenticated user's own ID.
@@ -49,14 +49,11 @@ Feature: User Account Management API
     Then the response status code should be 204
 
   Scenario: Delete account fails for unknown user id
-    Calls DELETE /api/users/999999 where the userId does not exist in the
-    database. UserServiceImpl.deleteUser throws IllegalArgumentException
-    ("User not found") which GlobalExceptionHandler maps to HTTP 400 Bad
-    Request (not 404, since IllegalArgumentException is used rather than
-    NoSuchElementException).
+    Calls DELETE /api/users/999999 which does not match the authenticated user.
+    IDOR security validation rejects the request with HTTP 403.
 
     When I delete the account for user id 999999
-    Then the response status code should be 400
+    Then the response status code should be 403
 
   Scenario: Delete account endpoint requires authentication
     Calls DELETE /api/users/1 without an Authorization header. Spring Security's

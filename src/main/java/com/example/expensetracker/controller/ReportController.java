@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,9 +46,12 @@ import java.util.Map;
 @RequestMapping("/api/reports")
 public class ReportController {
 
+    private static final Logger log = LoggerFactory.getLogger(ReportController.class);
+
     private final MonthlyReportService monthlyReportService;
     private final ExportService exportService;
     private final UserService userService;
+    private final com.example.expensetracker.security.UserSecurity userSecurity;
 
     /**
      * Constructs {@link ReportController} with required services.
@@ -54,13 +59,16 @@ public class ReportController {
      * @param monthlyReportService monthly report service
      * @param exportService export service
      * @param userService user service
+     * @param userSecurity user security component
      */
     public ReportController(MonthlyReportService monthlyReportService,
                             ExportService exportService,
-                            UserService userService) {
+                            UserService userService,
+                            com.example.expensetracker.security.UserSecurity userSecurity) {
         this.monthlyReportService = monthlyReportService;
         this.exportService = exportService;
         this.userService = userService;
+        this.userSecurity = userSecurity;
     }
 
     /**
@@ -89,12 +97,16 @@ public class ReportController {
             @RequestParam(required = false) Integer year,
             @Parameter(description = "Calendar month 1-12 (defaults to current month)", example = "8")
             @RequestParam(required = false) Integer month) {
+        userSecurity.validateUserAccess(userId);
 
         LocalDate now = LocalDate.now();
         int y = year != null ? year : now.getYear();
         int m = month != null ? month : now.getMonthValue();
 
+        log.info("Generating monthly financial report JSON for userId={}, period={}-{}", userId, y, m);
         MonthlyReportDto report = monthlyReportService.generateMonthlyReport(userId, y, m);
+        log.info("Monthly report generated for userId={}: totalInflow={}, totalOutflow={}, netSavings={}",
+                userId, report.getTotalIncome(), report.getTotalOutflow(), report.getNetCashFlow());
         return ResponseEntity.ok(report);
     }
 
@@ -123,12 +135,15 @@ public class ReportController {
             @RequestParam(required = false) Integer year,
             @Parameter(description = "Calendar month 1-12 (defaults to current month)", example = "8")
             @RequestParam(required = false) Integer month) {
+        userSecurity.validateUserAccess(userId);
 
         LocalDate now = LocalDate.now();
         int y = year != null ? year : now.getYear();
         int m = month != null ? month : now.getMonthValue();
 
+        log.info("Generating monthly report HTML for userId={}, period={}-{}", userId, y, m);
         String html = monthlyReportService.generateMonthlyReportHtml(userId, y, m);
+        log.info("Monthly report HTML generated for userId={}, length={}", userId, html.length());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"financial-report-" + y + "-" + m + ".html\"")
                 .body(html);
@@ -159,12 +174,15 @@ public class ReportController {
             @RequestParam(required = false) Integer year,
             @Parameter(description = "Calendar month 1-12 (defaults to current month)", example = "8")
             @RequestParam(required = false) Integer month) {
+        userSecurity.validateUserAccess(userId);
 
         LocalDate now = LocalDate.now();
         int y = year != null ? year : now.getYear();
         int m = month != null ? month : now.getMonthValue();
 
+        log.info("Triggering monthly report email for userId={}, period={}-{}", userId, y, m);
         monthlyReportService.sendMonthlyReportEmail(userId, y, m);
+        log.info("Monthly report email dispatched successfully for userId={}", userId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Monthly report email successfully sent."));
     }
 
@@ -192,10 +210,14 @@ public class ReportController {
             @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting financial statement Excel for userId={}, currencyParam={}, currencyHeader={}",
+                userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportFinancialStatementExcel(user, preferredCurrency);
+        log.info("Financial statement Excel generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-summary.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -226,10 +248,14 @@ public class ReportController {
             @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)", required = false)
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting financial statement PDF for userId={}, currencyParam={}, currencyHeader={}",
+                userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportFinancialStatementPdf(user, preferredCurrency);
+        log.info("Financial statement PDF generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-statement.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)

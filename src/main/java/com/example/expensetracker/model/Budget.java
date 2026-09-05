@@ -35,6 +35,9 @@ public class Budget {
 
     private String period = "MONTHLY"; // MONTHLY, WEEKLY, YEARLY, CUSTOM
 
+    @Column(name = "interval_days")
+    private Integer intervalDays;
+
     private java.time.LocalDate startDate;
 
     private java.time.LocalDate endDate;
@@ -146,6 +149,14 @@ public class Budget {
 
     public void setPeriod(String period) {
         this.period = period;
+    }
+
+    public Integer getIntervalDays() {
+        return intervalDays;
+    }
+
+    public void setIntervalDays(Integer intervalDays) {
+        this.intervalDays = intervalDays;
     }
 
     public java.time.LocalDate getStartDate() {

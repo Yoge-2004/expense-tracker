@@ -19,6 +19,9 @@ COPY app.jar /app/app.jar
 # Copy JSON backup sync file for bidirectional DB persistence across restarts
 COPY expenses_sync.json /app/expenses_sync.json
 
+# Copy backup SQLite database file if present
+COPY expense_tracker.db /app/expense_tracker.db
+
 # ── 3. Security & Non-Root Execution ──────────────────────────────────────────
 # Hugging Face Spaces strictly requires containers to run as a non-root user (UID 1000).
 # Ensure read/write ownership over /app so SQLite fallback and sync files can be updated.

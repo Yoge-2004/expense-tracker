@@ -110,6 +110,10 @@ public class SavingsGoalDto {
     }
 
     /** @return Currently accumulated balance */
+    public BigDecimal getCurrentSavedAmount() {
+        return currentAmount;
+    }
+
     public BigDecimal getCurrentAmount() {
         return currentAmount;
     }

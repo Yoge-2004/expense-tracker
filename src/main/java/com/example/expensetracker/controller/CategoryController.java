@@ -20,6 +20,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -52,15 +54,20 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/categories")
 public class CategoryController {
 
+    private static final Logger log = LoggerFactory.getLogger(CategoryController.class);
+
     private final CategoryService categoryService;
     private final UserService userService;
+    private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    public CategoryController(CategoryService categoryService, UserService userService) {
+    public CategoryController(CategoryService categoryService, UserService userService,
+                              com.example.expensetracker.security.UserSecurity userSecurity) {
         this.categoryService = categoryService;
         this.userService = userService;
+        this.userSecurity = userSecurity;
     }
 
-    // ─── POST /api/categories/user/{userId} ───────────────────────────────
+    // ─── POST /api/categories/user/{userId} ─────────────────────────────
 
     @Operation(
         summary = "Create user category",
@@ -127,13 +134,16 @@ public class CategoryController {
             )
             @PathVariable Long userId,
             @Valid @org.springframework.web.bind.annotation.RequestBody CategoryRequest request) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to create category for userId={}: name='{}'", userId, request.getName());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Category category = categoryService.createCategory(request.getName(), user);
+        log.info("Category created successfully with id={} for userId={}", category.getId(), userId);
         return new ResponseEntity<>(CategoryMapper.toDto(category), HttpStatus.CREATED);
     }
 
-    // ─── GET /api/categories/user/{userId} ────────────────────────────────
+    // ─── GET /api/categories/user/{userId} ──────────────────────────────
 
     @Operation(
         summary = "Get user categories",
@@ -184,14 +194,17 @@ public class CategoryController {
     public ResponseEntity<List<CategoryDto>> getUserCategories(
             @Parameter(description = "ID of the user whose personal categories to retrieve.", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.debug("Fetching user categories for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<CategoryDto> categories = categoryService.getUserCategories(user)
                 .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
+        log.info("Retrieved {} user categories for userId={}", categories.size(), userId);
         return ResponseEntity.ok(categories);
     }
 
-    // ─── GET /api/categories/global ───────────────────────────────────────
+    // ─── GET /api/categories/global ─────────────────────────────────────
 
     @Operation(
         summary = "Get global categories",
@@ -236,8 +249,10 @@ public class CategoryController {
     })
     @GetMapping("/global")
     public ResponseEntity<List<CategoryDto>> getGlobalCategories() {
+        log.debug("Fetching global categories");
         List<CategoryDto> categories = categoryService.getGlobalCategories()
                 .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
+        log.info("Retrieved {} global categories", categories.size());
         return ResponseEntity.ok(categories);
     }
 
@@ -264,9 +279,12 @@ public class CategoryController {
             @PathVariable Long categoryId,
             @Parameter(description = "ID of the user who owns the category", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to delete category id={} for userId={}", categoryId, userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         categoryService.deleteCategory(categoryId, user);
+        log.info("Category id={} deleted successfully for userId={}", categoryId, userId);
         return ResponseEntity.noContent().build();
     }
 }

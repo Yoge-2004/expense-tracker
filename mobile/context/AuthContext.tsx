@@ -37,7 +37,7 @@ interface AuthContextType {
   /** Dispatches a 6-digit signup OTP to the prospective user's email. */
   sendSignupOtp: (email: string, name: string) => Promise<void>;
   /** Completes registration and stores preferred currency. */
-  register: (name: string, username: string, email: string, password: string, otp: string, currency?: string) => Promise<void>;
+  register: (name: string, username: string, email: string, password: string, otp: string, currency?: string, securityPin?: string) => Promise<void>;
   /** Destroys active session, clears caches, and resets auth state. */
   logout: () => Promise<void>;
 }
@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
-   * Completes registration with full credentials and verification code (or BYPASS).
+   * Completes registration with full credentials and optional 6-digit Security PIN.
    */
   const register = async (
     name: string,
@@ -180,21 +180,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     otp: string,
-    userCurrency: string = 'INR'
+    userCurrency: string = 'INR',
+    securityPin?: string
   ): Promise<void> => {
     setIsLoading(true);
     try {
       const sanitizedUsername = (username || name.toLowerCase().replace(/[^a-z0-9_.]/g, '')).trim();
+      const payload: Record<string, any> = {
+        name: name.trim(),
+        username: sanitizedUsername,
+        email: email.trim(),
+        password,
+        otp: (otp || "").trim(),
+        currency: userCurrency,
+      };
+      if (securityPin && securityPin.trim().length === 6) {
+        payload.securityPin = securityPin.trim();
+      }
       await apiRequest('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          username: sanitizedUsername,
-          email: email.trim(),
-          password,
-          otp: otp.trim(),
-          currency: userCurrency,
-        }),
+        body: JSON.stringify(payload),
       });
 
       setCurrency(userCurrency);

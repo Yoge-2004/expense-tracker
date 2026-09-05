@@ -64,6 +64,24 @@ public class DatabaseMigrationConfig {
                 log.warn("Migration warning on users.enabled: {}", e.getMessage());
             }
 
+            try {
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS security_pin_hash VARCHAR(255)");
+            } catch (Exception e) {
+                log.warn("Migration warning on users.security_pin_hash: {}", e.getMessage());
+            }
+
+            try {
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_pin_attempts INT DEFAULT 0");
+            } catch (Exception e) {
+                log.warn("Migration warning on users.failed_pin_attempts: {}", e.getMessage());
+            }
+
+            try {
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP");
+            } catch (Exception e) {
+                log.warn("Migration warning on users.pin_locked_until: {}", e.getMessage());
+            }
+
         } catch (Exception e) {
             log.warn("Database schema migration notice: {}", e.getMessage());
         }

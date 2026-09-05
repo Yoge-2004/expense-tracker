@@ -6,7 +6,7 @@ Feature: Expense Management API
   Background:
     Given I am a registered and authenticated user
 
-  # ─── Create Expense ───────────────────────────────────────────────────────
+  # ─── Create Expense ──────────────────────────────────────────────────────
 
   Scenario: Create a new expense successfully
     Creates a valid expense record for the authenticated user with a positive
@@ -60,7 +60,7 @@ Feature: Expense Management API
     When I create an expense without a JWT token with amount 100, description "Unauthenticated", date "2025-06-15", and categoryId 1
     Then the response status code should be 401
 
-  # ─── Get Expenses ─────────────────────────────────────────────────────────
+  # ─── Get Expenses ────────────────────────────────────────────────────────
 
   Scenario: Retrieve all expenses for the authenticated user
     Seeds two expense records under different global categories (Food and
@@ -82,14 +82,13 @@ Feature: Expense Management API
     And the response should be an empty list
 
   Scenario: Retrieve expenses fails for unknown user id
-    Calls GET /api/expenses/user/999999 with a userId that does not exist in
-    the database. The controller throws IllegalArgumentException("User not found")
-    which GlobalExceptionHandler maps to HTTP 400 Bad Request.
+    Calls GET /api/expenses/user/999999 with a userId that does not match the
+    authenticated user. IDOR security validation rejects the request with HTTP 403.
 
     When I get all expenses for user id 999999
-    Then the response status code should be 400
+    Then the response status code should be 403
 
-  # ─── Update Expense ───────────────────────────────────────────────────────
+  # ─── Update Expense ──────────────────────────────────────────────────────
 
   Scenario: Update an existing expense successfully
     Creates an expense then updates its amount and description via
@@ -110,7 +109,7 @@ Feature: Expense Management API
     When I update a non-existent expense id 999999 with amount 100 and description "Ghost expense"
     Then the response status code should be 500
 
-  # ─── Delete Expense ───────────────────────────────────────────────────────
+  # ─── Delete Expense ──────────────────────────────────────────────────────
 
   Scenario: Delete an expense successfully
     Creates an expense then deletes it via DELETE /api/expenses/{id}/user/{userId}.
@@ -132,10 +131,10 @@ Feature: Expense Management API
     Then the response body should not contain "Tea and snacks"
 
   Scenario: Delete expense fails for unknown user id
-    Attempts to delete an existing expense but supplies a non-existent userId
-    in the path. The controller throws IllegalArgumentException("User not found")
-    which maps to HTTP 400. The expense is NOT deleted.
+    Attempts to delete an existing expense but supplies a userId in the path
+    that does not match the authenticated user. IDOR security validation rejects
+    the request with HTTP 403. The expense is NOT deleted.
 
     Given I have created an expense of 100.00 for "To delete" on "2025-06-06" under category 1
     When I delete the expense for unknown user id 999999
-    Then the response status code should be 400
+    Then the response status code should be 403

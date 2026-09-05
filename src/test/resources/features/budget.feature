@@ -6,7 +6,7 @@ Feature: Budget Management API
   Background:
     Given I am a registered and authenticated user
 
-  # ─── Set Budget ───────────────────────────────────────────────────────────
+  # ─── Set Budget ──────────────────────────────────────────────────────────
 
   Scenario: Set a budget for a category successfully
     Creates a monthly budget of ₹3000 for the global "Food" category (id=1).
@@ -57,14 +57,13 @@ Feature: Budget Management API
     Then the response status code should be 400
 
   Scenario: Set budget fails for unknown user id
-    Attempts to set a budget using a userId (999999) that does not exist.
-    The controller calls userService.findById and throws IllegalArgumentException
-    ("User not found") which GlobalExceptionHandler maps to HTTP 400.
+    Attempts to set a budget using a userId (999999) that does not match the
+    authenticated user. IDOR security validation rejects the request with HTTP 403.
 
     When I set a budget of 1000 for category id 1 with user id 999999
-    Then the response status code should be 400
+    Then the response status code should be 403
 
-  # ─── Budget Status ────────────────────────────────────────────────────────
+  # ─── Budget Status ───────────────────────────────────────────────────────
 
   Scenario: Get budget status after setting budgets and recording expenses
     Sets a ₹3000 budget for Food then records a ₹1500 grocery expense in the

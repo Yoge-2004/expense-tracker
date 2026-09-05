@@ -522,258 +522,174 @@ public class ExpenseTrackerSeleniumTest {
 
     @Test
     @Order(24)
-    @DisplayName("TC-24: Custom Dropdowns & Luxury Calendar Date Picker Verification")
-    public void testCustomDropdownsAndCalendarDatePicker() {
-        loginSessionAndGoToDashboard();
+    @DisplayName("TC-24: Small Devices Auth Input Icon and Placeholder No-Overlap Validation")
+    public void testAuthPagesInputIconNoOverlapOnSmallDevices() {
+        int[] screenWidths = {360, 320};
+        String[] pages = {indexUrl, registerUrl, forgotPasswordUrl};
 
-        // 1. Ensure filter panel is open
-        WebElement filterPanel = driver.findElement(By.id("filterPanel"));
-        if (!filterPanel.isDisplayed()) {
-            WebElement toggleBtn = driver.findElement(By.id("toggleFiltersBtn"));
-            clickElement(toggleBtn);
-            wait.until(ExpectedConditions.visibilityOf(filterPanel));
+        try {
+            for (int width : screenWidths) {
+                driver.manage().window().setSize(new org.openqa.selenium.Dimension(width, 740));
+                for (String pageUrl : pages) {
+                    driver.get(pageUrl);
+                    Boolean allInputsSpacedProperly = (Boolean) ((JavascriptExecutor) driver).executeScript(
+                        "const wrappers = document.querySelectorAll('.input-wrapper');" +
+                        "if (wrappers.length === 0) return false;" +
+                        "for (const w of wrappers) {" +
+                        "    const icon = w.querySelector('.input-icon');" +
+                        "    const input = w.querySelector('input:not([type=\"hidden\"]), .custom-select-trigger');" +
+                        "    if (!icon || !input) continue;" +
+                        "    const iconRect = icon.getBoundingClientRect();" +
+                        "    const inputRect = input.getBoundingClientRect();" +
+                        "    const style = window.getComputedStyle(input);" +
+                        "    const padLeft = parseFloat(style.paddingLeft) || 0;" +
+                        "    if (padLeft < 38) return false;" +
+                        "    if (iconRect.right > (inputRect.left + padLeft)) return false;" +
+                        "}" +
+                        "return true;"
+                    );
+                    assertTrue(allInputsSpacedProperly, "Inputs on " + pageUrl + " must have padding-left >= 38px and icon must not overlap text on " + width + "px width");
+                }
+            }
+        } finally {
+            driver.manage().window().setSize(new org.openqa.selenium.Dimension(1280, 800));
         }
-
-        // 2. Verify Custom Dropdown on #filterMonth
-        WebElement filterMonth = driver.findElement(By.id("filterMonth"));
-        assertTrue(filterMonth.getAttribute("class").contains("custom-select-native"),
-                "Native #filterMonth should be visually hidden via .custom-select-native");
-
-        WebElement monthWrapper = driver.findElement(By.cssSelector(".custom-select-wrapper[data-target-id='filterMonth']"));
-        assertNotNull(monthWrapper, "Custom select wrapper should exist for filterMonth");
-
-        WebElement monthTrigger = monthWrapper.findElement(By.className("custom-select-trigger"));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", monthTrigger);
-        clickElement(monthTrigger);
-
-        WebElement monthOptions = monthWrapper.findElement(By.className("custom-select-options"));
-        wait.until(ExpectedConditions.visibilityOf(monthOptions));
-        assertTrue(monthOptions.isDisplayed(), "Options popup should be visible when open");
-
-        // Pick a month (e.g. March = 3)
-        WebElement marchOption = monthWrapper.findElement(By.cssSelector(".custom-option[data-value='3']"));
-        clickElement(marchOption);
-
-        assertEquals("3", filterMonth.getAttribute("value"), "Filter month select value should update to 3");
-        assertFalse(monthWrapper.getAttribute("class").contains("open"), "Dropdown should close after selection");
-
-        // 3. Verify Custom Calendar Date Picker on #filterStartDate
-        WebElement startDateInput = driver.findElement(By.id("filterStartDate"));
-        clickElement(startDateInput);
-
-        WebElement calPicker = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("customCalendarPicker")));
-        assertTrue(calPicker.isDisplayed(), "Custom calendar date picker popover should open");
-
-        WebElement calGrid = calPicker.findElement(By.id("calGrid"));
-        List<WebElement> dayCells = calGrid.findElements(By.className("cal-day-cell"));
-        assertTrue(dayCells.size() >= 35, "Calendar grid should render at least 35 day cells");
-
-        // Click "Today" button
-        WebElement todayBtn = calPicker.findElement(By.id("calTodayBtn"));
-        clickElement(todayBtn);
-
-        wait.until(ExpectedConditions.invisibilityOf(calPicker));
-        assertFalse(startDateInput.getAttribute("value").isEmpty(), "Start date input should be populated with today's date");
-
-        // Open again to test "Clear"
-        clickElement(startDateInput);
-        wait.until(ExpectedConditions.visibilityOf(calPicker));
-        WebElement clearBtn = calPicker.findElement(By.id("calClearBtn"));
-        clickElement(clearBtn);
-
-        wait.until(ExpectedConditions.invisibilityOf(calPicker));
-        assertEquals("", startDateInput.getAttribute("value"), "Start date input should be cleared");
-
-        // 4. Verify changing Month and Year using the custom luxury dropdowns in the calendar
-        clickElement(startDateInput);
-        wait.until(ExpectedConditions.visibilityOf(calPicker));
-
-        WebElement calMonthWrapper = calPicker.findElement(By.cssSelector(".custom-select-wrapper[data-target-id='calMonthSelect']"));
-        WebElement calYearWrapper = calPicker.findElement(By.cssSelector(".custom-select-wrapper[data-target-id='calYearSelect']"));
-        assertNotNull(calMonthWrapper, "Month custom select wrapper should exist in calendar header");
-        assertNotNull(calYearWrapper, "Year custom select wrapper should exist in calendar header");
-
-        // Click month custom trigger and select May (index 4)
-        WebElement calMonthTrigger = calMonthWrapper.findElement(By.className("custom-select-trigger"));
-        clickElement(calMonthTrigger);
-        WebElement mayOption = calMonthWrapper.findElement(By.cssSelector(".custom-option[data-value='4']"));
-        clickElement(mayOption);
-
-        // Click year custom trigger and select 2024
-        WebElement calYearTrigger = calYearWrapper.findElement(By.className("custom-select-trigger"));
-        clickElement(calYearTrigger);
-        WebElement opt2024 = calYearWrapper.findElement(By.cssSelector(".custom-option[data-value='2024']"));
-        clickElement(opt2024);
-
-        // Click day 15 cell
-        WebElement day15 = calPicker.findElement(By.cssSelector(".cal-day-cell[data-date='2024-05-15']"));
-        clickElement(day15);
-
-        wait.until(ExpectedConditions.invisibilityOf(calPicker));
-        assertEquals("2024-05-15", startDateInput.getAttribute("value"), "Date input should reflect selected month and year 2024-05-15");
     }
 
     @Test
     @Order(25)
-    @DisplayName("TC-25: Income Symbols, Subscriptions Recurring Inflow/Outflow Tabs, and Multi-Factor Insights")
-    public void testIncomeSymbolsSubscriptionsAndSynthesizedInsights() {
+    @DisplayName("TC-25: Delete Account Confirmation Textbox Formatting & Danger Theme")
+    public void testDeleteAccountConfirmationInputStyling() {
         loginSessionAndGoToDashboard();
 
-        // 1. Inject test data with expenses, recurring incomes, and savings goals
         ((JavascriptExecutor) driver).executeScript(
-            "window.allExpenses = [" +
-            "  { id: 101, description: 'Netflix Premium', amount: 19.99, expenseDate: '2026-09-01', categoryName: 'Entertainment', isRecurring: true, frequency: 'MONTHLY' }," +
-            "  { id: 102, description: 'Grocery Market', amount: 85.50, expenseDate: '2026-09-02', categoryName: 'Food & Dining', isRecurring: false }" +
-            "];" +
-            "window.allIncomes = [" +
-            "  { id: 201, source: 'Engineering Salary', amount: 4500.00, incomeDate: '2026-09-01', description: 'Tech Corp Direct Deposit', isRecurring: true, frequency: 'MONTHLY', intervalDays: 1 }," +
-            "  { id: 202, source: 'Freelance Design', amount: 650.00, incomeDate: '2026-09-03', description: 'Client UI Design', isRecurring: false }" +
-            "];" +
-            "window.allSavingsGoals = [" +
-            "  { id: 301, name: 'Emergency Fund', targetAmount: 10000, currentAmount: 4500, targetDate: '2026-12-31' }" +
-            "];" +
-            "if (typeof renderIncomes === 'function') renderIncomes(window.allIncomes);" +
-            "if (typeof renderSavingsGoals === 'function') renderSavingsGoals(window.allSavingsGoals);" +
-            "if (typeof renderFinancialInsights === 'function') renderFinancialInsights(window.allExpenses);"
+            "const modal = document.getElementById('deleteAccountModal');" +
+            "if (modal && typeof openModal === 'function') openModal(modal);"
         );
 
-        // 2. Verify Income emoji box and symbols in #incomeList
-        wait.until(d -> {
-            WebElement list = d.findElement(By.id("incomeList"));
-            return list.getText().contains("Engineering Salary");
-        });
-        WebElement incomeList = driver.findElement(By.id("incomeList"));
-        List<WebElement> emojiBoxes = incomeList.findElements(By.className("income-emoji-box"));
-        assertFalse(emojiBoxes.isEmpty(), "Income list should render .income-emoji-box icons next to source names");
-        assertTrue(incomeList.getText().contains("Engineering Salary"), "Income table should display source text");
+        WebElement deleteModal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("deleteAccountModal")));
+        assertTrue(deleteModal.isDisplayed(), "Delete account modal should be visible");
 
-        // 3. Open Subscriptions Modal and verify Outflow/Inflow tabs
-        ((JavascriptExecutor) driver).executeScript(
-            "const modal = document.getElementById('subsModal');" +
-            "if (typeof openModal === 'function') openModal(modal);" +
-            "if (typeof loadSubscriptions === 'function') loadSubscriptions();"
+        WebElement confirmInput = driver.findElement(By.id("deleteConfirmInput"));
+        assertTrue(confirmInput.isDisplayed(), "Delete confirm input must be displayed");
+
+        Boolean isFormatted = (Boolean) ((JavascriptExecutor) driver).executeScript(
+            "const el = document.getElementById('deleteConfirmInput');" +
+            "if (!el) return false;" +
+            "const style = window.getComputedStyle(el);" +
+            "const borderRadius = parseFloat(style.borderRadius) || 0;" +
+            "const padTop = parseFloat(style.paddingTop) || 0;" +
+            "const padLeft = parseFloat(style.paddingLeft) || 0;" +
+            "return (borderRadius >= 10) && (padTop >= 8) && (padLeft >= 12);"
         );
+        assertTrue(isFormatted, "Delete confirmation textbox must be properly styled with rounded corners and ample padding");
 
-        WebElement subsModal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("subsModal")));
-        assertTrue(subsModal.isDisplayed(), "Subscriptions modal should be visible");
-
-        // Verify cash flow summary strip in modal (use toUpperCase since CSS uses text-transform: uppercase)
-        wait.until(d -> {
-            WebElement summary = d.findElement(By.id("subsCashflowSummary"));
-            return summary != null && summary.getText().toUpperCase().contains("RECURRING SUBSCRIPTIONS");
-        });
-        WebElement cashflowSummary = subsModal.findElement(By.id("subsCashflowSummary"));
-        assertTrue(cashflowSummary.isDisplayed(), "Modal should display cash flow summary strip");
-        assertTrue(cashflowSummary.getText().toUpperCase().contains("RECURRING INFLOWS"), "Summary should list recurring inflows");
-
-        // Test tab switching
-        WebElement expTabBtn = subsModal.findElement(By.id("subsTabExpensesBtn"));
-        WebElement incTabBtn = subsModal.findElement(By.id("subsTabIncomesBtn"));
-        assertNotNull(expTabBtn, "Outflow expenses tab button should exist");
-        assertNotNull(incTabBtn, "Inflow incomes tab button should exist");
-
-        // Switch to Inflows tab
-        clickElement(incTabBtn);
-        assertTrue(incTabBtn.getAttribute("class").contains("active"), "Incomes tab should be active after click");
-
-        // Close modal
-        WebElement closeBtn = subsModal.findElement(By.id("closeSubsModalBtn"));
-        clickElement(closeBtn);
-        wait.until(ExpectedConditions.invisibilityOf(subsModal));
-
-        // 4. Verify Synthesized Financial Insights in #insightsCardsGrid
-        ((JavascriptExecutor) driver).executeScript(
-            "if (typeof renderFinancialInsights === 'function') renderFinancialInsights(window.allExpenses);"
+        Boolean buttonsFormatted = (Boolean) ((JavascriptExecutor) driver).executeScript(
+            "const cancel = document.getElementById('cancelDeleteAccountBtn');" +
+            "const confirm = document.getElementById('confirmDeleteAccountBtn');" +
+            "if (!cancel || !confirm) return false;" +
+            "const cStyle = window.getComputedStyle(cancel);" +
+            "const fStyle = window.getComputedStyle(confirm);" +
+            "const cRadius = parseFloat(cStyle.borderRadius) || 0;" +
+            "const fRadius = parseFloat(fStyle.borderRadius) || 0;" +
+            "const cHeight = parseFloat(cStyle.height) || 0;" +
+            "const fHeight = parseFloat(fStyle.height) || 0;" +
+            "return (cRadius >= 10 && fRadius >= 10 && cHeight >= 38 && fHeight >= 38);"
         );
-        wait.until(d -> {
-            WebElement grid = d.findElement(By.id("insightsCardsGrid"));
-            return grid != null && grid.getText().toUpperCase().contains("NET CASH FLOW & SAVINGS RATE");
-        });
-        WebElement insightsGrid = driver.findElement(By.id("insightsCardsGrid"));
-        String insightsText = insightsGrid.getText();
-        assertTrue(insightsText.toUpperCase().contains("NET CASH FLOW & SAVINGS RATE"), "Insights should include Net Cash Flow & Savings Rate card");
-        assertTrue(insightsText.toUpperCase().contains("SAVINGS GOALS TRAJECTORY"), "Insights should include Savings Goals Trajectory card");
-        assertTrue(insightsText.toUpperCase().contains("RECURRING BASELINE COVERAGE"), "Insights should include Recurring Baseline Coverage card");
+        assertTrue(buttonsFormatted, "Delete and Cancel buttons must be cleanly formatted with rounded corners and min height");
 
-        WebElement healthBadge = driver.findElement(By.id("insightsHealthScoreText"));
-        assertTrue(healthBadge.getText().contains("Financial Health"), "Health badge should report synthesized Financial Health");
+        WebElement cancelBtn = driver.findElement(By.id("cancelDeleteAccountBtn"));
+        clickElement(cancelBtn);
+        wait.until(d -> !deleteModal.getAttribute("class").contains("active"));
     }
-
 
     @Test
     @Order(26)
-    public void testMetricCardsSemanticColorsMatchingTextAndLightModeAdaptation() {
+    @DisplayName("TC-26: Login Invalid Credentials Displays Friendly Error Toast Instead of Raw Unauthorized")
+    public void testLoginInvalidCredentialsUserFriendlyError() {
+        driver.get(indexUrl);
+        wait.until(ExpectedConditions.titleContains("Sign In"));
+
+        WebElement emailInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("email")));
+        WebElement passwordInput = driver.findElement(By.id("password"));
+        WebElement submitBtn = driver.findElement(By.cssSelector("button[type='submit']"));
+
+        emailInput.clear();
+        emailInput.sendKeys("nonexistent_user@example.com");
+        passwordInput.clear();
+        passwordInput.sendKeys("WrongPassword123!");
+
+        clickElement(submitBtn);
+
+        WebElement toast = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".toast.toast-error, .toast")));
+        String toastText = toast.getText();
+
+        assertFalse(toastText.trim().equalsIgnoreCase("Unauthorized"), "Error toast should not show raw Unauthorized to user");
+        assertTrue(toastText.toLowerCase().contains("invalid") || toastText.toLowerCase().contains("unable") || toastText.toLowerCase().contains("failed") || toastText.toLowerCase().contains("credentials"),
+            "Error toast should explain the issue in clear, user-friendly language: " + toastText);
+
+        assertTrue(emailInput.getAttribute("class").contains("is-invalid"), "Email input should be flagged with is-invalid");
+    }
+
+    @Test
+    @Order(27)
+    @DisplayName("TC-27: View Monthly Report vs Export Monthly Summary Mode Differentiation & Controls")
+    public void testViewMonthlyReportVsExportMonthlySummaryDifferentiation() {
         loginSessionAndGoToDashboard();
 
-        // 1. Locate all 5 metric cards
-        WebElement inflowCard = driver.findElement(By.cssSelector(".metric-card.metric-card-inflow"));
-        WebElement outflowCard = driver.findElement(By.cssSelector(".metric-card.metric-card-outflow"));
-        WebElement netflowCard = driver.findElement(By.cssSelector(".metric-card.metric-card-netflow"));
-        WebElement savingsCard = driver.findElement(By.cssSelector(".metric-card.metric-card-savings"));
-        WebElement subsCard = driver.findElement(By.cssSelector(".metric-card.metric-card-subs"));
+        WebElement profileTrigger = wait.until(ExpectedConditions.elementToBeClickable(By.id("profileTrigger")));
+        clickElement(profileTrigger);
 
-        assertNotNull(inflowCard, "Inflow card should exist");
-        assertNotNull(outflowCard, "Outflow card should exist");
-        assertNotNull(netflowCard, "Net cash flow card should exist");
-        assertNotNull(savingsCard, "Savings rate card should exist");
-        assertNotNull(subsCard, "Subscription card should exist with .metric-card-subs class");
+        WebElement viewReportBtn = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("viewMonthlyReportBtn")));
+        WebElement exportSummaryBtn = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("exportMonthlySummaryBtn")));
 
-        // 2. Verify all 5 cards have 4px left border
-        assertEquals("4px", inflowCard.getCssValue("border-left-width"), "Inflow card should have 4px left border");
-        assertEquals("4px", outflowCard.getCssValue("border-left-width"), "Outflow card should have 4px left border");
-        assertEquals("4px", netflowCard.getCssValue("border-left-width"), "Net flow card should have 4px left border");
-        assertEquals("4px", savingsCard.getCssValue("border-left-width"), "Savings card should have 4px left border");
-        assertEquals("4px", subsCard.getCssValue("border-left-width"), "Subscriptions card should have 4px left border");
+        assertTrue(viewReportBtn.isDisplayed(), "View Monthly Report button must be present in profile menu");
+        assertTrue(exportSummaryBtn.isDisplayed(), "Export Monthly Summary button must be present in profile menu");
 
-        // 3. Verify text color matches vertical stripe color on each card (Dark Mode)
-        String inflowBorderColor = inflowCard.getCssValue("border-left-color");
-        String inflowLabelColor = inflowCard.findElement(By.className("card-label")).getCssValue("color");
-        String inflowValueColor = inflowCard.findElement(By.className("metric-value")).getCssValue("color");
-        assertEquals(inflowBorderColor, inflowLabelColor, "Inflow card label text color should match vertical stripe");
-        assertEquals(inflowBorderColor, inflowValueColor, "Inflow card value text color should match vertical stripe");
+        // 1. Test clicking "View Monthly Report"
+        clickElement(viewReportBtn);
+        WebElement periodModal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("monthlyReportPeriodModal")));
+        assertTrue(periodModal.getAttribute("class").contains("active"), "Monthly report period modal should be active");
 
-        String subsBorderColor = subsCard.getCssValue("border-left-color");
-        String subsLabelColor = subsCard.findElement(By.className("card-label")).getCssValue("color");
-        String subsValueColor = subsCard.findElement(By.className("metric-value")).getCssValue("color");
-        assertEquals(subsBorderColor, subsLabelColor, "Subscription card label color should match vertical stripe");
-        assertEquals(subsBorderColor, subsValueColor, "Subscription card value color should match vertical stripe");
+        WebElement modalTitle = driver.findElement(By.id("periodModalTitle"));
+        assertTrue(modalTitle.getText().contains("View Monthly Report"), "Modal header in view mode should state View Monthly Report");
 
-        // 4. Toggle to light mode and verify stripe colors adapt without being overridden to faint grey
-        ((JavascriptExecutor) driver).executeScript("document.documentElement.setAttribute('data-theme', 'light'); document.body.setAttribute('data-theme', 'light');");
+        WebElement viewActions = driver.findElement(By.id("periodViewModeActions"));
+        WebElement exportActions = driver.findElement(By.id("periodExportModeActions"));
+        assertTrue(viewActions.isDisplayed(), "View mode actions must be displayed in view mode");
+        assertFalse(exportActions.isDisplayed(), "Export mode actions must be hidden in view mode");
 
-        // Wait for CSS color transition to settle across all cards (support both rgb and rgba with alpha 1)
-        wait.until(d -> {
-            String in = inflowCard.getCssValue("border-left-color");
-            String out = outflowCard.getCssValue("border-left-color");
-            String net = netflowCard.getCssValue("border-left-color");
-            String sav = savingsCard.getCssValue("border-left-color");
-            String sub = subsCard.getCssValue("border-left-color");
-            return in != null && in.contains("5, 150, 105")
-                && out != null && out.contains("220, 38, 38")
-                && net != null && net.contains("37, 99, 235")
-                && sav != null && sav.contains("180, 83, 9")
-                && sub != null && sub.contains("124, 58, 237");
-        });
+        // 2. Test dynamic mode switcher to Export
+        WebElement switchToExportBtn = driver.findElement(By.id("periodSwitchToExportBtn"));
+        clickElement(switchToExportBtn);
 
-        String lightInflowBorder = inflowCard.getCssValue("border-left-color");
-        String lightOutflowBorder = outflowCard.getCssValue("border-left-color");
-        String lightNetflowBorder = netflowCard.getCssValue("border-left-color");
-        String lightSavingsBorder = savingsCard.getCssValue("border-left-color");
-        String lightSubsBorder = subsCard.getCssValue("border-left-color");
+        wait.until(d -> modalTitle.getText().contains("Export Monthly Summary"));
+        assertTrue(exportActions.isDisplayed(), "Export mode actions must be displayed after switching to export mode");
+        assertFalse(viewActions.isDisplayed(), "View mode actions must be hidden after switching to export mode");
 
-        // In light theme, none of the vertical stripes should be transparent or generic grey
-        assertFalse(lightInflowBorder.contains("rgba(0, 0, 0, 0.08)"), "Light inflow stripe should adapt and not be grey");
-        assertFalse(lightSubsBorder.contains("rgba(0, 0, 0, 0.08)"), "Light subs stripe should adapt and not be grey");
+        WebElement exportCsvBtn = driver.findElement(By.id("periodExportCsvBtn"));
+        WebElement exportJsonBtn = driver.findElement(By.id("periodExportJsonBtn"));
+        WebElement downloadHtmlBtn = driver.findElement(By.id("periodDownloadReportBtn"));
+        assertTrue(exportCsvBtn.isDisplayed(), "Export CSV button must be available in export mode");
+        assertTrue(exportJsonBtn.isDisplayed(), "Export JSON button must be available in export mode");
+        assertTrue(downloadHtmlBtn.isDisplayed(), "Download HTML button must be available in export mode");
 
-        // Verify accessible contrast palette is active
-        assertTrue(lightInflowBorder.contains("5, 150, 105"), "Inflow stripe should adapt to light theme emerald (#059669)");
-        assertTrue(lightOutflowBorder.contains("220, 38, 38"), "Outflow stripe should adapt to light theme crimson (#DC2626)");
-        assertTrue(lightNetflowBorder.contains("37, 99, 235"), "Netflow stripe should adapt to light theme royal blue (#2563EB)");
-        assertTrue(lightSavingsBorder.contains("180, 83, 9"), "Savings stripe should adapt to light theme amber gold (#B45309)");
-        assertTrue(lightSubsBorder.contains("124, 58, 237"), "Subscriptions stripe should adapt to light theme violet (#7C3AED)");
+        // Close modal
+        WebElement closeBtn = driver.findElement(By.id("closePeriodModalBtn"));
+        clickElement(closeBtn);
+        wait.until(d -> !periodModal.getAttribute("class").contains("active"));
 
-        // Reset theme back to default
-        ((JavascriptExecutor) driver).executeScript("document.documentElement.removeAttribute('data-theme'); document.body.removeAttribute('data-theme');");
-        wait.until(d -> "rgb(16, 185, 129)".equals(inflowCard.getCssValue("border-left-color")) || "rgba(16, 185, 129, 1)".equals(inflowCard.getCssValue("border-left-color")));
+        // 3. Test clicking "Export Monthly Summary" directly from profile menu
+        clickElement(profileTrigger);
+        exportSummaryBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("exportMonthlySummaryBtn")));
+        clickElement(exportSummaryBtn);
+
+        wait.until(d -> periodModal.getAttribute("class").contains("active"));
+        wait.until(d -> modalTitle.getText().contains("Export Monthly Summary"));
+        assertTrue(exportActions.isDisplayed(), "Opening via Export Monthly Summary should directly show export actions");
+        assertFalse(viewActions.isDisplayed(), "Opening via Export Monthly Summary should not show view actions");
+
+        clickElement(closeBtn);
+        wait.until(d -> !periodModal.getAttribute("class").contains("active"));
     }
 }

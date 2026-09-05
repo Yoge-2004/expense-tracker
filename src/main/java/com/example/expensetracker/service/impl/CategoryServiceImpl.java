@@ -4,6 +4,8 @@ import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.service.CategoryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -35,6 +37,8 @@ import java.util.List;
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
+    private static final Logger log = LoggerFactory.getLogger(CategoryServiceImpl.class);
+
     /** Repository used for category persistence and querying. */
     private final CategoryRepository categoryRepository;
     private final com.example.expensetracker.repository.ExpenseRepository expenseRepository;
@@ -63,8 +67,7 @@ public class CategoryServiceImpl implements CategoryService {
      *
      * <p>Before creating the category, checks whether a category with the same name
      * already exists for the specified user using
-     * {@link CategoryRepository#existsByNameAndUser(String, User)}.
-     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
+     * {@link CategoryRepository#existsByNameAndUser(String, User)}.\n     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
      * to enforce per-user uniqueness of category names.</p>
      *
      * <p>After a successful save, both the per-user cache and the global categories
@@ -81,7 +84,9 @@ public class CategoryServiceImpl implements CategoryService {
         @CacheEvict(value = "globalCategories", allEntries = true)
     })
     public Category createCategory(String name, User user) {
+        log.info("Creating category '{}' for userId={}", name, user.getId());
         if (categoryRepository.existsByNameAndUser(name, user)) {
+            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}", name, user.getId());
             throw new IllegalArgumentException(
                     "Category '" + name + "' already exists for this user"
             );
@@ -91,7 +96,9 @@ public class CategoryServiceImpl implements CategoryService {
         category.setName(name);
         category.setUser(user);
 
-        return categoryRepository.save(category);
+        Category saved = categoryRepository.save(category);
+        log.info("Saved category '{}' with id={} for userId={}", name, saved.getId(), user.getId());
+        return saved;
     }
 
     /**
@@ -106,7 +113,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Cacheable(value = "userCategories", key = "#user.id")
     public List<Category> getUserCategories(User user) {
-        return categoryRepository.findByUser(user);
+        log.debug("Loading categories for userId={}", user.getId());
+        List<Category> categories = categoryRepository.findByUser(user);
+        log.debug("Loaded {} categories for userId={}", categories.size(), user.getId());
+        return categories;
     }
 
     /**
@@ -121,7 +131,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Cacheable(value = "globalCategories")
     public List<Category> getGlobalCategories() {
-        return categoryRepository.findByUserIsNull();
+        log.debug("Loading global categories");
+        List<Category> globals = categoryRepository.findByUserIsNull();
+        log.debug("Loaded {} global categories", globals.size());
+        return globals;
     }
 
     /**
@@ -140,21 +153,26 @@ public class CategoryServiceImpl implements CategoryService {
         @CacheEvict(value = "globalCategories", allEntries = true)
     })
     public void deleteCategory(Long categoryId, User user) {
+        log.info("Deleting category id={} for userId={}", categoryId, user.getId());
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
 
         if (category.getUser() == null) {
+            log.warn("Attempt to delete global category id={}", categoryId);
             throw new IllegalArgumentException("Global categories cannot be deleted");
         }
         if (!category.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: category id={} does not belong to userId={}", categoryId, user.getId());
             throw new IllegalArgumentException("Category not found");
         }
         if (expenseRepository.existsByCategory_Id(categoryId)
                 || recurringExpenseRepository.existsByCategory_Id(categoryId)) {
+            log.warn("Category id={} cannot be deleted because it is still referenced by expenses or recurring expenses", categoryId);
             throw new IllegalStateException(
                     "Category '" + category.getName() + "' is still used by one or more expenses and can't be deleted");
         }
 
         categoryRepository.delete(category);
+        log.info("Category id={} deleted successfully for userId={}", categoryId, user.getId());
     }
 }

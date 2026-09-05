@@ -61,6 +61,7 @@ export default function RegisterScreen() {
   const [currency, setCurrency] = useState('INR');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [securityPin, setSecurityPin] = useState('');
   const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -190,7 +191,7 @@ export default function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      await register(name.trim(), username.trim(), email.trim(), password, 'BYPASS', currency);
+      await register(name.trim(), username.trim(), email.trim(), password, '', currency, securityPin.trim());
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('🎉 Welcome!', 'Account created successfully! Please sign in with your credentials.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
@@ -211,7 +212,7 @@ export default function RegisterScreen() {
     }
     setIsLoading(true);
     try {
-      await register(name.trim(), username.trim(), email.trim(), password, otp.trim(), currency);
+      await register(name.trim(), username.trim(), email.trim(), password, otp.trim(), currency, securityPin.trim());
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('🎉 Welcome!', 'Account created successfully! Please sign in.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
@@ -415,6 +416,29 @@ export default function RegisterScreen() {
                   <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn}>
                     <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={18} color={c.textMuted} />
                   </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 6-Digit Security PIN (Recovery) */}
+              <View style={styles.fieldGroup}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[styles.label, { color: c.textMuted }]}>6-Digit Security PIN (Recovery)</Text>
+                  <Text style={{ fontSize: 11, color: c.primary, fontWeight: '600' }}>Recommended</Text>
+                </View>
+                <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder('securityPin') }]}>
+                  <Ionicons name="shield-outline" size={18} color={focusedField === 'securityPin' ? c.primary : c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: c.text, letterSpacing: 2 }]}
+                    placeholder="6-digit recovery PIN"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    secureTextEntry
+                    value={securityPin}
+                    onChangeText={(val) => setSecurityPin(val.replace(/[^0-9]/g, ''))}
+                    onFocus={() => setFocusedField('securityPin')}
+                    onBlur={() => setFocusedField(null)}
+                  />
                 </View>
               </View>
 

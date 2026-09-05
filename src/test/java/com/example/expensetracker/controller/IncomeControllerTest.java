@@ -54,6 +54,7 @@ class IncomeControllerTest {
     @MockitoBean private UserService userService;
     @MockitoBean private JwtService jwtService;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
+    @MockitoBean private com.example.expensetracker.security.UserSecurity userSecurity;
 
     private User sampleUser;
     private IncomeDto sampleIncomeDto;

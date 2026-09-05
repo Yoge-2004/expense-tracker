@@ -6,7 +6,7 @@ Feature: Category Management API
   Background:
     Given I am a registered and authenticated user
 
-  # ─── Create Category ──────────────────────────────────────────────────────
+  # ─── Create Category ─────────────────────────────────────────────────────
 
   Scenario: Create a personal category successfully
     Creates a new user-scoped category named "Petrol" for the authenticated user.
@@ -37,14 +37,13 @@ Feature: Category Management API
     Then the response status code should be 400
 
   Scenario: Create category fails for unknown user id
-    Attempts to create a category under userId 999999 which does not exist.
-    The controller calls userService.findById and throws IllegalArgumentException
-    ("User not found") which GlobalExceptionHandler maps to HTTP 400.
+    Attempts to create a category under userId 999999 which does not match
+    the authenticated user. IDOR security validation rejects the request with HTTP 403.
 
     When I create a category named "Ghost Category" for user id 999999
-    Then the response status code should be 400
+    Then the response status code should be 403
 
-  # ─── Get User Categories ──────────────────────────────────────────────────
+  # ─── Get User Categories ─────────────────────────────────────────────────
 
   Scenario: Retrieve all personal categories for the authenticated user
     Seeds two personal categories ("Petrol" and "Medicines") then calls
@@ -70,14 +69,13 @@ Feature: Category Management API
     And the response should be an empty list
 
   Scenario: Get user categories fails for unknown user id
-    Calls GET /api/categories/user/999999 where userId does not exist.
-    The controller throws IllegalArgumentException("User not found") which
-    GlobalExceptionHandler maps to HTTP 400 Bad Request.
+    Calls GET /api/categories/user/999999 which does not match the authenticated
+    user. IDOR security validation rejects the request with HTTP 403.
 
     When I get categories for user id 999999
-    Then the response status code should be 400
+    Then the response status code should be 403
 
-  # ─── Get Global Categories ────────────────────────────────────────────────
+  # ─── Get Global Categories ───────────────────────────────────────────────
 
   Scenario: Retrieve global categories returns the seeded system categories
     Calls GET /api/categories/global and verifies that the response contains

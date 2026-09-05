@@ -80,6 +80,8 @@ export default function AddExpenseScreen() {
     editCurrentAmount?: string;
     editTargetDate?: string;
     editRecurringAmount?: string;
+    // Budget fields
+    editPeriod?: string;
   }>();
   const isEditMode = Boolean(params.editId && params.editId !== "undefined" && params.editId !== "");
 
@@ -166,6 +168,25 @@ export default function AddExpenseScreen() {
   // Budget form state
   const [budgetCategoryId, setBudgetCategoryId] = useState<number | null>(null);
   const [budgetLimit, setBudgetLimit] = useState('');
+  const [budgetPeriod, setBudgetPeriod] = useState<string>('MONTHLY');
+  const [budgetIntervalDays, setBudgetIntervalDays] = useState<string>('30');
+  const [existingBudgets, setExistingBudgets] = useState<any[]>([]);
+  const [isLoadingBudgets, setIsLoadingBudgets] = useState<boolean>(false);
+
+  const loadExistingBudgets = async () => {
+    if (!userId) return;
+    try {
+      setIsLoadingBudgets(true);
+      const data = await apiRequest(`/expenses/budget/status/user/${userId}`);
+      if (Array.isArray(data)) {
+        setExistingBudgets(data);
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      setIsLoadingBudgets(false);
+    }
+  };
 
   // Form field errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -245,8 +266,17 @@ export default function AddExpenseScreen() {
         if (params.editRecurringAmount) setGoalRecurringAmount(params.editRecurringAmount);
         if (params.editFrequency) setGoalFrequency(params.editFrequency);
         if (params.editIntervalDays) setGoalIntervalDays(params.editIntervalDays);
+      } else if (type === "budget") {
+        setActiveTab("budget");
+        if (params.editCategoryId) setBudgetCategoryId(Number(params.editCategoryId));
+        if (params.editAmount) setBudgetLimit(params.editAmount);
+        if (params.editPeriod) setBudgetPeriod(params.editPeriod);
+        if (params.editIntervalDays) setBudgetIntervalDays(params.editIntervalDays);
       }
     } else {
+      setBudgetLimit("");
+      setBudgetPeriod("MONTHLY");
+      setBudgetIntervalDays("30");
       setDescription("");
       setAmount("");
       setExpenseDate(new Date().toISOString().split("T")[0]);
@@ -263,6 +293,12 @@ export default function AddExpenseScreen() {
       setErrors({});
     }
   }, [userId, params.editId, params.editType]);
+
+  useEffect(() => {
+    if (activeTab === 'budget' && userId) {
+      loadExistingBudgets();
+    }
+  }, [activeTab, userId]);
 
   const toggleRecurring = (val: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -510,6 +546,37 @@ export default function AddExpenseScreen() {
     }
   };
 
+  const handleDeleteBudgetFromList = (b: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    showAlert(
+      'Delete Category Budget?',
+      `Are you sure you want to remove the spending limit for ${b.categoryName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Budget',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (b.budgetId) {
+                await apiRequest(`/expenses/budget/${b.budgetId}`, { method: 'DELETE' });
+              } else {
+                await apiRequest(`/expenses/budget/user/${userId}/category/${b.categoryId}`, { method: 'DELETE' });
+              }
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              showAlert('Budget Deleted', 'Category spending cap removed successfully.', undefined, 'success');
+              loadExistingBudgets();
+            } catch (e: any) {
+              const msg = e instanceof ApiError ? e.message : 'Could not delete budget.';
+              showAlert('Delete Failed', msg, undefined, 'error');
+            }
+          },
+        },
+      ],
+      'destructive'
+    );
+  };
+
   const handleSaveBudget = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const fieldErrors: Record<string, string> = {};
@@ -530,6 +597,13 @@ export default function AddExpenseScreen() {
       }
     }
 
+    if (budgetPeriod === 'CUSTOM') {
+      const days = parseInt(budgetIntervalDays.trim(), 10);
+      if (isNaN(days) || days <= 0) {
+        fieldErrors.budgetIntervalDays = 'Please enter a valid number of days.';
+      }
+    }
+
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
       const firstError = Object.values(fieldErrors)[0];
@@ -542,20 +616,31 @@ export default function AddExpenseScreen() {
 
     try {
       const numLimit = parseFloat(cleanLimit);
+      const customDays = budgetPeriod === 'CUSTOM' ? (parseInt(budgetIntervalDays.trim(), 10) || 30) : null;
       await apiRequest(`/expenses/budget/user/${userId}`, {
         method: 'POST',
         body: JSON.stringify({
           categoryId: budgetCategoryId,
+          limitAmount: numLimit,
           limit: numLimit,
-          period: 'MONTHLY',
+          period: budgetPeriod,
+          intervalDays: customDays,
         }),
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert('🎯 Budget Set', 'Category spending cap saved successfully.', [
-        { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
-      ]);
-      setBudgetLimit('');
+      showAlert(isEditMode ? '🎯 Budget Updated' : '🎯 Budget Saved', 'Category spending cap saved successfully.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            loadExistingBudgets();
+            if (isEditMode) router.replace('/(tabs)');
+          },
+        },
+      ], 'success');
+      if (!isEditMode) {
+        setBudgetLimit('');
+      }
     } catch (e: any) {
       const isApiErr = e instanceof ApiError;
       const msg = isApiErr ? e.message : 'Could not save category budget.';
@@ -1475,6 +1560,78 @@ export default function AddExpenseScreen() {
                 {!!errors.budgetLimit && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.budgetLimit}</Text>}
               </View>
 
+              {/* Budget Period Selector */}
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Budget Period</Text>
+                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'MONTHLY', label: 'Monthly' },
+                    { id: 'WEEKLY', label: 'Weekly' },
+                    { id: 'YEARLY', label: 'Yearly' },
+                    { id: 'CUSTOM', label: 'Custom Interval' },
+                  ].map((p) => {
+                    const isSelected = budgetPeriod === p.id;
+                    return (
+                      <TouchableOpacity
+                        key={p.id}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                          setBudgetPeriod(p.id);
+                        }}
+                        style={[
+                          styles.catChip,
+                          {
+                            backgroundColor: isSelected ? c.primary : c.inputBg,
+                            borderColor: isSelected ? c.primary : c.border,
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.catChipText,
+                            {
+                              color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
+                              fontWeight: isSelected ? '800' : '600',
+                            },
+                          ]}
+                        >
+                          {p.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Custom Number of Days */}
+              {budgetPeriod === 'CUSTOM' && (
+                <View style={styles.fieldGroup}>
+                  <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Number of Days</Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      {
+                        backgroundColor: c.inputBg,
+                        borderColor: errors.budgetIntervalDays ? c.accent : c.border,
+                        color: c.text,
+                      },
+                    ]}
+                    placeholder="e.g. 30"
+                    placeholderTextColor={c.textMuted}
+                    keyboardType="number-pad"
+                    value={budgetIntervalDays}
+                    onChangeText={(v) => {
+                      setBudgetIntervalDays(v);
+                      if (errors.budgetIntervalDays) setErrors((prev) => ({ ...prev, budgetIntervalDays: '' }));
+                    }}
+                  />
+                  {!!errors.budgetIntervalDays && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.budgetIntervalDays}</Text>}
+                </View>
+              )}
+
               {/* Submit Budget */}
               <TouchableOpacity
                 activeOpacity={0.85}
@@ -1490,13 +1647,88 @@ export default function AddExpenseScreen() {
                 ) : (
                   <View style={styles.submitBtnInner}>
                     <Text style={[styles.submitBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
-                      Establish Budget Cap
+                      {isEditMode ? 'Update Budget Cap' : 'Establish Budget Cap'}
                     </Text>
                     <Ionicons name="shield-checkmark" size={20} color={isLight ? '#FFF' : '#10120E'} />
                   </View>
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Existing Active Budgets List */}
+            {existingBudgets.length > 0 && (
+              <View style={{ marginTop: 20 }}>
+                <Text style={{ color: c.text, marginBottom: 12, fontSize: 16, fontWeight: '700' }}>
+                  Configured Category Budgets
+                </Text>
+                <View style={{ gap: 10 }}>
+                  {existingBudgets.map((b: any, idx: number) => {
+                    const limitVal = Number(b.limit || 0);
+                    const spentVal = Number(b.spent || 0);
+                    const pct = limitVal > 0 ? Math.min(Math.round((spentVal / limitVal) * 100), 100) : 0;
+                    return (
+                      <View
+                        key={b.budgetId || b.categoryId || idx}
+                        style={[
+                          styles.formCard,
+                          {
+                            backgroundColor: c.card,
+                            borderColor: c.border,
+                            padding: 14,
+                            marginBottom: 0,
+                          },
+                        ]}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                            <Text style={{ fontSize: 18 }}>{getCategoryEmoji(b.categoryName)}</Text>
+                            <View>
+                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>{b.categoryName}</Text>
+                              <Text style={{ fontSize: 12, color: c.textMuted }}>
+                                {b.period === 'CUSTOM' ? `${b.intervalDays || 30} Days` : b.period || 'Monthly'}
+                              </Text>
+                            </View>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                            <TouchableOpacity
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                                setBudgetCategoryId(b.categoryId);
+                                setBudgetLimit(String(b.limit || ''));
+                                setBudgetPeriod(b.period || 'MONTHLY');
+                                if (b.intervalDays) setBudgetIntervalDays(String(b.intervalDays));
+                              }}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              style={{ padding: 4 }}
+                            >
+                              <Ionicons name="pencil" size={16} color={c.textMuted} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => handleDeleteBudgetFromList(b)}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                              style={{ padding: 4 }}
+                            >
+                              <Ionicons name="trash-outline" size={16} color={c.accent} />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <Text style={{ fontSize: 12, color: c.textMuted }}>
+                            {currSymbol}{Math.round(spentVal).toLocaleString()} spent
+                          </Text>
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: c.text }}>
+                            {currSymbol}{Math.round(limitVal).toLocaleString()} limit ({pct}%)
+                          </Text>
+                        </View>
+                        <View style={{ height: 6, backgroundColor: c.inputBg, borderRadius: 3, overflow: 'hidden' }}>
+                          <View style={{ width: `${pct}%`, height: '100%', backgroundColor: pct >= 100 ? c.accent : pct >= 80 ? c.warning : c.primary }} />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
           </StaggeredView>
         )}
       </ScrollView>

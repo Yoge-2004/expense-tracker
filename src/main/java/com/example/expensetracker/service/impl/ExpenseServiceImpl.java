@@ -6,6 +6,8 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.service.ExpenseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ import java.util.List;
  */
 @Service
 public class ExpenseServiceImpl implements ExpenseService {
+
+    private static final Logger log = LoggerFactory.getLogger(ExpenseServiceImpl.class);
 
     /** Repository for expense persistence and querying. */
     private final ExpenseRepository expenseRepository;
@@ -68,6 +72,10 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense createExpense(Expense expense, User user) {
+        log.info("Creating expense for userId={}: amount={}, date={}, categoryId={}",
+                user.getId(), expense.getAmount(), expense.getExpenseDate(),
+                expense.getCategory() != null ? expense.getCategory().getId() : null);
+
         if (expense.getCategory() != null && expense.getCategory().getId() != null) {
             Category category = categoryRepository
                     .findById(expense.getCategory().getId())
@@ -77,6 +85,8 @@ public class ExpenseServiceImpl implements ExpenseService {
             // Validate ownership: only global or user-owned categories are permitted
             if (category.getUser() != null
                     && !category.getUser().getId().equals(user.getId())) {
+                log.warn("Category ownership violation: categoryId={} does not belong to userId={}",
+                        category.getId(), user.getId());
                 throw new IllegalArgumentException(
                         "Category does not belong to this user");
             }
@@ -85,7 +95,9 @@ public class ExpenseServiceImpl implements ExpenseService {
         }
 
         expense.setUser(user);
-        return expenseRepository.save(expense);
+        Expense saved = expenseRepository.save(expense);
+        log.info("Saved expense id={} for userId={}", saved.getId(), user.getId());
+        return saved;
     }
 
     /**
@@ -101,7 +113,10 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Cacheable(value = "userExpenses", key = "#user.id")
     public List<Expense> getUserExpenses(User user) {
-        return expenseRepository.findByUser(user);
+        log.debug("Loading expenses from DB/Cache for userId={}", user.getId());
+        List<Expense> expenses = expenseRepository.findByUser(user);
+        log.debug("Loaded {} expense records for userId={}", expenses.size(), user.getId());
+        return expenses;
     }
 
     /**
@@ -121,16 +136,19 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public void deleteExpense(Long expenseId, User user) {
+        log.info("Deleting expense id={} for userId={}", expenseId, user.getId());
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() ->
                         new IllegalArgumentException("Expense not found"));
 
         if (!expense.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: expense id={} does not belong to userId={}", expenseId, user.getId());
             throw new IllegalArgumentException(
                     "Expense does not belong to this user");
         }
 
         expenseRepository.delete(expense);
+        log.info("Deleted expense id={} for userId={}", expenseId, user.getId());
     }
 
     /**
@@ -151,10 +169,12 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense updateExpense(Long expenseId, Expense expenseUpdates, User user) {
+        log.info("Updating expense id={} for userId={}", expenseId, user.getId());
         Expense existing = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new RuntimeException("Expense not found"));
 
         if (!existing.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: expense id={} does not belong to userId={}", expenseId, user.getId());
             throw new RuntimeException("Expense does not belong to this user");
         }
 
@@ -171,6 +191,8 @@ public class ExpenseServiceImpl implements ExpenseService {
             existing.setCategory(expenseUpdates.getCategory());
         }
 
-        return expenseRepository.save(existing);
+        Expense saved = expenseRepository.save(existing);
+        log.info("Updated expense id={} successfully for userId={}", saved.getId(), user.getId());
+        return saved;
     }
 }

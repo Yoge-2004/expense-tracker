@@ -31,9 +31,10 @@ public final class UserMapper {
     /**
      * Converts a {@link User} entity to a {@link UserDto}.
      *
-     * <p>Maps the entity's {@code id}, {@code email}, and {@code enabled} fields
-     * to the DTO. Sensitive fields such as {@code password} and {@code accountLocked}
-     * are intentionally excluded from the output to prevent exposure in API responses.</p>
+     * <p>Maps the entity's {@code id}, {@code name}, {@code username}, {@code email},
+     * {@code enabled}, and {@code currency} fields to the DTO. Sensitive fields such as
+     * {@code password} and {@code accountLocked} are intentionally excluded from the output
+     * to prevent exposure in API responses.</p>
      *
      * <p>Returns {@code null} safely if the provided user is {@code null}.</p>
      *
@@ -47,6 +48,8 @@ public final class UserMapper {
 
         return new UserDto(
                 user.getId(),
+                user.getName(),
+                user.getUsername(),
                 user.getEmail(),
                 user.isEnabled(),
                 user.getCurrency()

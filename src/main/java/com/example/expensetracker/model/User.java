@@ -2,6 +2,7 @@ package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -65,6 +66,25 @@ public class User {
      */
     @Column(nullable = false)
     private String password;
+
+    /**
+     * The BCrypt-encoded 6-digit Security PIN used for instant password reset
+     * and biometric recovery without relying on third-party email delivery.
+     */
+    @Column(name = "security_pin_hash")
+    private String securityPinHash;
+
+    /**
+     * Failed consecutive Security PIN attempts counter (lockout threshold: 5).
+     */
+    @Column(name = "failed_pin_attempts")
+    private Integer failedPinAttempts = 0;
+
+    /**
+     * Timestamp until which Security PIN verification is temporarily locked.
+     */
+    @Column(name = "pin_locked_until")
+    private LocalDateTime pinLockedUntil;
 
     /**
      * Indicates whether this user account is active.
@@ -190,13 +210,50 @@ public class User {
     /**
      * Sets the BCrypt-encoded password for this user's account.
      *
-     * <p>The caller is responsible for encoding the password before passing it here.
-     * Plain-text passwords must never be stored directly.</p>
+     * <p>The caller is responsible for encoding the password before passing it here.</p>
+     * Plain-text passwords must never be stored directly.
      *
      * @param password the BCrypt-encoded password to set
      */
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    /**
+     * Returns the BCrypt-encoded Security PIN for this user's account.
+     */
+    public String getSecurityPinHash() {
+        return securityPinHash;
+    }
+
+    /**
+     * Sets the BCrypt-encoded Security PIN for this user's account.
+     */
+    public void setSecurityPinHash(String securityPinHash) {
+        this.securityPinHash = securityPinHash;
+    }
+
+    /**
+     * Helper to verify if user has set a Security PIN.
+     */
+    public boolean hasSecurityPin() {
+        return securityPinHash != null && !securityPinHash.isBlank();
+    }
+
+    public int getFailedPinAttempts() {
+        return failedPinAttempts != null ? failedPinAttempts : 0;
+    }
+
+    public void setFailedPinAttempts(int failedPinAttempts) {
+        this.failedPinAttempts = failedPinAttempts;
+    }
+
+    public LocalDateTime getPinLockedUntil() {
+        return pinLockedUntil;
+    }
+
+    public void setPinLockedUntil(LocalDateTime pinLockedUntil) {
+        this.pinLockedUntil = pinLockedUntil;
     }
 
     /**

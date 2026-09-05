@@ -140,16 +140,23 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const submitBtn = document.getElementById('registerBtn');
     if (submitBtn?.disabled) return;
 
-    const name     = document.getElementById('reg-name').value.trim();
-    const username = document.getElementById('reg-username').value.trim();
-    const email    = document.getElementById('reg-email').value.trim();
-    const password = document.getElementById('reg-password').value;
-    const otp      = (document.getElementById('reg-otp')?.value || '').trim();
-    const currency = document.getElementById('reg-currency')?.value || 'INR';
+    const name        = document.getElementById('reg-name').value.trim();
+    const username    = document.getElementById('reg-username').value.trim();
+    const email       = document.getElementById('reg-email').value.trim();
+    const password    = document.getElementById('reg-password').value;
+    const securityPin = (document.getElementById('reg-security-pin')?.value || '').trim();
+    const otp         = (document.getElementById('reg-otp')?.value || '').trim();
+    const currency    = document.getElementById('reg-currency')?.value || 'INR';
 
     if (!/^[a-zA-Z0-9._]{3,30}$/.test(username)) {
         showToast('Username must be 3-30 characters: letters, numbers, dots, or underscores only.', 'error');
         document.getElementById('reg-username').classList.add('is-invalid');
+        return;
+    }
+
+    if (securityPin && !/^[0-9]{6}$/.test(securityPin)) {
+        showToast('Security PIN must be exactly 6 numeric digits.', 'error');
+        document.getElementById('reg-security-pin')?.classList.add('is-invalid');
         return;
     }
 
@@ -161,9 +168,13 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
     if (submitBtn) submitBtn.disabled = true;
     try {
+        const payload = { name, username, email, password, currency };
+        if (otp) payload.otp = otp;
+        if (securityPin) payload.securityPin = securityPin;
+
         await apiRequest('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ name, username, email, password, otp: otp || 'BYPASS', currency }),
+            body: JSON.stringify(payload),
         });
 
         clearInterval(otpTimerInterval);

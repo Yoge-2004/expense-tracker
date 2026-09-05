@@ -20,6 +20,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -60,6 +62,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/expenses")
 public class ExpenseController {
 
+    private static final Logger log = LoggerFactory.getLogger(ExpenseController.class);
+
     private final ExpenseService expenseService;
     private final UserService userService;
     private final CategoryRepository categoryRepository;
@@ -68,6 +72,7 @@ public class ExpenseController {
     private final ExpenseRepository expenseRepository;
     private final ExportService exportService;
     private final ImportService importService;
+    private final com.example.expensetracker.security.UserSecurity userSecurity;
 
     public ExpenseController(ExpenseService expenseService, UserService userService,
                              CategoryRepository categoryRepository,
@@ -75,7 +80,8 @@ public class ExpenseController {
                              RecurringExpenseRepository recurringRepository,
                              ExpenseRepository expenseRepository,
                              ExportService exportService,
-                             ImportService importService) {
+                             ImportService importService,
+                             com.example.expensetracker.security.UserSecurity userSecurity) {
         this.expenseService = expenseService;
         this.userService = userService;
         this.categoryRepository = categoryRepository;
@@ -84,11 +90,12 @@ public class ExpenseController {
         this.expenseRepository = expenseRepository;
         this.exportService = exportService;
         this.importService = importService;
+        this.userSecurity = userSecurity;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
     //  EXPENSE CRUD
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
 
     @Operation(
         summary = "Create expense",
@@ -149,6 +156,9 @@ public class ExpenseController {
             @Parameter(description = "ID of the authenticated user creating the expense.", required = true, example = "1")
             @PathVariable Long userId,
             @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseRequest request) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to create expense for userId={}: amount={}, date={}, categoryId={}",
+                userId, request.getAmount(), request.getExpenseDate(), request.getCategoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Expense expense = new Expense();
@@ -159,6 +169,7 @@ public class ExpenseController {
         category.setId(request.getCategoryId());
         expense.setCategory(category);
         Expense saved = expenseService.createExpense(expense, user);
+        log.info("Expense created successfully with id={} for userId={}", saved.getId(), userId);
         return new ResponseEntity<>(ExpenseMapper.toDto(saved), HttpStatus.CREATED);
     }
 
@@ -206,10 +217,13 @@ public class ExpenseController {
     public ResponseEntity<List<ExpenseDto>> getExpenses(
             @Parameter(description = "ID of the user whose expense records to retrieve.", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.debug("Fetching expense records for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<ExpenseDto> expenses = expenseService.getUserExpenses(user)
                 .stream().map(ExpenseMapper::toDto).collect(Collectors.toList());
+        log.info("Retrieved {} expense records for userId={}", expenses.size(), userId);
         return ResponseEntity.ok(expenses);
     }
 
@@ -277,6 +291,9 @@ public class ExpenseController {
             @Parameter(description = "ID of the user who owns the expense.", required = true, example = "1")
             @PathVariable Long userId,
             @org.springframework.web.bind.annotation.RequestBody ExpenseDto expenseDto) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to update expense id={} for userId={}: amount={}, categoryId={}",
+                expenseId, userId, expenseDto.getAmount(), expenseDto.getCategoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Expense expenseUpdates = new Expense();
@@ -289,6 +306,7 @@ public class ExpenseController {
             expenseUpdates.setCategory(category);
         }
         Expense updated = expenseService.updateExpense(expenseId, expenseUpdates, user);
+        log.info("Expense id={} successfully updated for userId={}", expenseId, userId);
         return ResponseEntity.ok(mapToDto(updated));
     }
 
@@ -334,15 +352,18 @@ public class ExpenseController {
             @PathVariable Long userId,
             @Parameter(description = "ID of the expense record to permanently delete.", required = true, example = "42")
             @PathVariable Long expenseId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to delete expense id={} for userId={}", expenseId, userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         expenseService.deleteExpense(expenseId, user);
+        log.info("Expense id={} successfully deleted for userId={}", expenseId, userId);
         return ResponseEntity.noContent().build();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
     //  BUDGET
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
 
     @Operation(
         summary = "Set category budget",
@@ -399,7 +420,11 @@ public class ExpenseController {
             @Parameter(description = "ID of the user setting the budget.", required = true, example = "1")
             @PathVariable Long userId,
             @org.springframework.web.bind.annotation.RequestBody BudgetDto dto) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Setting budget for userId={}, categoryId={}: limitAmount={}, period={}",
+                userId, dto.getCategoryId(), dto.getLimitAmount(), dto.getPeriod());
         if (dto.getLimitAmount() == null || dto.getLimitAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected budget for userId={}: limitAmount must be greater than zero", userId);
             return ResponseEntity.badRequest()
                     .body(Collections.singletonMap("error", "Budget limit must be a positive number"));
         }
@@ -413,9 +438,11 @@ public class ExpenseController {
         budget.setCategory(category);
         budget.setLimitAmount(dto.getLimitAmount());
         budget.setPeriod(dto.getPeriod() != null ? dto.getPeriod() : "MONTHLY");
+        budget.setIntervalDays("CUSTOM".equalsIgnoreCase(budget.getPeriod()) ? dto.getIntervalDays() : null);
         budget.setStartDate(dto.getStartDate());
         budget.setEndDate(dto.getEndDate());
         budgetRepository.save(budget);
+        log.info("Budget saved successfully for userId={}, categoryId={}", userId, dto.getCategoryId());
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget set successfully"));
     }
 
@@ -437,9 +464,15 @@ public class ExpenseController {
     @ApiResponse(responseCode = "200", description = "Budget deleted (or silently no-op if the ID didn't exist — deleteById does not throw on a missing row)")
     @DeleteMapping("/budget/{budgetId}")
     public ResponseEntity<?> deleteBudgetById(
-            @Parameter(description = "Database ID of the budget to delete. NOTE: not verified against any user — see the authorization gap above.", required = true, example = "3")
+            @Parameter(description = "Database ID of the budget to delete.", required = true, example = "3")
             @PathVariable Long budgetId) {
-        budgetRepository.deleteById(budgetId);
+        log.info("Deleting budget by budgetId={}", budgetId);
+        Budget budget = budgetRepository.findById(budgetId).orElse(null);
+        if (budget != null) {
+            userSecurity.validateUserAccess(budget.getUser().getId());
+            budgetRepository.delete(budget);
+        }
+        log.info("Budget id={} deleted successfully", budgetId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget limit deleted successfully"));
     }
 
@@ -458,9 +491,12 @@ public class ExpenseController {
             @PathVariable Long userId,
             @Parameter(description = "ID of the category whose budget limit should be removed.", required = true, example = "3")
             @PathVariable Long categoryId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Deleting budget for userId={}, categoryId={}", userId, categoryId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         budgetRepository.deleteByUserAndCategoryId(user, categoryId);
+        log.info("Budget for userId={}, categoryId={} deleted successfully", userId, categoryId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget limit deleted successfully"));
     }
 
@@ -472,6 +508,8 @@ public class ExpenseController {
     public ResponseEntity<List<BudgetStatusDto>> getBudgetStatus(
             @Parameter(description = "ID of the user whose budget status to retrieve.", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.debug("Calculating budget status for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<Budget> budgets = budgetRepository.findByUser(user);
@@ -492,8 +530,19 @@ public class ExpenseController {
                     end = now.withDayOfYear(now.lengthOfYear());
                 }
                 case "CUSTOM" -> {
-                    start = b.getStartDate() != null ? b.getStartDate() : now.withDayOfMonth(1);
-                    end = b.getEndDate() != null ? b.getEndDate() : now;
+                    if (b.getStartDate() != null && b.getEndDate() != null) {
+                        start = b.getStartDate();
+                        end = b.getEndDate();
+                    } else if (b.getStartDate() != null && b.getIntervalDays() != null && b.getIntervalDays() > 0) {
+                        start = b.getStartDate();
+                        end = b.getStartDate().plusDays(b.getIntervalDays());
+                    } else if (b.getIntervalDays() != null && b.getIntervalDays() > 0) {
+                        start = now;
+                        end = now.plusDays(b.getIntervalDays());
+                    } else {
+                        start = b.getStartDate() != null ? b.getStartDate() : now.withDayOfMonth(1);
+                        end = b.getEndDate() != null ? b.getEndDate() : now;
+                    }
                 }
                 default -> { // MONTHLY
                     start = now.withDayOfMonth(1);
@@ -516,16 +565,18 @@ public class ExpenseController {
                     spent,
                     pct,
                     period,
+                    b.getIntervalDays(),
                     start,
                     end
             );
         }).collect(Collectors.toList());
+        log.info("Generated budget status for {} budgets for userId={}", statusList.size(), userId);
         return ResponseEntity.ok(statusList);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
     //  RECURRING EXPENSES
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
 
     @Operation(
         summary = "Add recurring expense",
@@ -585,6 +636,9 @@ public class ExpenseController {
             @Parameter(description = "ID of the user registering the recurring expense.", required = true, example = "1")
             @PathVariable Long userId,
             @org.springframework.web.bind.annotation.RequestBody ExpenseDto dto) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to setup recurring expense for userId={}: amount={}, frequency={}, intervalDays={}, categoryId={}",
+                userId, dto.getAmount(), dto.getFrequency(), dto.getIntervalDays(), dto.getCategoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Category category = categoryRepository.findById(dto.getCategoryId())
@@ -595,6 +649,7 @@ public class ExpenseController {
         String frequency = normalizeFrequency(dto.getFrequency());
         Integer intervalDays = "CUSTOM".equals(frequency) ? dto.getIntervalDays() : null;
         if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
+            log.warn("Invalid intervalDays={} for custom recurring expense userId={}", intervalDays, userId);
             throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
         }
         rec.setFrequency(frequency);
@@ -609,6 +664,7 @@ public class ExpenseController {
         firstExp.setExpenseDate(dto.getExpenseDate());
         firstExp.setCategory(category);
         expenseService.createExpense(firstExp, user);
+        log.info("Recurring expense setup successfully with id={} for userId={}", rec.getId(), userId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Recurring Expense Setup Successfully"));
     }
 
@@ -658,6 +714,8 @@ public class ExpenseController {
     public ResponseEntity<List<Map<String, Object>>> getUserSubscriptions(
             @Parameter(description = "ID of the user whose subscriptions to retrieve.", required = true, example = "1")
             @PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.debug("Fetching recurring subscriptions for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<RecurringExpense> subs = recurringRepository.findByUser(user);
@@ -673,6 +731,7 @@ public class ExpenseController {
             map.put("categoryName", sub.getCategory() != null ? sub.getCategory().getName() : "Uncategorized");
             return map;
         }).collect(Collectors.toList());
+        log.info("Retrieved {} recurring subscriptions for userId={}", response.size(), userId);
         return ResponseEntity.ok(response);
     }
 
@@ -732,8 +791,10 @@ public class ExpenseController {
             @PathVariable Long recId,
             @PathVariable(value = "userId", required = false) Long userId,
             @org.springframework.web.bind.annotation.RequestBody Map<String, Object> updates) {
+        log.info("Received request to update subscription id={}, userId={}: fields={}", recId, userId, updates.keySet());
         RecurringExpense rec = recurringRepository.findById(recId)
                 .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
+        userSecurity.validateUserAccess(rec.getUser().getId());
         if (updates.containsKey("amount"))      rec.setAmount(new BigDecimal(updates.get("amount").toString()));
         if (updates.containsKey("description")) rec.setDescription((String) updates.get("description"));
         if (updates.containsKey("nextDueDate")) rec.setNextDueDate(LocalDate.parse((String) updates.get("nextDueDate")));
@@ -742,6 +803,7 @@ public class ExpenseController {
             Integer intervalDays = "CUSTOM".equals(frequency)
                     ? numberValue(updates.get("intervalDays")) : null;
             if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
+                log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
                 throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
             }
             rec.setFrequency(frequency);
@@ -749,11 +811,13 @@ public class ExpenseController {
         } else if (updates.containsKey("intervalDays") && "CUSTOM".equals(rec.getFrequency())) {
             Integer intervalDays = numberValue(updates.get("intervalDays"));
             if (intervalDays == null || intervalDays < 1) {
+                log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
                 throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
             }
             rec.setIntervalDays(intervalDays);
         }
         recurringRepository.save(rec);
+        log.info("Subscription id={} updated successfully", recId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Subscription updated successfully"));
     }
 
@@ -796,7 +860,13 @@ public class ExpenseController {
             @Parameter(description = "ID of the recurring expense subscription to cancel.", required = true, example = "3")
             @PathVariable Long recId,
             @PathVariable(value = "userId", required = false) Long userId) {
+        log.info("Received request to cancel recurring subscription id={}, userId={}", recId, userId);
+        RecurringExpense rec = recurringRepository.findById(recId).orElse(null);
+        if (rec != null) {
+            userSecurity.validateUserAccess(rec.getUser().getId());
+        }
         recurringRepository.deleteById(recId);
+        log.info("Subscription id={} cancelled successfully", recId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Subscription cancelled successfully"));
     }
 
@@ -821,16 +891,19 @@ public class ExpenseController {
         return value == null ? null : Integer.valueOf(value.toString());
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
     //  EXPORT & IMPORT (CSV, JSON, PDF, EXCEL)
-    // ═══════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
 
     @Operation(summary = "Export expenses to CSV")
     @GetMapping("/user/{userId}/export/csv")
     public ResponseEntity<byte[]> exportCsv(@PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting expenses to CSV for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         byte[] bytes = exportService.exportExpensesToCsv(user);
+        log.info("Expenses CSV export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.csv\"")
                 .contentType(MediaType.parseMediaType("text/csv"))
@@ -840,9 +913,12 @@ public class ExpenseController {
     @Operation(summary = "Export expenses to JSON")
     @GetMapping("/user/{userId}/export/json")
     public ResponseEntity<byte[]> exportJson(@PathVariable Long userId) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting expenses to JSON for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         byte[] bytes = exportService.exportExpensesToJson(user);
+        log.info("Expenses JSON export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.json\"")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -855,10 +931,13 @@ public class ExpenseController {
             @PathVariable Long userId,
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting expenses to PDF for userId={}, currencyParam={}, currencyHeader={}", userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportExpensesToPdf(user, preferredCurrency);
+        log.info("Expenses PDF export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -871,10 +950,13 @@ public class ExpenseController {
             @PathVariable Long userId,
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Exporting expenses to Excel for userId={}, currencyParam={}, currencyHeader={}", userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportExpensesToExcel(user, preferredCurrency);
+        log.info("Expenses Excel export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -897,18 +979,24 @@ public class ExpenseController {
     )
     @PostMapping(value = "/user/{userId}/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importCsv(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Importing expenses from CSV for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Map<String, Object> result = importService.importExpensesFromCsv(file, user);
+        log.info("CSV expense import completed for userId={}", userId);
         return ResponseEntity.ok(result);
     }
 
     @Operation(summary = "Import expenses from JSON file")
     @PostMapping(value = "/user/{userId}/import/json", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importJson(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Importing expenses from JSON for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Map<String, Object> result = importService.importExpensesFromJson(file, user);
+        log.info("JSON expense import completed for userId={}", userId);
         return ResponseEntity.ok(result);
     }
 
@@ -922,9 +1010,12 @@ public class ExpenseController {
     @Operation(summary = "Import expenses from Excel file (.xlsx / .xls)", description = "Uploads a Microsoft Excel workbook containing expense entries. Supports dynamic header detection and per-row error tracking.")
     @PostMapping(value = {"/user/{userId}/import/excel", "/user/{userId}/import/xlsx"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importExcel(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Importing expenses from Excel for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Map<String, Object> result = importService.importExpensesFromExcel(file, user);
+        log.info("Excel expense import completed for userId={}", userId);
         return ResponseEntity.ok(result);
     }
 

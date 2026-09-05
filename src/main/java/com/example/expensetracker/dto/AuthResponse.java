@@ -18,16 +18,24 @@ public class AuthResponse {
     @Schema(description = "Preferred display currency of the authenticated user (ISO 4217)", example = "INR")
     private String currency;
 
+    @Schema(description = "Whether the user has configured a 6-digit Security PIN for zero-email recovery", example = "true")
+    private Boolean hasSecurityPin;
+
     public AuthResponse(String token, Long userId, String name, String currency) {
-        this.token    = token;
-        this.userId   = userId;
-        this.name     = name;
-        this.currency = currency;
+        this(token, userId, name, currency, false);
     }
 
-    public String getToken()    { return token; }
-    public Long   getUserId()   { return userId; }
-    public String getName()     { return name; }
-    public String getCurrency() { return currency; }
-}
+    public AuthResponse(String token, Long userId, String name, String currency, Boolean hasSecurityPin) {
+        this.token          = token;
+        this.userId         = userId;
+        this.name           = name;
+        this.currency       = currency;
+        this.hasSecurityPin = hasSecurityPin;
+    }
 
+    public String  getToken()          { return token; }
+    public Long    getUserId()         { return userId; }
+    public String  getName()           { return name; }
+    public String  getCurrency()       { return currency; }
+    public Boolean getHasSecurityPin() { return hasSecurityPin; }
+}

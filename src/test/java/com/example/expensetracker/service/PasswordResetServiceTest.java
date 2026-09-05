@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -160,5 +161,57 @@ class PasswordResetServiceTest {
         verify(mailSender).createMimeMessage();
         verify(mailSender).send(mimeMessage);
         verify(otpRepository).save(any(PasswordResetOtp.class));
+    }
+
+    @Test
+    @DisplayName("resetPassword → Rejects hardcoded BYPASS backdoor outright")
+    void resetPassword_bypassBackdoor_rejected() {
+        assertThrows(BadCredentialsException.class, () ->
+                service.resetPassword("yoge@example.com", "BYPASS", "newPassword123"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("resetPassword → Succeeds with valid 6-digit Security PIN")
+    void resetPassword_validSecurityPin_succeeds() {
+        testUser.setSecurityPinHash("hashed:654321");
+        when(userRepository.findByEmailIgnoreCase("yoge@example.com")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("654321", "hashed:654321")).thenReturn(true);
+
+        service.resetPassword("yoge@example.com", "654321", "newSecret999");
+
+        assertEquals("hashed:newSecret999", testUser.getPassword());
+        assertEquals(0, testUser.getFailedPinAttempts());
+        assertNull(testUser.getPinLockedUntil());
+        verify(userRepository).save(testUser);
+    }
+
+    @Test
+    @DisplayName("resetPassword → Rejects when Security PIN lockout is currently active")
+    void resetPassword_whenLocked_throwsBadCredentialsException() {
+        testUser.setPinLockedUntil(LocalDateTime.now().plusMinutes(10));
+        when(userRepository.findByEmailIgnoreCase("yoge@example.com")).thenReturn(Optional.of(testUser));
+
+        assertThrows(BadCredentialsException.class, () ->
+                service.resetPassword("yoge@example.com", "654321", "newSecret999"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("resetPassword → Locks account for 15 minutes after 5 failed attempts")
+    void resetPassword_wrongPinFifthTime_locksAccount() {
+        testUser.setSecurityPinHash("hashed:654321");
+        testUser.setFailedPinAttempts(4);
+        when(userRepository.findByEmailIgnoreCase("yoge@example.com")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("000000", "hashed:654321")).thenReturn(false);
+        when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc("yoge@example.com", "PASSWORD_RESET"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(BadCredentialsException.class, () ->
+                service.resetPassword("yoge@example.com", "000000", "newSecret999"));
+
+        assertEquals(5, testUser.getFailedPinAttempts());
+        assertNotNull(testUser.getPinLockedUntil());
+        verify(userRepository).save(testUser);
     }
 }

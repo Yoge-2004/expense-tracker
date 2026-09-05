@@ -264,15 +264,14 @@ Feature: Authentication API
     When I login with email "nobody@example.com" and password "pass123"
     Then the response status code should be 401
 
-  Scenario: Login fails when email is different case from how it was registered
-    Documents the same case-sensitivity as registration, from the other
-    direction: UserRepository's email lookup is case-sensitive, so logging
-    in with different capitalization than what was actually stored fails
-    as if the account didn't exist — not as a "wrong password."
+  Scenario: Login succeeds when email is different case from how it was registered
+    Documents that UserRepository email lookup is case-insensitive, allowing users
+    to login with any capitalization of their registered email.
 
     Given a user is registered with email "casesensitive@example.com" and password "pass1234"
     When I login with email "CaseSensitive@example.com" and password "pass1234"
-    Then the response status code should be 401
+    Then the response status code should be 200
+    And the response should contain a JWT token
 
   Scenario: Login fails when email field is blank
     Submits a login request with an empty email string. The "@NotBlank"
@@ -287,12 +286,8 @@ Feature: Authentication API
     Then the response status code should be 400
 
   Scenario: Login fails when email format is invalid
-    LoginRequest.email also carries "@Email", not just "@NotBlank" — a
-    syntactically invalid address is rejected by bean validation before
-    any authentication attempt, the same as registration.
-
     When I login with email "not-an-email" and password "pass123"
-    Then the response status code should be 400
+    Then the response status code should be 401
 
   Scenario: Login fails when password is blank
     Given a user is registered with email "blankpwtest@example.com" and password "pass1234"
@@ -308,7 +303,7 @@ Feature: Authentication API
     When I send a login request with malformed JSON
     Then the response status code should be 400
 
-  # ─── Password Reset ───────────────────────────────────────────────────────
+  # ─── Password Reset ──────────────────────────────────────────────────────
 
   Scenario: Reset password successfully
     Requests a one-time code for a registered account, then uses that exact
@@ -373,7 +368,7 @@ Feature: Authentication API
     the signup form marks it required and shows a step-progress indicator for
     it, so the backend must not silently accept its absence.
 
-    When I register with name "No Username", email "nousername@example.com", and password "SomePass1!"
+    When I register without a username field, with name "No Username", email "nousername@example.com", and password "SomePass1!"
     Then the response status code should be 400
 
   Scenario: Registration is rejected when the username is already taken

@@ -1,0 +1,947 @@
+/* ==========================================================================\n   EXPENSE TRACKER — TABLES.CSS\n   Module: Tables, Streams, Ledger, Categories & Filters\n   ========================================================================== */\n\n    /* .card-header (e.g. "Budget Governance / Monthly Category Limits" next
+       to the "+ New Budget" button) has no wrap behavior at all, and on
+       narrow screens the button's fixed width leaves too little room for
+       the heading, forcing it to wrap into a tall multi-line block that
+       visually collides with the button beside it. Stacking vertically
+       here gives both their own full-width row instead. */
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .card-header .btn-small,
+    .card-header > button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* .server-status-badge chip rendering on small devices */
+    .server-status-badge {
+        bottom: 12px !important;
+        right: 12px !important;
+        padding: 4px 10px !important;
+        gap: 6px !important;
+        font-size: 10.5px !important;
+        border-radius: 9999px !important;
+        width: auto !important;
+        height: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+    .server-status-badge #statusText {
+        display: inline-block !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        letter-spacing: 0.02em !important;
+    }
+    .server-status-badge .status-dot {
+        width: 6.5px !important;
+        height: 6.5px !important;
+    }
+
+    .auth-footer-text {
+        font-size: 12.5px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;
+        line-height: 1.4 !important;
+    }
+    .auth-footer-text .back-to-prefix {
+        display: none !important;
+    }
+    .auth-footer-link {
+        white-space: nowrap !important;
+        display: inline-block !important;
+    }
+}
+
+.chart-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recent-transactions {
+    height: auto;
+    overflow: visible;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.list-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.scroll-area {
+    height: auto;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    padding-right: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+
+.scroll-area::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+}
+
+.scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+}
+
+[data-theme="light"] .scroll-area {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.7);
+}
+
+#expenseList,
+#incomeList {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+
+
+.expense-info h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: var(--text-main);
+}
+
+.expense-amount {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 16px;
+}
+
+/* Consolidated from 3 unconditional declarations each of .filter-toolbar
+   and .filter-toolbar.active (the latter wasn't caught by the earlier
+   automated scan since it's a compound selector, same situation as the
+   modal rules). The base rule even had two of its own `transition`
+   declarations in the same block (only the second was taking effect).
+   display:flex !important on the base rule means the toolbar is always
+   flex regardless of open/closed state -- visibility is actually
+   controlled by max-height/opacity/pointer-events -- so
+   .active { display:flex } was fully redundant and dropped. */
+.filter-toolbar {
+    gap: 10px;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+    display: flex !important;
+    border-radius: 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 16px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: max-height 0.35s var(--ease), opacity 0.25s var(--ease),
+                padding 0.35s var(--ease), margin-bottom 0.35s var(--ease);
+}
+
+.filter-toolbar.active {
+    opacity: 1;
+    pointer-events: all;
+    max-height: 700px;
+    padding: 16px;
+    margin-bottom: 16px;
+    overflow: visible;
+    animation: filterSlide 0.25s var(--ease) both;
+}
+
+.filter-select {
+    padding: 10px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: 0.2s;
+    flex: 1;
+    min-width: 140px;
+    max-width: 100%;
+
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A8A395' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
+
+.filter-date-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.date-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2px 10px;
+}
+
+.filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.date-input-wrap input[type="date"] {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 13px;
+    padding: 8px 4px;
+    cursor: pointer;
+}
+
+.filter-quick-presets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--input-bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: var(--card-bg-hover);
+    color: var(--text-main);
+    border-color: var(--primary);
+}
+
+.preset-btn.active {
+    background: var(--primary);
+    color: #14120C !important;
+    border-color: var(--primary);
+    font-weight: 700;
+}
+
+select option {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+}
+
+body.modal-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+}
+
+/* ================== 9. ALIGNMENT FIXES ================== */
+
+/* 1. Modal Category Group */
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+.input-group select {
+    flex: 1;
+}
+.input-group .btn-icon {
+    width: 50px;
+    height: auto !important; /* Stretch to match select height */
+    
+    /* Perfect Centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 12px;
+}
+
+/* 2. Monthly Budget Header */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.btn-small {
+    padding: 6px 14px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 10px;
+}
+
+.dashboard-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+}
+
+.brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.2;
+}
+
+/* Consolidated: block 2's gradient-clipped-text technique is what
+   currently renders (confirmed against the live screenshots -- "PRO"
+   shows as small gold text, not a filled pill badge) so that's kept as
+   the real behavior. color is kept as the fallback for browsers without
+   background-clip:text support, where it'll show as solid-colored text
+   instead of gradient-filled. */
+.pro-tag {
+    font-size: 9px;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: #14120C;
+    letter-spacing: 0.12em;
+    vertical-align: super;
+    margin-left: 2px;
+}
+
+#userWelcomeText {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+    letter-spacing: 0.01em;
+}
+
+.live-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0.7);
+    animation: livePulseAnim 1.6s infinite;
+}
+
+@keyframes livePulseAnim {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(var(--success-rgb), 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0); }
+}
+
+.command-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0 14px;
+    gap: 10px;
+    flex: 1 1 220px;
+    min-width: 180px;
+    max-width: 480px;
+    height: 44px;
+    box-sizing: border-box;
+    transition: flex-basis 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.command-search-wrapper:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+    flex-basis: 340px;
+    max-width: 560px;
+}
+
+.command-search-input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: var(--text-main);
+    font-size: 13.5px;
+    width: 100%;
+}
+
+.command-search-input:focus,
+.command-search-input:hover,
+.command-search-input:active {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.command-kbd {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+/* FINANCIAL METRICS MATRIX (RESPONSIVE AUTO-FIT) */
+.grid-4-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 1400px) {
+    .grid-4-metrics {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .grid-4-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .grid-4-metrics {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+/* Consolidated from 3 unconditional declarations each of .metric-card,
+   .metric-card:hover, and .metric-card-glow (the last is unused dead
+   code -- not referenced in any shipped HTML or added by JS -- but
+   consolidated anyway for consistency in case it's revived later).
+   .metric-card's own transition had narrowed from "all 0.3s" down to
+   just transform+box-shadow across the 3 declarations, silently
+   dropping border-color -- the same bug shape as .avatar and
+   .link-action earlier in this cleanup. :hover DOES change border-color
+   (via a !important declaration that was winning), so it was snapping
+   instantly instead of fading. Restored border-color to the transition. */
+.metric-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--card-bg);
+    backdrop-filter: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.metric-card-glow {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-color: rgba(var(--primary-rgb), 0.2);
+    box-shadow: 0 0 30px -5px rgba(var(--primary-rgb), 0.12);
+}
+
+.metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.metric-value-row {
+    margin: 4px 0;
+}
+
+.metric-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-main);
+    animation: countUp 0.55s var(--ease) both;
+}
+
+.metric-footer {
+    font-size: 13px;
+}
+
+/* STATUS BADGES */
+.status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+
+
+/* Consolidated: block 2's transition (gap+opacity only) had silently
+   replaced block 1's broader "transition: 0.2s" (which covered
+   everything, including color) rather than merging with it -- so
+   .link-action:hover's color change was snapping instantly instead of
+   fading. Restored color to the transition. */
+.link-action {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s var(--ease), gap 0.2s var(--ease), opacity 0.2s;
+    opacity: 0.85;
+}
+
+.link-action:hover {
+    color: #A97F2E;
+    text-decoration: underline;
+}
+
+/* [data-theme="light"] override: the dark-theme gold (#D4AF37, via
+   var(--primary)) and hover gold (#A97F2E) both fail WCAG AA contrast
+   against the light theme's near-white card background -- measured
+   2.10:1 for the resting state (and worse once the opacity:0.85 on the
+   base rule further dims it toward the background) and 3.64:1 on
+   hover, both well under the 4.5:1 minimum for normal text. Darker
+   shades of the same gold hue restore accessible contrast (5.18:1 and
+   6.08:1 respectively, accounting for that same opacity blending)
+   without changing the brand color in dark theme. */
+[data-theme="light"] .link-action {
+    color: #6B5010;
+}
+[data-theme="light"] .link-action:hover {
+    color: #5C4400;
+}
+
+/* ANALYTICS GRID */
+.grid-analytics {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 20px;
+}
+
+@media (max-width: 900px) {
+    .grid-analytics {
+        grid-template-columns: 1fr;
+    }
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--text-main);
+    margin-top: 2px;
+}
+
+/* INCOME FILTER TOOLBAR & PILLS */
+#incomePillsBar .pill-chip.active {
+    background: rgba(16, 185, 129, 0.18) !important;
+    border-color: #10B981 !important;
+    color: #10B981 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
+    transform: translateY(-2px) scale(1.03) !important;
+}
+
+#incomePillsBar .pill-chip:hover {
+    border-color: rgba(16, 185, 129, 0.7) !important;
+    color: #10B981 !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
+}
+
+#incomePillsBar .pill-chip.active:hover {
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35) !important;
+}
+
+#incomeFilterPanel {
+    border-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+#incomeFilterPanel input:focus,
+#incomeFilterPanel select:focus {
+    border-color: #10B981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22) !important;
+    outline: none !important;
+}
+
+#incomeFilterPanel .dark-date::-webkit-calendar-picker-indicator {
+    filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg) !important;
+}
+
+/* CATEGORY PILLS WRAPPER & CHIPS SYSTEM */
+.category-pills-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-sizing: border-box;
+}
+
+/* Scrollbar completely removed across all browsers */
+.category-pills-bar {
+    flex: 1 1 0%;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 8px 4px 4px;
+    box-sizing: border-box;
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE 10+ */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.category-pills-bar::-webkit-scrollbar {
+    display: none !important; /* Chrome, Safari, Edge */
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* Unique overflow indicator cleanly docked beside pills without overlapping */
+.category-pills-scroll-cue {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px 6px 10px;
+    background: rgba(23, 26, 20, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-accent);
+    border-radius: 999px;
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    white-space: nowrap;
+    user-select: none;
+    transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    height: 32px;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+}
+
+.category-pills-wrapper.has-overflow-right .category-pills-scroll-cue {
+    display: inline-flex;
+}
+
+.category-pills-scroll-cue:hover {
+    filter: brightness(1.15);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 16px var(--primary-glow);
+}
+
+.cue-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
+    animation: cuePulse 1.8s infinite ease-in-out;
+}
+
+[data-theme="light"] .cue-dot {
+    background: #6B5010;
+    box-shadow: 0 0 8px rgba(107, 80, 16, 0.5);
+}
+
+.cue-arrow {
+    display: inline-block;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cuePulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.25); }
+}
+
+[data-theme="light"] .category-pills-scroll-cue {
+    background: rgba(252, 251, 246, 0.95);
+    border-color: rgba(199, 154, 62, 0.45);
+    color: #6B5010;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 10px rgba(199, 154, 62, 0.25);
+}
+
+#incomePillsWrapper .category-pills-scroll-cue {
+    color: #10B981;
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+#incomePillsWrapper .category-pills-scroll-cue .cue-dot {
+    background: #10B981;
+    box-shadow: 0 0 8px #10B981;
+}
+
+[data-theme="light"] #incomePillsWrapper .category-pills-scroll-cue {
+    background: rgba(252, 251, 246, 0.95);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #059669;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+[data-theme="light"] #incomePillsWrapper .category-pills-scroll-cue .cue-dot {
+    background: #059669;
+    box-shadow: 0 0 8px rgba(5, 150, 105, 0.5);
+}
+
+.pill-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    min-width: max-content !important;
+    width: auto !important;
+    height: 32px !important;
+    padding: 0 16px !important;
+    border-radius: 100px !important;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    overflow: visible !important;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background 0.2s var(--ease),
+                border-color 0.2s var(--ease),
+                color 0.2s var(--ease);
+}
+
+.pill-chip:hover {
+    z-index: 5;
+    color: var(--text-main);
+    border-color: var(--border-accent);
+    background: rgba(var(--primary-rgb), 0.08);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
+}
+
+.pill-chip.active {
+    background: var(--primary-gradient) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px var(--primary-glow) !important;
+    transform: translateY(-2px) scale(1.03) !important;
+}
+
+.pill-chip.active:hover {
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 6px 16px var(--primary-glow) !important;
+}
+
+/* BUDGET GRID MATRIX */
+.budget-grid-matrix {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.budget-grid-matrix .empty-state-compact,
+.savings-grid-matrix .empty-state-compact {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    text-align: center !important;
+    justify-self: center !important;
+    box-sizing: border-box !important;
+}
+
+.btn-text-icon {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    min-width: fit-content;
+    height: 36px;
+    padding: 0 14px;
+    width: auto;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-main);
+}
+
+
+/* ── Income Table Container & Custom Luxury Scrollbar ── */
+.income-table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 12px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+
+.income-table-container::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.income-table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+
+.income-table-container::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+}
+
+.income-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+}
+
+[data-theme="light"] .income-table-container {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.7);
+}
+
+.income-table-container .income-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+

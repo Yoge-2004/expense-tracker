@@ -76,6 +76,10 @@ interface BudgetStatus {
   spent: number;
   percentage: number;
   status: string;
+  period?: string;
+  intervalDays?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface Category {
@@ -430,6 +434,53 @@ export default function DashboardScreen() {
               fetchData(true);
             } catch (e: any) {
               const msg = e instanceof ApiError ? e.message : "Could not delete savings goal.";
+              showAlert("Delete Failed", msg, undefined, "error");
+            }
+          },
+        },
+      ],
+      "destructive"
+    );
+  };
+
+  const handleBudgetEdit = (b: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.push({
+      pathname: "/(tabs)/add-expense",
+      params: {
+        editType: "budget",
+        editId: String(b.budgetId || b.categoryId),
+        editCategoryId: String(b.categoryId),
+        editAmount: String(b.limit),
+        editPeriod: b.period || "MONTHLY",
+        editIntervalDays: String(b.intervalDays || "30"),
+      },
+    });
+  };
+
+  const handleBudgetDelete = (b: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    showAlert(
+      "Delete Category Budget?",
+      `Are you sure you want to remove the spending limit for ${b.categoryName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Budget",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (b.budgetId) {
+                await apiRequest(`/expenses/budget/${b.budgetId}`, { method: "DELETE" });
+              } else {
+                await apiRequest(`/expenses/budget/user/${userId}/category/${b.categoryId}`, { method: "DELETE" });
+              }
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              setBudgets((prev) => prev.filter((item) => (item.budgetId ? item.budgetId !== b.budgetId : item.categoryId !== b.categoryId)));
+              showAlert("Budget Deleted", "Category spending cap removed successfully.", undefined, "success");
+              fetchData(true);
+            } catch (e: any) {
+              const msg = e instanceof ApiError ? e.message : "Could not delete category budget.";
               showAlert("Delete Failed", msg, undefined, "error");
             }
           },
@@ -900,7 +951,11 @@ export default function DashboardScreen() {
 
         {/* 5. Budget vs Actual Progress Bar */}
         <StaggeredView delay={460} direction="up">
-          <BudgetVsActualChart budgets={budgets} />
+          <BudgetVsActualChart
+            budgets={budgets}
+            onEditBudget={handleBudgetEdit}
+            onDeleteBudget={handleBudgetDelete}
+          />
         </StaggeredView>
 
         {/* =========================================

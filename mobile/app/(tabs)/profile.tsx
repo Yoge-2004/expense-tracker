@@ -23,6 +23,8 @@ import {
   FlatList,
   ActivityIndicator,
   useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -76,6 +78,51 @@ export default function ProfileScreen() {
       } else {
         showAlert('Permission Needed', 'Please allow notification permissions in your device settings to receive expense reminders.', undefined, 'warning');
       }
+    }
+  };
+
+  // Security PIN setup state
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [hasSecurityPin, setHasSecurityPin] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [isSavingPin, setIsSavingPin] = useState(false);
+
+  React.useEffect(() => {
+    if (!userId) return;
+    apiRequest(`/users/${userId}`)
+      .then((u) => {
+        if (u && u.hasSecurityPin) setHasSecurityPin(true);
+      })
+      .catch(() => {});
+  }, [userId]);
+
+  const handleSavePin = async () => {
+    if (!/^[0-9]{6}$/.test(newPin.trim())) {
+      showAlert('Invalid PIN', 'PIN must be exactly 6 numeric digits.', undefined, 'warning');
+      return;
+    }
+    if (newPin.trim() !== confirmPin.trim()) {
+      showAlert('Mismatch', 'PIN entries do not match.', undefined, 'warning');
+      return;
+    }
+    setIsSavingPin(true);
+    try {
+      await apiRequest(`/users/${userId}/security-pin`, {
+        method: 'PUT',
+        body: JSON.stringify({ securityPin: newPin.trim() }),
+      });
+      setHasSecurityPin(true);
+      setShowPinModal(false);
+      setNewPin('');
+      setConfirmPin('');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert('Security PIN Saved 🔒', 'Your 6-digit recovery PIN has been configured successfully.', undefined, 'success');
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : 'Could not save Security PIN.';
+      showAlert('Save Failed', msg, undefined, 'error');
+    } finally {
+      setIsSavingPin(false);
     }
   };
 
@@ -326,6 +373,29 @@ export default function ProfileScreen() {
         <StaggeredView delay={250} direction="up">
           <Text style={[styles.sectionTitle, { color: c.textMuted }]}>ACCOUNT</Text>
           <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
+            {/* 6-Digit Security PIN (Zero-Email Recovery) */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowPinModal(true);
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>6-Digit Security PIN</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    {hasSecurityPin ? 'Active (Zero-email recovery enabled)' : 'Not configured (Tap to setup)'}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+            </TouchableOpacity>
+
             {/* Sign Out */}
             <TouchableOpacity
               activeOpacity={0.8}
@@ -447,6 +517,71 @@ export default function ProfileScreen() {
               }}
             />
           </View>
+        </View>
+      </Modal>
+
+      {/* Security PIN Setup Modal */}
+      <Modal
+        visible={showPinModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPinModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxWidth: 400 }}>
+            <View style={[styles.deleteModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: c.text }}>Account Security PIN 🔒</Text>
+                <TouchableOpacity onPress={() => setShowPinModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="close" size={22} color={c.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <Text style={{ fontSize: 13, color: c.textMuted, lineHeight: 18, marginBottom: 16 }}>
+                Configure a 6-digit numeric PIN for instant zero-email account recovery. You can reset your password anytime even if email OTP is unavailable.
+              </Text>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: c.textMuted, marginBottom: 6 }}>NEW 6-DIGIT PIN</Text>
+                <TextInput
+                  style={[styles.deleteInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, letterSpacing: 4, textAlign: 'center', fontSize: 18, fontWeight: '700' }]}
+                  placeholder="••••••"
+                  placeholderTextColor={c.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  secureTextEntry
+                  value={newPin}
+                  onChangeText={setNewPin}
+                />
+              </View>
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: c.textMuted, marginBottom: 6 }}>CONFIRM 6-DIGIT PIN</Text>
+                <TextInput
+                  style={[styles.deleteInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, letterSpacing: 4, textAlign: 'center', fontSize: 18, fontWeight: '700' }]}
+                  placeholder="••••••"
+                  placeholderTextColor={c.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  secureTextEntry
+                  value={confirmPin}
+                  onChangeText={setConfirmPin}
+                />
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSavePin}
+                disabled={isSavingPin}
+                style={[
+                  styles.confirmDeleteBtn,
+                  { backgroundColor: c.primary, opacity: isSavingPin ? 0.7 : 1 },
+                ]}
+              >
+                {isSavingPin ? (
+                  <ActivityIndicator size="small" color="#10120E" />
+                ) : (
+                  <Text style={[styles.confirmDeleteBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>Save Security PIN</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 

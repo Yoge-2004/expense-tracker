@@ -3,6 +3,8 @@ package com.example.expensetracker.config;
 import com.example.expensetracker.security.JwtAuthenticationFilter;
 import com.example.expensetracker.security.RestAccessDeniedHandler;
 import com.example.expensetracker.security.RestAuthenticationEntryPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -11,22 +13,16 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
 /**
  * Main Spring Security configuration for the Expense Tracker application.
  *
- * <p>This class configures the HTTP security filter chain, enabling stateless
- * JWT-based authentication while disabling session management and CSRF protection
- * (appropriate for REST APIs consumed by non-browser or SPA clients).</p>
- *
- * <p>Security rules defined here:</p>
- * <ul>
- *   <li>Public access is granted to {@code /api/auth/**} (login, register, reset-password)
- *       and {@code /h2-console/**} (for development).</li>
- *   <li>All other endpoints require an authenticated JWT token.</li>
- *   <li>The custom {@link JwtAuthenticationFilter} is inserted before the default
- *       {@link UsernamePasswordAuthenticationFilter} to intercept and validate JWTs.</li>
- * </ul>
+ * <p>Configures stateless JWT authentication, endpoint authorization,
+ * custom entry points, and robust HTTP security headers including
+ * Content-Security-Policy (CSP), Strict-Transport-Security (HSTS),
+ * X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and Permissions-Policy.</p>
  *
  * @author Yogeshwaran
  * @version 1.0
@@ -37,6 +33,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
+    private static final String CSP_POLICY =
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://accounts.google.com; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; " +
+            "font-src 'self' data: https://fonts.gstatic.com; " +
+            "img-src 'self' data: https://images.unsplash.com https://*.googleusercontent.com https://cozy-narwhal-3099ad.netlify.app; " +
+            "connect-src 'self' https://accounts.google.com https://ipapi.co https://yoge-2004-expense-tracker-backend.hf.space; " +
+            "frame-src 'self' https://accounts.google.com; " +
+            "frame-ancestors 'self'; " +
+            "object-src 'none'; " +
+            "base-uri 'self';";
+
     /** The JWT authentication filter injected into the security filter chain. */
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
@@ -45,9 +55,6 @@ public class SecurityConfig {
     /**
      * Constructs a {@code SecurityConfig} with the required JWT authentication filter
      * and the JSON-based handlers for filter-chain-level auth failures.
-     *
-     * @param jwtAuthenticationFilter the custom filter responsible for JWT validation
-     *                                on each incoming HTTP request
      */
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                            RestAuthenticationEntryPoint restAuthenticationEntryPoint,
@@ -58,26 +65,15 @@ public class SecurityConfig {
     }
 
     /**
-     * Defines and builds the main {@link SecurityFilterChain} bean for the application.
+     * Defines the primary {@link SecurityFilterChain} bean.
      *
-     * <p>The chain is configured to:</p>
-     * <ul>
-     *   <li>Enable CORS with default settings (delegated to {@link CorsConfig}).</li>
-     *   <li>Disable CSRF protection (not needed for stateless JWT APIs).</li>
-     *   <li>Enforce stateless session management — no HTTP sessions are created or used.</li>
-     *   <li>Allow unauthenticated access to auth endpoints and H2 console.</li>
-     *   <li>Require authentication for all other requests.</li>
-     *   <li>Disable form-based login.</li>
-     *   <li>Register the {@link JwtAuthenticationFilter} before the standard
-     *       username/password filter.</li>
-     * </ul>
-     *
-     * @param http the {@link HttpSecurity} builder provided by Spring Security
-     * @return the fully configured {@link SecurityFilterChain}
-     * @throws Exception if the security configuration fails
+     * @param http the {@link HttpSecurity} builder
+     * @return the configured {@link SecurityFilterChain}
+     * @throws Exception if any security configuration fails
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication and robust security headers");
 
         http
                 .cors(Customizer.withDefaults())
@@ -115,9 +111,26 @@ public class SecurityConfig {
                         .accessDeniedHandler(restAccessDeniedHandler)
                 )
 
-                .formLogin(form -> form.disable());
+                .formLogin(form -> form.disable())
 
-        http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
+                .headers(headers -> headers
+                        .contentTypeOptions(Customizer.withDefaults())
+                        .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                        )
+                        .referrerPolicy(referrer -> referrer
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                        )
+                        .permissionsPolicyHeader(permissions -> permissions
+                                .policy("geolocation=(), camera=(), microphone=(), payment=()")
+                        )
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives(CSP_POLICY)
+                        )
+                );
 
         // Register JWT Filter before the default username/password filter
         http.addFilterBefore(

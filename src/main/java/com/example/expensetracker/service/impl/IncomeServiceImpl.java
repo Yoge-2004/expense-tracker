@@ -10,6 +10,8 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.service.IncomeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class IncomeServiceImpl implements IncomeService {
+
+    private static final Logger log = LoggerFactory.getLogger(IncomeServiceImpl.class);
 
     private final IncomeRepository incomeRepository;
     private final ExpenseRepository expenseRepository;
@@ -51,6 +55,7 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public IncomeDto createIncome(IncomeRequest request, User user) {
+        log.info("Creating income record for userId={}: amount={}, source={}", user.getId(), request.getAmount(), request.getSource());
         Income income = IncomeMapper.toEntity(request, user);
         if (Boolean.TRUE.equals(income.getIsRecurring())) {
             if (income.getFrequency() == null || income.getFrequency().isBlank()) {
@@ -68,6 +73,7 @@ public class IncomeServiceImpl implements IncomeService {
             income.setNextDueDate(null);
         }
         Income saved = incomeRepository.save(income);
+        log.info("Income record created with id={} for userId={}", saved.getId(), user.getId());
         return IncomeMapper.toDto(saved);
     }
 
@@ -78,10 +84,13 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional(readOnly = true)
     @Cacheable(value = "userIncomes", key = "#user.id")
     public List<IncomeDto> getUserIncomes(User user) {
-        return incomeRepository.findByUser(user)
+        log.debug("Retrieving user incomes for userId={}", user.getId());
+        List<IncomeDto> list = incomeRepository.findByUser(user)
                 .stream()
                 .map(IncomeMapper::toDto)
                 .collect(Collectors.toList());
+        log.debug("Loaded {} income records for userId={}", list.size(), user.getId());
+        return list;
     }
 
     /**
@@ -91,10 +100,13 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public IncomeDto updateIncome(Long incomeId, IncomeRequest request, User user) {
+        log.info("Updating income id={} for userId={}", incomeId, user.getId());
         Income existing = incomeRepository.findById(incomeId)
                 .orElseThrow(() -> new IllegalArgumentException("Income not found"));
 
         if (!existing.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: income id={} belongs to userId={}, but requested by userId={}",
+                    incomeId, existing.getUser().getId(), user.getId());
             throw new IllegalArgumentException("Income does not belong to this user");
         }
 
@@ -132,6 +144,7 @@ public class IncomeServiceImpl implements IncomeService {
         }
 
         Income saved = incomeRepository.save(existing);
+        log.info("Income id={} updated successfully for userId={}", saved.getId(), user.getId());
         return IncomeMapper.toDto(saved);
     }
 
@@ -142,14 +155,18 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public void deleteIncome(Long incomeId, User user) {
+        log.info("Deleting income id={} for userId={}", incomeId, user.getId());
         Income existing = incomeRepository.findById(incomeId)
                 .orElseThrow(() -> new IllegalArgumentException("Income not found"));
 
         if (!existing.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: income id={} belongs to userId={}, but requested by userId={}",
+                    incomeId, existing.getUser().getId(), user.getId());
             throw new IllegalArgumentException("Income does not belong to this user");
         }
 
         incomeRepository.delete(existing);
+        log.info("Income id={} deleted successfully for userId={}", incomeId, user.getId());
     }
 
     /**
@@ -158,6 +175,7 @@ public class IncomeServiceImpl implements IncomeService {
     @Override
     @Transactional(readOnly = true)
     public CashFlowSummaryDto getCashFlowSummary(User user, int year, int month) {
+        log.info("Computing cash flow summary for userId={}, period={}-{}", user.getId(), year, month);
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
@@ -181,6 +199,9 @@ public class IncomeServiceImpl implements IncomeService {
                     .doubleValue();
             savingsRate = Math.round(savingsRate * 10.0) / 10.0;
         }
+
+        log.debug("Computed cash flow for userId={}: totalIncome={}, totalExpense={}, netSavings={}, savingsRate={}%",
+                user.getId(), totalIncome, totalExpense, netSavings, savingsRate);
 
         return new CashFlowSummaryDto(
                 year,

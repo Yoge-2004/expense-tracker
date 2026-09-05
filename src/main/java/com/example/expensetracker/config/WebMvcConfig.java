@@ -1,8 +1,11 @@
 package com.example.expensetracker.config;
 
+import com.example.expensetracker.security.RateLimitInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -16,8 +19,8 @@ import java.util.concurrent.TimeUnit;
  * browsers and CDNs can serve them from cache, dramatically reducing latency
  * for repeat visitors to the Hugging Face Spaces deployment.</p>
  *
- * <p>The max-age is configurable via the {@code app.cache.static-max-age}
- * property (defaults to 86400 seconds / 1 day).</p>
+ * <p>Also registers the {@link RateLimitInterceptor} for protecting API routes
+ * against brute-force and request flooding attacks.</p>
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -25,20 +28,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${app.cache.static-max-age:86400}")
     private long staticMaxAgeSeconds;
 
+    @Autowired(required = false)
+    private RateLimitInterceptor rateLimitInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        if (rateLimitInterceptor != null) {
+            registry.addInterceptor(rateLimitInterceptor)
+                    .addPathPatterns("/api/**");
+        }
+    }
+
     /**
      * Registers resource handlers for frontend static assets with appropriate
-     * Cache-Control headers. These handlers serve:
-     * <ul>
-     *   <li>{@code /static/**} — JS, CSS, fonts bundled in the jar</li>
-     *   <li>{@code /frontend/**} — The vanilla HTML/CSS/JS frontend files</li>
-     * </ul>
-     *
-     * <p>Resources are served with:
-     * <ul>
-     *   <li>{@code Cache-Control: public, max-age=86400} for immutable-style assets</li>
-     *   <li>{@code Vary: Accept-Encoding} is automatically set by Spring</li>
-     * </ul>
-     * </p>
+     * Cache-Control headers.
      *
      * @param registry the resource handler registry
      */

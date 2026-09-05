@@ -16,15 +16,15 @@ import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.service.ExportService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.lowagie.text.Document;
-import com.lowagie.text.Element;
-import com.lowagie.text.FontFactory;
-import com.lowagie.text.PageSize;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Phrase;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
+import org.openpdf.text.Document;
+import org.openpdf.text.Element;
+import org.openpdf.text.FontFactory;
+import org.openpdf.text.PageSize;
+import org.openpdf.text.Paragraph;
+import org.openpdf.text.Phrase;
+import org.openpdf.text.pdf.PdfPCell;
+import org.openpdf.text.pdf.PdfPTable;
+import org.openpdf.text.pdf.PdfWriter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xddf.usermodel.chart.*;
@@ -271,12 +271,12 @@ public class ExportServiceImpl implements ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Color.DARK_GRAY);
+            org.openpdf.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Color.DARK_GRAY);
             Paragraph title = new Paragraph("Expense Report", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
 
-            com.lowagie.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
+            org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: " + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
@@ -288,7 +288,7 @@ public class ExportServiceImpl implements ExportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[]{20, 25, 35, 20});
 
-            com.lowagie.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
+            org.openpdf.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
             Color headerBg = new Color(37, 99, 235);
 
             addHeaderCell(table, "Date", headerFont, headerBg);
@@ -297,7 +297,7 @@ public class ExportServiceImpl implements ExportService {
             addHeaderCell(table, "Amount (" + curr.symbol + ")", headerFont, headerBg);
 
             BigDecimal total = BigDecimal.ZERO;
-            com.lowagie.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
+            org.openpdf.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
 
             for (Expense exp : expenses) {
                 table.addCell(new Phrase(exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "", dataFont));
@@ -309,7 +309,7 @@ public class ExportServiceImpl implements ExportService {
             }
             document.add(table);
 
-            com.lowagie.text.Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(37, 99, 235));
+            org.openpdf.text.Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(37, 99, 235));
             Paragraph totalPara = new Paragraph("\nTotal Expenses: " + curr.symbol + " " + formatAmount(total, curr.decimals), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
@@ -493,12 +493,12 @@ public class ExportServiceImpl implements ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Color.DARK_GRAY);
+            org.openpdf.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, Color.DARK_GRAY);
             Paragraph title = new Paragraph("Income Report", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
 
-            com.lowagie.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
+            org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: " + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
@@ -510,7 +510,7 @@ public class ExportServiceImpl implements ExportService {
             table.setWidthPercentage(100);
             table.setWidths(new float[]{20, 25, 35, 20});
 
-            com.lowagie.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
+            org.openpdf.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
             Color headerBg = new Color(4, 120, 87);
 
             addHeaderCell(table, "Date", headerFont, headerBg);
@@ -519,7 +519,7 @@ public class ExportServiceImpl implements ExportService {
             addHeaderCell(table, "Amount (" + curr.symbol + ")", headerFont, headerBg);
 
             BigDecimal total = BigDecimal.ZERO;
-            com.lowagie.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
+            org.openpdf.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
 
             for (Income inc : incomes) {
                 table.addCell(new Phrase(inc.getIncomeDate() != null ? inc.getIncomeDate().toString() : "", dataFont));
@@ -531,7 +531,7 @@ public class ExportServiceImpl implements ExportService {
             }
             document.add(table);
 
-            com.lowagie.text.Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(4, 120, 87));
+            org.openpdf.text.Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(4, 120, 87));
             Paragraph totalPara = new Paragraph("\nTotal Incomes: " + curr.symbol + " " + formatAmount(total, curr.decimals), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
@@ -2247,12 +2247,12 @@ public class ExportServiceImpl implements ExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
-            com.lowagie.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, Color.DARK_GRAY);
+            org.openpdf.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, Color.DARK_GRAY);
             Paragraph title = new Paragraph("EXECUTIVE FINANCIAL STATEMENT", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
 
-            com.lowagie.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
+            org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: " + curr.code + " (" + curr.symbol + ") | Generated: " + LocalDate.now() + "\n\n",
                     subTitleFont
@@ -2265,12 +2265,12 @@ public class ExportServiceImpl implements ExportService {
             kpiTable.setWidthPercentage(100);
             kpiTable.setWidths(new float[]{33, 33, 34});
 
-            com.lowagie.text.Font kpiHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
+            org.openpdf.text.Font kpiHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
             addHeaderCell(kpiTable, "Total Earnings (" + curr.symbol + ")", kpiHeaderFont, new Color(16, 185, 129));
             addHeaderCell(kpiTable, "Total Spendings (" + curr.symbol + ")", kpiHeaderFont, new Color(239, 68, 68));
             addHeaderCell(kpiTable, "Net Cash Flow (" + curr.symbol + ")", kpiHeaderFont, new Color(59, 130, 246));
 
-            com.lowagie.text.Font kpiValueFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY);
+            org.openpdf.text.Font kpiValueFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY);
             addKpiCell(kpiTable, curr.symbol + " " + formatAmount(totalIncome, curr.decimals), kpiValueFont);
             addKpiCell(kpiTable, curr.symbol + " " + formatAmount(totalExpenses, curr.decimals), kpiValueFont);
             addKpiCell(kpiTable, curr.symbol + " " + formatAmount(netSavings, curr.decimals), kpiValueFont);
@@ -2287,14 +2287,14 @@ public class ExportServiceImpl implements ExportService {
             expTable.setWidthPercentage(100);
             expTable.setWidths(new float[]{20, 25, 35, 20});
 
-            com.lowagie.text.Font tableHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE);
+            org.openpdf.text.Font tableHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.WHITE);
             Color expHeaderBg = new Color(79, 70, 229);
             addHeaderCell(expTable, "Date", tableHeaderFont, expHeaderBg);
             addHeaderCell(expTable, "Category", tableHeaderFont, expHeaderBg);
             addHeaderCell(expTable, "Description", tableHeaderFont, expHeaderBg);
             addHeaderCell(expTable, "Amount (" + curr.symbol + ")", tableHeaderFont, expHeaderBg);
 
-            com.lowagie.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.BLACK);
+            org.openpdf.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.BLACK);
             int expCount = 0;
             for (Expense exp : expenses) {
                 if (expCount++ >= 10) break; // Top 10 for statement
@@ -2356,7 +2356,7 @@ public class ExportServiceImpl implements ExportService {
     // LOW-LEVEL HELPER UTILITIES
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void addHeaderCell(PdfPTable table, String text, com.lowagie.text.Font font, Color bg) {
+    private void addHeaderCell(PdfPTable table, String text, org.openpdf.text.Font font, Color bg) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setBackgroundColor(bg);
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -2365,7 +2365,7 @@ public class ExportServiceImpl implements ExportService {
         table.addCell(cell);
     }
 
-    private void addKpiCell(PdfPTable table, String text, com.lowagie.text.Font font) {
+    private void addKpiCell(PdfPTable table, String text, org.openpdf.text.Font font) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);

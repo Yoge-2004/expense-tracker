@@ -207,8 +207,6 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         localStorage.clear();
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");
-    } else if (response.status === 401) {
-        throw new Error("Unauthorized");
     }
 
     if (response.status === 204) return null;
@@ -237,13 +235,15 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
             msg = "Unable to connect to the server. Please try again in a moment.";
         }
 
-        if (!msg) {
+        if (!msg || msg.trim().toLowerCase() === "unauthorized" || msg.trim().toLowerCase() === "bad credentials") {
             const statusMessages = {
                 400: "That request wasn't valid. Please check your input and try again.",
+                401: "Invalid email or password. Please check your credentials and try again.",
                 403: "You don't have permission to do that.",
                 404: "The requested resource couldn't be found.",
                 409: "This conflicts with existing data.",
                 422: "That request wasn't valid. Please check your input and try again.",
+                429: "Too many attempts. Please wait a moment and try again.",
                 500: "Something went wrong on the server. Please try again.",
                 502: "The server is temporarily unavailable. Please try again shortly.",
                 503: "The server is temporarily unavailable. Please try again shortly.",

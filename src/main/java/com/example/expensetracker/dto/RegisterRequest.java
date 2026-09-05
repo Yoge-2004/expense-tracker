@@ -3,6 +3,7 @@ package com.example.expensetracker.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /** Request body for POST /api/auth/register. */
@@ -15,7 +16,7 @@ public class RegisterRequest {
 
     @Schema(description = "Unique login handle, distinct from the display name", example = "johndoe_26", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Username is required")
-    @jakarta.validation.constraints.Pattern(
+    @Pattern(
             regexp = "^[a-zA-Z0-9._]{3,30}$",
             message = "Username must be 3-30 characters and contain only letters, numbers, dots, or underscores")
     private String username;
@@ -33,6 +34,12 @@ public class RegisterRequest {
     @Schema(description = "6-digit email verification OTP (required when email verification is enabled)", example = "482913")
     private String otp;
 
+    @Schema(description = "Optional 6-digit Security PIN for zero-email instant recovery and biometric verification", example = "123456")
+    @Pattern(
+            regexp = "^$|^[0-9]{6}$",
+            message = "Security PIN must be exactly 6 numeric digits")
+    private String securityPin;
+
     @Schema(description = "Preferred display currency (ISO 4217 3-letter code). Defaults to INR if omitted.", example = "INR")
     private String currency = "INR";
 
@@ -48,7 +55,8 @@ public class RegisterRequest {
     public void   setPassword(String p)     { this.password = p; }
     public String getOtp()                  { return otp; }
     public void   setOtp(String otp)        { this.otp = otp; }
+    public String getSecurityPin()          { return securityPin; }
+    public void   setSecurityPin(String pin){ this.securityPin = pin; }
     public String getCurrency()             { return currency != null ? currency : "INR"; }
     public void   setCurrency(String c)     { this.currency = c; }
 }
-

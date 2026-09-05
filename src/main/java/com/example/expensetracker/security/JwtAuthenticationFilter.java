@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import io.jsonwebtoken.JwtException;
 import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,25 +21,6 @@ import java.io.IOException;
  * JWT-based authentication filter that intercepts every incoming HTTP request
  * exactly once per request lifecycle.
  *
- * <p>This filter is registered before Spring Security's default
- * {@link org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter}
- * via {@link com.example.expensetracker.config.SecurityConfig}. It performs the following
- * steps on each request:</p>
- * <ol>
- *   <li>Extracts the {@code Authorization} header and checks for a {@code Bearer } prefix.</li>
- *   <li>If absent or malformed, the filter chain continues without setting authentication.</li>
- *   <li>Extracts the email (subject) from the JWT token via {@link JwtService}.</li>
- *   <li>If the {@link org.springframework.security.core.context.SecurityContext} is empty,
- *       loads the user via {@link CustomUserDetailsService}.</li>
- *   <li>Validates the token against the loaded user details.</li>
- *   <li>On success, creates a {@link UsernamePasswordAuthenticationToken} and stores it
- *       in the {@link org.springframework.security.core.context.SecurityContextHolder},
- *       marking the request as authenticated.</li>
- * </ol>
- *
- * <p>Extends {@link OncePerRequestFilter} to guarantee that the filter runs
- * at most once per request, preventing double-authentication in forwarded requests.</p>
- *
  * @author Yogeshwaran
  * @version 1.0
  * @see JwtService
@@ -45,6 +28,8 @@ import java.io.IOException;
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     /** Service used to parse, validate, and extract claims from JWT tokens. */
     private final JwtService jwtService;
@@ -67,17 +52,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * Performs JWT extraction, validation, and security context population
      * for each incoming HTTP request.
-     *
-     * <p>If the {@code Authorization} header is missing or does not start with
-     * {@code "Bearer "}, the request is forwarded without authentication. Otherwise,
-     * the JWT is extracted and validated; on success, the security context is populated
-     * with an authenticated {@link UsernamePasswordAuthenticationToken}.</p>
-     *
-     * @param request     the incoming {@link HttpServletRequest}
-     * @param response    the outgoing {@link HttpServletResponse}
-     * @param filterChain the remaining filter chain to pass the request through
-     * @throws ServletException if a servlet-related error occurs during filtering
-     * @throws IOException      if an I/O error occurs during filtering
      */
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -100,9 +74,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             userEmail = jwtService.extractUsername(jwt);
         } catch (JwtException | IllegalArgumentException exception) {
-            // An expired, malformed, or invalid token is simply unauthenticated.
-            // Let Spring Security produce its normal 401 response instead of
-            // propagating a parser exception as a 500 error.
+            log.warn("JWT parsing/validation failed for URI '{}': {}", request.getRequestURI(), exception.getMessage());
             filterChain.doFilter(request, response);
             return;
         }
@@ -126,6 +98,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("Successfully authenticated user '{}' for path: {}", userEmail, request.getRequestURI());
+            } else {
+                log.warn("JWT token invalid for user '{}' on path: {}", userEmail, request.getRequestURI());
             }
         }
 

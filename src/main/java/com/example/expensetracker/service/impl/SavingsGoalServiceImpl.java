@@ -7,6 +7,8 @@ import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.service.SavingsGoalService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SavingsGoalServiceImpl implements SavingsGoalService {
+
+    private static final Logger log = LoggerFactory.getLogger(SavingsGoalServiceImpl.class);
 
     private final SavingsGoalRepository savingsGoalRepository;
 
@@ -40,8 +44,11 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto createGoal(SavingsGoalRequest request, User user) {
+        log.info("Creating savings goal for userId={}: name={}, targetAmount={}",
+                user.getId(), request.getName(), request.getTargetAmount());
         SavingsGoal goal = SavingsGoalMapper.toEntity(request, user);
         SavingsGoal saved = savingsGoalRepository.save(goal);
+        log.info("Savings goal created with id={} for userId={}", saved.getId(), user.getId());
         return SavingsGoalMapper.toDto(saved);
     }
 
@@ -51,10 +58,13 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional(readOnly = true)
     public List<SavingsGoalDto> getUserGoals(User user) {
-        return savingsGoalRepository.findByUser(user)
+        log.debug("Loading savings goals for userId={}", user.getId());
+        List<SavingsGoalDto> goals = savingsGoalRepository.findByUser(user)
                 .stream()
                 .map(SavingsGoalMapper::toDto)
                 .collect(Collectors.toList());
+        log.debug("Loaded {} savings goals for userId={}", goals.size(), user.getId());
+        return goals;
     }
 
     /**
@@ -63,10 +73,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto updateGoal(Long goalId, SavingsGoalRequest request, User user) {
+        log.info("Updating savings goal id={} for userId={}", goalId, user.getId());
         SavingsGoal existing = savingsGoalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
 
         if (!existing.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
@@ -105,6 +117,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         }
 
         SavingsGoal saved = savingsGoalRepository.save(existing);
+        log.info("Savings goal id={} updated successfully for userId={}", saved.getId(), user.getId());
         return SavingsGoalMapper.toDto(saved);
     }
 
@@ -114,7 +127,9 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto depositToGoal(Long goalId, BigDecimal amount, User user) {
+        log.info("Processing deposit of {} to savings goal id={} for userId={}", amount, goalId, user.getId());
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected non-positive deposit amount={} for goalId={}", amount, goalId);
             throw new IllegalArgumentException("Deposit amount must be greater than zero");
         }
 
@@ -122,6 +137,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
 
         if (!goal.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
@@ -133,9 +149,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
 
         if (goal.getTargetAmount() != null && updatedAmount.compareTo(goal.getTargetAmount()) >= 0) {
             goal.setStatus("COMPLETED");
+            log.info("Savings goal id={} reached target amount ({}) and marked COMPLETED", goalId, goal.getTargetAmount());
         }
 
         SavingsGoal saved = savingsGoalRepository.save(goal);
+        log.info("Deposit applied to savings goal id={}: newCurrentAmount={}, status={}",
+                goalId, saved.getCurrentAmount(), saved.getStatus());
         return SavingsGoalMapper.toDto(saved);
     }
 
@@ -145,14 +164,17 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public void deleteGoal(Long goalId, User user) {
+        log.info("Deleting savings goal id={} for userId={}", goalId, user.getId());
         SavingsGoal goal = savingsGoalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
 
         if (!goal.getUser().getId().equals(user.getId())) {
+            log.warn("Ownership mismatch: savings goal id={} does not belong to userId={}", goalId, user.getId());
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
         savingsGoalRepository.delete(goal);
+        log.info("Savings goal id={} deleted successfully for userId={}", goalId, user.getId());
     }
 
     /**
@@ -161,9 +183,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional(readOnly = true)
     public List<SavingsGoalDto> getRecurringGoals(User user) {
-        return savingsGoalRepository.findByUserAndIsRecurringTrue(user)
+        log.debug("Loading recurring savings goals for userId={}", user.getId());
+        List<SavingsGoalDto> list = savingsGoalRepository.findByUserAndIsRecurringTrue(user)
                 .stream()
                 .map(SavingsGoalMapper::toDto)
                 .collect(Collectors.toList());
+        log.debug("Loaded {} recurring savings goals for userId={}", list.size(), user.getId());
+        return list;
     }
 }

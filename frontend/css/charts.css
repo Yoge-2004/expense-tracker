@@ -1,0 +1,38 @@
+/* ==========================================================================\n   EXPENSE TRACKER — CHARTS.CSS\n   Module: Charts & Budget Progress Bars\n   ========================================================================== */\n\n/* ================== 7. BUDGET PROGRESS BARS ================== */
+/* Consolidated from 3 declarations. Same animation-lock bug found
+   repeatedly in the Phase 3 cleanup: expenseSlideIn's "both" fill-mode
+   permanently overrides transform via the CSS animation cascade layer
+   once the entrance animation finishes, blocking :hover's
+   translateY(-2px) from ever applying. Dropped "both". */
+.budget-item {
+    margin-bottom: 16px;
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    transition: all 0.25s var(--ease);
+    position: relative;
+    overflow: hidden;
+    animation: expenseSlideIn 0.4s var(--ease);
+}
+
+.budget-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--input-bg);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* (.progress-fill removed — merged into .budget-bar-fill, the real class
+   used by the rendered budget bars.) */
+

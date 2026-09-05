@@ -73,6 +73,32 @@ public interface UserService {
     Optional<User> findById(Long id);
 
     /**
+     * Sets or updates the 6-digit Security PIN for zero-email instant recovery.
+     *
+     * @param userId the user ID
+     * @param newPin the 6-digit numeric Security PIN
+     */
+    void updateSecurityPin(Long userId, String newPin);
+
+    /**
+     * Verifies the provided 6-digit Security PIN against the user's stored PIN hash.
+     * Tracks failed attempts and locks verification upon consecutive failures.
+     *
+     * @param userId the user ID
+     * @param pin    the 6-digit numeric Security PIN
+     * @return {@code true} if valid, {@code false} if invalid
+     */
+    boolean verifySecurityPin(Long userId, String pin);
+
+    /**
+     * Updates the currency preference for the given user account.
+     *
+     * @param userId   the primary key of the user to update
+     * @param currency the ISO 4217 3-letter currency code
+     */
+    void updateCurrency(Long userId, String currency);
+
+    /**
      * Deletes the user account identified by the given ID, along with all
      * associated data.
      *
@@ -83,17 +109,7 @@ public interface UserService {
      *   <li>Deletes the user entity itself.</li>
      * </ol>
      *
-     * @param userId the primary key of the user account to delete
-     * @throws IllegalArgumentException if no user is found with the given ID
+     * @param id the primary key of the user to delete
      */
-    void deleteUser(Long userId);
-
-    /**
-     * Updates the preferred display currency of a user account.
-     *
-     * @param userId   the primary key of the user to update
-     * @param currency the ISO 4217 3-letter currency code (e.g. {@code "INR"}, {@code "USD"})
-     * @throws IllegalArgumentException if no user exists with the given ID
-     */
-    void updateCurrency(Long userId, String currency);
+    void deleteUser(Long id);
 }

@@ -77,6 +77,7 @@ class ExpenseControllerTest {
     @MockitoBean ImportService importService;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
+    @MockitoBean com.example.expensetracker.security.UserSecurity userSecurity;
 
     private User sampleUser;
     private Category foodCategory;

@@ -760,7 +760,7 @@ async function loadBudgets() {
                         </div>
                         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                             <span style="font-size:13px; font-weight:800; color:${barColor}; margin-right:2px;">${(b.percentage || 0).toFixed(0)}%</span>
-                            <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}')" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                            <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${b.categoryName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}', ${b.intervalDays || 30})" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                             </button>
                             <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0}, event)" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
@@ -820,29 +820,45 @@ const budgetCategorySelect = document.getElementById("budgetCategorySelect");
 const budgetPeriod = document.getElementById("budgetPeriod");
 const customBudgetDates = document.getElementById("customBudgetDates");
 
+function syncBudgetPeriodVisibility() {
+    if (!customBudgetDates || !budgetPeriod) return;
+    const isCustom = budgetPeriod.value === "CUSTOM";
+    customBudgetDates.hidden = !isCustom;
+    customBudgetDates.style.display = isCustom ? "block" : "none";
+}
+
 elements.addBudgetBtn.addEventListener("click", () => {
     budgetCategorySelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
     if (window.syncCustomSelect) window.syncCustomSelect(budgetCategorySelect);
     setBudgetForm.reset();
-    if (customBudgetDates) customBudgetDates.hidden = true;
+    if (budgetPeriod) {
+        budgetPeriod.value = "MONTHLY";
+        if (window.syncCustomSelect) window.syncCustomSelect(budgetPeriod);
+    }
+    syncBudgetPeriodVisibility();
+    const daysEl = document.getElementById("budgetIntervalDays");
+    if (daysEl) daysEl.value = 30;
     openModal(setBudgetModal);
 });
 
 // Edit Budget — pre-fill the budget modal with existing values and re-open it
-window.openEditBudget = (budgetId, categoryId, categoryName, limit, period, startDate, endDate) => {
+window.openEditBudget = (budgetId, categoryId, categoryName, limit, period, startDate, endDate, intervalDays = 30) => {
     // Rebuild category list with the target selected
     budgetCategorySelect.innerHTML = allCategories.map(c =>
         `<option value="${c.id}"${c.id === categoryId ? ' selected' : ''}>${c.name}</option>`
     ).join("");
     if (window.syncCustomSelect) window.syncCustomSelect(budgetCategorySelect);
 
-    // Pre-fill limit, period and dates
+    // Pre-fill limit, period, interval days and dates
     const limitInput = document.getElementById("budgetLimit") || document.getElementById("budgetLimitAmount");
     if (limitInput) limitInput.value = limit;
     if (budgetPeriod) {
         budgetPeriod.value = period || "MONTHLY";
-        if (customBudgetDates) customBudgetDates.hidden = budgetPeriod.value !== "CUSTOM";
+        if (window.syncCustomSelect) window.syncCustomSelect(budgetPeriod);
+        syncBudgetPeriodVisibility();
     }
+    const daysEl  = document.getElementById("budgetIntervalDays");
+    if (daysEl) daysEl.value = intervalDays || 30;
     const startEl = document.getElementById("budgetStartDate");
     const endEl   = document.getElementById("budgetEndDate");
     if (startEl) startEl.value = startDate || "";
@@ -851,7 +867,6 @@ window.openEditBudget = (budgetId, categoryId, categoryName, limit, period, star
     openModal(setBudgetModal);
 };
 
-
 document.getElementById("closeBudgetModalBtn")?.addEventListener("click", () => {
     closeModal(setBudgetModal);
 });
@@ -859,9 +874,7 @@ setBudgetModal?.addEventListener("click", (e) => {
     if (e.target === setBudgetModal) closeModal(setBudgetModal);
 });
 
-budgetPeriod?.addEventListener("change", () => {
-    if (customBudgetDates) customBudgetDates.hidden = budgetPeriod.value !== "CUSTOM";
-});
+budgetPeriod?.addEventListener("change", syncBudgetPeriodVisibility);
 
 setBudgetForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -871,6 +884,7 @@ setBudgetForm?.addEventListener("submit", async (e) => {
     const catId = parseInt(budgetCategorySelect.value);
     const limit = parseFloat((document.getElementById("budgetLimit") || document.getElementById("budgetLimitAmount")).value);
     const period = budgetPeriod.value;
+    const intervalDays = period === "CUSTOM" ? (parseInt(document.getElementById("budgetIntervalDays")?.value) || 30) : null;
     const startDate = document.getElementById("budgetStartDate").value || null;
     const endDate = document.getElementById("budgetEndDate").value || null;
 
@@ -884,6 +898,7 @@ setBudgetForm?.addEventListener("submit", async (e) => {
                 categoryId: catId,
                 limitAmount: limit,
                 period: period,
+                intervalDays: intervalDays,
                 startDate: startDate,
                 endDate: endDate
             })
@@ -2049,15 +2064,24 @@ document.addEventListener("keydown", (e) => {
 });
 document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "index.html"; });
 
+const exportMonthlySummaryBtn = document.getElementById("exportMonthlySummaryBtn");
+if (exportMonthlySummaryBtn) {
+    exportMonthlySummaryBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        toggleProfileMenu(false);
+        openMonthlyReportPeriodModal("export");
+    });
+}
+
 const sendMonthlyReportBtn = document.getElementById("sendMonthlyReportBtn");
 if (sendMonthlyReportBtn) {
-    // Adapt menu item based on server email availability
     (async () => {
         try {
             const authConfig = await apiRequest("/auth/config", { method: "GET" });
-            if (authConfig && authConfig.emailVerificationEnabled === false) {
-                sendMonthlyReportBtn.innerHTML = "📊 Export Monthly Summary";
-                sendMonthlyReportBtn.setAttribute("title", "Export your monthly financial breakdown");
+            if (authConfig && authConfig.emailVerificationEnabled) {
+                sendMonthlyReportBtn.style.display = "block";
+                const periodEmailBtn = document.getElementById("periodEmailReportBtn");
+                if (periodEmailBtn) periodEmailBtn.style.display = "flex";
             }
         } catch (e) {
             // Ignore config lookup errors on legacy servers
@@ -2067,7 +2091,7 @@ if (sendMonthlyReportBtn) {
     sendMonthlyReportBtn.addEventListener("click", (e) => {
         e.preventDefault();
         toggleProfileMenu(false);
-        openMonthlyReportPeriodModal("email");
+        openMonthlyReportPeriodModal("export");
     });
 }
 
@@ -4047,6 +4071,31 @@ function renderPeriodPickerUI() {
     }
 }
 
+let currentPeriodModalMode = "view"; // "view" | "export"
+
+function setPeriodModalMode(mode) {
+    currentPeriodModalMode = mode;
+    const modalIcon = document.getElementById("periodModalIcon");
+    const modalTitle = document.getElementById("periodModalTitle");
+    const modalSubtitle = document.getElementById("periodModalSubtitle");
+    const viewActions = document.getElementById("periodViewModeActions");
+    const exportActions = document.getElementById("periodExportModeActions");
+
+    if (mode === "export") {
+        if (modalIcon) modalIcon.textContent = "📥";
+        if (modalTitle) modalTitle.textContent = "Export Monthly Summary";
+        if (modalSubtitle) modalSubtitle.textContent = "Select statement period & format to download your financial records.";
+        if (viewActions) viewActions.style.display = "none";
+        if (exportActions) exportActions.style.display = "block";
+    } else {
+        if (modalIcon) modalIcon.textContent = "📊";
+        if (modalTitle) modalTitle.textContent = "View Monthly Report";
+        if (modalSubtitle) modalSubtitle.textContent = "Account inception:";
+        if (viewActions) viewActions.style.display = "block";
+        if (exportActions) exportActions.style.display = "none";
+    }
+}
+
 function openMonthlyReportPeriodModal(initialAction = "view") {
     if (!monthlyReportPeriodModal) return;
     determineAccountInception();
@@ -4056,14 +4105,23 @@ function openMonthlyReportPeriodModal(initialAction = "view") {
         selectedReportMonth = currentSystemMonth;
     }
     renderPeriodPickerUI();
+    setPeriodModalMode(initialAction === "export" ? "export" : "view");
     openModal(monthlyReportPeriodModal);
 
-    if (initialAction === "email") {
-        setTimeout(() => periodEmailReportBtn?.focus(), 50);
+    if (initialAction === "export") {
+        setTimeout(() => periodDownloadReportBtn?.focus(), 50);
     } else {
         setTimeout(() => periodViewReportBtn?.focus(), 50);
     }
 }
+
+document.getElementById("periodSwitchToExportBtn")?.addEventListener("click", () => {
+    setPeriodModalMode("export");
+});
+
+document.getElementById("periodSwitchToViewBtn")?.addEventListener("click", () => {
+    setPeriodModalMode("view");
+});
 
 closePeriodModalBtn?.addEventListener("click", () => {
     closeModal(monthlyReportPeriodModal);
@@ -4196,6 +4254,73 @@ async function emailMonthlyReport(year = selectedReportYear, month = selectedRep
     }
 }
 
+async function exportMonthlyCsv(year = selectedReportYear, month = selectedReportMonth) {
+    const monthObj = ALL_REPORT_MONTHS.find(m => m.num === month) || { full: `Month ${month}` };
+    try {
+        setLoading(true, `Exporting CSV transactions for ${monthObj.full} ${year}...`);
+        const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+        const monthlyExpenses = (allExpenses || []).filter(e => {
+            const d = e.expenseDate || e.date;
+            return d && d >= startDate && d <= endDate;
+        });
+        const monthlyIncomes = (allIncomes || []).filter(i => {
+            const d = i.incomeDate || i.date;
+            return d && d >= startDate && d <= endDate;
+        });
+
+        let csv = "Type,Date,Description,Category/Source,Amount,Payment Method\n";
+        monthlyExpenses.forEach(e => {
+            const catName = getCategoryName(e.categoryId) || "Uncategorized";
+            csv += `Expense,${e.expenseDate || e.date || ""},"${(e.description || "").replace(/"/g, '""')}",${catName},${e.amount || 0},${e.paymentMethod || "CASH"}\n`;
+        });
+        monthlyIncomes.forEach(i => {
+            const catName = i.source || "Income";
+            csv += `Income,${i.incomeDate || i.date || ""},"${(i.description || i.source || "").replace(/"/g, '""')}",${catName},${i.amount || 0},${i.paymentMethod || "CASH"}\n`;
+        });
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `financial-ledger-${year}-${String(month).padStart(2, "0")}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Monthly transactions CSV downloaded for ${monthObj.full} ${year}.`, "success");
+    } catch (err) {
+        showToast(err.message || "Failed to export CSV", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function exportMonthlyJson(year = selectedReportYear, month = selectedReportMonth) {
+    const monthObj = ALL_REPORT_MONTHS.find(m => m.num === month) || { full: `Month ${month}` };
+    try {
+        setLoading(true, `Exporting JSON analytics for ${monthObj.full} ${year}...`);
+        const report = await apiRequest(`/reports/monthly/user/${userId}?year=${year}&month=${month}`, { method: "GET" });
+        const jsonStr = JSON.stringify(report, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `monthly-analytics-${year}-${String(month).padStart(2, "0")}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Monthly JSON analytics downloaded for ${monthObj.full} ${year}.`, "success");
+    } catch (err) {
+        showToast(err.message || "Failed to export JSON analytics", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
 // Action button listeners in Period Picker Modal
 periodViewReportBtn?.addEventListener("click", () => {
     closeModal(monthlyReportPeriodModal);
@@ -4204,6 +4329,14 @@ periodViewReportBtn?.addEventListener("click", () => {
 
 periodDownloadReportBtn?.addEventListener("click", () => {
     downloadMonthlyReport(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodExportCsvBtn")?.addEventListener("click", () => {
+    exportMonthlyCsv(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodExportJsonBtn")?.addEventListener("click", () => {
+    exportMonthlyJson(selectedReportYear, selectedReportMonth);
 });
 
 periodEmailReportBtn?.addEventListener("click", () => {
@@ -4395,3 +4528,77 @@ if (document.readyState === "loading") {
 } else {
     initLedgerStreamTabs();
 }
+
+
+// Security PIN Modal & Account Recovery Management
+const securityPinModal = document.getElementById("securityPinModal");
+const securityPinBtn = document.getElementById("securityPinBtn");
+const closeSecurityPinModalBtn = document.getElementById("closeSecurityPinModalBtn");
+const securityPinForm = document.getElementById("securityPinForm");
+const pinStatusIndicator = document.getElementById("pinStatusIndicator");
+
+async function openSecurityPinDialog() {
+    toggleProfileMenu(false);
+    if (!securityPinModal) return;
+    try {
+        const userProf = await apiRequest(`/users/${userId}`);
+        const hasPin = !!(userProf && userProf.hasSecurityPin);
+        if (pinStatusIndicator) {
+            pinStatusIndicator.style.background = hasPin ? "rgba(76, 122, 120, 0.15)" : "rgba(230, 162, 60, 0.15)";
+            pinStatusIndicator.style.border = `1px solid ${hasPin ? "#4C7A78" : "#E6A23C"}`;
+            pinStatusIndicator.style.color = hasPin ? "#4C7A78" : "#E6A23C";
+            pinStatusIndicator.innerHTML = hasPin
+                ? `<span>🔒 <strong>Active:</strong> 6-Digit PIN is set. Enter a new PIN below if you want to update it.</span>`
+                : `<span>⚠️ <strong>Not Configured:</strong> Set a 6-digit PIN below for zero-email instant recovery.</span>`;
+        }
+    } catch (err) {
+        console.warn("Could not fetch user security status:", err);
+    }
+    const newPinEl = document.getElementById("newSecurityPin");
+    const confirmPinEl = document.getElementById("confirmSecurityPin");
+    if (newPinEl) newPinEl.value = "";
+    if (confirmPinEl) confirmPinEl.value = "";
+    openModal(securityPinModal);
+}
+
+securityPinBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    openSecurityPinDialog();
+});
+
+closeSecurityPinModalBtn?.addEventListener("click", () => {
+    closeModal(securityPinModal);
+});
+
+securityPinModal?.addEventListener("click", (e) => {
+    if (e.target === securityPinModal) closeModal(securityPinModal);
+});
+
+securityPinForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const newPin = (document.getElementById("newSecurityPin")?.value || "").trim();
+    const confirmPin = (document.getElementById("confirmSecurityPin")?.value || "").trim();
+
+    if (!/^[0-9]{6}$/.test(newPin)) {
+        return showToast("PIN must be exactly 6 numeric digits.", "error");
+    }
+    if (newPin !== confirmPin) {
+        return showToast("PINs do not match.", "error");
+    }
+
+    const submitBtn = securityPinForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+        await apiRequest(`/users/${userId}/security-pin`, {
+            method: "PUT",
+            body: JSON.stringify({ securityPin: newPin })
+        });
+        showToast("Security PIN updated successfully! 🔒", "success");
+        closeModal(securityPinModal);
+    } catch (err) {
+        showToast(err.message || "Failed to update Security PIN", "error");
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+    }
+});
