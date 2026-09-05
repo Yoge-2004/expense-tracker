@@ -20,6 +20,10 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
         localStorage.setItem("token", response.token);
         localStorage.setItem("userId", response.userId);
         localStorage.setItem("userName", response.name || "User");
+        localStorage.setItem("userEmail", email);
+        if (localStorage.getItem("webauthn_bio_token")) {
+            localStorage.setItem("webauthn_bio_token", response.token);
+        }
         showToast("Signed in successfully!", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
         // Intentionally leave the button disabled here — we're navigating away.
@@ -183,5 +187,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 clearInterval(interval);
             }
         }, 250);
+    }
+});
+
+// Initialize Web Biometrics on login page
+document.addEventListener("DOMContentLoaded", async () => {
+    const bioBtn = document.getElementById("biometricLoginBtn");
+    if (bioBtn && window.WebBiometrics) {
+        try {
+            const available = await WebBiometrics.isAvailable();
+            const enabled = WebBiometrics.isEnabled();
+            if (available && enabled) {
+                bioBtn.style.display = "flex";
+                bioBtn.addEventListener("click", async () => {
+                    bioBtn.disabled = true;
+                    try {
+                        const res = await WebBiometrics.authenticate();
+                        if (res && res.token) {
+                            localStorage.setItem("token", res.token);
+                            showToast("Biometric verification verified. Welcome back!", "success");
+                            setTimeout(() => { window.location.href = "dashboard.html"; }, 400);
+                        }
+                    } catch (err) {
+                        showToast(err.message || "Biometric authentication cancelled.", "error");
+                        bioBtn.disabled = false;
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn("Biometrics check failed:", e);
+        }
     }
 });

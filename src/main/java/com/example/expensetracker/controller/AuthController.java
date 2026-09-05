@@ -157,8 +157,10 @@ public class AuthController {
         boolean sent = passwordResetService.sendSignupOtp(request.getEmail(), request.getName());
         if (!sent) {
             log.warn("Signup OTP not sent: email {} is already registered", request.getEmail());
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "This email address is already registered."));
+            return ResponseEntity.ok(Map.of(
+                "message", "If this email is eligible, a verification code has been dispatched.",
+                "emailVerificationEnabled", String.valueOf(emailVerificationEnabled)
+            ));
         }
         log.info("Signup OTP dispatched for email={}", request.getEmail());
         return ResponseEntity.ok(Map.of(

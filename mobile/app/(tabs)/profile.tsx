@@ -18,6 +18,7 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  Switch,
   TextInput,
   Modal,
   FlatList,
@@ -42,7 +43,7 @@ import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled } from '../../services/notifications';
 
 export default function ProfileScreen() {
-  const { userId, userName, theme, toggleTheme, currency, updateCurrency, logout, updateUserName } = useAuth();
+  const { userId, userName, theme, toggleTheme, currency, updateCurrency, logout, updateUserName, isBiometricsAvailable, isBiometricEnabled, toggleBiometrics } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
   const isLight = theme === 'light';
@@ -379,6 +380,34 @@ export default function ProfileScreen() {
         <StaggeredView delay={250} direction="up">
           <Text style={[styles.sectionTitle, { color: c.textMuted }]}>ACCOUNT</Text>
           <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
+            {/* Biometric Unlock (Face ID / Fingerprint) */}
+            {isBiometricsAvailable && (
+              <View style={[styles.menuRow, { borderBottomColor: c.border, justifyContent: 'space-between' }]}>
+                <View style={styles.menuRowLeft}>
+                  <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                    <Ionicons name="finger-print-outline" size={18} color={c.primary} />
+                  </View>
+                  <View>
+                    <Text style={[styles.menuRowTitle, { color: c.text }]}>Biometric Unlock</Text>
+                    <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                      {isBiometricEnabled ? 'Enabled (Face ID / Fingerprint active)' : 'Disabled (Tap to enable)'}
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={isBiometricEnabled}
+                  onValueChange={async (val) => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                    const ok = await toggleBiometrics(val);
+                    if (!ok) {
+                      showAlert('Biometrics', 'Biometric authentication failed or was cancelled.');
+                    }
+                  }}
+                  trackColor={{ false: c.border, true: c.primary }}
+                />
+              </View>
+            )}
+
             {/* 6-Digit Security PIN (Zero-Email Recovery) */}
             <TouchableOpacity
               activeOpacity={0.8}

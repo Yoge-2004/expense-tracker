@@ -1,12 +1,13 @@
 /**
  * @file AuthContext.tsx
  * @description React Context Provider managing identity state, secure token lifecycle,
- * global currency preference, and UI theme switching (Dark / Light).
+ * global currency preference, UI theme switching (Dark / Light), and Biometrics (Face ID / Fingerprint).
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getSession, saveSession, clearSession, apiRequest } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 /**
  * Shape of the authentication context exposed to child screens.
@@ -40,6 +41,14 @@ interface AuthContextType {
   register: (name: string, username: string, email: string, password: string, otp: string, currency?: string, securityPin?: string) => Promise<void>;
   /** Destroys active session, clears caches, and resets auth state. */
   logout: () => Promise<void>;
+  /** Whether device hardware supports biometrics and has enrolled prints/face. */
+  isBiometricsAvailable: boolean;
+  /** Whether user has enabled biometric unlock in settings. */
+  isBiometricEnabled: boolean;
+  /** Unlocks user session using Face ID / Fingerprint. */
+  loginWithBiometrics: () => Promise<boolean>;
+  /** Toggles biometric unlock preference. */
+  toggleBiometrics: (enabled: boolean) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,11 +63,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userName, setUserName] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('INR');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+
+  // Check hardware and enrollment for biometrics
+  const checkBiometricsSupport = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      setIsBiometricsAvailable(hasHardware && isEnrolled);
+
+      const savedPref = await SecureStore.getItemAsync('biometric_enabled');
+      const savedToken = await SecureStore.getItemAsync('biometric_saved_token');
+      setIsBiometricEnabled(savedPref === 'true' && !!savedToken);
+    } catch (e) {
+      console.warn('[AuthContext] Error checking biometrics support:', e);
+    }
+  };
 
   // Hydrate auth session, theme, and currency from secure storage on startup
   useEffect(() => {
     async function loadSession() {
       try {
+        await checkBiometricsSupport();
+
         const session = await getSession();
         if (session.token && session.userId) {
           setToken(session.token);
@@ -95,9 +123,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Logs in a user with email and password credentials.
-   * Persists JWT token, userId, and name to secure storage.
+   * Saves biometric backup token upon successful authentication.
    */
+  const saveBiometricCredentials = async (jwtToken: string, uid: string, name: string) => {
+    try {
+      await SecureStore.setItemAsync('biometric_saved_token', jwtToken);
+      await SecureStore.setItemAsync('biometric_saved_userId', uid);
+      await SecureStore.setItemAsync('biometric_saved_name', name || 'User');
+      await SecureStore.setItemAsync('biometric_enabled', 'true');
+      setIsBiometricEnabled(true);
+    } catch (e) {
+      console.warn('[AuthContext] Could not store biometric credentials:', e);
+    }
+  };
+
   /**
    * Logs in a user with Google OAuth ID token.
    */
@@ -111,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data && data.token && data.userId) {
         await saveSession(data.token, data.userId.toString(), data.name);
+        await saveBiometricCredentials(data.token, data.userId.toString(), data.name);
         setToken(data.token);
         setUserId(data.userId.toString());
         setUserName(data.name);
@@ -141,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data && data.token && data.userId) {
         await saveSession(data.token, data.userId.toString(), data.name);
+        await saveBiometricCredentials(data.token, data.userId.toString(), data.name);
         setToken(data.token);
         setUserId(data.userId.toString());
         setUserName(data.name);
@@ -158,6 +199,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /**
+   * Authenticates the user via device Face ID / Fingerprint.
+   */
+  const loginWithBiometrics = async (): Promise<boolean> => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) return false;
+
+      const savedToken = await SecureStore.getItemAsync('biometric_saved_token');
+      const savedUserId = await SecureStore.getItemAsync('biometric_saved_userId');
+      const savedName = await SecureStore.getItemAsync('biometric_saved_name');
+
+      if (!savedToken || !savedUserId) return false;
+
+      const authRes = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock Expense Tracker',
+        fallbackLabel: 'Use password',
+        cancelLabel: 'Cancel',
+        disableDeviceFallback: false,
+      });
+
+      if (authRes.success) {
+        await saveSession(savedToken, savedUserId, savedName || 'User');
+        setToken(savedToken);
+        setUserId(savedUserId);
+        setUserName(savedName || 'User');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.warn('[AuthContext] Biometric login error:', e);
+      return false;
+    }
+  };
+
+  /**
+   * Toggles biometric preference.
+   */
+  const toggleBiometrics = async (enabled: boolean): Promise<boolean> => {
+    try {
+      if (enabled) {
+        const authRes = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Confirm biometrics to enable quick unlock',
+        });
+        if (!authRes.success) return false;
+        if (token && userId) {
+          await saveBiometricCredentials(token, userId, userName || 'User');
+        }
+        await SecureStore.setItemAsync('biometric_enabled', 'true');
+        setIsBiometricEnabled(true);
+        return true;
+      } else {
+        await SecureStore.setItemAsync('biometric_enabled', 'false');
+        setIsBiometricEnabled(false);
+        return true;
+      }
+    } catch (e) {
+      console.warn('[AuthContext] Error toggling biometrics:', e);
+      return false;
     }
   };
 
@@ -299,6 +403,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sendSignupOtp,
         register,
         logout,
+        isBiometricsAvailable,
+        isBiometricEnabled,
+        loginWithBiometrics,
+        toggleBiometrics,
       }}
     >
       {children}
@@ -306,15 +414,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * Hook to consume the active Authentication and Settings Context.
- *
- * @throws {Error} If called outside of an `AuthProvider` tree.
- */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be consumed within an AuthProvider component.');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

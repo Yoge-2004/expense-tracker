@@ -45,7 +45,8 @@ function isValidEmail(email: string): boolean {
 }
 
 export default function LoginScreen() {
-  const { login, loginWithGoogle, theme } = useAuth();
+  const { login, loginWithGoogle, loginWithBiometrics, isBiometricsAvailable, theme } = useAuth();
+  const [isBioLoading, setIsBioLoading] = useState(false);
   const { showAlert } = useAlert();
   const router = useRouter();
   const c = Colors[theme];
@@ -72,6 +73,23 @@ export default function LoginScreen() {
       Animated.timing(heroSlide, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start();
   }, []);
+
+    const handleBiometricSignIn = async () => {
+    setIsBioLoading(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      const ok = await loginWithBiometrics();
+      if (ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      } else {
+        showAlert('Biometric Unlock', 'Biometrics could not be verified or no active session saved. Please sign in with email/password once to enable quick unlock.');
+      }
+    } catch (err: any) {
+      showAlert('Biometric Error', err.message || 'Unable to authenticate with biometrics.');
+    } finally {
+      setIsBioLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -206,6 +224,27 @@ export default function LoginScreen() {
             <Text style={[styles.formTitle, { color: c.text }]}>Welcome back</Text>
             <Text style={[styles.formSubtitle, { color: c.textMuted }]}>Sign in to your private financial ledger</Text>
           </StaggeredView>
+
+          {/* Biometric Face ID / Fingerprint Unlock */}
+          {isBiometricsAvailable && (
+            <StaggeredView delay={120} direction="up">
+              <TouchableOpacity
+                activeOpacity={0.85}
+                disabled={isBioLoading}
+                onPress={handleBiometricSignIn}
+                style={[styles.biometricBtn, { backgroundColor: c.card, borderColor: c.primary }]}
+              >
+                {isBioLoading ? (
+                  <ActivityIndicator color={c.primary} size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="finger-print-outline" size={20} color={c.primary} />
+                    <Text style={[styles.biometricText, { color: c.text }]}>Unlock with Face ID / Fingerprint</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </StaggeredView>
+          )}
 
           {/* Google Sign-In One-Tap Button */}
           <StaggeredView delay={130} direction="up">
@@ -426,6 +465,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 16,
+  },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginBottom: 12,
+  },
+  biometricText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   googleOAuthBtn: {
     flexDirection: 'row',

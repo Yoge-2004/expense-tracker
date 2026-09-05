@@ -100,6 +100,7 @@ public class UserController {
         summary = "Generate username suggestions",
         description = "Generates 4 unique, creative username suggestions based on a name or keyword."
     )
+    @RateLimited(key = "user-suggest-usernames", maxRequests = 20, windowSeconds = 60, message = "Too many username suggestion requests. Please try again later.")
     @GetMapping("/suggest-usernames")
     public ResponseEntity<Map<String, Object>> suggestUsernames(
             @RequestParam(required = false, defaultValue = "user") String base) {

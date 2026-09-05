@@ -1,3 +1,4 @@
+import { saveFileToDevice } from "../utils/fileDownloader";
 /**
  * @file ExportImportModal.tsx
  * @description Modal providing multi-format data export (Excel .xlsx PowerBI dashboard,
@@ -88,16 +89,12 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         throw new Error(`Server returned HTTP ${downloadResult.status}`);
       }
 
-      const isShareAvailable = await Sharing.isAvailableAsync();
-      if (isShareAvailable) {
-        await Sharing.shareAsync(downloadResult.uri, {
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          dialogTitle: 'Download Financial Dashboard (.xlsx)',
-          UTI: 'com.microsoft.excel.xlsx',
-        });
-      } else {
-        showAlert('Download Complete', `Excel dashboard saved to device: ${filename}`);
-      }
+      await saveFileToDevice(
+        downloadResult.uri,
+        filename,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "com.microsoft.excel.xlsx"
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
       showAlert('Export Failed', e.message || 'Could not download Excel file.');
@@ -124,16 +121,12 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         throw new Error(`Server returned HTTP ${downloadResult.status}`);
       }
 
-      const isShareAvailable = await Sharing.isAvailableAsync();
-      if (isShareAvailable) {
-        await Sharing.shareAsync(downloadResult.uri, {
-          mimeType: 'application/pdf',
-          dialogTitle: 'Download Executive Statement (.pdf)',
-          UTI: 'com.adobe.pdf',
-        });
-      } else {
-        showAlert('Download Complete', `PDF statement saved to device: ${filename}`);
-      }
+      await saveFileToDevice(
+        downloadResult.uri,
+        filename,
+        "application/pdf",
+        "com.adobe.pdf"
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
       showAlert('Export Failed', e.message || 'Could not download PDF file.');
@@ -167,16 +160,12 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      const isShareAvailable = await Sharing.isAvailableAsync();
-      if (isShareAvailable) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'text/csv',
-          dialogTitle: 'Save / Share Expenses CSV',
-          UTI: 'public.comma-separated-values-text',
-        });
-      } else {
-        showAlert('File Created', `CSV saved to ${filename}`);
-      }
+      await saveFileToDevice(
+        fileUri,
+        filename,
+        "text/csv",
+        "public.comma-separated-values-text"
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
       showAlert('Export Failed', e.message || 'Could not export CSV file.');
@@ -202,16 +191,12 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      const isShareAvailable = await Sharing.isAvailableAsync();
-      if (isShareAvailable) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'application/json',
-          dialogTitle: 'Save / Share Expenses JSON',
-          UTI: 'public.json',
-        });
-      } else {
-        showAlert('File Created', `JSON saved to ${filename}`);
-      }
+      await saveFileToDevice(
+        fileUri,
+        filename,
+        "application/json",
+        "public.json"
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
       showAlert('Export Failed', e.message || 'Could not export JSON file.');
@@ -248,16 +233,12 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      const isShareAvailable = await Sharing.isAvailableAsync();
-      if (isShareAvailable) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'text/plain',
-          dialogTitle: 'Save / Share Financial Summary',
-          UTI: 'public.plain-text',
-        });
-      } else {
-        showAlert('File Created', `Summary report saved to ${filename}`);
-      }
+      await saveFileToDevice(
+        fileUri,
+        filename,
+        "text/plain",
+        "public.plain-text"
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e: any) {
       showAlert('Export Failed', e.message || 'Could not export summary.');

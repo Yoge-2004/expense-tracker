@@ -263,16 +263,16 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/auth/signup/send-otp → 400 Bad Request when email is already registered")
-    void sendSignupOtp_existingEmail_returns400() throws Exception {
+    @DisplayName("POST /api/auth/signup/send-otp → 200 OK without disclosing user existence (CWE-204)")
+    void sendSignupOtp_existingEmail_preventsEnumeration_returns200() throws Exception {
         when(passwordResetService.sendSignupOtp(anyString(), anyString())).thenReturn(false);
 
         mockMvc.perform(post("/api/auth/signup/send-otp")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("email", "yoge@example.com", "name", "Yogeshwaran"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("This email address is already registered."));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("If this email is eligible, a verification code has been dispatched."));
     }
 
     @Test

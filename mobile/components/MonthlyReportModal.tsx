@@ -1,3 +1,4 @@
+import { saveFileToDevice } from "../utils/fileDownloader";
 /**
  * @file MonthlyReportModal.tsx
  * @description Monthly Financial Report generation & dispatch modal.
@@ -269,19 +270,12 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
 
       setTimeout(async () => {
         try {
-          const isAvailable = await Sharing.isAvailableAsync();
-          if (isAvailable) {
-            await Sharing.shareAsync(fileUri, {
-              mimeType: 'text/html',
-              dialogTitle: `${userName || 'User'}'s Financial Statement (${selectedMonthObj?.full} ${selectedYear})`,
-              UTI: 'public.html',
-            });
-          } else {
-            await Share.share({
-              title: fileName,
-              message: previewHtml,
-            });
-          }
+          await saveFileToDevice(
+            fileUri,
+            fileName,
+            "text/html",
+            "public.html"
+          );
         } catch (shareErr: any) {
           console.warn('[MonthlyReportModal] Delayed share invocation error:', shareErr);
         }

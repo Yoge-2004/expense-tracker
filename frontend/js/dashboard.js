@@ -4637,3 +4637,26 @@ securityPinForm?.addEventListener("submit", async (e) => {
         if (submitBtn) submitBtn.disabled = false;
     }
 });
+
+// ─── Biometric Authentication (Touch ID / Face ID / Windows Hello) ─────────
+const biometricAuthBtn = document.getElementById("biometricAuthBtn");
+biometricAuthBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (!window.WebBiometrics) {
+        showToast("Biometric module not initialized.", "error");
+        return;
+    }
+    const isAvail = await WebBiometrics.isAvailable();
+    if (!isAvail) {
+        showToast("Biometric hardware (Touch ID / Face ID / Windows Hello) is not detected or supported on this browser.", "warning");
+        return;
+    }
+    const token = localStorage.getItem("token");
+    const userEmail = localStorage.getItem("userEmail") || (window.currentUser && window.currentUser.email) || "user";
+    try {
+        await WebBiometrics.enroll(userEmail, token);
+        showToast("Biometric authentication (Touch ID / Face ID) activated successfully for this device! 🧬", "success");
+    } catch (err) {
+        showToast(err.message || "Biometric registration was cancelled.", "info");
+    }
+});
