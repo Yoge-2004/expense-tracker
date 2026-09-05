@@ -5,11 +5,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +34,10 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
+
+    public static final String DEFAULT_DEV_SECRET = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+
     /**
      * Base64 encoded secret key from application.properties
      */
@@ -40,6 +50,9 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
+    @Autowired(required = false)
+    private Environment environment;
+
     /**
      * Cached signing key
      */
@@ -50,8 +63,46 @@ public class JwtService {
      */
     @PostConstruct
     public void init() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        if (secretKey == null || secretKey.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret key is not configured. Set the JWT_SECRET environment variable.");
+        }
+
+        if (environment != null && environment.getActiveProfiles() != null) {
+            boolean isProduction = Arrays.stream(environment.getActiveProfiles())
+                    .anyMatch(p -> p.equalsIgnoreCase("neon") || p.equalsIgnoreCase("prod") || p.equalsIgnoreCase("production"));
+
+            if (isProduction && DEFAULT_DEV_SECRET.equals(secretKey.trim())) {
+                log.warn("SECURITY NOTICE: Running in production profile with default development secret. Ensure JWT_SECRET is set via environment secrets.");
+            }
+        }
+
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(secretKey.trim());
+        } catch (Exception e) {
+            keyBytes = secretKey.trim().getBytes(StandardCharsets.UTF_8);
+        }
+
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException(
+                    "JWT secret key must be at least 256 bits (32 bytes) for HS256 algorithm. Current length: " + keyBytes.length + " bytes."
+            );
+        }
+
         signingKey = Keys.hmacShaKeyFor(keyBytes);
+        log.info("JwtService successfully initialized with HMAC-SHA signing key (algorithm: HS256).");
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    public void setJwtExpiration(long jwtExpiration) {
+        this.jwtExpiration = jwtExpiration;
+    }
+
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
     }
 
     /**
