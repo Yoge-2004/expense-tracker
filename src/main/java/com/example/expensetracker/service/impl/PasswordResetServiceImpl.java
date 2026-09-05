@@ -69,7 +69,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public void requestReset(String email) {
         String normalizedEmail = normalizeEmail(email);
-
         User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + normalizedEmail));
 
@@ -77,9 +76,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         invalidateLatestUnusedOtp(user.getEmail(), "PASSWORD_RESET");
 
         String otp = generateOtp();
-        PasswordResetOtp record = createOtpRecord(user.getEmail(), "PASSWORD_RESET", otp);
-        otpRepository.save(record);
-
+        otpRepository.save(createOtpRecord(user.getEmail(), "PASSWORD_RESET", otp));
         sendOtpEmail(user, otp, "PASSWORD_RESET");
     }
 
@@ -105,15 +102,17 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         enforceRecoveryLockout(user);
 
-        boolean verified = verifySecurityPin(user, inputCode);
+        boolean verifiedByPin = verifySecurityPin(user, inputCode);
         PasswordResetOtp emailOtp = null;
 
-        if (!verified) {
+        if (!verifiedByPin) {
             emailOtp = otpRepository
                     .findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
                     .orElse(null);
+
             if (emailOtp != null) {
-                if (emailOtp.getExpiresAt() == null || emailOtp.getExpiresAt().isBefore(LocalDateTime.now())) {
+                LocalDateTime now = LocalDateTime.now();
+                if (emailOtp.getExpiresAt() == null || emailOtp.getExpiresAt().isBefore(now)) {
                     emailOtp.setUsed(true);
                     otpRepository.save(emailOtp);
                     emailOtp = null;
@@ -122,27 +121,32 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                     otpRepository.save(emailOtp);
                     emailOtp = null;
                 } else if (passwordEncoder.matches(inputCode, emailOtp.getOtpHash())) {
-                    verified = true;
+                    // Keep this record reference so the successful reset can
+                    // consume the exact OTP that authorized the password change.
                 } else {
                     emailOtp.setAttempts(emailOtp.getAttempts() + 1);
+                    if (emailOtp.getAttempts() >= MAX_ATTEMPTS) {
+                        emailOtp.setUsed(true);
+                    }
                     otpRepository.save(emailOtp);
                     emailOtp = null;
                 }
             }
         }
 
+        boolean verified = verifiedByPin || emailOtp != null;
         if (!verified) {
             registerFailedRecoveryAttempt(user);
             throw new BadCredentialsException("Invalid verification code or Security PIN.");
         }
 
-        // A successful PIN reset must also consume the latest outstanding email
-        // reset code. Otherwise an already-issued email OTP remains reusable
-        // after the account password has changed.
         if (emailOtp != null) {
             emailOtp.setUsed(true);
             otpRepository.save(emailOtp);
-        } else if (isSecurityPinMatch(user, inputCode)) {
+        } else if (verifiedByPin) {
+            // A successful PIN reset must consume any outstanding email reset
+            // code so an earlier intercepted OTP cannot be replayed after the
+            // password has already changed.
             invalidateLatestUnusedOtp(user.getEmail(), "PASSWORD_RESET");
         }
 
@@ -157,11 +161,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public boolean sendSignupOtp(String email, String name) {
         String normalizedEmail = normalizeEmail(email);
-        if (normalizedEmail.isBlank()) return false;
-
-        // Email identity is case-insensitive throughout the authentication
-        // model; use the same rule here so signup cannot bypass the duplicate
-        // account check by changing email casing.
         if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             return false;
         }
@@ -170,8 +169,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         invalidateLatestUnusedOtp(normalizedEmail, "SIGNUP");
 
         String otp = generateOtp();
-        PasswordResetOtp record = createOtpRecord(normalizedEmail, "SIGNUP", otp);
-        otpRepository.save(record);
+        otpRepository.save(createOtpRecord(normalizedEmail, "SIGNUP", otp));
 
         User tempUser = new User();
         tempUser.setName(name != null && !name.isBlank() ? name.trim() : normalizedEmail);
@@ -184,7 +182,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public void verifySignupOtp(String email, String otp) {
         String normalizedEmail = normalizeEmail(email);
-        if (normalizedEmail.isBlank() || otp == null || otp.isBlank()) {
+        if (otp == null || otp.isBlank()) {
             throw new BadCredentialsException("Invalid or expired code.");
         }
 
@@ -256,11 +254,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     private boolean verifySecurityPin(User user, String inputCode) {
-        return user.getSecurityPinHash() != null
-                && passwordEncoder.matches(inputCode, user.getSecurityPinHash());
-    }
-
-    private boolean isSecurityPinMatch(User user, String inputCode) {
         return user.getSecurityPinHash() != null
                 && passwordEncoder.matches(inputCode, user.getSecurityPinHash());
     }
