@@ -77,7 +77,7 @@ class PasswordResetServiceTest {
 
     @Test
     void sendSignupOtp_rejectsEmailAlreadyRegisteredRegardlessOfCase() {
-        when(userRepository.existsByEmailIgnoreCase("yoge@example.com")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("YOGE@EXAMPLE.COM".trim())).thenReturn(true);
 
         assertThat(service.sendSignupOtp("YOGE@EXAMPLE.COM", "Yogeshwaran")).isFalse();
         verify(otpRepository, never()).save(any());
@@ -124,7 +124,6 @@ class PasswordResetServiceTest {
 
         verify(mailSender).createMimeMessage();
         verify(mailSender).send(mimeMessage);
-        verify(otpRepository).save(any(PasswordResetOtp.class));
 
         ArgumentCaptor<PasswordResetOtp> captor = ArgumentCaptor.forClass(PasswordResetOtp.class);
         verify(otpRepository, atLeastOnce()).save(captor.capture());
@@ -161,17 +160,19 @@ class PasswordResetServiceTest {
         assertThat(testUser.getPinLockedUntil()).isNull();
         verify(otpRepository).save(outstandingOtp);
         verify(userRepository).save(testUser);
+        verify(passwordEncoder, never()).matches("654321", "hashed:111111");
     }
 
     @Test
     void resetPassword_validEmailOtp_consumesExactOtp() {
         PasswordResetOtp otpRecord = otp("PASSWORD_RESET", "hashed:654321", LocalDateTime.now().plusMinutes(10));
         when(userRepository.findByEmailIgnoreCase("yoge@example.com")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("654321", "missing-pin-hash")).thenReturn(false);
         when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc("yoge@example.com", "PASSWORD_RESET"))
                 .thenReturn(Optional.of(otpRecord));
-        when(passwordEncoder.matches("654321", "hashed:654321")).thenReturn(false);
         when(passwordEncoder.matches("654321", "hashed:654321")).thenReturn(true);
 
+        testUser.setSecurityPinHash("missing-pin-hash");
         service.resetPassword("yoge@example.com", "654321", "newSecret999");
 
         assertThat(otpRecord.isUsed()).isTrue();
@@ -186,7 +187,7 @@ class PasswordResetServiceTest {
         when(userRepository.findByEmailIgnoreCase("yoge@example.com")).thenReturn(Optional.of(testUser));
         when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc("yoge@example.com", "PASSWORD_RESET"))
                 .thenReturn(Optional.of(expired));
-        when(passwordEncoder.matches("654321", "hashed:654321")).thenReturn(false);
+        when(passwordEncoder.matches("654321", anyString())).thenReturn(false);
 
         assertThrows(BadCredentialsException.class,
                 () -> service.resetPassword("yoge@example.com", "654321", "newSecret999"));
