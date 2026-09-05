@@ -8,16 +8,6 @@ let loadingTimer;
 let isServerOnline = true;
 
 function ensureFeedbackUi() {
-    // Previously only checked for #appToastRegion's existence as a proxy for
-    // "all three elements are present" — but if #appLoading or
-    // #serverStatusBadge ever went missing independently while
-    // #appToastRegion remained, this would return early without repairing
-    // them, and setLoading()/updateServerStatus() would then throw on the
-    // missing element. Checking all three closes that gap — but naively
-    // re-injecting the full template when only one is missing would create
-    // duplicate-ID elements for whichever ones still exist, since
-    // insertAdjacentHTML doesn't check for existing IDs. Removing any
-    // partial remnants first avoids that.
     const allPresent = document.getElementById("appToastRegion")
         && document.getElementById("appLoading")
         && document.getElementById("serverStatusBadge");
@@ -41,7 +31,6 @@ function updateServerStatus(online, message = "Connected") {
     const badge = document.getElementById("serverStatusBadge");
     const text = document.getElementById("statusText");
     if (!badge || !text) return;
-
     if (online) {
         badge.className = "server-status-badge online";
         text.textContent = "Connected";
@@ -70,16 +59,20 @@ function showToast(message, type = "info") {
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
     toast.setAttribute("role", type === "error" ? "alert" : "status");
-    toast.innerHTML = `<span class="toast-message">${message}</span><button type="button" class="toast-close" aria-label="Close notification" onclick="this.parentElement.remove()">✕</button>`;
+    const messageEl = document.createElement("span");
+    messageEl.className = "toast-message";
+    messageEl.textContent = message == null ? "" : String(message);
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "toast-close";
+    closeBtn.setAttribute("aria-label", "Close notification");
+    closeBtn.textContent = "✕";
+    closeBtn.addEventListener("click", () => toast.remove());
+    toast.append(messageEl, closeBtn);
     document.getElementById("appToastRegion").appendChild(toast);
     setTimeout(() => {
         if (toast.parentElement) {
             toast.classList.add("leaving");
-            // The "leaving" state is driven by a CSS animation (toastOut), not a
-            // transition, so this must listen for animationend. A setTimeout
-            // fallback is kept as a safety net in case CSS changes again and
-            // neither event fires — without it, toasts silently pile up in the
-            // DOM forever and end up blocking clicks on real UI underneath them.
             const remove = () => toast.remove();
             toast.addEventListener("animationend", remove, { once: true });
             toast.addEventListener("transitionend", remove, { once: true });
@@ -132,7 +125,9 @@ function checkPendingFlashToast() {
     } catch (_) {}
 }
 
-// Automatically check server health on load and periodically
+// Check once on page load, then once per day. Regular API requests still wake
+// the backend immediately when the user actually interacts with the app.
+const HEALTH_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
@@ -143,22 +138,18 @@ if (typeof document !== "undefined") {
         checkHealth();
         checkPendingFlashToast();
     }
-    setInterval(checkHealth, 15000);
+    setInterval(checkHealth, HEALTH_CHECK_INTERVAL_MS);
 }
 
 async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
     const method = (options.method || "GET").toUpperCase();
     const skipCache = options.skipCache === true || options.cache === "no-store";
 
-    if (method !== "GET" || skipCache) {
-        apiCache.clear();
-    }
+    if (method !== "GET" || skipCache) apiCache.clear();
 
     if (method === "GET" && !skipCache) {
         const cached = apiCache.get(endpoint);
-        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-            return cached.data;
-        }
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) return cached.data;
     }
 
     const token = localStorage.getItem("token");
@@ -177,11 +168,6 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
             await new Promise(r => setTimeout(r, 2500));
-            // Do not decrement activeRequests here — the `finally` block
-            // below always runs exactly once per call (including this one),
-            // so decrementing here too was double-counting on every retry
-            // and could hide the loading overlay while another concurrent
-            // request was still genuinely in flight.
             return apiRequest(endpoint, options, retriesLeft - 1);
         }
         updateServerStatus(false, "Connecting...");
@@ -208,7 +194,10 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
     const shouldSkipAuthRedirect = options.skipAuthRedirect === true || isDeleteAccount || isVerifyPin;
 
     if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect && !window.location.href.includes("test_mock_auth=true")) {
-        localStorage.clear();
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");
     }
@@ -217,23 +206,11 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
 
     const text = await response.text();
     if (!response.ok) {
-        // Previously this parsed the JSON body inside a try block and threw
-        // from there, relying on that throw being caught by the very next
-        // catch clause as an ad-hoc control-flow trick. It happened to work
-        // when the backend returned valid JSON, but any non-JSON or empty
-        // body (which is exactly what Spring Security's filter chain used to
-        // return for 401/403s before it reached our own error handler) made
-        // JSON.parse's own "Unexpected end of JSON input" message match the
-        // `.includes("JSON")` check, so it silently fell back to "Unable to
-        // connect to the server" — a misleading message for what was often a
-        // permissions or validation error, not a connectivity problem.
         let msg = null;
         try {
             const parsed = JSON.parse(text);
             msg = parsed.message || parsed.error || null;
-        } catch (_) {
-            // Body wasn't JSON; fall through to a status-based message below.
-        }
+        } catch (_) {}
 
         if (msg && msg.toLowerCase().includes("database")) {
             msg = "Unable to connect to the server. Please try again in a moment.";
@@ -254,24 +231,15 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
             };
             msg = statusMessages[response.status] || `Request failed (${response.status}).`;
         }
-
         throw new Error(msg);
     }
 
     const data = text ? JSON.parse(text) : null;
-
-    if (method === "GET") {
-        apiCache.set(endpoint, { data, timestamp: Date.now() });
-    }
-
+    if (method === "GET") apiCache.set(endpoint, { data, timestamp: Date.now() });
     return data;
 }
 
 // Global Theme Handler
-
-// Browser chrome (tab bar / PWA title bar) color per theme — kept in sync
-// with the --bg-dark value each theme sets in css/style.css so the tab
-// color actually matches the page instead of staying fixed on dark.
 const THEME_COLOR_MAP = { dark: "#10120E", light: "#F8F9FA" };
 
 function updateThemeColorMeta(theme) {
@@ -315,19 +283,16 @@ function updateAllThemeIcons(theme) {
 function toggleGlobalTheme() {
     const currentTheme = (document.documentElement.getAttribute("data-theme") || "dark") === "light" ? "light" : "dark";
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
-
     document.documentElement.setAttribute("data-theme", nextTheme);
     document.body.setAttribute("data-theme", nextTheme);
     localStorage.setItem("theme", nextTheme);
     updateThemeColorMeta(nextTheme);
     updateAllThemeIcons(nextTheme);
-
     requestAnimationFrame(() => {
         document.dispatchEvent(new CustomEvent("themechange", { detail: { theme: nextTheme } }));
     });
 }
 
-// Global Multi-Currency System (50 World Currencies)
 const WORLD_CURRENCIES = [
     { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸', locale: 'en-US' },
     { code: 'EUR', symbol: '€', name: 'Euro', flag: '🇪🇺', locale: 'de-DE' },
@@ -431,12 +396,6 @@ const WORLD_CURRENCIES = [
     { code: 'BSD', symbol: 'B$', name: 'Bahamian Dollar', flag: '🇧🇸', locale: 'en-BS' }
 ];
 
-/**
- * Guesses the user's likely currency from their browser locale (e.g. "en-IN"
- * -> the currency whose `locale` field shares the same region, "IN" -> INR).
- * No network/geolocation call and no permission prompt required. Returns null
- * if nothing matches, so callers can fall back to a fixed default.
- */
 function detectLikelyCurrencyCode() {
     try {
         const timeZone = (Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
@@ -458,9 +417,7 @@ function detectLikelyCurrencyCode() {
             if (match) return match.code;
         }
         return null;
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
 async function detectClientLocationCurrency() {
@@ -470,21 +427,12 @@ async function detectClientLocationCurrency() {
         const res = await fetch('https://ipapi.co/currency/', { signal: AbortSignal.timeout(2000) });
         if (res.ok) {
             const code = (await res.text()).trim().toUpperCase();
-            if (code && typeof WORLD_CURRENCIES !== 'undefined' && WORLD_CURRENCIES.some(c => c.code === code)) {
-                return code;
-            }
+            if (code && typeof WORLD_CURRENCIES !== 'undefined' && WORLD_CURRENCIES.some(c => c.code === code)) return code;
         }
-    } catch (e) {
-        // Fallback silently if offline or blocked
-    }
+    } catch (e) {}
     return null;
 }
 
-/**
- * Returns WORLD_CURRENCIES reordered so the user's likely currency (per
- * detectLikelyCurrencyCode) appears first in currency pickers, without
- * changing the underlying data or any other consumer of WORLD_CURRENCIES.
- */
 function getCurrenciesSortedByLikelihood() {
     const detected = detectLikelyCurrencyCode();
     if (!detected) return WORLD_CURRENCIES;
@@ -493,52 +441,35 @@ function getCurrenciesSortedByLikelihood() {
     return [detectedItem, ...WORLD_CURRENCIES.filter(c => c.code !== detected)];
 }
 
-function getSelectedCurrency() {
-    return localStorage.getItem("userCurrency") || "USD";
-}
-
+function getSelectedCurrency() { return localStorage.getItem("userCurrency") || "USD"; }
 function getCurrencyInfo(code) {
     const c = code || getSelectedCurrency();
     return WORLD_CURRENCIES.find(item => item.code === c) || WORLD_CURRENCIES[0];
 }
-
-function getCurrencySymbol() {
-    return getCurrencyInfo().symbol;
-}
-
+function getCurrencySymbol() { return getCurrencyInfo().symbol; }
 function formatGlobalCurrency(amt) {
     const info = getCurrencyInfo();
     try {
         return new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, maximumFractionDigits: 2 }).format(amt || 0);
-    } catch (e) {
-        return `${info.symbol} ${Number(amt || 0).toFixed(2)}`;
-    }
+    } catch (e) { return `${info.symbol} ${Number(amt || 0).toFixed(2)}`; }
 }
-
 function formatGlobalCompactCurrency(amt) {
     const info = getCurrencyInfo();
     try {
         return new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, notation: 'compact', maximumFractionDigits: 1 }).format(amt || 0);
-    } catch (e) {
-        return `${info.symbol} ${Number(amt || 0).toFixed(0)}`;
-    }
+    } catch (e) { return `${info.symbol} ${Number(amt || 0).toFixed(0)}`; }
 }
 
-// Run immediately for zero flash of unthemed content
 initGlobalTheme();
 
-// Attach listeners on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
     initGlobalTheme();
 
     document.addEventListener("click", (e) => {
         const toggleBtn = e.target.closest(".theme-toggle-btn, #themeToggle");
-        if (toggleBtn) {
-            toggleGlobalTheme();
-        }
+        if (toggleBtn) toggleGlobalTheme();
     });
 
-    // Global Interactive Multi-Color Fluid Click Ripple Effect
     document.addEventListener("click", (e) => {
         const targetBtn = e.target.closest(".btn-primary, .btn-secondary, .btn-oauth, .preset-btn, .btn-icon, button[type='submit']:not(.pill-chip)");
         if (!targetBtn) return;
