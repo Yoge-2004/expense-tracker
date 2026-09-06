@@ -87,7 +87,7 @@ class IdorEndpointProtectionTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.error").value("Forbidden"))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("You do not have permission to access or modify resources belonging to another user.")));
+                .andExpect(jsonPath("$.message").value("Access is denied: Access denied."));
     }
 
     @Test
