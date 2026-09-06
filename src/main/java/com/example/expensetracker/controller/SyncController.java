@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.Map;
 
@@ -37,17 +39,20 @@ public class SyncController {
         this.rateLimiterService = rateLimiterService;
     }
 
+    /**
+     * Uses the servlet connection address rather than a client-supplied
+     * forwarding header. Forwarding headers are only safe to trust when a
+     * trusted reverse proxy has been explicitly configured to sanitize them.
+     */
     private String resolveClientIp(HttpServletRequest request) {
-        String clientIp = request != null ? request.getHeader("X-Forwarded-For") : null;
-        if (clientIp == null || clientIp.isBlank()) {
-            return request != null ? request.getRemoteAddr() : "127.0.0.1";
-        }
-        return clientIp.split(",")[0].trim();
+        return request != null && request.getRemoteAddr() != null
+                ? request.getRemoteAddr()
+                : "unknown";
     }
 
     private ResponseEntity<Map<String, Object>> rateLimit(String clientIp) {
         if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
-            log.warn("Rate limit exceeded for sync requests from IP: {}", clientIp);
+            log.warn("Rate limit exceeded for sync requests");
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("status", "error", "message", "Too many sync requests. Please try again later."));
         }
@@ -60,16 +65,15 @@ public class SyncController {
     }
 
     private boolean hasValidSyncToken(String syncToken) {
-        return syncSecretKey != null && !syncSecretKey.isBlank()
-                && syncToken != null && !syncToken.isBlank()
-                && syncToken.equals(syncSecretKey);
+        if (syncSecretKey == null || syncSecretKey.isBlank() || syncToken == null || syncToken.isBlank()) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                syncSecretKey.getBytes(StandardCharsets.UTF_8),
+                syncToken.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
-    /**
-     * Local File ↔ DB sync remains available to authenticated users because it
-     * operates on the application's local synchronization workflow. External
-     * automation can also authenticate with the dedicated sync token.
-     */
     private ResponseEntity<Map<String, Object>> validateLocalSyncAccess(String syncToken, HttpServletRequest request) {
         String clientIp = resolveClientIp(request);
         ResponseEntity<Map<String, Object>> rateLimitError = rateLimit(clientIp);
@@ -77,16 +81,11 @@ public class SyncController {
 
         if (hasValidSyncToken(syncToken) || hasAuthenticatedSession()) return null;
 
-        log.warn("Unauthorized local sync attempt from IP: {}", clientIp);
+        log.warn("Unauthorized local sync attempt");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("status", "error", "message", "Unauthorized: valid sync token or authenticated session required."));
     }
 
-    /**
-     * Hugging Face backup controls are restricted to the dedicated sync secret.
-     * This keeps ordinary user JWTs from triggering overwrite/pull operations
-     * against the shared backup channel while preserving scheduled automation.
-     */
     private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {
         String clientIp = resolveClientIp(request);
         ResponseEntity<Map<String, Object>> rateLimitError = rateLimit(clientIp);
@@ -94,7 +93,7 @@ public class SyncController {
 
         if (hasValidSyncToken(syncToken)) return null;
 
-        log.warn("Unauthorized HF sync attempt from IP: {}", clientIp);
+        log.warn("Unauthorized HF sync attempt");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("status", "error", "message", "Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
     }
