@@ -21,9 +21,8 @@ public class WebAuthnController {
     }
 
     @PostMapping("/register/options")
-    public ResponseEntity<String> registrationOptions(Authentication authentication) {
-        User user = currentUser(authentication);
-        return ResponseEntity.ok(webAuthnService.startRegistration(user));
+    public ResponseEntity<Map<String, String>> registrationOptions(Authentication authentication) {
+        return ResponseEntity.ok(webAuthnService.startRegistration(currentUser(authentication)));
     }
 
     @PostMapping("/register/finish")
@@ -31,13 +30,12 @@ public class WebAuthnController {
         Authentication authentication,
         @RequestBody WebAuthnFinishRequest request
     ) {
-        User user = currentUser(authentication);
-        webAuthnService.finishRegistration(user, request.transactionId(), request.credential());
+        webAuthnService.finishRegistration(currentUser(authentication), request.transactionId(), request.credential());
         return ResponseEntity.ok(Map.of("message", "Biometric sign-in is now enabled on this device."));
     }
 
     @PostMapping("/login/options")
-    public ResponseEntity<String> loginOptions() {
+    public ResponseEntity<Map<String, String>> loginOptions() {
         return ResponseEntity.ok(webAuthnService.startAuthentication());
     }
 
