@@ -1,0 +1,97 @@
+name: One-time remediation
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    if: github.event.head_commit.message == 'Run one-time frontend remediation'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply exact frontend remediations
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          # Remove the production-visible mock authentication hook from dashboard.js.
+          dashboard = Path('frontend/js/dashboard.js')
+          text = dashboard.read_text(encoding='utf-8')
+          block = '''// Check for test mock auth in test environments
+          const urlSearch = window.location.search || (window.location.href.includes("?") ? window.location.href.slice(window.location.href.indexOf("?")) : "");
+          const urlParams = new URLSearchParams(urlSearch);
+          if (urlParams.get("test_mock_auth") === "true" || window.location.href.includes("test_mock_auth=true")) {
+              localStorage.setItem("token", "mock_jwt_token_123");
+              localStorage.setItem("userId", "101");
+              if (!localStorage.getItem("userName")) localStorage.setItem("userName", "Alex Smith");
+              if (!localStorage.getItem("userCurrency")) localStorage.setItem("userCurrency", "USD");
+          }
+
+          '''
+          if block not in text:
+              raise SystemExit('dashboard.js mock-auth block not found; refusing partial remediation')
+          dashboard.write_text(text.replace(block, '', 1), encoding='utf-8')
+
+          # Remove the corresponding production exception from API 401 handling.
+          api = Path('frontend/js/api.js')
+          text = api.read_text(encoding='utf-8')
+          old = ' && !window.location.href.includes("test_mock_auth=true")'
+          if old not in text:
+              raise SystemExit('api.js mock-auth exception not found; refusing partial remediation')
+          api.write_text(text.replace(old, '', 1), encoding='utf-8')
+
+          # Remove only local ?v= cache-busting parameters from HTML resource URLs.
+          # Absolute URLs (for example Google Fonts) are intentionally untouched.
+          html_files = list(Path('frontend').glob('*.html')) + list(Path('frontend').glob('**/*.html'))
+          resource_re = re.compile(r'((?:href|src)=["\'](?:\./)?(?:css|js|images|fonts|assets)/[^"\']+?)\?v=[^"\']+(["\'])', re.I)
+          for path in sorted(set(html_files)):
+              current = path.read_text(encoding='utf-8')
+              updated = resource_re.sub(r'\1\2', current)
+              if updated != current:
+                  path.write_text(updated, encoding='utf-8')
+
+          # Remove local cache-busting parameters from mobile source/resource references,
+          # while preserving query strings used by remote URLs or functional configuration.
+          mobile_root = Path('mobile')
+          mobile_re = re.compile(r'((?:["\'])(?:\./|\.\./)(?:[^"\']+?\.(?:js|ts|tsx|css|json|png|jpg|jpeg|svg|webp)))\?v=[^"\']+(["\'])', re.I)
+          for path in mobile_root.rglob('*'):
+              if not path.is_file() or path.name in {'package-lock.json'}:
+                  continue
+              try:
+                  current = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              updated = mobile_re.sub(r'\1\2', current)
+              if updated != current:
+                  path.write_text(updated, encoding='utf-8')
+
+      - name: Validate changes
+        run: |
+          git diff --check
+          node --check frontend/js/dashboard.js
+          node --check frontend/js/api.js
+          ! grep -R --line-number --exclude-dir=.git 'mock_jwt_token_123\|test_mock_auth=true' frontend/js
+
+      - name: Commit remediation and remove one-time workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-time-remediate.yml
+          git add frontend mobile
+          if git diff --cached --quiet; then
+            echo 'No remediation changes detected.'
+            exit 1
+          fi
+          git commit -m 'Harden frontend authentication and resource loading'
+          git push origin main
