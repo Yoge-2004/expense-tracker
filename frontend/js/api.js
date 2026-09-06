@@ -193,7 +193,7 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
     const isVerifyPin = endpoint.includes("/verify-security-pin");
     const shouldSkipAuthRedirect = options.skipAuthRedirect === true || isDeleteAccount || isVerifyPin;
 
-    if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect && !window.location.href.includes("test_mock_auth=true")) {
+    if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect) {
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
         localStorage.removeItem("userName");

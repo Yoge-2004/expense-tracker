@@ -1,13 +1,3 @@
-// Check for test mock auth in test environments
-const urlSearch = window.location.search || (window.location.href.includes("?") ? window.location.href.slice(window.location.href.indexOf("?")) : "");
-const urlParams = new URLSearchParams(urlSearch);
-if (urlParams.get("test_mock_auth") === "true" || window.location.href.includes("test_mock_auth=true")) {
-    localStorage.setItem("token", "mock_jwt_token_123");
-    localStorage.setItem("userId", "101");
-    if (!localStorage.getItem("userName")) localStorage.setItem("userName", "Alex Smith");
-    if (!localStorage.getItem("userCurrency")) localStorage.setItem("userCurrency", "USD");
-}
-
 const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
 const userName = localStorage.getItem("userName") || "User";
