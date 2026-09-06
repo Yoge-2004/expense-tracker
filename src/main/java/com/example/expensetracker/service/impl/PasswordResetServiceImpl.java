@@ -83,9 +83,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         User user = userRepository.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
 
-        log.info("Generating password reset OTP for email={}", user.getEmail());
+        log.info("Generating password reset OTP");
 
-        // Invalidate any still-open PASSWORD_RESET code before issuing a new one.
         otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
                 .ifPresent(existing -> {
                     existing.setUsed(true);
@@ -111,34 +110,30 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new BadCredentialsException("Invalid or expired code or PIN.");
         }
 
-        // HARDENING: Completely reject deprecated backdoor strings
         if ("BYPASS".equalsIgnoreCase(otp.trim())) {
-            log.warn("Security violation: Rejected deprecated BYPASS token attempt for email={}", email);
+            log.warn("Security violation: Rejected deprecated BYPASS token attempt");
             throw new BadCredentialsException("Invalid verification code or Security PIN.");
         }
 
         User user = userRepository.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
 
-        // Check brute-force lockout for Security PIN / OTP recovery
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
             long minutesRemaining = java.time.Duration.between(LocalDateTime.now(), user.getPinLockedUntil()).toMinutes() + 1;
-            log.warn("Recovery attempt blocked for locked account email={}, minutesRemaining={}", user.getEmail(), minutesRemaining);
+            log.warn("Recovery attempt blocked for locked account; minutesRemaining={}", minutesRemaining);
             throw new BadCredentialsException("Account recovery temporarily locked due to too many failed attempts. Please try again in " + minutesRemaining + " minute(s).");
         }
 
         String inputCode = otp.trim();
         boolean verified = false;
 
-        // 1. Verify against user's 6-digit Security PIN (works in zero-email environments)
         if (user.getSecurityPinHash() != null && passwordEncoder.matches(inputCode, user.getSecurityPinHash())) {
             verified = true;
             user.setFailedPinAttempts(0);
             user.setPinLockedUntil(null);
-            log.info("Password reset authorized via 6-digit Security PIN for email={}", user.getEmail());
+            log.info("Password reset authorized via 6-digit Security PIN");
         }
 
-        // 2. Verify against unexpired, unused Email OTP if PIN didn't match
         if (!verified) {
             Optional<PasswordResetOtp> recordOpt = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET");
             if (recordOpt.isPresent()) {
@@ -150,7 +145,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                         otpRepository.save(record);
                         user.setFailedPinAttempts(0);
                         user.setPinLockedUntil(null);
-                        log.info("Password reset authorized via Email OTP for email={}", user.getEmail());
+                        log.info("Password reset authorized via Email OTP");
                     } else {
                         record.setAttempts(record.getAttempts() + 1);
                         otpRepository.save(record);
@@ -159,13 +154,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             }
         }
 
-        // 3. If neither matched, increment failed attempts and lockout after threshold
         if (!verified) {
             int failed = user.getFailedPinAttempts() + 1;
             user.setFailedPinAttempts(failed);
             if (failed >= 5) {
                 user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
-                log.warn("Account recovery locked for 15 minutes due to 5 consecutive failed attempts for email={}", user.getEmail());
+                log.warn("Account recovery locked for 15 minutes due to 5 consecutive failed attempts");
             }
             userRepository.save(user);
             throw new BadCredentialsException("Invalid verification code or Security PIN.");
@@ -173,7 +167,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        log.info("Password reset successfully applied for email={}", user.getEmail());
+        log.info("Password reset successfully applied");
     }
 
     @Override
@@ -181,15 +175,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     public boolean sendSignupOtp(String email, String name) {
         if (email == null || email.isBlank()) return false;
 
-        // Fail fast if the email is already registered — unlike password reset,
-        // revealing this is expected and useful for the signup flow.
         if (userRepository.existsByEmail(email)) {
             return false;
         }
 
-        log.info("Generating signup OTP for email={}", email);
+        log.info("Generating signup OTP");
 
-        // Invalidate any still-open SIGNUP OTP for this email before issuing a new one.
         otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
                 .ifPresent(existing -> {
                     existing.setUsed(true);
@@ -205,7 +196,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
         otpRepository.save(record);
 
-        // Build a temporary User object just to reuse the email helper
         User tempUser = new User();
         tempUser.setName(name != null && !name.isBlank() ? name : email);
         tempUser.setEmail(email);
@@ -241,14 +231,13 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new BadCredentialsException("Invalid verification code.");
         }
 
-        // Mark as used — the register endpoint completes the account creation.
         record.setUsed(true);
         otpRepository.save(record);
-        log.info("Signup OTP verified successfully for email={}", email);
+        log.info("Signup OTP verified successfully");
     }
 
     private String generateOtp() {
-        int code = 100000 + random.nextInt(900000); // always 6 digits
+        int code = 100000 + random.nextInt(900000);
         return String.valueOf(code);
     }
 
@@ -259,13 +248,13 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()) {
-            log.info("[Email Delivery Disabled] Generated {} OTP for email={} (masked for security)", purpose, user.getEmail());
+            log.info("[Email Delivery Disabled] Generated {} OTP (delivery disabled)", purpose);
             return;
         }
 
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.error("spring.mail.host is set but no JavaMailSender bean is available; code for {} was not sent.", user.getEmail());
+            log.error("spring.mail.host is set but no JavaMailSender bean is available; code was not sent.");
             return;
         }
 
@@ -289,11 +278,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             }
 
             mailSender.send(mimeMessage);
-            log.info("Successfully dispatched {} OTP email to {}", purpose, user.getEmail());
+            log.info("Successfully dispatched {} OTP email", purpose);
         } catch (MailException e) {
-            log.error("Failed to deliver {} OTP email to {}: {}", purpose, user.getEmail(), e.getMessage());
+            log.error("Failed to deliver {} OTP email: {}", purpose, e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected error constructing {} email for {}: {}", purpose, user.getEmail(), e.getMessage(), e);
+            log.error("Unexpected error constructing {} email: {}", purpose, e.getMessage(), e);
         }
     }
 
