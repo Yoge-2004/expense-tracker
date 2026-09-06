@@ -121,24 +121,32 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public boolean verifySecurityPin(Long userId, String pin) {
-        if (pin == null || pin.isBlank()) return false;
+        if (pin == null || !pin.matches("^[0-9]{6}$")) {
+            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
-            return false;
+            throw new IllegalStateException("Security PIN verification temporarily locked");
         }
-        if (user.getSecurityPinHash() == null || user.getSecurityPinHash().isBlank()) return false;
+
+        if (user.getSecurityPinHash() == null || user.getSecurityPinHash().isBlank()) {
+            throw new IllegalStateException("No security PIN has been set");
+        }
+
         if (passwordEncoder.matches(pin, user.getSecurityPinHash())) {
             user.setFailedPinAttempts(0);
             user.setPinLockedUntil(null);
             userRepository.save(user);
             return true;
         }
+
         int attempts = Optional.ofNullable(user.getFailedPinAttempts()).orElse(0) + 1;
         user.setFailedPinAttempts(attempts);
         if (attempts >= 5) {
             user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
-            user.setFailedPinAttempts(0);
         }
         userRepository.save(user);
         return false;
