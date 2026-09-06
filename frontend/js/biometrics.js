@@ -4,9 +4,9 @@
  * authenticator holds the private key and the server verifies every assertion.
  */
 
-// Remove legacy authentication-test query parameters before dashboard.js runs.
-// This prevents a test-only URL from altering production authentication state.
-if (window.location.search.includes('test_mock_auth')) {
+// The legacy mock-auth query is only used by the local file:// Selenium suite.
+// Strip it on deployed HTTP(S) pages so a production URL cannot trigger test auth.
+if (window.location.protocol !== 'file:' && window.location.search.includes('test_mock_auth')) {
     const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
     window.history.replaceState({}, document.title, cleanUrl);
 }
