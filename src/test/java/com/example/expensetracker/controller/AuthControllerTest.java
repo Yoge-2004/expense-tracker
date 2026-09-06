@@ -259,7 +259,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("email", "new@example.com", "name", "New User"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Verification code sent to new@example.com"));
+                .andExpect(jsonPath("$.message").value("If this email is eligible, a verification code has been dispatched."));
     }
 
     @Test

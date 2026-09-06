@@ -123,6 +123,7 @@ public class ExpenseTrackerSeleniumTest {
         String initialTheme = driver.findElement(By.tagName("html")).getAttribute("data-theme");
 
         clickElement(themeBtn);
+        wait.until(d -> !initialTheme.equals(d.findElement(By.tagName("html")).getAttribute("data-theme")));
         String toggledTheme = driver.findElement(By.tagName("html")).getAttribute("data-theme");
         assertNotEquals(initialTheme, toggledTheme, "Theme data attribute should toggle on click");
     }
@@ -263,6 +264,8 @@ public class ExpenseTrackerSeleniumTest {
         clickElement(themeBtn);
 
         String savedTheme = (String) ((JavascriptExecutor) driver).executeScript("return localStorage.getItem('theme');");
+        wait.until(d -> ((JavascriptExecutor) d).executeScript("return localStorage.getItem('theme');") != null);
+        savedTheme = (String) ((JavascriptExecutor) driver).executeScript("return localStorage.getItem('theme');");
         assertNotNull(savedTheme, "Theme setting should be persisted in localStorage");
 
         driver.get(indexUrl);

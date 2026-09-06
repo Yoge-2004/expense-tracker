@@ -130,16 +130,13 @@ Feature: Authentication API
     When I register with name "Another User", email "duplicate@example.com", and password "pass123"
     Then the response status code should be 400
 
-  Scenario: Email uniqueness is case-sensitive, not case-insensitive
-    Documents actual current behavior: UserRepository's email lookup is
-    case-sensitive (see its Javadoc), so "Case@Example.com" and
-    "case@example.com" are treated as two different accounts rather than
-    a duplicate. This may or may not be the intended product behavior, but
-    the test should reflect what the system actually does today.
+  Scenario: Email uniqueness is case-insensitive
+    Email identity is normalized for registration, so capitalization changes
+    must not create a second account for the same email address.
 
     Given a user is registered with email "case@example.com" and password "pass123"
     When I register with name "Different Case", email "Case@Example.com", and password "pass123"
-    Then the response status code should be 201
+    Then the response status code should be 400
 
   Scenario: Register succeeds with a plus-addressed email
     "+tag" addressing is valid email syntax and a common real-world pattern
