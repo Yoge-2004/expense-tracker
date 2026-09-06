@@ -4,6 +4,13 @@
  * authenticator holds the private key and the server verifies every assertion.
  */
 
+// Remove legacy authentication-test query parameters before dashboard.js runs.
+// This prevents a test-only URL from altering production authentication state.
+if (window.location.search.includes('test_mock_auth')) {
+    const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
+    window.history.replaceState({}, document.title, cleanUrl);
+}
+
 // Remove tokens created by the old, insecure browser-only biometric implementation.
 localStorage.removeItem("webauthn_bio_token");
 localStorage.removeItem("webauthn_bio_email");
