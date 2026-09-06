@@ -7,15 +7,12 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,25 +33,20 @@ public class JwtService {
 
     private static final Logger log = LoggerFactory.getLogger(JwtService.class);
 
-    public static final String DEFAULT_DEV_SECRET = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
-
     /**
-     * Base64 encoded secret key from application.properties
+     * Base64 encoded secret key from application.properties.
      */
     @Value("${jwt.secret}")
     private String secretKey;
 
     /**
-     * Token expiration duration in milliseconds
+     * Token expiration duration in milliseconds.
      */
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
-    @Autowired(required = false)
-    private Environment environment;
-
     /**
-     * Cached signing key
+     * Cached signing key.
      */
     private SecretKey signingKey;
 
@@ -65,15 +57,6 @@ public class JwtService {
     public void init() {
         if (secretKey == null || secretKey.trim().isEmpty()) {
             throw new IllegalStateException("JWT secret key is not configured. Set the JWT_SECRET environment variable.");
-        }
-
-        if (environment != null && environment.getActiveProfiles() != null) {
-            boolean isProduction = Arrays.stream(environment.getActiveProfiles())
-                    .anyMatch(p -> p.equalsIgnoreCase("neon") || p.equalsIgnoreCase("prod") || p.equalsIgnoreCase("production"));
-
-            if (isProduction && DEFAULT_DEV_SECRET.equals(secretKey.trim())) {
-                log.warn("SECURITY NOTICE: Running in production profile with default development secret. Ensure JWT_SECRET is set via environment secrets.");
-            }
         }
 
         byte[] keyBytes;
@@ -99,10 +82,6 @@ public class JwtService {
 
     public void setJwtExpiration(long jwtExpiration) {
         this.jwtExpiration = jwtExpiration;
-    }
-
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
     }
 
     /**
