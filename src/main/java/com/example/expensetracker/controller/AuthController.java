@@ -30,7 +30,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Tag(
     name        = "Authentication",
@@ -105,7 +104,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(
             @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
         String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
-        log.info("Login attempt for identifier={}", identifier);
+        log.info("Login attempt received");
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
 
@@ -121,7 +120,7 @@ public class AuthController {
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
         }
         String token = jwtService.generateToken(user.getEmail());
-        log.info("User {} (id={}) successfully authenticated", user.getEmail(), user.getId());
+        log.info("User successfully authenticated; userId={}", user.getId());
         return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency(), user.hasSecurityPin()));
     }
 
@@ -212,7 +211,6 @@ public class AuthController {
         try {
             passwordResetService.requestReset(email);
         } catch (Exception e) {
-            // Deliberately keep the response identical for unknown and known accounts.
             log.info("Password reset request processed without exposing account state: {}", e.getClass().getSimpleName());
         }
         return ResponseEntity.ok(Map.of(
