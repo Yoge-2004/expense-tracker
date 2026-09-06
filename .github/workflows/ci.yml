@@ -21,7 +21,18 @@ jobs:
           java-version: '26'
           cache: maven
       - name: Run Maven tests
-        run: mvn -B test
+        shell: bash
+        run: |
+          set -o pipefail
+          mvn -B test 2>&1 | tee backend-test.log
+      - name: Upload backend test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-log
+          path: backend-test.log
+          if-no-files-found: error
+          retention-days: 7
 
   frontend:
     name: Web frontend checks
