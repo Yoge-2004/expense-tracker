@@ -1,0 +1,99 @@
+name: One-time final client hardening
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.event.head_commit.message == 'Run one-time final client hardening'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply exact client test and consistency fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          # Keep Selenium's authentication setup entirely in the test suite.
+          path = Path('src/test/java/com/example/expensetracker/selenium/ExpenseTrackerSeleniumTest.java')
+          text = path.read_text(encoding='utf-8')
+          old = '        dashboardUrl = "file://" + new File("frontend/dashboard.html").getAbsolutePath() + "?test_mock_auth=true";'
+          new = '        dashboardUrl = "file://" + new File("frontend/dashboard.html").getAbsolutePath();'
+          if old not in text:
+              raise SystemExit('Selenium dashboard URL marker not found')
+          text = text.replace(old, new, 1)
+          old = '''    private void loginSessionAndGoToDashboard() {
+        driver.get(dashboardUrl);
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("userWelcomeText")));
+    }'''
+          new = '''    private void loginSessionAndGoToDashboard() {
+        // Establish test-only storage state without exposing a production authentication hook.
+        driver.get(indexUrl);
+        ((JavascriptExecutor) driver).executeScript(
+                "localStorage.setItem('token', 'selenium-test-token');" +
+                "localStorage.setItem('userId', '101');" +
+                "localStorage.setItem('userName', 'Alex Smith');" +
+                "localStorage.setItem('userCurrency', 'USD');"
+        );
+        driver.get(dashboardUrl);
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("userWelcomeText")));
+    }'''
+          if old not in text:
+              raise SystemExit('Selenium login helper block not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Do not close the currency picker until the remote preference update succeeds.
+          path = Path('mobile/app/(tabs)/profile.tsx')
+          text = path.read_text(encoding='utf-8')
+          old = '''                    onPress={() => {
+                      updateCurrency(item.code);
+                      setShowCurrencyModal(false);
+                      Haptics.selectionAsync().catch(() => {});
+                    }}'''
+          new = '''                    onPress={async () => {
+                      try {
+                        await updateCurrency(item.code);
+                        setShowCurrencyModal(false);
+                        Haptics.selectionAsync().catch(() => {});
+                      } catch (e: any) {
+                        const msg = e instanceof ApiError ? e.message : 'Could not update your currency.';
+                        showAlert('Currency Update Failed', msg, undefined, 'error');
+                      }
+                    }}'''
+          if old not in text:
+              raise SystemExit('Mobile currency handler not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Keep the generated recovery DOM fix formatted consistently.
+          path = Path('frontend/forgot-password.html')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              '          const recipient = document.createElement("strong");\n          recipient.style.color = "var(--primary)";\n          recipient.textContent = resetEmail;\n          codeSentNote.appendChild(recipient);',
+              '                    const recipient = document.createElement("strong");\n                    recipient.style.color = "var(--primary)";\n                    recipient.textContent = resetEmail;\n                    codeSentNote.appendChild(recipient);'
+          )
+          path.write_text(text, encoding='utf-8')
+
+      - name: Validate
+        run: |
+          git diff --check
+          node --check frontend/js/dashboard.js
+          node --check frontend/js/api.js
+          ! grep -R --line-number --exclude-dir=.git 'mock_jwt_token_123\|test_mock_auth=true' frontend mobile src
+
+      - name: Commit and remove workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-time-final-client-hardening.yml
+          git add frontend mobile src/test
+          git commit -m 'Remove legacy test authentication dependencies'
+          git push origin main
