@@ -50,20 +50,40 @@ jobs:
       - name: Generate Android project from Expo config
         run: npx expo prebuild --platform android --non-interactive --no-install
 
-      - name: Build installable debug APK
+      - name: Build standalone release APK
         shell: bash
         run: |
           set -o pipefail
           cd android
-          ./gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee ../gradle-build.log
+          ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee ../gradle-build.log
           exit ${PIPESTATUS[0]}
+
+      - name: Verify APK contains embedded JavaScript bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK_PATH"
+          if ! unzip -l "$APK_PATH" | grep -Eq 'assets/index\.android\.(bundle|js)$'; then
+            echo "ERROR: Release APK does not contain an embedded Android JavaScript bundle."
+            exit 1
+          fi
+          echo "Embedded JavaScript bundle verified. Metro is not required by this APK."
+
+      - name: Verify APK signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose "$APK_PATH"
 
       - name: Collect APK
         shell: bash
         run: |
           set -euo pipefail
-          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
-          test -s "$APK_PATH"
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
           cp "$APK_PATH" expense-tracker.apk
           sha256sum expense-tracker.apk | tee expense-tracker.apk.sha256
           test -s expense-tracker.apk
@@ -94,8 +114,8 @@ jobs:
           tag_name: android-v${{ github.run_number }}
           name: Expense Tracker Android v${{ github.run_number }}
           body: |
-            Installable Android APK built locally from the Expo project on main at commit ${{ github.sha }}.
-            Build type: debug APK for direct installation/testing.
+            Standalone Android APK built from the Expo project on main at commit ${{ github.sha }}.
+            The release variant embeds the JavaScript bundle; Metro is not required after installation.
           files: |
             mobile/expense-tracker.apk
             mobile/expense-tracker.apk.sha256
