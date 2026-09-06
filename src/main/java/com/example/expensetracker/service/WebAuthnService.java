@@ -10,9 +10,8 @@ import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.WebAuthnCredentialRepositoryAdapter;
 import com.yubico.webauthn.AssertionRequest;
 import com.yubico.webauthn.AssertionResult;
-import com.yubico.webauthn.FinishRegistrationOptions;
 import com.yubico.webauthn.FinishAssertionOptions;
-import com.yubico.webauthn.RegisteredCredential;
+import com.yubico.webauthn.FinishRegistrationOptions;
 import com.yubico.webauthn.RegistrationResult;
 import com.yubico.webauthn.RelyingParty;
 import com.yubico.webauthn.RelyingPartyIdentity;
@@ -22,7 +21,6 @@ import com.yubico.webauthn.data.AuthenticatorAttachment;
 import com.yubico.webauthn.data.ByteArray;
 import com.yubico.webauthn.data.PublicKeyCredential;
 import com.yubico.webauthn.data.PublicKeyCredentialCreationOptions;
-import com.yubico.webauthn.data.PublicKeyCredentialRequestOptions;
 import com.yubico.webauthn.data.ResidentKeyRequirement;
 import com.yubico.webauthn.data.UserIdentity;
 import com.yubico.webauthn.data.UserVerificationRequirement;
@@ -36,8 +34,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -69,16 +67,15 @@ public class WebAuthnService {
         this.relyingParty = RelyingParty.builder()
             .identity(RelyingPartyIdentity.builder().id(rpId).name("Expense Tracker Pro").build())
             .credentialRepository(credentialRepository)
-            .origins(java.util.Set.of(origin))
+            .origins(Set.of(origin))
             .allowUntrustedAttestation(true)
             .validateSignatureCounter(true)
             .build();
     }
 
     @Transactional
-    public String startRegistration(User user) {
+    public Map<String, String> startRegistration(User user) {
         cleanupExpiredChallenges();
-
         byte[] userHandle = new byte[32];
         secureRandom.nextBytes(userHandle);
 
@@ -101,15 +98,14 @@ public class WebAuthnService {
 
         String transactionId = UUID.randomUUID().toString();
         saveChallenge(transactionId, user.getId(), REGISTRATION, request.toJson());
-        return request.toCredentialsCreateJson();
+        return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsCreateJson());
     }
 
     @Transactional
     public void finishRegistration(User user, String transactionId, String credentialJson) {
         WebAuthnChallenge challenge = consumeChallenge(transactionId, REGISTRATION, user.getId());
-        PublicKeyCredentialCreationOptions request;
         try {
-            request = PublicKeyCredentialCreationOptions.fromJson(challenge.getRequestJson());
+            PublicKeyCredentialCreationOptions request = PublicKeyCredentialCreationOptions.fromJson(challenge.getRequestJson());
             PublicKeyCredential<?, ?> parsed = PublicKeyCredential.parseRegistrationResponseJson(credentialJson);
             @SuppressWarnings("unchecked")
             PublicKeyCredential<com.yubico.webauthn.data.AuthenticatorAttestationResponse,
@@ -138,7 +134,7 @@ public class WebAuthnService {
     }
 
     @Transactional
-    public String startAuthentication() {
+    public Map<String, String> startAuthentication() {
         cleanupExpiredChallenges();
         AssertionRequest request = relyingParty.startAssertion(
             StartAssertionOptions.builder()
@@ -148,7 +144,7 @@ public class WebAuthnService {
 
         String transactionId = UUID.randomUUID().toString();
         saveChallenge(transactionId, null, ASSERTION, request.toJson());
-        return request.toCredentialsGetJson();
+        return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsGetJson());
     }
 
     @Transactional
@@ -182,9 +178,8 @@ public class WebAuthnService {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account is unavailable.");
             }
 
-            String token = jwtService.generateToken(user.getEmail());
             return Map.of(
-                "token", token,
+                "token", jwtService.generateToken(user.getEmail()),
                 "userId", user.getId(),
                 "name", user.getName(),
                 "email", user.getEmail()
