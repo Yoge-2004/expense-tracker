@@ -42,12 +42,10 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Expo Doctor diagnostics
-        continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
           npx expo-doctor 2>&1 | tee expo-doctor.log
-          exit ${PIPESTATUS[0]}
 
       - name: Generate Android project from Expo config
         run: npx expo prebuild --platform android --non-interactive --no-install
@@ -56,7 +54,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./android/gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee gradle-build.log
+          cd android
+          ./gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee ../gradle-build.log
           exit ${PIPESTATUS[0]}
 
       - name: Collect APK
