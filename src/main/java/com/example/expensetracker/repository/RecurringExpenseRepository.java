@@ -3,6 +3,9 @@ package com.example.expensetracker.repository;
 import com.example.expensetracker.model.RecurringExpense;
 import com.example.expensetracker.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -63,4 +66,13 @@ public interface RecurringExpenseRepository extends JpaRepository<RecurringExpen
      * before a category can be safely deleted.
      */
     boolean existsByCategory_Id(Long categoryId);
+
+    /**
+     * Deletes all recurring expenses owned by the specified user.
+     *
+     * @param userId the ID of the owning user
+     */
+    @Modifying
+    @Query("DELETE FROM RecurringExpense r WHERE r.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }
