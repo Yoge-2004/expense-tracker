@@ -1,104 +1,158 @@
 /**
- * @file biometrics.js
- * @description WebAuthn biometric authentication module for Expense Tracker (Touch ID, Face ID, Windows Hello).
+ * Server-verified WebAuthn/passkey authentication for Expense Tracker.
+ * No JWT or password is stored as a biometric credential. The browser's
+ * authenticator holds the private key and the server verifies every assertion.
  */
 
 const WebBiometrics = {
-    /**
-     * Checks whether platform authenticator (TouchID / FaceID / Windows Hello) is supported.
-     */
     async isAvailable() {
-        if (!window.PublicKeyCredential) return false;
+        if (!window.PublicKeyCredential || !window.isSecureContext) return false;
         try {
             return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-        } catch (e) {
+        } catch (_) {
             return false;
         }
     },
 
-    /**
-     * Checks whether biometric login was previously enabled on this browser.
-     */
     isEnabled() {
-        return !!localStorage.getItem('webauthn_bio_token');
+        return localStorage.getItem("webauthn_bio_enabled") === "true";
     },
 
-    /**
-     * Enrolls the current session for biometric sign-in using WebAuthn.
-     */
-    async enroll(email, token) {
+    _decodeBase64Url(value) {
+        const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+        const binary = atob(padded);
+        return Uint8Array.from(binary, c => c.charCodeAt(0));
+    },
+
+    _encodeBase64Url(value) {
+        const bytes = value instanceof ArrayBuffer ? new Uint8Array(value) : value;
+        let binary = "";
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+            binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+        }
+        return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    },
+
+    _creationOptions(json) {
+        const options = typeof json === "string" ? JSON.parse(json) : structuredClone(json);
+        options.challenge = this._decodeBase64Url(options.challenge);
+        if (options.user?.id) options.user.id = this._decodeBase64Url(options.user.id);
+        if (Array.isArray(options.excludeCredentials)) {
+            options.excludeCredentials = options.excludeCredentials.map(item => ({
+                ...item,
+                id: this._decodeBase64Url(item.id)
+            }));
+        }
+        return options;
+    },
+
+    _requestOptions(json) {
+        const options = typeof json === "string" ? JSON.parse(json) : structuredClone(json);
+        options.challenge = this._decodeBase64Url(options.challenge);
+        if (Array.isArray(options.allowCredentials)) {
+            options.allowCredentials = options.allowCredentials.map(item => ({
+                ...item,
+                id: this._decodeBase64Url(item.id)
+            }));
+        }
+        return options;
+    },
+
+    _serializeCredential(credential) {
+        const response = credential.response;
+        const payload = {
+            id: credential.id,
+            rawId: this._encodeBase64Url(credential.rawId),
+            type: credential.type,
+            response: {
+                clientDataJSON: this._encodeBase64Url(response.clientDataJSON)
+            },
+            clientExtensionResults: credential.getClientExtensionResults()
+        };
+
+        if ("attestationObject" in response) {
+            payload.response.attestationObject = this._encodeBase64Url(response.attestationObject);
+            if (typeof response.getTransports === "function") {
+                payload.response.transports = response.getTransports();
+            }
+        } else {
+            payload.response.authenticatorData = this._encodeBase64Url(response.authenticatorData);
+            payload.response.signature = this._encodeBase64Url(response.signature);
+            payload.response.userHandle = response.userHandle
+                ? this._encodeBase64Url(response.userHandle)
+                : null;
+        }
+        return payload;
+    },
+
+    async enroll(_email, _token) {
         if (!(await this.isAvailable())) {
-            throw new Error("Biometric authentication (Touch ID / Face ID / Windows Hello) is not supported on this device/browser.");
+            throw new Error("Biometric sign-in is not supported by this browser or device.");
         }
 
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-        const userIdBytes = new TextEncoder().encode(email || 'user');
+        const started = await apiRequest("/webauthn/register/options", { method: "POST" });
+        if (!started?.transactionId || !started?.publicKey) {
+            throw new Error("Could not start biometric setup. Please try again.");
+        }
 
         const credential = await navigator.credentials.create({
-            publicKey: {
-                challenge,
-                rp: { name: "Expense Tracker Pro", id: window.location.hostname },
-                user: {
-                    id: userIdBytes,
-                    name: email,
-                    displayName: email,
-                },
-                pubKeyCredParams: [
-                    { alg: -7, type: "public-key" },  // ES256
-                    { alg: -257, type: "public-key" } // RS256
-                ],
-                authenticatorSelection: {
-                    authenticatorAttachment: "platform",
-                    userVerification: "preferred",
-                    requireResidentKey: false
-                },
-                timeout: 60000
-            }
+            publicKey: this._creationOptions(started.publicKey)
+        });
+        if (!credential) throw new Error("Biometric setup was cancelled.");
+
+        await apiRequest("/webauthn/register/finish", {
+            method: "POST",
+            body: JSON.stringify({
+                transactionId: started.transactionId,
+                credential: this._serializeCredential(credential)
+            })
         });
 
-        if (credential) {
-            localStorage.setItem('webauthn_bio_token', token);
-            localStorage.setItem('webauthn_bio_email', email);
-            localStorage.setItem('webauthn_bio_cred_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))));
-            return true;
-        }
-        return false;
+        localStorage.setItem("webauthn_bio_enabled", "true");
+        return true;
     },
 
-    /**
-     * Performs biometric authentication and logs the user into their session.
-     */
     async authenticate() {
-        const token = localStorage.getItem('webauthn_bio_token');
-        const email = localStorage.getItem('webauthn_bio_email');
-        if (!token) throw new Error("No biometric credentials registered on this browser.");
+        if (!(await this.isAvailable())) {
+            throw new Error("Biometric sign-in is not supported by this browser or device.");
+        }
 
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
+        const started = await apiRequest("/webauthn/login/options", {
+            method: "POST",
+            cache: "no-store"
+        });
+        if (!started?.transactionId || !started?.publicKey) {
+            throw new Error("Could not start biometric sign-in. Please use your password instead.");
+        }
 
-        const assertion = await navigator.credentials.get({
-            publicKey: {
-                challenge,
-                rpId: window.location.hostname,
-                userVerification: "preferred",
-                timeout: 60000
-            }
+        const credential = await navigator.credentials.get({
+            publicKey: this._requestOptions(started.publicKey)
+        });
+        if (!credential) throw new Error("Biometric sign-in was cancelled.");
+
+        const response = await apiRequest("/webauthn/login/finish", {
+            method: "POST",
+            body: JSON.stringify({
+                transactionId: started.transactionId,
+                credential: this._serializeCredential(credential)
+            })
         });
 
-        if (assertion) {
-            return { token, email };
+        if (!response?.token || !response?.userId) {
+            throw new Error("Biometric sign-in could not be verified. Please use your password instead.");
         }
-        throw new Error("Biometric verification failed.");
+        localStorage.setItem("webauthn_bio_enabled", "true");
+        return response;
     },
 
-    /**
-     * Disables biometric credentials on this browser.
-     */
-    disable() {
-        localStorage.removeItem('webauthn_bio_token');
-        localStorage.removeItem('webauthn_bio_email');
-        localStorage.removeItem('webauthn_bio_cred_id');
+    async disable() {
+        try {
+            await apiRequest("/webauthn/credentials", { method: "DELETE" });
+        } finally {
+            localStorage.removeItem("webauthn_bio_enabled");
+        }
     }
 };
 
