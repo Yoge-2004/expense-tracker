@@ -3,6 +3,10 @@ package com.example.expensetracker.repository;
 import com.example.expensetracker.model.Budget;
 import com.example.expensetracker.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -49,4 +53,13 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     void deleteByUserAndCategoryId(User user, Long categoryId);
 
     void deleteByIdAndUser(Long id, User user);
+
+    /**
+     * Deletes all budgets owned by the specified user.
+     *
+     * @param userId the ID of the owning user
+     */
+    @Modifying
+    @Query("DELETE FROM Budget b WHERE b.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }
