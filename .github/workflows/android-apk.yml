@@ -41,6 +41,15 @@ jobs:
       - name: Expo project validation
         run: npx expo-doctor
 
+      - name: Initialize or link EAS project
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPO_TOKEN="$(printf '%s' "$EXPO_TOKEN" | tr -d '\r\n' | sed -E 's/^['"'"']|['"'"']$//g')"
+          export EXPO_TOKEN
+          test -n "$EXPO_TOKEN"
+          npx eas-cli@latest project:init --account yoge-2004 --non-interactive
+
       - name: Build APK with EAS
         shell: bash
         run: |
