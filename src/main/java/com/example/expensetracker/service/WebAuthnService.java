@@ -14,14 +14,15 @@ import com.yubico.webauthn.FinishAssertionOptions;
 import com.yubico.webauthn.FinishRegistrationOptions;
 import com.yubico.webauthn.RegistrationResult;
 import com.yubico.webauthn.RelyingParty;
-import com.yubico.webauthn.RelyingPartyIdentity;
 import com.yubico.webauthn.StartAssertionOptions;
 import com.yubico.webauthn.StartRegistrationOptions;
 import com.yubico.webauthn.data.AuthenticatorAttachment;
+import com.yubico.webauthn.data.AuthenticatorSelectionCriteria;
 import com.yubico.webauthn.data.ByteArray;
 import com.yubico.webauthn.data.PublicKeyCredential;
 import com.yubico.webauthn.data.PublicKeyCredentialCreationOptions;
 import com.yubico.webauthn.data.ResidentKeyRequirement;
+import com.yubico.webauthn.data.RelyingPartyIdentity;
 import com.yubico.webauthn.data.UserIdentity;
 import com.yubico.webauthn.data.UserVerificationRequirement;
 import com.yubico.webauthn.exception.AssertionFailedException;
@@ -88,7 +89,7 @@ public class WebAuthnService {
         PublicKeyCredentialCreationOptions request = relyingParty.startRegistration(
             StartRegistrationOptions.builder()
                 .user(identity)
-                .authenticatorSelection(com.yubico.webauthn.data.AuthenticatorSelectionCriteria.builder()
+                .authenticatorSelection(AuthenticatorSelectionCriteria.builder()
                     .authenticatorAttachment(AuthenticatorAttachment.PLATFORM)
                     .residentKey(ResidentKeyRequirement.REQUIRED)
                     .userVerification(UserVerificationRequirement.REQUIRED)
@@ -101,8 +102,6 @@ public class WebAuthnService {
         return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsCreateJson());
     }
 
-    // Deliberately not transactional: consumeChallenge must commit before verification so a failed
-    // assertion cannot replay the same server challenge.
     public void finishRegistration(User user, String transactionId, String credentialJson) {
         WebAuthnChallenge challenge = consumeChallenge(transactionId, REGISTRATION, user.getId());
         try {
@@ -146,7 +145,6 @@ public class WebAuthnService {
         return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsGetJson());
     }
 
-    // Deliberately not transactional for the same single-use challenge guarantee as registration.
     public Map<String, Object> finishAuthentication(String transactionId, String assertionJson) {
         WebAuthnChallenge challenge = consumeChallenge(transactionId, ASSERTION, null);
         try {
