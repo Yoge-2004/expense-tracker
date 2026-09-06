@@ -48,7 +48,7 @@ public class UserSecurity {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (!isCurrentUser(auth, userId)) {
             log.warn("Access denied: authenticated principal does not own userId={}", userId);
-            throw new AccessDeniedException("Access denied.");
+            throw new AccessDeniedException("You do not have permission to access or modify resources belonging to another user.");
         }
     }
 }
