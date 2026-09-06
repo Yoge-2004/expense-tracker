@@ -23,7 +23,7 @@ public class SecurityConfig {
 
     private static final String CSP_POLICY =
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://accounts.google.com; " +
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com; " +
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; " +
             "font-src 'self' data: https://fonts.gstatic.com; " +
             "img-src 'self' data: https://images.unsplash.com https://*.googleusercontent.com https://cozy-narwhal-3099ad.netlify.app; " +
@@ -47,7 +47,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication and robust security headers");
+        log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication and security headers");
 
         http
                 .cors(Customizer.withDefaults())
@@ -67,7 +67,6 @@ public class SecurityConfig {
                                 "/api/users/suggest-usernames",
                                 "/api/health/**",
                                 "/api/sync/**",
-                                "/h2-console/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
