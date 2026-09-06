@@ -13,58 +13,49 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Production-Grade Secure Cross-Origin Resource Sharing (CORS) Configuration.
- * 
- * <p><strong>Security Best Practice:</strong> Hardcoding wildcard ({@code *}) origins with 
- * {@code allowCredentials(true)} poses severe security risks (CSRF, credential theft). 
- * This class dynamically parses explicit trusted origins from configuration / environment 
- * variables (e.g. {@code CORS_ALLOWED_ORIGINS}) while supporting local development environments.</p>
- * 
- * @author Yogeshwaran
- * @version 2.1
+ * Cross-Origin Resource Sharing configuration.
+ *
+ * <p>Production origins must be explicitly configured with {@code CORS_ALLOWED_ORIGINS}.
+ * Wildcard origin patterns are intentionally not used with credentialed requests.</p>
  */
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.allowed-origins:https://*.netlify.app,https://cozy-narwhal-3099ad.netlify.app,https://*.hf.space,http://127.0.0.1:5500,http://localhost:5500,http://localhost:3000,http://localhost:8080,http://127.0.0.1:8080,http://localhost:63342,http://127.0.0.1:63342,http://localhost:*,http://127.0.0.1:*,http://192.168.*:*,http://10.*:*,http://172.*:*,exp://*:*}")
+    private static final List<String> DEFAULT_ALLOWED_ORIGINS = List.of(
+            "https://cozy-narwhal-3099ad.netlify.app"
+    );
+
+    @Value("${app.cors.allowed-origins:https://cozy-narwhal-3099ad.netlify.app}")
     private String[] allowedOrigins;
 
     private List<String> getCleanOrigins() {
         if (allowedOrigins == null) {
-            return List.of("https://*.netlify.app", "https://*.hf.space", "http://localhost:*", "http://127.0.0.1:*");
+            return DEFAULT_ALLOWED_ORIGINS;
         }
         List<String> cleaned = Arrays.stream(allowedOrigins)
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !"null".equalsIgnoreCase(s))
                 .toList();
-        return cleaned.isEmpty()
-                ? List.of("https://*.netlify.app", "https://*.hf.space", "http://localhost:*", "http://127.0.0.1:*")
-                : cleaned;
+        return cleaned.isEmpty() ? DEFAULT_ALLOWED_ORIGINS : cleaned;
     }
 
-    /**
-     * Configures Spring Security CORS filter with explicit allowed origin patterns.
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         List<String> origins = getCleanOrigins();
 
-        config.setAllowedOriginPatterns(origins);
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type", "Content-Disposition"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L); // Cache preflight response for 1 hour
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
 
-    /**
-     * Configures Spring WebMVC controller CORS mapping.
-     */
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
@@ -73,7 +64,7 @@ public class CorsConfig {
                 List<String> origins = getCleanOrigins();
 
                 registry.addMapping("/**")
-                        .allowedOriginPatterns(origins.toArray(new String[0]))
+                        .allowedOrigins(origins.toArray(new String[0]))
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency")
                         .exposedHeaders("Authorization", "Content-Type", "Content-Disposition")
