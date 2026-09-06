@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SyncController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@TestPropertySource(properties = "app.sync.secret-key=expense-tracker-auto-sync-secret-key-2026")
 class SyncControllerTest {
 
     private static final String SYNC_TOKEN = "expense-tracker-auto-sync-secret-key-2026";
