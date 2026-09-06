@@ -101,7 +101,8 @@ public class WebAuthnService {
         return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsCreateJson());
     }
 
-    @Transactional
+    // Deliberately not transactional: consumeChallenge must commit before verification so a failed
+    // assertion cannot replay the same server challenge.
     public void finishRegistration(User user, String transactionId, String credentialJson) {
         WebAuthnChallenge challenge = consumeChallenge(transactionId, REGISTRATION, user.getId());
         try {
@@ -137,9 +138,7 @@ public class WebAuthnService {
     public Map<String, String> startAuthentication() {
         cleanupExpiredChallenges();
         AssertionRequest request = relyingParty.startAssertion(
-            StartAssertionOptions.builder()
-                .userVerification(UserVerificationRequirement.REQUIRED)
-                .build()
+            StartAssertionOptions.builder().userVerification(UserVerificationRequirement.REQUIRED).build()
         );
 
         String transactionId = UUID.randomUUID().toString();
@@ -147,7 +146,7 @@ public class WebAuthnService {
         return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsGetJson());
     }
 
-    @Transactional
+    // Deliberately not transactional for the same single-use challenge guarantee as registration.
     public Map<String, Object> finishAuthentication(String transactionId, String assertionJson) {
         WebAuthnChallenge challenge = consumeChallenge(transactionId, ASSERTION, null);
         try {
@@ -205,18 +204,12 @@ public class WebAuthnService {
     }
 
     private WebAuthnChallenge consumeChallenge(String id, String ceremony, Long userId) {
-        if (id == null || id.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid biometric transaction.");
-        }
+        if (id == null || id.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid biometric transaction.");
         WebAuthnChallenge challenge = challenges.findByIdAndCeremony(id, ceremony)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Biometric transaction has expired or is invalid."));
         challenges.deleteById(id);
-        if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Biometric transaction has expired.");
-        }
-        if (userId != null && !userId.equals(challenge.getUserId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Biometric transaction does not belong to this account.");
-        }
+        if (challenge.getExpiresAt().isBefore(LocalDateTime.now())) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Biometric transaction has expired.");
+        if (userId != null && !userId.equals(challenge.getUserId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Biometric transaction does not belong to this account.");
         return challenge;
     }
 
