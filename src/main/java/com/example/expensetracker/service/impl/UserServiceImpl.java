@@ -1,7 +1,5 @@
 package com.example.expensetracker.service.impl;
 
-import com.example.expensetracker.model.Category;
-import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.*;
 import com.example.expensetracker.service.UserService;
@@ -216,6 +214,21 @@ public class UserServiceImpl implements UserService {
         }
         userRepository.save(user);
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void updateCurrency(Long userId, String currency) {
+        if (currency == null || !currency.matches("^[A-Za-z]{3}$")) {
+            throw new IllegalArgumentException("Currency must be a 3-letter ISO 4217 code.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setCurrency(currency.toUpperCase(java.util.Locale.ROOT));
+        userRepository.save(user);
     }
 
     /**
