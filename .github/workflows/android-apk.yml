@@ -1,0 +1,71 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/android-apk.yml'
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Expo project validation
+        run: npx expo-doctor
+
+      - name: Build APK with EAS
+        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --wait
+
+      - name: Download APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx eas-cli@latest build:list --platform android --limit 1 --json > eas-build.json
+          node -e "const fs=require('fs'); const builds=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const url=builds[0]?.artifacts?.buildUrl; if(!url) throw new Error('EAS did not return an APK build URL'); fs.writeFileSync('apk-url.txt', url);"
+          curl --fail --location --retry 3 "$(cat apk-url.txt)" --output expense-tracker.apk
+          test -s expense-tracker.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: expense-tracker-android-apk
+          path: mobile/expense-tracker.apk
+          retention-days: 30
+
+      - name: Publish APK to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v${{ github.run_number }}
+          name: Expense Tracker Android v${{ github.run_number }}
+          body: |
+            Android APK built from main at commit ${{ github.sha }}.
+          files: mobile/expense-tracker.apk
+          fail_on_unmatched_files: true
