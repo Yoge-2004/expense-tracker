@@ -99,6 +99,22 @@ public interface UserService {
     void updateCurrency(Long userId, String currency);
 
     /**
+     * Checks whether a user exists with the given email address.
+     *
+     * @param email the email address to check
+     * @return {@code true} if a matching user exists; otherwise {@code false}
+     */
+    boolean userExistsByEmail(String email);
+
+    /**
+     * Checks whether a user exists with the given username.
+     *
+     * @param username the username to check
+     * @return {@code true} if a matching user exists; otherwise {@code false}
+     */
+    boolean userExistsByUsername(String username);
+
+    /**
      * Deletes the user account identified by the given ID, along with all
      * associated data.
      *
