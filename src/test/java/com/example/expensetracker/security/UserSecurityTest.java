@@ -78,11 +78,13 @@ class UserSecurityTest {
     }
 
     @Test
-    @DisplayName("Allows access gracefully in unauthenticated/slice-test context without principal")
-    void allowsAccess_whenNoAuthenticationOrMockEnvironment() {
+    @DisplayName("Rejects access when there is no authenticated principal")
+    void rejectsAccess_whenNoAuthentication() {
         SecurityContextHolder.clearContext();
 
         assertFalse(userSecurity.isCurrentUser(100L));
-        assertDoesNotThrow(() -> userSecurity.validateUserAccess(100L));
+        AccessDeniedException ex = assertThrows(AccessDeniedException.class,
+                () -> userSecurity.validateUserAccess(100L));
+        assertEquals("Access denied.", ex.getMessage());
     }
 }
