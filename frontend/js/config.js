@@ -7,7 +7,7 @@
 //
 // Until this is set, the "Continue with Google" button shows a setup notice
 // instead of silently pretending to sign the user in.
-const GOOGLE_CLIENT_ID = "487469737581-k1idcre171eknatam925igofmc6jtk00.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "487469573581-k1idcre171eknatam925igofmc6jtk00.apps.googleusercontent.com";
 
 /* Theme-performance guard: keep the existing visual design, but avoid
    animating many large DOM surfaces independently during a theme switch. */
@@ -76,13 +76,17 @@ const GOOGLE_CLIENT_ID = "487469737581-k1idcre171eknatam925igofmc6jtk00.apps.goo
 
         const root = document.documentElement;
         const applyTheme = () => {
-            if (typeof window.toggleGlobalTheme === "function") {
-                window.toggleGlobalTheme();
+            const current = root.getAttribute("data-theme") === "light" ? "light" : "dark";
+            const next = current === "dark" ? "light" : "dark";
+            root.setAttribute("data-theme", next);
+            if (document.body) document.body.setAttribute("data-theme", next);
+            try { localStorage.setItem("theme", next); } catch (_) {}
+
+            if (typeof window.updateThemeColorMeta === "function") {
+                window.updateThemeColorMeta(next);
             } else {
-                const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
-                root.setAttribute("data-theme", next);
-                if (document.body) document.body.setAttribute("data-theme", next);
-                try { localStorage.setItem("theme", next); } catch (_) {}
+                const meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute("content", next === "light" ? "#F8F9FA" : "#10120E");
             }
         };
 
