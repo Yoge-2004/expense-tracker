@@ -102,8 +102,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User registerUser(User user) {
         log.info("Attempting to register user with email: {}, username: {}", user.getEmail(), user.getUsername());
-        if (userRepository.findByEmail(user.getEmail().trim()).isPresent()) {
-            log.warn("Registration rejected — email already exists: {}", user.getEmail());
+        String normalizedEmail = user.getEmail().trim();
+        if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
+            log.warn("Registration rejected — email already exists: {}", normalizedEmail);
             throw new IllegalArgumentException("User with this email already exists");
         }
         if (user.getUsername() != null && !user.getUsername().isBlank()) {
@@ -113,7 +114,7 @@ public class UserServiceImpl implements UserService {
             }
             user.setUsername(user.getUsername().trim());
         }
-        user.setEmail(user.getEmail().trim());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         if (user.getSecurityPinHash() != null && !user.getSecurityPinHash().isBlank()) {
             user.setSecurityPinHash(passwordEncoder.encode(user.getSecurityPinHash().trim()));
@@ -178,15 +179,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void updateSecurityPin(Long userId, String newPin) {
         if (newPin == null || !newPin.matches("^[0-9]{6}$")) {
-            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits.");
+            throw new IllegalArgumentException("Security PIN must be exactly 6 digits.");
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        user.setSecurityPinHash(passwordEncoder.encode(newPin.trim()));
+        user.setSecurityPinHash(passwordEncoder.encode(newPin));
         user.setFailedPinAttempts(0);
         user.setPinLockedUntil(null);
         userRepository.save(user);
-        log.info("Security PIN successfully updated for userId={}", userId);
     }
 
     /**
@@ -195,100 +195,60 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public boolean verifySecurityPin(Long userId, String pin) {
-        if (pin == null || !pin.matches("^[0-9]{6}$")) {
-            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits.");
-        }
+        if (pin == null || pin.isBlank()) return false;
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
-            long minutesRemaining = java.time.Duration.between(LocalDateTime.now(), user.getPinLockedUntil()).toMinutes() + 1;
-            throw new IllegalStateException("Security PIN verification temporarily locked due to too many failed attempts. Please try again in " + minutesRemaining + " minute(s).");
+            return false;
         }
-
-        if (user.getSecurityPinHash() == null) {
-            throw new IllegalStateException("No security PIN has been set for this account.");
-        }
-
-        if (passwordEncoder.matches(pin.trim(), user.getSecurityPinHash())) {
+        if (user.getSecurityPinHash() == null || user.getSecurityPinHash().isBlank()) return false;
+        if (passwordEncoder.matches(pin, user.getSecurityPinHash())) {
             user.setFailedPinAttempts(0);
             user.setPinLockedUntil(null);
             userRepository.save(user);
-            log.info("Security PIN successfully verified for userId={}", userId);
             return true;
-        } else {
-            int failed = user.getFailedPinAttempts() + 1;
-            user.setFailedPinAttempts(failed);
-            if (failed >= 5) {
-                user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
-                log.warn("UserId={} security PIN locked for 15 minutes due to 5 consecutive failures", userId);
-            }
-            userRepository.save(user);
-            log.warn("Incorrect security PIN attempt for userId={}, failedAttempts={}", userId, failed);
-            return false;
         }
+        int attempts = Optional.ofNullable(user.getFailedPinAttempts()).orElse(0) + 1;
+        user.setFailedPinAttempts(attempts);
+        if (attempts >= 5) {
+            user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
+            user.setFailedPinAttempts(0);
+        }
+        userRepository.save(user);
+        return false;
     }
 
     /**
      * {@inheritDoc}
-     *
-     * <p>Performs a full cascading deletion across all user data in order:</p>
-     * <ol>
-     *   <li>Expenses</li>
-     *   <li>Incomes</li>
-     *   <li>Savings Goals</li>
-     *   <li>Budgets</li>
-     *   <li>Recurring Expenses</li>
-     *   <li>User Categories</li>
-     *   <li>User account</li>
-     * </ol>
-     *
-     * @param userId the primary key of the user to delete
-     * @throws IllegalArgumentException if no user exists with the given ID
      */
     @Override
     @Transactional
     public void deleteUser(Long userId) {
-        log.info("Initiating cascading account deletion for userId={}", userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Step 1: Delete all expenses owned by the user
-        expenseRepository.deleteAll(expenseRepository.findByUser(user));
-
-        // Step 2: Delete all incomes owned by the user
-        incomeRepository.deleteAll(incomeRepository.findByUser(user));
-
-        // Step 3: Delete all savings goals owned by the user
-        savingsGoalRepository.deleteAll(savingsGoalRepository.findByUser(user));
-
-        // Step 4: Delete all budgets owned by the user
-        budgetRepository.deleteAll(budgetRepository.findByUser(user));
-
-        // Step 5: Delete all recurring expenses owned by the user
-        recurringRepository.deleteAll(recurringRepository.findByUser(user));
-
-        // Step 6: Delete all user-created categories
-        categoryRepository.deleteAll(categoryRepository.findByUser(user));
-
-        // Step 7: Delete the user itself
+        expenseRepository.deleteByUserId(userId);
+        recurringRepository.deleteByUserId(userId);
+        incomeRepository.deleteByUserId(userId);
+        budgetRepository.deleteByUserId(userId);
+        savingsGoalRepository.deleteByUserId(userId);
+        categoryRepository.deleteByUserId(userId);
         userRepository.delete(user);
-        log.info("Cascading account deletion completed successfully for userId={}", userId);
     }
 
     /**
-     * Updates the {@code currency} field on the user entity.
-     *
-     * @param userId   the primary key of the user to update
-     * @param currency the ISO 4217 3-letter currency code
-     * @throws IllegalArgumentException if no user exists with the given ID
+     * {@inheritDoc}
      */
-    public void updateCurrency(Long userId, String currency) {
-        log.info("Updating currency preference for userId={} to {}", userId, currency);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        user.setCurrency(currency != null ? currency.toUpperCase() : "INR");
-        userRepository.save(user);
-        log.info("Currency preference saved for userId={}: {}", userId, user.getCurrency());
+    @Override
+    public boolean userExistsByEmail(String email) {
+        return email != null && userRepository.existsByEmailIgnoreCase(email.trim());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean userExistsByUsername(String username) {
+        return username != null && userRepository.existsByUsernameIgnoreCase(username.trim());
     }
 }
