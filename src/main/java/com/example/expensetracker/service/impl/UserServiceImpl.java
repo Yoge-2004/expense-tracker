@@ -15,59 +15,21 @@ import java.util.Optional;
 /**
  * Concrete implementation of {@link UserService} providing business logic
  * for user registration, lookup, password management, and account deletion.
- *
- * <p>This service coordinates interactions between {@link UserRepository},
- * {@link ExpenseRepository}, {@link CategoryRepository}, and the
- * {@link PasswordEncoder} to enforce unique emails, hashed passwords,
- * and clean cascading account deletion.</p>
- *
- * @author Yogeshwaran
- * @version 1.0
- * @see UserService
- * @see UserRepository
  */
 @Service
 public class UserServiceImpl implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
-    /** Repository for user entity persistence and lookup. */
     private final UserRepository userRepository;
-
-    /** Encoder used to hash passwords before storing them in the database. */
     private final PasswordEncoder passwordEncoder;
-
-    /** Repository for deleting expense records during account deletion. */
     private final ExpenseRepository expenseRepository;
-
-    /** Repository for deleting user-created categories during account deletion. */
     private final CategoryRepository categoryRepository;
-
-    /** Repository for deleting budget records during account deletion. */
     private final BudgetRepository budgetRepository;
-
-    /** Repository for deleting recurring expense records during account deletion. */
     private final RecurringExpenseRepository recurringRepository;
-
-    /** Repository for deleting income records during account deletion. */
     private final IncomeRepository incomeRepository;
-
-    /** Repository for deleting savings goal records during account deletion. */
     private final SavingsGoalRepository savingsGoalRepository;
 
-    /**
-     * Constructs a new {@code UserServiceImpl} with all required repositories
-     * and the password encoder injected by Spring.
-     *
-     * @param userRepository      the user repository
-     * @param passwordEncoder     the BCrypt password encoder
-     * @param expenseRepository   the expense repository
-     * @param categoryRepository  the category repository
-     * @param budgetRepository    the budget repository
-     * @param recurringRepository the recurring expense repository
-     * @param incomeRepository    the income repository
-     * @param savingsGoalRepository the savings goal repository
-     */
     public UserServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
                            ExpenseRepository expenseRepository,
@@ -86,31 +48,22 @@ public class UserServiceImpl implements UserService {
         this.savingsGoalRepository = savingsGoalRepository;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Checks that the email is not already registered before encoding the
-     * password and saving the new entity.</p>
-     *
-     * @param user the user data to register
-     * @return the persisted user with generated ID
-     * @throws IllegalArgumentException if the email is already in use
-     */
     @Override
     @Transactional
     public User registerUser(User user) {
-        log.info("Attempting to register user with email: {}, username: {}", user.getEmail(), user.getUsername());
+        log.info("Attempting to register user");
         String normalizedEmail = user.getEmail().trim();
         if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
-            log.warn("Registration rejected — email already exists: {}", normalizedEmail);
+            log.warn("Registration rejected because email is already registered");
             throw new IllegalArgumentException("User with this email already exists");
         }
         if (user.getUsername() != null && !user.getUsername().isBlank()) {
-            if (userRepository.findByUsernameIgnoreCase(user.getUsername().trim()).isPresent()) {
-                log.warn("Registration rejected — username already exists: {}", user.getUsername());
-                throw new IllegalArgumentException("Username '" + user.getUsername().trim() + "' is already taken. Please choose another.");
+            String normalizedUsername = user.getUsername().trim();
+            if (userRepository.findByUsernameIgnoreCase(normalizedUsername).isPresent()) {
+                log.warn("Registration rejected because username is already registered");
+                throw new IllegalArgumentException("Username '" + normalizedUsername + "' is already taken. Please choose another.");
             }
-            user.setUsername(user.getUsername().trim());
+            user.setUsername(normalizedUsername);
         }
         user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -126,53 +79,31 @@ public class UserServiceImpl implements UserService {
         return savedUser;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<User> findByIdentifier(String identifier) {
         if (identifier == null || identifier.isBlank()) {
             return Optional.empty();
         }
         String q = identifier.trim();
-        log.debug("Finding user by identifier: {}", q);
+        log.debug("Finding user by supplied identifier");
         return userRepository.findByEmailIgnoreCase(q)
                 .or(() -> userRepository.findByUsernameIgnoreCase(q));
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Delegates to {@link UserRepository#findByEmail(String)}.</p>
-     *
-     * @param email the email address to search for
-     * @return an {@link Optional} with the matching {@link User}, or empty if not found
-     */
     @Override
     public Optional<User> findByEmail(String email) {
         if (email == null || email.isBlank()) return Optional.empty();
-        log.debug("Finding user by email: {}", email);
+        log.debug("Finding user by email identifier");
         return userRepository.findByEmailIgnoreCase(email.trim())
                 .or(() -> userRepository.findByEmail(email));
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Delegates to {@link UserRepository#findById(Object)}.</p>
-     *
-     * @param id the primary key of the user to find
-     * @return an {@link Optional} with the matching {@link User}, or empty if not found
-     */
     @Override
     public Optional<User> findById(Long id) {
         log.debug("Finding user by id: {}", id);
         return userRepository.findById(id);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @Transactional
     public void updateSecurityPin(Long userId, String newPin) {
@@ -187,9 +118,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @Transactional
     public boolean verifySecurityPin(Long userId, String pin) {
@@ -216,9 +144,6 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @Transactional
     public void updateCurrency(Long userId, String currency) {
@@ -231,9 +156,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @Transactional
     public void deleteUser(Long userId) {
@@ -249,17 +171,11 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean userExistsByEmail(String email) {
         return email != null && userRepository.existsByEmailIgnoreCase(email.trim());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean userExistsByUsername(String username) {
         return username != null && userRepository.existsByUsernameIgnoreCase(username.trim());
