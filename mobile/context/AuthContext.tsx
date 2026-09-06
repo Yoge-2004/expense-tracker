@@ -332,22 +332,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateCurrency = async (newCurrency: string): Promise<void> => {
     const code = newCurrency.trim().toUpperCase();
     if (!code) return;
+
+    // When authenticated, commit the change remotely before changing local state.
+    // This prevents the mobile UI from showing a currency the backend rejected.
+    if (userId) {
+      await apiRequest(`/users/${userId}/currency`, {
+        method: 'PUT',
+        body: JSON.stringify({ currency: code }),
+      });
+    }
+
     setCurrency(code);
     try {
       await SecureStore.setItemAsync('user_currency', code);
     } catch (e) {
       console.warn('[AuthContext] Failed to persist currency code:', e);
-    }
-
-    if (userId) {
-      try {
-        await apiRequest(`/users/${userId}/currency`, {
-          method: 'PUT',
-          body: JSON.stringify({ currency: code }),
-        });
-      } catch (e) {
-        console.warn('[AuthContext] Non-critical: Could not sync currency to backend:', e);
-      }
     }
   };
 
