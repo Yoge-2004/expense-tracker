@@ -4,6 +4,11 @@
  * authenticator holds the private key and the server verifies every assertion.
  */
 
+// Remove tokens created by the old, insecure browser-only biometric implementation.
+localStorage.removeItem("webauthn_bio_token");
+localStorage.removeItem("webauthn_bio_email");
+localStorage.removeItem("webauthn_bio_cred_id");
+
 const WebBiometrics = {
     async isAvailable() {
         if (!window.PublicKeyCredential || !window.isSecureContext) return false;
@@ -42,10 +47,7 @@ const WebBiometrics = {
         options.challenge = this._decodeBase64Url(options.challenge);
         if (options.user?.id) options.user.id = this._decodeBase64Url(options.user.id);
         if (Array.isArray(options.excludeCredentials)) {
-            options.excludeCredentials = options.excludeCredentials.map(item => ({
-                ...item,
-                id: this._decodeBase64Url(item.id)
-            }));
+            options.excludeCredentials = options.excludeCredentials.map(item => ({ ...item, id: this._decodeBase64Url(item.id) }));
         }
         return options;
     },
@@ -54,10 +56,7 @@ const WebBiometrics = {
         const options = typeof json === "string" ? JSON.parse(json) : structuredClone(json);
         options.challenge = this._decodeBase64Url(options.challenge);
         if (Array.isArray(options.allowCredentials)) {
-            options.allowCredentials = options.allowCredentials.map(item => ({
-                ...item,
-                id: this._decodeBase64Url(item.id)
-            }));
+            options.allowCredentials = options.allowCredentials.map(item => ({ ...item, id: this._decodeBase64Url(item.id) }));
         }
         return options;
     },
@@ -84,9 +83,7 @@ const WebBiometrics = {
     },
 
     async enroll(_email, _token) {
-        if (!(await this.isAvailable())) {
-            throw new Error("Biometric sign-in is not supported by this browser or device.");
-        }
+        if (!(await this.isAvailable())) throw new Error("Biometric sign-in is not supported by this browser or device.");
 
         const started = await apiRequest("/webauthn/register/options", { method: "POST" });
         if (!started?.transactionId || !started?.publicKey) throw new Error("Could not start biometric setup. Please try again.");
