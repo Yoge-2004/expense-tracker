@@ -290,7 +290,7 @@ public class ExpenseController {
             @PathVariable Long expenseId,
             @Parameter(description = "ID of the user who owns the expense.", required = true, example = "1")
             @PathVariable Long userId,
-            @org.springframework.web.bind.annotation.RequestBody ExpenseDto expenseDto) {
+            @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseDto expenseDto) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to update expense id={} for userId={}: amount={}, categoryId={}",
                 expenseId, userId, expenseDto.getAmount(), expenseDto.getCategoryId());

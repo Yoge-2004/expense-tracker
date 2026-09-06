@@ -220,7 +220,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Malformed JSON request body: " + (ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage()),
+                "Malformed JSON request body.",
                 request.getRequestURI()
         );
 
@@ -237,7 +237,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Invalid parameter value for '" + ex.getName() + "': " + ex.getValue(),
+                "Invalid parameter value.",
                 request.getRequestURI()
         );
 
