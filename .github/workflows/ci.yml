@@ -25,13 +25,16 @@ jobs:
         run: |
           set -o pipefail
           mvn -B test 2>&1 | tee backend-test.log
-      - name: Upload backend test log
+      - name: Upload backend test log and reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-test-log
-          path: backend-test.log
-          if-no-files-found: error
+          name: backend-test-results
+          path: |
+            backend-test.log
+            target/surefire-reports/**
+            target/failsafe-reports/**
+          if-no-files-found: warn
           retention-days: 7
 
   frontend:
@@ -66,5 +69,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! git ls-files | grep -E '(^|/)(\.env|.*\.keystore|.*\.db|.*\.mv\.db)$'
-          ! grep -R --line-number --exclude-dir=.git --exclude='package-lock.json' 'mock_jwt_token_123\|test_mock_auth=true' frontend mobile src
+          ! git ls-files | grep -E '(^|/)(\\.env|.*\\.keystore|.*\\.db|.*\\.mv\\.db)$'
+          ! grep -R --line-number --exclude-dir=.git --exclude='package-lock.json' 'mock_jwt_token_123\\|test_mock_auth=true' frontend mobile src
