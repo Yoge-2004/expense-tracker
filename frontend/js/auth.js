@@ -1,7 +1,7 @@
 document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const submitBtn = e.target.querySelector('button[type="submit"]');
-    if (submitBtn?.disabled) return; // a submission is already in flight
+    if (submitBtn?.disabled) return;
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
@@ -21,13 +21,8 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
         localStorage.setItem("userId", response.userId);
         localStorage.setItem("userName", response.name || "User");
         localStorage.setItem("userEmail", email);
-        if (localStorage.getItem("webauthn_bio_token")) {
-            localStorage.setItem("webauthn_bio_token", response.token);
-        }
         showToast("Signed in successfully!", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
-        // Intentionally leave the button disabled here — we're navigating away.
-
     } catch (error) {
         showToast(error.message, "error");
         const emailEl = document.getElementById("email");
@@ -44,7 +39,6 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     });
 });
 
-// Visual Feedback for Google Sign-In button
 function setGoogleButtonLoading(loading, message = "Connecting to Google...") {
     const btns = document.querySelectorAll(".btn-oauth, #googleOAuthBtn");
     btns.forEach(btn => {
@@ -64,9 +58,6 @@ function setGoogleButtonLoading(loading, message = "Connecting to Google...") {
     });
 }
 
-// Real Google Sign-In (Google Identity Services). The server never sees a
-// plain email typed by the user — only a Google-signed ID token, which it
-// independently verifies. See GoogleIdTokenVerifier.java on the backend.
 function isGoogleSignInConfigured() {
     return typeof GOOGLE_CLIENT_ID === "string" &&
         GOOGLE_CLIENT_ID.length > 0 &&
@@ -110,16 +101,13 @@ async function handleGoogleCredentialResponse(credentialResponse) {
             body: JSON.stringify({ idToken: credentialResponse.credential })
         });
 
-        if (!response?.token || !response?.userId) {
-            throw new Error("Google sign-in failed.");
-        }
+        if (!response?.token || !response?.userId) throw new Error("Google sign-in failed.");
 
         localStorage.setItem("token", response.token);
         localStorage.setItem("userId", response.userId);
         localStorage.setItem("userName", response.name || "Google User");
         showToast("Signed in with Google! Redirecting...", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
-
     } catch (error) {
         setGoogleButtonLoading(false);
         showToast(error.message || "Google sign-in failed.", "error");
@@ -147,9 +135,7 @@ function handleGoogleOAuth() {
     }
 
     try {
-        if (!isGoogleInitialized) {
-            initGoogleSignIn();
-        }
+        if (!isGoogleInitialized) initGoogleSignIn();
         google.accounts.id.prompt((notification) => {
             if (notification.isNotDisplayed()) {
                 const reason = notification.getNotDisplayedReason?.() || "origin_or_cookies";
@@ -190,32 +176,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Initialize Web Biometrics on login page
+// WebAuthn login: the authenticator proves possession of the private key and
+// the backend verifies the signed assertion before issuing a fresh JWT.
 document.addEventListener("DOMContentLoaded", async () => {
     const bioBtn = document.getElementById("biometricLoginBtn");
-    if (bioBtn && window.WebBiometrics) {
-        try {
-            const available = await WebBiometrics.isAvailable();
-            const enabled = WebBiometrics.isEnabled();
-            if (available && enabled) {
-                bioBtn.style.display = "flex";
-                bioBtn.addEventListener("click", async () => {
-                    bioBtn.disabled = true;
-                    try {
-                        const res = await WebBiometrics.authenticate();
-                        if (res && res.token) {
-                            localStorage.setItem("token", res.token);
-                            showToast("Biometric verification verified. Welcome back!", "success");
-                            setTimeout(() => { window.location.href = "dashboard.html"; }, 400);
-                        }
-                    } catch (err) {
-                        showToast(err.message || "Biometric authentication cancelled.", "error");
-                        bioBtn.disabled = false;
-                    }
-                });
+    if (!bioBtn || !window.WebBiometrics) return;
+
+    try {
+        const available = await WebBiometrics.isAvailable();
+        if (!available) return;
+
+        bioBtn.style.display = "flex";
+        bioBtn.addEventListener("click", async () => {
+            bioBtn.disabled = true;
+            try {
+                const res = await WebBiometrics.authenticate();
+                localStorage.setItem("token", res.token);
+                localStorage.setItem("userId", res.userId);
+                localStorage.setItem("userName", res.name || "User");
+                localStorage.setItem("userEmail", res.email || "");
+                showToast("Biometric sign-in verified. Welcome back!", "success");
+                setTimeout(() => { window.location.href = "dashboard.html"; }, 400);
+            } catch (err) {
+                showToast(err.message || "Biometric authentication cancelled.", "error");
+                bioBtn.disabled = false;
             }
-        } catch (e) {
-            console.warn("Biometrics check failed:", e);
-        }
+        });
+    } catch (e) {
+        console.warn("Biometrics check failed:", e);
     }
 });
