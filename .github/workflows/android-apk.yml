@@ -42,7 +42,13 @@ jobs:
         run: npx expo-doctor
 
       - name: Build APK with EAS
-        run: npx eas-cli@latest build --platform android --profile preview --non-interactive --wait
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPO_TOKEN="$(printf '%s' "$EXPO_TOKEN" | tr -d '\r\n' | sed -E 's/^['"'"']|['"'"']$//g')"
+          export EXPO_TOKEN
+          test -n "$EXPO_TOKEN"
+          npx eas-cli@latest build --platform android --profile preview --non-interactive --wait
 
       - name: Download APK
         shell: bash
