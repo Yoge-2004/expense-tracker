@@ -8,6 +8,7 @@ import com.yubico.webauthn.CredentialRepository;
 import com.yubico.webauthn.RegisteredCredential;
 import com.yubico.webauthn.data.ByteArray;
 import com.yubico.webauthn.data.PublicKeyCredentialDescriptor;
+import com.yubico.webauthn.data.exception.Base64UrlException;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -32,9 +33,7 @@ public class WebAuthnCredentialRepositoryAdapter implements CredentialRepository
             .map(credentials::findByUserId)
             .orElseGet(java.util.List::of)
             .stream()
-            .map(c -> PublicKeyCredentialDescriptor.builder()
-                .id(ByteArray.fromBase64Url(c.getCredentialId()))
-                .build())
+            .map(this::toCredentialDescriptor)
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -42,7 +41,7 @@ public class WebAuthnCredentialRepositoryAdapter implements CredentialRepository
     public Optional<ByteArray> getUserHandleForUsername(String username) {
         return findUser(username)
             .flatMap(u -> credentials.findByUserId(u.getId()).stream().findFirst())
-            .map(c -> ByteArray.fromBase64Url(c.getUserHandle()));
+            .flatMap(this::toUserHandle);
     }
 
     @Override
@@ -54,13 +53,14 @@ public class WebAuthnCredentialRepositoryAdapter implements CredentialRepository
     @Override
     public Optional<RegisteredCredential> lookup(ByteArray credentialId, ByteArray userHandle) {
         return credentials.findByCredentialIdAndUserHandle(credentialId.getBase64Url(), userHandle.getBase64Url())
-            .map(this::toRegisteredCredential);
+            .flatMap(this::toRegisteredCredential);
     }
 
     @Override
     public Set<RegisteredCredential> lookupAll(ByteArray credentialId) {
         return credentials.findByCredentialId(credentialId.getBase64Url())
-            .map(c -> Set.of(toRegisteredCredential(c)))
+            .flatMap(this::toRegisteredCredential)
+            .map(Set::of)
             .orElseGet(Set::of);
     }
 
@@ -70,12 +70,30 @@ public class WebAuthnCredentialRepositoryAdapter implements CredentialRepository
             .or(() -> users.findByUsernameIgnoreCase(identifier));
     }
 
-    private RegisteredCredential toRegisteredCredential(WebAuthnCredential credential) {
-        return RegisteredCredential.builder()
-            .credentialId(ByteArray.fromBase64Url(credential.getCredentialId()))
-            .userHandle(ByteArray.fromBase64Url(credential.getUserHandle()))
-            .publicKeyCose(ByteArray.fromBase64Url(credential.getPublicKeyCose()))
-            .signatureCount(credential.getSignatureCount())
+    private PublicKeyCredentialDescriptor toCredentialDescriptor(WebAuthnCredential credential) {
+        return PublicKeyCredentialDescriptor.builder()
+            .id(decodeBase64Url(credential.getCredentialId(), "credential ID"))
             .build();
+    }
+
+    private Optional<ByteArray> toUserHandle(WebAuthnCredential credential) {
+        return Optional.of(decodeBase64Url(credential.getUserHandle(), "user handle"));
+    }
+
+    private Optional<RegisteredCredential> toRegisteredCredential(WebAuthnCredential credential) {
+        return Optional.of(RegisteredCredential.builder()
+            .credentialId(decodeBase64Url(credential.getCredentialId(), "credential ID"))
+            .userHandle(decodeBase64Url(credential.getUserHandle(), "user handle"))
+            .publicKeyCose(decodeBase64Url(credential.getPublicKeyCose(), "public key COSE data"))
+            .signatureCount(credential.getSignatureCount())
+            .build());
+    }
+
+    private ByteArray decodeBase64Url(String value, String fieldName) {
+        try {
+            return ByteArray.fromBase64Url(value);
+        } catch (Base64UrlException e) {
+            throw new IllegalStateException("Invalid stored WebAuthn " + fieldName, e);
+        }
     }
 }
