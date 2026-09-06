@@ -3,8 +3,12 @@ package com.example.expensetracker.repository;
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for {@link Category} entities.
@@ -58,5 +62,14 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
      */
     boolean existsByNameAndUser(String name, User user);
 
-    java.util.Optional<Category> findByNameIgnoreCase(String name);
+    Optional<Category> findByNameIgnoreCase(String name);
+
+    /**
+     * Deletes all categories owned by the specified user.
+     *
+     * @param userId the ID of the owning user
+     */
+    @Modifying
+    @Query("DELETE FROM Category c WHERE c.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }
