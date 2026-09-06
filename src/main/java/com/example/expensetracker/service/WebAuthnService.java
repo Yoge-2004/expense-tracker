@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -98,8 +99,12 @@ public class WebAuthnService {
         );
 
         String transactionId = UUID.randomUUID().toString();
-        saveChallenge(transactionId, user.getId(), REGISTRATION, request.toJson());
-        return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsCreateJson());
+        try {
+            saveChallenge(transactionId, user.getId(), REGISTRATION, request.toJson());
+            return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsCreateJson());
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to prepare biometric registration.", ex);
+        }
     }
 
     public void finishRegistration(User user, String transactionId, String credentialJson) {
@@ -130,6 +135,8 @@ public class WebAuthnService {
             credentials.save(stored);
         } catch (RegistrationFailedException | IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Biometric registration could not be completed.", ex);
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Biometric registration could not be completed.", ex);
         }
     }
 
@@ -141,8 +148,12 @@ public class WebAuthnService {
         );
 
         String transactionId = UUID.randomUUID().toString();
-        saveChallenge(transactionId, null, ASSERTION, request.toJson());
-        return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsGetJson());
+        try {
+            saveChallenge(transactionId, null, ASSERTION, request.toJson());
+            return Map.of("transactionId", transactionId, "publicKey", request.toCredentialsGetJson());
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to prepare biometric authentication.", ex);
+        }
     }
 
     public Map<String, Object> finishAuthentication(String transactionId, String assertionJson) {
@@ -182,6 +193,8 @@ public class WebAuthnService {
                 "email", user.getEmail()
             );
         } catch (AssertionFailedException | IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Biometric verification failed.", ex);
+        } catch (IOException ex) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Biometric verification failed.", ex);
         }
     }
