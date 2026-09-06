@@ -3,7 +3,6 @@ package com.example.expensetracker.security;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -14,22 +13,21 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("JwtService Unit Tests")
 class JwtServiceTest {
 
+    private static final String TEST_SECRET = "expense-tracker-jwt-unit-test-secret-key-2026";
+
     private JwtService jwtService;
-    private MockEnvironment environment;
 
     @BeforeEach
     void setUp() {
         jwtService = new JwtService();
-        environment = new MockEnvironment();
-        jwtService.setEnvironment(environment);
-        jwtService.setSecretKey(JwtService.DEFAULT_DEV_SECRET);
+        jwtService.setSecretKey(TEST_SECRET);
         jwtService.setJwtExpiration(3600000); // 1 hour
         jwtService.init();
     }
 
     @Test
-    @DisplayName("init with valid base64 secret succeeds")
-    void init_validBase64Secret_succeeds() {
+    @DisplayName("init with valid secret succeeds")
+    void init_validSecret_succeeds() {
         assertNotNull(jwtService.generateToken("user@example.com"));
     }
 
@@ -45,7 +43,7 @@ class JwtServiceTest {
     @DisplayName("init with secret shorter than 32 bytes throws IllegalStateException")
     void init_shortSecret_throwsException() {
         JwtService service = new JwtService();
-        service.setSecretKey("c2hvcnQ="); // "short" base64
+        service.setSecretKey("short");
         assertThrows(IllegalStateException.class, service::init);
     }
 
