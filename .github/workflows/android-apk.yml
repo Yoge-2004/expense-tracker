@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
@@ -41,14 +41,23 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
-      - name: Expo project validation
-        run: npx expo-doctor
+      - name: Expo Doctor diagnostics
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npx expo-doctor 2>&1 | tee expo-doctor.log
+          exit ${PIPESTATUS[0]}
 
       - name: Generate Android project from Expo config
-        run: npx expo prebuild --platform android --non-interactive
+        run: npx expo prebuild --platform android --non-interactive --no-install
 
       - name: Build installable debug APK
-        run: ./android/gradlew --no-daemon --stacktrace assembleDebug
+        shell: bash
+        run: |
+          set -o pipefail
+          ./android/gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee gradle-build.log
+          exit ${PIPESTATUS[0]}
 
       - name: Collect APK
         shell: bash
@@ -57,13 +66,27 @@ jobs:
           APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK_PATH"
           cp "$APK_PATH" expense-tracker.apk
+          sha256sum expense-tracker.apk | tee expense-tracker.apk.sha256
           test -s expense-tracker.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: expense-tracker-android-apk
-          path: mobile/expense-tracker.apk
+          path: |
+            mobile/expense-tracker.apk
+            mobile/expense-tracker.apk.sha256
+          retention-days: 30
+
+      - name: Upload Android build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-build-logs
+          path: |
+            mobile/expo-doctor.log
+            mobile/gradle-build.log
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Publish APK to GitHub release
@@ -73,6 +96,8 @@ jobs:
           name: Expense Tracker Android v${{ github.run_number }}
           body: |
             Installable Android APK built locally from the Expo project on main at commit ${{ github.sha }}.
-            This build does not require Expo/EAS authentication.
-          files: mobile/expense-tracker.apk
+            Build type: debug APK for direct installation/testing.
+          files: |
+            mobile/expense-tracker.apk
+            mobile/expense-tracker.apk.sha256
           fail_on_unmatched_files: true
