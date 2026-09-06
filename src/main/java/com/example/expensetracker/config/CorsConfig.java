@@ -16,7 +16,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * Cross-Origin Resource Sharing configuration.
  *
  * <p>Production origins must be explicitly configured with {@code CORS_ALLOWED_ORIGINS}.
- * Wildcard origin patterns are intentionally not used with credentialed requests.</p>
+ * Wildcard origin patterns are intentionally not used.</p>
  */
 @Configuration
 public class CorsConfig {
@@ -48,7 +48,7 @@ public class CorsConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type", "Content-Disposition"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -68,7 +68,7 @@ public class CorsConfig {
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency")
                         .exposedHeaders("Authorization", "Content-Type", "Content-Disposition")
-                        .allowCredentials(true)
+                        .allowCredentials(false)
                         .maxAge(3600);
             }
         };
