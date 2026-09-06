@@ -68,7 +68,7 @@ public class ExpenseTrackerSeleniumTest {
         indexUrl = "file://" + new File("frontend/index.html").getAbsolutePath();
         registerUrl = "file://" + new File("frontend/register.html").getAbsolutePath();
         forgotPasswordUrl = "file://" + new File("frontend/forgot-password.html").getAbsolutePath();
-        dashboardUrl = "file://" + new File("frontend/dashboard.html").getAbsolutePath() + "?test_mock_auth=true";
+        dashboardUrl = "file://" + new File("frontend/dashboard.html").getAbsolutePath();
     }
 
     @AfterAll
@@ -87,6 +87,15 @@ public class ExpenseTrackerSeleniumTest {
     }
 
     private void loginSessionAndGoToDashboard() {
+        // Establish test-only storage state inside the test runner rather than
+        // exposing an authentication bypass in production frontend code.
+        driver.get(indexUrl);
+        ((JavascriptExecutor) driver).executeScript(
+                "localStorage.setItem('token', 'selenium-test-token');" +
+                "localStorage.setItem('userId', '101');" +
+                "localStorage.setItem('userName', 'Alex Smith');" +
+                "localStorage.setItem('userCurrency', 'USD');"
+        );
         driver.get(dashboardUrl);
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("userWelcomeText")));
     }
@@ -484,8 +493,6 @@ public class ExpenseTrackerSeleniumTest {
         driver.get(registerUrl);
         wait.until(ExpectedConditions.titleContains("Create Account"));
 
-        // Capture the body of the next call to /auth/register instead of letting
-        // it hit the network (there is no live backend in this file:// suite).
         ((JavascriptExecutor) driver).executeScript(
                 "window.__capturedRegisterBody = null;" +
                 "const originalFetch = window.fetch;" +
@@ -648,7 +655,6 @@ public class ExpenseTrackerSeleniumTest {
         assertTrue(viewReportBtn.isDisplayed(), "View Monthly Report button must be present in profile menu");
         assertTrue(exportSummaryBtn.isDisplayed(), "Export Monthly Summary button must be present in profile menu");
 
-        // 1. Test clicking "View Monthly Report"
         clickElement(viewReportBtn);
         WebElement periodModal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("monthlyReportPeriodModal")));
         assertTrue(periodModal.getAttribute("class").contains("active"), "Monthly report period modal should be active");
@@ -661,7 +667,6 @@ public class ExpenseTrackerSeleniumTest {
         assertTrue(viewActions.isDisplayed(), "View mode actions must be displayed in view mode");
         assertFalse(exportActions.isDisplayed(), "Export mode actions must be hidden in view mode");
 
-        // 2. Test dynamic mode switcher to Export
         WebElement switchToExportBtn = driver.findElement(By.id("periodSwitchToExportBtn"));
         clickElement(switchToExportBtn);
 
@@ -676,12 +681,10 @@ public class ExpenseTrackerSeleniumTest {
         assertTrue(exportJsonBtn.isDisplayed(), "Export JSON button must be available in export mode");
         assertTrue(downloadHtmlBtn.isDisplayed(), "Download HTML button must be available in export mode");
 
-        // Close modal
         WebElement closeBtn = driver.findElement(By.id("closePeriodModalBtn"));
         clickElement(closeBtn);
         wait.until(d -> !periodModal.getAttribute("class").contains("active"));
 
-        // 3. Test clicking "Export Monthly Summary" directly from profile menu
         ((JavascriptExecutor) driver).executeScript(
             "if (typeof toggleProfileMenu === 'function') { toggleProfileMenu(true); } else { const m = document.getElementById('profileMenu'); if (m) m.classList.add('active'); }"
         );
