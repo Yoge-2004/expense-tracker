@@ -14,8 +14,10 @@ const WebBiometrics = {
         }
     },
 
+    // The button should be discoverable on every compatible device. The browser
+    // authenticator, not localStorage, determines whether a passkey exists.
     isEnabled() {
-        return localStorage.getItem("webauthn_bio_enabled") === "true";
+        return !!window.PublicKeyCredential && !!window.isSecureContext;
     },
 
     _decodeBase64Url(value) {
@@ -66,23 +68,17 @@ const WebBiometrics = {
             id: credential.id,
             rawId: this._encodeBase64Url(credential.rawId),
             type: credential.type,
-            response: {
-                clientDataJSON: this._encodeBase64Url(response.clientDataJSON)
-            },
+            response: { clientDataJSON: this._encodeBase64Url(response.clientDataJSON) },
             clientExtensionResults: credential.getClientExtensionResults()
         };
 
         if ("attestationObject" in response) {
             payload.response.attestationObject = this._encodeBase64Url(response.attestationObject);
-            if (typeof response.getTransports === "function") {
-                payload.response.transports = response.getTransports();
-            }
+            if (typeof response.getTransports === "function") payload.response.transports = response.getTransports();
         } else {
             payload.response.authenticatorData = this._encodeBase64Url(response.authenticatorData);
             payload.response.signature = this._encodeBase64Url(response.signature);
-            payload.response.userHandle = response.userHandle
-                ? this._encodeBase64Url(response.userHandle)
-                : null;
+            payload.response.userHandle = response.userHandle ? this._encodeBase64Url(response.userHandle) : null;
         }
         return payload;
     },
@@ -93,56 +89,33 @@ const WebBiometrics = {
         }
 
         const started = await apiRequest("/webauthn/register/options", { method: "POST" });
-        if (!started?.transactionId || !started?.publicKey) {
-            throw new Error("Could not start biometric setup. Please try again.");
-        }
+        if (!started?.transactionId || !started?.publicKey) throw new Error("Could not start biometric setup. Please try again.");
 
-        const credential = await navigator.credentials.create({
-            publicKey: this._creationOptions(started.publicKey)
-        });
+        const credential = await navigator.credentials.create({ publicKey: this._creationOptions(started.publicKey) });
         if (!credential) throw new Error("Biometric setup was cancelled.");
 
         await apiRequest("/webauthn/register/finish", {
             method: "POST",
-            body: JSON.stringify({
-                transactionId: started.transactionId,
-                credential: this._serializeCredential(credential)
-            })
+            body: JSON.stringify({ transactionId: started.transactionId, credential: this._serializeCredential(credential) })
         });
-
         localStorage.setItem("webauthn_bio_enabled", "true");
         return true;
     },
 
     async authenticate() {
-        if (!(await this.isAvailable())) {
-            throw new Error("Biometric sign-in is not supported by this browser or device.");
-        }
+        if (!(await this.isAvailable())) throw new Error("Biometric sign-in is not supported by this browser or device.");
 
-        const started = await apiRequest("/webauthn/login/options", {
-            method: "POST",
-            cache: "no-store"
-        });
-        if (!started?.transactionId || !started?.publicKey) {
-            throw new Error("Could not start biometric sign-in. Please use your password instead.");
-        }
+        const started = await apiRequest("/webauthn/login/options", { method: "POST", cache: "no-store" });
+        if (!started?.transactionId || !started?.publicKey) throw new Error("Could not start biometric sign-in. Please use your password instead.");
 
-        const credential = await navigator.credentials.get({
-            publicKey: this._requestOptions(started.publicKey)
-        });
+        const credential = await navigator.credentials.get({ publicKey: this._requestOptions(started.publicKey) });
         if (!credential) throw new Error("Biometric sign-in was cancelled.");
 
         const response = await apiRequest("/webauthn/login/finish", {
             method: "POST",
-            body: JSON.stringify({
-                transactionId: started.transactionId,
-                credential: this._serializeCredential(credential)
-            })
+            body: JSON.stringify({ transactionId: started.transactionId, credential: this._serializeCredential(credential) })
         });
-
-        if (!response?.token || !response?.userId) {
-            throw new Error("Biometric sign-in could not be verified. Please use your password instead.");
-        }
+        if (!response?.token || !response?.userId) throw new Error("Biometric sign-in could not be verified. Please use your password instead.");
         localStorage.setItem("webauthn_bio_enabled", "true");
         return response;
     },
