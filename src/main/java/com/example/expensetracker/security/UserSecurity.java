@@ -23,29 +23,13 @@ public class UserSecurity {
 
     private static final Logger log = LoggerFactory.getLogger(UserSecurity.class);
 
-    /**
-     * Checks if the currently authenticated principal is the user with the given userId.
-     *
-     * @param userId the ID to verify
-     * @return {@code true} if authenticated user matches userId; {@code false} otherwise
-     */
     public boolean isCurrentUser(Long userId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return isCurrentUser(auth, userId);
     }
 
-    /**
-     * Checks if the given authentication matches the given userId.
-     *
-     * @param authentication the current authentication object
-     * @param userId the ID to verify
-     * @return {@code true} if authenticated user matches userId; {@code false} otherwise
-     */
     public boolean isCurrentUser(Authentication authentication, Long userId) {
-        if (userId == null) {
-            return false;
-        }
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (userId == null || authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
         Object principal = authentication.getPrincipal();
@@ -58,20 +42,13 @@ public class UserSecurity {
 
     /**
      * Validates that the currently authenticated user matches the target userId.
-     * Throws {@link AccessDeniedException} if the user is not authorized.
-     *
-     * @param userId target user ID to access
-     * @throws AccessDeniedException if authenticated user does not match the target userId
+     * Production authorization fails closed when no authenticated principal exists.
      */
     public void validateUserAccess(Long userId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            // Allows unit slice tests that run without a security context to continue functioning
-            return;
-        }
         if (!isCurrentUser(auth, userId)) {
-            log.warn("Access denied (IDOR protection): Authenticated user is not authorized for userId={}", userId);
-            throw new AccessDeniedException("Access denied: You do not have permission to access or modify resources belonging to another user.");
+            log.warn("Access denied: authenticated principal does not own userId={}", userId);
+            throw new AccessDeniedException("Access denied.");
         }
     }
 }
