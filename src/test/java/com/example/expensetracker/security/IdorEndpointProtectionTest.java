@@ -58,6 +58,7 @@ class IdorEndpointProtectionTest {
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean private PasswordEncoder passwordEncoder;
+    @MockitoBean private GoogleIdTokenVerifier googleIdTokenVerifier;
 
     private static final Long AUTHENTICATED_USER_ID = 1L;
     private static final Long ATTACKER_TARGET_USER_ID = 2L;
