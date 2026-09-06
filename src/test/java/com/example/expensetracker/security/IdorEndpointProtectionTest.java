@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -56,6 +57,7 @@ class IdorEndpointProtectionTest {
     @MockitoBean private JwtService jwtService;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockitoBean private PasswordEncoder passwordEncoder;
 
     private static final Long AUTHENTICATED_USER_ID = 1L;
     private static final Long ATTACKER_TARGET_USER_ID = 2L;
