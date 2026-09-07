@@ -12,6 +12,16 @@
 
 ---
 
+## 📦 Releases & Downloads
+
+Official Android APK builds are published through GitHub Releases.
+
+**👉 [Download / View Releases](https://github.com/Yoge-2004/expense-tracker/releases)**
+
+Each release contains the corresponding APK, checksums, version information, and release notes.
+
+---
+
 ## 🌟 About the App
 
 The Expense Tracker mobile application is the native client for the Expense Tracker platform. It is designed for fast everyday finance interactions while sharing the same backend, authentication model, and financial data as the web application.
