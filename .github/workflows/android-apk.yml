@@ -32,21 +32,30 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
-      - name: Normalize EAS token
+      - name: Validate EAS token
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${EXPO_TOKEN:-}" ]; then
-            echo "EXPO_TOKEN is missing from GitHub Actions repository secrets."
+          CLEAN_TOKEN="${EXPO_TOKEN:-}"
+          # Normalize accidental whitespace/newlines introduced while copying the token.
+          CLEAN_TOKEN="${CLEAN_TOKEN//$'\r'/}"
+          CLEAN_TOKEN="${CLEAN_TOKEN//$'\n'/}"
+          CLEAN_TOKEN="${CLEAN_TOKEN//$'\t'/}"
+          CLEAN_TOKEN="${CLEAN_TOKEN#\"}"
+          CLEAN_TOKEN="${CLEAN_TOKEN%\"}"
+          CLEAN_TOKEN="${CLEAN_TOKEN#\'}"
+          CLEAN_TOKEN="${CLEAN_TOKEN%\'}"
+          CLEAN_TOKEN="$(printf '%s' "$CLEAN_TOKEN" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+          if [ -z "$CLEAN_TOKEN" ]; then
+            echo "EXPO_TOKEN is missing or empty."
             exit 1
           fi
-          CLEAN_TOKEN="$(node -e "const fs=require('fs'); const v=process.env.EXPO_TOKEN ?? ''; const clean=v.replace(/^\\uFEFF/, '').replace(/[\\u0000-\\u001F\\u007F]/g, '').trim().replace(/^(['\"])(.*)\\1$/, '$2'); if (!clean) process.exit(2); if (!/^[\\x20-\\x7E]+$/.test(clean)) process.exit(3); fs.writeFileSync(process.stdout.fd, clean);")"
-          if [ -z "$CLEAN_TOKEN" ]; then
-            echo "EXPO_TOKEN is empty after normalization."
+          if ! printf '%s' "$CLEAN_TOKEN" | LC_ALL=C grep -Eq '^[ -~]+$'; then
+            echo "EXPO_TOKEN contains unsupported control/non-ASCII characters."
             exit 1
           fi
           printf 'EXPO_TOKEN=%s\n' "$CLEAN_TOKEN" >> "$GITHUB_ENV"
-          echo "EAS token normalized successfully (length=${#CLEAN_TOKEN})."
+          echo "EAS token validated successfully (length=${#CLEAN_TOKEN})."
 
       - name: Install dependencies
         run: npm ci
@@ -80,7 +89,7 @@ jobs:
           curl --fail --location --retry 3 "$(cat apk-url.txt)" --output expense-tracker.apk
           test -s expense-tracker.apk
 
-      - name: Verify APK package and signature
+      - name: Verify APK package, signature and Google Sign-In fingerprint
         shell: bash
         run: |
           set -euo pipefail
@@ -88,6 +97,7 @@ jobs:
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
           test -x "$APKSIGNER"
           "$APKSIGNER" verify --verbose expense-tracker.apk
+          "$APKSIGNER" verify --print-certs expense-tracker.apk | tee android-signing-certificate.txt
           sha256sum expense-tracker.apk | tee expense-tracker.apk.sha256
 
       - name: Upload APK artifact
@@ -97,6 +107,7 @@ jobs:
           path: |
             mobile/expense-tracker.apk
             mobile/expense-tracker.apk.sha256
+            mobile/android-signing-certificate.txt
           retention-days: 30
 
       - name: Upload Android build diagnostics
@@ -106,6 +117,8 @@ jobs:
           name: android-apk-build-logs
           path: |
             mobile/expo-doctor.log
+            mobile/android-signing-certificate.txt
+            mobile/eas-build.json
           if-no-files-found: warn
           retention-days: 30
 
@@ -117,6 +130,7 @@ jobs:
           body: |
             Standalone Android APK built from main at commit ${{ github.sha }}.
             EAS Build profile: preview (APK).
+            Google Sign-In: the Android signing certificate fingerprint is included in the workflow artifacts for registering the EAS release SHA-1 in Google Cloud.
           files: |
             mobile/expense-tracker.apk
             mobile/expense-tracker.apk.sha256
