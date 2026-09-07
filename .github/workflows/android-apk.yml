@@ -40,12 +40,13 @@ jobs:
             echo "EXPO_TOKEN is missing from GitHub Actions repository secrets."
             exit 1
           fi
-          CLEAN_TOKEN="$(printf '%s' "$EXPO_TOKEN" | tr -d '[:space:]')"
+          CLEAN_TOKEN="$(node -e "const fs=require('fs'); const v=process.env.EXPO_TOKEN ?? ''; const clean=v.replace(/^\\uFEFF/, '').replace(/[\\u0000-\\u001F\\u007F]/g, '').trim().replace(/^(['\"])(.*)\\1$/, '$2'); if (!clean) process.exit(2); if (!/^[\\x20-\\x7E]+$/.test(clean)) process.exit(3); fs.writeFileSync(process.stdout.fd, clean);")"
           if [ -z "$CLEAN_TOKEN" ]; then
             echo "EXPO_TOKEN is empty after normalization."
             exit 1
           fi
           printf 'EXPO_TOKEN=%s\n' "$CLEAN_TOKEN" >> "$GITHUB_ENV"
+          echo "EAS token normalized successfully (length=${#CLEAN_TOKEN})."
 
       - name: Install dependencies
         run: npm ci
