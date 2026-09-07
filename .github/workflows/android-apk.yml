@@ -101,6 +101,13 @@ jobs:
       - name: Build APK with EAS
         run: eas build --platform android --profile preview --non-interactive --wait
 
+      - name: Build IPA with EAS
+        shell: bash
+        run: |
+          set -o pipefail
+          echo "Starting EAS iOS build..."
+          eas build --platform ios --profile preview --non-interactive --wait || echo "iOS build skipped: requires Apple Developer credentials on EAS account."
+
       - name: Download APK
         shell: bash
         run: |
@@ -109,6 +116,28 @@ jobs:
           node -e "const fs=require('fs'); const builds=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const url=builds[0]?.artifacts?.buildUrl; if(!url) throw new Error('EAS did not return an APK build URL'); fs.writeFileSync('apk-url.txt', url);"
           curl --fail --location --retry 3 "$(cat apk-url.txt)" --output expense-tracker.apk
           test -s expense-tracker.apk
+
+      - name: Download IPA (if generated)
+        shell: bash
+        run: |
+          set -o pipefail
+          if eas build:list --platform ios --limit 1 --json > eas-build-ios.json 2>/dev/null; then
+            node -e "
+              const fs = require('fs');
+              try {
+                const builds = JSON.parse(fs.readFileSync('eas-build-ios.json', 'utf8'));
+                const url = builds[0]?.artifacts?.buildUrl;
+                if (url && builds[0]?.status === 'FINISHED') {
+                  fs.writeFileSync('ipa-url.txt', url);
+                  console.log('Found iOS IPA build URL');
+                }
+              } catch (e) {}
+            "
+            if [ -f ipa-url.txt ]; then
+              curl --fail --location --retry 3 "$(cat ipa-url.txt)" --output expense-tracker.ipa
+              sha256sum expense-tracker.ipa | tee expense-tracker.ipa.sha256
+            fi
+          fi
 
       - name: Verify APK package, signature and Google Sign-In fingerprint
         shell: bash
@@ -121,13 +150,14 @@ jobs:
           "$APKSIGNER" verify --print-certs expense-tracker.apk | tee android-signing-certificate.txt
           sha256sum expense-tracker.apk | tee expense-tracker.apk.sha256
 
-      - name: Upload APK artifact
+      - name: Upload APK & IPA artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: expense-tracker-android-apk
+          name: expense-tracker-mobile-binaries
           path: |
             mobile/expense-tracker.apk
             mobile/expense-tracker.apk.sha256
+            mobile/expense-tracker.ipa*
             mobile/android-signing-certificate.txt
           retention-days: 30
 
@@ -140,6 +170,7 @@ jobs:
             mobile/expo-doctor.log
             mobile/android-signing-certificate.txt
             mobile/eas-build.json
+            mobile/eas-build-ios.json
             mobile/eas-init.json
           if-no-files-found: warn
           retention-days: 30
@@ -150,13 +181,14 @@ jobs:
           set -euo pipefail
           node scripts/generate-release-notes.js
 
-      - name: Publish APK to GitHub release
+      - name: Publish APK & IPA to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.1-build${{ github.run_number }}
-          name: "Expense Tracker Mobile v1.0.1 (Build #${{ github.run_number }})"
+          tag_name: v1.0.2-build${{ github.run_number }}
+          name: "Expense Tracker Mobile v1.0.2 (Build #${{ github.run_number }})"
           body_path: mobile/release-notes.md
           files: |
             mobile/expense-tracker.apk
             mobile/expense-tracker.apk.sha256
-          fail_on_unmatched_files: true
+            mobile/expense-tracker.ipa*
+          fail_on_unmatched_files: false

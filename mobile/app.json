@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expense Tracker",
     "slug": "expense-tracker-mobile",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
@@ -10,6 +10,7 @@
       "icon": "./assets/icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "com.yoge.expensetracker",
+      "buildNumber": "3",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -23,10 +24,10 @@
     },
     "android": {
       "package": "com.yoge.expensetracker",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0b0e14"
+        "backgroundColor": "#F9F6EF"
       }
     },
     "web": {

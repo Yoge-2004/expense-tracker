@@ -53,7 +53,8 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
   const [selectedDateStr, setSelectedDateStr] = useState(initialDate || '');
-  const [isPickerMode, setIsPickerMode] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'none' | 'month' | 'year'>('none');
+  const [decadeBase, setDecadeBase] = useState(Math.floor(today.getFullYear() / 12) * 12);
 
   useEffect(() => {
     if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
@@ -63,12 +64,14 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
       if (!isNaN(y) && !isNaN(m)) {
         setViewYear(y);
         setViewMonth(m);
+        setDecadeBase(Math.floor(y / 12) * 12);
         setSelectedDateStr(initialDate);
       }
     } else {
       const now = new Date();
       setViewYear(now.getFullYear());
       setViewMonth(now.getMonth());
+      setDecadeBase(Math.floor(now.getFullYear() / 12) * 12);
       setSelectedDateStr('');
     }
   }, [initialDate, visible]);
@@ -91,6 +94,18 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
     } else {
       setViewMonth((m) => m + 1);
     }
+  };
+
+  const handleSelectYear = (yr: number) => {
+    Haptics.selectionAsync().catch(() => {});
+    setViewYear(yr);
+    setPickerMode('none');
+  };
+
+  const handleSelectMonth = (m: number) => {
+    Haptics.selectionAsync().catch(() => {});
+    setViewMonth(m);
+    setPickerMode('none');
   };
 
   const handleSelectDay = (day: number) => {
@@ -157,75 +172,186 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                 </TouchableOpacity>
               </View>
 
-              {/* Month / Year Navigator Bar */}
-              <View style={[styles.monthNav, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                <TouchableOpacity
-                  onPress={isPickerMode ? () => setViewYear((y) => y - 1) : handlePrevMonth}
-                  style={styles.navArrowBtn}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="chevron-back" size={20} color={c.text} />
-                </TouchableOpacity>
+              {/* Dual Month & Year Navigator Controls */}
+              <View style={styles.navControlsRow}>
+                {/* Month Group */}
+                <View style={[styles.controlPill, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                  <TouchableOpacity
+                    onPress={handlePrevMonth}
+                    style={styles.navArrowBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="chevron-back" size={16} color={c.text} />
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  activeOpacity={0.75}
-                  onPress={() => {
-                    Haptics.selectionAsync().catch(() => {});
-                    setIsPickerMode((prev) => !prev);
-                  }}
-                  style={styles.monthYearTouchable}
-                >
-                  <Text style={[styles.monthYearText, { color: c.text }]}>
-                    {MONTH_NAMES[viewMonth]} {viewYear}
-                  </Text>
-                  <Ionicons
-                    name={isPickerMode ? 'chevron-up-circle' : 'calendar-outline'}
-                    size={16}
-                    color={c.primary}
-                    style={{ marginLeft: 6 }}
-                  />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      Haptics.selectionAsync().catch(() => {});
+                      setPickerMode(pickerMode === 'month' ? 'none' : 'month');
+                    }}
+                    style={styles.pillTouchable}
+                  >
+                    <Text style={[styles.pillText, { color: c.text }]}>
+                      {MONTH_NAMES[viewMonth].slice(0, 3)}
+                    </Text>
+                    <Ionicons
+                      name={pickerMode === 'month' ? 'caret-up' : 'caret-down'}
+                      size={11}
+                      color={c.primary}
+                      style={{ marginLeft: 3 }}
+                    />
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={isPickerMode ? () => setViewYear((y) => y + 1) : handleNextMonth}
-                  style={styles.navArrowBtn}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons name="chevron-forward" size={20} color={c.text} />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleNextMonth}
+                    style={styles.navArrowBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="chevron-forward" size={16} color={c.text} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Year Group */}
+                <View style={[styles.controlPill, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                      setViewYear((y) => y - 1);
+                    }}
+                    style={styles.navArrowBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="chevron-back" size={16} color={c.text} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      Haptics.selectionAsync().catch(() => {});
+                      setDecadeBase(Math.floor(viewYear / 12) * 12);
+                      setPickerMode(pickerMode === 'year' ? 'none' : 'year');
+                    }}
+                    style={styles.pillTouchable}
+                  >
+                    <Text style={[styles.pillText, { color: c.text }]}>
+                      {viewYear}
+                    </Text>
+                    <Ionicons
+                      name={pickerMode === 'year' ? 'caret-up' : 'caret-down'}
+                      size={11}
+                      color={c.primary}
+                      style={{ marginLeft: 3 }}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                      setViewYear((y) => y + 1);
+                    }}
+                    style={styles.navArrowBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="chevron-forward" size={16} color={c.text} />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              {/* VIEW 1: Quick Month & Year Picker Grid */}
-              {isPickerMode ? (
+              {/* VIEW 1: Quick Year Picker Grid */}
+              {pickerMode === 'year' && (
                 <View style={styles.pickerContainer}>
-                  <View style={styles.pickerYearHeader}>
-                    <Text style={[styles.pickerYearLabel, { color: c.textMuted }]}>Select Month & Year</Text>
-                    <Text style={[styles.pickerYearNumber, { color: c.primary }]}>{viewYear}</Text>
+                  <View style={styles.pickerHeaderRow}>
+                    <TouchableOpacity
+                      onPress={() => setDecadeBase((d) => d - 12)}
+                      style={styles.pickerHeaderArrow}
+                    >
+                      <Ionicons name="chevron-back" size={18} color={c.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.pickerHeaderTitle, { color: c.text }]}>
+                      Select Year ({decadeBase} – {decadeBase + 11})
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setDecadeBase((d) => d + 12)}
+                      style={styles.pickerHeaderArrow}
+                    >
+                      <Ionicons name="chevron-forward" size={18} color={c.text} />
+                    </TouchableOpacity>
                   </View>
 
-                  <View style={styles.monthGrid}>
-                    {MONTH_NAMES.map((name, idx) => {
-                      const isCurrentView = idx === viewMonth;
+                  <View style={styles.gridSelectorWrap}>
+                    {Array.from({ length: 12 }, (_, i) => decadeBase + i).map((yr) => {
+                      const isCurrent = yr === viewYear;
                       return (
                         <TouchableOpacity
-                          key={idx}
+                          key={yr}
                           activeOpacity={0.7}
-                          onPress={() => {
-                            Haptics.selectionAsync().catch(() => {});
-                            setViewMonth(idx);
-                            setIsPickerMode(false);
-                          }}
+                          onPress={() => handleSelectYear(yr)}
                           style={[
-                            styles.monthChip,
-                            { backgroundColor: isCurrentView ? c.primary : c.inputBg, borderColor: c.border },
+                            styles.selectorChip,
+                            {
+                              backgroundColor: isCurrent ? c.primary : c.inputBg,
+                              borderColor: c.border,
+                            },
                           ]}
                         >
                           <Text
                             style={[
-                              styles.monthChipText,
+                              styles.selectorChipText,
                               {
-                                color: isCurrentView ? (isLight ? '#FFFFFF' : '#10120E') : c.text,
-                                fontWeight: isCurrentView ? '800' : '600',
+                                color: isCurrent ? (isLight ? '#FFFFFF' : '#10120E') : c.text,
+                                fontWeight: isCurrent ? '800' : '600',
+                              },
+                            ]}
+                          >
+                            {yr}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => setPickerMode('none')}
+                    style={[styles.backToDaysBtn, { borderColor: c.border }]}
+                  >
+                    <Ionicons name="arrow-back" size={14} color={c.primary} />
+                    <Text style={[styles.backToDaysText, { color: c.primary }]}>Back to Calendar</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* VIEW 2: Quick Month Picker Grid */}
+              {pickerMode === 'month' && (
+                <View style={styles.pickerContainer}>
+                  <View style={styles.pickerHeaderRow}>
+                    <Text style={[styles.pickerHeaderTitle, { color: c.text }]}>
+                      Select Month ({viewYear})
+                    </Text>
+                  </View>
+
+                  <View style={styles.gridSelectorWrap}>
+                    {MONTH_NAMES.map((name, idx) => {
+                      const isCurrent = idx === viewMonth;
+                      return (
+                        <TouchableOpacity
+                          key={idx}
+                          activeOpacity={0.7}
+                          onPress={() => handleSelectMonth(idx)}
+                          style={[
+                            styles.selectorChip,
+                            {
+                              backgroundColor: isCurrent ? c.primary : c.inputBg,
+                              borderColor: c.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.selectorChipText,
+                              {
+                                color: isCurrent ? (isLight ? '#FFFFFF' : '#10120E') : c.text,
+                                fontWeight: isCurrent ? '800' : '600',
                               },
                             ]}
                           >
@@ -237,15 +363,17 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                   </View>
 
                   <TouchableOpacity
-                    onPress={() => setIsPickerMode(false)}
+                    onPress={() => setPickerMode('none')}
                     style={[styles.backToDaysBtn, { borderColor: c.border }]}
                   >
                     <Ionicons name="arrow-back" size={14} color={c.primary} />
-                    <Text style={[styles.backToDaysText, { color: c.primary }]}>Back to Day Calendar</Text>
+                    <Text style={[styles.backToDaysText, { color: c.primary }]}>Back to Calendar</Text>
                   </TouchableOpacity>
                 </View>
-              ) : (
-                /* VIEW 2: Standard Day Calendar Grid */
+              )}
+
+              {/* VIEW 3: Standard Day Calendar Grid */}
+              {pickerMode === 'none' && (
                 <>
                   {/* Day Labels Row: 7 columns, width 14.28% each */}
                   <View style={styles.dayLabelsRow}>
@@ -362,54 +490,60 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.3,
   },
-  monthNav: {
+  navControlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    gap: 8,
     marginBottom: 14,
+  },
+  controlPill: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   navArrowBtn: {
     padding: 6,
   },
-  monthYearTouchable: {
+  pillTouchable: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
   },
-  monthYearText: {
-    fontSize: 15,
+  pillText: {
+    fontSize: 13.5,
     fontWeight: '800',
   },
   pickerContainer: {
     paddingVertical: 8,
   },
-  pickerYearHeader: {
+  pickerHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
     paddingHorizontal: 4,
   },
-  pickerYearLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+  pickerHeaderArrow: {
+    padding: 4,
   },
-  pickerYearNumber: {
-    fontSize: 17,
-    fontWeight: '800',
+  pickerHeaderTitle: {
+    fontSize: 14,
+    fontWeight: '700',
   },
-  monthGrid: {
+  gridSelectorWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'space-between',
   },
-  monthChip: {
+  selectorChip: {
     width: '31%',
     height: 40,
     borderRadius: 12,
@@ -418,7 +552,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 2,
   },
-  monthChipText: {
+  selectorChipText: {
     fontSize: 13,
   },
   backToDaysBtn: {

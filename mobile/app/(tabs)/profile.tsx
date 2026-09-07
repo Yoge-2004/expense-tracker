@@ -388,8 +388,16 @@ export default function ProfileScreen() {
               <View style={styles.pinFieldWrap}>
                 <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>NEW 6-DIGIT PIN</Text>
                 <TextInput
-                  style={[styles.pinTextInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
-                  placeholder="••••••"
+                  style={[
+                    styles.pinTextInput,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: c.border,
+                      color: c.text,
+                      letterSpacing: newPin.length > 0 ? 4 : 0,
+                    },
+                  ]}
+                  placeholder="Enter 6-digit PIN"
                   placeholderTextColor={c.textMuted}
                   keyboardType="number-pad"
                   maxLength={6}
@@ -403,8 +411,16 @@ export default function ProfileScreen() {
               <View style={styles.pinFieldWrap}>
                 <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>CONFIRM 6-DIGIT PIN</Text>
                 <TextInput
-                  style={[styles.pinTextInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
-                  placeholder="••••••"
+                  style={[
+                    styles.pinTextInput,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: c.border,
+                      color: c.text,
+                      letterSpacing: confirmPin.length > 0 ? 4 : 0,
+                    },
+                  ]}
+                  placeholder="Confirm 6-digit PIN"
                   placeholderTextColor={c.textMuted}
                   keyboardType="number-pad"
                   maxLength={6}
@@ -557,13 +573,13 @@ const styles = StyleSheet.create({
   },
   pinTextInput: {
     width: '100%',
-    height: 46,
+    height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    textAlign: 'center',
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 6,
+    paddingHorizontal: 16,
+    textAlign: 'left',
+    fontSize: 16,
+    fontWeight: '700',
   },
   savePinBtn: {
     width: '100%',

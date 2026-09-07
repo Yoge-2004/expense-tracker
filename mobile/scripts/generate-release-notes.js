@@ -34,12 +34,15 @@ function main() {
   const baseDir = path.resolve(__dirname, '..');
   const appJsonPath = path.join(baseDir, 'app.json');
   const apkPath = path.join(baseDir, 'expense-tracker.apk');
-  const sha256Path = path.join(baseDir, 'expense-tracker.apk.sha256');
+  const apkSha256Path = path.join(baseDir, 'expense-tracker.apk.sha256');
+  const ipaPath = path.join(baseDir, 'expense-tracker.ipa');
+  const ipaSha256Path = path.join(baseDir, 'expense-tracker.ipa.sha256');
   const outputPath = path.join(baseDir, 'release-notes.md');
 
-  let version = '1.0.1';
-  let versionCode = 2;
+  let version = '1.0.2';
+  let versionCode = 3;
   let packageId = 'com.yoge.expensetracker';
+  let bundleId = 'com.yoge.expensetracker';
 
   if (fs.existsSync(appJsonPath)) {
     try {
@@ -47,6 +50,7 @@ function main() {
       version = appJson.expo?.version || version;
       versionCode = appJson.expo?.android?.versionCode || versionCode;
       packageId = appJson.expo?.android?.package || packageId;
+      bundleId = appJson.expo?.ios?.bundleIdentifier || bundleId;
     } catch (e) {
       console.warn('Error reading app.json:', e);
     }
@@ -55,59 +59,75 @@ function main() {
   const runNumber = process.env.GITHUB_RUN_NUMBER || 'latest';
   const commitSha = process.env.GITHUB_SHA || 'main';
   const shortSha = commitSha.length > 7 ? commitSha.substring(0, 7) : commitSha;
+
+  const hasApk = fs.existsSync(apkPath);
   const apkSize = getFileSize(apkPath);
-  const sha256 = getSha256(apkPath, sha256Path);
+  const apkSha256 = getSha256(apkPath, apkSha256Path);
+
+  const hasIpa = fs.existsSync(ipaPath);
+  const ipaSize = getFileSize(ipaPath);
+  const ipaSha256 = getSha256(ipaPath, ipaSha256Path);
+
+  let artifactsTable = `| Attribute | Details |
+| :--- | :--- |
+| **Release Version** | \`${version}\` |
+| **Version Code / Build** | Android: \`${versionCode}\` / iOS: \`${versionCode}\` |
+| **Package / Bundle ID** | \`${packageId}\` |
+| **Build Number** | \`#${runNumber}\` |
+| **Commit SHA** | [\`${shortSha}\`](https://github.com/Yoge-2004/expense-tracker/commit/${commitSha}) |`;
+
+  if (hasApk) {
+    artifactsTable += `
+| **Android APK Size** | \`${apkSize}\` |
+| **Android APK SHA-256** | \`${apkSha256}\` |`;
+  }
+
+  if (hasIpa) {
+    artifactsTable += `
+| **iOS IPA Size** | \`${ipaSize}\` |
+| **iOS IPA SHA-256** | \`${ipaSha256}\` |`;
+  }
 
   const markdown = `# 🚀 Expense Tracker Mobile v${version} (Build #${runNumber})
 
-A major update for **Expense Tracker Mobile**, introducing the brand-new modern visual brand identity, interactive calendar navigation, chronological expense ledger ordering, enhanced security PIN modal layout, and comprehensive category usage protection.
+A major update for **Expense Tracker Mobile**, featuring the brand-new 3D wallet brand identity, intuitive year navigation steppers and selectors, natural security PIN cursor positioning, and verified Google OAuth authentication.
 
 ---
 
 ### ✨ What's New & Key Highlights
 
-* **🎨 Modern App Icon & Brand Identity**:
-  * Ultra-premium fintech shield emblem featuring emerald (\`#10B981\`) and electric cyan (\`#06B6D4\`) accents set against a deep obsidian background.
-  * Designed with full Android adaptive icon safe-zone compliance.
+* **👛 New App Icon & Visual Identity**:
+  * Premium 3D-styled leather wallet motif with white stitching, gold Indian Rupee (₹) coin, receipt, and payment card.
+  * Rendered against an elegant warm cream (\`#F9F6EF\`) background with Android adaptive icon safe-zone centering.
 
-* **📅 Interactive Calendar Picker**:
-  * Rigid 7-column grid alignment (\`14.285%\`) ensuring day headers and dates align perfectly across all device widths.
-  * Fixed trailing empty days padding to prevent month-end row wrapping or scattering.
-  * Interactive **Month & Year Selector**: Tap the month header to jump across years and months directly in a clean 3-column grid without tedious pagination.
+* **📅 Intuitive Year & Month Navigation**:
+  * Dual dedicated steppers: **\`‹ Sep ▾ ›\`** and **\`‹ ${new Date().getFullYear()} ▾ ›\`**.
+  * **1-Tap Year Jump**: Directly tap **\`‹\`** or **\`›\`** beside the year to step forward or backward by a full year without nested menus.
+  * **Full Year Selector Grid**: Tap the year dropdown **\`${new Date().getFullYear()} ▾\`** to open a 12-year grid view with decade navigation.
+  * **Month Selector Grid**: Tap **\`Sep ▾\`** to jump to any month in one tap.
 
-* **⏱️ Chronological Expense Ledger**:
-  * Upgraded sorting engine with insertion-order tie-breaking (\`id DESC\`). Transactions recorded on the same date now reliably appear newest-first.
-  * Synchronized with Spring Boot backend JPA query (\`ORDER BY e.expenseDate DESC, e.id DESC\`).
-
-* **🔒 Account Security PIN Modal**:
-  * Centered full-width stretch layout with edge-anchored close button \`(×)\`.
-  * Perfectly aligned 6-digit PIN input fields with clear typography and tactile feedback.
+* **🔒 Security PIN Cursor Fix**:
+  * Updated PIN input layout with left alignment and comfortable padding, ensuring the cursor (\`|\`) blinks naturally at the beginning of the textbox.
+  * Added clear, friendly placeholders (\`Enter 6-digit PIN\` / \`Confirm 6-digit PIN\`).
 
 * **🛡️ Category Dependency Protection**:
-  * Replaced silent failures with informative lock dialogs when attempting to delete categories actively referenced by expenses, subscriptions, or budgets.
+  * Informative lock dialog preventing silent deletion of categories actively linked to budgets, subscriptions, or transactions.
+
+* **⏱️ Chronological Expense Ledger**:
+  * Reverse-chronological insertion-order sorting (\`id DESC\`) on both mobile client and Spring Boot JPA backend.
 
 ---
 
 ### 📦 Build & Artifact Summary
 
-| Attribute | Details |
-| :--- | :--- |
-| **Release Version** | \`${version}\` |
-| **Android Version Code** | \`${versionCode}\` |
-| **Application ID** | \`${packageId}\` |
-| **Build Profile** | EAS Preview (Standalone APK) |
-| **Build Number** | \`#${runNumber}\` |
-| **Commit SHA** | [\`${shortSha}\`](https://github.com/Yoge-2004/expense-tracker/commit/${commitSha}) |
-| **APK File Size** | \`${apkSize}\` |
-| **SHA-256 Checksum** | \`${sha256}\` |
+${artifactsTable}
 
 ---
 
 ### 📲 Installation & Update Guide
 
-1. **Download APK**: Download **\`expense-tracker.apk\`** below under **Assets**.
-2. **Install / Upgrade**: Open the APK on your Android device to install (allow "Install from Unknown Sources" if prompted).
-3. **Seamless In-Place Upgrade**: Upgrading preserves existing local SQLite storage, Google OAuth tokens, and biometric preferences without conflicts.
+1. **Android Users**: Download **\`expense-tracker.apk\`** below under **Assets** and open to install.
+${hasIpa ? '2. **iOS Users**: Download **`expense-tracker.ipa`** below and install via Apple Configurator, TestFlight, or ad-hoc provisioning.\n3.' : '2.'} **In-Place Upgrade**: All your existing login sessions, local caches, and biometric preferences remain safe and untouched.
 
 #### 🔐 Checksum Verification (Optional)
 \`\`\`bash
@@ -116,10 +136,6 @@ sha256sum expense-tracker.apk
 
 # Windows PowerShell
 Get-FileHash -Algorithm SHA256 .\\expense-tracker.apk
-\`\`\`
-Expected Hash:
-\`\`\`
-${sha256}
 \`\`\`
 `;
 
