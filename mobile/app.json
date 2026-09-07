@@ -45,6 +45,13 @@
       "expo-sharing",
       "expo-status-bar"
     ],
-    "scheme": "expensetracker"
+    "scheme": "expensetracker",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1f8a984c-edd6-455d-9ba1-1832827887ac"
+      }
+    },
+    "owner": "yoge-2004"
   }
 }
