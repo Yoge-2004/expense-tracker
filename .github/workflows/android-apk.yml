@@ -32,22 +32,31 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
-      - name: Setup Expo and EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Verify Expo authentication
+      - name: Normalize EAS token
+        shell: bash
         run: |
+          set -euo pipefail
           if [ -z "${EXPO_TOKEN:-}" ]; then
             echo "EXPO_TOKEN is missing from GitHub Actions repository secrets."
             exit 1
           fi
-          eas whoami
+          CLEAN_TOKEN="$(printf '%s' "$EXPO_TOKEN" | tr -d '[:space:]')"
+          if [ -z "$CLEAN_TOKEN" ]; then
+            echo "EXPO_TOKEN is empty after normalization."
+            exit 1
+          fi
+          printf 'EXPO_TOKEN=%s\n' "$CLEAN_TOKEN" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install EAS CLI
+        run: npm install --no-save eas-cli@latest
+
+      - name: Verify Expo authentication
+        run: |
+          set -euo pipefail
+          ./node_modules/.bin/eas whoami
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -59,13 +68,13 @@ jobs:
           npx expo-doctor 2>&1 | tee expo-doctor.log
 
       - name: Build APK with EAS
-        run: eas build --platform android --profile preview --non-interactive --wait
+        run: ./node_modules/.bin/eas build --platform android --profile preview --non-interactive --wait
 
       - name: Download APK
         shell: bash
         run: |
           set -euo pipefail
-          eas build:list --platform android --limit 1 --json > eas-build.json
+          ./node_modules/.bin/eas build:list --platform android --limit 1 --json > eas-build.json
           node -e "const fs=require('fs'); const builds=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const url=builds[0]?.artifacts?.buildUrl; if(!url) throw new Error('EAS did not return an APK build URL'); fs.writeFileSync('apk-url.txt', url);"
           curl --fail --location --retry 3 "$(cat apk-url.txt)" --output expense-tracker.apk
           test -s expense-tracker.apk
