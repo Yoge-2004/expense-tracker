@@ -60,13 +60,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install EAS CLI
-        run: npm install --no-save eas-cli@latest
+      - name: Install EAS CLI globally
+        run: npm install --global eas-cli@latest
 
       - name: Verify Expo authentication
         run: |
           set -euo pipefail
-          ./node_modules/.bin/eas whoami
+          eas whoami
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -78,13 +78,13 @@ jobs:
           npx expo-doctor 2>&1 | tee expo-doctor.log
 
       - name: Build APK with EAS
-        run: ./node_modules/.bin/eas build --platform android --profile preview --non-interactive --wait
+        run: eas build --platform android --profile preview --non-interactive --wait
 
       - name: Download APK
         shell: bash
         run: |
           set -euo pipefail
-          ./node_modules/.bin/eas build:list --platform android --limit 1 --json > eas-build.json
+          eas build:list --platform android --limit 1 --json > eas-build.json
           node -e "const fs=require('fs'); const builds=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const url=builds[0]?.artifacts?.buildUrl; if(!url) throw new Error('EAS did not return an APK build URL'); fs.writeFileSync('apk-url.txt', url);"
           curl --fail --location --retry 3 "$(cat apk-url.txt)" --output expense-tracker.apk
           test -s expense-tracker.apk
