@@ -37,7 +37,6 @@ jobs:
         run: |
           set -euo pipefail
           CLEAN_TOKEN="${EXPO_TOKEN:-}"
-          # Normalize accidental whitespace/newlines introduced while copying the token.
           CLEAN_TOKEN="${CLEAN_TOKEN//$'\r'/}"
           CLEAN_TOKEN="${CLEAN_TOKEN//$'\n'/}"
           CLEAN_TOKEN="${CLEAN_TOKEN//$'\t'/}"
@@ -67,6 +66,28 @@ jobs:
         run: |
           set -euo pipefail
           eas whoami
+
+      - name: Initialize and link EAS project
+        shell: bash
+        run: |
+          set -euo pipefail
+          eas init --account yoge-2004 --non-interactive --json | tee eas-init.json
+          node -e "const fs=require('fs'); const c=JSON.parse(fs.readFileSync('app.json','utf8')); const id=c?.expo?.extra?.eas?.projectId; if(!id) throw new Error('EAS init did not write expo.extra.eas.projectId to app.json'); console.log('EAS project linked:', id);"
+
+      - name: Persist EAS project link
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE"
+          if git diff --quiet -- mobile/app.json; then
+            echo "EAS project link already committed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mobile/app.json
+          git commit -m "chore(eas): link mobile project [skip ci]"
+          git push origin HEAD:main
 
       - name: TypeScript check
         run: npx tsc --noEmit
@@ -119,6 +140,7 @@ jobs:
             mobile/expo-doctor.log
             mobile/android-signing-certificate.txt
             mobile/eas-build.json
+            mobile/eas-init.json
           if-no-files-found: warn
           retention-days: 30
 
