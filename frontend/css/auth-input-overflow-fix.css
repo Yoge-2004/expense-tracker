@@ -1,0 +1,23 @@
+/* Small-screen auth input/icon collision guard.
+   Keep the icon comfortably inside the text start position on narrow phones.
+   This is intentionally scoped to auth input wrappers so dashboard controls
+   are unaffected. */
+@media (max-width: 360px) {
+    .input-wrapper > .input-icon {
+        left: 10px !important;
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .input-wrapper > input:not([type="hidden"]),
+    .input-wrapper > .form-input,
+    .form-group .input-wrapper > input:not([type="hidden"]),
+    .form-group .input-wrapper > .form-input,
+    .auth-form .input-wrapper > input:not([type="hidden"]),
+    .auth-form .input-wrapper > .form-input,
+    .input-wrapper > .custom-select-trigger,
+    .form-group .input-wrapper > .custom-select-trigger {
+        padding-left: 48px !important;
+        box-sizing: border-box !important;
+    }
+}
