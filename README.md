@@ -734,6 +734,14 @@ docs/images/
 
 ---
 
+# 📦 Releases
+
+Download the latest Android builds, view release notes, checksums, and previous versions from the official GitHub Releases page.
+
+**👉 [View all releases](https://github.com/Yoge-2004/expense-tracker/releases)**
+
+---
+
 # 🤝 Contributing
 
 1. Fork the repository.
