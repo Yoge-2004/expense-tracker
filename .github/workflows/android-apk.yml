@@ -11,6 +11,9 @@ on:
 permissions:
   contents: write
 
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
 jobs:
   build-apk:
     name: Build Android APK
@@ -20,20 +23,28 @@ jobs:
         working-directory: mobile
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
         with:
-          distribution: temurin
-          java-version: '17'
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo authentication
+        run: |
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "EXPO_TOKEN is missing from GitHub Actions repository secrets."
+            exit 1
+          fi
+          eas whoami
 
       - name: Install dependencies
         run: npm ci
@@ -47,46 +58,27 @@ jobs:
           set -o pipefail
           npx expo-doctor 2>&1 | tee expo-doctor.log
 
-      - name: Generate Android project from Expo config
-        run: npx expo prebuild --platform android --non-interactive --no-install
+      - name: Build APK with EAS
+        run: eas build --platform android --profile preview --non-interactive --wait
 
-      - name: Build standalone release APK
-        shell: bash
-        run: |
-          set -o pipefail
-          cd android
-          ./gradlew --no-daemon --stacktrace assembleRelease 2>&1 | tee ../gradle-build.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Verify APK contains embedded JavaScript bundle
+      - name: Download APK
         shell: bash
         run: |
           set -euo pipefail
-          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
-          test -s "$APK_PATH"
-          if ! unzip -l "$APK_PATH" | grep -Eq 'assets/index\.android\.(bundle|js)$'; then
-            echo "ERROR: Release APK does not contain an embedded Android JavaScript bundle."
-            exit 1
-          fi
-          echo "Embedded JavaScript bundle verified. Metro is not required by this APK."
+          eas build:list --platform android --limit 1 --json > eas-build.json
+          node -e "const fs=require('fs'); const builds=JSON.parse(fs.readFileSync('eas-build.json','utf8')); const url=builds[0]?.artifacts?.buildUrl; if(!url) throw new Error('EAS did not return an APK build URL'); fs.writeFileSync('apk-url.txt', url);"
+          curl --fail --location --retry 3 "$(cat apk-url.txt)" --output expense-tracker.apk
+          test -s expense-tracker.apk
 
-      - name: Verify APK signature
+      - name: Verify APK package and signature
         shell: bash
         run: |
           set -euo pipefail
-          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          unzip -l expense-tracker.apk | grep -E 'AndroidManifest.xml|classes.dex' >/dev/null
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
           test -x "$APKSIGNER"
-          "$APKSIGNER" verify --verbose "$APK_PATH"
-
-      - name: Collect APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
-          cp "$APK_PATH" expense-tracker.apk
+          "$APKSIGNER" verify --verbose expense-tracker.apk
           sha256sum expense-tracker.apk | tee expense-tracker.apk.sha256
-          test -s expense-tracker.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -104,7 +96,6 @@ jobs:
           name: android-apk-build-logs
           path: |
             mobile/expo-doctor.log
-            mobile/gradle-build.log
           if-no-files-found: warn
           retention-days: 30
 
@@ -114,8 +105,8 @@ jobs:
           tag_name: android-v${{ github.run_number }}
           name: Expense Tracker Android v${{ github.run_number }}
           body: |
-            Standalone Android APK built from the Expo project on main at commit ${{ github.sha }}.
-            The release variant embeds the JavaScript bundle; Metro is not required after installation.
+            Standalone Android APK built from main at commit ${{ github.sha }}.
+            EAS Build profile: preview (APK).
           files: |
             mobile/expense-tracker.apk
             mobile/expense-tracker.apk.sha256
