@@ -53,6 +53,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
   const [selectedDateStr, setSelectedDateStr] = useState(initialDate || '');
+  const [isPickerMode, setIsPickerMode] = useState(false);
 
   useEffect(() => {
     if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
@@ -117,7 +118,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay(); // 0 = Sun
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
-  const calendarCells = [];
+  const calendarCells: (number | null)[] = [];
   // Blank days before month starts
   for (let i = 0; i < firstDayOfWeek; i++) {
     calendarCells.push(null);
@@ -125,6 +126,14 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   // Days of month
   for (let d = 1; d <= daysInMonth; d++) {
     calendarCells.push(d);
+  }
+  // Pad remaining cells of last week to complete the 7 columns
+  const remainder = calendarCells.length % 7;
+  if (remainder > 0) {
+    const padCount = 7 - remainder;
+    for (let p = 0; p < padCount; p++) {
+      calendarCells.push(null);
+    }
   }
 
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -148,67 +157,149 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                 </TouchableOpacity>
               </View>
 
-              {/* Month Navigator */}
+              {/* Month / Year Navigator Bar */}
               <View style={[styles.monthNav, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                <TouchableOpacity onPress={handlePrevMonth} style={styles.navArrowBtn}>
+                <TouchableOpacity
+                  onPress={isPickerMode ? () => setViewYear((y) => y - 1) : handlePrevMonth}
+                  style={styles.navArrowBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <Ionicons name="chevron-back" size={20} color={c.text} />
                 </TouchableOpacity>
-                <Text style={[styles.monthYearText, { color: c.text }]}>
-                  {MONTH_NAMES[viewMonth]} {viewYear}
-                </Text>
-                <TouchableOpacity onPress={handleNextMonth} style={styles.navArrowBtn}>
+
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    Haptics.selectionAsync().catch(() => {});
+                    setIsPickerMode((prev) => !prev);
+                  }}
+                  style={styles.monthYearTouchable}
+                >
+                  <Text style={[styles.monthYearText, { color: c.text }]}>
+                    {MONTH_NAMES[viewMonth]} {viewYear}
+                  </Text>
+                  <Ionicons
+                    name={isPickerMode ? 'chevron-up-circle' : 'calendar-outline'}
+                    size={16}
+                    color={c.primary}
+                    style={{ marginLeft: 6 }}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={isPickerMode ? () => setViewYear((y) => y + 1) : handleNextMonth}
+                  style={styles.navArrowBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <Ionicons name="chevron-forward" size={20} color={c.text} />
                 </TouchableOpacity>
               </View>
 
-              {/* Day Labels Row */}
-              <View style={styles.dayLabelsRow}>
-                {DAY_LABELS.map((d, idx) => (
-                  <Text key={idx} style={[styles.dayLabel, { color: c.textMuted }]}>
-                    {d}
-                  </Text>
-                ))}
-              </View>
+              {/* VIEW 1: Quick Month & Year Picker Grid */}
+              {isPickerMode ? (
+                <View style={styles.pickerContainer}>
+                  <View style={styles.pickerYearHeader}>
+                    <Text style={[styles.pickerYearLabel, { color: c.textMuted }]}>Select Month & Year</Text>
+                    <Text style={[styles.pickerYearNumber, { color: c.primary }]}>{viewYear}</Text>
+                  </View>
 
-              {/* Grid of Days */}
-              <View style={styles.grid}>
-                {calendarCells.map((day, idx) => {
-                  if (day === null) {
-                    return <View key={idx} style={styles.dayCell} />;
-                  }
+                  <View style={styles.monthGrid}>
+                    {MONTH_NAMES.map((name, idx) => {
+                      const isCurrentView = idx === viewMonth;
+                      return (
+                        <TouchableOpacity
+                          key={idx}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            Haptics.selectionAsync().catch(() => {});
+                            setViewMonth(idx);
+                            setIsPickerMode(false);
+                          }}
+                          style={[
+                            styles.monthChip,
+                            { backgroundColor: isCurrentView ? c.primary : c.inputBg, borderColor: c.border },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.monthChipText,
+                              {
+                                color: isCurrentView ? (isLight ? '#FFFFFF' : '#10120E') : c.text,
+                                fontWeight: isCurrentView ? '800' : '600',
+                              },
+                            ]}
+                          >
+                            {name.slice(0, 3)}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
 
-                  const cellDateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                  const isSelected = selectedDateStr === cellDateStr;
-                  const isToday = todayStr === cellDateStr;
+                  <TouchableOpacity
+                    onPress={() => setIsPickerMode(false)}
+                    style={[styles.backToDaysBtn, { borderColor: c.border }]}
+                  >
+                    <Ionicons name="arrow-back" size={14} color={c.primary} />
+                    <Text style={[styles.backToDaysText, { color: c.primary }]}>Back to Day Calendar</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                /* VIEW 2: Standard Day Calendar Grid */
+                <>
+                  {/* Day Labels Row: 7 columns, width 14.28% each */}
+                  <View style={styles.dayLabelsRow}>
+                    {DAY_LABELS.map((d, idx) => (
+                      <View key={idx} style={styles.colContainer}>
+                        <Text style={[styles.dayLabel, { color: c.textMuted }]}>
+                          {d}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
 
-                  return (
-                    <TouchableOpacity
-                      key={idx}
-                      activeOpacity={0.7}
-                      onPress={() => handleSelectDay(day)}
-                      style={[
-                        styles.dayCell,
-                        isSelected && { backgroundColor: c.primary },
-                        !isSelected && isToday && { borderColor: c.primary, borderWidth: 1.5 },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dayText,
-                          {
-                            color: isSelected
-                              ? (isLight ? '#FFFFFF' : '#10120E')
-                              : (isToday ? c.primary : c.text),
-                            fontWeight: isSelected || isToday ? '800' : '500',
-                          },
-                        ]}
-                      >
-                        {day}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+                  {/* Grid of Days: strictly 7 columns per row */}
+                  <View style={styles.grid}>
+                    {calendarCells.map((day, idx) => {
+                      if (day === null) {
+                        return <View key={idx} style={styles.colContainer} />;
+                      }
+
+                      const cellDateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const isSelected = selectedDateStr === cellDateStr;
+                      const isToday = todayStr === cellDateStr;
+
+                      return (
+                        <View key={idx} style={styles.colContainer}>
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => handleSelectDay(day)}
+                            style={[
+                              styles.dayCell,
+                              isSelected && { backgroundColor: c.primary },
+                              !isSelected && isToday && { borderColor: c.primary, borderWidth: 1.5 },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.dayText,
+                                {
+                                  color: isSelected
+                                    ? (isLight ? '#FFFFFF' : '#10120E')
+                                    : (isToday ? c.primary : c.text),
+                                  fontWeight: isSelected || isToday ? '800' : '500',
+                                },
+                              ]}
+                            >
+                              {day}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </>
+              )}
 
               {/* Footer Quick Action */}
               <View style={styles.footerRow}>
@@ -284,17 +375,78 @@ const styles = StyleSheet.create({
   navArrowBtn: {
     padding: 6,
   },
+  monthYearTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
   monthYearText: {
     fontSize: 15,
     fontWeight: '800',
   },
+  pickerContainer: {
+    paddingVertical: 8,
+  },
+  pickerYearHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  pickerYearLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  pickerYearNumber: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+  },
+  monthChip: {
+    width: '31%',
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  monthChipText: {
+    fontSize: 13,
+  },
+  backToDaysBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  backToDaysText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   dayLabelsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     marginBottom: 8,
+    width: '100%',
+  },
+  colContainer: {
+    width: '14.285%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40,
   },
   dayLabel: {
-    width: 38,
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '700',
@@ -302,13 +454,12 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    rowGap: 6,
+    width: '100%',
   },
   dayCell: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },

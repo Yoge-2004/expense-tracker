@@ -144,15 +144,18 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Generate formatted release documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/generate-release-notes.js
+
       - name: Publish APK to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-v${{ github.run_number }}
-          name: Expense Tracker Android v${{ github.run_number }}
-          body: |
-            Standalone Android APK built from main at commit ${{ github.sha }}.
-            EAS Build profile: preview (APK).
-            Google Sign-In: the Android signing certificate fingerprint is included in the workflow artifacts for registering the EAS release SHA-1 in Google Cloud.
+          tag_name: v1.0.1-build${{ github.run_number }}
+          name: "Expense Tracker Mobile v1.0.1 (Build #${{ github.run_number }})"
+          body_path: mobile/release-notes.md
           files: |
             mobile/expense-tracker.apk
             mobile/expense-tracker.apk.sha256

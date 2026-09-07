@@ -57,28 +57,40 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [usedIds, setUsedIds] = useState<Set<number>>(new Set());
+  const [activeExpenses, setActiveExpenses] = useState<any[]>([]);
+  const [activeRecurring, setActiveRecurring] = useState<any[]>([]);
+  const [activeBudgets, setActiveBudgets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [creating, setCreating] = useState(false);
 
   /**
-   * Fetches user custom categories and computes active usage across expenses & recurring items.
+   * Fetches user custom categories and computes active usage across expenses, recurring items & budgets.
    */
   const fetchCategoriesAndUsage = async () => {
     if (!userId || !visible) return;
     setLoading(true);
     try {
-      const [allCats, expenses, recurring] = await Promise.all([
+      const [allCats, expenses, recurring, budgets] = await Promise.all([
         apiRequest(`/categories/user/${userId}`).catch(() => []),
         apiRequest(`/expenses/user/${userId}`).catch(() => []),
         apiRequest(`/expenses/recurring/user/${userId}`).catch(() => []),
+        apiRequest(`/expenses/budget/status/user/${userId}`).catch(() => []),
       ]);
 
       setCategories(Array.isArray(allCats) ? allCats : []);
+      const safeExp = Array.isArray(expenses) ? expenses : [];
+      const safeRec = Array.isArray(recurring) ? recurring : [];
+      const safeBud = Array.isArray(budgets) ? budgets : [];
+
+      setActiveExpenses(safeExp);
+      setActiveRecurring(safeRec);
+      setActiveBudgets(safeBud);
 
       const used = new Set<number>([
-        ...(Array.isArray(expenses) ? expenses : []).map((e: any) => Number(e.categoryId)),
-        ...(Array.isArray(recurring) ? recurring : []).map((r: any) => Number(r.categoryId)),
+        ...safeExp.map((e: any) => Number(e.categoryId)),
+        ...safeRec.map((r: any) => Number(r.categoryId)),
+        ...safeBud.map((b: any) => Number(b.categoryId)),
       ]);
       setUsedIds(used);
     } catch (e: any) {
@@ -125,13 +137,26 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
   };
 
   /**
-   * Confirms and deletes an unused category.
+   * Confirms and deletes an unused category, or explains active dependencies if protected.
    */
   const handleDeleteCategory = async (cat: Category) => {
     if (usedIds.has(cat.id)) {
+      const expCount = activeExpenses.filter((e: any) => Number(e.categoryId) === cat.id).length;
+      const recCount = activeRecurring.filter((r: any) => Number(r.categoryId) === cat.id).length;
+      const budCount = activeBudgets.filter((b: any) => Number(b.categoryId) === cat.id).length;
+
+      const usageParts: string[] = [];
+      if (expCount > 0) usageParts.push(`${expCount} expense${expCount > 1 ? 's' : ''}`);
+      if (recCount > 0) usageParts.push(`${recCount} recurring subscription${recCount > 1 ? 's' : ''}`);
+      if (budCount > 0) usageParts.push(`${budCount} active budget${budCount > 1 ? 's' : ''}`);
+
+      const usageDesc = usageParts.length > 0 ? usageParts.join(', ') : 'active records';
+
       showAlert(
-        'Category In Use',
-        `"${cat.name}" is used by existing transactions or subscriptions and cannot be deleted.`
+        'Category Protected 🔒',
+        `"${cat.name}" cannot be deleted because it is currently used by ${usageDesc}.\n\nTo delete this category, reassign or delete those records first.`,
+        undefined,
+        'info'
       );
       return;
     }
@@ -243,23 +268,31 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                         <Text style={styles.catEmoji}>{getCategoryEmoji(cat.name)}</Text>
                         <Text style={[styles.catName, { color: c.text }]}>{cat.name}</Text>
                         {inUse && (
-                          <View style={[styles.inUseBadge, { backgroundColor: c.border }]}>
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => handleDeleteCategory(cat)}
+                            style={[styles.inUseBadge, { backgroundColor: c.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 }]}
+                          >
+                            <Ionicons name="lock-closed" size={10} color={c.textMuted} style={{ marginRight: 4 }} />
                             <Text style={[styles.inUseText, { color: c.textMuted }]}>In use</Text>
-                          </View>
+                          </TouchableOpacity>
                         )}
                       </View>
 
                       <TouchableOpacity
                         onPress={() => handleDeleteCategory(cat)}
-                        disabled={inUse}
                         style={[
                           styles.deleteBtn,
                           {
-                            opacity: inUse ? 0.3 : 1,
+                            opacity: inUse ? 0.5 : 1,
                           },
                         ]}
                       >
-                        <Ionicons name="trash-outline" size={18} color={c.accent} />
+                        <Ionicons
+                          name={inUse ? "lock-closed-outline" : "trash-outline"}
+                          size={18}
+                          color={inUse ? c.textMuted : c.accent}
+                        />
                       </TouchableOpacity>
                     </View>
                   );

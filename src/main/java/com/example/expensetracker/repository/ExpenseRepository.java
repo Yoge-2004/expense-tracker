@@ -35,7 +35,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
      * @return a list of {@link Expense} records owned by the user;
      *         empty list if the user has no expenses
      */
-    List<Expense> findByUser(User user);
+    @Query("SELECT e FROM Expense e WHERE e.user = :user ORDER BY e.expenseDate DESC, e.id DESC")
+    List<Expense> findByUser(@Param("user") User user);
 
     /**
      * Retrieves all expenses for a user that fall within a given date range (inclusive).

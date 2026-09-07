@@ -363,13 +363,72 @@ export default function ProfileScreen() {
       {/* Security PIN Setup Modal */}
       <Modal visible={showPinModal} transparent={true} animationType="fade" onRequestClose={() => setShowPinModal(false)}>
         <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxWidth: 400 }}>
-            <View style={[styles.deleteModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}><Text style={{ fontSize: 18, fontWeight: '800', color: c.text }}>Account Security PIN 🔒</Text><TouchableOpacity onPress={() => setShowPinModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}><Ionicons name="close" size={22} color={c.textMuted} /></TouchableOpacity></View>
-              <Text style={{ fontSize: 13, color: c.textMuted, lineHeight: 18, marginBottom: 16 }}>Configure a 6-digit numeric PIN for instant zero-email account recovery. You can reset your password anytime even if email OTP is unavailable.</Text>
-              <View style={{ marginBottom: 12 }}><Text style={{ fontSize: 12, fontWeight: '700', color: c.textMuted, marginBottom: 6 }}>NEW 6-DIGIT PIN</Text><TextInput style={[styles.deleteInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, letterSpacing: 4, textAlign: 'center', fontSize: 18, fontWeight: '700' }]} placeholder="••••••" placeholderTextColor={c.textMuted} keyboardType="number-pad" maxLength={6} secureTextEntry value={newPin} onChangeText={setNewPin} /></View>
-              <View style={{ marginBottom: 16 }}><Text style={{ fontSize: 12, fontWeight: '700', color: c.textMuted, marginBottom: 6 }}>CONFIRM 6-DIGIT PIN</Text><TextInput style={[styles.deleteInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, letterSpacing: 4, textAlign: 'center', fontSize: 18, fontWeight: '700' }]} placeholder="••••••" placeholderTextColor={c.textMuted} keyboardType="number-pad" maxLength={6} secureTextEntry value={confirmPin} onChangeText={setConfirmPin} /></View>
-              <TouchableOpacity activeOpacity={0.85} onPress={handleSavePin} disabled={isSavingPin} style={[styles.confirmDeleteBtn, { backgroundColor: c.primary, opacity: isSavingPin ? 0.7 : 1 }]}>{isSavingPin ? <ActivityIndicator size="small" color="#10120E" /> : <Text style={[styles.confirmDeleteBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>Save Security PIN</Text>}</TouchableOpacity>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxWidth: 420 }}>
+            <View style={[styles.pinModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              {/* Header with Title and Corner Close Icon */}
+              <View style={styles.pinHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="shield-checkmark" size={20} color={c.primary} />
+                  <Text style={[styles.pinModalTitle, { color: c.text }]}>Security PIN Setup</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowPinModal(false)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }]}
+                >
+                  <Ionicons name="close" size={18} color={c.text} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.pinModalDesc, { color: c.textMuted }]}>
+                Configure a 6-digit numeric PIN for instant zero-email account recovery. You can reset your password anytime even if email OTP is unavailable.
+              </Text>
+
+              {/* New PIN Input Field */}
+              <View style={styles.pinFieldWrap}>
+                <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>NEW 6-DIGIT PIN</Text>
+                <TextInput
+                  style={[styles.pinTextInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
+                  placeholder="••••••"
+                  placeholderTextColor={c.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  secureTextEntry
+                  value={newPin}
+                  onChangeText={setNewPin}
+                />
+              </View>
+
+              {/* Confirm PIN Input Field */}
+              <View style={styles.pinFieldWrap}>
+                <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>CONFIRM 6-DIGIT PIN</Text>
+                <TextInput
+                  style={[styles.pinTextInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
+                  placeholder="••••••"
+                  placeholderTextColor={c.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  secureTextEntry
+                  value={confirmPin}
+                  onChangeText={setConfirmPin}
+                />
+              </View>
+
+              {/* Save Button */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSavePin}
+                disabled={isSavingPin}
+                style={[styles.savePinBtn, { backgroundColor: c.primary, opacity: isSavingPin ? 0.7 : 1 }]}
+              >
+                {isSavingPin ? (
+                  <ActivityIndicator size="small" color="#10120E" />
+                ) : (
+                  <Text style={[styles.savePinBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                    Save Security PIN
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -450,4 +509,72 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontSize: 14, fontWeight: '700' },
   confirmDeleteBtn: { flex: 1.2, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   confirmDeleteBtnText: { color: '#FFF', fontSize: 14, fontWeight: '800' },
+  pinModalCard: {
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: 'stretch',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  pinHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 10,
+  },
+  pinModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  pinCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pinModalDesc: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginBottom: 18,
+  },
+  pinFieldWrap: {
+    width: '100%',
+    marginBottom: 14,
+  },
+  pinFieldLabel: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  pinTextInput: {
+    width: '100%',
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 6,
+  },
+  savePinBtn: {
+    width: '100%',
+    height: 46,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  savePinBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
 });

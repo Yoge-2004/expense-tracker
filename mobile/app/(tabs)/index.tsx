@@ -650,10 +650,30 @@ export default function DashboardScreen() {
       : []),
   ].sort((a, b) => {
     try {
-      if (sortOption === 'date-desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (sortOption === 'date-asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
-      if (sortOption === 'amount-desc') return b.amount - a.amount;
-      if (sortOption === 'amount-asc') return a.amount - b.amount;
+      if (sortOption === 'date-desc') {
+        const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dDiff !== 0) return dDiff;
+        return (b.id || 0) - (a.id || 0);
+      }
+      if (sortOption === 'date-asc') {
+        const dDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (dDiff !== 0) return dDiff;
+        return (a.id || 0) - (b.id || 0);
+      }
+      if (sortOption === 'amount-desc') {
+        const aDiff = b.amount - a.amount;
+        if (aDiff !== 0) return aDiff;
+        const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dDiff !== 0) return dDiff;
+        return (b.id || 0) - (a.id || 0);
+      }
+      if (sortOption === 'amount-asc') {
+        const aDiff = a.amount - b.amount;
+        if (aDiff !== 0) return aDiff;
+        const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dDiff !== 0) return dDiff;
+        return (b.id || 0) - (a.id || 0);
+      }
     } catch {
       return 0;
     }
