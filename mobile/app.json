@@ -3,7 +3,7 @@
     "name": "Expense Tracker",
     "slug": "expense-tracker-mobile",
     "version": "1.0.2",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
     "ios": {
