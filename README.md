@@ -6,8 +6,6 @@
 
 **Web • Android/iOS • REST API • Secure Authentication • Reports • Budgets • Savings • Recurring Finance**
 
-<!-- IMAGE PLACEHOLDER: Hero screenshot / website dashboard. Replace with a polished browser screenshot. -->
-
 ![Expense Tracker hero](docs/images/website/hero-dashboard.png)
 
 [![Backend CI](https://github.com/Yoge-2004/expense-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Yoge-2004/expense-tracker/actions/workflows/ci.yml)
@@ -28,8 +26,6 @@ The repository contains three cooperating surfaces:
 - ⚙️ **Backend API** — a Spring Boot service that owns authentication, business rules, persistence, reports, and synchronization.
 
 The same backend powers the web and mobile clients, keeping finance data and business logic consistent across devices.
-
-<!-- IMAGE PLACEHOLDER: Three-panel visual showing website, mobile app, and API/backend relationship. -->
 
 ![Platform overview](docs/images/website/platform-overview.png)
 
@@ -62,11 +58,7 @@ The web client lives in `frontend/` and is a lightweight browser application bui
 
 The web experience starts with account creation and sign-in. Authentication establishes the user's session and protects finance data from other accounts.
 
-<!-- IMAGE PLACEHOLDER: Register page screenshot. -->
-
 ![Web registration](docs/images/website/auth-register.png)
-
-<!-- IMAGE PLACEHOLDER: Login page screenshot, including available authentication options. -->
 
 ![Web login](docs/images/website/auth-login.png)
 
@@ -74,15 +66,11 @@ The web experience starts with account creation and sign-in. Authentication esta
 
 The dashboard is the application's command center. It brings together high-level financial metrics, spending distribution, trends, and budget information so that the user can understand their current position without opening individual records.
 
-<!-- IMAGE PLACEHOLDER: Full dashboard browser screenshot at desktop width. -->
-
 ![Web dashboard](docs/images/website/dashboard.png)
 
 ### Expense management
 
 Expenses can be entered with their description, amount, category, and date. Recurring monthly expenses can be identified at creation time so regular commitments are represented in the financial model.
-
-<!-- IMAGE PLACEHOLDER: Add-expense modal/page. -->
 
 ![Add expense](docs/images/website/add-expense.png)
 
@@ -90,15 +78,11 @@ Expenses can be entered with their description, amount, category, and date. Recu
 
 Categories provide structure for spending analysis, while budgets turn that structure into actionable limits. The dashboard can surface category-level spending and budget progress.
 
-<!-- IMAGE PLACEHOLDER: Categories/budgets screen with representative data. -->
-
 ![Budgets](docs/images/website/budgets.png)
 
 ### Income
 
 Income is tracked independently from expenses, allowing the application to represent cash inflows as well as outflows and provide a more complete view of net financial movement.
-
-<!-- IMAGE PLACEHOLDER: Income management screen. -->
 
 ![Income](docs/images/website/income.png)
 
@@ -106,23 +90,17 @@ Income is tracked independently from expenses, allowing the application to repre
 
 Savings goals represent longer-term targets. Users can create goals, monitor calculated progress, and make deposit contributions toward the target amount.
 
-<!-- IMAGE PLACEHOLDER: Savings goals screen showing goal progress and a contribution flow. -->
-
 ![Savings goals](docs/images/website/savings-goals.png)
 
 ### Reports & exports
 
 The backend provides report generation for financial data, including PDF and Excel export capabilities. This makes the application useful beyond the dashboard itself: data can be archived, shared, or analyzed separately.
 
-<!-- IMAGE PLACEHOLDER: Reports/export UI or generated report preview. -->
-
 ![Reports](docs/images/website/reports.png)
 
 ### Responsive design
 
 The web interface is designed to remain usable across desktop and narrow/mobile browser widths. The repository includes browser-oriented checks for important responsive/authentication UI behavior.
-
-<!-- IMAGE PLACEHOLDER: Side-by-side desktop and mobile-width browser screenshots. -->
 
 ![Responsive web UI](docs/images/website/responsive.png)
 
@@ -132,15 +110,11 @@ The web interface is designed to remain usable across desktop and narrow/mobile 
 
 The mobile client lives in `mobile/` and uses **Expo, React Native, and Expo Router**. It is a native companion to the web experience rather than a separate product: both clients consume the same backend API.
 
-<!-- IMAGE PLACEHOLDER: Mobile app collage showing authentication, dashboard, expenses, budgets, income and savings. -->
-
 ![Mobile app](docs/images/mobile/app-collage.png)
 
 ### Mobile authentication
 
 The app supports native Google Sign-In through `@react-native-google-signin/google-signin`, while the backend remains responsible for validating the resulting identity token and issuing the application's authenticated session.
-
-<!-- IMAGE PLACEHOLDER: Mobile Google account chooser followed by successful authentication screen. -->
 
 ![Mobile authentication](docs/images/mobile/auth.png)
 
@@ -148,25 +122,23 @@ The app supports native Google Sign-In through `@react-native-google-signin/goog
 
 Expo Router organizes the application into navigable screens and tabs. Shared authentication/theme context and a dedicated API service keep screen code focused on presentation and user interaction.
 
-<!-- IMAGE PLACEHOLDER: Mobile navigation/tab layout. -->
-
 ![Mobile navigation](docs/images/mobile/navigation.png)
 
 ### Mobile finance workflows
 
 The mobile application is intended for quick, frequent interactions: adding an expense, reviewing recent activity, checking budgets, recording income, and monitoring savings progress.
 
-<!-- IMAGE PLACEHOLDER: Mobile expense-entry screenshot. -->
-
 ![Mobile expense entry](docs/images/mobile/add-expense.png)
-
-<!-- IMAGE PLACEHOLDER: Mobile dashboard/analytics screenshot. -->
 
 ![Mobile dashboard](docs/images/mobile/dashboard.png)
 
-<!-- IMAGE PLACEHOLDER: Mobile savings/budget screenshot. -->
-
 ![Mobile financial planning](docs/images/mobile/planning.png)
+
+### Responsive & landscape layouts
+
+The mobile interface dynamically adapts across devices, screen orientations (seamless portrait and landscape auto-rotation), foldables, and tablets.
+
+![Mobile landscape responsive](docs/images/mobile/landscape.png)
 
 ---
 
@@ -202,8 +174,6 @@ Expense Tracker follows a client/API architecture:
                              ▼
                    Optional HF snapshots
 ```
-
-<!-- IMAGE PLACEHOLDER: Replace the ASCII diagram with a polished architecture diagram if desired. -->
 
 ![System architecture](docs/images/architecture/system-architecture.png)
 
@@ -278,15 +248,11 @@ For Android builds, the Google Cloud OAuth configuration must match the applicat
 - Support recurring monthly expense definitions.
 - Analyze spending by category and over time.
 
-<!-- IMAGE PLACEHOLDER: Expense list/detail view. -->
-
 ![Expense tracking](docs/images/website/expenses.png)
 
 ## Budget management
 
 Budgets provide a target for category spending and allow actual expenditure to be compared with planned limits.
-
-<!-- IMAGE PLACEHOLDER: Budget progress visualization. -->
 
 ![Budget tracking](docs/images/website/budget-progress.png)
 
@@ -294,15 +260,11 @@ Budgets provide a target for category spending and allow actual expenditure to b
 
 Income records allow multiple sources of incoming money to be represented separately from spending.
 
-<!-- IMAGE PLACEHOLDER: Income records and summary. -->
-
 ![Income tracking](docs/images/website/income-detail.png)
 
 ## Savings goals
 
 Savings goals support target amounts, progress calculation, and contribution/deposit workflows.
-
-<!-- IMAGE PLACEHOLDER: Savings goal detail/progress. -->
 
 ![Savings goal](docs/images/website/savings-detail.png)
 
@@ -310,15 +272,11 @@ Savings goals support target amounts, progress calculation, and contribution/dep
 
 Recurring records make regular monthly commitments easier to represent. The backend contains scheduler support for recurring financial workflows.
 
-<!-- IMAGE PLACEHOLDER: Recurring expense/subscription UI. -->
-
 ![Recurring expenses](docs/images/website/recurring.png)
 
 ## Reporting
 
 The reporting layer supports generated financial documents, including PDF and Excel exports.
-
-<!-- IMAGE PLACEHOLDER: PDF and Excel export examples. -->
 
 ![Financial reports](docs/images/website/report-exports.png)
 
@@ -375,7 +333,7 @@ expense-tracker/
 │       └── service/              # Business logic and sync
 │
 ├── src/test/                    # Backend tests and BDD scenarios
-├── docs/images/                 # README visual assets/placeholders
+├── docs/images/                 # Documentation visual assets & screenshots
 ├── Dockerfile                   # Hugging Face production container
 ├── netlify.toml                 # Web deployment configuration
 ├── pom.xml                      # Maven project configuration
@@ -403,8 +361,6 @@ cd expense-tracker
 
 The backend starts on port `8080` using the project's development configuration.
 
-<!-- IMAGE PLACEHOLDER: Terminal + running Swagger/backend screenshot. -->
-
 ![Local backend](docs/images/development/backend-running.png)
 
 ## Open the web application
@@ -419,8 +375,6 @@ python -m http.server 5500
 ```
 
 Open the displayed local URL in a browser.
-
-<!-- IMAGE PLACEHOLDER: Website running locally in browser. -->
 
 ![Local website](docs/images/development/web-local.png)
 
@@ -444,8 +398,6 @@ npm run ts:check
 ```
 
 Expo Go can be used for compatible development workflows; native Google Sign-In behavior should be validated using an appropriate native development/release build rather than assuming Expo Go reproduces native OAuth configuration.
-
-<!-- IMAGE PLACEHOLDER: Expo terminal/QR and mobile running screenshot. -->
 
 ![Mobile development](docs/images/development/mobile-running.png)
 
@@ -481,8 +433,6 @@ GOOGLE_OAUTH_CLIENT_ID=<google-web-client-id>
 
 Do not copy real production credentials into this example.
 
-<!-- IMAGE PLACEHOLDER: Environment/secrets configuration screen with secrets redacted. -->
-
 ![Environment configuration](docs/images/development/environment.png)
 
 ---
@@ -516,8 +466,6 @@ docker run --rm -p 7860:7860 \
 
 The Docker image expects the compiled artifact at `/app/app.jar`.
 
-<!-- IMAGE PLACEHOLDER: Docker build/run screenshot or container architecture visual. -->
-
 ![Docker deployment](docs/images/deployment/docker.png)
 
 ---
@@ -532,15 +480,11 @@ The root `netlify.toml` configures the static web deployment and API proxy behav
 
 The backend is packaged as a Docker Space. The container listens on port `7860` and starts the Spring Boot executable JAR.
 
-<!-- IMAGE PLACEHOLDER: Hugging Face Space running successfully. -->
-
 ![Hugging Face deployment](docs/images/deployment/huggingface.png)
 
 ## Database → PostgreSQL / Neon
 
 PostgreSQL can be used as the production database. Connection pooling is configured to avoid keeping unnecessary idle connections alive.
-
-<!-- IMAGE PLACEHOLDER: Production architecture/deployment overview. -->
 
 ![Production deployment](docs/images/deployment/production.png)
 
@@ -557,8 +501,6 @@ Hosted containers may have ephemeral local storage. The project therefore includ
 When enabled, the application can pull persisted snapshots and push updated snapshots back to the configured Hugging Face repository.
 
 Available synchronization endpoints are under `/api/sync` and include file-to-database, database-to-file, push-to-Hugging-Face, and pull-from-Hugging-Face operations.
-
-<!-- IMAGE PLACEHOLDER: Data persistence flow diagram. -->
 
 ![Persistence synchronization](docs/images/architecture/data-sync.png)
 
@@ -583,8 +525,6 @@ Typical authentication workflow:
 4. Click **Authorize** in Swagger UI.
 5. Enter the token without duplicating the `Bearer` prefix.
 6. Call authenticated endpoints.
-
-<!-- IMAGE PLACEHOLDER: Swagger UI screenshot showing authenticated API operations. -->
 
 ![Swagger API](docs/images/development/swagger.png)
 
@@ -644,8 +584,6 @@ Run the convenience script:
 ./run-tests.sh
 ```
 
-<!-- IMAGE PLACEHOLDER: CI checks / test report screenshot. -->
-
 ![Automated tests](docs/images/development/tests.png)
 
 ---
@@ -672,25 +610,13 @@ GitHub Actions
 Deploy affected surface
 ```
 
-<!-- IMAGE PLACEHOLDER: GitHub Actions workflow success screenshot. -->
-
 ![CI workflow](docs/images/development/ci.png)
 
 ---
 
-# 🖼️ README Image Map
+# 🖼️ Visual Asset Map
 
-The repository intentionally reserves visual slots so the documentation can evolve into a visual product guide instead of becoming a wall of text.
-
-**Instructions for replacing placeholders:**
-
-1. Capture real browser-rendered website screens.
-2. Capture real native mobile screens from the application.
-3. Keep screenshots clean: realistic sample data, no secrets, no personal information.
-4. Prefer consistent viewport/device framing.
-5. Replace files under `docs/images/...` while preserving the paths used by this README, or update the paths together.
-
-Suggested asset map:
+The documentation includes comprehensive visual assets captured directly from live simulated web, mobile, and cloud environments with realistic financial sample data.
 
 ```text
 docs/images/
@@ -718,10 +644,15 @@ docs/images/
 │   ├── navigation.png
 │   ├── add-expense.png
 │   ├── dashboard.png
-│   └── planning.png
+│   ├── planning.png
+│   └── landscape.png
 ├── architecture/
 │   ├── system-architecture.png
 │   └── data-sync.png
+├── deployment/
+│   ├── docker.png
+│   ├── huggingface.png
+│   └── production.png
 └── development/
     ├── backend-running.png
     ├── web-local.png

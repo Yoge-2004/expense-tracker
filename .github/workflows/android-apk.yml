@@ -105,9 +105,13 @@ jobs:
       - name: Build IPA with EAS
         shell: bash
         run: |
-          set -o pipefail
-          echo "Starting EAS iOS build..."
-          eas build --platform ios --profile preview --non-interactive --wait || echo "iOS build skipped: requires Apple Developer credentials on EAS account."
+          echo "Starting EAS iOS build attempt..."
+          if eas build --platform ios --profile preview --non-interactive --wait; then
+            echo "EAS iOS IPA build completed successfully."
+          else
+            BUILD_EXIT=$?
+            echo "::warning title=iOS EAS Build Notice::EAS iOS build exited with code ${BUILD_EXIT} (standalone IPA requires Apple Developer credentials linked to EAS account). Android APK packaging continues."
+          fi
 
       - name: Download APK
         shell: bash

@@ -721,7 +721,7 @@ export default function AddExpenseScreen() {
               }}
             >
               <Ionicons name="add-circle" size={16} color={c.primary} />
-              <Text style={{ fontSize: 12.5, fontWeight: "700", color: c.primary }}>+ Add New</Text>
+              <Text style={{ fontSize: 12.5, fontWeight: "700", color: c.primary }}>Add New</Text>
             </TouchableOpacity>
           )}
         </View>

@@ -13,14 +13,11 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Animated,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../constants/theme';
 import { useAuth } from './AuthContext';
-
-const { width } = Dimensions.get('window');
 
 export type AlertType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'destructive';
 
@@ -254,7 +251,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   card: {
-    width: Math.min(width - 48, 360),
+    maxWidth: 360,
+    width: '100%',
     borderRadius: 24,
     borderWidth: 1,
     padding: 24,

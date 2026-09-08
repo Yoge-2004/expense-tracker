@@ -469,6 +469,7 @@ const styles = StyleSheet.create({
   },
   card: {
     maxWidth: 360,
+    maxHeight: '94%',
     width: '92%',
     borderRadius: 24,
     borderWidth: 1,

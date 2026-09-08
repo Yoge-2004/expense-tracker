@@ -5,10 +5,8 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Animated, Dimensions } from 'react-native';
+import { StyleSheet, View, Animated, useWindowDimensions } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-
-const { width, height } = Dimensions.get('window');
 
 interface AmbientAuraProps {
   /** Optional touch pass-through configuration (defaults to 'none'). */
@@ -20,6 +18,7 @@ interface AmbientAuraProps {
  */
 export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none' }) => {
   const { theme } = useAuth();
+  const { width, height } = useWindowDimensions();
   const isLight = theme === 'light';
 
   const orb1Anim = useRef(new Animated.Value(0)).current;
@@ -96,12 +95,15 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={pointerEvents}>
-      {/* Orb 1 - Gold/Primary Glow */}
+      {/* Orb 1 - Primary/Gold Glow */}
       <Animated.View
         style={[
           styles.orb,
-          styles.orb1,
           {
+            width: Math.min(width, height) * 0.85,
+            height: Math.min(width, height) * 0.85,
+            top: -Math.min(width, height) * 0.25,
+            right: -Math.min(width, height) * 0.2,
             backgroundColor: isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(199, 154, 62, 0.16)',
             transform: [
               { translateX: orb1TranslateX },
@@ -116,8 +118,11 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
       <Animated.View
         style={[
           styles.orb,
-          styles.orb2,
           {
+            width: Math.min(width, height) * 0.75,
+            height: Math.min(width, height) * 0.75,
+            top: height * 0.25,
+            left: -Math.min(width, height) * 0.25,
             backgroundColor: isLight ? 'rgba(231, 76, 60, 0.12)' : 'rgba(162, 62, 50, 0.14)',
             transform: [
               { translateX: orb2TranslateX },
@@ -132,8 +137,11 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
       <Animated.View
         style={[
           styles.orb,
-          styles.orb3,
           {
+            width: Math.min(width, height) * 0.65,
+            height: Math.min(width, height) * 0.65,
+            bottom: height * 0.1,
+            right: -Math.min(width, height) * 0.15,
             backgroundColor: isLight ? 'rgba(14, 165, 233, 0.12)' : 'rgba(76, 122, 120, 0.14)',
             transform: [
               { translateX: orb3TranslateX },
@@ -150,23 +158,5 @@ const styles = StyleSheet.create({
   orb: {
     position: 'absolute',
     borderRadius: 999,
-  },
-  orb1: {
-    width: width * 0.75,
-    height: width * 0.75,
-    top: -width * 0.25,
-    right: -width * 0.2,
-  },
-  orb2: {
-    width: width * 0.65,
-    height: width * 0.65,
-    top: height * 0.25,
-    left: -width * 0.25,
-  },
-  orb3: {
-    width: width * 0.55,
-    height: width * 0.55,
-    bottom: height * 0.1,
-    right: -width * 0.15,
   },
 });
