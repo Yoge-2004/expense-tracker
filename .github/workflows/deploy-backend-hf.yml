@@ -1,0 +1,82 @@
+name: Deploy Backend JAR to Hugging Face
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - 'mvnw'
+      - 'mvnw.cmd'
+      - 'Dockerfile'
+      - '.github/workflows/deploy-backend-hf.yml'
+
+permissions:
+  contents: read
+
+env:
+  HF_SPACE_REPO: Yoge-2004/expense-tracker-backend
+
+jobs:
+  build-and-deploy:
+    name: Build Spring Boot JAR and deploy to HF Space
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java 26
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '26'
+          cache: maven
+
+      - name: Build production JAR
+        run: mvn -B -DskipTests package
+
+      - name: Prepare Hugging Face Space payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR="$(find target -maxdepth 1 -type f -name '*.jar' ! -name '*.original' | head -n 1)"
+          if [ -z "$JAR" ]; then
+            echo 'No executable Spring Boot JAR was produced.'
+            exit 1
+          fi
+          mkdir -p hf-space-payload
+          cp "$JAR" hf-space-payload/app.jar
+          cp Dockerfile hf-space-payload/Dockerfile
+          ls -lh hf-space-payload
+
+      - name: Validate Hugging Face token
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "${HF_TOKEN:-}" ]; then
+            echo 'HF_TOKEN GitHub Actions secret is missing.'
+            echo 'Add a Hugging Face write token as repository secret HF_TOKEN before enabling automatic deployment.'
+            exit 1
+          fi
+
+      - name: Install Hugging Face CLI
+        run: python -m pip install --upgrade huggingface_hub
+
+      - name: Upload JAR and Dockerfile to Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          hf upload "$HF_SPACE_REPO" hf-space-payload . \
+            --repo-type=space \
+            --token "$HF_TOKEN" \
+            --commit-message="Deploy backend ${GITHUB_SHA::7}"
+
+      - name: Publish deployment summary
+        run: |
+          echo "### Hugging Face backend deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Space: \\`$HF_SPACE_REPO\\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \\`${GITHUB_SHA::7}\\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifact: \\`app.jar\\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dockerfile: synchronized" >> "$GITHUB_STEP_SUMMARY"
