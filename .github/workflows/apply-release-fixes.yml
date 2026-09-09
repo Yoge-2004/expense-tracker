@@ -29,8 +29,8 @@ jobs:
             echo 'No source changes required.'
             exit 0
           fi
-          git add 'mobile/app/(tabs)/index.tsx' 'src/main/java/com/example/expensetracker/controller/RangeReportController.java'
-          git commit -m 'fix: synchronize dashboard filters and repair report compilation'
+          git add 'mobile/app/(tabs)/index.tsx' 'src/main/java/com/example/expensetracker/controller/RangeReportController.java' 'frontend/js/api.js' 'frontend/css/tables.css'
+          git commit -m 'fix: stabilize dashboard loading and responsive income ledger'
           git push origin HEAD:main
 
       - name: Dispatch verification and deployment workflows
