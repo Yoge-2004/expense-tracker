@@ -194,16 +194,7 @@
     }
 }
 
-/* Consolidated from 3 unconditional declarations each of .metric-card,
-   .metric-card:hover, and .metric-card-glow (the last is unused dead
-   code -- not referenced in any shipped HTML or added by JS -- but
-   consolidated anyway for consistency in case it's revived later).
-   .metric-card's own transition had narrowed from "all 0.3s" down to
-   just transform+box-shadow across the 3 declarations, silently
-   dropping border-color -- the same bug shape as .avatar and
-   .link-action earlier in this cleanup. :hover DOES change border-color
-   (via a !important declaration that was winning), so it was snapping
-   instantly instead of fading. Restored border-color to the transition. */
+/* Include border-color in the metric transition so hover changes animate smoothly. */
 .metric-card {
     position: relative;
     overflow: hidden;
@@ -260,11 +251,7 @@
     letter-spacing: 0.06em;
 }
 
-/* Consolidated: block 2's transition (gap+opacity only) had silently
-   replaced block 1's broader "transition: 0.2s" (which covered
-   everything, including color) rather than merging with it -- so
-   .link-action:hover's color change was snapping instantly instead of
-   fading. Restored color to the transition. */
+/* Include color in the link transition so hover changes animate smoothly. */
 .link-action {
     color: var(--primary);
     font-size: 12px;
@@ -282,15 +269,7 @@
     text-decoration: underline;
 }
 
-/* [data-theme="light"] override: the dark-theme gold (#D4AF37, via
-   var(--primary)) and hover gold (#A97F2E) both fail WCAG AA contrast
-   against the light theme's near-white card background -- measured
-   2.10:1 for the resting state (and worse once the opacity:0.85 on the
-   base rule further dims it toward the background) and 3.64:1 on
-   hover, both well under the 4.5:1 minimum for normal text. Darker
-   shades of the same gold hue restore accessible contrast (5.18:1 and
-   6.08:1 respectively, accounting for that same opacity blending)
-   without changing the brand color in dark theme. */
+/* Use darker gold in light theme to keep badge text readable. */
 [data-theme="light"] .link-action {
     color: #6B5010;
 }

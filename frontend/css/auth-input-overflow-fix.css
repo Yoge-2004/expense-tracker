@@ -1,7 +1,4 @@
-/* Small-screen auth input/icon collision guard.
-   Keep the icon comfortably inside the text start position on narrow phones.
-   This is intentionally scoped to auth input wrappers so dashboard controls
-   are unaffected. */
+/* Narrow-screen guard for auth input and icon spacing. */
 @media (max-width: 360px) {
     .input-wrapper > .input-icon {
         left: 10px !important;

@@ -11,9 +11,7 @@
         background: var(--bg-dark);
     }
 
-    /* (.split-screen, .hero-section, .hero-content, .auth-section, .grid-stats
-       removed — confirmed unused in every HTML file, leftover from an old
-       page structure that predates the current dashboard layout.) */
+    /* Legacy auth-page selectors were removed because the current HTML no longer uses them. */
 
     .dashboard-container {
         height: auto;
@@ -268,22 +266,13 @@
 /* ── Extra small screens (phones < 480px) ── */
 @media (max-width: 480px) {
     .dashboard-container {
-        /* Was 16px 12px 32px — most phones fall under this 480px
-           breakpoint (not just unusually small ones), so this was the
-           padding nearly everyone actually saw, and 12px read as the
-           Record Expense button, theme toggle, and search bar sitting
-           flush against the screen edges with no margin. Matching the
-           20px horizontal padding used at the wider 900px tier instead
-           of shrinking it further. */
+        /* Keep 20px horizontal padding on narrow screens for consistent edge spacing. */
         padding: 20px 20px 40px !important;
         gap: 14px !important;
     }
 
     .top-bar-actions {
-        /* Was 8px !important — this 480px block sits later in the file
-           than the 16px fix at the 900px tier, and since most phones
-           are under 480px wide, this narrower value (not the 16px one)
-           is what was actually reaching most people. */
+        /* Keep narrow-screen spacing aligned with the wider responsive tier. */
         gap: 14px !important;
     }
 

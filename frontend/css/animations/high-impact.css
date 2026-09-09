@@ -137,9 +137,7 @@
     animation: shimmerSweep 0.9s ease-in-out;
 }
 
-/* (Elastic modal entrance removed: .modal.active .modal-content never
-   matched real markup. .modal-overlay.active .modal already animates
-   in via modalSpringIn — see keyframes near its declaration below.) */
+/* Modal entrance animation is defined on the active overlay. */
 
 /* (Table Row Highlights & Slide — removed: .expense-row/tbody tr never matched
    real markup; .expense-item already has working hover treatment elsewhere.) */

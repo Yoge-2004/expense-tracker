@@ -4,11 +4,7 @@
    ========================================================================== */
 
 /* ================== 7. BUDGET PROGRESS BARS ================== */
-/* Consolidated from 3 declarations. Same animation-lock bug found
-   repeatedly in the Phase 3 cleanup: expenseSlideIn's "both" fill-mode
-   permanently overrides transform via the CSS animation cascade layer
-   once the entrance animation finishes, blocking :hover's
-   translateY(-2px) from ever applying. Dropped "both". */
+/* Avoid fill-mode: both so the entrance animation does not block hover transforms. */
 .budget-item {
     margin-bottom: 16px;
     border-radius: 14px;

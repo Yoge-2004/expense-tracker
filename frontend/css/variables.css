@@ -24,10 +24,7 @@
     --border-accent: rgba(199, 154, 62, 0.35);
     --input-bg: rgba(23, 26, 20, 0.7);
 
-    /* RGB-channel-only tokens — lets any rgba(var(--x-rgb), alpha) usage
-       pick its own alpha without hardcoding the triple. Single source of
-       truth for the brand colors: change these once, every glow/shadow/
-       tint across the file follows, in both themes. */
+    /* RGB tokens allow per-use alpha values while keeping brand colors centralized. */
     --primary-rgb: 199, 154, 62;
     --accent-rgb: 162, 62, 50;
     --highlight-rgb: 76, 122, 120;
@@ -64,9 +61,7 @@
     --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
     --shadow-glow: 0 10px 30px -5px rgba(199, 154, 62, 0.18);
 
-    /* Fixed dark text for use on top of gold surfaces (buttons, selected
-       pills). Deliberately does NOT change with theme — gold stays
-       medium-bright in both modes, so dark text keeps working in both. */
+    /* Keep dark text fixed on gold surfaces for consistent contrast across themes. */
     --on-primary: #10120E;
 
     /* Semantic Metric Cards Palette (Dark Mode) */
@@ -91,15 +86,7 @@
     --metric-subs-glow: rgba(139, 92, 246, 0.18);
 }
 
-/* Smooth theme switch — scoped to a class toggled on <html> for ~0.5s
-   around the switch (see toggleGlobalTheme in js/api.js), rather than a
-   permanent global transition, so it doesn't fight the site's existing
-   hover/press transition timings the rest of the time. Without this, every
-   [data-theme="light"] override above (all !important, all instant) applied
-   in one un-transitioned frame, which read as a hard cut rather than a
-   lag — but felt laggy because color and background-color changed
-   immediately while shadows/borders didn't, so pieces of the UI updated
-   out of sync with each other. */
+/* Theme switching uses a temporary transition scope so color changes stay synchronized. */
 body,
 .dashboard-layout,
 .top-bar,

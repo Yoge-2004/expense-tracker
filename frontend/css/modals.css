@@ -3,15 +3,7 @@
    Module: Modals, Dialogs & Curved Modal Interfaces
    ========================================================================== */
 
-/* Consolidated from 3 unconditional declarations of .modal-overlay. The
-   base rule's own backdrop-filter (blur(12px) saturate(160%), from the
-   3rd declaration) was actually dead code: .modal-overlay.active (2
-   classes) and .modal-overlay:not(.active) (also 2 selectors, plus
-   !important) both have higher specificity and between them cover
-   every possible state, so the bare selector's own backdrop-filter
-   value could never actually apply. Dropped it. Added the missing
-   -webkit-backdrop-filter to .active for Safari, matching the
-   :not(.active) rule which already had both prefixes. */
+/* State-specific overlay rules control backdrop blur; keep Safari support aligned. */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -52,13 +44,7 @@
     -webkit-backdrop-filter: blur(4px);
 }
 
-/* Consolidated from 3 unconditional declarations of .modal (was lines
-   ~1184/1754/3678). border, background, border-radius, and box-shadow
-   each had 2 competing values; kept whichever was already winning
-   (later + no !important beats earlier, same as everywhere else in
-   this cleanup). The @keyframes modalIn this used to animate in with
-   was itself dead: see the .modal-overlay.active .modal consolidation
-   below for why. */
+/* Keep effective modal values in one base rule; entrance motion is handled by the active overlay. */
 .modal {
     background: rgba(23, 26, 20, 0.96);
     padding: 28px 24px;

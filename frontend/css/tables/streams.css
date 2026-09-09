@@ -4,12 +4,7 @@
    ========================================================================== */
 
 @media (max-width: 700px) {
-    /* .card-header (e.g. "Budget Governance / Monthly Category Limits" next
-       to the "+ New Budget" button) has no wrap behavior at all, and on
-       narrow screens the button's fixed width leaves too little room for
-       the heading, forcing it to wrap into a tall multi-line block that
-       visually collides with the button beside it. Stacking vertically
-       here gives both their own full-width row instead. */
+    /* Stack the header and action vertically on narrow screens to avoid collisions. */
     .card-header {
         flex-direction: column;
         align-items: flex-start;

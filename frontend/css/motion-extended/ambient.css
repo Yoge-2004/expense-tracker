@@ -4,15 +4,7 @@
    drifting depth layers, and a scroll-parallax hook for the hero orbs.
    ------------------------------------------------------------------------- */
 
-/* 205. Ambient: fine grain texture. Was animated (grainDrift, 9s steps)
-   and blended (mix-blend-mode: overlay) — the animation cost was the
-   smaller half of the problem. This site's aurora background canvas
-   animates continuously via requestAnimationFrame, and mix-blend-mode
-   forces the browser to recomposite whatever's blended against
-   *everything below it* on every one of those canvas frames, whether or
-   not the blended layer itself is animating. Static positioning + plain
-   opacity (no blend mode) makes this a one-time paint instead of an
-   ongoing full-viewport cost repeated 60 times a second. */
+/* Keep grain static; blending over the animated canvas causes repeated full-viewport recompositing. */
 .grain-overlay {
     position: fixed;
     inset: 0;
@@ -23,11 +15,7 @@
 }
 [data-theme="light"] .grain-overlay { opacity: 0.06; }
 
-/* 206. Ambient: soft mesh gradient wash behind cards. Was animated via
-   background-position, which isn't a compositor-only property — every
-   step of that 26s loop was a full-viewport repaint, running forever on
-   every page. The static gradient still gives the depth this was added
-   for; it just no longer costs anything after the first paint. */
+/* Keep the mesh wash static; background-position animation causes repeated full-viewport repaints. */
 .mesh-wash {
     position: fixed;
     inset: 0;

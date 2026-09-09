@@ -130,8 +130,7 @@ button[type="submit"]:active {
     transition-duration: 0.08s !important;
 }
 
-/* Consolidated from 2 declarations -- transform had scale(1.05) vs
-   translateY(-2px) scale(1.08) !important (the latter was winning). */
+/* Use the current hover transform for edit actions. */
 .btn-edit:hover {
     background: var(--primary);
     color: var(--on-primary);
@@ -139,7 +138,7 @@ button[type="submit"]:active {
     box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.3);
 }
 
-/* Consolidated from 2 declarations, same shape as .btn-edit:hover above. */
+/* Keep the hover transform consistent with edit actions. */
 .btn-delete:hover {
     background: var(--accent);
     color: var(--on-primary);

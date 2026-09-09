@@ -1,12 +1,4 @@
-/* Consolidated from 3 unconditional declarations each of .filter-toolbar
-   and .filter-toolbar.active (the latter wasn't caught by the earlier
-   automated scan since it's a compound selector, same situation as the
-   modal rules). The base rule even had two of its own `transition`
-   declarations in the same block (only the second was taking effect).
-   display:flex !important on the base rule means the toolbar is always
-   flex regardless of open/closed state -- visibility is actually
-   controlled by max-height/opacity/pointer-events -- so
-   .active { display:flex } was fully redundant and dropped. */
+/* Toolbar visibility uses max-height, opacity and pointer-events; display stays flex in both states. */
 .filter-toolbar {
     gap: 10px;
     margin-bottom: 0;
