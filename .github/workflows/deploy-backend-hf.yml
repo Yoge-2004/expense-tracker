@@ -65,6 +65,28 @@ jobs:
       - name: Install Hugging Face CLI
         run: python -m pip install --upgrade huggingface_hub
 
+      - name: Compact HF Space Git history
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          repo = os.environ['HF_SPACE_REPO']
+          token = os.environ['HF_TOKEN']
+          print(f'Squashing {repo} main history to reclaim repository storage...')
+          HfApi(token=token).super_squash_history(
+              repo_id=repo,
+              branch='main',
+              repo_type='space',
+              token=token,
+              commit_message='Compact Space history before deployment',
+          )
+          print('HF Space history compacted successfully.')
+          PY
+
       - name: Upload backend and synchronize Space metadata
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
