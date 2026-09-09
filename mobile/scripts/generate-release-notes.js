@@ -41,7 +41,6 @@ function main() {
     } catch (e) { console.warn('Error reading app.json:', e); }
   }
 
-  const runNumber = process.env.GITHUB_RUN_NUMBER || 'latest';
   const commitSha = process.env.GITHUB_SHA || 'main';
   const shortSha = commitSha.length > 7 ? commitSha.slice(0, 7) : commitSha;
   const hasApk = fs.existsSync(apkPath);
@@ -58,14 +57,13 @@ function main() {
     '| **Android Version Code** | ' + versionCode + ' |',
     '| **Package ID** | ' + packageId + ' |',
     '| **iOS Bundle ID** | ' + bundleId + ' |',
-    '| **Build Number** | #' + runNumber + ' |',
     '| **Commit SHA** | ' + shortSha + ' |'
   ];
   if (hasApk) rows.push('| **Android APK Size** | ' + apkSize + ' |', '| **Android APK SHA-256** | ' + apkSha + ' |');
   if (hasIpa) rows.push('| **iOS IPA Size** | ' + ipaSize + ' |', '| **iOS IPA SHA-256** | ' + ipaSha + ' |');
 
   const lines = [
-    '# Expense Tracker Mobile v' + version + ' — Build #' + runNumber,
+    '# Expense Tracker Mobile v' + version,
     '',
     'A release focused on **trustworthy financial reporting, filter-synchronized analytics, premium exports, responsive layouts, notifications, and CI reliability**.',
     '',
@@ -115,7 +113,7 @@ function main() {
     '',
     '---',
     '',
-    '## Build & Artifact Summary',
+    '## Release & Artifact Summary',
     '',
     rows.join('\n'),
     '',
