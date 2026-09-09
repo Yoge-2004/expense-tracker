@@ -50,7 +50,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 .google-oauth-wrapper #googleRealButton,
 .google-oauth-wrapper .google-real-btn { display: none !important; }
 
-/* Budget progress is a real bounded track, never a card-sized overlay. */
+/* Budget progress is a bounded track, never a card-sized overlay. */
 .budget-item { position: relative !important; overflow: hidden !important; }
 .budget-item .budget-bar-track {
     display: block !important;
@@ -197,4 +197,18 @@ for page_name in ("index.html", "register.html"):
         raise RuntimeError(f"Google OAuth button not found in {page_name}")
     page.write_text(text_new, encoding="utf-8")
 
-print("Applied deterministic UI regression fixes.")
+# Convert synchronous native dashboard dialogs into awaitable app dialogs.
+DASHBOARD_JS = FRONTEND / "js/dashboard.js"
+dashboard = DASHBOARD_JS.read_text(encoding="utf-8")
+confirm_pattern = re.compile(r'if \(!confirm\(("[^"]*(?:\\"[^"]*)*")\)\) return;')
+dashboard_new, confirm_count = confirm_pattern.subn(r'if (!(await window.appConfirm(\1))) return;', dashboard)
+if confirm_count < 2:
+    raise RuntimeError(f"Expected dashboard confirmation dialogs were not found (found {confirm_count})")
+
+prompt_pattern = re.compile(r'const name = prompt\(("[^"]*(?:\\"[^"]*)*")\);')
+dashboard_new, prompt_count = prompt_pattern.subn(r'const name = await window.appPrompt(\1);', dashboard_new)
+if prompt_count < 1:
+    raise RuntimeError("Dashboard category prompt was not found")
+DASHBOARD_JS.write_text(dashboard_new, encoding="utf-8")
+
+print(f"Applied deterministic UI fixes and replaced {confirm_count} confirm + {prompt_count} prompt call(s).")
