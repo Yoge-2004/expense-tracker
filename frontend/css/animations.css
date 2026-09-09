@@ -426,7 +426,7 @@ button[type="submit"]:active {
     padding: 24px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 12px 32px var(--shadow-color);
+    box-shadow: 0 12px 32px var(--shadow-premium);
     transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
     width: 100%;
     max-width: 100%;
@@ -436,7 +436,7 @@ button[type="submit"]:active {
 
 .insights-intelligence-panel:hover {
     border-color: rgba(var(--primary-rgb), 0.35);
-    box-shadow: 0 16px 40px var(--shadow-color), 0 0 24px var(--primary-glow);
+    box-shadow: 0 16px 40px var(--shadow-premium), 0 0 24px var(--primary-glow);
 }
 
 .insights-panel-header {
