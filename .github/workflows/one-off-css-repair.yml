@@ -1,0 +1,32 @@
+name: One-off CSS repair
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: "!contains(github.event.head_commit.message, '[css-repair]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair tables.css mobile scope
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('frontend/css/tables.css')
+          s = p.read_text(encoding='utf-8')
+          needle = '   ========================================================================== */\n\n    /* .card-header'
+          replacement = '   ========================================================================== */\n\n@media (max-width: 700px) {\n    /* .card-header'
+          if needle not in s:
+              raise SystemExit('Expected tables.css header pattern not found; refusing to modify.')
+          s = s.replace(needle, replacement, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit repair
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/css/tables.css
+          git diff --cached --check
+          git commit -m 'fix: scope tables mobile rules [css-repair]'
+          git push
