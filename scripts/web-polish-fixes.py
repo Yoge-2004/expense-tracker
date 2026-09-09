@@ -32,4 +32,4 @@ for name in ('frontend/index.html', 'frontend/dashboard.html'):
         html = html.replace(old, new, 1)
         p.write_text(html, encoding='utf-8')
 
-print('Applied savings action styling and WebAuthn client fixes.')
+print('Applied savings action styling and WebAuthn client fixes. Web polish v2.')
