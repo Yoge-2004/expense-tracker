@@ -2,7 +2,7 @@
   "id" : 1,
   "userId" : 1,
   "amount" : 480.50,
-  "category" : "Uncategorized",
+  "category" : "Food",
   "description" : "Whole Foods Organic Groceries",
   "date" : "2026-09-03",
   "recurring" : false
@@ -10,7 +10,7 @@
   "id" : 2,
   "userId" : 1,
   "amount" : 165.00,
-  "category" : "Uncategorized",
+  "category" : "Food",
   "description" : "Executive Dinner & Networking",
   "date" : "2026-09-09",
   "recurring" : false
@@ -18,7 +18,7 @@
   "id" : 3,
   "userId" : 1,
   "amount" : 85.20,
-  "category" : "Uncategorized",
+  "category" : "Food",
   "description" : "Artisan Coffee & Bistro Lunches",
   "date" : "2026-09-17",
   "recurring" : false
@@ -26,7 +26,7 @@
   "id" : 4,
   "userId" : 1,
   "amount" : 2100.00,
-  "category" : "Uncategorized",
+  "category" : "Utilities",
   "description" : "Luxury Downtown Apartment Rent",
   "date" : "2026-09-02",
   "recurring" : true
@@ -34,7 +34,7 @@
   "id" : 5,
   "userId" : 1,
   "amount" : 145.00,
-  "category" : "Uncategorized",
+  "category" : "Utilities",
   "description" : "Clean Energy Grid Electricity",
   "date" : "2026-09-06",
   "recurring" : false
@@ -42,7 +42,7 @@
   "id" : 6,
   "userId" : 1,
   "amount" : 89.99,
-  "category" : "Uncategorized",
+  "category" : "Utilities",
   "description" : "Gigabit Fiber Internet",
   "date" : "2026-09-07",
   "recurring" : true
@@ -50,7 +50,7 @@
   "id" : 7,
   "userId" : 1,
   "amount" : 120.00,
-  "category" : "Uncategorized",
+  "category" : "Transport",
   "description" : "Tesla Supercharger & Toll Pass",
   "date" : "2026-09-05",
   "recurring" : false
@@ -58,7 +58,7 @@
   "id" : 8,
   "userId" : 1,
   "amount" : 45.00,
-  "category" : "Uncategorized",
+  "category" : "Transport",
   "description" : "Airport Ride & City Transit",
   "date" : "2026-09-13",
   "recurring" : false
@@ -66,7 +66,7 @@
   "id" : 9,
   "userId" : 1,
   "amount" : 220.00,
-  "category" : "Uncategorized",
+  "category" : "Entertainment",
   "description" : "Symphony Hall Concert Tickets",
   "date" : "2026-09-08",
   "recurring" : false
@@ -74,7 +74,7 @@
   "id" : 10,
   "userId" : 1,
   "amount" : 42.98,
-  "category" : "Uncategorized",
+  "category" : "Entertainment",
   "description" : "Streaming Services (Netflix & Spotify)",
   "date" : "2026-09-15",
   "recurring" : true
@@ -82,7 +82,7 @@
   "id" : 11,
   "userId" : 1,
   "amount" : 180.00,
-  "category" : "Uncategorized",
+  "category" : "Health",
   "description" : "Equinox Athletic Club Membership",
   "date" : "2026-09-04",
   "recurring" : true
@@ -90,7 +90,7 @@
   "id" : 12,
   "userId" : 1,
   "amount" : 95.00,
-  "category" : "Uncategorized",
+  "category" : "Health",
   "description" : "Sports Therapy & Wellness",
   "date" : "2026-09-19",
   "recurring" : false
@@ -98,7 +98,7 @@
   "id" : 13,
   "userId" : 1,
   "amount" : 2100.00,
-  "category" : "Uncategorized",
+  "category" : "Utilities",
   "description" : "Apartment Rent",
   "date" : "2026-08-01",
   "recurring" : true
@@ -106,7 +106,7 @@
   "id" : 14,
   "userId" : 1,
   "amount" : 650.00,
-  "category" : "Uncategorized",
+  "category" : "Food",
   "description" : "Groceries & Dining",
   "date" : "2026-08-10",
   "recurring" : false
@@ -114,7 +114,7 @@
   "id" : 15,
   "userId" : 1,
   "amount" : 150.00,
-  "category" : "Uncategorized",
+  "category" : "Transport",
   "description" : "Fuel & Transit",
   "date" : "2026-08-15",
   "recurring" : false

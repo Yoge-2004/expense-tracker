@@ -62,9 +62,12 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('expense-reminders', {
         name: 'Daily Expense Reminders',
+        description: 'Twice-daily reminders to keep your expense ledger up to date.',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#6366F1',
+        lightColor: '#D4AF37',       // gold — matches app brand color
+        enableVibrate: true,
+        showBadge: true,
       }).catch(() => {});
     }
 
