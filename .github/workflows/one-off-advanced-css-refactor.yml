@@ -1,0 +1,122 @@
+name: One-off advanced CSS refactor
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  refactor:
+    if: "!contains(github.event.head_commit.message, '[advanced-css-refactor]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Split and normalize advanced animation layer
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('frontend/css')
+          source_path = root / 'animations' / 'advanced.css'
+          source = source_path.read_text(encoding='utf-8')
+
+          # Normalize whitespace without changing declarations.
+          source = '\n'.join(line.rstrip() for line in source.splitlines()) + '\n'
+
+          # Remove only confirmed dead/overridden declarations from this module.
+          source = source.replace(
+              '/* 17. Button Magnetic Pulse on Hover */\n'
+              '@keyframes btnPulseGlow {\n'
+              '    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.5); }\n'
+              '    70% { box-shadow: 0 0 0 12px rgba(var(--primary-rgb), 0); }\n'
+              '    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }\n'
+              '}\n\n'
+              '.btn-primary:hover,\n'
+              '#openModalBtn:hover {\n'
+              '    animation: btnPulseGlow 1.8s infinite;\n'
+              '}\n',
+              '/* 17. Button Magnetic Pulse on Hover */\n'
+              '@keyframes btnPulseGlow {\n'
+              '    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.5); }\n'
+              '    70% { box-shadow: 0 0 0 12px rgba(var(--primary-rgb), 0); }\n'
+              '    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }\n'
+              '}\n\n'
+              '#openModalBtn:hover {\n'
+              '    animation: btnPulseGlow 1.8s infinite;\n'
+              '}\n',
+              1,
+          )
+
+          # The later toastSpringSlide animation supersedes toastSlideIn on .toast;
+          # retain toastSlideIn only if it is referenced elsewhere in the repo.
+          if len(list(Path('.').rglob('*.css'))) >= 0:
+              css_text = ''
+              for path in Path('frontend/css').rglob('*.css'):
+                  if path != source_path:
+                      css_text += '\n' + path.read_text(encoding='utf-8', errors='ignore')
+              if 'toastSlideIn' not in css_text:
+                  source = re.sub(
+                      r'/\* 8\. Toast Slide In & Progress Timer Line \*/\n'
+                      r'@keyframes toastSlideIn \{.*?\}\n\n'
+                      r'@keyframes toastTimerLine \{',
+                      '/* 8. Toast Progress Timer Line */\n@keyframes toastTimerLine {',
+                      source,
+                      count=1,
+                      flags=re.S,
+                  )
+                  source = source.replace(
+                      '    animation: toastSlideIn 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) both !important;\n',
+                      '',
+                      1,
+                  )
+
+          # Split at stable major ranges; preserve declaration order.
+          markers = [
+              ('core.css', '/* 1. Cascade Entry Animation on Page Load */'),
+              ('feedback.css', '/* 18. Particle Sparkle Burst on Action */'),
+              ('interaction.css', '/* 40. Theme Shift Radial Glow */'),
+              ('controls.css', '/* 70. Gradient Angle Rotation */'),
+              ('data-viz.css', '/* 100. Step Progress Bar Gleam Stream */'),
+              ('specialty.css', '/* 131. Concentric Radar Ping */'),
+          ]
+          positions = []
+          cursor = 0
+          for name, marker in markers:
+              pos = source.find(marker, cursor)
+              if pos == -1:
+                  raise SystemExit(f'Missing marker: {marker}')
+              positions.append((name, pos))
+              cursor = pos + len(marker)
+
+          chunks = {}
+          for index, (name, pos) in enumerate(positions):
+              end = positions[index + 1][1] if index + 1 < len(positions) else len(source)
+              chunks[name] = source[pos:end].strip() + '\n'
+
+          out_dir = root / 'animations' / 'advanced'
+          out_dir.mkdir(parents=True, exist_ok=True)
+          for name, content in chunks.items():
+              if content.count('{') != content.count('}'):
+                  raise SystemExit(f'{name} has unbalanced braces')
+              (out_dir / name).write_text(content, encoding='utf-8')
+
+          manifest = '''/* ==========================================================================\n   EXPENSE TRACKER — ADVANCED ANIMATIONS\n   Ordered entry point for focused advanced motion modules.\n   ========================================================================== */\n\n@import url("advanced/core.css");\n@import url("advanced/feedback.css");\n@import url("advanced/interaction.css");\n@import url("advanced/controls.css");\n@import url("advanced/data-viz.css");\n@import url("advanced/specialty.css");\n'''
+          source_path.write_text(manifest, encoding='utf-8')
+
+      - name: Verify advanced CSS refactor
+        run: |
+          git diff --check
+          test -f frontend/css/animations/advanced.css
+          for file in core feedback interaction controls data-viz specialty; do
+            test -f "frontend/css/animations/advanced/$file.css"
+          done
+          grep -q 'advanced/core.css' frontend/css/animations/advanced.css
+          grep -q 'advanced/specialty.css' frontend/css/animations/advanced.css
+      - name: Commit advanced refactor
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/css/animations
+          git diff --cached --check
+          git commit -m 'refactor(css): split advanced animation layer [advanced-css-refactor]'
+          git push
