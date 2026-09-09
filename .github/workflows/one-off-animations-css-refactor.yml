@@ -26,6 +26,9 @@ jobs:
                   f'{source.count("{")} opens vs {source.count("}")} closes'
               )
 
+          # Normalize trailing whitespace while retaining all declarations.
+          source = '\n'.join(line.rstrip() for line in source.splitlines()) + '\n'
+
           # Remove the malformed dangling selector that accidentally widened
           # the following .btn-edit:active rule to the idle .btn-edit state.
           malformed = '.btn-edit,\n\n\n\n\n.btn-edit:active {'
