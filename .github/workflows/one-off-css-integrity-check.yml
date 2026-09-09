@@ -1,0 +1,103 @@
+name: One-off CSS integrity check
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  verify:
+    if: "!contains(github.event.head_commit.message, '[css-integrity-check]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify CSS architecture
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('frontend/css')
+          files = sorted(root.rglob('*.css'))
+          if not files:
+              raise SystemExit('No CSS files found')
+
+          names = {p.relative_to(root).as_posix() for p in files}
+          failures = []
+          defined = set()
+          used = set()
+
+          for path in files:
+              rel = path.relative_to(root).as_posix()
+              text = path.read_text(encoding='utf-8')
+              stripped = re.sub(r'/\\*.*?\\*/', '', text, flags=re.S)
+
+              if text.count('{') != text.count('}'):
+                  failures.append(f'{rel}: unbalanced braces')
+
+              if re.search(r'(?m)^\\s*[^@/\\s].*$', text):
+                  pass
+
+              for match in re.finditer(r'@import\\s+(?:url\\()?["]?([^" )]+)', stripped):
+                  target = match.group(1)
+                  if target.startswith(('http://', 'https://', '//')):
+                      continue
+                  candidate = (root / target).resolve()
+                  try:
+                      candidate_rel = candidate.relative_to(root.resolve()).as_posix()
+                  except ValueError:
+                      failures.append(f'{rel}: import escapes CSS root: {target}')
+                      continue
+                  if candidate_rel not in names:
+                      failures.append(f'{rel}: missing import target: {target}')
+
+              defined.update(re.findall(r'(--[A-Za-z0-9_-]+)\\s*:', stripped))
+              used.update(re.findall(r'var\\(\\s*(--[A-Za-z0-9_-]+)', stripped))
+
+          undefined = sorted(used - defined)
+          if undefined:
+              failures.append('Undefined custom properties: ' + ', '.join(undefined))
+
+          manifests = {
+              'variables.css': 3,
+              'base.css': 3,
+              'components.css': 3,
+              'dashboard/enhancements.css': 12,
+          }
+          for rel, expected in manifests.items():
+              text = (root / rel).read_text(encoding='utf-8')
+              imports = [line for line in text.splitlines() if line.strip().startswith('@import')]
+              if len(imports) != expected:
+                  failures.append(f'{rel}: expected {expected} imports, found {len(imports)}')
+
+          # Root manifests must contain imports only after their header comments.
+          for rel in manifests:
+              text = (root / rel).read_text(encoding='utf-8').strip()
+              lines = text.splitlines()
+              saw_import = False
+              for line in lines:
+                  if line.strip().startswith('@import'):
+                      saw_import = True
+                  elif saw_import and line.strip() and not line.strip().startswith('@import'):
+                      failures.append(f'{rel}: non-import content appears after the import block')
+                      break
+
+          print(f'CSS_FILES={len(files)}')
+          print(f'DEFINED_CUSTOM_PROPERTIES={len(defined)}')
+          print(f'USED_CUSTOM_PROPERTIES={len(used)}')
+          print(f'UNDEFINED_CUSTOM_PROPERTIES={len(undefined)}')
+          print(f'INTEGRITY_FAILURES={len(failures)}')
+          if failures:
+              print('\\n'.join(failures))
+              raise SystemExit(1)
+
+      - name: Remove one-off workflow
+        run: rm .github/workflows/one-off-css-integrity-check.yml
+
+      - name: Commit verification cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/one-off-css-integrity-check.yml
+          git rm .github/workflows/one-off-css-integrity-check.yml
+          git commit -m 'chore(ci): remove completed CSS integrity check [css-integrity-check]'
+          git push
