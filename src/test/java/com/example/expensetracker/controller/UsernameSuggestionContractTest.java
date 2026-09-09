@@ -1,8 +1,12 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.repository.UserRepository;
+import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
+import com.example.expensetracker.security.JwtAuthenticationFilter;
+import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.UserSecurity;
+import com.example.expensetracker.service.MonthlyReportService;
 import com.example.expensetracker.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +15,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,13 +22,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Contract tests for the public username-suggestion API.
- *
- * These tests protect the product contract rather than the implementation:
- * the UI presents exactly three suggestions, suggestions must be unique, and
- * merely requesting suggestions must never create a user.
- */
+/** Contract tests for the public username-suggestion API. */
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class UsernameSuggestionContractTest {
@@ -34,6 +31,10 @@ class UsernameSuggestionContractTest {
 
     @MockitoBean UserService userService;
     @MockitoBean UserRepository userRepository;
+    @MockitoBean MonthlyReportService monthlyReportService;
+    @MockitoBean JwtService jwtService;
+    @MockitoBean CustomUserDetailsService customUserDetailsService;
+    @MockitoBean JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean UserSecurity userSecurity;
     @MockitoBean org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     @MockitoBean GoogleIdTokenVerifier googleIdTokenVerifier;
