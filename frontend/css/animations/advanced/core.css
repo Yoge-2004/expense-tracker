@@ -52,7 +52,6 @@
     100% { background-position: 200% 0; }
 }
 
-.budget-bar-fill,
 .budget-bar-fill::after,
 .step-bar::after {
     content: '';
@@ -179,89 +178,3 @@
     transform: none !important;
     box-shadow: none !important;
 }
-
-/* 12. Multi-Ring Dual Speed Action Spinner */
-@keyframes dualSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.spinner-sm {
-    border-width: 2.5px;
-    border-top-color: currentColor;
-    border-right-color: transparent;
-    animation: dualSpin 0.7s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite !important;
-}
-
-/* 13. 1-Tap Date Preset Energetic Flash */
-@keyframes presetActiveFlash {
-    0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.8); }
-    70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0); }
-    100% { transform: scale(1); }
-}
-
-.preset-btn.active {
-    animation: presetActiveFlash 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* 14. Validation Error Harmonic Shake */
-@keyframes errorHarmonicShake {
-    0%, 100% { transform: translateX(0); }
-    15% { transform: translateX(-8px) rotate(-1deg); }
-    30% { transform: translateX(7px) rotate(1deg); }
-    45% { transform: translateX(-5px); }
-    60% { transform: translateX(4px); }
-    75% { transform: translateX(-2px); }
-}
-
-.shake,
-.is-invalid {
-    animation: errorHarmonicShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-
-/* 15. Dropdown Menu Accordion Unfurl */
-@keyframes dropdownUnfurl {
-    0% {
-        opacity: 0;
-        transform: translateY(-10px) scaleY(0.92);
-        transform-origin: top center;
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scaleY(1);
-        transform-origin: top center;
-    }
-}
-
-.custom-select-wrapper.open .custom-select-options,
-.profile-menu.active {
-    animation: dropdownUnfurl 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* 16. Empty State Floating Bobbing Illustration */
-@keyframes gentleFloatBob {
-    0% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-9px) rotate(1.5deg); }
-    100% { transform: translateY(0) rotate(0deg); }
-}
-
-.empty-state svg,
-.empty-state-icon,
-.floating-element {
-    animation: gentleFloatBob 4s ease-in-out infinite;
-    display: inline-block;
-    will-change: transform;
-}
-
-/* 17. Button Magnetic Pulse on Hover */
-@keyframes btnPulseGlow {
-    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.5); }
-    70% { box-shadow: 0 0 0 12px rgba(var(--primary-rgb), 0); }
-    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
-}
-
-#openModalBtn:hover {
-    animation: btnPulseGlow 1.8s infinite;
-}
-
-/* The remaining advanced effects continue in focused modules. */
