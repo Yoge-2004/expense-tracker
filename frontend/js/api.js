@@ -180,8 +180,10 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         updateServerStatus(false, "Connecting...");
         throw new Error("Unable to connect to the server. Please check your connection and try again.");
     } finally {
-        activeRequests -= 1;
-        if (activeRequests === 0) setLoading(false);
+        if (showRequestLoading) {
+            activeRequests -= 1;
+            if (activeRequests === 0) setLoading(false);
+        }
     }
 
     if (response.status === 503) {
