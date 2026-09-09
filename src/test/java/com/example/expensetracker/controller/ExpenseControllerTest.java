@@ -306,8 +306,9 @@ class ExpenseControllerTest {
 
         Expense a = expense(1L, new BigDecimal("250"), "A", LocalDate.of(2026, 9, 2), food);
         Expense b = expense(2L, new BigDecimal("100"), "B", LocalDate.of(2026, 9, 4), food);
-        Expense other = expense(3L, new BigDecimal("900"), "Other", LocalDate.of(2026, 9, 4), new Category());
-        other.getCategory().setId(2L);
+        Category otherCategory = new Category();
+        otherCategory.setId(2L);
+        Expense other = expense(3L, new BigDecimal("900"), "Other", LocalDate.of(2026, 9, 4), otherCategory);
 
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(budgetRepository.findByUser(user)).thenReturn(List.of(budget));
@@ -316,9 +317,9 @@ class ExpenseControllerTest {
 
         mockMvc.perform(get("/api/expenses/budget/status/user/7"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(3))
+                .andExpect(jsonPath("$[0].budgetId").value(3))
                 .andExpect(jsonPath("$[0].categoryName").value("Food"))
-                .andExpect(jsonPath("$[0].limitAmount").value(1000))
+                .andExpect(jsonPath("$[0].limit").value(1000))
                 .andExpect(jsonPath("$[0].spent").value(350))
                 .andExpect(jsonPath("$[0].percentage").value(35.0))
                 .andExpect(jsonPath("$[0].period").value("MONTHLY"));
@@ -373,7 +374,7 @@ class ExpenseControllerTest {
                         && "Netflix".equals(rec.getDescription())
                         && "MONTHLY".equals(rec.getFrequency())
                         && LocalDate.of(2026, 10, 1).equals(rec.getNextDueDate())
-                        && Integer.valueOf(0).equals(rec.getIntervalDays()) == false
+                        && rec.getIntervalDays() == null
                         && food.equals(rec.getCategory())
                         && user.equals(rec.getUser())));
         verify(expenseService).createExpense(argThat(first ->
@@ -534,7 +535,8 @@ class ExpenseControllerTest {
     @Test
     void importJsonRejectsMissingFile() throws Exception {
         mockMvc.perform(multipart("/api/expenses/user/7/import/json"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Required multipart file part is missing."));
 
         verifyNoInteractions(userService, importService);
     }
