@@ -61,17 +61,6 @@
     height: 100%;
 }
 
-/* Consolidated from 4 separate unconditional declarations (was lines
-   ~697/2693/3904/5265). max-width had two competing values (400px vs
-   480px); border had two competing colors, one hardcoded
-   (rgba(255,255,255,0.08), not theme-aware) and one using the --border
-   token -- kept the token version since it's the same visual result in
-   dark theme and is the correct, theme-aware choice rather than a
-   hardcoded magic value (confirmed [data-theme="light"] .auth-card
-   already overrides border-color separately at higher specificity, so
-   this doesn't affect light theme). Dropped !important throughout --
-   nothing else depends on it now that there's only one unconditional
-   declaration to begin with. */
 .auth-card {
     width: 100%;
     max-width: 480px;
@@ -103,7 +92,6 @@
 /* ================== ∞ NEW AUTH PAGE SYSTEM ================== */
 
 /* ── Keyframes ── */
-/* ── Keyframes ── */
 @keyframes orbFloat {
     0%, 100% { transform: translate(0, 0) scale(1); filter: blur(60px); }
     33% { transform: translate(35px, -25px) scale(1.1); filter: blur(50px); }
@@ -123,7 +111,7 @@
     box-shadow: 0 12px 32px -4px rgba(var(--primary-rgb), 0.5), 0 0 20px rgba(var(--accent-rgb), 0.25) !important;
 }
 
-.btn-primary:active, button[type="submit"]:active, .btn-icon:active, .suggestion-chip:active, .card:active {
+.btn-icon:active, .suggestion-chip:active, .card:active {
     transform: scale(0.97) !important;
 }
 
@@ -283,20 +271,6 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    /* margin-bottom moved to the .auth-top-actions wrapper now that
-       .hero-brand lives inside it as a flex sibling of the theme toggle —
-       keeping it here too would double the spacing before the headline. */
-
-    /* .auth-top-actions centers its two flex children (align-items:
-       center), but that only centers each child's own box — it doesn't
-       make the two boxes the same height. .hero-brand's box height was
-       determined by .hero-brand-icon at 38px, while .theme-toggle-btn is
-       a fixed 42px, so the row centered two different-height boxes
-       around the same line: correct on the math, but visibly off,
-       because a few px of asymmetric padding/box-shadow on each element
-       reads as "not aligned" well before it reads as "different sizes".
-       Matching the height directly removes the discrepancy instead of
-       relying on centering two unequal boxes to look flush. */
     min-height: 42px;
 }
 
@@ -352,7 +326,6 @@
 }
 
 /* Floating stat cards */
-/* Floating stat cards */
 .hero-float-cards {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -363,7 +336,6 @@
     box-sizing: border-box;
 }
 
-/* In index.html (3 cards): Card 1 spans full width across top; Cards 2 & 3 side-by-side */
 .hero-float-cards:not(.perks-grid) .float-card-1 {
     grid-column: 1 / -1;
     width: 100%;
@@ -419,8 +391,7 @@
 }
 
 .float-card-value,
-.float-card-amount,
-.perk-title {
+.float-card-amount {
     font-size: 13.5px;
     font-weight: 700;
     color: var(--text-main);
@@ -429,8 +400,7 @@
     margin-bottom: 2px;
 }
 
-.float-card-label,
-.perk-sub {
+.float-card-label {
     font-size: 11.5px;
     color: var(--text-muted);
     line-height: 1.4;
@@ -474,7 +444,6 @@
     box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.35);
 }
 
-/* Light Theme: Crisp, high-contrast porcelain & royal bronze pills to eliminate blending */
 [data-theme="light"] .hero-feature-pill {
     background: rgba(255, 255, 255, 0.94) !important;
     border: 1px solid rgba(180, 135, 45, 0.36) !important;
@@ -533,20 +502,6 @@
     box-sizing: border-box !important;
 }
 
-.perk-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    background: rgba(23, 26, 20, 0.52);
-    border: 1px solid rgba(236, 231, 216, 0.12);
-    border-radius: 16px;
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.38);
-    transition: transform 0.3s var(--ease), box-shadow 0.3s, border-color 0.3s;
-}
-
 .perk-item:hover {
     border-color: rgba(var(--primary-rgb),0.3);
 }
@@ -596,8 +551,6 @@
     width: 0 !important;
     height: 0 !important;
 }
-
-
 
 .auth-card-header {
     margin-bottom: 28px;
@@ -651,16 +604,6 @@
     margin-top: 16px;
 }
 
-/* Consolidated from 3 unconditional declarations. Note: block 2's
-   properties (display:flex, gap, margin-bottom:28px) don't semantically
-   fit this element -- .step-bar is used exactly once in the shipped
-   HTML, as a single width-animated progress-fill div nested inside
-   .step-progress, not a flex container -- and look like they may have
-   been intended for a different component under the same class name.
-   Since they don't actually conflict with anything (non-overlapping
-   properties), preserved as-is rather than guessed at and removed,
-   since I have no way to visually confirm removing them wouldn't
-   change something currently rendering correctly. */
 .step-bar {
     height: 100%;
     background: var(--primary-gradient);
@@ -724,7 +667,6 @@
     position: absolute;
     left: 14px;
     top: 50%;
-    transform: translateY(-50%);
     color: var(--text-muted);
     pointer-events: none;
     z-index: 5;
@@ -747,7 +689,6 @@
 }
 
 .form-input:focus {
-    outline: none !important;
     border-color: var(--primary) !important;
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22) !important;
 }
@@ -861,6 +802,8 @@
     transition: all 0.25s var(--ease);
     padding: 8px;
     display: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
 }
 
 .custom-select-search {
@@ -902,11 +845,6 @@
 
 .custom-select-options::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
-}
-
-.custom-select-options {
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
 }
 
 .custom-option {
@@ -1045,19 +983,6 @@
 }
 
 /* ── Dashboard Enhancements ── */
-
-
-/* Animated number counters */
-
-
-/* (Transaction row hover — removed: .expense-row duplicate, superseded by
-   the working .expense-item:hover rules elsewhere.) */
-
-/* (Budget bar width transition — already on .budget-bar-fill above.) */
-
-/* Command search glow handled strictly on wrapper (.command-search-wrapper:focus-within) */
-
-/* Top bar glass effect */
 .top-bar {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1066,27 +991,12 @@
     z-index: 100;
 }
 
-/* Avatar ring */
 .user-profile:hover .avatar {
     box-shadow: 0 0 0 3px var(--primary), 0 6px 20px rgba(var(--primary-rgb),0.4);
 }
 
-/* Card glow variant */
-
-
 /* Top action bar for auth pages (Theme toggle, etc) */
 .auth-top-actions {
-    /* Previously position:absolute (top:20px; right:20px) relative to the
-       WHOLE VIEWPORT, since this element sat outside .auth-page entirely in
-       the DOM. That meant its alignment with .hero-brand / .hero-back-link
-       was pure coincidence — it wasn't actually a flex sibling of either,
-       just two independently-positioned things that happened to land near
-       each other depending on whatever padding values were current. When
-       .auth-hero's padding was later trimmed (fixing an unrelated scrollbar
-       bug), the logo moved but this fixed top:20px never did, breaking what
-       alignment there was. Now a real flex row containing both, so they're
-       always vertically centered together regardless of any future padding
-       changes. */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1212,23 +1122,9 @@
         flex: 1 1 auto !important;
         align-items: center !important;
         box-sizing: border-box !important;
-        /* Was min-height: 74px !important + align-items: flex-start —
-           that was working around .float-card-value wrapping to 2 lines
-           and making the card taller than its neighbor. Now that the
-           value is clamped to one line (below), every card naturally
-           lands at the same, shorter height on its own, so forcing an
-           extra floor just left empty space under the text. Tightened
-           padding too, for a noticeably smaller card as asked. */
         padding: 10px 14px !important;
     }
 
-    /* The 2-up grid halves each card's width, and "12 budgets" / "6
-       subscriptions" were wrapping onto a second line at 15px while
-       "₹24,810" stayed on one — that mismatch in line count is what made
-       the row look unaligned (card 2 taller than card 1, both stretched
-       to match by the grid, leaving mismatched internal spacing). Sizing
-       down slightly and clamping to one line keeps every card the same
-       shape regardless of label length. */
     .float-card > div:not(.float-card-icon):not(.perk-icon),
     .perk-item > div:not(.float-card-icon):not(.perk-icon) {
         min-width: 0 !important;
@@ -1258,14 +1154,6 @@
         height: 30px !important;
     }
 
-    /* This used to span both grid columns so the odd third card wouldn't
-       leave a visibly empty cell next to it — but "6 subscriptions" is
-       short, so spanning the full row just moved the empty space inside
-       the card instead of removing it (a wide box with left-aligned
-       content and nothing after it). Sizing it like its siblings instead
-       — same width as cards 1 and 2, alone in its own row — keeps the
-       card itself tight to its content; the row simply has one card
-       instead of two, rather than one oversized card with dead space. */
     .float-card:nth-child(3) {
         grid-column: auto !important;
     }
@@ -1304,12 +1192,6 @@
         width: 100% !important;
         padding: 16px 18px 40px !important;
         box-sizing: border-box !important;
-        /* Same bug as .auth-hero had: the desktop base rule's
-           min-height: 100vh (for the 2-column split-screen layout) was
-           never reset here, so on mobile the form panel was still forced
-           to a full screen height even though the sign-in card itself is
-           much shorter — leaving a trailing blank gap of hero-background
-           below the card once scrolled into view. */
         min-height: auto !important;
         height: auto !important;
         overflow-y: visible !important;
@@ -1329,7 +1211,6 @@
         box-sizing: border-box !important;
     }
 
-    /* Mobile Top Bar & Search Layout Fix - NOT sticky on mobile to free up screen real estate */
     .top-bar {
         position: static !important;
         top: auto !important;
@@ -1362,10 +1243,6 @@
         gap: 16px !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        /* This is the actual fix requested: padding, not gap. gap only
-           controls spacing *between* the button/icon/search-bar as
-           siblings — it does nothing for the space between this box's
-           own edge and each of them. Padding is what creates that. */
         padding: 0 14px !important;
     }
 
@@ -1554,7 +1431,6 @@
    HERO DESKTOP VISUAL BALANCE SYSTEM (Laptop & Large Displays)
    ══════════════════════════════════════════════════════════════════════ */
 
-/* Hidden on mobile/tablets to keep mobile lean, fast, and compact */
 .hero-desktop-balance {
     display: none !important;
 }
@@ -1569,7 +1445,6 @@
         animation: fadeIn 0.8s var(--ease) 0.15s both !important;
     }
 
-    /* Primary Glassmorphic Showcase Card */
     .hero-visual-card {
         background: rgba(23, 26, 20, 0.58) !important;
         border: 1px solid rgba(236, 231, 216, 0.12) !important;
@@ -1642,7 +1517,6 @@
         white-space: nowrap !important;
     }
 
-    /* Segmented Budget Progress Track */
     .hero-budget-track {
         height: 7px !important;
         border-radius: 10px !important;
@@ -1694,7 +1568,6 @@
         color: var(--text-main) !important;
     }
 
-    /* Feature Matrix Rows (Register Page) */
     .hero-feature-matrix {
         display: flex !important;
         flex-direction: column !important;
@@ -1739,7 +1612,6 @@
         line-height: 1.3 !important;
     }
 
-    /* Security Timeline Steps (Forgot Password Page) */
     .hero-security-timeline {
         display: flex !important;
         flex-direction: column !important;
@@ -1785,7 +1657,6 @@
         line-height: 1.3 !important;
     }
 
-    /* Social Proof / Testimonial Quote Card */
     .hero-quote-card {
         background: rgba(23, 26, 20, 0.52) !important;
         border: 1px solid rgba(236, 231, 216, 0.1) !important;
@@ -1897,7 +1768,6 @@
         white-space: nowrap !important;
     }
 
-    /* Trust & Security Footnote Bar */
     .hero-trust-bar {
         display: flex !important;
         align-items: center !important;
@@ -1919,7 +1789,6 @@
         opacity: 0.4 !important;
     }
 
-    /* Light Theme Adaptation for Hero Desktop Balance Elements */
     [data-theme="light"] .hero-visual-card {
         background: rgba(255, 255, 255, 0.78) !important;
         border-color: rgba(16, 18, 14, 0.1) !important;
@@ -1935,7 +1804,6 @@
         background: rgba(0, 0, 0, 0.06) !important;
     }
 
-    /* Sign Up Hero Balance (Increased visual height & presence) */
     .hero-balance-signup {
         gap: 15px !important;
         margin-top: 16px !important;
@@ -1978,7 +1846,6 @@
         color: var(--text-muted) !important;
     }
 
-    /* Forgot Password Hero Balance (Slightly decreased & streamlined) */
     .hero-balance-forgot {
         gap: 10px !important;
         margin-top: 12px !important;
@@ -1992,9 +1859,7 @@
     .hero-balance-forgot .hero-trust-bar {
         padding-top: 0 !important;
     }
-
 }
-
 
 /* ==========================================================================
    INPUT WRAPPER & ICON PADDING SAFEGUARDS (AUTH PAGES)
