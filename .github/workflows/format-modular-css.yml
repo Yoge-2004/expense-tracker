@@ -1,0 +1,51 @@
+name: Format modular CSS
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Format CSS with project indentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = [Path('frontend/css/components'), Path('frontend/css/dashboard')]
+          for root in roots:
+              for path in sorted(root.glob('*.css')):
+                  text = path.read_text(encoding='utf-8')
+                  lines = text.splitlines()
+                  # The extracted modules currently use the same structure with
+                  # two-space indentation. Double only leading indentation so
+                  # relative nesting is preserved and the repository's 4-space
+                  # CSS convention is restored.
+                  out = []
+                  for line in lines:
+                      if line.startswith('  '):
+                          spaces = len(line) - len(line.lstrip(' '))
+                          if spaces > 0:
+                              line = ' ' * (spaces * 2) + line[spaces:]
+                      out.append(line)
+                  path.write_text('\n'.join(out).rstrip() + '\n', encoding='utf-8')
+          PY
+
+      - name: Commit formatting changes
+        run: |
+          if git diff --quiet -- frontend/css/components frontend/css/dashboard; then
+            echo 'Modular CSS is already using 4-space indentation.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/css/components frontend/css/dashboard
+          git commit -m 'style(css): standardize modular CSS indentation'
+          git push
