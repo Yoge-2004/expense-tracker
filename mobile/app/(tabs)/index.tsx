@@ -490,38 +490,6 @@ export default function DashboardScreen() {
     );
   };
 
-  // Calculations for Matrix & Cash Flow Metrics
-  const totalSpent = expenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
-  const totalIncome = incomes.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
-  const netCashFlow = totalIncome - totalSpent;
-  const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100).toFixed(1) : "0.0";
-
-  const now = new Date();
-  const currentDay = Math.max(now.getDate(), 1);
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const currentMonthExpenses = expenses.filter((e) => {
-    if (!e.expenseDate) return false;
-    try {
-      const d = new Date(e.expenseDate);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    } catch {
-      return false;
-    }
-  });
-  const currentMonthSpent = currentMonthExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
-  const dailyBurn = currentMonthSpent / currentDay;
-  const monthEndForecast = dailyBurn * daysInMonth;
-
-  // Category summary
-  const catSummary: Record<string, number> = {};
-  expenses.forEach((e) => {
-    const name = e.categoryName || 'General';
-    catSummary[name] = (catSummary[name] || 0) + Math.max(0, Number(e.amount || 0));
-  });
-  const sortedCats = Object.entries(catSummary).sort((a, b) => b[1] - a[1]);
-  const highestCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
-  const highestCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
-
   // Filtered Expenses List (including Custom Date Range)
   const filteredExpenses = expenses
     .filter((e) => {
@@ -606,6 +574,36 @@ export default function DashboardScreen() {
 
       return matchSearch && matchDate;
     });
+
+  // Dashboard metrics intentionally derive from the exact same filtered datasets as the ledger.
+  // This keeps KPIs, insights and charts synchronized with search/category/date filters.
+  const dashboardExpenses = filteredExpenses;
+  const dashboardIncomes = filteredIncomes;
+  const totalSpent = dashboardExpenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+  const totalIncome = dashboardIncomes.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+  const netCashFlow = totalIncome - totalSpent;
+  const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100).toFixed(1) : "0.0";
+
+  const now = new Date();
+  const currentDay = Math.max(now.getDate(), 1);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const currentMonthExpenses = dashboardExpenses.filter((e) => {
+    if (!e.expenseDate) return false;
+    const d = new Date(e.expenseDate);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const currentMonthSpent = currentMonthExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+  const dailyBurn = currentMonthSpent / currentDay;
+  const monthEndForecast = dailyBurn * daysInMonth;
+
+  const catSummary: Record<string, number> = {};
+  dashboardExpenses.forEach((e) => {
+    const name = e.categoryName || 'General';
+    catSummary[name] = (catSummary[name] || 0) + Math.max(0, Number(e.amount || 0));
+  });
+  const sortedCats = Object.entries(catSummary).sort((a, b) => b[1] - a[1]);
+  const highestCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
+  const highestCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
 
   interface UnifiedTxItem {
     id: number;
@@ -929,7 +927,7 @@ export default function DashboardScreen() {
             3. IN-DEPTH FINANCIAL INTELLIGENCE CARDS
            ========================================= */}
         <InsightCards
-          expenses={expenses}
+          expenses={dashboardExpenses}
           budgets={budgets}
           incomes={incomes}
           savingsGoals={savingsGoals}
@@ -951,22 +949,22 @@ export default function DashboardScreen() {
 
         {/* 1. Category Donut */}
         <StaggeredView delay={220} direction="up">
-          <CategoryDonutChart expenses={expenses} />
+          <CategoryDonutChart expenses={dashboardExpenses} />
         </StaggeredView>
 
         {/* 2. Spend Trend Line */}
         <StaggeredView delay={280} direction="up">
-          <SpendTrendChart expenses={expenses} />
+          <SpendTrendChart expenses={dashboardExpenses} />
         </StaggeredView>
 
         {/* 3. Recurring vs Variable Spend Split */}
         <StaggeredView delay={340} direction="up">
-          <RecurringSplitChart expenses={expenses} />
+          <RecurringSplitChart expenses={dashboardExpenses} />
         </StaggeredView>
 
         {/* 4. Day of the Week Distribution */}
         <StaggeredView delay={400} direction="up">
-          <DayOfWeekChart expenses={expenses} />
+          <DayOfWeekChart expenses={dashboardExpenses} />
         </StaggeredView>
 
         {/* 5. Budget vs Actual Progress Bar */}
