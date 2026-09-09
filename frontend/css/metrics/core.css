@@ -1,0 +1,100 @@
+/* ==========================================================================
+   EXPENSE TRACKER — METRICS CORE
+   Dashboard visual hierarchy and metric presentation foundations.
+   ========================================================================== */
+
+@media (min-width: 1920px) {
+    .dashboard-container {
+        max-width: 1600px;
+        padding: 48px 48px 64px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .dashboard-container {
+        max-width: 1900px;
+        padding: 56px 56px 72px;
+    }
+
+    .grid-4-metrics,
+    .grid-analytics {
+        gap: 28px;
+    }
+}
+
+.top-bar {
+    padding: 4px 0 16px;
+    margin-bottom: 4px;
+}
+
+.dashboard-heading h2 {
+    font-size: clamp(26px, 4vw, 34px);
+    letter-spacing: -1px;
+}
+
+.dashboard-heading p {
+    margin-top: 10px;
+}
+
+.top-bar-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.summary-stack {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.summary-stack .add-expense-button {
+    grid-column: 1 / -1;
+    min-height: 58px;
+}
+
+.summary-card-primary {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--primary-rgb), 0.18) 0%,
+        rgba(178, 138, 50, 0.1) 100%
+    );
+    border: 1px solid var(--border-accent);
+    box-shadow: 0 10px 30px -10px var(--primary-glow);
+}
+
+.metric-card-glow .metric-value {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.grid-4-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 1400px) {
+    .grid-4-metrics {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .grid-4-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .grid-4-metrics {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
