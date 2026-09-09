@@ -759,7 +759,11 @@ async function loadBudgets() {
                             </button>
                         </div>
                     </div>
-                    <div class="budget-bar-track">
+                    <div class="budget-status-row">
+                        <span>${formatCurrency(spent)} of ${formatCurrency(limit)}</span>
+                        <strong class="budget-status-value" style="color:${barColor};">${Math.round(b.percentage || 0)}% used</strong>
+                    </div>
+                    <div class="budget-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(Math.max(Number(b.percentage || 0), 0), 100)}" aria-label="${escapeHtml(b.categoryName || b.category?.name || 'Budget')} utilization">
                         <div class="budget-bar-fill" style="width:${pct}%; background:${barColor};"></div>
                     </div>
                 </div>`;
@@ -785,7 +789,7 @@ async function loadBudgets() {
 }
 
 window.deleteBudgetLimit = async (budgetId, categoryId, event) => {
-    if (!confirm("Are you sure you want to delete this budget limit?")) return;
+    if (!(await window.appConfirm("Are you sure you want to delete this budget limit?"))) return;
     try {
         if (budgetId && budgetId > 0) {
             await apiRequest(`/expenses/budget/${budgetId}`, { method: "DELETE" });
@@ -1664,7 +1668,7 @@ window.editExpense = (id) => {
 };
 
 window.deleteExpense = async (id, event) => {
-    if (!confirm("Delete this expense?")) return;
+    if (!(await window.appConfirm("Delete this expense?"))) return;
     try {
         await apiRequest(`/expenses/${id}/user/${userId}`, { method: 'DELETE' });
         showToast("Expense deleted.", "success");
@@ -1749,7 +1753,7 @@ elements.recurringFrequency.addEventListener("change", () => {
 
 // Add Category
 elements.addCategoryBtn.addEventListener("click", async () => {
-    const name = prompt("Enter new category name:");
+    const name = await window.appPrompt("Enter new category name:");
     if (!name || !name.trim()) return;
     try {
         const newCat = await apiRequest(`/categories/user/${userId}`, { method: "POST", body: JSON.stringify({ name: name.trim() }) });
@@ -2462,7 +2466,7 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
 
 document.getElementById("exportExcelBtn")?.addEventListener("click", () => {
     downloadAuthenticated(
-        `${API_BASE_URL}/expenses/user/${userId}/export/excel`,
+        `${API_BASE_URL}/reports/user/${userId}/export/excel`,
         "expenses.xlsx",
         "Generating Expenses Excel Workbook...",
         () => exportExpensesClientSideExcel()
@@ -2846,7 +2850,7 @@ window.editIncomeFromSubsModal = (incId) => {
 };
 
 window.deleteIncomeFromSubsModal = async (incId) => {
-    if (!confirm("Are you sure you want to delete this recurring income stream?")) return;
+    if (!(await window.appConfirm("Are you sure you want to delete this recurring income stream?"))) return;
     try {
         setLoading(true, "Deleting income...");
         await apiRequest(`/incomes/${incId}/user/${userId}`, { method: "DELETE" });
@@ -2933,7 +2937,7 @@ editSubForm?.addEventListener("submit", async (e) => {
 
 // Cancel Logic
 window.cancelSubscription = async (id, event) => {
-    if (!confirm("Are you sure you want to cancel this recurring subscription? Future auto-payments will stop.")) return;
+    if (!(await window.appConfirm("Are you sure you want to cancel this recurring subscription? Future auto-payments will stop."))) return;
 
     try {
         await apiRequest(`/expenses/recurring/${id}`, { method: "DELETE" });
@@ -3360,7 +3364,7 @@ function renderIncomesTableOnly(incomes) {
     listEl.querySelectorAll(".delete-income-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             const incId = btn.getAttribute("data-income-id");
-            if (!confirm("Are you sure you want to delete this income stream?")) return;
+            if (!(await window.appConfirm("Are you sure you want to delete this income stream?"))) return;
             try {
                 setLoading(true, "Deleting income...");
                 await apiRequest(`/incomes/${incId}/user/${userId}`, { method: "DELETE" });
@@ -3518,7 +3522,7 @@ function renderSavingsGoals(goals) {
     container.querySelectorAll(".delete-goal-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
             const goalId = btn.getAttribute("data-goal-id");
-            if (!confirm("Are you sure you want to delete this savings goal?")) return;
+            if (!(await window.appConfirm("Are you sure you want to delete this savings goal?"))) return;
             try {
                 setLoading(true, "Deleting savings goal...");
                 await apiRequest(`/savings/goals/${goalId}/user/${userId}`, { method: "DELETE" });
@@ -4406,13 +4410,8 @@ emailReportBtn?.addEventListener("click", () => {
 });
 
 
-// --- AUTO-UPDATE DASHBOARD WITH SERVER DATA ---
-// Automatically keeps the UI refreshed whenever tab becomes active or on interval
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        loadDashboard(true);
-    }
-});
+// Dashboard refreshes are event-driven; tab visibility alone does not reset state or clear caches.
+
 
 window.addEventListener("focus", () => {
     loadDashboard(true);
