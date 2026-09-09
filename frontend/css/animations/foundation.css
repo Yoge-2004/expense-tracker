@@ -1,0 +1,220 @@
+/* ==========================================================================
+   EXPENSE TRACKER — ANIMATIONS.CSS
+   Module: Animations, Keyframes & Micro-Interactions Suite
+   ========================================================================== */
+
+/* ================== 10. ANIMATIONS & TRANSITIONS ================== */
+
+/* --- Keyframes --- */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px) scaleY(0.95); }
+    to   { opacity: 1; transform: translateY(0)   scaleY(1); }
+}
+
+@keyframes cardEntrance {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes expenseSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes progressGrow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+
+@keyframes avatarPulse {
+    0%, 100% { box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3); }
+    50%       { box-shadow: 0 4px 22px rgba(var(--primary-rgb), 0.6); }
+}
+
+@keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+}
+
+@keyframes ripple {
+    to { transform: scale(4); opacity: 0; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-5px); }
+    40%       { transform: translateX(5px); }
+    60%       { transform: translateX(-4px); }
+    80%       { transform: translateX(4px); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes spin-centered {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.grid-stats .card:nth-child(1) { animation-delay: 0.05s; }
+.grid-stats .card:nth-child(2) { animation-delay: 0.12s; }
+
+/* --- Primary & submit buttons: press + shine --- */
+.btn-primary,
+button[type="submit"] {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s;
+}
+
+.btn-primary::after,
+button[type="submit"]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+    background-size: 200% 100%;
+    background-position: -200% center;
+    transition: background-position 0.5s ease;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.btn-primary:hover::after,
+button[type="submit"]:hover::after {
+    background-position: 200% center;
+}
+
+.btn-primary:hover,
+button[type="submit"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px var(--accent-glow);
+    filter: brightness(1.08);
+}
+
+.btn-primary:active,
+button[type="submit"]:active {
+    transform: translateY(0) scale(0.97);
+    box-shadow: 0 4px 12px var(--accent-glow);
+    filter: brightness(0.96);
+    transition-duration: 0.08s;
+}
+
+/* Ripple layer for primary button clicks */
+.btn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(0);
+    pointer-events: none;
+    animation: ripple 0.55s linear;
+}
+
+.btn-icon:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.18) !important;
+}
+
+.btn-icon:active {
+    transform: scale(0.91) !important;
+    transition-duration: 0.08s !important;
+}
+
+/* --- Edit / Delete buttons: hover-lift + active-press motion
+   (base colors are set where these classes are first defined, above) --- */
+.btn-edit:active {
+    transform: scale(0.93) !important;
+    transition-duration: 0.08s !important;
+}
+
+/* Consolidated from 2 declarations -- transform had scale(1.05) vs
+   translateY(-2px) scale(1.08) !important (the latter was winning). */
+.btn-edit:hover {
+    background: var(--primary);
+    color: var(--on-primary);
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Consolidated from 2 declarations, same shape as .btn-edit:hover above. */
+.btn-delete:hover {
+    background: var(--accent);
+    color: var(--on-primary);
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.35);
+}
+
+.btn-delete:active {
+    transform: scale(0.93) !important;
+    transition-duration: 0.08s !important;
+}
+
+/* Shake on .shake class (add/remove via JS on error) */
+.btn-delete.shake { animation: shake 0.4s var(--ease); }
+
+/* Stagger each item */
+.expense-item:nth-child(1)  { animation-delay: 0.04s; }
+.expense-item:nth-child(2)  { animation-delay: 0.08s; }
+.expense-item:nth-child(3)  { animation-delay: 0.12s; }
+.expense-item:nth-child(4)  { animation-delay: 0.16s; }
+.expense-item:nth-child(5)  { animation-delay: 0.20s; }
+.expense-item:nth-child(6)  { animation-delay: 0.24s; }
+.expense-item:nth-child(7)  { animation-delay: 0.28s; }
+.expense-item:nth-child(8)  { animation-delay: 0.32s; }
+.expense-item:nth-child(9)  { animation-delay: 0.36s; }
+.expense-item:nth-child(10) { animation-delay: 0.40s; }
+
+/* (Progress bar entrance — merged into .budget-bar-fill above.) */
+
+
+/* --- Avatar --- */
+
+.user-profile:hover .avatar {
+    transform: scale(1.1);
+    animation: avatarPulse 1.6s ease-in-out infinite;
+}
+
+/* --- Inputs: glow on focus --- */
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+    transition: border-color 0.2s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+/* (Duplicate focus glow removed — see .command-search-wrapper:focus-within above.) */
+
+.budget-item:nth-child(1) { animation-delay: 0.05s; }
+.budget-item:nth-child(2) { animation-delay: 0.10s; }
+.budget-item:nth-child(3) { animation-delay: 0.15s; }
+.budget-item:nth-child(4) { animation-delay: 0.20s; }
+.budget-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* --- Loading spinner state on confirm-delete button --- */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin-centered 0.7s linear infinite;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* --- Theme toggle smooth icon swap --- */
+.sun-icon, .moon-icon {
+    transition: opacity 0.3s var(--ease), transform 0.35s var(--ease);
+}

@@ -1,0 +1,163 @@
+/* ================== HIGH-IMPACT PROMINENT ANIMATIONS ================== */
+
+@keyframes staggeredSlideIn {
+    0% {
+        opacity: 0;
+        transform: perspective(1000px) rotateX(12deg) translateY(45px) scale(0.94);
+    }
+    70% {
+        opacity: 0.9;
+        transform: perspective(1000px) rotateX(-2deg) translateY(-4px) scale(1.01);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1);
+    }
+}
+
+@keyframes modalElasticIn {
+    0% {
+        opacity: 0;
+        transform: perspective(1000px) scale(0.8) translateY(30px);
+    }
+    50% {
+        opacity: 1;
+        transform: perspective(1000px) scale(1.06) translateY(-8px);
+    }
+    75% {
+        transform: perspective(1000px) scale(0.98) translateY(2px);
+    }
+    100% {
+        opacity: 1;
+        transform: perspective(1000px) scale(1) translateY(0);
+    }
+}
+
+@keyframes pulseGlowRing {
+    0% {
+        box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4), 0 10px 25px -5px rgba(var(--primary-rgb), 0.3);
+    }
+    70% {
+        box-shadow: 0 0 0 16px rgba(var(--highlight-rgb), 0), 0 20px 40px -5px rgba(var(--primary-rgb), 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(var(--highlight-rgb), 0), 0 10px 25px -5px rgba(var(--primary-rgb), 0.3);
+    }
+}
+
+@keyframes floatElement {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-8px) rotate(0.5deg);
+    }
+}
+
+@keyframes shimmerSweep {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes pulseBadge {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.85;
+    }
+}
+
+/* Staggered Card Entrance Cascades */
+.grid > *:nth-child(1), .grid-4-metrics > *:nth-child(1), .grid-analytics > *:nth-child(1) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.grid > *:nth-child(2), .grid-4-metrics > *:nth-child(2), .grid-analytics > *:nth-child(2) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s both;
+}
+
+.grid > *:nth-child(3), .grid-4-metrics > *:nth-child(3), .grid-analytics > *:nth-child(3) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.3s both;
+}
+
+.grid > *:nth-child(4), .grid-4-metrics > *:nth-child(4), .grid-analytics > *:nth-child(4) {
+    animation: staggeredSlideIn 0.75s cubic-bezier(0.2, 0.9, 0.3, 1) 0.45s both;
+}
+
+/* Prominent Stat Card Hover Scaling & Lift */
+.stat-card, .metric-card {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease !important;
+}
+
+.stat-card:hover {
+    transform: translateY(-10px) scale(1.025) rotate(0.5deg) !important;
+    box-shadow: 0 20px 45px -10px rgba(var(--primary-rgb), 0.45), 0 0 25px rgba(178, 138, 50, 0.3) !important;
+    border-color: rgba(var(--primary-rgb), 0.6) !important;
+}
+
+.stat-card.active, .stat-card.hero, .metric-card-glow {
+    animation: pulseGlowRing 3s ease-in-out infinite;
+}
+
+/* Interactive Buttons */
+.btn-primary, .btn-submit {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, background 0.3s ease !important;
+}
+
+.btn-primary:hover, .btn-submit:hover {
+    transform: translateY(-3px) scale(1.03) !important;
+    box-shadow: 0 12px 30px -4px rgba(var(--primary-rgb), 0.6) !important;
+}
+
+.btn-primary:active, .btn-submit:active {
+    transform: translateY(1px) scale(0.97) !important;
+}
+
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: skewX(-20deg);
+}
+
+.btn-primary:hover::after {
+    animation: shimmerSweep 0.9s ease-in-out;
+}
+
+/* (Elastic modal entrance removed: .modal.active .modal-content never
+   matched real markup. .modal-overlay.active .modal already animates
+   in via modalSpringIn — see keyframes near its declaration below.) */
+
+/* (Table Row Highlights & Slide — removed: .expense-row/tbody tr never matched
+   real markup; .expense-item already has working hover treatment elsewhere.) */
+
+/* Status Badges Pulsing */
+.badge, .status-badge {
+    transition: transform 0.25s ease !important;
+}
+
+.badge:hover, .status-badge:hover {
+    animation: pulseBadge 1.2s ease-in-out infinite;
+}
+
+/* --- Reduce motion for accessibility --- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
