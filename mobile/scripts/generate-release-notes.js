@@ -3,30 +3,18 @@ const path = require('path');
 const crypto = require('crypto');
 
 function getFileSize(filePath) {
-  try {
-    const stats = fs.statSync(filePath);
-    return (stats.size / (1024 * 1024)).toFixed(2) + ' MB';
-  } catch {
-    return 'N/A';
-  }
+  try { return (fs.statSync(filePath).size / (1024 * 1024)).toFixed(2) + ' MB'; }
+  catch { return 'N/A'; }
 }
 
 function getSha256(filePath, fallbackHashFile) {
   try {
     if (fallbackHashFile && fs.existsSync(fallbackHashFile)) {
-      const content = fs.readFileSync(fallbackHashFile, 'utf8').trim();
-      const firstToken = content.split(/\s+/)[0];
-      if (firstToken && firstToken.length === 64) {
-        return firstToken;
-      }
+      const token = fs.readFileSync(fallbackHashFile, 'utf8').trim().split(/\s+/)[0];
+      if (token && token.length === 64) return token;
     }
-    if (fs.existsSync(filePath)) {
-      const fileBuffer = fs.readFileSync(filePath);
-      return crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    }
-  } catch (err) {
-    console.warn('Could not compute SHA-256:', err);
-  }
+    if (fs.existsSync(filePath)) return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+  } catch (err) { console.warn('Could not compute SHA-256:', err); }
   return 'Pending verification';
 }
 
@@ -34,16 +22,15 @@ function main() {
   const baseDir = path.resolve(__dirname, '..');
   const appJsonPath = path.join(baseDir, 'app.json');
   const apkPath = path.join(baseDir, 'expense-tracker.apk');
-  const apkSha256Path = path.join(baseDir, 'expense-tracker.apk.sha256');
+  const apkShaPath = path.join(baseDir, 'expense-tracker.apk.sha256');
   const ipaPath = path.join(baseDir, 'expense-tracker.ipa');
-  const ipaSha256Path = path.join(baseDir, 'expense-tracker.ipa.sha256');
+  const ipaShaPath = path.join(baseDir, 'expense-tracker.ipa.sha256');
   const outputPath = path.join(baseDir, 'release-notes.md');
 
-  let version = '1.0.2';
-  let versionCode = 3;
+  let version = '1.0.3';
+  let versionCode = 5;
   let packageId = 'com.yoge.expensetracker';
   let bundleId = 'com.yoge.expensetracker';
-
   if (fs.existsSync(appJsonPath)) {
     try {
       const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
@@ -51,96 +38,99 @@ function main() {
       versionCode = appJson.expo?.android?.versionCode || versionCode;
       packageId = appJson.expo?.android?.package || packageId;
       bundleId = appJson.expo?.ios?.bundleIdentifier || bundleId;
-    } catch (e) {
-      console.warn('Error reading app.json:', e);
-    }
+    } catch (e) { console.warn('Error reading app.json:', e); }
   }
 
   const runNumber = process.env.GITHUB_RUN_NUMBER || 'latest';
   const commitSha = process.env.GITHUB_SHA || 'main';
-  const shortSha = commitSha.length > 7 ? commitSha.substring(0, 7) : commitSha;
-
+  const shortSha = commitSha.length > 7 ? commitSha.slice(0, 7) : commitSha;
   const hasApk = fs.existsSync(apkPath);
-  const apkSize = getFileSize(apkPath);
-  const apkSha256 = getSha256(apkPath, apkSha256Path);
-
   const hasIpa = fs.existsSync(ipaPath);
+  const apkSize = getFileSize(apkPath);
+  const apkSha = getSha256(apkPath, apkShaPath);
   const ipaSize = getFileSize(ipaPath);
-  const ipaSha256 = getSha256(ipaPath, ipaSha256Path);
+  const ipaSha = getSha256(ipaPath, ipaShaPath);
 
-  let artifactsTable = `| Attribute | Details |
-| :--- | :--- |
-| **Release Version** | \`${version}\` |
-| **Version Code / Build** | Android: \`${versionCode}\` / iOS: \`${versionCode}\` |
-| **Package / Bundle ID** | \`${packageId}\` |
-| **Build Number** | \`#${runNumber}\` |
-| **Commit SHA** | [\`${shortSha}\`](https://github.com/Yoge-2004/expense-tracker/commit/${commitSha}) |`;
+  let artifacts = `| Attribute | Details |\n| :--- | :--- |\n| **Release Version** | \`${version}\` |\n| **Android Version Code** | \`${versionCode}\` |\n| **Package ID** | \`${packageId}\` |\n| **iOS Bundle ID** | \`${bundleId}\` |\n| **Build Number** | \`#${runNumber}\` |\n| **Commit SHA** | [\`${shortSha}\`](https://github.com/Yoge-2004/expense-tracker/commit/${commitSha}) |`;
+  if (hasApk) artifacts += `\n| **Android APK Size** | \`${apkSize}\` |\n| **Android APK SHA-256** | \`${apkSha}\` |`;
+  if (hasIpa) artifacts += `\n| **iOS IPA Size** | \`${ipaSize}\` |\n| **iOS IPA SHA-256** | \`${ipaSha}\` |`;
 
-  if (hasApk) {
-    artifactsTable += `
-| **Android APK Size** | \`${apkSize}\` |
-| **Android APK SHA-256** | \`${apkSha256}\` |`;
-  }
+  const markdown = `# Expense Tracker Mobile v${version} — Build #${runNumber}
 
-  if (hasIpa) {
-    artifactsTable += `
-| **iOS IPA Size** | \`${ipaSize}\` |
-| **iOS IPA SHA-256** | \`${ipaSha256}\` |`;
-  }
-
-  const markdown = `# 🚀 Expense Tracker Mobile v${version} (Build #${runNumber})
-
-A major update for **Expense Tracker Mobile**, featuring the brand-new 3D wallet brand identity, intuitive year navigation steppers and selectors, natural security PIN cursor positioning, and verified Google OAuth authentication.
+A release focused on **trustworthy financial reporting, filter-synchronized analytics, premium exports, responsive layouts, notifications, and CI reliability**.
 
 ---
 
-### ✨ What's New & Key Highlights
+## What's New
 
-* **👛 New App Icon & Visual Identity**:
-  * Premium 3D-styled leather wallet motif with white stitching, gold Indian Rupee (₹) coin, receipt, and payment card.
-  * Rendered against an elegant warm cream (\`#F9F6EF\`) background with Android adaptive icon safe-zone centering.
+### Dashboard Intelligence
+- **Filters now drive the dashboard itself**, not only the transaction ledger: KPIs, cash-flow metrics, top category, insights, and financial charts use the same active search/category/date-filtered dataset.
+- Search, category, Today, This Month, Last 30D, and Custom Range remain synchronized with the visible analytics.
+- Dashboard calculations use the freshest persisted records after synchronization.
 
-* **📅 Intuitive Year & Month Navigation**:
-  * Dual dedicated steppers: **\`‹ Sep ▾ ›\`** and **\`‹ ${new Date().getFullYear()} ▾ ›\`**.
-  * **1-Tap Year Jump**: Directly tap **\`‹\`** or **\`›\`** beside the year to step forward or backward by a full year without nested menus.
-  * **Full Year Selector Grid**: Tap the year dropdown **\`${new Date().getFullYear()} ▾\`** to open a 12-year grid view with decade navigation.
-  * **Month Selector Grid**: Tap **\`Sep ▾\`** to jump to any month in one tap.
+### Executive Export Center
+- Export now requires an explicit reporting period: **Month & Year**, **Custom Range**, or **All Time**.
+- PDF and Excel reports are generated from **live backend ledger data at export time**, reducing stale-cache and missed-record exports.
+- Custom ranges are passed directly to the backend reporting endpoints.
 
-* **🔒 Security PIN Cursor Fix**:
-  * Updated PIN input layout with left alignment and comfortable padding, ensuring the cursor (\`|\`) blinks naturally at the beginning of the textbox.
-  * Added clear, friendly placeholders (\`Enter 6-digit PIN\` / \`Confirm 6-digit PIN\`).
+### Premium PDF Report
+- Executive KPI block for spend, income, net cash flow, and transaction count.
+- Management-oriented insights including largest cost centre, average transaction value, and cash-flow interpretation.
+- Category breakdown with spend share.
+- Full transaction ledger for the selected reporting period.
+- Clean financial typography with no decorative glyph/icon noise.
 
-* **🛡️ Category Dependency Protection**:
-  * Informative lock dialog preventing silent deletion of categories actively linked to budgets, subscriptions, or transactions.
+### Power BI-Inspired Excel Workbook
+- **Executive Dashboard** sheet with headline KPIs and insights.
+- **Category Analysis** sheet with spend, share, transaction count, and average transaction value.
+- **Transactions** sheet with a clean audit-friendly ledger.
+- **Cash Flow** sheet with monthly income, spend, and net movement.
+- Removed the previous glyph-heavy presentation in favour of a restrained executive reporting layout.
 
-* **⏱️ Chronological Expense Ledger**:
-  * Reverse-chronological insertion-order sorting (\`id DESC\`) on both mobile client and Spring Boot JPA backend.
+### Download Experience
+- Export completion is routed through the app's custom alert UI instead of relying on the native Android download-success alert.
+- Export filenames include the selected reporting period.
+
+### Notifications & Responsive App
+- Android notification icon/channel configuration is aligned with the app's premium gold visual identity.
+- iOS notification configuration is included in the Expo project; a final iOS IPA still depends on Apple Developer credentials being available to EAS.
+- Native orientation is now configured for **default orientation**, enabling landscape-aware layouts.
+- Calendar/date-selection controls were hardened against narrow-screen overflow.
+
+### Build & Delivery Reliability
+- GitHub Actions now use the Node 24-compatible action generations required ahead of GitHub's Node 20 removal.
+- EAS CLI and Expo Doctor versions are pinned for reproducible mobile builds.
+- Backend report compilation is covered by CI.
+- Spring Boot production JAR delivery can be published to the Hugging Face backend Space from GitHub Actions when the repository has an `HF_TOKEN` write secret.
 
 ---
 
-### 📦 Build & Artifact Summary
+## Build & Artifact Summary
 
-${artifactsTable}
+${artifacts}
 
 ---
 
-### 📲 Installation & Update Guide
+## Installation
 
-1. **Android Users**: Download **\`expense-tracker.apk\`** below under **Assets** and open to install.
-${hasIpa ? '2. **iOS Users**: Download **`expense-tracker.ipa`** below and install via Apple Configurator, TestFlight, or ad-hoc provisioning.\n3.' : '2.'} **In-Place Upgrade**: All your existing login sessions, local caches, and biometric preferences remain safe and untouched.
+1. **Android:** download \`expense-tracker.apk\` from the Assets section.
+${hasIpa ? '2. **iOS:** an IPA is available in Assets; installation still follows Apple provisioning requirements.\n3.' : '2.'} **Verify:** optionally compare the published SHA-256 checksum with your downloaded APK.
 
-#### 🔐 Checksum Verification (Optional)
+### SHA-256
 \`\`\`bash
-# Linux / macOS
 sha256sum expense-tracker.apk
-
-# Windows PowerShell
-Get-FileHash -Algorithm SHA256 .\\expense-tracker.apk
 \`\`\`
+
+---
+
+## Notes
+
+- Reports reflect the selected date range and the persisted server-side ledger at export time.
+- iOS build availability is credential-dependent; the Android release is the primary downloadable artifact when no Apple credentials are linked.
 `;
 
   fs.writeFileSync(outputPath, markdown, 'utf8');
-  console.log(`Successfully generated release notes at: ${outputPath}`);
+  console.log(`Generated release notes: ${outputPath}`);
 }
 
 main();
