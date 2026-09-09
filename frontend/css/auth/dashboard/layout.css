@@ -1,0 +1,378 @@
+/* ── Dashboard Enhancements ── */
+.top-bar {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.user-profile:hover .avatar {
+    box-shadow: 0 0 0 3px var(--primary), 0 6px 20px rgba(var(--primary-rgb),0.4);
+}
+
+/* Top action bar for auth pages (Theme toggle, etc) */
+.auth-top-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+/* Username suggestion chips */
+.username-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(var(--primary-rgb), 0.05);
+    border: 1px dashed rgba(var(--primary-rgb), 0.3);
+    border-radius: 10px;
+}
+
+.suggestion-title {
+    width: 100%;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.suggestion-chip {
+    background: rgba(var(--primary-rgb), 0.12);
+    border: 1px solid rgba(var(--primary-rgb), 0.4);
+    color: var(--primary);
+    padding: 3px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+}
+
+.suggestion-chip:hover {
+    background: var(--primary);
+    color: var(--on-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+}
+
+/* Responsive — Auth pages & Dashboard mobile layout */
+@media (max-width: 900px) {
+    .auth-page {
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 100vh;
+        height: auto;
+        overflow-y: visible !important;
+        overflow: visible !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+
+    .auth-hero {
+        position: relative !important;
+        top: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 24px 16px 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        border-bottom: 1px solid var(--border);
+        overflow: visible !important;
+    }
+
+    .auth-hero-content {
+        width: 100% !important;
+        max-width: 520px !important;
+        text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+
+    .hero-brand {
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    .hero-headline {
+        font-size: 24px !important;
+        line-height: 1.25 !important;
+        margin-top: 6px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .hero-subline {
+        font-size: 13px !important;
+        margin-bottom: 14px !important;
+        max-width: 100% !important;
+    }
+
+    .hero-float-cards {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+        padding: 2px 0 0 !important;
+    }
+
+    .float-card {
+        margin-left: 0 !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+        padding: 10px 14px !important;
+    }
+
+    .float-card > div:not(.float-card-icon):not(.perk-icon),
+    .perk-item > div:not(.float-card-icon):not(.perk-icon) {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        overflow: hidden !important;
+    }
+
+    .float-card-value, .perk-title {
+        font-size: 13px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+        display: block !important;
+    }
+
+    .float-card-label, .perk-sub {
+        font-size: 10.5px !important;
+        line-height: 1.3 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+    }
+
+    .float-card-icon {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .float-card:nth-child(3) {
+        grid-column: auto !important;
+    }
+
+    .perks-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        width: 100% !important;
+        margin-top: 12px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .perk-item {
+        padding: 10px 14px !important;
+        border-radius: 14px !important;
+        background: rgba(23, 26, 20, 0.52) !important;
+        border: 1px solid rgba(236, 231, 216, 0.12) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .hero-features {
+        display: none !important;
+    }
+
+    .dashboard-container {
+        padding: 24px 20px 48px !important;
+        gap: 20px !important;
+    }
+
+    .auth-form-section {
+        width: 100% !important;
+        padding: 16px 18px 40px !important;
+        box-sizing: border-box !important;
+        min-height: auto !important;
+        height: auto !important;
+        overflow-y: visible !important;
+    }
+
+    .auth-card {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 32px 24px !important;
+        border-radius: 20px !important;
+    }
+
+    .form-input, select.form-input {
+        font-size: 14px !important;
+        height: 48px !important;
+        box-sizing: border-box !important;
+    }
+
+    .top-bar {
+        position: static !important;
+        top: auto !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding-top: 8px !important;
+        padding-bottom: 14px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .dashboard-heading {
+        margin-bottom: 2px !important;
+    }
+
+    .dashboard-heading #userWelcomeText {
+        margin-top: 4px !important;
+        font-size: 13px !important;
+        color: var(--text-muted) !important;
+    }
+
+    .top-bar-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0 14px !important;
+    }
+
+    .command-search-wrapper {
+        order: 10 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+        height: 44px !important;
+        margin-top: 10px !important;
+        position: relative !important;
+        z-index: 50 !important;
+        pointer-events: auto !important;
+        box-sizing: border-box !important;
+    }
+
+    .command-search-wrapper:focus-within {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .command-search-input {
+        width: 100% !important;
+        pointer-events: auto !important;
+        font-size: 15px !important;
+        padding: 0 8px !important;
+        box-sizing: border-box !important;
+    }
+
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        flex: 1 1 calc(50% - 6px) !important;
+        width: calc(50% - 6px) !important;
+        height: 44px !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        border-radius: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-bottom: 8px !important;
+        box-sizing: border-box !important;
+    }
+
+    .command-kbd {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .perks-grid {
+        grid-template-columns: 1fr 1fr !important;
+        margin-bottom: 6px !important;
+    }
+    .hero-headline { font-size: 22px !important; }
+    .auth-title { font-size: 22px !important; }
+    .auth-hero {
+        position: relative !important;
+        top: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 20px 14px 6px !important;
+    }
+    .auth-form-section { padding: 12px 12px 30px !important; }
+
+    .auth-card {
+        padding: 22px 16px 26px !important;
+    }
+
+    .auth-card-header {
+        margin-bottom: 16px !important;
+    }
+
+    .hero-float-cards {
+        gap: 8px !important;
+        margin-bottom: 6px !important;
+        padding: 0 !important;
+    }
+
+    .float-card, .perk-item {
+        padding: 8px 10px !important;
+        gap: 8px !important;
+    }
+
+    .float-card-icon, .perk-icon {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        border-radius: 8px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .float-card-icon svg, .perk-icon svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .float-card-value, .perk-title {
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .float-card-label, .perk-sub {
+        font-size: 9px !important;
+        line-height: 1.25 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+}
