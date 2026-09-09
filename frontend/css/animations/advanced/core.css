@@ -46,8 +46,6 @@
     }
 }
 
-
-
 /* 4. Progress Bar & Step Bar Shimmer Wave */
 @keyframes shimmerSweep {
     0% { background-position: -200% 0; }
@@ -55,8 +53,6 @@
 }
 
 .budget-bar-fill,
-
-
 .budget-bar-fill::after,
 .step-bar::after {
     content: '';
@@ -123,13 +119,6 @@
     -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
-/* Consolidated: this was declared 4 times total (2 already merged into
-   the .modal rule above using the plain "modalIn" keyframe, which is
-   why that keyframe was dead -- this pair's !important animation value
-   was always winning instead). Kept modalSpringIn (entrance bounce) +
-   modalBorderGlow (a subtle glow while the dialog is open, not an
-   always-on-forever animation like the ones cut in the previous
-   animation pass, since it only runs while a modal is actually visible). */
 .modal-overlay.active .modal {
     animation: modalSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
                modalBorderGlow 4s ease-in-out infinite alternate;
@@ -169,8 +158,6 @@
     100% { transform: translateY(-2px) scale(1.03); }
 }
 
-
-
 /* 10. Number Counter Flash / Glow on Change */
 @keyframes numberGlow {
     0% { color: var(--primary); text-shadow: 0 0 16px rgba(var(--primary-rgb), 0.8); }
@@ -192,13 +179,6 @@
     transform: none !important;
     box-shadow: none !important;
 }
-
-.input-wrapper:focus-within {
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-
 
 /* 12. Multi-Ring Dual Speed Action Spinner */
 @keyframes dualSpin {
@@ -284,6 +264,4 @@
     animation: btnPulseGlow 1.8s infinite;
 }
 
-/* ==========================================================================
-   ADDITIONAL 22 ADVANCED MICRO-ANIMATIONS (TOTAL 39+ SYSTEM)
-   ========================================================================== */
+/* The remaining advanced effects continue in focused modules. */
