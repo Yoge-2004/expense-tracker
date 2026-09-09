@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 env:
-  PATCH_REVISION: "2"
+  PATCH_REVISION: "3"
 
 jobs:
   patch:
@@ -22,7 +22,6 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
 
           api = Path('frontend/js/api.js')
           s = api.read_text()
@@ -30,10 +29,10 @@ jobs:
     setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
     let response;'''
           new = '''    // Background GETs must not flash the global loading veil. The dashboard
-    // performs several parallel reads (profile, budgets, incomes, savings,
-    // subscriptions), and showing the global loader for every one made the
-    // page appear to randomly refresh/flicker during normal use. Mutations
-    // still show the loader, and callers can opt a GET in with showLoading.
+    // performs several parallel reads, and showing the global loader for every
+    // one made the page appear to randomly refresh/flicker during normal use.
+    // Mutations still show the loader, and callers can opt a GET in with
+    // showLoading: true.
     const showRequestLoading = options.showLoading === true || method !== "GET";
     if (showRequestLoading) {
         activeRequests += 1;
@@ -52,7 +51,7 @@ jobs:
             if (activeRequests === 0) setLoading(false);
         }
     }'''
-          if old_finally in s and 'if (showRequestLoading) {\n            activeRequests -= 1;' not in s:
+          if old_finally in s and 'if (showRequestLoading) {' not in s:
               s = s.replace(old_finally, new_finally, 1)
           api.write_text(s)
 
@@ -137,15 +136,7 @@ jobs:
 }
 '''
           if marker not in c:
-              c += block
-              css.write_text(c)
-
-          # Ensure dynamically-created income action buttons can never act as form submitters.
-          dash = Path('frontend/js/dashboard.js')
-          d = dash.read_text()
-          d2 = re.sub(r'<button (onclick="(?:editIncome|deleteIncome)[^>]*?) class="btn-(?:edit|delete)"', r'<button type="button" \1 class="btn-edit"', d)
-          if d2 != d:
-              dash.write_text(d2)
+              css.write_text(c + block)
 
       - name: Verify patched files
         shell: bash
@@ -158,14 +149,12 @@ jobs:
 
       - name: Commit stabilization patch and remove this one-time workflow
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/js/api.js frontend/js/dashboard.js frontend/css/tables.css
-          git commit -m "fix(web): stabilize dashboard loading and responsive income ledger" || true
+          git add frontend/js/api.js frontend/css/tables.css
+          git commit -m "fix(web): stabilize dashboard loading and responsive income ledger"
           git rm .github/workflows/ui-stability-patch.yml
           git commit -m "chore: remove one-time UI stabilization workflow"
           git push
