@@ -11,6 +11,7 @@ on:
       - 'mvnw.cmd'
       - 'Dockerfile'
       - '.github/workflows/deploy-backend-hf.yml'
+      - 'hf-space/README.md'
 
 permissions:
   contents: read
@@ -48,6 +49,7 @@ jobs:
           mkdir -p hf-space-payload
           cp "$JAR" hf-space-payload/app.jar
           cp Dockerfile hf-space-payload/Dockerfile
+          cp hf-space/README.md hf-space-payload/README.md
           ls -lh hf-space-payload
 
       - name: Validate Hugging Face token
@@ -63,7 +65,7 @@ jobs:
       - name: Install Hugging Face CLI
         run: python -m pip install --upgrade huggingface_hub
 
-      - name: Upload JAR and Dockerfile to Space
+      - name: Upload backend, Dockerfile, and Space README
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -80,3 +82,4 @@ jobs:
           echo "- Commit: \\`${GITHUB_SHA::7}\\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Artifact: \\`app.jar\\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Dockerfile: synchronized" >> "$GITHUB_STEP_SUMMARY"
+          echo "- README: synchronized" >> "$GITHUB_STEP_SUMMARY"
