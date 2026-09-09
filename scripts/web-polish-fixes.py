@@ -12,11 +12,7 @@ if old_edit not in s or old_delete not in s:
 s = s.replace(old_edit, new_edit, 1).replace(old_delete, new_delete, 1)
 dashboard.write_text(s, encoding='utf-8')
 
-# Replace the previous placeholder biometrics module with a real WebAuthn client.
-biometrics = Path('frontend/js/biometrics.js')
-biometrics.write_text(Path('/tmp/biometrics.js').read_text(encoding='utf-8') if Path('/tmp/biometrics.js').exists() else biometrics.read_text(encoding='utf-8'), encoding='utf-8')
-
-# Explicitly style savings actions and prevent inherited/inline styles from making them look like plain text.
+# Explicitly style savings actions and prevent inherited styles from making them look like plain text.
 tables = Path('frontend/css/tables.css')
 css = tables.read_text(encoding='utf-8')
 marker = '/* Web savings goal action buttons: match expense/income edit/delete controls. */'
@@ -24,7 +20,7 @@ if marker not in css:
     css += '''\n\n/* Web savings goal action buttons: match expense/income edit/delete controls. */\n.savings-goal-card .edit-goal-btn,\n.savings-goal-card .delete-goal-btn {\n    width: 36px;\n    height: 36px;\n    min-width: 36px;\n    padding: 0;\n    border-radius: 10px;\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    flex: 0 0 auto;\n    cursor: pointer;\n    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;\n}\n.savings-goal-card .edit-goal-btn svg,\n.savings-goal-card .delete-goal-btn svg {\n    width: 15px;\n    height: 15px;\n    pointer-events: none;\n}\n.savings-goal-card .edit-goal-btn {\n    color: var(--primary) !important;\n}\n.savings-goal-card .delete-goal-btn {\n    color: var(--danger) !important;\n}\n.savings-goal-card .edit-goal-btn:hover,\n.savings-goal-card .delete-goal-btn:hover {\n    transform: translateY(-1px);\n}\n[data-theme="light"] .savings-goal-card .edit-goal-btn,\n[data-theme="light"] .savings-goal-card .delete-goal-btn {\n    background: var(--input-bg);\n}\n\n@media (max-width: 700px) {\n    .savings-goal-card .edit-goal-btn,\n    .savings-goal-card .delete-goal-btn {\n        width: 34px;\n        height: 34px;\n        min-width: 34px;\n        border-radius: 9px;\n    }\n}\n'''
     tables.write_text(css, encoding='utf-8')
 
-# Bust browser caches for the newly repaired client module on both auth and dashboard pages.
+# Bust browser caches for the repaired client module on both auth and dashboard pages.
 for name in ('frontend/index.html', 'frontend/dashboard.html'):
     p = Path(name)
     html = p.read_text(encoding='utf-8')
