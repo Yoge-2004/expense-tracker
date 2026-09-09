@@ -51,86 +51,89 @@ function main() {
   const ipaSize = getFileSize(ipaPath);
   const ipaSha = getSha256(ipaPath, ipaShaPath);
 
-  let artifacts = `| Attribute | Details |\n| :--- | :--- |\n| **Release Version** | \`${version}\` |\n| **Android Version Code** | \`${versionCode}\` |\n| **Package ID** | \`${packageId}\` |\n| **iOS Bundle ID** | \`${bundleId}\` |\n| **Build Number** | \`#${runNumber}\` |\n| **Commit SHA** | [\`${shortSha}\`](https://github.com/Yoge-2004/expense-tracker/commit/${commitSha}) |`;
-  if (hasApk) artifacts += `\n| **Android APK Size** | \`${apkSize}\` |\n| **Android APK SHA-256** | \`${apkSha}\` |`;
-  if (hasIpa) artifacts += `\n| **iOS IPA Size** | \`${ipaSize}\` |\n| **iOS IPA SHA-256** | \`${ipaSha}\` |`;
+  const rows = [
+    '| Attribute | Details |',
+    '| :--- | :--- |',
+    '| **Release Version** | ' + version + ' |',
+    '| **Android Version Code** | ' + versionCode + ' |',
+    '| **Package ID** | ' + packageId + ' |',
+    '| **iOS Bundle ID** | ' + bundleId + ' |',
+    '| **Build Number** | #' + runNumber + ' |',
+    '| **Commit SHA** | ' + shortSha + ' |'
+  ];
+  if (hasApk) rows.push('| **Android APK Size** | ' + apkSize + ' |', '| **Android APK SHA-256** | ' + apkSha + ' |');
+  if (hasIpa) rows.push('| **iOS IPA Size** | ' + ipaSize + ' |', '| **iOS IPA SHA-256** | ' + ipaSha + ' |');
 
-  const markdown = `# Expense Tracker Mobile v${version} — Build #${runNumber}
+  const lines = [
+    '# Expense Tracker Mobile v' + version + ' — Build #' + runNumber,
+    '',
+    'A release focused on **trustworthy financial reporting, filter-synchronized analytics, premium exports, responsive layouts, notifications, and CI reliability**.',
+    '',
+    '---',
+    '',
+    "## What's New",
+    '',
+    '### Dashboard Intelligence',
+    '- **Filters now drive the dashboard itself**, not only the transaction ledger: KPIs, cash-flow metrics, top category, insights, and financial charts use the same active search/category/date-filtered dataset.',
+    '- Search, category, Today, This Month, Last 30D, and Custom Range remain synchronized with the visible analytics.',
+    '- Dashboard calculations use the freshest persisted records after synchronization.',
+    '',
+    '### Executive Export Center',
+    '- Export now requires an explicit reporting period: **Month & Year**, **Custom Range**, or **All Time**.',
+    '- PDF and Excel reports are generated from **live backend ledger data at export time**, reducing stale-cache and missed-record exports.',
+    '- Custom ranges are passed directly to the backend reporting endpoints.',
+    '',
+    '### Premium PDF Report',
+    '- Executive KPI block for spend, income, net cash flow, and transaction count.',
+    '- Management-oriented insights including largest cost centre, average transaction value, and cash-flow interpretation.',
+    '- Category breakdown with spend share.',
+    '- Full transaction ledger for the selected reporting period.',
+    '- Clean financial typography with no decorative glyph/icon noise.',
+    '',
+    '### Power BI-Inspired Excel Workbook',
+    '- **Executive Dashboard** sheet with headline KPIs and insights.',
+    '- **Category Analysis** sheet with spend, share, transaction count, and average transaction value.',
+    '- **Transactions** sheet with a clean audit-friendly ledger.',
+    '- **Cash Flow** sheet with monthly income, spend, and net movement.',
+    '- Removed the previous glyph-heavy presentation in favour of a restrained executive reporting layout.',
+    '',
+    '### Download Experience',
+    "- Export completion is routed through the app's custom alert UI instead of relying on the native Android download-success alert.",
+    '- Export filenames include the selected reporting period.',
+    '',
+    '### Notifications & Responsive App',
+    '- Android notification icon/channel configuration is aligned with the app visual identity.',
+    '- iOS notification configuration is included in the Expo project; a final iOS IPA still depends on Apple Developer credentials being available to EAS.',
+    '- Native orientation is now configured for default orientation, enabling landscape-aware layouts.',
+    '- Calendar/date-selection controls were hardened against narrow-screen overflow.',
+    '',
+    '### Build & Delivery Reliability',
+    "- GitHub Actions now use the Node 24-compatible action generations required ahead of GitHub's Node 20 removal.",
+    '- EAS CLI and Expo Doctor versions are pinned for reproducible mobile builds.',
+    '- Backend report compilation is covered by CI.',
+    '- Spring Boot production JAR delivery can be published to the Hugging Face backend Space from GitHub Actions when the repository has an HF_TOKEN write secret.',
+    '',
+    '---',
+    '',
+    '## Build & Artifact Summary',
+    '',
+    rows.join('\n'),
+    '',
+    '---',
+    '',
+    '## Installation',
+    '',
+    '1. Android: download the expense-tracker.apk asset from the release.',
+    hasIpa ? '2. iOS: an IPA is available in Assets; Apple provisioning requirements still apply.' : '2. Verify: optionally compare the published SHA-256 checksum with your downloaded APK.',
+    '',
+    '### Notes',
+    '',
+    '- Reports reflect the selected date range and the persisted server-side ledger at export time.',
+    '- iOS build availability is credential-dependent; the Android release is the primary downloadable artifact when no Apple credentials are linked to EAS.'
+  ];
 
-A release focused on **trustworthy financial reporting, filter-synchronized analytics, premium exports, responsive layouts, notifications, and CI reliability**.
-
----
-
-## What's New
-
-### Dashboard Intelligence
-- **Filters now drive the dashboard itself**, not only the transaction ledger: KPIs, cash-flow metrics, top category, insights, and financial charts use the same active search/category/date-filtered dataset.
-- Search, category, Today, This Month, Last 30D, and Custom Range remain synchronized with the visible analytics.
-- Dashboard calculations use the freshest persisted records after synchronization.
-
-### Executive Export Center
-- Export now requires an explicit reporting period: **Month & Year**, **Custom Range**, or **All Time**.
-- PDF and Excel reports are generated from **live backend ledger data at export time**, reducing stale-cache and missed-record exports.
-- Custom ranges are passed directly to the backend reporting endpoints.
-
-### Premium PDF Report
-- Executive KPI block for spend, income, net cash flow, and transaction count.
-- Management-oriented insights including largest cost centre, average transaction value, and cash-flow interpretation.
-- Category breakdown with spend share.
-- Full transaction ledger for the selected reporting period.
-- Clean financial typography with no decorative glyph/icon noise.
-
-### Power BI-Inspired Excel Workbook
-- **Executive Dashboard** sheet with headline KPIs and insights.
-- **Category Analysis** sheet with spend, share, transaction count, and average transaction value.
-- **Transactions** sheet with a clean audit-friendly ledger.
-- **Cash Flow** sheet with monthly income, spend, and net movement.
-- Removed the previous glyph-heavy presentation in favour of a restrained executive reporting layout.
-
-### Download Experience
-- Export completion is routed through the app's custom alert UI instead of relying on the native Android download-success alert.
-- Export filenames include the selected reporting period.
-
-### Notifications & Responsive App
-- Android notification icon/channel configuration is aligned with the app's premium gold visual identity.
-- iOS notification configuration is included in the Expo project; a final iOS IPA still depends on Apple Developer credentials being available to EAS.
-- Native orientation is now configured for **default orientation**, enabling landscape-aware layouts.
-- Calendar/date-selection controls were hardened against narrow-screen overflow.
-
-### Build & Delivery Reliability
-- GitHub Actions now use the Node 24-compatible action generations required ahead of GitHub's Node 20 removal.
-- EAS CLI and Expo Doctor versions are pinned for reproducible mobile builds.
-- Backend report compilation is covered by CI.
-- Spring Boot production JAR delivery can be published to the Hugging Face backend Space from GitHub Actions when the repository has an `HF_TOKEN` write secret.
-
----
-
-## Build & Artifact Summary
-
-${artifacts}
-
----
-
-## Installation
-
-1. **Android:** download \`expense-tracker.apk\` from the Assets section.
-${hasIpa ? '2. **iOS:** an IPA is available in Assets; installation still follows Apple provisioning requirements.\n3.' : '2.'} **Verify:** optionally compare the published SHA-256 checksum with your downloaded APK.
-
-### SHA-256
-\`\`\`bash
-sha256sum expense-tracker.apk
-\`\`\`
-
----
-
-## Notes
-
-- Reports reflect the selected date range and the persisted server-side ledger at export time.
-- iOS build availability is credential-dependent; the Android release is the primary downloadable artifact when no Apple credentials are linked.
-`;
-
-  fs.writeFileSync(outputPath, markdown, 'utf8');
-  console.log(`Generated release notes: ${outputPath}`);
+  fs.writeFileSync(outputPath, lines.join('\n') + '\n', 'utf8');
+  console.log('Generated release notes: ' + outputPath);
 }
 
 main();
