@@ -1,0 +1,56 @@
+/* ==========================================================================
+   EXPENSE TRACKER — BASE.CSS
+   Module: Foundation (Reset, Base Typography, Global Scrollbars)
+   ========================================================================== */
+
+/* ================== 2. FOUNDATION ================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--font-body);
+}
+
+/* Strict hidden rule to prevent class display rules from overriding hidden attribute */
+[hidden],
+.form-group-box[hidden],
+.form-group-box .form-group[hidden],
+#customIntervalWrap[hidden],
+#recurringOptions[hidden],
+#incomeRecurringOptions[hidden],
+#incomeCustomIntervalWrap[hidden],
+#editSubCustomIntervalWrap[hidden] {
+    display: none !important;
+}
+
+/* Targeted smooth transitions for theme switches without layout thrashing */
+body,
+.dashboard-container,
+.auth-page,
+.auth-card,
+.metric-card,
+.chart-card,
+.transactions-card,
+.budget-card,
+.modal,
+.top-bar,
+.form-input,
+select,
+input {
+    transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}
+
+/* Money/count fields: type the number, no native spinner arrows */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
