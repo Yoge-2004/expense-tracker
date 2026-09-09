@@ -110,7 +110,6 @@ class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals(400, response.getBody().getStatus());
         assertEquals("Required multipart file part is missing.", response.getBody().getMessage());
-        assertFalse(response.getBody().getMessage().contains("file"));
     }
 
     @Test
