@@ -1,5 +1,6 @@
 package com.example.expensetracker.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
@@ -23,8 +24,13 @@ public class DatabaseSnapshotService {
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
     private final DataSource dataSource;
+    private final String fallbackDbPath;
 
-    public DatabaseSnapshotService(DataSource dataSource) { this.dataSource = dataSource; }
+    public DatabaseSnapshotService(DataSource dataSource,
+                                   @Value("${app.fallback-db-path:${DATA_DIR:/data}/expensetracker_fallback}") String fallbackDbPath) {
+        this.dataSource = dataSource;
+        this.fallbackDbPath = fallbackDbPath;
+    }
 
     public int exportCurrentDatabase(Path sqliteFile) throws Exception {
         Files.deleteIfExists(sqliteFile);
@@ -43,12 +49,16 @@ public class DatabaseSnapshotService {
         return rows;
     }
 
-    /** Imports the encrypted-repository snapshot into the Hibernate-managed H2 failover store. */
+    /** Imports the repository snapshot into the dedicated local H2 failover store, never into Neon. */
     public int importIntoFallback(Path sqliteFile) throws Exception {
         Class.forName("org.sqlite.JDBC");
         int rows = 0;
+        Path path = Path.of(fallbackDbPath).toAbsolutePath();
+        Path parent = path.getParent();
+        if (parent != null) Files.createDirectories(parent);
+        String h2Url = "jdbc:h2:file:" + path + ";MODE=PostgreSQL;AUTO_SERVER=TRUE";
         try (Connection source = DriverManager.getConnection("jdbc:sqlite:" + sqliteFile.toAbsolutePath());
-             Connection target = dataSource.getConnection()) {
+             Connection target = DriverManager.getConnection(h2Url, "sa", "")) {
             target.setAutoCommit(false);
             try (Statement s = target.createStatement()) { s.execute("SET REFERENTIAL_INTEGRITY FALSE"); }
             for (String table : tableNames(source)) {
