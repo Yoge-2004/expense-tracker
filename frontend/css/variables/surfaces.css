@@ -1,0 +1,128 @@
+/* Global page surfaces and light-theme component overrides. */
+[data-theme="light"] body {
+    background-color: var(--bg-dark) !important;
+    background-image: none !important;
+    color: var(--text-main) !important;
+}
+
+[data-theme="light"] .dashboard-container,
+[data-theme="light"] .auth-hero {
+    background: transparent !important;
+    color: var(--text-main) !important;
+}
+
+body {
+    position: relative;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+[data-theme="light"] body::before {
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.16) 0%, transparent 70%);
+    filter: blur(65px);
+}
+
+[data-theme="light"] body::after {
+    background: radial-gradient(circle, rgba(var(--highlight-rgb), 0.14) 0%, transparent 70%);
+    filter: blur(75px);
+}
+
+.auth-page,
+.dashboard-container,
+.main-layout,
+.auth-card {
+    position: relative;
+    z-index: 1;
+}
+
+[data-theme="light"] .auth-hero {
+    background: transparent !important;
+}
+
+[data-theme="light"] .auth-form-section {
+    background: rgba(247, 246, 240, 0.76) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .metric-card,
+[data-theme="light"] .auth-card,
+[data-theme="light"] .recent-transactions,
+[data-theme="light"] .profile-menu {
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-main) !important;
+    box-shadow: 0 10px 30px -5px rgba(180, 140, 60, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.15) !important;
+}
+
+[data-theme="light"] .float-card,
+[data-theme="light"] .perk-item {
+    background: rgba(255, 255, 255, 0.76) !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+    border: 1px solid rgba(199, 154, 62, 0.24) !important;
+    box-shadow: 0 12px 32px -8px rgba(180, 140, 60, 0.18) !important;
+    color: var(--text-main) !important;
+}
+
+[data-theme="light"] .hero-orb-1 {
+    background: radial-gradient(circle, rgba(199, 154, 62, 0.38) 0%, rgba(199, 154, 62, 0.12) 50%, transparent 70%) !important;
+}
+
+[data-theme="light"] .hero-orb-2 {
+    background: radial-gradient(circle, rgba(41, 128, 185, 0.32) 0%, rgba(41, 128, 185, 0.10) 50%, transparent 70%) !important;
+}
+
+[data-theme="light"] .hero-orb-3 {
+    background: radial-gradient(circle, rgba(231, 76, 60, 0.28) 0%, rgba(231, 76, 60, 0.08) 50%, transparent 70%) !important;
+}
+
+[data-theme="light"] .hero-grid {
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px) !important;
+}
+
+[data-theme="light"] .btn-oauth {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1.5px solid rgba(199, 154, 62, 0.3) !important;
+    color: var(--text-main) !important;
+    box-shadow: 0 4px 16px rgba(180, 140, 60, 0.1) !important;
+}
+
+[data-theme="light"] .btn-icon {
+    background: rgba(255, 255, 255, 0.85) !important;
+    color: var(--text-main) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+[data-theme="light"] .command-search-wrapper {
+    background: var(--card-bg) !important;
+    border-color: var(--border) !important;
+}
+
+[data-theme="light"] .command-kbd {
+    background: rgba(15, 23, 42, 0.08) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid rgba(199, 154, 62, 0.20) !important;
+}
+
+[data-theme="light"] .command-search-input,
+[data-theme="light"] .form-input {
+    color: var(--text-main) !important;
+}
+
+[data-theme="light"] .form-input {
+    background: var(--input-bg) !important;
+    border-color: var(--border) !important;
+}
