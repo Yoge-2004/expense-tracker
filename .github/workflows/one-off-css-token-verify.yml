@@ -1,0 +1,36 @@
+name: One-off CSS token verify
+
+on:
+  push:
+    paths:
+      - 'frontend/css/**'
+      - '.github/workflows/one-off-css-token-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Verify custom properties
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          css = '\n'.join(p.read_text(encoding='utf-8') for p in Path('frontend/css').rglob('*.css'))
+          css = re.sub(r'/\*.*?\*/', '', css, flags=re.S)
+          defined = set(re.findall(r'--([A-Za-z0-9_-]+)\s*:', css))
+          used = set(re.findall(r'var\(\s*--([A-Za-z0-9_-]+)', css))
+          undefined = sorted(used - defined)
+          print(f'DEFINED_COUNT={len(defined)}')
+          print(f'USED_COUNT={len(used)}')
+          print(f'UNDEFINED_COUNT={len(undefined)}')
+          if undefined:
+              print('UNDEFINED=' + ', '.join('--' + x for x in undefined))
+              raise SystemExit(1)
+          print('CUSTOM_PROPERTY_AUDIT=PASS')
