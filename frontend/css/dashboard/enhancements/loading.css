@@ -1,0 +1,113 @@
+/* EXPENSE TRACKER — DASHBOARD ENHANCEMENTS */
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes shimmer {
+    0% {
+        background-position: -600px 0;
+    }
+    100% {
+        background-position: 600px 0;
+    }
+}
+.skeleton {
+    border-radius: 8px;
+    background: linear-gradient(
+        90deg,
+        var(--input-bg) 25%,
+        rgba(255, 255, 255, 0.04) 50%,
+        var(--input-bg) 75%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 1.6s infinite linear;
+}
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+}
+.skeleton-text.wide {
+    width: 80%;
+}
+.skeleton-text.mid {
+    width: 55%;
+}
+.skeleton-text.short {
+    width: 35%;
+}
+.skeleton-value {
+    height: 28px;
+    width: 60%;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+.skeleton-row {
+    height: 64px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+}
+.metric-card-glow::after {
+    display: none !important;
+}
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card-bg);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    animation: expenseSlideIn 0.35s var(--ease);
+    transition:
+        background 0.2s var(--ease),
+        transform 0.2s var(--ease),
+        border-color 0.2s var(--ease),
+        box-shadow 0.2s var(--ease);
+}
+.expense-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary-gradient);
+    border-radius: 14px 0 0 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.expense-item:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.expense-item:hover::before {
+    opacity: 1;
+}
+.cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}

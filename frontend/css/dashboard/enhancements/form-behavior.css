@@ -1,0 +1,14 @@
+#addExpenseForm .form-group input,
+#addExpenseForm .form-group select,
+#addBudgetForm .form-group input,
+#addBudgetForm .form-group select {
+    transition: all 0.25s var(--ease);
+}
+#addExpenseForm .form-group input:focus,
+#addExpenseForm .form-group select:focus,
+#addBudgetForm .form-group input:focus,
+#addBudgetForm .form-group select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12) !important;
+    outline: none;
+}

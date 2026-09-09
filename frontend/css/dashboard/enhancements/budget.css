@@ -1,0 +1,22 @@
+.budget-bar-track {
+    height: 6px;
+    border-radius: 100px;
+    background: var(--input-bg);
+    overflow: hidden;
+    position: relative;
+    margin-top: 10px;
+}
+.budget-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left;
+    animation: progressGrow 0.9s var(--ease) both;
+    position: relative;
+}
+.budget-bar-fill.warning {
+    background: var(--warning) !important;
+}
+.budget-bar-fill.danger {
+    background: var(--accent) !important;
+}

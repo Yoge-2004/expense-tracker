@@ -1,0 +1,22 @@
+.scroll-area,
+.scroll-area-modal {
+    scroll-behavior: smooth;
+}
+.app-loading .spinner {
+    width: 28px !important;
+    height: 28px !important;
+    border-width: 3px !important;
+    border-top-color: var(--primary) !important;
+}
+.btn-danger {
+    background: var(--danger-gradient) !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.3) !important;
+    transition: all 0.25s var(--ease) !important;
+}
+.btn-danger:hover {
+    filter: brightness(1.1) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.4) !important;
+}

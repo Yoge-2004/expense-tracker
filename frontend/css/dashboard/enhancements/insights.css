@@ -1,0 +1,16 @@
+.insight-card,
+.trend-card {
+    transition:
+        transform 0.3s var(--ease),
+        box-shadow 0.3s;
+}
+.insight-card:hover,
+.trend-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4);
+}
+.budget-item:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+    background: var(--card-bg-hover);
+}
