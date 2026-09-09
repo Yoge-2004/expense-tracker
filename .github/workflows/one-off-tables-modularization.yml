@@ -1,0 +1,70 @@
+name: One-off tables CSS modularization
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-off-tables-modularization.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Split tables stylesheet
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          table = Path('frontend/css/tables.css')
+          source = table.read_text()
+          markers = [
+              ('filters', '/* Consolidated from 3 unconditional declarations each of .filter-toolbar'),
+              ('dashboard-support', '/* ================== 9. ALIGNMENT FIXES ================== */'),
+              ('controls', '/* INCOME FILTER TOOLBAR & PILLS */'),
+              ('ledger', '/* ── Income Table Container & Custom Luxury Scrollbar ── */'),
+          ]
+          positions = {}
+          for name, marker in markers:
+              index = source.find(marker)
+              if index == -1:
+                  raise SystemExit(f'missing marker: {marker}')
+              positions[name] = index
+
+          ordered = [
+              ('streams.css', 0, positions['filters']),
+              ('filters.css', positions['filters'], positions['dashboard-support']),
+              ('dashboard-support.css', positions['dashboard-support'], positions['controls']),
+              ('controls.css', positions['controls'], positions['ledger']),
+              ('ledger.css', positions['ledger'], len(source)),
+          ]
+
+          directory = Path('frontend/css/tables')
+          directory.mkdir(parents=True, exist_ok=True)
+          for filename, start, end in ordered:
+              content = source[start:end]
+              lines = [line.rstrip() for line in content.splitlines()]
+              normalized = '\n'.join(lines)
+              while '\n\n\n' in normalized:
+                  normalized = normalized.replace('\n\n\n', '\n\n')
+              (directory / filename).write_text(normalized.strip() + '\n')
+
+          table.write_text('''/* ==========================================================================\n   EXPENSE TRACKER — TABLES.CSS\n   Ordered entry point for table, filter and ledger modules.\n   ========================================================================== */\n\n@import url("tables/streams.css");\n@import url("tables/filters.css");\n@import url("tables/dashboard-support.css");\n@import url("tables/controls.css");\n@import url("tables/ledger.css");\n''')
+          PY
+
+      - name: Commit generated modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/css/tables.css frontend/css/tables/
+          git commit -m 'refactor(css): modularize tables stylesheet' || exit 0
+          git push origin HEAD:main
