@@ -1,0 +1,377 @@
+/* ==========================================================================
+   EXPENSE TRACKER — RESPONSIVE.CSS
+   Module: Responsive Breakpoints & Mobile Optimization
+   ========================================================================== */
+
+/* ================== 8. MOBILE RESPONSIVE ================== */
+@media (max-width: 900px) {
+    body {
+        height: auto;
+        overflow-y: auto;
+        background: var(--bg-dark);
+    }
+
+    /* (.split-screen, .hero-section, .hero-content, .auth-section, .grid-stats
+       removed — confirmed unused in every HTML file, leftover from an old
+       page structure that predates the current dashboard layout.) */
+
+    .dashboard-container {
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .card {
+        justify-content: flex-start;
+        min-height: 180px;
+    }
+
+    .card canvas {
+        width: 100% !important;
+        max-height: 250px;
+    }
+
+    .list-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px;
+    }
+
+    .list-header-actions {
+        width: 100%;
+        display: flex;
+        gap: 10px;
+    }
+
+    .command-search-wrapper {
+        flex: 1;
+        min-width: 0;
+        width: auto !important;
+    }
+
+    .btn-icon {
+        flex: 0 0 36px;
+    }
+
+    .filter-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-select {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .recent-transactions {
+        height: auto;
+        overflow: visible;
+    }
+
+    .scroll-area {
+        overflow: visible;
+        height: auto;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(30px) scale(0.95); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes app-spin {
+    to { transform: rotate(360deg); }
+}
+
+
+/* ================== RESPONSIVE ENHANCEMENTS (DASHBOARD) ================== */
+
+/* ── Dashboard top-bar: prevent export buttons from overflowing ── */
+@media (max-width: 768px) {
+    .list-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
+
+    .list-header > div:first-child {
+        width: 100%;
+    }
+
+    .list-header-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    .btn-text-icon {
+        font-size: 11px !important;
+        padding: 0 12px !important;
+        height: 34px !important;
+        width: auto !important;
+        min-width: fit-content !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Budget grid single column */
+    .budget-grid-matrix {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Modal: full-width on small screens */
+    .modal-overlay {
+        padding: 10px 8px !important;
+        overflow: hidden !important;
+    }
+
+    .modal {
+        width: 95% !important;
+        max-width: 440px !important;
+        max-height: min(calc(100dvh - 20px), calc(100vh - 20px), 90vh) !important;
+        padding: 22px 18px !important;
+        border-radius: 20px !important;
+        overflow-x: hidden !important;
+    }
+
+    .modal::-webkit-scrollbar {
+        width: 4px !important;
+    }
+
+    .modal::-webkit-scrollbar-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    .modal::-webkit-scrollbar-track {
+        background: transparent !important;
+        margin-block: 20px !important;
+        margin-top: 20px !important;
+        margin-bottom: 20px !important;
+        border-radius: 999px !important;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+        background: rgba(var(--primary-rgb), 0.45) !important;
+        border-radius: 999px !important;
+    }
+
+    .modal-large {
+        width: 95% !important;
+        max-height: 85vh !important;
+    }
+
+    /* Switch label: always show text before toggle, with space between */
+    .switch-label {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Section heading meta hide */
+    .section-meta {
+        display: none !important;
+    }
+
+    /* Reduce card padding */
+    .card {
+        padding: 16px !important;
+    }
+
+    /* Chart heights */
+    .chart-wrapper {
+        height: 180px !important;
+    }
+
+    .trend-chart-wrapper {
+        height: 180px !important;
+    }
+
+    /* Expense items: wrap gracefully without truncating full expense name */
+    .expense-item {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 14px 12px !important;
+    }
+
+    .expense-emoji-box {
+        width: 38px !important;
+        height: 38px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .expense-info {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .expense-title {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.35 !important;
+        margin: 0 0 4px 0 !important;
+    }
+
+    .expense-meta {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        font-size: 11px !important;
+    }
+
+    .expense-actions-col {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+        margin-left: 6px !important;
+    }
+
+    .expense-amount {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+    }
+
+    .expense-actions-col .btn-edit,
+    .expense-actions-col .btn-delete {
+        width: 28px !important;
+        height: 28px !important;
+        padding: 0 !important;
+    }
+}
+
+/* ── Extra small screens (phones < 480px) ── */
+@media (max-width: 480px) {
+    .dashboard-container {
+        /* Was 16px 12px 32px — most phones fall under this 480px
+           breakpoint (not just unusually small ones), so this was the
+           padding nearly everyone actually saw, and 12px read as the
+           Record Expense button, theme toggle, and search bar sitting
+           flush against the screen edges with no margin. Matching the
+           20px horizontal padding used at the wider 900px tier instead
+           of shrinking it further. */
+        padding: 20px 20px 40px !important;
+        gap: 14px !important;
+    }
+
+    .top-bar-actions {
+        /* Was 8px !important — this 480px block sits later in the file
+           than the 16px fix at the 900px tier, and since most phones
+           are under 480px wide, this narrower value (not the 16px one)
+           is what was actually reaching most people. */
+        gap: 14px !important;
+    }
+
+    .metric-value {
+        font-size: 20px !important;
+    }
+
+    .category-pills-bar {
+        gap: 8px !important;
+    }
+
+    .pill-chip {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+    }
+
+    .command-search-wrapper {
+        height: 42px !important;
+        padding: 0 10px !important;
+        gap: 8px !important;
+        border-radius: 12px !important;
+    }
+
+    .command-search-input {
+        font-size: 14px !important;
+        padding: 0 4px !important;
+    }
+
+    .modal-overlay {
+        padding: 8px 6px !important;
+        overflow: hidden !important;
+    }
+
+    .modal {
+        padding: 18px 14px !important;
+        width: 96% !important;
+        max-width: 420px !important;
+        max-height: min(calc(100dvh - 16px), calc(100vh - 16px), 92vh) !important;
+        border-radius: 18px !important;
+        overflow-x: hidden !important;
+    }
+
+    .budget-date-row {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .budget-date-col {
+        width: 100% !important;
+        flex: none !important;
+    }
+
+    .modal::-webkit-scrollbar {
+        width: 4px !important;
+    }
+
+    .modal::-webkit-scrollbar-button {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    .modal::-webkit-scrollbar-track {
+        background: transparent !important;
+        margin-block: 18px !important;
+        margin-top: 18px !important;
+        margin-bottom: 18px !important;
+        border-radius: 999px !important;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+        background: rgba(var(--primary-rgb), 0.45) !important;
+        border-radius: 999px !important;
+    }
+
+    .section-title {
+        font-size: 15px !important;
+    }
+
+    .card-label {
+        font-size: 10px !important;
+    }
+
+    .btn-text-icon {
+        min-width: fit-content !important;
+        width: auto !important;
+        padding: 0 10px !important;
+        white-space: nowrap !important;
+    }
+}
+

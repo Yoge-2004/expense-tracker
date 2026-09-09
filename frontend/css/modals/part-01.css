@@ -1,0 +1,306 @@
+/* ==========================================================================
+   EXPENSE TRACKER — MODALS.CSS
+   Module: Modals, Dialogs & Curved Modal Interfaces
+   ========================================================================== */
+
+/* Consolidated from 3 unconditional declarations of .modal-overlay. The
+   base rule's own backdrop-filter (blur(12px) saturate(160%), from the
+   3rd declaration) was actually dead code: .modal-overlay.active (2
+   classes) and .modal-overlay:not(.active) (also 2 selectors, plus
+   !important) both have higher specificity and between them cover
+   every possible state, so the bare selector's own backdrop-filter
+   value could never actually apply. Dropped it. Added the missing
+   -webkit-backdrop-filter to .active for Safari, matching the
+   :not(.active) rule which already had both prefixes. */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 6, 14, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s var(--ease), backdrop-filter 0.3s;
+    z-index: 999;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.modal-overlay::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+.modal-overlay::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+.modal-overlay:not(.active) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Consolidated from 3 unconditional declarations of .modal (was lines
+   ~1184/1754/3678). border, background, border-radius, and box-shadow
+   each had 2 competing values; kept whichever was already winning
+   (later + no !important beats earlier, same as everywhere else in
+   this cleanup). The @keyframes modalIn this used to animate in with
+   was itself dead: see the .modal-overlay.active .modal consolidation
+   below for why. */
+.modal {
+    background: rgba(23, 26, 20, 0.96);
+    padding: 28px 24px;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 460px;
+    max-height: min(calc(100dvh - 32px), calc(100vh - 32px), 88vh);
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid rgba(var(--ink-rgb), 0.08);
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(var(--primary-rgb), 0.08);
+    box-sizing: border-box;
+    margin: auto;
+    transform: scale(0.93) translateY(12px);
+    transition: transform 0.35s var(--ease), opacity 0.3s;
+    opacity: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
+}
+
+/* Modal scrollbars adapted for curved dialog boundaries */
+.modal::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.modal::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+.modal::-webkit-scrollbar-track {
+    background: transparent !important;
+    margin-block: 24px !important;
+    margin-top: 24px !important;
+    margin-bottom: 24px !important;
+    border-radius: 999px !important;
+}
+.modal::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45) !important;
+    border-radius: 999px !important;
+    border: 1px solid transparent !important;
+    background-clip: padding-box !important;
+    transition: background 0.2s var(--ease);
+}
+.modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.75) !important;
+}
+
+.modal h3 {
+    color: var(--text-main);
+    margin-bottom: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.form-group input:not([type="checkbox"]),
+.form-group select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box !important;
+    padding: 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-main);
+    outline: none;
+    font-size: 14px;
+    min-width: 0;
+}
+
+.form-group select {
+    appearance: none;
+    padding-right: 42px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A8A395' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 18px;
+}
+
+#customIntervalWrap { margin-top: 12px; }
+
+/* Budget Modal responsive layout */
+#addBudgetForm {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+#customBudgetDates {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.budget-date-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.budget-date-col {
+    flex: 1 1 0%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.budget-date-col input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.app-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(4, 6, 14, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+.app-loading.visible { opacity: 1; pointer-events: auto; }
+.spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,.28); border-top-color: var(--accent); border-radius: 50%; animation: app-spin .75s linear infinite; }
+.toast-region {
+    position: fixed;
+    z-index: 2100;
+    top: 20px;
+    right: 20px;
+    width: min(380px, calc(100vw - 32px));
+    display: grid;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 14px 16px !important;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 14px !important;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+    color: var(--text-main);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+    animation: toast-in 0.25s var(--ease);
+    transition: opacity 0.2s, transform 0.2s;
+    box-sizing: border-box !important;
+    position: relative;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.toast-message,
+.toast > span {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    word-break: break-word !important;
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
+    color: var(--text-main) !important;
+}
+
+.toast-close {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    transition: color 0.2s var(--ease), background-color 0.2s var(--ease) !important;
+}
+
+.toast-close:hover {
+    color: var(--text-main) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="light"] .toast-close:hover {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.toast-success { border-left-color: var(--success, #10B981) !important; }
+.toast-error   { border-left-color: var(--danger, #EF4444) !important; }
+.toast-warning { border-left-color: var(--warning, #F59E0B) !important; }
+.toast-info    { border-left-color: var(--highlight, #0EA5E9) !important; }
+
+.server-status-badge {
+    position: fixed;
+    bottom: 18px;
+    right: 18px;
+    z-index: 1500;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s ease;
+    user-select: none;
+    box-sizing: border-box;
+}
+
