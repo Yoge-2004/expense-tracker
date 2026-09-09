@@ -15,7 +15,6 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
 
           root = Path('frontend/css')
           source_path = root / 'animations.css'
@@ -29,15 +28,18 @@ jobs:
 
           # Remove the malformed dangling selector that accidentally widened
           # the following .btn-edit:active rule to the idle .btn-edit state.
-          source = source.replace('.btn-edit,\n\n\n\n\n.btn-edit:active {', '.btn-edit:active {')
+          malformed = '.btn-edit,\n\n\n\n\n.btn-edit:active {'
+          if malformed not in source:
+              raise SystemExit('Expected malformed .btn-edit selector was not found; refusing to rewrite.')
+          source = source.replace(malformed, '.btn-edit:active {', 1)
 
-          # Remove exact duplicate keyframe definition; the first definition
-          # remains in the same cascade position and is behaviorally identical.
+          # The duplicate shimmerSweep definition has already been removed in
+          # an earlier cleanup. Verify that exactly one authoritative definition
+          # remains instead of silently changing animation semantics.
           duplicate_shimmer = '''@keyframes shimmerSweep {\n    0% { background-position: -200% 0; }\n    100% { background-position: 200% 0; }\n}\n'''
           occurrences = source.count(duplicate_shimmer)
-          if occurrences != 2:
-              raise SystemExit(f'Expected exactly 2 shimmerSweep definitions, found {occurrences}')
-          source = source.replace(duplicate_shimmer, '', 1)
+          if occurrences != 1:
+              raise SystemExit(f'Expected exactly 1 authoritative shimmerSweep definition, found {occurrences}')
 
           # Remove known empty/dead section scaffolding left by earlier passes.
           dead_fragments = [
@@ -72,15 +74,15 @@ jobs:
               pos = source.find(marker, cursor)
               if pos == -1:
                   raise SystemExit(f'Missing expected section marker: {name}')
-              positions.append((name, pos, marker))
+              positions.append((name, pos))
               cursor = pos + len(marker)
 
-          preamble = source[:positions[0][1]].rstrip() + '\n'
-          chunks = {'foundation.css': preamble}
-          for i, (name, pos, marker) in enumerate(positions):
+          chunks = {
+              'foundation.css': source[:positions[0][1]].rstrip() + '\n'
+          }
+          for i, (name, pos) in enumerate(positions):
               end = positions[i + 1][1] if i + 1 < len(positions) else len(source)
-              chunk = source[pos:end].strip() + '\n'
-              chunks[name] = chunk
+              chunks[name] = source[pos:end].strip() + '\n'
 
           out_dir = root / 'animations'
           out_dir.mkdir(parents=True, exist_ok=True)
@@ -133,8 +135,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add frontend/css .github/workflows/one-off-animations-css-refactor.yml
-          git add -u frontend/css/animations-fixes.css frontend/css/style.css frontend/css/animations.css
+          git add frontend/css
           git diff --cached --check
           git commit -m 'refactor(css): modularize animation system [animation-refactor]'
           git push
