@@ -2,16 +2,6 @@ name: Deploy Backend JAR to Hugging Face
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'pom.xml'
-      - 'mvnw'
-      - 'mvnw.cmd'
-      - 'Dockerfile'
-      - '.github/workflows/deploy-backend-hf.yml'
-      - 'hf-space/README.md'
 
 permissions:
   contents: read
@@ -58,7 +48,7 @@ jobs:
         run: |
           if [ -z "${HF_TOKEN:-}" ]; then
             echo 'HF_TOKEN GitHub Actions secret is missing.'
-            echo 'Add a Hugging Face write token as repository secret HF_TOKEN before enabling automatic deployment.'
+            echo 'Add a Hugging Face write token as repository secret HF_TOKEN before enabling deployment.'
             exit 1
           fi
 
