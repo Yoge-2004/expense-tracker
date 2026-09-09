@@ -1,0 +1,40 @@
+name: Web E2E Regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '30 2 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: Playwright responsive regression
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Install Playwright test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run responsive web regression suite
+        run: npm test
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-web-report
+          path: tests/web/playwright-report/
+          if-no-files-found: warn
+          retention-days: 7
