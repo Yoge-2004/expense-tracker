@@ -1,0 +1,80 @@
+/* Theme transition and light-mode token overrides. */
+body,
+.dashboard-layout,
+.top-bar,
+.card,
+.stat-card,
+.unified-ledger-card,
+.metric-card,
+.modal,
+.filter-panel,
+.insights-banner,
+.insight-metric-card,
+.auth-card,
+.auth-form-section,
+.auth-hero,
+.float-card,
+.perk-item,
+.recent-transactions,
+.profile-menu {
+    transition: background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s ease,
+                box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+    --bg-dark: #EEF1F6;
+    --card-bg: #FFFFFF;
+    --card-bg-hover: #FFFFFF;
+    --text-main: #0F172A;
+    --text-muted: #475569;
+    --border: rgba(212, 175, 55, 0.28);
+    --border-accent: rgba(212, 175, 55, 0.55);
+    --input-bg: #FFFFFF;
+
+    --primary-rgb: 212, 175, 55;
+    --accent-rgb: 231, 76, 60;
+    --highlight-rgb: 14, 165, 233;
+    --success-rgb: 16, 185, 129;
+    --warning-rgb: 245, 158, 11;
+    --ink-rgb: 15, 23, 42;
+
+    --primary: #D4AF37;
+    --primary-gradient: linear-gradient(135deg, #E6C25B 0%, #D4AF37 50%, #B8860B 100%);
+    --primary-glow: rgba(212, 175, 55, 0.32);
+
+    --accent: #E74C3C;
+    --accent-gradient: linear-gradient(135deg, #FF6B6B 0%, #E74C3C 100%);
+    --accent-glow: rgba(231, 76, 60, 0.25);
+
+    --highlight: #0EA5E9;
+    --highlight-gradient: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+
+    --success: #10B981;
+    --success-gradient: linear-gradient(135deg, #34D399 0%, #059669 100%);
+    --warning: #F59E0B;
+    --warning-gradient: linear-gradient(135deg, #FBBF24 0%, #D97706 100%);
+    --danger: #EF4444;
+    --danger-gradient: linear-gradient(135deg, #F87171 0%, #DC2626 100%);
+
+    --glass: blur(28px);
+    --shadow-premium: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 0 1px rgba(212, 175, 55, 0.14);
+    --shadow-glow: 0 12px 35px -8px rgba(212, 175, 55, 0.28);
+
+    --metric-inflow: #059669;
+    --metric-inflow-rgb: 5, 150, 105;
+    --metric-inflow-glow: rgba(5, 150, 105, 0.15);
+    --metric-outflow: #DC2626;
+    --metric-outflow-rgb: 220, 38, 38;
+    --metric-outflow-glow: rgba(220, 38, 38, 0.15);
+    --metric-netflow: #2563EB;
+    --metric-netflow-rgb: 37, 99, 235;
+    --metric-netflow-glow: rgba(37, 99, 235, 0.15);
+    --metric-savings: #B45309;
+    --metric-savings-rgb: 180, 83, 9;
+    --metric-savings-glow: rgba(180, 83, 9, 0.15);
+    --metric-subs: #7C3AED;
+    --metric-subs-rgb: 124, 58, 237;
+    --metric-subs-glow: rgba(124, 58, 237, 0.15);
+}
