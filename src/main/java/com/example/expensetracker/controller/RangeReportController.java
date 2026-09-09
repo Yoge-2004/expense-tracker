@@ -7,17 +7,9 @@ import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.VerticalAlignment;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openpdf.text.Document;
-import org.openpdf.text.Element;
 import org.openpdf.text.FontFactory;
 import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
@@ -25,304 +17,108 @@ import org.openpdf.text.Phrase;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Range-aware executive exports. These endpoints always query persistence at export time,
- * rather than trusting the dashboard's cached/filtered client collection.
- */
 @RestController
 @RequestMapping("/api/reports")
 public class RangeReportController {
+    private static final MediaType XLSX = MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    private final ExpenseRepository expenses;
+    private final IncomeRepository incomes;
+    private final UserService users;
+    private final UserSecurity security;
 
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final MediaType XLSX = MediaType.parseMediaType(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-
-    private final ExpenseRepository expenseRepository;
-    private final IncomeRepository incomeRepository;
-    private final UserService userService;
-    private final UserSecurity userSecurity;
-
-    public RangeReportController(
-            ExpenseRepository expenseRepository,
-            IncomeRepository incomeRepository,
-            UserService userService,
-            UserSecurity userSecurity) {
-        this.expenseRepository = expenseRepository;
-        this.incomeRepository = incomeRepository;
-        this.userService = userService;
-        this.userSecurity = userSecurity;
+    public RangeReportController(ExpenseRepository expenses, IncomeRepository incomes, UserService users, UserSecurity security) {
+        this.expenses = expenses; this.incomes = incomes; this.users = users; this.security = security;
     }
 
     @GetMapping("/user/{userId}/export/range/excel")
-    public ResponseEntity<byte[]> exportExcel(
-            @PathVariable Long userId,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to,
-            @RequestParam(required = false, defaultValue = "INR") String currency) {
-        userSecurity.validateUserAccess(userId);
-        User user = getUser(userId);
-        Range range = Range.of(from, to);
-        Dataset data = load(user, range);
-        byte[] bytes = buildExcel(data, range, currency);
-        return ResponseEntity.ok()
-                .contentType(XLSX)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename("ExpenseTracker_Executive_Dashboard.xlsx").build().toString())
-                .body(bytes);
+    public ResponseEntity<byte[]> excel(@PathVariable Long userId, @RequestParam(required=false) String from,
+                                        @RequestParam(required=false) String to, @RequestParam(defaultValue="INR") String currency) {
+        security.validateUserAccess(userId);
+        User user = user(userId); Range range = Range.of(from, to); Data data = data(user, range);
+        return ResponseEntity.ok().contentType(XLSX).header(HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment().filename("ExpenseTracker_Executive_Dashboard.xlsx").build().toString()).body(excel(data, range, currency));
     }
 
     @GetMapping("/user/{userId}/export/range/pdf")
-    public ResponseEntity<byte[]> exportPdf(
-            @PathVariable Long userId,
-            @RequestParam(required = false) String from,
-            @RequestParam(required = false) String to,
-            @RequestParam(required = false, defaultValue = "INR") String currency) {
-        userSecurity.validateUserAccess(userId);
-        User user = getUser(userId);
-        Range range = Range.of(from, to);
-        Dataset data = load(user, range);
-        byte[] bytes = buildPdf(data, range, currency, user.getName());
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename("ExpenseTracker_Executive_Report.pdf").build().toString())
-                .body(bytes);
+    public ResponseEntity<byte[]> pdf(@PathVariable Long userId, @RequestParam(required=false) String from,
+                                      @RequestParam(required=false) String to, @RequestParam(defaultValue="INR") String currency) {
+        security.validateUserAccess(userId);
+        User user = user(userId); Range range = Range.of(from, to); Data data = data(user, range);
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).header(HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment().filename("ExpenseTracker_Executive_Report.pdf").build().toString()).body(pdf(data, range, currency, user.getName()));
     }
 
-    private User getUser(Long userId) {
-        return userService.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+    private User user(Long id) { return users.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found")); }
+
+    private Data data(User user, Range range) {
+        List<Expense> e = expenses.findByUser(user).stream().filter(x -> range.contains(x.getExpenseDate()))
+                .sorted(Comparator.comparing(Expense::getExpenseDate, Comparator.nullsLast(Comparator.reverseOrder()))).collect(Collectors.toList());
+        List<Income> i = incomes.findByUser(user).stream().filter(x -> range.contains(x.getIncomeDate()))
+                .sorted(Comparator.comparing(Income::getIncomeDate, Comparator.nullsLast(Comparator.reverseOrder()))).collect(Collectors.toList());
+        return new Data(e, i);
     }
 
-    private Dataset load(User user, Range range) {
-        List<Expense> expenses = expenseRepository.findByUser(user).stream()
-                .filter(e -> range.contains(e.getExpenseDate()))
-                .sorted(Comparator.comparing(Expense::getExpenseDate, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
-        List<Income> incomes = incomeRepository.findByUser(user).stream()
-                .filter(i -> range.contains(i.getIncomeDate()))
-                .sorted(Comparator.comparing(Income::getIncomeDate, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
-        return new Dataset(expenses, incomes);
+    private byte[] excel(Data d, Range range, String currency) {
+        String s = symbol(currency); BigDecimal spend=d.spend(), income=d.income(), net=income.subtract(spend);
+        try (XSSFWorkbook wb=new XSSFWorkbook(); ByteArrayOutputStream out=new ByteArrayOutputStream()) {
+            CellStyle hero=style(wb,"0F172A","FFFFFF",true,16), header=style(wb,"334155","FFFFFF",true,10), body=style(wb,"F8FAFC","0F172A",false,10);
+            CellStyle good=style(wb,"ECFDF5","047857",true,10), bad=style(wb,"FEF2F2","B91C1C",true,10), money=style(wb,"F8FAFC","0F172A",false,10);
+            money.setDataFormat(wb.createDataFormat().getFormat("\""+s+" \"#,##0.00;(\""+s+" \"#,##0.00);\"-\""));
+            Sheet dash=wb.createSheet("Executive Dashboard"); dash.setDisplayGridlines(false); dash.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0,1,0,7));
+            put(dash,0,0,"EXPENSETRACKER | EXECUTIVE FINANCIAL DASHBOARD",hero); put(dash,2,0,"Reporting period",header); put(dash,2,1,range.label(),body);
+            put(dash,4,0,"TOTAL SPEND",header); put(dash,5,0,spend,money); put(dash,4,2,"TOTAL INCOME",header); put(dash,5,2,income,money);
+            put(dash,4,4,"NET CASH FLOW",header); put(dash,5,4,net,net.signum()>=0?good:bad); put(dash,4,6,"TRANSACTIONS",header); put(dash,5,6,d.expenses.size(),body);
+            put(dash,7,0,"KEY INSIGHTS",header); List<String> insights=insights(d,spend,income,s); for(int n=0;n<insights.size();n++) put(dash,8+n,0,insights.get(n),body); for(int c=0;c<8;c++) dash.setColumnWidth(c,20*256);
+
+            Sheet cat=wb.createSheet("Category Analysis"); cat.setDisplayGridlines(false); put(cat,0,0,"CATEGORY PERFORMANCE",hero);
+            String[] ch={"Category","Spend","Share","Transactions","Average"}; for(int c=0;c<ch.length;c++) put(cat,2,c,ch[c],header);
+            Map<String,List<Expense>> groups=d.expenses.stream().collect(Collectors.groupingBy(x->x.getCategory()==null?"Uncategorized":x.getCategory().getName(),LinkedHashMap::new,Collectors.toList())); int r=3;
+            for(var entry:groups.entrySet().stream().sorted((a,b)->total(b.getValue()).compareTo(total(a.getValue()))).toList()) { BigDecimal t=total(entry.getValue()); double pct=spend.signum()==0?0:t.divide(spend,4,RoundingMode.HALF_UP).doubleValue();
+                put(cat,r,0,entry.getKey(),body); put(cat,r,1,t,money); put(cat,r,2,pct,body); put(cat,r,3,entry.getValue().size(),body); put(cat,r,4,t.divide(BigDecimal.valueOf(entry.getValue().size()),2,RoundingMode.HALF_UP),money); r++; }
+            for(int c=0;c<5;c++) cat.setColumnWidth(c,new int[]{28,18,14,16,18}[c]*256);
+
+            Sheet tx=wb.createSheet("Transactions"); tx.setDisplayGridlines(false); String[] th={"Date","Category","Description","Amount","Recurring"}; for(int c=0;c<th.length;c++) put(tx,0,c,th[c],header); r=1;
+            for(Expense x:d.expenses){put(tx,r,0,x.getExpenseDate()==null?"":x.getExpenseDate().toString(),body);put(tx,r,1,x.getCategory()==null?"Uncategorized":x.getCategory().getName(),body);put(tx,r,2,x.getDescription()==null?"":x.getDescription(),body);put(tx,r,3,nz(x.getAmount()),money);put(tx,r,4,x.isRecurring()?"Yes":"No",body);r++;}
+            for(int c=0;c<5;c++) tx.setColumnWidth(c,new int[]{16,24,48,18,14}[c]*256);
+
+            Sheet cash=wb.createSheet("Cash Flow"); cash.setDisplayGridlines(false); String[] fh={"Month","Income","Spend","Net"}; for(int c=0;c<4;c++) put(cash,0,c,fh[c],header);
+            Map<String,BigDecimal> im=d.incomes.stream().filter(x->x.getIncomeDate()!=null).collect(Collectors.groupingBy(x->x.getIncomeDate().withDayOfMonth(1).toString(),Collectors.mapping(x->nz(x.getAmount()),Collectors.reducing(BigDecimal.ZERO,BigDecimal::add))));
+            Map<String,BigDecimal> em=d.expenses.stream().filter(x->x.getExpenseDate()!=null).collect(Collectors.groupingBy(x->x.getExpenseDate().withDayOfMonth(1).toString(),Collectors.mapping(x->nz(x.getAmount()),Collectors.reducing(BigDecimal.ZERO,BigDecimal::add))));
+            r=1; Set<String> months=new TreeSet<>();months.addAll(im.keySet());months.addAll(em.keySet()); for(String m:months){BigDecimal i=im.getOrDefault(m,BigDecimal.ZERO),e=em.getOrDefault(m,BigDecimal.ZERO);put(cash,r,0,m,body);put(cash,r,1,i,money);put(cash,r,2,e,money);put(cash,r,3,i.subtract(e),i.compareTo(e)>=0?good:bad);r++;} for(int c=0;c<4;c++)cash.setColumnWidth(c,20*256);
+            wb.write(out); return out.toByteArray();
+        } catch(Exception ex){throw new IllegalStateException("Unable to create executive Excel report",ex);}
     }
 
-    private byte[] buildExcel(Dataset data, Range range, String currency) {
-        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            String symbol = currencySymbol(currency);
-            BigDecimal expenseTotal = data.expenseTotal();
-            BigDecimal incomeTotal = data.incomeTotal();
-            BigDecimal net = incomeTotal.subtract(expenseTotal);
-            BigDecimal average = data.expenses.isEmpty() ? BigDecimal.ZERO
-                    : expenseTotal.divide(BigDecimal.valueOf(data.expenses.size()), 2, java.math.RoundingMode.HALF_UP);
-
-            CellStyle hero = style(wb, "0F172A", "FFFFFF", true, 16);
-            CellStyle section = style(wb, "1E293B", "FFFFFF", true, 11);
-            CellStyle header = style(wb, "334155", "FFFFFF", true, 10);
-            CellStyle normal = style(wb, "F8FAFC", "0F172A", false, 10);
-            CellStyle money = style(wb, "F8FAFC", "0F172A", false, 10);
-            money.setDataFormat(wb.createDataFormat().getFormat("\"" + symbol + " \"#,##0.00;(\"" + symbol + " \"#,##0.00);\"-\""));
-            CellStyle positive = style(wb, "ECFDF5", "047857", true, 10);
-            CellStyle negative = style(wb, "FEF2F2", "B91C1C", true, 10);
-
-            var dash = wb.createSheet("Executive Dashboard");
-            dash.setDisplayGridlines(false);
-            dash.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 1, 0, 7));
-            set(dash, 0, 0, "EXPENSETRACKER | EXECUTIVE FINANCIAL DASHBOARD", hero);
-            set(dash, 2, 0, "Reporting period", section);
-            set(dash, 2, 1, range.label(), normal);
-            set(dash, 4, 0, "TOTAL SPEND", header); set(dash, 5, 0, expenseTotal, money);
-            set(dash, 4, 2, "TOTAL INCOME", header); set(dash, 5, 2, incomeTotal, money);
-            set(dash, 4, 4, "NET CASH FLOW", header); set(dash, 5, 4, net, net.signum() >= 0 ? positive : negative);
-            set(dash, 4, 6, "TRANSACTIONS", header); set(dash, 5, 6, data.expenses.size(), normal);
-            set(dash, 7, 0, "KEY INSIGHTS", section);
-            List<String> insights = insights(data, expenseTotal, incomeTotal, average, symbol);
-            for (int i = 0; i < insights.size(); i++) set(dash, 8 + i, 0, insights.get(i), normal);
-            for (int i = 0; i < 8; i++) dash.setColumnWidth(i, 20 * 256);
-
-            var cat = wb.createSheet("Category Analysis");
-            cat.setDisplayGridlines(false);
-            set(cat, 0, 0, "CATEGORY PERFORMANCE", hero);
-            String[] catHeaders = {"Category", "Spend", "% of Spend", "Transactions", "Average"};
-            for (int c = 0; c < catHeaders.length; c++) set(cat, 2, c, catHeaders[c], header);
-            Map<String, List<Expense>> groups = data.expenses.stream().collect(Collectors.groupingBy(
-                    e -> e.getCategory() == null ? "Uncategorized" : e.getCategory().getName(),
-                    LinkedHashMap::new, Collectors.toList()));
-            int r = 3;
-            for (var entry : groups.entrySet().stream().sorted((a,b) -> b.getValue().stream().map(Expense::getAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add).compareTo(a.getValue().stream().map(Expense::getAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add))).collect(Collectors.toList())) {
-                BigDecimal total = entry.getValue().stream().map(Expense::getAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
-                BigDecimal pct = expenseTotal.signum() == 0 ? BigDecimal.ZERO : total.multiply(BigDecimal.valueOf(100)).divide(expenseTotal, 1, java.math.RoundingMode.HALF_UP);
-                BigDecimal avg = entry.getValue().isEmpty() ? BigDecimal.ZERO : total.divide(BigDecimal.valueOf(entry.getValue().size()), 2, java.math.RoundingMode.HALF_UP);
-                set(cat, r, 0, entry.getKey(), normal); set(cat, r, 1, total, money); set(cat, r, 2, pct.doubleValue() / 100d, normal); set(cat, r, 3, entry.getValue().size(), normal); set(cat, r, 4, avg, money); r++;
-            }
-            for (int i = 0; i < 5; i++) cat.setColumnWidth(i, new int[]{28,18,16,16,18}[i] * 256);
-
-            var tx = wb.createSheet("Transactions");
-            tx.setDisplayGridlines(false);
-            String[] txHeaders = {"Date", "Category", "Description", "Amount", "Recurring"};
-            for (int c = 0; c < txHeaders.length; c++) set(tx, 0, c, txHeaders[c], header);
-            r = 1;
-            for (Expense e : data.expenses) {
-                set(tx, r, 0, e.getExpenseDate() == null ? "" : e.getExpenseDate().format(DATE), normal);
-                set(tx, r, 1, e.getCategory() == null ? "Uncategorized" : e.getCategory().getName(), normal);
-                set(tx, r, 2, e.getDescription() == null ? "" : e.getDescription(), normal);
-                set(tx, r, 3, e.getAmount() == null ? BigDecimal.ZERO : e.getAmount(), money);
-                set(tx, r, 4, e.isRecurring() ? "Yes" : "No", normal); r++;
-            }
-            for (int i = 0; i < 5; i++) tx.setColumnWidth(i, new int[]{16,24,48,18,14}[i] * 256);
-
-            var trend = wb.createSheet("Cash Flow");
-            trend.setDisplayGridlines(false);
-            String[] trendHeaders = {"Month", "Income", "Spend", "Net"};
-            for (int c = 0; c < trendHeaders.length; c++) set(trend, 0, c, trendHeaders[c], header);
-            Map<String, BigDecimal> inc = data.incomes.stream().filter(i -> i.getIncomeDate() != null).collect(Collectors.groupingBy(i -> i.getIncomeDate().withDayOfMonth(1).toString(), Collectors.mapping(i -> nz(i.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
-            Map<String, BigDecimal> exp = data.expenses.stream().filter(e -> e.getExpenseDate() != null).collect(Collectors.groupingBy(e -> e.getExpenseDate().withDayOfMonth(1).toString(), Collectors.mapping(e -> nz(e.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
-            r = 1;
-            for (String month : java.util.stream.Stream.concat(inc.keySet().stream(), exp.keySet().stream()).distinct().sorted().collect(Collectors.toList())) {
-                BigDecimal i = inc.getOrDefault(month, BigDecimal.ZERO), e = exp.getOrDefault(month, BigDecimal.ZERO);
-                set(trend, r, 0, month, normal); set(trend, r, 1, i, money); set(trend, r, 2, e, money); set(trend, r, 3, i.subtract(e), i.compareTo(e) >= 0 ? positive : negative); r++;
-            }
-            for (int i = 0; i < 4; i++) trend.setColumnWidth(i, 20 * 256);
-            return wb.write(out) == null ? out.toByteArray() : out.toByteArray();
-        } catch (Exception e) {
-            throw new IllegalStateException("Unable to create executive Excel report", e);
-        }
+    private byte[] pdf(Data d, Range range, String currency, String name) {
+        String s=symbol(currency); BigDecimal spend=d.spend(), income=d.income(), net=income.subtract(spend);
+        try(ByteArrayOutputStream out=new ByteArrayOutputStream()){Document doc=new Document(PageSize.A4,34,34,38,38);PdfWriter.getInstance(doc,out);doc.open();
+            var title=FontFactory.getFont(FontFactory.HELVETICA_BOLD,22,new Color(15,23,42));var muted=FontFactory.getFont(FontFactory.HELVETICA,9,new Color(100,116,139));var bold=FontFactory.getFont(FontFactory.HELVETICA_BOLD,10,new Color(15,23,42));
+            doc.add(new Paragraph("EXPENSETRACKER",title));doc.add(new Paragraph("Executive Financial Intelligence Report",FontFactory.getFont(FontFactory.HELVETICA_BOLD,14,new Color(79,70,229))));doc.add(new Paragraph("Prepared for "+name+" | "+range.label()+" | "+currency,muted));
+            PdfPTable k=new PdfPTable(4);k.setWidthPercentage(100);kpi(k,"TOTAL SPEND",s+" "+spend,new Color(239,68,68));kpi(k,"TOTAL INCOME",s+" "+income,new Color(16,185,129));kpi(k,"NET CASH FLOW",s+" "+net,net.signum()>=0?new Color(16,185,129):new Color(239,68,68));kpi(k,"TRANSACTIONS",String.valueOf(d.expenses.size()),new Color(79,70,229));doc.add(k);
+            doc.add(new Paragraph("Key insights",bold));for(String x:insights(d,spend,income,s))doc.add(new Paragraph("- "+x,muted));
+            Map<String,BigDecimal> cats=d.expenses.stream().collect(Collectors.groupingBy(x->x.getCategory()==null?"Uncategorized":x.getCategory().getName(),Collectors.mapping(x->nz(x.getAmount()),Collectors.reducing(BigDecimal.ZERO,BigDecimal::add))));
+            doc.add(new Paragraph("Category breakdown",bold));PdfPTable ct=new PdfPTable(3);ct.setWidthPercentage(100);head(ct,"Category");head(ct,"Spend");head(ct,"Share");for(var e:cats.entrySet().stream().sorted((a,b)->b.getValue().compareTo(a.getValue())).toList()){ct.addCell(new Phrase(e.getKey(),muted));ct.addCell(new Phrase(s+" "+e.getValue(),muted));ct.addCell(new Phrase((spend.signum()==0?BigDecimal.ZERO:e.getValue().multiply(BigDecimal.valueOf(100)).divide(spend,1,RoundingMode.HALF_UP))+"%",muted));}doc.add(ct);
+            doc.add(new Paragraph("Transaction ledger",bold));PdfPTable t=new PdfPTable(4);t.setWidthPercentage(100);head(t,"Date");head(t,"Category");head(t,"Description");head(t,"Amount");for(Expense x:d.expenses){t.addCell(new Phrase(x.getExpenseDate()==null?"":x.getExpenseDate().toString(),muted));t.addCell(new Phrase(x.getCategory()==null?"Uncategorized":x.getCategory().getName(),muted));t.addCell(new Phrase(x.getDescription()==null?"":x.getDescription(),muted));t.addCell(new Phrase(s+" "+nz(x.getAmount()),muted));}doc.add(t);doc.add(new Paragraph("Generated from live persisted ledger data at export time.",muted));doc.close();return out.toByteArray();
+        }catch(Exception ex){throw new IllegalStateException("Unable to create executive PDF report",ex);}
     }
 
-    private byte[] buildPdf(Dataset data, Range range, String currency, String userName) {
-        String symbol = currencySymbol(currency);
-        BigDecimal spend = data.expenseTotal(), income = data.incomeTotal(), net = income.subtract(spend);
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Document doc = new Document(PageSize.A4, 34, 34, 38, 38);
-            PdfWriter.getInstance(doc, out);
-            doc.open();
-            org.openpdf.text.Font title = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, new Color(15,23,42));
-            org.openpdf.text.Font muted = FontFactory.getFont(FontFactory.HELVETICA, 9, new Color(100,116,139));
-            org.openpdf.text.Font bold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, new Color(15,23,42));
-            doc.add(new Paragraph("EXPENSETRACKER", title));
-            doc.add(new Paragraph("Executive Financial Intelligence Report", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(79,70,229))));
-            doc.add(new Paragraph("Prepared for " + userName + "  |  " + range.label() + "  |  " + currency, muted));
-            doc.add(new Paragraph("\n"));
-
-            PdfPTable kpis = new PdfPTable(4); kpis.setWidthPercentage(100);
-            addKpi(kpis, "TOTAL SPEND", symbol + " " + spend, new Color(239,68,68));
-            addKpi(kpis, "TOTAL INCOME", symbol + " " + income, new Color(16,185,129));
-            addKpi(kpis, "NET CASH FLOW", symbol + " " + net, net.signum() >= 0 ? new Color(16,185,129) : new Color(239,68,68));
-            addKpi(kpis, "TRANSACTIONS", String.valueOf(data.expenses.size()), new Color(79,70,229));
-            doc.add(kpis);
-            doc.add(new Paragraph("\nKey insights", bold));
-            for (String insight : insights(data, spend, income, data.expenses.isEmpty() ? BigDecimal.ZERO : spend.divide(BigDecimal.valueOf(data.expenses.size()), 2, java.math.RoundingMode.HALF_UP), symbol)) {
-                doc.add(new Paragraph("- " + insight, FontFactory.getFont(FontFactory.HELVETICA, 9, new Color(51,65,85))));
-            }
-            doc.add(new Paragraph("\nCategory breakdown", bold));
-            Map<String, BigDecimal> categories = data.expenses.stream().collect(Collectors.groupingBy(e -> e.getCategory() == null ? "Uncategorized" : e.getCategory().getName(), Collectors.mapping(e -> nz(e.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
-            PdfPTable cat = new PdfPTable(3); cat.setWidthPercentage(100);
-            headerCell(cat, "Category"); headerCell(cat, "Spend"); headerCell(cat, "%");
-            for (var entry : categories.entrySet().stream().sorted((a,b) -> b.getValue().compareTo(a.getValue())).collect(Collectors.toList())) {
-                cat.addCell(new Phrase(entry.getKey(), muted));
-                cat.addCell(new Phrase(symbol + " " + entry.getValue(), muted));
-                BigDecimal pct = spend.signum() == 0 ? BigDecimal.ZERO : entry.getValue().multiply(BigDecimal.valueOf(100)).divide(spend, 1, java.math.RoundingMode.HALF_UP);
-                cat.addCell(new Phrase(pct + "%", muted));
-            }
-            doc.add(cat);
-            doc.add(new Paragraph("\nTransaction ledger", bold));
-            PdfPTable table = new PdfPTable(4); table.setWidthPercentage(100); table.setWidths(new float[]{18,24,38,20});
-            headerCell(table, "Date"); headerCell(table, "Category"); headerCell(table, "Description"); headerCell(table, "Amount");
-            for (Expense e : data.expenses) {
-                table.addCell(new Phrase(e.getExpenseDate() == null ? "" : e.getExpenseDate().toString(), muted));
-                table.addCell(new Phrase(e.getCategory() == null ? "Uncategorized" : e.getCategory().getName(), muted));
-                table.addCell(new Phrase(e.getDescription() == null ? "" : e.getDescription(), muted));
-                table.addCell(new Phrase(symbol + " " + nz(e.getAmount()), muted));
-            }
-            doc.add(table);
-            doc.add(new Paragraph("\nGenerated from live persisted ledger data at export time.", muted));
-            doc.close();
-            return out.toByteArray();
-        } catch (Exception e) {
-            throw new IllegalStateException("Unable to create executive PDF report", e);
-        }
-    }
-
-    private static List<String> insights(Dataset data, BigDecimal spend, BigDecimal income, BigDecimal average, String symbol) {
-        String topCategory = data.expenses.stream().collect(Collectors.groupingBy(e -> e.getCategory() == null ? "Uncategorized" : e.getCategory().getName(), Collectors.mapping(e -> nz(e.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add)))).entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("No category data");
-        BigDecimal net = income.subtract(spend);
-        return List.of(
-                "Largest cost centre: " + topCategory + ".",
-                "Average expense per transaction: " + symbol + " " + average + ".",
-                net.signum() >= 0 ? "Cash flow is positive for this reporting period." : "Cash flow is negative; spending exceeded recorded income.",
-                data.expenses.isEmpty() ? "No expenses were recorded in the selected period." : "Review recurring and top-category spend before the next cycle."
-        );
-    }
-
-    private static CellStyle style(Workbook wb, String bg, String fg, boolean bold, int size) {
-        CellStyle s = wb.createCellStyle();
-        s.setFillForegroundColor(new org.apache.poi.xssf.usermodel.XSSFColor(java.awt.Color.decode("#" + bg), null));
-        s.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        s.setAlignment(HorizontalAlignment.LEFT); s.setVerticalAlignment(VerticalAlignment.CENTER);
-        s.setBorderBottom(BorderStyle.THIN); s.setBorderColor(org.apache.poi.ss.usermodel.BorderSide.BOTTOM, new org.apache.poi.xssf.usermodel.XSSFColor(java.awt.Color.decode("#CBD5E1"), null));
-        Font f = wb.createFont(); f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor(java.awt.Color.decode("#" + fg), null)); f.setBold(bold); f.setFontHeightInPoints((short) size); f.setFontName("Aptos"); s.setFont(f);
-        return s;
-    }
-
-    private static void set(org.apache.poi.ss.usermodel.Sheet sheet, int row, int col, Object value, CellStyle style) {
-        Cell cell = sheet.getRow(row) == null ? sheet.createRow(row).createCell(col) : sheet.getRow(row).createCell(col);
-        if (value instanceof BigDecimal b) cell.setCellValue(b.doubleValue());
-        else if (value instanceof Number n) cell.setCellValue(n.doubleValue());
-        else cell.setCellValue(String.valueOf(value));
-        cell.setCellStyle(style);
-    }
-
-    private static void addKpi(PdfPTable table, String label, String value, Color accent) {
-        PdfPCell cell = new PdfPCell(); cell.setPadding(10); cell.setBorderColor(new Color(226,232,240));
-        cell.addElement(new Paragraph(label, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, accent)));
-        cell.addElement(new Paragraph(value, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, new Color(15,23,42)))); table.addCell(cell);
-    }
-
-    private static void headerCell(PdfPTable table, String text) {
-        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, Color.WHITE)));
-        cell.setBackgroundColor(new Color(30,41,59)); cell.setPadding(7); table.addCell(cell);
-    }
-
-    private static BigDecimal nz(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
-
-    private static String currencySymbol(String code) {
-        if (code == null) return "₹";
-        return switch (code.toUpperCase()) { case "USD" -> "$"; case "EUR" -> "€"; case "GBP" -> "£"; case "JPY" -> "¥"; case "AED" -> "AED"; default -> "INR".equalsIgnoreCase(code) ? "₹" : code.toUpperCase(); };
-    }
-
-    private record Dataset(List<Expense> expenses, List<Income> incomes) {
-        BigDecimal expenseTotal() { return expenses.stream().map(e -> nz(e.getAmount())).reduce(BigDecimal.ZERO, BigDecimal::add); }
-        BigDecimal incomeTotal() { return incomes.stream().map(i -> nz(i.getAmount())).reduce(BigDecimal.ZERO, BigDecimal::add); }
-    }
-
-    private record Range(LocalDate from, LocalDate to) {
-        static Range of(String from, String to) {
-            LocalDate f = (from == null || from.isBlank()) ? null : LocalDate.parse(from);
-            LocalDate t = (to == null || to.isBlank()) ? null : LocalDate.parse(to);
-            if (f != null && t != null && t.isBefore(f)) throw new IllegalArgumentException("The report end date must be on or after the start date.");
-            return new Range(f, t);
-        }
-        boolean contains(LocalDate date) { return date != null && (from == null || !date.isBefore(from)) && (to == null || !date.isAfter(to)); }
-        String label() { if (from == null && to == null) return "All time"; if (from == null) return "Through " + to; if (to == null) return "From " + from; return from + " to " + to; }
-    }
+    private static List<String> insights(Data d,BigDecimal spend,BigDecimal income,String s){String top=d.expenses.stream().collect(Collectors.groupingBy(x->x.getCategory()==null?"Uncategorized":x.getCategory().getName(),Collectors.mapping(x->nz(x.getAmount()),Collectors.reducing(BigDecimal.ZERO,BigDecimal::add)))).entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("No category data");BigDecimal avg=d.expenses.isEmpty()?BigDecimal.ZERO:spend.divide(BigDecimal.valueOf(d.expenses.size()),2,RoundingMode.HALF_UP);return List.of("Largest cost centre: "+top+".","Average expense per transaction: "+s+" "+avg+".",(income.compareTo(spend)>=0?"Cash flow is positive for this period.":"Spending exceeded recorded income in this period."),d.expenses.isEmpty()?"No expenses were recorded in the selected period.":"Review the highest-cost category and recurring transactions before the next cycle.");}
+    private static BigDecimal total(List<Expense> e){return e.stream().map(x->nz(x.getAmount())).reduce(BigDecimal.ZERO,BigDecimal::add);} private static BigDecimal nz(BigDecimal b){return b==null?BigDecimal.ZERO:b;}
+    private static String symbol(String c){if(c==null)return "₹";return switch(c.toUpperCase()){case "USD"->"$";case "EUR"->"€";case "GBP"->"£";case "JPY"->"¥";case "AED"->"AED";case "INR"->"₹";default->c.toUpperCase();};}
+    private static CellStyle style(Workbook w,String bg,String fg,boolean bold,int size){CellStyle s=w.createCellStyle();s.setFillForegroundColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#"+bg),null));s.setFillPattern(FillPatternType.SOLID_FOREGROUND);Font f=w.createFont();f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#"+fg),null));f.setBold(bold);f.setFontHeightInPoints((short)size);f.setFontName("Aptos");s.setFont(f);s.setVerticalAlignment(VerticalAlignment.CENTER);return s;}
+    private static void put(Sheet sh,int r,int c,Object v,CellStyle s){Cell cell=sh.getRow(r)==null?sh.createRow(r).createCell(c):sh.getRow(r).createCell(c);if(v instanceof BigDecimal b)cell.setCellValue(b.doubleValue());else if(v instanceof Number n)cell.setCellValue(n.doubleValue());else cell.setCellValue(String.valueOf(v));cell.setCellStyle(s);}
+    private static void kpi(PdfPTable t,String l,String v,Color c){PdfPCell p=new PdfPCell();p.setPadding(9);p.setBorderColor(new Color(226,232,240));p.addElement(new Paragraph(l,FontFactory.getFont(FontFactory.HELVETICA_BOLD,8,c)));p.addElement(new Paragraph(v,FontFactory.getFont(FontFactory.HELVETICA_BOLD,12,new Color(15,23,42))));t.addCell(p);} private static void head(PdfPTable t,String x){PdfPCell p=new PdfPCell(new Phrase(x,FontFactory.getFont(FontFactory.HELVETICA_BOLD,8,Color.WHITE)));p.setBackgroundColor(new Color(30,41,59));p.setPadding(7);t.addCell(p);}
+    private record Data(List<Expense> expenses,List<Income> incomes){BigDecimal spend(){return total(expenses);}BigDecimal income(){return incomes.stream().map(x->nz(x.getAmount())).reduce(BigDecimal.ZERO,BigDecimal::add);}}
+    private record Range(LocalDate from,LocalDate to){static Range of(String f,String t){LocalDate a=f==null||f.isBlank()?null:LocalDate.parse(f),b=t==null||t.isBlank()?null:LocalDate.parse(t);if(a!=null&&b!=null&&b.isBefore(a))throw new IllegalArgumentException("End date must be on or after start date.");return new Range(a,b);}boolean contains(LocalDate d){return d!=null&&(from==null||!d.isBefore(from))&&(to==null||!d.isAfter(to));}String label(){return from==null&&to==null?"All time":from==null?"Through "+to:to==null?"From "+from:from+" to "+to;}}
 }
