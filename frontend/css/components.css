@@ -951,3 +951,4 @@ button[type="submit"]:active {
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     width: min(340px, calc(100vw - 24px)) !important;
+}
