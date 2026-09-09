@@ -8,6 +8,7 @@ import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openpdf.text.Document;
 import org.openpdf.text.FontFactory;
@@ -72,8 +73,8 @@ public class RangeReportController {
     private byte[] excel(Data d, Range range, String currency) {
         String s = symbol(currency); BigDecimal spend=d.spend(), income=d.income(), net=income.subtract(spend);
         try (XSSFWorkbook wb=new XSSFWorkbook(); ByteArrayOutputStream out=new ByteArrayOutputStream()) {
-            CellStyle hero=style(wb,"0F172A","FFFFFF",true,16), header=style(wb,"334155","FFFFFF",true,10), body=style(wb,"F8FAFC","0F172A",false,10);
-            CellStyle good=style(wb,"ECFDF5","047857",true,10), bad=style(wb,"FEF2F2","B91C1C",true,10), money=style(wb,"F8FAFC","0F172A",false,10);
+            XSSFCellStyle hero=style(wb,"0F172A","FFFFFF",true,16), header=style(wb,"334155","FFFFFF",true,10), body=style(wb,"F8FAFC","0F172A",false,10);
+            XSSFCellStyle good=style(wb,"ECFDF5","047857",true,10), bad=style(wb,"FEF2F2","B91C1C",true,10), money=style(wb,"F8FAFC","0F172A",false,10);
             money.setDataFormat(wb.createDataFormat().getFormat("\""+s+" \"#,##0.00;(\""+s+" \"#,##0.00);\"-\""));
             Sheet dash=wb.createSheet("Executive Dashboard"); dash.setDisplayGridlines(false); dash.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0,1,0,7));
             put(dash,0,0,"EXPENSETRACKER | EXECUTIVE FINANCIAL DASHBOARD",hero); put(dash,2,0,"Reporting period",header); put(dash,2,1,range.label(),body);
@@ -116,7 +117,7 @@ public class RangeReportController {
     private static List<String> insights(Data d,BigDecimal spend,BigDecimal income,String s){String top=d.expenses.stream().collect(Collectors.groupingBy(x->x.getCategory()==null?"Uncategorized":x.getCategory().getName(),Collectors.mapping(x->nz(x.getAmount()),Collectors.reducing(BigDecimal.ZERO,BigDecimal::add)))).entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("No category data");BigDecimal avg=d.expenses.isEmpty()?BigDecimal.ZERO:spend.divide(BigDecimal.valueOf(d.expenses.size()),2,RoundingMode.HALF_UP);return List.of("Largest cost centre: "+top+".","Average expense per transaction: "+s+" "+avg+".",(income.compareTo(spend)>=0?"Cash flow is positive for this period.":"Spending exceeded recorded income in this period."),d.expenses.isEmpty()?"No expenses were recorded in the selected period.":"Review the highest-cost category and recurring transactions before the next cycle.");}
     private static BigDecimal total(List<Expense> e){return e.stream().map(x->nz(x.getAmount())).reduce(BigDecimal.ZERO,BigDecimal::add);} private static BigDecimal nz(BigDecimal b){return b==null?BigDecimal.ZERO:b;}
     private static String symbol(String c){if(c==null)return "₹";return switch(c.toUpperCase()){case "USD"->"$";case "EUR"->"€";case "GBP"->"£";case "JPY"->"¥";case "AED"->"AED";case "INR"->"₹";default->c.toUpperCase();};}
-    private static CellStyle style(Workbook w,String bg,String fg,boolean bold,int size){CellStyle s=w.createCellStyle();s.setFillForegroundColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#"+bg),null));s.setFillPattern(FillPatternType.SOLID_FOREGROUND);Font f=w.createFont();f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#"+fg),null));f.setBold(bold);f.setFontHeightInPoints((short)size);f.setFontName("Aptos");s.setFont(f);s.setVerticalAlignment(VerticalAlignment.CENTER);return s;}
+    private static XSSFCellStyle style(XSSFWorkbook w,String bg,String fg,boolean bold,int size){XSSFCellStyle s=w.createCellStyle();s.setFillForegroundColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#"+bg),null));s.setFillPattern(FillPatternType.SOLID_FOREGROUND);Font f=w.createFont();f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#"+fg),null));f.setBold(bold);f.setFontHeightInPoints((short)size);f.setFontName("Aptos");s.setFont(f);s.setVerticalAlignment(VerticalAlignment.CENTER);return s;}
     private static void put(Sheet sh,int r,int c,Object v,CellStyle s){Cell cell=sh.getRow(r)==null?sh.createRow(r).createCell(c):sh.getRow(r).createCell(c);if(v instanceof BigDecimal b)cell.setCellValue(b.doubleValue());else if(v instanceof Number n)cell.setCellValue(n.doubleValue());else cell.setCellValue(String.valueOf(v));cell.setCellStyle(s);}
     private static void kpi(PdfPTable t,String l,String v,Color c){PdfPCell p=new PdfPCell();p.setPadding(9);p.setBorderColor(new Color(226,232,240));p.addElement(new Paragraph(l,FontFactory.getFont(FontFactory.HELVETICA_BOLD,8,c)));p.addElement(new Paragraph(v,FontFactory.getFont(FontFactory.HELVETICA_BOLD,12,new Color(15,23,42))));t.addCell(p);} private static void head(PdfPTable t,String x){PdfPCell p=new PdfPCell(new Phrase(x,FontFactory.getFont(FontFactory.HELVETICA_BOLD,8,Color.WHITE)));p.setBackgroundColor(new Color(30,41,59));p.setPadding(7);t.addCell(p);}
     private record Data(List<Expense> expenses,List<Income> incomes){BigDecimal spend(){return total(expenses);}BigDecimal income(){return incomes.stream().map(x->nz(x.getAmount())).reduce(BigDecimal.ZERO,BigDecimal::add);}}
