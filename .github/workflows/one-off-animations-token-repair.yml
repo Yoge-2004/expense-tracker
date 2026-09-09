@@ -1,0 +1,42 @@
+name: One-off animations token repair
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: "!contains(github.event.head_commit.message, '[animations-token-repair]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace undefined shadow token
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('frontend/css/animations.css')
+          s = p.read_text(encoding='utf-8')
+          old = 'var(--shadow-color)'
+          if s.count(old) != 2:
+              raise SystemExit(f'Expected exactly 2 shadow-color usages, found {s.count(old)}')
+          s = s.replace(old, 'var(--shadow-premium)')
+          p.write_text(s, encoding='utf-8')
+      - name: Verify repair
+        shell: python
+        run: |
+          from pathlib import Path
+          s = Path('frontend/css/animations.css').read_text(encoding='utf-8')
+          if 'var(--shadow-color)' in s:
+              raise SystemExit('Undefined --shadow-color remains')
+          if s.count('var(--shadow-premium)') < 2:
+              raise SystemExit('Expected repaired shadow-premium usages were not found')
+          if s.count('{') != s.count('}'):
+              raise SystemExit(f'Unbalanced braces: {s.count("{")} opens, {s.count("}")} closes')
+      - name: Commit repair
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/css/animations.css
+          git diff --cached --check
+          git commit -m 'fix: use defined shadow token in animations css [animations-token-repair]'
+          git push
