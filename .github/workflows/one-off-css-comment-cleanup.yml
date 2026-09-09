@@ -1,0 +1,73 @@
+name: One-off CSS comment cleanup
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-off-css-comment-cleanup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Normalize CSS comments
+        shell: python
+        run: |
+          from pathlib import Path
+          import re, subprocess
+
+          root = Path('frontend/css')
+          replacements = [
+              (r'/\*\s*Consolidated from 2 declarations -- transform had scale\(1\.05\) vs.*?\*/', '/* Use the current hover transform for edit actions. */'),
+              (r'/\*\s*Consolidated from 2 declarations, same shape as \.btn-edit:hover above\.\s*\*/', '/* Keep the hover transform consistent with edit actions. */'),
+              (r'/\*\s*\(Elastic modal entrance removed:.*?\*/', '/* Modal entrance animation is defined on the active overlay. */'),
+              (r'/\*\s*Consolidated from 3 declarations\. Same animation-lock bug.*?Dropped "both"\.\s*\*/', '/* Avoid fill-mode: both so the entrance animation does not block hover transforms. */'),
+              (r'/\*\s*Consolidated from 3 unconditional declarations of \.modal-overlay\..*?\*/', '/* State-specific overlay rules control backdrop blur; keep Safari support aligned. */'),
+              (r'/\*\s*Consolidated from 3 unconditional declarations of \.modal \(was lines.*?\*/', '/* Keep effective modal values in one base rule; entrance motion is handled by the active overlay. */'),
+              (r'/\*\s*Consolidated: block 2\'s gradient-clipped-text technique is what currently renders.*?\*/', '/* Use gradient-clipped text for the PRO badge with a solid-color fallback. */'),
+              (r'/\*\s*Consolidated from 3 unconditional declarations each of \.metric-card.*?\*/', '/* Include border-color in the metric transition so hover changes animate smoothly. */'),
+              (r'/\*\s*Consolidated: block 2\'s transition \(gap\+opacity only\).*?\*/', '/* Include color in the link transition so hover changes animate smoothly. */'),
+              (r'/\*\s*\[data-theme="light"\] override: the dark-theme gold.*?\*/', '/* Use darker gold in light theme to keep badge text readable. */'),
+              (r'/\*\s*Consolidated from 3 unconditional declarations each of \.filter-toolbar.*?\*/', '/* Toolbar visibility uses max-height, opacity and pointer-events; display stays flex in both states. */'),
+              (r'/\*\s*\.card-header \(e\.g\..*?\*/', '/* Stack the header and action vertically on narrow screens to avoid collisions. */'),
+              (r'/\*\s*RGB-channel-only tokens.*?\*/', '/* RGB tokens allow per-use alpha values while keeping brand colors centralized. */'),
+              (r'/\*\s*Fixed dark text for use on top of gold surfaces.*?\*/', '/* Keep dark text fixed on gold surfaces for consistent contrast across themes. */'),
+              (r'/\*\s*Smooth theme switch.*?\*/', '/* Theme switching uses a temporary transition scope so color changes stay synchronized. */'),
+              (r'/\*\s*205\. Ambient: fine grain texture\..*?\*/', '/* Keep grain static; blending over the animated canvas causes repeated full-viewport recompositing. */'),
+              (r'/\*\s*206\. Ambient: soft mesh gradient wash.*?\*/', '/* Keep the mesh wash static; background-position animation causes repeated full-viewport repaints. */'),
+              (r'/\*\s*A\. SCROLL-TRIGGERED REVEAL SYSTEM.*?\*/', '/* Shared reveal transitions are driven by data-reveal to keep variants centralized. */'),
+              (r'/\*\s*182\. Reveal: revealed end-state.*?\*/', '/* Use :where() so revealed-state styles do not outrank component hover rules. */'),
+              (r'/\*\s*\(\.split-screen, \.hero-section.*?\*/', '/* Legacy auth-page selectors were removed because the current HTML no longer uses them. */'),
+              (r'/\*\s*Was 16px 12px 32px.*?\*/', '/* Keep 20px horizontal padding on narrow screens for consistent edge spacing. */'),
+              (r'/\*\s*Was 8px !important.*?\*/', '/* Keep narrow-screen spacing aligned with the wider responsive tier. */'),
+              (r'/\*\s*Small-screen auth input/icon collision guard\..*?\*/', '/* Narrow-screen guard for auth input and icon spacing. */'),
+              (r'/\*\s*Expense Tracker Master Stylesheet.*?\*/', '/* Master stylesheet: ordered imports for all CSS subsystems. */'),
+          ]
+
+          changed = []
+          for path in sorted(root.rglob('*.css')):
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for pattern, replacement in replacements:
+                  text = re.sub(pattern, replacement, text, flags=re.S | re.I)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed.append(str(path))
+
+          if not changed:
+              print('No targeted CSS comment cleanup was needed.')
+              raise SystemExit(0)
+
+          print('Updated:')
+          for path in changed:
+              print(path)
+
+          subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
+          subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git', 'add', 'frontend/css'], check=True)
+          subprocess.run(['git', 'commit', '-m', 'refactor(css): clean historical comments'], check=True)
+          subprocess.run(['git', 'push', 'origin', 'HEAD:main'], check=True)
