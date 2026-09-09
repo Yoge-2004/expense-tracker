@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/apply-ui-regression-fixes.py'
       - 'scripts/refine-dashboard-ui.py'
+      - 'scripts/fix-dashboard-refresh.py'
       - '.github/workflows/apply-targeted-ui-fixes.yml'
   workflow_dispatch:
 
@@ -25,6 +26,9 @@ jobs:
       - name: Refine dashboard budget and export UX
         run: python3 scripts/refine-dashboard-ui.py
 
+      - name: Remove visibility-triggered refresh
+        run: python3 scripts/fix-dashboard-refresh.py
+
       - name: Validate JavaScript
         run: |
           node --check frontend/js/ui-regression-fixes.js
@@ -41,5 +45,5 @@ jobs:
             echo 'No changes to commit.'
             exit 0
           fi
-          git commit -m 'fix(ui): refine budget status export and native dialogs'
+          git commit -m 'fix(ui): refine budget status export native dialogs and refresh behavior'
           git push origin HEAD:main
