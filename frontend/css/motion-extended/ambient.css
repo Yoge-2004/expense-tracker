@@ -1,0 +1,140 @@
+/* -------------------------------------------------------------------------
+   D. AMBIENT BACKGROUND DEPTH — addresses the "background looks plain"
+   feedback: adds a subtle grain layer, richer light-theme wash, extra
+   drifting depth layers, and a scroll-parallax hook for the hero orbs.
+   ------------------------------------------------------------------------- */
+
+/* 205. Ambient: fine grain texture. Was animated (grainDrift, 9s steps)
+   and blended (mix-blend-mode: overlay) — the animation cost was the
+   smaller half of the problem. This site's aurora background canvas
+   animates continuously via requestAnimationFrame, and mix-blend-mode
+   forces the browser to recomposite whatever's blended against
+   *everything below it* on every one of those canvas frames, whether or
+   not the blended layer itself is animating. Static positioning + plain
+   opacity (no blend mode) makes this a one-time paint instead of an
+   ongoing full-viewport cost repeated 60 times a second. */
+.grain-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="light"] .grain-overlay { opacity: 0.06; }
+
+/* 206. Ambient: soft mesh gradient wash behind cards. Was animated via
+   background-position, which isn't a compositor-only property — every
+   step of that 26s loop was a full-viewport repaint, running forever on
+   every page. The static gradient still gives the depth this was added
+   for; it just no longer costs anything after the first paint. */
+.mesh-wash {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(var(--primary-rgb), 0.07), transparent 60%),
+        radial-gradient(ellipse 55% 45% at 85% 80%, rgba(var(--highlight-rgb), 0.06), transparent 60%);
+}
+
+/* 207. Ambient: richer diagonal wash specifically for light theme, which
+   otherwise reads as a flat single-tone page */
+[data-theme="light"] .mesh-wash {
+    background-image:
+        linear-gradient(135deg, rgba(212, 175, 55, 0.06) 0%, transparent 45%),
+        radial-gradient(ellipse 60% 50% at 15% 15%, rgba(212, 175, 55, 0.09), transparent 60%),
+        radial-gradient(ellipse 55% 45% at 88% 85%, rgba(14, 165, 233, 0.07), transparent 60%);
+}
+
+/* 208. Ambient: extra fourth orb layer for more depth on hero panels */
+@keyframes orbFloatSlow {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-24px, 18px) scale(1.08); }
+}
+.hero-orb-4 {
+    position: absolute;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.55;
+    pointer-events: none;
+    top: 55%;
+    right: 8%;
+    background: radial-gradient(circle, rgba(var(--warning-rgb), 0.24) 0%, rgba(var(--warning-rgb), 0.06) 45%, transparent 70%);
+    animation: orbFloatSlow 16s ease-in-out infinite;
+}
+
+/* 209. Ambient: hero grid gains slightly more presence (was near-invisible
+   on mobile where the canvas doesn't fill the panel edge-to-edge) */
+.hero-grid { opacity: 0.7; }
+[data-theme="light"] .hero-grid { opacity: 0.85; }
+
+/* 210. Ambient: floating dust motes rising slowly behind form panels */
+@keyframes floatingDustRise {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 0.5; }
+    90% { opacity: 0.4; }
+    100% { transform: translateY(-120px); opacity: 0; }
+}
+.dust-mote {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.6);
+    pointer-events: none;
+    animation: floatingDustRise 7s ease-in infinite;
+}
+
+/* 211. Ambient: secondary light-ray sweep, slower/wider than the existing one */
+@keyframes lightRayGlide2 {
+    0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+    15% { opacity: 0.4; }
+    85% { opacity: 0.3; }
+    100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+}
+.light-ray-sweep {
+    position: absolute;
+    top: 0; left: 0;
+    width: 25%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    pointer-events: none;
+    animation: lightRayGlide2 11s ease-in-out infinite;
+}
+
+/* 212. Ambient: depth-layered float for stacked float-cards (slightly
+   different timing per layer reinforces a sense of parallax depth) */
+@keyframes depthLayerFloat {
+    0%, 100% { transform: translateY(0) translateZ(0); }
+    50% { transform: translateY(-9px) translateZ(0); }
+}
+.float-card { animation: depthLayerFloat 6.5s ease-in-out infinite; }
+.float-card-2 { animation-delay: -2.2s; }
+.float-card-3 { animation-delay: -4.4s; }
+
+/* 213. Ambient: scroll parallax hook — motion.js writes --parallax-y as the
+   user scrolls; orbs and grid drift at a fraction of scroll speed */
+.auth-hero-bg, .hero-grid, .hero-orb {
+    --parallax-y: 0px;
+    transform: translateY(calc(var(--parallax-y, 0px) * 1));
+}
+.hero-orb-1 { transform: translateY(calc(var(--parallax-y, 0px) * 0.4)); }
+.hero-orb-2 { transform: translateY(calc(var(--parallax-y, 0px) * 0.65)); }
+.hero-orb-3 { transform: translateY(calc(var(--parallax-y, 0px) * 0.85)); }
+
+/* 214. Ambient: dashboard content backdrop breathing gradient, so scrolled
+   sections don't sit on a totally flat fill */
+@keyframes contentBackdropBreathe {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.85; }
+}
+.dashboard-container::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(var(--primary-rgb), 0.05), transparent 65%);
+    animation: contentBackdropBreathe 12s ease-in-out infinite;
+}

@@ -1,0 +1,128 @@
+/* -------------------------------------------------------------------------
+   E. LOADING & MICRO-FEEDBACK STATES
+   ------------------------------------------------------------------------- */
+
+/* 215. Feedback: three-dot loading bounce for inline async actions */
+@keyframes loadingDotsBounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+    40% { transform: translateY(-6px); opacity: 1; }
+}
+.loading-dots span {
+    display: inline-block;
+    width: 5px; height: 5px;
+    margin: 0 2px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: loadingDotsBounce 1s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+/* 216. Feedback: success checkmark pop-in (distinct trigger class from the
+   existing stroke-draw check, for inline confirmations) */
+@keyframes successCheckPop2 {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.2) rotate(6deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.success-pop-icon {
+    animation: successCheckPop2 0.45s var(--ease-bounce);
+}
+
+/* 217. Feedback: soft error shake for inline validation (gentler than the
+   existing hard shake, meant for non-blocking hints) */
+@keyframes errorShakeSoft {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+.shake-soft { animation: errorShakeSoft 0.32s ease-in-out; }
+
+/* 218. Feedback: progress shimmer sweep variant for slim progress bars */
+@keyframes progressShimmerSweep2 {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+.progress-shimmer-slim::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    animation: progressShimmerSweep2 1.6s linear infinite;
+}
+
+/* 219. Feedback: toast bounce-slide entrance variant */
+@keyframes toastSlideBounce2 {
+    0% { transform: translateY(20px) scale(0.92); opacity: 0; }
+    60% { transform: translateY(-4px) scale(1.02); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.toast.motion-v2 { animation: toastSlideBounce2 0.5s var(--ease-bounce); }
+
+/* 220. Feedback: badge count pop when a counter updates */
+@keyframes badgeCountPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+.badge-count-pop { animation: badgeCountPop 0.35s var(--ease-bounce); }
+
+/* 221. Feedback: input focus glow ring expansion */
+@keyframes inputFocusGlowRing {
+    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.45); }
+    100% { box-shadow: 0 0 0 5px rgba(var(--primary-rgb), 0); }
+}
+.form-input:focus, .field-input:focus {
+    animation: inputFocusGlowRing 0.5s var(--ease);
+}
+
+/* 222. Feedback: form field slide-in validation message */
+@keyframes formFieldSlideValidate {
+    0% { transform: translateY(-6px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.field-validate-msg { animation: formFieldSlideValidate 0.28s var(--ease); }
+
+/* 223. Feedback: copy-to-clipboard confirmation pop */
+@keyframes copyToClipboardPop {
+    0% { transform: scale(0.85) translateY(4px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.copy-confirm-pop { animation: copyToClipboardPop 0.25s var(--ease-bounce); }
+
+/* 224. Feedback: number ticker fade for updating totals/metrics */
+@keyframes numberTickerFade {
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+.number-ticker-update { animation: numberTickerFade 0.3s var(--ease); }
+
+/* 225. Feedback: skeleton block pulse (alternate to the existing shimmer,
+   used for smaller inline placeholders) */
+@keyframes skeletonPulseAlt {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.85; }
+}
+.skeleton-pulse-alt { animation: skeletonPulseAlt 1.4s ease-in-out infinite; }
+
+/* 226. Feedback: section entrance stagger helper — motion.js applies this
+   custom property per child index so lists cascade in rather than reveal
+   as one block */
+.reveal-stagger-parent > * {
+    --stagger-index: 0;
+    --reveal-delay: calc(var(--stagger-index, 0) * 70ms);
+}
+
+/* -------------------------------------------------------------------------
+   Reduced motion: every group above respects the user's OS-level preference.
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    [data-reveal] {
+        transition-duration: 0.01ms !important;
+    }
+    .grain-overlay, .mesh-wash, .hero-orb-4, .dust-mote, .light-ray-sweep,
+    .float-card, .dashboard-container::before,
+    .touch-ripple-wave, .loading-dots span {
+        animation: none !important;
+    }
+}

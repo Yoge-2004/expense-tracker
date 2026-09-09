@@ -1,0 +1,78 @@
+/* ==========================================================================
+   MOTION SUITE — PART 2: SCROLL, TOUCH & AMBIENT DEPTH (171 → 226+)
+   Continues the numbered animation suite from style.css (which ends at #170).
+   Paired with js/motion.js, which applies these classes/attributes at runtime.
+   Organized in five groups:
+     A. Scroll-triggered reveal system      (#171–#182)
+     B. Touch & gesture feedback             (#183–#194)
+     C. Pointer / hover micro-interactions   (#195–#204)
+     D. Ambient background depth             (#205–#214)
+     E. Loading & micro-feedback states      (#215–#226)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   A. SCROLL-TRIGGERED REVEAL SYSTEM
+   Elements get [data-reveal] from motion.js; motion.js's IntersectionObserver
+   toggles .is-revealed when they cross into the viewport. One shared
+   transition engine driven by the data-reveal value keeps this to a single
+   rule set instead of ten near-duplicate blocks.
+   ------------------------------------------------------------------------- */
+
+/* 171. Reveal: base hidden state + shared transition */
+[data-reveal] {
+    --reveal-delay: 0ms;
+    opacity: 0;
+    transition:
+        opacity 0.7s var(--ease),
+        transform 0.75s var(--ease),
+        filter 0.7s var(--ease);
+    will-change: opacity, transform;
+}
+
+/* 172. Reveal: fade-up */
+[data-reveal="fade-up"] { transform: translateY(38px); }
+
+/* 173. Reveal: fade-down */
+[data-reveal="fade-down"] { transform: translateY(-34px); }
+
+/* 174. Reveal: fade-left */
+[data-reveal="fade-left"] { transform: translateX(-44px); }
+
+/* 175. Reveal: fade-right */
+[data-reveal="fade-right"] { transform: translateX(44px); }
+
+/* 176. Reveal: zoom-in */
+[data-reveal="zoom"] { transform: scale(0.88); }
+
+/* 177. Reveal: blur-in */
+[data-reveal="blur"] { filter: blur(10px); transform: scale(0.97); }
+
+/* 178. Reveal: flip-x (tips forward, hinges on bottom edge) */
+[data-reveal="flip-x"] { transform: perspective(900px) rotateX(28deg) translateY(20px); transform-origin: bottom center; }
+
+/* 179. Reveal: flip-y (swings in from the side) */
+[data-reveal="flip-y"] { transform: perspective(900px) rotateY(32deg) translateX(20px); transform-origin: left center; }
+
+/* 180. Reveal: rotate-in */
+[data-reveal="rotate"] { transform: rotate(-6deg) scale(0.92) translateY(24px); }
+
+/* 181. Reveal: skew-in */
+[data-reveal="skew"] { transform: skewY(4deg) translateY(30px); }
+
+/* 182. Reveal: revealed end-state for every variant above, plus staggered
+   children support — motion.js sets --reveal-delay per element for a
+   cascading wave instead of every item popping in at once.
+   :where() wraps [data-reveal] so it contributes zero specificity here:
+   without it, this rule's specificity (0,2,0) ties with component hover
+   rules like .metric-card:hover, and — being in this later-loaded
+   stylesheet — was winning that tie permanently once an element was
+   revealed, silently overriding transform: none onto every hover state
+   forever after. This still correctly beats the plain [data-reveal="x"]
+   hidden-state rule above (lower specificity, same file), just no longer
+   outranks a component's own hover/interactive styling. */
+:where([data-reveal]).is-revealed {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+    transition-delay: var(--reveal-delay, 0ms);
+}
