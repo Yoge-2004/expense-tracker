@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/apply-ui-regression-fixes.py'
+      - 'scripts/refine-dashboard-ui.py'
       - '.github/workflows/apply-targeted-ui-fixes.yml'
   workflow_dispatch:
 
@@ -20,6 +21,9 @@ jobs:
 
       - name: Apply deterministic UI fixes
         run: python3 scripts/apply-ui-regression-fixes.py
+
+      - name: Refine dashboard budget and export UX
+        run: python3 scripts/refine-dashboard-ui.py
 
       - name: Validate JavaScript
         run: |
@@ -37,5 +41,5 @@ jobs:
             echo 'No changes to commit.'
             exit 0
           fi
-          git commit -m 'fix(ui): repair auth controls mobile layout and idle refresh'
+          git commit -m 'fix(ui): refine budget status export and native dialogs'
           git push origin HEAD:main
