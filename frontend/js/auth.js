@@ -77,17 +77,7 @@ function initGoogleSignIn() {
         });
         isGoogleInitialized = true;
 
-        const realButtons = document.querySelectorAll("#googleRealButton, .google-real-btn");
-        realButtons.forEach(btnContainer => {
-            const parentWidth = btnContainer.parentElement?.getBoundingClientRect().width || 380;
-            const width = Math.min(Math.max(Math.round(parentWidth) || 360, 280), 440);
-            google.accounts.id.renderButton(btnContainer, {
-                type: "standard",
-                size: "large",
-                width: width,
-                height: 48
-            });
-        });
+        // The visible button owns the interaction; Google Identity Services is used only via prompt().
     } catch (e) {
         console.warn("Google Sign-In initialization:", e);
     }
