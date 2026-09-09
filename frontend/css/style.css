@@ -1,9 +1,4 @@
-/* ==========================================================================
-   EXPENSE TRACKER MASTER STYLESHEET
-   Modularized Architecture for 100% Maintainability & Expandability
-   All subsystems are organized into discrete, domain-specific modules.
-   ========================================================================== */
-
+/* Expense Tracker stylesheet manifest. Import order defines the cascade. */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import url("variables.css");
 @import url("base.css");
