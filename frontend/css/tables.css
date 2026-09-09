@@ -3,6 +3,7 @@
    Module: Tables, Streams, Ledger, Categories & Filters
    ========================================================================== */
 
+@media (max-width: 700px) {
     /* .card-header (e.g. "Budget Governance / Monthly Category Limits" next
        to the "+ New Budget" button) has no wrap behavior at all, and on
        narrow screens the button's fixed width leaves too little room for
