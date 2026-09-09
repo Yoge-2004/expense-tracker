@@ -11,13 +11,16 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.AbstractDataSource;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Custom DataSource configuration that provides seamless fallback to a local file database
- * if the primary database (Neon PostgreSQL) is down, unreachable, or sleeping.
+ * Provides a local emergency datastore for environments where the primary database
+ * becomes temporarily unreachable. The local store is NOT treated as a replica:
+ * it is only safe for recovery when it has been populated by an explicit backup/
+ * restore process. Production authority remains Neon PostgreSQL.
  */
 @Configuration
 public class ResilientFallbackDataSourceConfig {
@@ -36,17 +39,19 @@ public class ResilientFallbackDataSourceConfig {
     @Value("${spring.datasource.password:}")
     private String primaryPassword;
 
+    @Value("${app.fallback-db-path:${DATA_DIR:/data}/expensetracker_fallback}")
+    private String fallbackDbPath;
+
     @Bean
     @Primary
     public DataSource dataSource() {
-        // Build Primary DataSource (Neon PostgreSQL / configured DB)
         HikariConfig primaryConfig = new HikariConfig();
         primaryConfig.setJdbcUrl(primaryUrl);
         primaryConfig.setDriverClassName(primaryDriver);
         primaryConfig.setUsername(primaryUsername);
         primaryConfig.setPassword(primaryPassword);
-        primaryConfig.setConnectionTimeout(5000); // 5s fast fail to trigger fallback
-        primaryConfig.setInitializationFailTimeout(-1); // Do not crash startup if remote DB is asleep
+        primaryConfig.setConnectionTimeout(5000);
+        primaryConfig.setInitializationFailTimeout(-1);
         primaryConfig.setMaximumPoolSize(10);
         primaryConfig.setMinimumIdle(0);
         primaryConfig.setPoolName("PrimaryHikariPool");
@@ -55,40 +60,41 @@ public class ResilientFallbackDataSourceConfig {
         try {
             primaryDs = new HikariDataSource(primaryConfig);
         } catch (Exception e) {
-            log.warn("Failed to initialize primary Hikari pool directly: {}", e.getMessage());
+            log.warn("Primary database pool could not initialize: {}", e.getMessage());
             primaryDs = null;
         }
 
-        // If primary DB is an H2 database (in-memory test or local file), do not attach a separate fallback DB
         if (primaryUrl != null && primaryUrl.contains(":h2:")) {
             return primaryDs;
         }
 
-        // Build Fallback DataSource (Local H2 File DB)
+        File fallbackFile = new File(fallbackDbPath).getAbsoluteFile();
+        File parent = fallbackFile.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            log.warn("Could not create fallback database directory: {}", parent);
+        }
+
         HikariConfig fallbackConfig = new HikariConfig();
-        fallbackConfig.setJdbcUrl("jdbc:h2:file:./expensetracker_fallback;AUTO_SERVER=TRUE;MODE=PostgreSQL");
+        fallbackConfig.setJdbcUrl("jdbc:h2:file:" + fallbackFile.getPath() + ";AUTO_SERVER=TRUE;MODE=PostgreSQL");
         fallbackConfig.setDriverClassName("org.h2.Driver");
         fallbackConfig.setUsername("sa");
         fallbackConfig.setPassword("");
         fallbackConfig.setConnectionTimeout(5000);
         fallbackConfig.setMaximumPoolSize(10);
+        fallbackConfig.setMinimumIdle(0);
         fallbackConfig.setPoolName("FallbackHikariPool");
         HikariDataSource fallbackDs = new HikariDataSource(fallbackConfig);
 
+        log.info("Emergency fallback database path: {}", fallbackFile);
         return new ResilientRoutingDataSource(primaryDs, fallbackDs);
     }
 
-    /**
-     * Smart routing DataSource that uses Primary DS when healthy, but transparently switches
-     * to Fallback DS if Primary fails to supply a connection.
-     */
     private static class ResilientRoutingDataSource extends AbstractDataSource {
-
         private final DataSource primaryDs;
         private final DataSource fallbackDs;
         private final AtomicBoolean primaryUnavailable = new AtomicBoolean(false);
 
-        public ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs) {
+        ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs) {
             this.primaryDs = primaryDs;
             this.fallbackDs = fallbackDs;
         }
@@ -98,15 +104,13 @@ public class ResilientFallbackDataSourceConfig {
             if (primaryDs != null && !primaryUnavailable.get()) {
                 try {
                     Connection conn = primaryDs.getConnection();
-                    if (conn != null && conn.isValid(2)) {
-                        return conn;
-                    }
+                    if (conn != null && conn.isValid(2)) return conn;
                 } catch (Exception e) {
-                    log.warn("Primary database connection failed ({}), switching to local HF Spaces database fallback...", e.getMessage());
+                    log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
                     primaryUnavailable.set(true);
                 }
             }
-            log.info("Serving connection from local HF Spaces fallback database.");
+            log.warn("Serving the emergency local datastore. This is only a recovery store and may be stale.");
             return fallbackDs.getConnection();
         }
 
@@ -115,11 +119,9 @@ public class ResilientFallbackDataSourceConfig {
             if (primaryDs != null && !primaryUnavailable.get()) {
                 try {
                     Connection conn = primaryDs.getConnection(username, password);
-                    if (conn != null && conn.isValid(2)) {
-                        return conn;
-                    }
+                    if (conn != null && conn.isValid(2)) return conn;
                 } catch (Exception e) {
-                    log.warn("Primary database connection failed ({}), switching to local HF Spaces database fallback...", e.getMessage());
+                    log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
                     primaryUnavailable.set(true);
                 }
             }
