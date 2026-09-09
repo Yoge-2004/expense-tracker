@@ -1,18 +1,31 @@
 # Encrypted production database snapshot
 
-`expense_tracker.sqlite.enc` is generated automatically from the active production database and committed by the backend.
+`expense_tracker.sqlite.enc` is the recovery snapshot for the production database. It is stored in the **Hugging Face Space repository**, not in the GitHub source repository.
+
+## Architecture
 
 - **Neon PostgreSQL is authoritative while reachable.**
-- The snapshot is a SQLite representation encrypted with **AES-256-GCM** before it is committed.
-- The encryption password is never stored in this repository.
-- When Neon becomes unavailable, the backend hydrates its local emergency datastore from the latest encrypted snapshot and continues serving reads/writes.
-- While in emergency mode, the backend periodically commits the updated encrypted snapshot back to this repository.
-- Plaintext `*.db`, `*.sqlite`, `*.sqlite3`, and `expenses_sync.json` files are intentionally blocked from being committed.
+- The active database is exported to a portable SQLite snapshot every 10 minutes.
+- The SQLite snapshot is encrypted with **AES-256-GCM** and committed as `database/expense_tracker.sqlite.enc` in the Hugging Face Space repository.
+- The repository may be public, but the database contents are not readable without the single `DB_BACKUP_KEY` secret.
+- If Neon becomes unavailable, the backend hydrates its local failover datastore from the latest encrypted HF snapshot and continues serving reads and writes.
+- During failover, the updated failover state is periodically encrypted and pushed back to the HF Space repository.
+- This is snapshot-based disaster recovery, not a live database replica; the recovery point is limited by the snapshot interval.
 
-Required runtime secrets:
+## Required runtime secrets
 
-- `DB_BACKUP_PASSWORD` — strong encryption password shared by GitHub Actions and the backend.
-- `GITHUB_DB_TOKEN` — GitHub token with permission to update this repository's contents from the backend.
-- `SYNC_SECRET_KEY` — token used by the scheduled backup workflow to invoke the protected backup endpoint.
+Only these two runtime secrets are required for the HF database backup/failover path:
 
-Never paste any of these secrets into source code, issues, README files, or commit messages.
+- `HF_TOKEN` — a Hugging Face token with permission to read and update the Space repository.
+- `DB_BACKUP_KEY` — the single secret used to encrypt and decrypt the database snapshot.
+
+No second database password is required.
+
+## Security rules
+
+- Never commit `DB_BACKUP_KEY` or `HF_TOKEN` to source control.
+- Never commit plaintext `*.db`, `*.sqlite`, `*.sqlite3`, or `expenses_sync.json` database exports.
+- Keep `database/expense_tracker.sqlite.enc` encrypted at all times.
+- If the backup key is exposed, rotate it and create a fresh encrypted snapshot.
+
+The encrypted snapshot is intentionally stored in the Hugging Face Space repository because that repository is the requested recovery storage location. The backend uses the decrypted snapshot only as temporary input while hydrating the local failover datastore; plaintext database files are not committed.
