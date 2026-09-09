@@ -29,12 +29,6 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F9F6EF"
-      },
-      "notification": {
-        "icon": "./assets/notification-icon.png",
-        "color": "#D4AF37",
-        "androidMode": "default",
-        "androidCollapsedTitle": "ExpenseTracker"
       }
     },
     "web": {
