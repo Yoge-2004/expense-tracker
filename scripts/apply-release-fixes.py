@@ -85,11 +85,10 @@ for old, new in [
     ('<DayOfWeekChart expenses={expenses}', '<DayOfWeekChart expenses={dashboardExpenses}'),
 ]:
     s = s.replace(old, new, 1)
-# Declare the filter clock once, before both filtered datasets.
+# Ensure exactly one shared filter clock exists before filteredExpenses.
 s = s.replace('  // Filtered Expenses List (including Custom Date Range)', '  const now = new Date();\n\n  // Filtered Expenses List (including Custom Date Range)', 1)
-# Collapse any duplicate declaration left by an earlier patch attempt.
-s = s.replace('  const now = new Date();\n\n  const now = new Date();', '  const now = new Date();', 1)
-# Remove any old duplicate declaration immediately before the metrics block.
+while '  const now = new Date();\n\n  const now = new Date();' in s:
+    s = s.replace('  const now = new Date();\n\n  const now = new Date();', '  const now = new Date();', 1)
 s = s.replace('  const now = new Date();\n  const currentDay = Math.max(now.getDate(), 1);', '  const currentDay = Math.max(now.getDate(), 1);', 1)
 INDEX.write_text(s)
 
