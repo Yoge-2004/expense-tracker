@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/apply-release-fixes.py'
+      - 'scripts/web-ui-fixes.py'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +20,9 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Apply deterministic source fixes
-        run: python3 scripts/apply-release-fixes.py
+        run: |
+          python3 scripts/apply-release-fixes.py
+          python3 scripts/web-ui-fixes.py
 
       - name: Commit source fixes
         run: |
