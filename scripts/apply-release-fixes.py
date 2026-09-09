@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# One-time deterministic release stabilization patch; safe to re-run.
 INDEX = Path('mobile/app/(tabs)/index.tsx')
 REPORT = Path('src/main/java/com/example/expensetracker/controller/RangeReportController.java')
 
@@ -88,6 +89,5 @@ for old, new in [
 INDEX.write_text(s)
 
 r = REPORT.read_text()
-# Apache POI's XSSF font overload is not present on the generic Font interface.
 r = r.replace('Font f=w.createFont();f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor', 'org.apache.poi.xssf.usermodel.XSSFFont f=w.createFont();f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor', 1)
 REPORT.write_text(r)
