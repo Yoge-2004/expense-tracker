@@ -3,6 +3,7 @@
     0% { background-position: -200% center; }
     100% { background-position: 200% center; }
 }
+
 .step-progress-fill {
     background: linear-gradient(90deg, var(--primary) 0%, #fff 50%, var(--primary) 100%);
     background-size: 200% 100%;
@@ -14,20 +15,9 @@
     0% { transform: scaleY(0); transform-origin: bottom; }
     100% { transform: scaleY(1); transform-origin: bottom; }
 }
+
 .chart-bar-animated {
     animation: chartBarGrowVertical 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* 102. Donut Segment Radial Pop */
-@keyframes donutPopOut {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.06); filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); }
-}
-
-/* 103. Chart Area Glow Wave */
-@keyframes chartGlowWave {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 0.85; filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.4)); }
 }
 
 /* 104. Chart Tooltip Elastic Glide */
@@ -35,46 +25,22 @@
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* 105. Gauge Needle Deflection */
-@keyframes needleDeflection {
-    0% { transform: rotate(-90deg); }
-    70% { transform: rotate(15deg); }
-    100% { transform: rotate(0deg); }
-}
-
-/* 106. Trend Line Sparkle Runner */
-@keyframes sparkLineTravel {
-    0% { offset-distance: 0%; opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { offset-distance: 100%; opacity: 0; }
-}
-
 /* 107. Stat Counter Ticker Flip */
 @keyframes counterNumberRoll {
     0% { transform: translateY(12px); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
 }
-.metric-value, .stat-value {
+
+.metric-value,
+.stat-value {
     animation: counterNumberRoll 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* 109. Financial Health Breathing Gauge */
-@keyframes healthGaugePulse {
-    0%, 100% { stroke-dasharray: 280, 300; stroke: var(--primary); }
-    50% { stroke-dasharray: 290, 300; stroke: var(--accent); }
-}
-
-/* 112. Chart Grid Lines Entrance */
-@keyframes gridLinesFade {
-    0% { opacity: 0; stroke-dashoffset: 100; }
-    100% { opacity: 1; stroke-dashoffset: 0; }
 }
 
 /* 113. Heatmap Calendar Day Cell Pop */
 .calendar-heatmap-day {
     transition: transform 0.2s ease, filter 0.2s ease;
 }
+
 .calendar-heatmap-day:hover {
     transform: scale(1.4) !important;
     z-index: 10;
@@ -87,6 +53,7 @@
     30% { transform: scale(1.18); color: var(--primary); }
     100% { transform: scale(1); }
 }
+
 .metric-updated {
     animation: metricUpdateBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -97,6 +64,7 @@
     70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
 }
+
 .status-dot {
     animation: radarBeaconPulse 2s infinite !important;
 }
@@ -107,12 +75,15 @@
     50% { transform: scale(1.06); }
     100% { transform: scale(1); }
 }
-.category-pill:active, .filter-chip:active {
+
+.category-pill:active,
+.filter-chip:active {
     animation: pillTapBounce 0.25s ease;
 }
 
 /* 120. Filter Chip Selected Halo */
-.filter-chip.active, .category-pill.active {
+.filter-chip.active,
+.category-pill.active {
     box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.35) !important;
     transform: translateY(-1px) scale(1.02) !important;
     transition: all 0.25s ease !important;
@@ -124,13 +95,15 @@
     20%, 60% { transform: rotate(14deg); }
     40%, 80% { transform: rotate(-14deg); }
 }
+
 .reminder-bell-active svg {
     animation: bellWiggle 1.5s ease-in-out infinite;
     transform-origin: top center;
 }
 
 /* 122. Currency Pill Glowing Ring */
-.currency-option:hover, .currency-option.selected {
+.currency-option:hover,
+.currency-option.selected {
     box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.3) !important;
     border-color: var(--primary) !important;
 }
@@ -140,6 +113,7 @@
     0% { opacity: 0; transform: scale(0.8) translateX(10px); }
     100% { opacity: 1; transform: scale(1) translateX(0); }
 }
+
 .transaction-tag {
     animation: tagSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -150,6 +124,7 @@
     80% { transform: scale(1.25); opacity: 1; }
     100% { transform: scale(1); opacity: 1; }
 }
+
 .notification-badge {
     animation: badgePopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -159,6 +134,7 @@
     0% { stroke-dashoffset: 50; }
     100% { stroke-dashoffset: 0; }
 }
+
 .verified-icon path {
     stroke-dasharray: 50;
     animation: checkDrawStroke 0.6s ease-out forwards;
@@ -169,6 +145,7 @@
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.4); opacity: 0.6; box-shadow: 0 0 8px #e74c3c; }
 }
+
 .unread-indicator {
     animation: unreadDotPulse 1.8s ease-in-out infinite;
 }
@@ -178,6 +155,8 @@
     0%, 100% { box-shadow: 0 0 0 2px var(--primary); }
     50% { box-shadow: 0 0 0 6px rgba(var(--primary-rgb), 0.35); }
 }
-.step-number.active, .step-item.active .step-number {
+
+.step-number.active,
+.step-item.active .step-number {
     animation: stepRingGlow 2s ease-in-out infinite;
 }
