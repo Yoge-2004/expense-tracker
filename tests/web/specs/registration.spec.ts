@@ -25,10 +25,17 @@ test.describe('registration UI regression', () => {
 
     const suggestions = page.locator('#usernameSuggestions');
     await expect(suggestions).toBeVisible();
-    await expect(suggestions.locator('button, [role="button"]')).toHaveCount(3);
+    await expect(suggestions.locator('.suggestion-chip')).toHaveCount(3);
 
-    const box = await page.locator('body').boundingBox();
+    const chips = suggestions.locator('.suggestion-chip');
+    await expect(chips.nth(0)).toContainText('@john_1');
+    await expect(chips.nth(1)).toContainText('@john_2');
+    await expect(chips.nth(2)).toContainText('@john_3');
+
+    const body = page.locator('body');
+    const box = await body.boundingBox();
     expect(box?.width).toBeGreaterThan(0);
     expect(box?.height).toBeGreaterThan(0);
+    await expect(body).toHaveCSS('overflow-x', /hidden|visible|clip/);
   });
 });
