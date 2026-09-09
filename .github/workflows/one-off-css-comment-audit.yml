@@ -1,13 +1,17 @@
 name: One-off CSS comment audit
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - 'frontend/css/**'
+      - '.github/workflows/one-off-css-comment-audit.yml'
 
 permissions:
   contents: read
 
 jobs:
   audit:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
