@@ -490,6 +490,8 @@ export default function DashboardScreen() {
     );
   };
 
+  const now = new Date();
+
   // Filtered Expenses List (including Custom Date Range)
   const filteredExpenses = expenses
     .filter((e) => {
@@ -584,7 +586,6 @@ export default function DashboardScreen() {
   const netCashFlow = totalIncome - totalSpent;
   const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100).toFixed(1) : "0.0";
 
-  const now = new Date();
   const currentDay = Math.max(now.getDate(), 1);
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const currentMonthExpenses = dashboardExpenses.filter((e) => {
