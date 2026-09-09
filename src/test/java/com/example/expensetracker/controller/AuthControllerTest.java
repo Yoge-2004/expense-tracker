@@ -2,6 +2,7 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.CustomUserDetails;
+import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.service.PasswordResetService;
@@ -17,10 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Optional;
-
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -38,6 +36,7 @@ class AuthControllerTest {
     @MockitoBean UserService userService;
     @MockitoBean GoogleIdTokenVerifier googleIdTokenVerifier;
     @MockitoBean PasswordResetService passwordResetService;
+    @MockitoBean CustomUserDetailsService customUserDetailsService;
 
     private User user;
 
