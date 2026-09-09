@@ -159,8 +159,15 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         ...options.headers
     };
 
-    activeRequests += 1;
-    setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
+    // Background GETs must not flash the global loading veil. The dashboard
+    // performs several parallel reads, and showing the global loader for every
+    // one made the page appear to randomly refresh/flicker during normal use.
+    // Mutations still show the loader, and callers can opt a GET in with showLoading: true.
+    const showRequestLoading = options.showLoading === true || method !== "GET";
+    if (showRequestLoading) {
+        activeRequests += 1;
+        setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
+    }
     let response;
     try {
         response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
