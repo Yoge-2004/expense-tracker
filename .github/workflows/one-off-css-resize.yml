@@ -1,0 +1,131 @@
+name: One-off CSS resize
+
+on:
+  push:
+    paths:
+      - 'frontend/css/**'
+      - '.github/workflows/one-off-css-resize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  resize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split oversized CSS files at top-level boundaries
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import subprocess
+
+          ROOT = Path('frontend/css')
+          LIMIT = 9000
+
+          def split_css(text):
+              boundaries = []
+              depth = 0
+              i = 0
+              n = len(text)
+              quote = None
+              comment = False
+              last = 0
+              while i < n:
+                  if comment:
+                      if text.startswith('*/', i):
+                          comment = False
+                          i += 2
+                          continue
+                      i += 1
+                      continue
+                  if quote:
+                      if text[i] == '\\':
+                          i += 2
+                          continue
+                      if text[i] == quote:
+                          quote = None
+                      i += 1
+                      continue
+                  if text.startswith('/*', i):
+                      comment = True
+                      i += 2
+                      continue
+                  c = text[i]
+                  if c in ('"', "'"):
+                      quote = c
+                  elif c == '{':
+                      depth += 1
+                  elif c == '}':
+                      depth -= 1
+                      if depth == 0:
+                          j = i + 1
+                          while j < n and text[j] in ' \t\r\n':
+                              j += 1
+                          boundaries.append(j)
+                  i += 1
+
+              if depth != 0:
+                  raise ValueError('Unbalanced CSS braces')
+
+              chunks = []
+              start = 0
+              for end in boundaries:
+                  if end - start >= LIMIT and end > start:
+                      chunks.append(text[start:end])
+                      start = end
+              if start < n:
+                  chunks.append(text[start:])
+              return chunks
+
+          changed = []
+          for path in sorted(ROOT.rglob('*.css')):
+              if path.name.startswith('_'):
+                  continue
+              text = path.read_text(encoding='utf-8')
+              if len(text.encode('utf-8')) <= LIMIT:
+                  continue
+              chunks = split_css(text)
+              if len(chunks) <= 1:
+                  continue
+
+              rel = path.relative_to(ROOT)
+              stem = path.stem
+              module_dir = path.parent / stem
+              module_dir.mkdir(exist_ok=True)
+              for old in module_dir.glob('part-*.css'):
+                  old.unlink()
+
+              imports = []
+              for index, chunk in enumerate(chunks, 1):
+                  out = module_dir / f'part-{index:02d}.css'
+                  out.write_text(chunk, encoding='utf-8')
+                  imports.append(f'@import url("{stem}/part-{index:02d}.css");')
+
+              manifest = (
+                  f'/* ==========================================================================\n'
+                  f'   EXPENSE TRACKER — {rel.as_posix()}\n'
+                  f'   Ordered manifest for modular CSS. Source blocks are preserved verbatim.\n'
+                  f'   ========================================================================== */\n\n'
+                  + '\n'.join(imports) + '\n'
+              )
+              path.write_text(manifest, encoding='utf-8')
+              changed.append((str(rel), len(text.encode('utf-8')), [p.name for p in module_dir.glob('part-*.css')]))
+
+          if not changed:
+              print('No oversized CSS files required resizing.')
+              raise SystemExit(0)
+
+          for rel, size, parts in changed:
+              print(f'{rel}: {size} bytes -> {len(parts)} modules')
+
+          subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'], check=True)
+          subprocess.run(['git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git', 'add', 'frontend/css'], check=True)
+          subprocess.run(['git', 'commit', '-m', 'refactor(css): resize oversized stylesheets'], check=True)
+          subprocess.run(['git', 'push'], check=True)
