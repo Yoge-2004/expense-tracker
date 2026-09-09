@@ -65,10 +65,35 @@ html.theme-transitioning *::after {
     box-sizing: border-box !important;
 }
 
+/* Make budget utilization legible without placing the fill outside its track. */
+.budget-status-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+    margin-top: 10px !important;
+    color: var(--text-muted) !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+}
+.budget-status-row > span {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+.budget-status-value {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 1000px) {
     .top-bar-actions .command-search-wrapper { width: min(34vw, 340px) !important; min-width: 220px !important; }
 }
 
 @media (max-width: 700px) {
     .top-bar-actions .command-search-wrapper { width: 100% !important; min-width: 0 !important; flex: 1 1 100% !important; }
+    .budget-status-row { gap: 8px !important; font-size: 10.5px !important; }
 }
