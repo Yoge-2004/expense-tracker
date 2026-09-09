@@ -61,15 +61,19 @@ public class DatabaseSnapshotService {
              Connection target = DriverManager.getConnection(h2Url, "sa", "")) {
             target.setAutoCommit(false);
             try (Statement s = target.createStatement()) { s.execute("SET REFERENTIAL_INTEGRITY FALSE"); }
-            for (String table : tableNames(source)) {
-                List<Column> sourceColumns = columns(source, table);
-                List<String> targetColumns = targetColumns(target, table);
-                if (targetColumns.isEmpty()) continue;
-                List<String> common = sourceColumns.stream().map(c -> c.name)
-                        .filter(c -> targetColumns.contains(c.toLowerCase(Locale.ROOT))).toList();
+            Map<String,String> actualTables = actualTableNames(target);
+            for (String sourceTable : tableNames(source)) {
+                String targetTable = actualTables.get(sourceTable.toLowerCase(Locale.ROOT));
+                if (targetTable == null) continue;
+                List<Column> sourceColumns = columns(source, sourceTable);
+                Map<String,String> actualColumns = actualColumnNames(target, targetTable);
+                List<ColumnPair> common = sourceColumns.stream()
+                        .filter(c -> actualColumns.containsKey(c.name.toLowerCase(Locale.ROOT)))
+                        .map(c -> new ColumnPair(c.name, actualColumns.get(c.name.toLowerCase(Locale.ROOT))))
+                        .toList();
                 if (common.isEmpty()) continue;
-                try (Statement s = target.createStatement()) { s.executeUpdate("DELETE FROM " + q(table)); }
-                rows += insertRows(source, target, table, common);
+                try (Statement s = target.createStatement()) { s.executeUpdate("DELETE FROM " + q(targetTable)); }
+                rows += insertRows(source, target, sourceTable, targetTable, common);
             }
             try (Statement s = target.createStatement()) { s.execute("SET REFERENTIAL_INTEGRITY TRUE"); }
             target.commit();
@@ -77,16 +81,16 @@ public class DatabaseSnapshotService {
         return rows;
     }
 
-    private int insertRows(Connection source, Connection target, String table, List<String> columns) throws SQLException {
-        String names = String.join(",", columns.stream().map(this::q).toList());
+    private int insertRows(Connection source, Connection target, String sourceTable, String targetTable, List<ColumnPair> columns) throws SQLException {
+        String names = String.join(",", columns.stream().map(c -> q(c.target)).toList());
         String placeholders = String.join(",", Collections.nCopies(columns.size(), "?"));
         int rows = 0;
-        String sql = "INSERT INTO " + q(table) + " (" + names + ") VALUES (" + placeholders + ")";
+        String sql = "INSERT INTO " + q(targetTable) + " (" + names + ") VALUES (" + placeholders + ")";
         try (PreparedStatement p = target.prepareStatement(sql);
              Statement s = source.createStatement();
-             ResultSet rs = s.executeQuery("SELECT * FROM " + q(table))) {
+             ResultSet rs = s.executeQuery("SELECT * FROM " + q(sourceTable))) {
             while (rs.next()) {
-                for (int i = 0; i < columns.size(); i++) p.setObject(i + 1, normalize(rs.getObject(columns.get(i))));
+                for (int i = 0; i < columns.size(); i++) p.setObject(i + 1, normalize(rs.getObject(columns.get(i).source)));
                 p.executeUpdate();
                 rows++;
             }
@@ -147,6 +151,17 @@ public class DatabaseSnapshotService {
         return result;
     }
 
+    private Map<String,String> actualTableNames(Connection connection) throws SQLException {
+        Map<String,String> result = new HashMap<>();
+        try (ResultSet rs = connection.getMetaData().getTables(null, null, "%", new String[]{"TABLE"})) {
+            while (rs.next()) {
+                String name = rs.getString("TABLE_NAME");
+                if (name != null) result.put(name.toLowerCase(Locale.ROOT), name);
+            }
+        }
+        return result;
+    }
+
     private List<Column> columns(Connection connection, String table) throws SQLException {
         Set<String> primaryKeys = new HashSet<>();
         try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, null, table)) {
@@ -162,16 +177,20 @@ public class DatabaseSnapshotService {
         return result;
     }
 
-    private List<String> targetColumns(Connection connection, String table) throws SQLException {
-        List<String> result = new ArrayList<>();
+    private Map<String,String> actualColumnNames(Connection connection, String table) throws SQLException {
+        Map<String,String> result = new HashMap<>();
         try (ResultSet rs = connection.getMetaData().getColumns(null, null, table, "%")) {
-            while (rs.next()) result.add(rs.getString("COLUMN_NAME").toLowerCase(Locale.ROOT));
+            while (rs.next()) {
+                String name = rs.getString("COLUMN_NAME");
+                if (name != null) result.put(name.toLowerCase(Locale.ROOT), name);
+            }
         }
         return result;
     }
 
     private String q(String identifier) { return "\"" + identifier.replace("\"", "\"\"") + "\""; }
     private record Column(String name, int jdbcType, boolean pk) {}
+    private record ColumnPair(String source, String target) {}
 
     public static void encrypt(Path input, Path output, String password) throws Exception {
         byte[] salt = new byte[SALT_LENGTH];
