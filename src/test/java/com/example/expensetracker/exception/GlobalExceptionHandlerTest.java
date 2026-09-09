@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.util.NoSuchElementException;
 
@@ -90,7 +91,6 @@ class GlobalExceptionHandlerTest {
     @Test
     void rateLimitIncludesRetryAfterHeader() {
         var ex = new RateLimitExceededException("Too many requests", 30);
-
         var response = handler.handleRateLimitExceeded(ex, request);
 
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
@@ -98,6 +98,19 @@ class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals(429, response.getBody().getStatus());
         assertEquals("Too many requests", response.getBody().getMessage());
+    }
+
+    @Test
+    void missingMultipartPartMapsToBadRequestWithoutExposingPartName() {
+        var ex = new MissingServletRequestPartException("file");
+
+        var response = handler.handleMissingMultipartPart(ex, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getBody().getStatus());
+        assertEquals("Required multipart file part is missing.", response.getBody().getMessage());
+        assertFalse(response.getBody().getMessage().contains("file"));
     }
 
     @Test
