@@ -1,0 +1,71 @@
+name: One-time dashboard UI stabilization
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Patch dashboard stability and income responsive UI
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          
+          api = Path('frontend/js/api.js')
+          s = api.read_text()
+          old = '''    activeRequests += 1;\n    setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");\n    let response;'''
+          new = '''    // Background GETs must not flash the global loading veil. The dashboard\n    // performs several parallel reads (profile, budgets, incomes, savings,\n    // subscriptions), and showing the global loader for every one made the\n    // page appear to randomly refresh/flicker during normal use. Mutations\n    // still show the loader, and callers can opt a GET in with showLoading.\n    const showRequestLoading = options.showLoading === true || method !== "GET";\n    if (showRequestLoading) {\n        activeRequests += 1;\n        setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");\n    }\n    let response;'''
+          if old in s and 'const showRequestLoading = options.showLoading === true' not in s:
+              s = s.replace(old, new, 1)
+          old_finally = '''    } finally {\n        activeRequests -= 1;\n        if (activeRequests === 0) setLoading(false);\n    }'''
+          new_finally = '''    } finally {\n        if (showRequestLoading) {\n            activeRequests -= 1;\n            if (activeRequests === 0) setLoading(false);\n        }\n    }'''
+          if old_finally in s and 'if (showRequestLoading) {\n            activeRequests -= 1;' not in s:
+              s = s.replace(old_finally, new_finally, 1)
+          api.write_text(s)
+          
+          css = Path('frontend/css/tables.css')
+          c = css.read_text()
+          marker = '/* Mobile income cards: prevent table-width overflow and keep actions visually consistent with the expense ledger. */'
+          block = r'''\n\n/* Mobile income cards: prevent table-width overflow and keep actions visually consistent with the expense ledger. */\n.income-table-container {\n    width: 100% !important;\n    max-width: 100% !important;\n    overflow-x: hidden !important;\n    box-sizing: border-box !important;\n}\n\n.income-table {\n    width: 100% !important;\n    max-width: 100% !important;\n}\n\n.income-table .btn-edit,\n.income-table .btn-delete {\n    width: 36px !important;\n    height: 36px !important;\n    min-width: 36px !important;\n    min-height: 36px !important;\n    padding: 0 !important;\n    border-radius: 12px !important;\n    display: inline-flex !important;\n    align-items: center !important;\n    justify-content: center !important;\n    flex: 0 0 36px !important;\n}\n\n.income-table .btn-edit svg,\n.income-table .btn-delete svg {\n    width: 15px !important;\n    height: 15px !important;\n    flex-shrink: 0 !important;\n}\n\n@media (max-width: 700px) {\n    .income-table-container {\n        overflow-x: hidden !important;\n        padding: 0 !important;\n    }\n\n    .income-table,\n    .income-table thead,\n    .income-table tbody,\n    .income-table tr,\n    .income-table td {\n        display: block !important;\n        width: 100% !important;\n        max-width: 100% !important;\n        box-sizing: border-box !important;\n    }\n\n    .income-table thead {\n        display: none !important;\n    }\n\n    .income-table tbody {\n        display: grid !important;\n        gap: 10px !important;\n    }\n\n    .income-table tbody tr {\n        display: grid !important;\n        grid-template-columns: minmax(0, 1fr) auto !important;\n        gap: 0 12px !important;\n        padding: 13px 12px !important;\n        border: 1px solid var(--border) !important;\n        border-radius: 14px !important;\n        background: var(--card-bg) !important;\n        box-shadow: 0 4px 18px rgba(0,0,0,0.08) !important;\n        overflow: hidden !important;\n    }\n\n    .income-table tbody td {\n        min-width: 0 !important;\n        width: auto !important;\n        max-width: none !important;\n        padding: 4px 0 !important;\n        border: 0 !important;\n        white-space: normal !important;\n        overflow-wrap: anywhere !important;\n        word-break: break-word !important;\n        vertical-align: middle !important;\n    }\n\n    .income-table tbody td:nth-child(1) {\n        grid-column: 1 / -1 !important;\n        color: var(--text-muted) !important;\n        font-size: 11px !important;\n        padding-bottom: 7px !important;\n    }\n\n    .income-table tbody td:nth-child(2) {\n        grid-column: 1 !important;\n        font-size: 14px !important;\n        font-weight: 750 !important;\n        color: var(--text-main) !important;\n    }\n\n    .income-table tbody td:nth-child(3) {\n        grid-column: 1 / -1 !important;\n        color: var(--text-muted) !important;\n        font-size: 12px !important;\n        line-height: 1.4 !important;\n    }\n\n    .income-table tbody td:nth-child(4) {\n        grid-column: 1 !important;\n        color: #10B981 !important;\n        font-size: 11px !important;\n        font-weight: 700 !important;\n        text-transform: uppercase !important;\n        letter-spacing: 0.04em !important;\n    }\n\n    .income-table tbody td:nth-child(5) {\n        grid-column: 1 !important;\n        grid-row: 3 !important;\n        color: #10B981 !important;\n        font-family: var(--font-mono) !important;\n        font-size: 15px !important;\n        font-weight: 800 !important;\n        white-space: nowrap !important;\n    }\n\n    .income-table tbody td:nth-child(6) {\n        grid-column: 2 !important;\n        grid-row: 2 / span 2 !important;\n        align-self: center !important;\n        justify-self: end !important;\n        display: flex !important;\n        align-items: center !important;\n        justify-content: flex-end !important;\n        gap: 7px !important;\n        padding: 0 !important;\n    }\n\n    .income-table tbody td:nth-child(6) .btn-edit,\n    .income-table tbody td:nth-child(6) .btn-delete {\n        width: 34px !important;\n        height: 34px !important;\n        min-width: 34px !important;\n        min-height: 34px !important;\n        border-radius: 10px !important;\n    }\n\n    .income-table tbody td:nth-child(6) .btn-edit svg,\n    .income-table tbody td:nth-child(6) .btn-delete svg {\n        width: 14px !important;\n        height: 14px !important;\n    }\n}\n'''
+          if marker not in c:
+              c += block
+              css.write_text(c)
+          
+          # Give dynamically-created income action buttons an explicit non-submit type.\n          dash = Path('frontend/js/dashboard.js')\n          d = dash.read_text()
+          d2 = re.sub(r'<button (onclick="(?:editIncome|deleteIncome)[^>]*?) class="btn-(?:edit|delete)"', r'<button type="button" \1 class="btn-edit"', d)
+          # The exact income table actions can vary; the CSS above is the authoritative styling.\n          if d2 != d:
+              dash.write_text(d2)
+
+      - name: Verify patched files
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check frontend/js/api.js
+          node --check frontend/js/dashboard.js
+          grep -q "showRequestLoading" frontend/js/api.js
+          grep -q "Mobile income cards" frontend/css/tables.css
+
+      - name: Commit stabilization patch and remove this one-time workflow
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/js/api.js frontend/js/dashboard.js frontend/css/tables.css
+          git commit -m "fix(web): stabilize dashboard loading and responsive income ledger" || true
+          git rm .github/workflows/ui-stability-patch.yml
+          git add -u .github/workflows/ui-stability-patch.yml
+          git commit -m "chore: remove one-time UI stabilization workflow"
+          git push
