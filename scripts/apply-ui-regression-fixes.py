@@ -4,7 +4,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "frontend"
 
-CSS = r'''/* Targeted fixes for verified auth and dashboard regressions. */
+CSS = r'''/* Targeted fixes for verified current auth and dashboard regressions. */
 
 /* Keep budget fills inside the progress track and show actual utilization. */
 .budget-bar-track {
