@@ -85,12 +85,10 @@ for old, new in [
     ('<DayOfWeekChart expenses={expenses}', '<DayOfWeekChart expenses={dashboardExpenses}'),
 ]:
     s = s.replace(old, new, 1)
-# The filters themselves also use `now`, so declare it before filteredExpenses.
 s = s.replace('  // Filtered Expenses List (including Custom Date Range)', '  const now = new Date();\n\n  // Filtered Expenses List (including Custom Date Range)', 1)
-# Avoid a duplicate declaration in the metrics block.
 s = s.replace('  const now = new Date();\n  const currentDay = Math.max(now.getDate(), 1);', '  const currentDay = Math.max(now.getDate(), 1);', 1)
 INDEX.write_text(s)
 
 r = REPORT.read_text()
-r = r.replace('Font f=w.createFont();f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor', 'org.apache.poi.xssf.usermodel.XSSFFont f=w.createFont();f.setColor(new org.apache.poi.xssf.usermodel.XSSFColor', 1)
+r = r.replace('org.apache.poi.xssf.usermodel.XSSForg.apache.poi.xssf.usermodel.XSSFFont f=', 'org.apache.poi.xssf.usermodel.XSSFFont f=')
 REPORT.write_text(r)
