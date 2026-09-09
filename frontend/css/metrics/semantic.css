@@ -1,0 +1,135 @@
+/* ==========================================================================
+   EXPENSE TRACKER — METRICS SEMANTIC SYSTEM
+   Financial metric colors, stripes, labels, values and badges.
+   ========================================================================== */
+
+.metric-card.metric-card-inflow {
+    border-left: 4px solid var(--metric-inflow) !important;
+}
+
+.metric-card.metric-card-inflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-inflow-glow), 0 0 0 1px var(--metric-inflow);
+}
+
+.metric-card.metric-card-inflow .card-label,
+.metric-card.metric-card-inflow .metric-value {
+    color: var(--metric-inflow) !important;
+}
+
+.metric-card.metric-card-inflow .card-label {
+    font-weight: 700;
+}
+
+.metric-card.metric-card-outflow {
+    border-left: 4px solid var(--metric-outflow) !important;
+}
+
+.metric-card.metric-card-outflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-outflow-glow), 0 0 0 1px var(--metric-outflow);
+}
+
+.metric-card.metric-card-outflow .card-label,
+.metric-card.metric-card-outflow .metric-value {
+    color: var(--metric-outflow) !important;
+}
+
+.metric-card.metric-card-outflow .card-label {
+    font-weight: 700;
+}
+
+.metric-card.metric-card-netflow {
+    border-left: 4px solid var(--metric-netflow) !important;
+}
+
+.metric-card.metric-card-netflow:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-netflow-glow), 0 0 0 1px var(--metric-netflow);
+}
+
+.metric-card.metric-card-netflow .card-label,
+.metric-card.metric-card-netflow .metric-value {
+    color: var(--metric-netflow) !important;
+}
+
+.metric-card.metric-card-netflow .card-label {
+    font-weight: 700;
+}
+
+.metric-card.metric-card-savings {
+    border-left: 4px solid var(--metric-savings) !important;
+}
+
+.metric-card.metric-card-savings:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-savings-glow), 0 0 0 1px var(--metric-savings);
+}
+
+.metric-card.metric-card-savings .card-label,
+.metric-card.metric-card-savings .metric-value {
+    color: var(--metric-savings) !important;
+}
+
+.metric-card.metric-card-savings .card-label {
+    font-weight: 700;
+}
+
+.metric-card.metric-card-subs {
+    border-left: 4px solid var(--metric-subs) !important;
+}
+
+.metric-card.metric-card-subs:hover {
+    box-shadow: 0 10px 25px -5px var(--metric-subs-glow), 0 0 0 1px var(--metric-subs);
+}
+
+.metric-card.metric-card-subs .card-label,
+.metric-card.metric-card-subs .metric-value {
+    color: var(--metric-subs) !important;
+}
+
+.metric-card.metric-card-subs .card-label {
+    font-weight: 700;
+}
+
+.badge-subs {
+    background: rgba(var(--metric-subs-rgb), 0.12);
+    color: var(--metric-subs);
+    border: 1px solid rgba(var(--metric-subs-rgb), 0.25);
+}
+
+.subs-link-action,
+.metric-card-subs .link-action {
+    color: var(--metric-subs) !important;
+}
+
+.subs-link-action:hover,
+.metric-card-subs .link-action:hover {
+    color: var(--metric-subs) !important;
+    filter: brightness(1.15);
+    text-decoration: underline;
+}
+
+.metric-card-inflow .status-badge,
+.badge-inflow {
+    background: rgba(var(--metric-inflow-rgb), 0.12) !important;
+    color: var(--metric-inflow) !important;
+    border: 1px solid rgba(var(--metric-inflow-rgb), 0.25) !important;
+}
+
+.metric-card-outflow .status-badge,
+.badge-outflow {
+    background: rgba(var(--metric-outflow-rgb), 0.12) !important;
+    color: var(--metric-outflow) !important;
+    border: 1px solid rgba(var(--metric-outflow-rgb), 0.25) !important;
+}
+
+.metric-card-netflow .status-badge,
+.badge-netflow {
+    background: rgba(var(--metric-netflow-rgb), 0.12) !important;
+    color: var(--metric-netflow) !important;
+    border: 1px solid rgba(var(--metric-netflow-rgb), 0.25) !important;
+}
+
+.metric-card-savings .status-badge,
+.badge-savings {
+    background: rgba(var(--metric-savings-rgb), 0.12) !important;
+    color: var(--metric-savings) !important;
+    border: 1px solid rgba(var(--metric-savings-rgb), 0.25) !important;
+}
