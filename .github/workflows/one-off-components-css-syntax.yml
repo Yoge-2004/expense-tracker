@@ -18,10 +18,9 @@ jobs:
           p = Path('frontend/css/components.css')
           s = p.read_text(encoding='utf-8')
           needle = '    width: min(340px, calc(100vw - 24px)) !important;\n'
-          replacement = needle + '}\n'
           if not s.endswith(needle):
               raise SystemExit('Expected components.css to end at the incomplete cal-mobile-modal declaration; refusing to modify.')
-          p.write_text(s + '}' + '\n', encoding='utf-8')
+          p.write_text(s + '}\n', encoding='utf-8')
       - name: Validate CSS structure
         shell: python
         run: |
@@ -29,7 +28,7 @@ jobs:
           s = Path('frontend/css/components.css').read_text(encoding='utf-8')
           if s.count('{') != s.count('}'):
               raise SystemExit(f'Unbalanced braces after repair: {s.count("{")} opens, {s.count("}")} closes')
-          if not s.rstrip().endswith('}')):
+          if not s.rstrip().endswith('}'):
               raise SystemExit('components.css still does not end with a closing brace')
       - name: Commit repair
         run: |
