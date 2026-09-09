@@ -1,0 +1,100 @@
+name: One-off large CSS modularization
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-off-large-css-modularization.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Split large CSS modules
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          # ----------------------------- AUTH.CSS -----------------------------
+          auth = Path('frontend/css/auth.css')
+          source = auth.read_text(encoding='utf-8')
+          markers = [
+              ('layout', '/* ── Auth Page Layout ── */'),
+              ('hero', '/* ── Left Hero Panel ── */'),
+              ('forms', '/* ── Right Form Panel ── */'),
+              ('dashboard', '/* ── Dashboard Enhancements ── */'),
+          ]
+          positions = {}
+          for name, marker in markers:
+              index = source.find(marker)
+              if index == -1:
+                  raise SystemExit(f'missing auth marker: {marker}')
+              positions[name] = index
+
+          auth_parts = {
+              'core.css': source[:positions['layout']],
+              'layout.css': source[positions['layout']:positions['hero']],
+              'hero.css': source[positions['hero']:positions['forms']],
+              'forms.css': source[positions['forms']:positions['dashboard']],
+              'dashboard-support.css': source[positions['dashboard']:],
+          }
+          auth_dir = Path('frontend/css/auth')
+          auth_dir.mkdir(parents=True, exist_ok=True)
+          for filename, content in auth_parts.items():
+              cleaned = '\n'.join(line.rstrip() for line in content.splitlines())
+              while '\n\n\n' in cleaned:
+                  cleaned = cleaned.replace('\n\n\n', '\n\n')
+              (auth_dir / filename).write_text(cleaned.strip() + '\n', encoding='utf-8')
+
+          auth.write_text('''/* ==========================================================================\n   EXPENSE TRACKER — AUTH.CSS\n   Ordered entry point for authentication page modules.\n   ========================================================================== */\n\n@import url("auth/core.css");\n@import url("auth/layout.css");\n@import url("auth/hero.css");\n@import url("auth/forms.css");\n@import url("auth/dashboard-support.css");\n''', encoding='utf-8')
+
+          # ------------------------ MOTION-EXTENDED.CSS ------------------------
+          motion = Path('frontend/css/motion-extended.css')
+          source = motion.read_text(encoding='utf-8')
+          group_markers = [
+              ('scroll', '/* -------------------------------------------------------------------------\n   A. SCROLL-TRIGGERED REVEAL SYSTEM'),
+              ('touch', '/* -------------------------------------------------------------------------\n   B. TOUCH & GESTURE FEEDBACK'),
+              ('pointer', '/* -------------------------------------------------------------------------\n   C. POINTER / HOVER MICRO-INTERACTIONS'),
+              ('ambient', '/* -------------------------------------------------------------------------\n   D. AMBIENT BACKGROUND DEPTH'),
+              ('feedback', '/* -------------------------------------------------------------------------\n   E. LOADING & MICRO-FEEDBACK STATES'),
+          ]
+          positions = {}
+          for name, marker in group_markers:
+              index = source.find(marker)
+              if index == -1:
+                  raise SystemExit(f'missing motion marker: {name}')
+              positions[name] = index
+
+          motion_parts = {
+              'scroll.css': source[:positions['touch']],
+              'touch.css': source[positions['touch']:positions['pointer']],
+              'pointer.css': source[positions['pointer']:positions['ambient']],
+              'ambient.css': source[positions['ambient']:positions['feedback']],
+              'feedback.css': source[positions['feedback']:],
+          }
+          motion_dir = Path('frontend/css/motion-extended')
+          motion_dir.mkdir(parents=True, exist_ok=True)
+          for filename, content in motion_parts.items():
+              cleaned = '\n'.join(line.rstrip() for line in content.splitlines())
+              while '\n\n\n' in cleaned:
+                  cleaned = cleaned.replace('\n\n\n', '\n\n')
+              (motion_dir / filename).write_text(cleaned.strip() + '\n', encoding='utf-8')
+
+          # Keep the existing load order exactly: scroll -> touch -> pointer -> ambient -> feedback.
+          motion.write_text('''/* ==========================================================================\n   MOTION SUITE — PART 2 ENTRY POINT\n   Ordered modules for scroll, touch, pointer, ambient and feedback motion.\n   ========================================================================== */\n\n@import url("motion-extended/scroll.css");\n@import url("motion-extended/touch.css");\n@import url("motion-extended/pointer.css");\n@import url("motion-extended/ambient.css");\n@import url("motion-extended/feedback.css");\n''', encoding='utf-8')
+          PY
+      - name: Commit generated modules
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/css/auth.css frontend/css/auth/ frontend/css/motion-extended.css frontend/css/motion-extended/
+          git commit -m 'refactor(css): modularize large auth and motion stylesheets' || exit 0
+          git push origin HEAD:main
