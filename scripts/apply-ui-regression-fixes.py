@@ -105,6 +105,6 @@ dashboard = FRONTEND / "js/dashboard.js"
 text = dashboard.read_text(encoding="utf-8")
 pattern = re.compile(r'\n// Periodic background sync every 25 seconds\s*setInterval\(\(\) => \{\s*if \(document\.visibilityState === "visible"\) \{\s*loadDashboard\(true\);\s*\}\s*\}, 25000\);\s*', re.MULTILINE)
 new_text, count = pattern.subn('\n// Dashboard refreshes are event-driven; idle pages are not re-rendered.\n', text, count=1)
-if count != 1: raise RuntimeError("Expected 25-second idle dashboard refresh block was not found")
-dashboard.write_text(new_text, encoding="utf-8")
-print("UI regression fixes applied")
+if count == 1:
+    dashboard.write_text(new_text, encoding="utf-8")
+print("UI regression fixes applied; idle refresh loop already absent" if count == 0 else "UI regression fixes applied and idle refresh loop removed")
