@@ -492,8 +492,6 @@ export default function DashboardScreen() {
 
   const now = new Date();
 
-  const now = new Date();
-
   // Filtered Expenses List (including Custom Date Range)
   const filteredExpenses = expenses
     .filter((e) => {
