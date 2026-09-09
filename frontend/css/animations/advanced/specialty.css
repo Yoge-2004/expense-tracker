@@ -1,0 +1,149 @@
+/* 131. Concentric Radar Ping */
+
+.radar-ping::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--primary);
+    animation: radarBeaconPulse 1s cubic-bezier(0.3, 0, 0.3, 1) infinite;
+}
+
+/* 133. Gold Coin Drop Bounce */
+@keyframes coinDropBounce {
+    0% { transform: translateY(-40px) rotateY(0deg); opacity: 0; }
+    60% { transform: translateY(4px) rotateY(360deg); opacity: 1; }
+    80% { transform: translateY(-6px) rotateY(540deg); }
+    100% { transform: translateY(0) rotateY(720deg); opacity: 1; }
+}
+.coin-animation {
+    animation: coinDropBounce 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* 134. Receipt Paper Print Slide */
+@keyframes receiptSlideDown {
+    0% { transform: translateY(-100%); opacity: 0; }
+    70% { transform: translateY(8px); opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.receipt-card {
+    animation: receiptSlideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 136. Piggy Bank Gentle Wobble */
+@keyframes piggyBankWobble {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-5deg) scale(1.05); }
+    75% { transform: rotate(5deg) scale(1.05); }
+}
+.piggy-bank-icon:hover {
+    animation: piggyBankWobble 0.6s ease-in-out;
+}
+
+/* 137. 3D Bill Folding Effect */
+@keyframes billFold3D {
+    0% { transform: perspective(600px) rotateX(-20deg); opacity: 0; }
+    100% { transform: perspective(600px) rotateX(0deg); opacity: 1; }
+}
+.recurring-bill-card {
+    animation: billFold3D 0.5s ease-out;
+}
+
+/* 141. 5-Star Sparkle Cascade */
+@keyframes starCascade {
+    0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+    60% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.star-rating svg:nth-child(1) { animation: starCascade 0.3s ease 0.05s both; }
+.star-rating svg:nth-child(2) { animation: starCascade 0.3s ease 0.10s both; }
+.star-rating svg:nth-child(3) { animation: starCascade 0.3s ease 0.15s both; }
+.star-rating svg:nth-child(4) { animation: starCascade 0.3s ease 0.20s both; }
+.star-rating svg:nth-child(5) { animation: starCascade 0.3s ease 0.25s both; }
+
+/* 142. Level-Up Golden Aura Sweep */
+@keyframes levelUpSweep {
+    0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.8); }
+    50% { box-shadow: 0 0 30px 10px rgba(var(--primary-rgb), 0.4); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0); }
+}
+.level-up-card {
+    animation: levelUpSweep 2s ease-out;
+}
+
+/* 143. Cloud Sync Continuous Smooth Spin */
+@keyframes syncSpinSmooth {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.sync-spin-icon {
+    animation: syncSpinSmooth 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 144. Pull-to-Refresh Spring Snap */
+@keyframes pullRefreshSpring {
+    0% { transform: translateY(-40px); }
+    70% { transform: translateY(12px); }
+    100% { transform: translateY(0); }
+}
+
+/* 145. Item Delete Disintegrate Fade */
+@keyframes deleteDisintegrate {
+    0% { opacity: 1; transform: scale(1) translateX(0); max-height: 80px; }
+    50% { opacity: 0.4; transform: scale(0.9) translateX(30px); }
+    100% { opacity: 0; transform: scale(0.6) translateX(80px); max-height: 0; padding: 0; margin: 0; }
+}
+.item-deleting {
+    animation: deleteDisintegrate 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    pointer-events: none;
+}
+
+/* 146. Export Paper Plane Fly-Out */
+@keyframes paperPlaneFly {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+    50% { transform: translate(40px, -30px) rotate(15deg) scale(0.8); opacity: 0.8; }
+    100% { transform: translate(120px, -80px) rotate(35deg) scale(0.2); opacity: 0; }
+}
+.export-flying svg {
+    animation: paperPlaneFly 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 147. Download Arrow Downward Bounce */
+@keyframes downloadArrowBounce {
+    0%, 100% { transform: translateY(0); }
+    40% { transform: translateY(6px); }
+    60% { transform: translateY(2px); }
+    80% { transform: translateY(5px); }
+}
+.btn-download:hover svg {
+    animation: downloadArrowBounce 0.8s ease;
+}
+
+/* 148. Modal Cinematic Blur Backdrop */
+@keyframes modalBackdropBlurFade {
+    0% { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+    100% { opacity: 1; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+}
+.modal-overlay.active, .modal.active {
+    animation: modalBackdropBlurFade 0.35s ease forwards !important;
+}
+
+/* 149. Modal Dialog 3D Elastic Pop */
+@keyframes modal3DElasticPop {
+    0% { opacity: 0; transform: scale(0.85) translateY(30px) perspective(600px) rotateX(10deg); }
+    70% { opacity: 1; transform: scale(1.02) translateY(-4px) perspective(600px) rotateX(-2deg); }
+    100% { opacity: 1; transform: scale(1) translateY(0) perspective(600px) rotateX(0deg); }
+}
+.modal-content, .modal-dialog {
+    animation: modal3DElasticPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* 150. Toast Notification Spring Slide-In */
+@keyframes toastSpringSlide {
+    0% { opacity: 0; transform: translateX(120%) scale(0.9); }
+    70% { opacity: 1; transform: translateX(-8px) scale(1.02); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+.toast {
+    animation: toastSpringSlide 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
