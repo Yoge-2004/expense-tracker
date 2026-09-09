@@ -1,4 +1,6 @@
-/* EXPENSE TRACKER — COMPONENTS / ACTIONS */
+/* ==========================================================================
+   EXPENSE TRACKER — COMPONENTS / ACTIONS
+   ========================================================================== */
 
 .btn-primary,
 button[type="submit"] {
@@ -139,8 +141,8 @@ button[type="submit"]:active {
     outline: none;
 }
 
-.field input:focus+label,
-.field input:not(:placeholder-shown)+label {
+.field input:focus + label,
+.field input:not(:placeholder-shown) + label {
     top: 0;
     font-size: 12px;
     font-weight: 600;
@@ -169,9 +171,28 @@ button[type="submit"]:active {
     place-items: center;
 }
 
-.password-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-.password-toggle:hover, .password-toggle:focus-visible { color: var(--accent); outline: none; }
-.password-toggle.is-visible::after { content: ''; position: absolute; width: 22px; height: 1.5px; background: currentColor; transform: rotate(-45deg); }
+.password-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    color: var(--accent);
+    outline: none;
+}
+
+.password-toggle.is-visible::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 1.5px;
+    background: currentColor;
+    transform: rotate(-45deg);
+}
 
 .brand-logo {
     font-size: 20px;
@@ -218,6 +239,7 @@ button[type="submit"]:active {
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
 }
 
+/* Theme Toggle Button */
 .theme-toggle-btn {
     width: 42px !important;
     height: 42px !important;
