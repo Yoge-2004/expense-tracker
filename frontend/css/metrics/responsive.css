@@ -1,0 +1,53 @@
+/* ==========================================================================
+   EXPENSE TRACKER — METRICS RESPONSIVE
+   Narrow-screen protection for the smart financial insights panel.
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .insights-intelligence-panel {
+        padding: 16px 14px !important;
+        border-radius: 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .insights-panel-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    .insights-panel-title-wrap {
+        width: 100% !important;
+    }
+
+    .insights-panel-heading {
+        font-size: 16px !important;
+        word-break: break-word !important;
+    }
+
+    .insights-cards-grid {
+        grid-template-columns: 1fr !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        gap: 10px !important;
+        box-sizing: border-box !important;
+    }
+
+    .insight-card-item {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        padding: 14px !important;
+    }
+
+    .savings-grid-matrix {
+        grid-template-columns: 1fr !important;
+    }
+}
