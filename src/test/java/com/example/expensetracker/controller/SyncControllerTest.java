@@ -2,12 +2,12 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.security.RateLimiterService;
 import com.example.expensetracker.service.FileDbSyncService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,23 +29,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SyncControllerTest {
 
     @Autowired MockMvc mockMvc;
+    @Autowired SyncController controller;
 
     @MockitoBean FileDbSyncService syncService;
     @MockitoBean RateLimiterService rateLimiterService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(syncController(), "syncSecretKey", "sync-secret");
+        ReflectionTestUtils.setField(controller, "syncSecretKey", "sync-secret");
         when(rateLimiterService.tryAcquire(anyString(), eq(15), any(Duration.class))).thenReturn(true);
         SecurityContextHolder.clearContext();
     }
 
-    private SyncController syncController() {
-        return (SyncController) org.springframework.test.web.servlet.setup.MockMvcBuilders
-                .standaloneSetup(new SyncController(syncService, rateLimiterService)).build()
-                .getDispatcherServlet()
-                .getWebApplicationContext()
-                .getBean(SyncController.class);
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -76,6 +74,7 @@ class SyncControllerTest {
                 .andExpect(jsonPath("$.imported").value(4));
 
         verify(syncService).syncFileToDb();
+        verify(rateLimiterService).tryAcquire(eq("sync:10.0.0.2"), eq(15), any(Duration.class));
     }
 
     @Test
@@ -140,8 +139,9 @@ class SyncControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("success"));
 
-        verify(syncService).downloadJsonBackupFromHuggingFace();
-        verify(syncService).syncFileToDb();
+        var inOrder = inOrder(syncService);
+        inOrder.verify(syncService).downloadJsonBackupFromHuggingFace();
+        inOrder.verify(syncService).syncFileToDb();
     }
 
     @Test
