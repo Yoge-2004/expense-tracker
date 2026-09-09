@@ -121,17 +121,13 @@ input[type="number"]::-webkit-inner-spin-button {
     background: var(--input-bg) !important;
     border: 1px solid var(--border) !important;
     cursor: pointer !important;
-    transition: background 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease) !important;
+    transition: background 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                border-color 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     margin: 0 0 0 auto !important;
     padding: 0 !important;
     box-sizing: border-box !important;
     animation: none !important; /* Prevents tick/pop animation from distorting toggle switch */
-}
-
-.switch-label input[type="checkbox"] {
-    transition: background 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                border-color 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .switch-label input[type="checkbox"]::before {
@@ -569,4 +565,3 @@ a {
     text-decoration: none;
     color: inherit;
 }
-
