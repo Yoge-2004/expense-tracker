@@ -47,7 +47,6 @@ new_metrics = '''  // Dashboard metrics intentionally derive from the exact same
   const netCashFlow = totalIncome - totalSpent;
   const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100).toFixed(1) : "0.0";
 
-  const now = new Date();
   const currentDay = Math.max(now.getDate(), 1);
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const currentMonthExpenses = dashboardExpenses.filter((e) => {
@@ -86,6 +85,10 @@ for old, new in [
     ('<DayOfWeekChart expenses={expenses}', '<DayOfWeekChart expenses={dashboardExpenses}'),
 ]:
     s = s.replace(old, new, 1)
+# The filters themselves also use `now`, so declare it before filteredExpenses.
+s = s.replace('  // Filtered Expenses List (including Custom Date Range)', '  const now = new Date();\n\n  // Filtered Expenses List (including Custom Date Range)', 1)
+# Avoid a duplicate declaration in the metrics block.
+s = s.replace('  const now = new Date();\n  const currentDay = Math.max(now.getDate(), 1);', '  const currentDay = Math.max(now.getDate(), 1);', 1)
 INDEX.write_text(s)
 
 r = REPORT.read_text()
