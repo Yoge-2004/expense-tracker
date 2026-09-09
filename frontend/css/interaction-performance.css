@@ -1,0 +1,74 @@
+/* Lightweight interaction and performance safeguards. */
+
+/* Theme changes stay visual without animating expensive geometry/effects across the whole page. */
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+    transition: none !important;
+    animation-play-state: paused !important;
+}
+
+/* Restore intentional focus feedback after the theme frame guard completes. */
+.theme-toggle-btn,
+#themeToggle {
+    transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+/* Inputs retain their leading icons even when browser/animation rules alter inline SVG sizing. */
+.input-wrapper > .input-icon,
+.input-wrapper > svg.input-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    width: 18px !important;
+    height: 18px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: var(--text-muted) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+    transform: translateY(-50%) !important;
+}
+.input-wrapper:focus-within > .input-icon,
+.input-wrapper:focus-within > svg.input-icon {
+    color: var(--primary) !important;
+}
+
+/* Give the desktop command search enough room for the label, hint, and long queries. */
+.top-bar-actions .command-search-wrapper {
+    width: clamp(280px, 28vw, 420px) !important;
+    min-width: 280px !important;
+    flex: 0 1 420px !important;
+}
+.top-bar-actions .command-search-input {
+    min-width: 0 !important;
+    padding-right: 62px !important;
+}
+.command-kbd {
+    min-width: 52px !important;
+    height: 24px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 8px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 7px !important;
+    background: rgba(var(--ink-rgb), .07) !important;
+    color: var(--text-muted) !important;
+    font-family: var(--font-mono, "IBM Plex Mono", monospace) !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: .02em !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 1000px) {
+    .top-bar-actions .command-search-wrapper { width: min(34vw, 340px) !important; min-width: 220px !important; }
+}
+
+@media (max-width: 700px) {
+    .top-bar-actions .command-search-wrapper { width: 100% !important; min-width: 0 !important; flex: 1 1 100% !important; }
+}
