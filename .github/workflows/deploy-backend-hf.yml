@@ -2,6 +2,14 @@ name: Deploy Backend JAR to Hugging Face
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - 'Dockerfile'
+      - 'hf-space/README.md'
+      - '.github/workflows/deploy-backend-hf.yml'
 
 permissions:
   contents: read
