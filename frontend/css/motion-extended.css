@@ -20,6 +20,7 @@
 
 /* 171. Reveal: base hidden state + shared transition */
 [data-reveal] {
+    --reveal-delay: 0ms;
     opacity: 0;
     transition:
         opacity 0.7s var(--ease),
@@ -197,6 +198,7 @@
     100% { transform: translateX(0); }
 }
 .momentum-settle {
+    --momentum-from: 0px;
     animation: momentumSettle 0.4s var(--ease);
 }
 
@@ -212,6 +214,8 @@
 
 /* 196. Pointer: 3D tilt on cards, driven by --tilt-x/--tilt-y from motion.js */
 .tilt-target {
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
     transition: transform 0.35s var(--ease);
     transform: perspective(800px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
     transform-style: preserve-3d;
@@ -219,6 +223,8 @@
 
 /* 197. Pointer: glow that follows the cursor across a card surface */
 .glow-follow {
+    --glow-x: 50%;
+    --glow-y: 50%;
     position: relative;
     overflow: hidden;
 }
@@ -422,6 +428,7 @@
 /* 213. Ambient: scroll parallax hook — motion.js writes --parallax-y as the
    user scrolls; orbs and grid drift at a fraction of scroll speed */
 .auth-hero-bg, .hero-grid, .hero-orb {
+    --parallax-y: 0px;
     transform: translateY(calc(var(--parallax-y, 0px) * 1));
 }
 .hero-orb-1 { transform: translateY(calc(var(--parallax-y, 0px) * 0.4)); }
@@ -554,7 +561,10 @@
 /* 226. Feedback: section entrance stagger helper — motion.js applies this
    custom property per child index so lists cascade in rather than reveal
    as one block */
-.reveal-stagger-parent > * { --reveal-delay: calc(var(--stagger-index, 0) * 70ms); }
+.reveal-stagger-parent > * {
+    --stagger-index: 0;
+    --reveal-delay: calc(var(--stagger-index, 0) * 70ms);
+}
 
 /* -------------------------------------------------------------------------
    Reduced motion: every group above respects the user's OS-level preference.

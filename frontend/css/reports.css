@@ -384,7 +384,7 @@
     border-radius: 10px;
     border: 1px solid var(--border);
     background: var(--input-bg, rgba(255, 255, 255, 0.04));
-    color: var(--text);
+    color: var(--text-main);
     cursor: pointer;
     transition: all 0.18s ease;
     user-select: none;
@@ -424,7 +424,7 @@
     border-radius: 10px;
     border: 1px solid var(--border);
     background: var(--input-bg, rgba(255, 255, 255, 0.04));
-    color: var(--text);
+    color: var(--text-main);
     cursor: pointer;
     transition: all 0.18s ease;
     user-select: none;

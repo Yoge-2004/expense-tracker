@@ -628,7 +628,7 @@
     font-weight: 500 !important;
     font-family: inherit !important;
     letter-spacing: 0.5px !important;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast) !important;
+    transition: border-color var(--ease), box-shadow var(--ease), background-color var(--ease) !important;
 }
 
 .field-input:focus,
