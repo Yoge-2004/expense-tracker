@@ -1,0 +1,13 @@
+/* ===========================================================================
+   EXPENSE TRACKER — ANIMATIONS COMPATIBILITY FIXES
+   Module: Surgical cascade corrections for legacy animation selectors
+   =========================================================================== */
+
+/* animations.css contains a selector list beginning with `.btn-edit,` before
+   the active-state rule. That makes the active-state declarations apply to
+   the idle button as well. Restore the component's normal idle behavior while
+   leaving hover and active animation states untouched. */
+.btn-edit:not(:hover):not(:active) {
+    transform: none !important;
+    transition-duration: 0.2s !important;
+}
