@@ -28,9 +28,12 @@ jobs:
           used = {}
           for path in files:
               text = path.read_text(encoding='utf-8')
-              for name in re.findall(r'(?m)^\s*(--[A-Za-z0-9_-]+)\s*:', text):
+              # Strip CSS comments before token extraction so documentation examples
+              # such as `rgba(var(--x-rgb), alpha)` do not become false positives.
+              source = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+              for name in re.findall(r'(?m)^\s*(--[A-Za-z0-9_-]+)\s*:', source):
                   defined.add(name)
-              for name in re.findall(r'var\(\s*(--[A-Za-z0-9_-]+)', text):
+              for name in re.findall(r'var\(\s*(--[A-Za-z0-9_-]+)', source):
                   used.setdefault(name, []).append(str(path.relative_to(root)))
 
           undefined = sorted(name for name in used if name not in defined)
