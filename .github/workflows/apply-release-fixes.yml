@@ -34,7 +34,7 @@ jobs:
             echo 'No source changes required.'
             exit 0
           fi
-          git add 'mobile/app/(tabs)/index.tsx' 'src/main/java/com/example/expensetracker/controller/RangeReportController.java' 'frontend/js/api.js' 'frontend/css/tables.css' 'frontend/js/dashboard.js' 'frontend/js/biometrics.js' 'frontend/index.html' 'frontend/dashboard.html' 'frontend/css/tables/'
+          git add 'mobile/app/(tabs)/index.tsx' 'src/main/java/com/example/expensetracker/controller/RangeReportController.java' 'frontend/js/api.js' 'frontend/css/tables.css' 'frontend/js/dashboard.js' 'frontend/js/biometrics.js' 'frontend/index.html' 'frontend/dashboard.html'
           git commit -m 'fix: polish savings actions and enable web biometrics'
           git push origin HEAD:main
 
