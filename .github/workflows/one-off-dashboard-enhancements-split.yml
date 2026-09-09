@@ -44,29 +44,28 @@ jobs:
           if any(indexes[i][0] >= indexes[i + 1][0] for i in range(len(indexes) - 1)):
               raise SystemExit('Semantic boundaries are not strictly ordered; refusing to modify.')
 
-          # The first block begins at the file header and ends immediately before the first anchor.
+          # Keep the original order exactly: the first module includes the file preamble,
+          # then each following module begins at its semantic boundary.
           chunks = []
-          first_start = 0
           for i, (start, _anchor, filename) in enumerate(indexes):
+              end = indexes[i + 1][0] if i + 1 < len(indexes) else len(text)
               if i == 0:
-                  continue
-              prev_start = indexes[i - 1][0]
-              prev_filename = indexes[i - 1][2]
-              chunks.append((prev_filename, text[prev_start:start]))
-          chunks.insert(0, (indexes[0][2], text[first_start:indexes[0][0]]))
-          chunks.append((indexes[-1][2], text[indexes[-1][0]:]))
+                  content = text[:end]
+              else:
+                  content = text[start:end]
+              chunks.append((filename, content))
 
           out_dir = root / 'dashboard' / 'enhancements'
           out_dir.mkdir(exist_ok=True)
           for filename, content in chunks:
               (out_dir / filename).write_text(content.rstrip() + '\n', encoding='utf-8')
 
-          source.write_text(
+          manifest = (
               '/* EXPENSE TRACKER — DASHBOARD ENHANCEMENTS */\n'
               '/* Domain modules preserve the original cascade order while narrowing ownership. */\n'
-              + ''.join(f'@import url("dashboard/enhancements/{filename}");\n' for filename in [f for _, _, f in indexes]),
-              encoding='utf-8'
+              + ''.join(f'@import url("dashboard/enhancements/{filename}");\n' for _, _, filename in indexes)
           )
+          source.write_text(manifest, encoding='utf-8')
 
           for filename, content in chunks:
               if content.count('{') != content.count('}'):
