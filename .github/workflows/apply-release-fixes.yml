@@ -1,0 +1,33 @@
+name: Apply Release Stabilization Fixes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply-release-fixes.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Apply deterministic source fixes
+        run: python3 scripts/apply-release-fixes.py
+
+      - name: Commit source fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet; then
+            echo 'No source changes required.'
+            exit 0
+          fi
+          git add 'mobile/app/(tabs)/index.tsx' 'src/main/java/com/example/expensetracker/controller/RangeReportController.java'
+          git commit -m 'fix: synchronize dashboard filters and repair report compilation'
+          git push origin HEAD:main
