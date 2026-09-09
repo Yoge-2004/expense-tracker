@@ -7,6 +7,9 @@ on:
 permissions:
   contents: write
 
+env:
+  PATCH_REVISION: "2"
+
 jobs:
   patch:
     if: github.actor != 'github-actions[bot]'
@@ -20,30 +23,128 @@ jobs:
         run: |
           from pathlib import Path
           import re
-          
+
           api = Path('frontend/js/api.js')
           s = api.read_text()
-          old = '''    activeRequests += 1;\n    setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");\n    let response;'''
-          new = '''    // Background GETs must not flash the global loading veil. The dashboard\n    // performs several parallel reads (profile, budgets, incomes, savings,\n    // subscriptions), and showing the global loader for every one made the\n    // page appear to randomly refresh/flicker during normal use. Mutations\n    // still show the loader, and callers can opt a GET in with showLoading.\n    const showRequestLoading = options.showLoading === true || method !== "GET";\n    if (showRequestLoading) {\n        activeRequests += 1;\n        setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");\n    }\n    let response;'''
+          old = '''    activeRequests += 1;
+    setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
+    let response;'''
+          new = '''    // Background GETs must not flash the global loading veil. The dashboard
+    // performs several parallel reads (profile, budgets, incomes, savings,
+    // subscriptions), and showing the global loader for every one made the
+    // page appear to randomly refresh/flicker during normal use. Mutations
+    // still show the loader, and callers can opt a GET in with showLoading.
+    const showRequestLoading = options.showLoading === true || method !== "GET";
+    if (showRequestLoading) {
+        activeRequests += 1;
+        setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
+    }
+    let response;'''
           if old in s and 'const showRequestLoading = options.showLoading === true' not in s:
               s = s.replace(old, new, 1)
-          old_finally = '''    } finally {\n        activeRequests -= 1;\n        if (activeRequests === 0) setLoading(false);\n    }'''
-          new_finally = '''    } finally {\n        if (showRequestLoading) {\n            activeRequests -= 1;\n            if (activeRequests === 0) setLoading(false);\n        }\n    }'''
+          old_finally = '''    } finally {
+        activeRequests -= 1;
+        if (activeRequests === 0) setLoading(false);
+    }'''
+          new_finally = '''    } finally {
+        if (showRequestLoading) {
+            activeRequests -= 1;
+            if (activeRequests === 0) setLoading(false);
+        }
+    }'''
           if old_finally in s and 'if (showRequestLoading) {\n            activeRequests -= 1;' not in s:
               s = s.replace(old_finally, new_finally, 1)
           api.write_text(s)
-          
+
           css = Path('frontend/css/tables.css')
           c = css.read_text()
           marker = '/* Mobile income cards: prevent table-width overflow and keep actions visually consistent with the expense ledger. */'
-          block = r'''\n\n/* Mobile income cards: prevent table-width overflow and keep actions visually consistent with the expense ledger. */\n.income-table-container {\n    width: 100% !important;\n    max-width: 100% !important;\n    overflow-x: hidden !important;\n    box-sizing: border-box !important;\n}\n\n.income-table {\n    width: 100% !important;\n    max-width: 100% !important;\n}\n\n.income-table .btn-edit,\n.income-table .btn-delete {\n    width: 36px !important;\n    height: 36px !important;\n    min-width: 36px !important;\n    min-height: 36px !important;\n    padding: 0 !important;\n    border-radius: 12px !important;\n    display: inline-flex !important;\n    align-items: center !important;\n    justify-content: center !important;\n    flex: 0 0 36px !important;\n}\n\n.income-table .btn-edit svg,\n.income-table .btn-delete svg {\n    width: 15px !important;\n    height: 15px !important;\n    flex-shrink: 0 !important;\n}\n\n@media (max-width: 700px) {\n    .income-table-container {\n        overflow-x: hidden !important;\n        padding: 0 !important;\n    }\n\n    .income-table,\n    .income-table thead,\n    .income-table tbody,\n    .income-table tr,\n    .income-table td {\n        display: block !important;\n        width: 100% !important;\n        max-width: 100% !important;\n        box-sizing: border-box !important;\n    }\n\n    .income-table thead {\n        display: none !important;\n    }\n\n    .income-table tbody {\n        display: grid !important;\n        gap: 10px !important;\n    }\n\n    .income-table tbody tr {\n        display: grid !important;\n        grid-template-columns: minmax(0, 1fr) auto !important;\n        gap: 0 12px !important;\n        padding: 13px 12px !important;\n        border: 1px solid var(--border) !important;\n        border-radius: 14px !important;\n        background: var(--card-bg) !important;\n        box-shadow: 0 4px 18px rgba(0,0,0,0.08) !important;\n        overflow: hidden !important;\n    }\n\n    .income-table tbody td {\n        min-width: 0 !important;\n        width: auto !important;\n        max-width: none !important;\n        padding: 4px 0 !important;\n        border: 0 !important;\n        white-space: normal !important;\n        overflow-wrap: anywhere !important;\n        word-break: break-word !important;\n        vertical-align: middle !important;\n    }\n\n    .income-table tbody td:nth-child(1) {\n        grid-column: 1 / -1 !important;\n        color: var(--text-muted) !important;\n        font-size: 11px !important;\n        padding-bottom: 7px !important;\n    }\n\n    .income-table tbody td:nth-child(2) {\n        grid-column: 1 !important;\n        font-size: 14px !important;\n        font-weight: 750 !important;\n        color: var(--text-main) !important;\n    }\n\n    .income-table tbody td:nth-child(3) {\n        grid-column: 1 / -1 !important;\n        color: var(--text-muted) !important;\n        font-size: 12px !important;\n        line-height: 1.4 !important;\n    }\n\n    .income-table tbody td:nth-child(4) {\n        grid-column: 1 !important;\n        color: #10B981 !important;\n        font-size: 11px !important;\n        font-weight: 700 !important;\n        text-transform: uppercase !important;\n        letter-spacing: 0.04em !important;\n    }\n\n    .income-table tbody td:nth-child(5) {\n        grid-column: 1 !important;\n        grid-row: 3 !important;\n        color: #10B981 !important;\n        font-family: var(--font-mono) !important;\n        font-size: 15px !important;\n        font-weight: 800 !important;\n        white-space: nowrap !important;\n    }\n\n    .income-table tbody td:nth-child(6) {\n        grid-column: 2 !important;\n        grid-row: 2 / span 2 !important;\n        align-self: center !important;\n        justify-self: end !important;\n        display: flex !important;\n        align-items: center !important;\n        justify-content: flex-end !important;\n        gap: 7px !important;\n        padding: 0 !important;\n    }\n\n    .income-table tbody td:nth-child(6) .btn-edit,\n    .income-table tbody td:nth-child(6) .btn-delete {\n        width: 34px !important;\n        height: 34px !important;\n        min-width: 34px !important;\n        min-height: 34px !important;\n        border-radius: 10px !important;\n    }\n\n    .income-table tbody td:nth-child(6) .btn-edit svg,\n    .income-table tbody td:nth-child(6) .btn-delete svg {\n        width: 14px !important;\n        height: 14px !important;\n    }\n}\n'''
+          block = '''
+
+/* Mobile income cards: prevent table-width overflow and keep actions visually consistent with the expense ledger. */
+.income-table-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+}
+.income-table { width: 100% !important; max-width: 100% !important; }
+.income-table .btn-edit,
+.income-table .btn-delete {
+    width: 36px !important; height: 36px !important;
+    min-width: 36px !important; min-height: 36px !important;
+    padding: 0 !important; border-radius: 12px !important;
+    display: inline-flex !important; align-items: center !important;
+    justify-content: center !important; flex: 0 0 36px !important;
+}
+.income-table .btn-edit svg,
+.income-table .btn-delete svg { width: 15px !important; height: 15px !important; flex-shrink: 0 !important; }
+
+@media (max-width: 700px) {
+    .income-table-container { overflow-x: hidden !important; padding: 0 !important; }
+    .income-table, .income-table thead, .income-table tbody,
+    .income-table tr, .income-table td {
+        display: block !important; width: 100% !important; max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .income-table thead { display: none !important; }
+    .income-table tbody { display: grid !important; gap: 10px !important; }
+    .income-table tbody tr {
+        display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 0 12px !important; padding: 13px 12px !important;
+        border: 1px solid var(--border) !important; border-radius: 14px !important;
+        background: var(--card-bg) !important; box-shadow: 0 4px 18px rgba(0,0,0,0.08) !important;
+        overflow: hidden !important;
+    }
+    .income-table tbody td {
+        min-width: 0 !important; width: auto !important; max-width: none !important;
+        padding: 4px 0 !important; border: 0 !important; white-space: normal !important;
+        overflow-wrap: anywhere !important; word-break: break-word !important; vertical-align: middle !important;
+    }
+    .income-table tbody td:nth-child(1) {
+        grid-column: 1 / -1 !important; color: var(--text-muted) !important;
+        font-size: 11px !important; padding-bottom: 7px !important;
+    }
+    .income-table tbody td:nth-child(2) {
+        grid-column: 1 !important; font-size: 14px !important; font-weight: 750 !important;
+        color: var(--text-main) !important;
+    }
+    .income-table tbody td:nth-child(3) {
+        grid-column: 1 / -1 !important; color: var(--text-muted) !important;
+        font-size: 12px !important; line-height: 1.4 !important;
+    }
+    .income-table tbody td:nth-child(4) {
+        grid-column: 1 !important; color: #10B981 !important; font-size: 11px !important;
+        font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.04em !important;
+    }
+    .income-table tbody td:nth-child(5) {
+        grid-column: 1 !important; grid-row: 3 !important; color: #10B981 !important;
+        font-family: var(--font-mono) !important; font-size: 15px !important; font-weight: 800 !important;
+        white-space: nowrap !important;
+    }
+    .income-table tbody td:nth-child(6) {
+        grid-column: 2 !important; grid-row: 2 / span 2 !important; align-self: center !important;
+        justify-self: end !important; display: flex !important; align-items: center !important;
+        justify-content: flex-end !important; gap: 7px !important; padding: 0 !important;
+    }
+    .income-table tbody td:nth-child(6) .btn-edit,
+    .income-table tbody td:nth-child(6) .btn-delete {
+        width: 34px !important; height: 34px !important; min-width: 34px !important;
+        min-height: 34px !important; border-radius: 10px !important;
+    }
+    .income-table tbody td:nth-child(6) .btn-edit svg,
+    .income-table tbody td:nth-child(6) .btn-delete svg { width: 14px !important; height: 14px !important; }
+}
+'''
           if marker not in c:
               c += block
               css.write_text(c)
-          
-          # Give dynamically-created income action buttons an explicit non-submit type.\n          dash = Path('frontend/js/dashboard.js')\n          d = dash.read_text()
+
+          # Ensure dynamically-created income action buttons can never act as form submitters.
+          dash = Path('frontend/js/dashboard.js')
+          d = dash.read_text()
           d2 = re.sub(r'<button (onclick="(?:editIncome|deleteIncome)[^>]*?) class="btn-(?:edit|delete)"', r'<button type="button" \1 class="btn-edit"', d)
-          # The exact income table actions can vary; the CSS above is the authoritative styling.\n          if d2 != d:
+          if d2 != d:
               dash.write_text(d2)
 
       - name: Verify patched files
@@ -66,6 +167,5 @@ jobs:
           git add frontend/js/api.js frontend/js/dashboard.js frontend/css/tables.css
           git commit -m "fix(web): stabilize dashboard loading and responsive income ledger" || true
           git rm .github/workflows/ui-stability-patch.yml
-          git add -u .github/workflows/ui-stability-patch.yml
           git commit -m "chore: remove one-time UI stabilization workflow"
           git push
