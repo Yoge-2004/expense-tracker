@@ -1,0 +1,385 @@
+name: Apply UI Bug Fixes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-ui-bug-fixes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Apply targeted UI fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          style = root / 'frontend/css/style.css'
+          css = root / 'frontend/css/ui-bug-fixes.css'
+          js = root / 'frontend/js/ui-bug-fixes.js'
+
+          css.write_text(r'''/* Targeted UI corrections for the current auth and dashboard surfaces. */
+
+/* Keep budget progress as a bounded fill inside its track. */
+.budget-bar-fill {
+    position: relative !important;
+    inset: auto !important;
+    width: var(--budget-progress, auto);
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+.budget-bar-fill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.32), transparent);
+    background-size: 200% 100%;
+    animation: shimmerSweep 2.8s infinite linear;
+    pointer-events: none;
+}
+
+/* The fallback OAuth button is the visible control; the GSI iframe is click plumbing. */
+.google-oauth-wrapper { isolation: isolate; }
+.google-oauth-wrapper #googleOAuthBtn {
+    z-index: 1 !important;
+}
+.google-oauth-wrapper #googleRealButton {
+    display: none !important;
+}
+.google-oauth-wrapper #googleOAuthBtn svg {
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* Preserve the plus icon in narrow dashboard action rows. */
+.top-bar .add-income-button svg,
+.top-bar .add-expense-button svg,
+#openIncomeModalBtn svg,
+#addIncomeTableBtn svg {
+    display: block !important;
+    flex: 0 0 auto !important;
+    visibility: visible !important;
+}
+
+/* Stream tabs should be a real horizontal scroller instead of a clipped row. */
+.ledger-stream-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+.stream-pill-btn {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+}
+.stream-badge-count {
+    flex: 0 0 auto !important;
+    min-width: 2ch !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+}
+
+/* A stable, shared ledger surface keeps outflows and inflows visually comparable. */
+.ledger-column {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+#expenseList,
+#incomeList {
+    min-width: 0 !important;
+}
+.expense-item {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 0 8px !important;
+    padding: 12px 14px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    background: rgba(var(--ink-rgb), 0.025) !important;
+}
+.expense-item:hover {
+    transform: translateY(-1px);
+}
+.expense-emoji-box {
+    width: 40px !important;
+    height: 40px !important;
+}
+.expense-info,
+.expense-actions {
+    min-width: 0 !important;
+}
+.expense-info h4,
+.expense-title {
+    margin: 0 !important;
+    overflow-wrap: anywhere;
+}
+.expense-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+}
+
+/* Existing income tables inherit the same compact visual rhythm. */
+#incomeList table {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 8px !important;
+}
+#incomeList tbody tr {
+    background: rgba(var(--ink-rgb), 0.025) !important;
+    box-shadow: inset 0 0 0 1px var(--border) !important;
+}
+#incomeList tbody td {
+    border: 0 !important;
+}
+#incomeList tbody tr td:first-child {
+    border-radius: 14px 0 0 14px !important;
+}
+#incomeList tbody tr td:last-child {
+    border-radius: 0 14px 14px 0 !important;
+}
+
+/* Small screens: keep the menu inside the viewport and stack the ledger. */
+@media (max-width: 700px) {
+    .unified-ledger-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+        min-width: 0 !important;
+    }
+    .ledger-column + .ledger-column {
+        margin-top: 18px !important;
+    }
+    .expense-item {
+        grid-template-columns: auto minmax(0, 1fr) !important;
+    }
+    .expense-actions {
+        grid-column: 2;
+        justify-content: flex-start !important;
+        margin-top: -2px;
+    }
+    #incomeList table,
+    #incomeList thead,
+    #incomeList tbody,
+    #incomeList tr,
+    #incomeList td {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    #incomeList thead {
+        display: none !important;
+    }
+    #incomeList tbody tr {
+        margin-bottom: 8px !important;
+        padding: 10px 12px !important;
+        border-radius: 14px !important;
+    }
+    #incomeList tbody td {
+        padding: 4px 0 !important;
+        border-radius: 0 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-menu {
+        position: fixed !important;
+        top: 60px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        max-height: calc(100vh - 76px) !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+        z-index: 5000 !important;
+    }
+    .profile-menu a {
+        min-width: 0 !important;
+        overflow-wrap: anywhere !important;
+    }
+}
+
+/* Remove browser tap flash and keep subscription tab geometry stable on press/focus. */
+.subs-tab-btn {
+    min-height: 38px !important;
+    box-sizing: border-box !important;
+    border: 1px solid transparent !important;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+.subs-tab-btn:active {
+    transform: none !important;
+}
+.subs-tab-btn:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+.subs-tab-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 60%, transparent) !important;
+    outline-offset: 2px;
+}
+
+button,
+a,
+[role="button"] {
+    -webkit-tap-highlight-color: transparent;
+}
+''', encoding='utf-8')
+
+          existing = style.read_text(encoding='utf-8')
+          marker = '@import url("ui-bug-fixes.css");'
+          if marker not in existing:
+              style.write_text(existing.rstrip() + '\n' + marker + '\n', encoding='utf-8')
+
+          js.write_text(r'''/* Runtime fixes for theme icon synchronization and idle dashboard refreshes. */
+(function installUiBugFixes() {
+    'use strict';
+
+    function syncThemeIcons() {
+        const theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        if (typeof window.updateAllThemeIcons === 'function') {
+            window.updateAllThemeIcons(theme);
+            return;
+        }
+        document.querySelectorAll('.theme-toggle-btn, #themeToggle').forEach((button) => {
+            const sun = button.querySelector('.sun-icon');
+            const moon = button.querySelector('.moon-icon');
+            if (!sun || !moon) return;
+            const light = theme === 'light';
+            sun.style.display = light ? 'none' : 'block';
+            moon.style.display = light ? 'block' : 'none';
+            button.setAttribute('aria-label', light ? 'Switch to Dark Theme' : 'Switch to Light Theme');
+            button.setAttribute('title', light ? 'Switch to Dark Theme' : 'Switch to Light Theme');
+        });
+    }
+
+    function installThemeSync() {
+        syncThemeIcons();
+        document.addEventListener('DOMContentLoaded', syncThemeIcons, { once: true });
+        document.addEventListener('themechange', syncThemeIcons);
+        const root = document.documentElement;
+        if (root && typeof MutationObserver !== 'undefined') {
+            new MutationObserver((records) => {
+                if (records.some(r => r.type === 'attributes' && r.attributeName === 'data-theme')) {
+                    syncThemeIcons();
+                }
+            }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+        }
+    }
+
+    function installRefreshGuard() {
+        if (typeof window.loadDashboard !== 'function') return;
+        const original = window.loadDashboard;
+        if (original.__idleRefreshGuard) return;
+
+        let forcedRefreshRequested = false;
+        const mutationSelectors = [
+            '#addExpenseForm button[type="submit"]', '#incomeForm button[type="submit"]',
+            '#addBudgetForm button[type="submit"]', '#editSubForm button[type="submit"]',
+            '#securityPinForm button[type="submit"]', '.btn-delete', '.btn-edit',
+            '#importExpensesBtn', '#importIncomesBtn'
+        ].join(',');
+
+        document.addEventListener('click', (event) => {
+            if (event.target && event.target.closest && event.target.closest(mutationSelectors)) {
+                forcedRefreshRequested = true;
+                setTimeout(() => { forcedRefreshRequested = false; }, 30000);
+            }
+        }, true);
+        document.addEventListener('submit', (event) => {
+            if (event.target && event.target.closest && event.target.closest('form')) {
+                forcedRefreshRequested = true;
+                setTimeout(() => { forcedRefreshRequested = false; }, 30000);
+            }
+        }, true);
+
+        function guardedLoadDashboard(skipCache) {
+            if (skipCache === true && !forcedRefreshRequested) {
+                return Promise.resolve();
+            }
+            forcedRefreshRequested = false;
+            return original.apply(this, arguments);
+        }
+        guardedLoadDashboard.__idleRefreshGuard = true;
+        window.loadDashboard = guardedLoadDashboard;
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            installThemeSync();
+            installRefreshGuard();
+        }, { once: true });
+    } else {
+        installThemeSync();
+        installRefreshGuard();
+    }
+})();
+''', encoding='utf-8')
+
+          # Stop the destructive 25-second forced dashboard reload directly in source.
+          dashboard = root / 'frontend/js/dashboard.js'
+          text = dashboard.read_text(encoding='utf-8')
+          pattern = re.compile(r'\n// Periodic background sync every 25 seconds\s*setInterval\(\(\) => \{\s*if \(document\.visibilityState === "visible"\) \{\s*loadDashboard\(true\);\s*\}\s*\}, 25000\);\s*', re.MULTILINE)
+          new_text, count = pattern.subn('\n// Dashboard data refreshes are event-driven; do not re-render on an idle timer.\n', text, count=1)
+          if count != 1:
+              raise SystemExit('Expected 25-second dashboard refresh block was not found.')
+          dashboard.write_text(new_text, encoding='utf-8')
+
+          for name in ('index.html', 'register.html', 'dashboard.html'):
+              page = root / 'frontend' / name
+              txt = page.read_text(encoding='utf-8')
+              tag = '<script src="js/ui-bug-fixes.js"></script>'
+              if tag not in txt:
+                  idx = txt.lower().rfind('</body>')
+                  if idx == -1:
+                      raise SystemExit(f'No </body> marker in {page}')
+                  txt = txt[:idx] + '    ' + tag + '\n' + txt[idx:]
+                  page.write_text(txt, encoding='utf-8')
+
+          print('UI bug-fix patch applied.')
+          print('dashboard refresh block removed:', count)
+
+      - name: Validate changed JavaScript
+        run: |
+          node --check frontend/js/ui-bug-fixes.js
+          node --check frontend/js/dashboard.js
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/css/style.css frontend/css/ui-bug-fixes.css frontend/js/ui-bug-fixes.js frontend/js/dashboard.js frontend/index.html frontend/register.html frontend/dashboard.html .github/workflows/apply-ui-bug-fixes.yml
+          git rm -f .github/workflows/apply-ui-bug-fixes.yml
+          if git diff --cached --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git commit -m 'fix(ui): repair auth controls, mobile dashboard and idle refresh'
+          git push origin HEAD:main
