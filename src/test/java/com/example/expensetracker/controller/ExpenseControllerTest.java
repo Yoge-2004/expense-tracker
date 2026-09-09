@@ -2,7 +2,6 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.ExpenseDto;
 import com.example.expensetracker.dto.ExpenseRequest;
-import com.example.expensetracker.mapper.ExpenseMapper;
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.User;
@@ -14,6 +13,7 @@ import com.example.expensetracker.service.ExpenseService;
 import com.example.expensetracker.service.ExportService;
 import com.example.expensetracker.service.ImportService;
 import com.example.expensetracker.service.UserService;
+import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.UserSecurity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +51,7 @@ class ExpenseControllerTest {
     @MockitoBean ExportService exportService;
     @MockitoBean ImportService importService;
     @MockitoBean UserSecurity userSecurity;
+    @MockitoBean JwtService jwtService;
 
     private User user;
     private Category food;
