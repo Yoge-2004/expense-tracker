@@ -4418,13 +4418,7 @@ window.addEventListener("focus", () => {
     loadDashboard(true);
 });
 
-// Periodic background sync every 25 seconds
-setInterval(() => {
-    if (document.visibilityState === "visible") {
-        loadDashboard(true);
-    }
-}, 25000);
-
+// Dashboard refreshes are event-driven; idle pages are not re-rendered.
 // --- CATEGORY PILLS HORIZONTAL OVERFLOW INDICATOR & SCROLL SYSTEM ---
 function bindCategoryPillsScrollCues() {
     const configs = [
