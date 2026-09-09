@@ -1,8 +1,7 @@
-/* ==========================================================================
-   EXPENSE TRACKER — ANIMATIONS.CSS
-   Module entry point for focused animation and micro-interaction layers.
-   Declaration order matches the pre-refactor cascade.
-   ========================================================================== */
+/* ========================================================================
+   EXPENSE TRACKER — ADVANCED ANIMATIONS ENTRY POINT
+   Ordered animation modules are imported by the master stylesheet.
+   ======================================================================== */
 
 @import url("animations/foundation.css");
 @import url("animations/high-impact.css");
