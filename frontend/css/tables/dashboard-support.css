@@ -1,0 +1,320 @@
+/* ================== 9. ALIGNMENT FIXES ================== */
+
+/* 1. Modal Category Group */
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+.input-group select {
+    flex: 1;
+}
+.input-group .btn-icon {
+    width: 50px;
+    height: auto !important; /* Stretch to match select height */
+
+    /* Perfect Centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 12px;
+}
+
+/* 2. Monthly Budget Header */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.btn-small {
+    padding: 6px 14px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 10px;
+}
+
+.dashboard-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+}
+
+.brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    color: var(--text-main);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.2;
+}
+
+/* Consolidated: block 2's gradient-clipped-text technique is what
+   currently renders (confirmed against the live screenshots -- "PRO"
+   shows as small gold text, not a filled pill badge) so that's kept as
+   the real behavior. color is kept as the fallback for browsers without
+   background-clip:text support, where it'll show as solid-colored text
+   instead of gradient-filled. */
+.pro-tag {
+    font-size: 9px;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: #14120C;
+    letter-spacing: 0.12em;
+    vertical-align: super;
+    margin-left: 2px;
+}
+
+#userWelcomeText {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+    letter-spacing: 0.01em;
+}
+
+.live-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0.7);
+    animation: livePulseAnim 1.6s infinite;
+}
+
+@keyframes livePulseAnim {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(var(--success-rgb), 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(var(--success-rgb), 0); }
+}
+
+.command-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0 14px;
+    gap: 10px;
+    flex: 1 1 220px;
+    min-width: 180px;
+    max-width: 480px;
+    height: 44px;
+    box-sizing: border-box;
+    transition: flex-basis 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.command-search-wrapper:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+    flex-basis: 340px;
+    max-width: 560px;
+}
+
+.command-search-input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: var(--text-main);
+    font-size: 13.5px;
+    width: 100%;
+}
+
+.command-search-input:focus,
+.command-search-input:hover,
+.command-search-input:active {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.command-kbd {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+/* FINANCIAL METRICS MATRIX (RESPONSIVE AUTO-FIT) */
+.grid-4-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 1400px) {
+    .grid-4-metrics {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .grid-4-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .grid-4-metrics {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+/* Consolidated from 3 unconditional declarations each of .metric-card,
+   .metric-card:hover, and .metric-card-glow (the last is unused dead
+   code -- not referenced in any shipped HTML or added by JS -- but
+   consolidated anyway for consistency in case it's revived later).
+   .metric-card's own transition had narrowed from "all 0.3s" down to
+   just transform+box-shadow across the 3 declarations, silently
+   dropping border-color -- the same bug shape as .avatar and
+   .link-action earlier in this cleanup. :hover DOES change border-color
+   (via a !important declaration that was winning), so it was snapping
+   instantly instead of fading. Restored border-color to the transition. */
+.metric-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--card-bg);
+    backdrop-filter: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+.metric-card-glow {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-color: rgba(var(--primary-rgb), 0.2);
+    box-shadow: 0 0 30px -5px rgba(var(--primary-rgb), 0.12);
+}
+
+.metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.metric-value-row {
+    margin: 4px 0;
+}
+
+.metric-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-main);
+    animation: countUp 0.55s var(--ease) both;
+}
+
+.metric-footer {
+    font-size: 13px;
+}
+
+/* STATUS BADGES */
+.status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* Consolidated: block 2's transition (gap+opacity only) had silently
+   replaced block 1's broader "transition: 0.2s" (which covered
+   everything, including color) rather than merging with it -- so
+   .link-action:hover's color change was snapping instantly instead of
+   fading. Restored color to the transition. */
+.link-action {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s var(--ease), gap 0.2s var(--ease), opacity 0.2s;
+    opacity: 0.85;
+}
+
+.link-action:hover {
+    color: #A97F2E;
+    text-decoration: underline;
+}
+
+/* [data-theme="light"] override: the dark-theme gold (#D4AF37, via
+   var(--primary)) and hover gold (#A97F2E) both fail WCAG AA contrast
+   against the light theme's near-white card background -- measured
+   2.10:1 for the resting state (and worse once the opacity:0.85 on the
+   base rule further dims it toward the background) and 3.64:1 on
+   hover, both well under the 4.5:1 minimum for normal text. Darker
+   shades of the same gold hue restore accessible contrast (5.18:1 and
+   6.08:1 respectively, accounting for that same opacity blending)
+   without changing the brand color in dark theme. */
+[data-theme="light"] .link-action {
+    color: #6B5010;
+}
+[data-theme="light"] .link-action:hover {
+    color: #5C4400;
+}
+
+/* ANALYTICS GRID */
+.grid-analytics {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 20px;
+}
+
+@media (max-width: 900px) {
+    .grid-analytics {
+        grid-template-columns: 1fr;
+    }
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--text-main);
+    margin-top: 2px;
+}

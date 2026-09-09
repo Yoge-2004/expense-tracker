@@ -1,0 +1,139 @@
+/* ── Income Table Container & Custom Luxury Scrollbar ── */
+.income-table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 12px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+
+.income-table-container::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.income-table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+
+.income-table-container::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+}
+
+.income-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+}
+
+[data-theme="light"] .income-table-container {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+[data-theme="light"] .income-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.7);
+}
+
+.income-table-container .income-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Mobile income cards: prevent table-width overflow and keep actions visually consistent with the expense ledger. */
+.income-table-container { width: 100% !important; max-width: 100% !important; overflow-x: hidden !important; box-sizing: border-box !important; }
+.income-table { width: 100% !important; max-width: 100% !important; }
+.income-table .btn-edit,
+.income-table .btn-delete {
+    width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important;
+    padding: 0 !important; border-radius: 12px !important; display: inline-flex !important;
+    align-items: center !important; justify-content: center !important; flex: 0 0 36px !important;
+}
+.income-table .btn-edit svg, .income-table .btn-delete svg { width: 15px !important; height: 15px !important; flex-shrink: 0 !important; }
+@media (max-width: 700px) {
+    .income-table-container { overflow-x: hidden !important; padding: 0 !important; }
+    .income-table, .income-table thead, .income-table tbody, .income-table tr, .income-table td {
+        display: block !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important;
+    }
+    .income-table thead { display: none !important; }
+    .income-table tbody { display: grid !important; gap: 10px !important; }
+    .income-table tbody tr {
+        display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; gap: 0 12px !important;
+        padding: 13px 12px !important; border: 1px solid var(--border) !important; border-radius: 14px !important;
+        background: var(--card-bg) !important; box-shadow: 0 4px 18px rgba(0,0,0,0.08) !important; overflow: hidden !important;
+    }
+    .income-table tbody td {
+        min-width: 0 !important; width: auto !important; max-width: none !important; padding: 4px 0 !important;
+        border: 0 !important; white-space: normal !important; overflow-wrap: anywhere !important;
+        word-break: break-word !important; vertical-align: middle !important;
+    }
+    .income-table tbody td:nth-child(1) { grid-column: 1 / -1 !important; color: var(--text-muted) !important; font-size: 11px !important; padding-bottom: 7px !important; }
+    .income-table tbody td:nth-child(2) { grid-column: 1 !important; font-size: 14px !important; font-weight: 750 !important; color: var(--text-main) !important; }
+    .income-table tbody td:nth-child(3) { grid-column: 1 / -1 !important; color: var(--text-muted) !important; font-size: 12px !important; line-height: 1.4 !important; }
+    .income-table tbody td:nth-child(4) { grid-column: 1 !important; color: #10B981 !important; font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.04em !important; }
+    .income-table tbody td:nth-child(5) { grid-column: 1 !important; grid-row: 3 !important; color: #10B981 !important; font-family: var(--font-mono) !important; font-size: 15px !important; font-weight: 800 !important; white-space: nowrap !important; }
+    .income-table tbody td:nth-child(6) { grid-column: 2 !important; grid-row: 2 / span 2 !important; align-self: center !important; justify-self: end !important; display: flex !important; align-items: center !important; justify-content: flex-end !important; gap: 7px !important; padding: 0 !important; }
+    .income-table tbody td:nth-child(6) .btn-edit, .income-table tbody td:nth-child(6) .btn-delete {
+        width: 34px !important; height: 34px !important; min-width: 34px !important; min-height: 34px !important; border-radius: 10px !important;
+    }
+    .income-table tbody td:nth-child(6) .btn-edit svg, .income-table tbody td:nth-child(6) .btn-delete svg { width: 14px !important; height: 14px !important; }
+}
+
+/* Web savings goal action buttons: match expense/income edit/delete controls. */
+.savings-goal-card .edit-goal-btn,
+.savings-goal-card .delete-goal-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    cursor: pointer;
+    transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.savings-goal-card .edit-goal-btn svg,
+.savings-goal-card .delete-goal-btn svg {
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
+}
+.savings-goal-card .edit-goal-btn {
+    color: var(--primary) !important;
+}
+.savings-goal-card .delete-goal-btn {
+    color: var(--danger) !important;
+}
+.savings-goal-card .edit-goal-btn:hover,
+.savings-goal-card .delete-goal-btn:hover {
+    transform: translateY(-1px);
+}
+[data-theme="light"] .savings-goal-card .edit-goal-btn,
+[data-theme="light"] .savings-goal-card .delete-goal-btn {
+    background: var(--input-bg);
+}
+
+@media (max-width: 700px) {
+    .savings-goal-card .edit-goal-btn,
+    .savings-goal-card .delete-goal-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 9px;
+    }
+}

@@ -1,0 +1,161 @@
+/* ==========================================================================
+   EXPENSE TRACKER — TABLES.CSS
+   Module: Tables, Streams, Ledger, Categories & Filters
+   ========================================================================== */
+
+@media (max-width: 700px) {
+    /* .card-header (e.g. "Budget Governance / Monthly Category Limits" next
+       to the "+ New Budget" button) has no wrap behavior at all, and on
+       narrow screens the button's fixed width leaves too little room for
+       the heading, forcing it to wrap into a tall multi-line block that
+       visually collides with the button beside it. Stacking vertically
+       here gives both their own full-width row instead. */
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .card-header .btn-small,
+    .card-header > button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* .server-status-badge chip rendering on small devices */
+    .server-status-badge {
+        bottom: 12px !important;
+        right: 12px !important;
+        padding: 4px 10px !important;
+        gap: 6px !important;
+        font-size: 10.5px !important;
+        border-radius: 9999px !important;
+        width: auto !important;
+        height: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+    .server-status-badge #statusText {
+        display: inline-block !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        letter-spacing: 0.02em !important;
+    }
+    .server-status-badge .status-dot {
+        width: 6.5px !important;
+        height: 6.5px !important;
+    }
+
+    .auth-footer-text {
+        font-size: 12.5px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;
+        line-height: 1.4 !important;
+    }
+    .auth-footer-text .back-to-prefix {
+        display: none !important;
+    }
+    .auth-footer-link {
+        white-space: nowrap !important;
+        display: inline-block !important;
+    }
+}
+
+.chart-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recent-transactions {
+    height: auto;
+    overflow: visible;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.list-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.scroll-area {
+    height: auto;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    padding-right: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+
+.scroll-area::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+.scroll-area::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+}
+
+.scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb), 0.7);
+}
+
+[data-theme="light"] .scroll-area {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+
+[data-theme="light"] .scroll-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.7);
+}
+
+#expenseList,
+#incomeList {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.expense-info h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: var(--text-main);
+}
+
+.expense-amount {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 16px;
+}
