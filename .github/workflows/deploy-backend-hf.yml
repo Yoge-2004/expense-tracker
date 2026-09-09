@@ -1,5 +1,6 @@
 name: Deploy Backend JAR to Hugging Face
 
+# Manual/push deployment workflow. A source or workflow update rebuilds and publishes app.jar.
 on:
   workflow_dispatch:
   push:
