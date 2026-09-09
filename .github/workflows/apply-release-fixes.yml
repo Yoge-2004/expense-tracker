@@ -7,6 +7,7 @@ on:
       - 'scripts/apply-release-fixes.py'
       - 'scripts/web-ui-fixes.py'
       - 'scripts/web-polish-fixes.py'
+      - 'scripts/apply-ui-regression-fixes.py'
   workflow_dispatch:
 
 permissions:
@@ -25,6 +26,7 @@ jobs:
           python3 scripts/apply-release-fixes.py
           python3 scripts/web-ui-fixes.py
           python3 scripts/web-polish-fixes.py
+          python3 scripts/apply-ui-regression-fixes.py
 
       - name: Commit source fixes
         run: |
@@ -34,8 +36,8 @@ jobs:
             echo 'No source changes required.'
             exit 0
           fi
-          git add 'mobile/app/(tabs)/index.tsx' 'src/main/java/com/example/expensetracker/controller/RangeReportController.java' 'frontend/js/api.js' 'frontend/css/tables.css' 'frontend/js/dashboard.js' 'frontend/js/biometrics.js' 'frontend/index.html' 'frontend/dashboard.html'
-          git commit -m 'fix: polish savings actions and enable web biometrics'
+          git add frontend
+          git commit -m 'fix(ui): repair auth controls mobile layout and dashboard refresh'
           git push origin HEAD:main
 
       - name: Dispatch verification and deployment workflows
