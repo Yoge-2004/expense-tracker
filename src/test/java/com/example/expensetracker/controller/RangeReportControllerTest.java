@@ -47,10 +47,12 @@ class RangeReportControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", response.getHeaders().getContentType().toString());
-        assertEquals("attachment; filename=ExpenseTracker_Executive_Dashboard.xlsx", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 1000);
         verify(security).validateUserAccess(7L);
+        verify(expenses).findByUser(user);
+        verify(incomes).findByUser(user);
     }
 
     @Test
@@ -64,8 +66,9 @@ class RangeReportControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("application/pdf", response.getHeaders().getContentType().toString());
-        assertEquals("attachment; filename=ExpenseTracker_Executive_Report.pdf", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Report.pdf\"", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
         assertNotNull(response.getBody());
+        assertTrue(response.getBody().length > 1000);
         assertEquals('%', (char) response.getBody()[0]);
         assertEquals('P', (char) response.getBody()[1]);
         assertEquals('D', (char) response.getBody()[2]);
