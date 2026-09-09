@@ -6,7 +6,7 @@ colorFrom: yellow
 colorTo: red
 sdk: docker
 app_port: 7860
-short_description: Secure, production-ready Expense Tracker backend with PostgreSQL, WebAuthn, reports, and resilient runtime controls.
+short_description: Secure Expense Tracker API with Neon failover.
 ---
 
 # 💰 Expense Tracker — Backend API
@@ -15,7 +15,8 @@ short_description: Secure, production-ready Expense Tracker backend with Postgre
 
 This Space runs the Spring Boot backend that powers authentication, expenses, income, budgets, subscriptions, savings goals, reports, exports, Google Sign-In, and WebAuthn/passkey authentication.
 
-> **Production database:** Neon PostgreSQL  
+> **Primary database:** Neon PostgreSQL  
+> **Failover snapshot:** encrypted SQLite in the public GitHub repository  
 > **Runtime:** Spring Boot + Java 26  
 > **Container:** Docker on Hugging Face Spaces  
 > **Port:** `7860`
@@ -32,9 +33,9 @@ This Space runs the Spring Boot backend that powers authentication, expenses, in
 - 📄 PDF and Excel report generation
 - 📥 CSV / JSON data export
 - 🛡️ CORS, validation, security headers, and protected API endpoints
-- 🩺 Production health and resilience controls
+- 🧯 Automatic database failover when Neon becomes unreachable
 
-## 🏗️ Architecture
+## 🏗️ Production database architecture
 
 ```text
 Web browser / Android app
@@ -43,26 +44,46 @@ Web browser / Android app
   Hugging Face Space
   Spring Boot API
           │
-          ▼
-   Neon PostgreSQL
-   (authoritative data)
+     ┌────┴─────┐
+     │          │
+     ▼          ▼
+ Neon DB    Local H2 failover
+(primary)   hydrated from the
+            encrypted snapshot
+                 │
+                 ▼
+       Public GitHub repository
+       database/expense_tracker.sqlite.enc
 ```
 
-The Space is intentionally **stateless**. User data is not committed into the Space repository or Docker image.
+### How the database backup works
 
-### Database resilience
+1. **Neon is authoritative while reachable.**
+2. Every 10 minutes the backend exports the currently active database to a portable SQLite snapshot.
+3. The SQLite snapshot is encrypted with **AES-256-GCM** before it is committed to GitHub.
+4. The public repository therefore contains an encrypted database blob, not a readable SQLite database.
+5. The encryption password and GitHub write token exist only as deployment secrets.
+6. If Neon becomes unavailable, the backend routes database access to its local emergency H2 store, hydrated from the latest encrypted GitHub snapshot.
+7. Reads and writes continue against that failover store while the service is in emergency mode, and updated encrypted snapshots are pushed back to GitHub.
 
-Neon PostgreSQL remains the source of truth. The backend also contains an emergency local datastore path that can be backed by an attached Hugging Face Storage Bucket mounted at `/data`.
+The repository snapshot is intentionally **not** a Hugging Face Storage Bucket and is not stored in the Space image.
 
-**Important:** a local SQLite/H2 file is not automatically a live replica of Neon. A stale file must never be presented as current user data. For production disaster recovery, the persistent storage/backup process must be configured separately.
+## 🔒 Database security
 
-Hugging Face's default Space filesystem is ephemeral; persistent data requires a mounted Storage Bucket or another external storage service.
+The repository is public, so the failover database is never committed as plaintext SQLite.
 
-## 🔒 Secrets
+The protected snapshot uses:
 
-Secrets are configured through Hugging Face Space Secrets / environment variables and are never stored in this README or Docker image.
+- AES-256-GCM authenticated encryption
+- PBKDF2-HMAC-SHA256 password derivation with 600,000 iterations
+- Random salt and nonce for every snapshot
+- GitHub Contents API for controlled updates
 
-Typical production variables include:
+The repository blocks plaintext `*.db`, `*.sqlite`, `*.sqlite3`, and `expenses_sync.json` files from being reintroduced.
+
+**Never put `DB_BACKUP_PASSWORD`, `GITHUB_DB_TOKEN`, `SYNC_SECRET_KEY`, `JWT_SECRET`, database passwords, or OAuth secrets in Git.**
+
+## 🔑 Required runtime secrets
 
 ```text
 SPRING_DATASOURCE_URL
@@ -71,7 +92,12 @@ SPRING_DATASOURCE_PASSWORD
 GOOGLE_OAUTH_CLIENT_ID
 JWT_SECRET
 CORS_ALLOWED_ORIGINS
+GITHUB_DB_TOKEN
+DB_BACKUP_PASSWORD
+SYNC_SECRET_KEY
 ```
+
+`GITHUB_DB_TOKEN` needs permission to update the encrypted snapshot in `Yoge-2004/expense-tracker`. `DB_BACKUP_PASSWORD` must be identical wherever the snapshot is encrypted/decrypted.
 
 ## 🧪 API & documentation
 
@@ -92,15 +118,11 @@ Each deployment synchronizes:
 - `Dockerfile`
 - this `README.md`
 
-No application user data is packaged into the deployment artifact.
+The encrypted database snapshot is deliberately **not** packaged into the Docker image. The backend downloads it from GitHub at runtime using its deployment secret.
 
 ## 🛡️ Data safety principle
 
-This service follows a simple rule:
-
-> **Neon is the source of truth. HF compute is replaceable. User data must live outside the container image.**
-
-For true zero/low-data-loss failover, use a persistent backup or a second PostgreSQL service rather than relying on an ephemeral container filesystem.
+> **Neon is authoritative while healthy. GitHub stores the encrypted failover snapshot. HF compute is replaceable. No plaintext user database belongs in a public repository or container image.**
 
 ## 👤 Project
 
@@ -113,4 +135,4 @@ Built and maintained by **Yoge-2004** as the backend for the Expense Tracker pro
 
 ### ⚠️ Production note
 
-This Space is an application runtime, not a database host. Do not upload `*.db`, `*.sqlite`, `*.json` exports containing user records, or other live database snapshots to this public Space repository.
+Do not upload `*.db`, `*.sqlite`, `*.sqlite3`, plaintext JSON exports containing user records, or any other readable database snapshot to this public Space repository.
