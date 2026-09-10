@@ -175,3 +175,131 @@ if marker not in c:
 }
 '''
 TABLES.write_text(c)
+
+# ── Dashboard runtime fixes and safe first-stage modularization ──
+DASH = Path('frontend/js/dashboard.js')
+DASH_HTML = Path('frontend/dashboard.html')
+DASH_CSS = Path('frontend/css/ui-regression-fixes.css')
+MODULE_DIR = Path('frontend/js/modules')
+
+dash = DASH.read_text(encoding='utf-8')
+dash = dash.replace(
+    '${formatCurrency(spent)} of ${formatCurrency(limit)}',
+    '${formatCurrency(b.spent)} of ${formatCurrency(b.limit)}',
+    1,
+)
+dash = dash.replace(
+    'if (!confirm(`Delete category "${catName}"? This can\'t be undone.`)) return;',
+    'if (!(await window.appConfirm(`Delete category "${catName}"? This can\'t be undone.`))) return;',
+    1,
+)
+
+# Extract the small, dependency-free utility block first; larger feature modules can follow after review.
+helper_start = dash.find('// Timezone-safe local date helpers')
+helper_end = dash.find('// Modal Scroll Lock Helpers')
+if helper_start != -1 and helper_end > helper_start and 'window.DashboardUtils' not in dash:
+    MODULE_DIR.mkdir(parents=True, exist_ok=True)
+    utility = '''/* Shared dashboard utilities. */
+(function () {
+    "use strict";
+
+    function getLocalDateString(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function parseLocalDate(value) {
+        if (!value) return new Date();
+        if (value instanceof Date) return value;
+        const parts = String(value).split("T")[0].split("-");
+        if (parts.length === 3) return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return new Date(value);
+    }
+
+    function escapeHtml(value) {
+        if (value == null) return "";
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function formatCurrency(amount) {
+        if (typeof window.formatGlobalCurrency === "function") return window.formatGlobalCurrency(amount);
+        const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "$";
+        return `${symbol} ${Number(amount || 0).toFixed(2)}`;
+    }
+
+    function formatDate(value) {
+        if (!value) return "";
+        return parseLocalDate(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    window.DashboardUtils = Object.freeze({ getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate });
+})();
+'''
+    (MODULE_DIR / 'dashboard-utils.js').write_text(utility, encoding='utf-8')
+    dash = dash[:helper_start] + '''// Shared utilities are loaded from js/modules/dashboard-utils.js.
+const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate } = window.DashboardUtils;
+
+''' + dash[helper_end:]
+DASH.write_text(dash, encoding='utf-8')
+
+html = DASH_HTML.read_text(encoding='utf-8')
+if 'js/modules/dashboard-utils.js' not in html:
+    script_tag = '<script src="js/dashboard.js'
+    idx = html.find(script_tag)
+    if idx == -1:
+        raise SystemExit('dashboard.js script tag not found')
+    html = html[:idx] + '<script src="js/modules/dashboard-utils.js?v=20260910"></script>\n    ' + html[idx:]
+
+html = html.replace(
+    '<a href="#" id="biometricAuthBtn">🧬 Biometrics (Touch/Face ID)</a>',
+    '''<a href="#" id="biometricAuthBtn" class="profile-menu-action" aria-label="Biometrics (Touch/Face ID)">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 0 2 2v-2"/>
+        <path d="M8 8c1.2-1.7 2.9-2.5 4-2.5S14.8 6.3 16 8M7.5 12c0-1.7 1.6-3.5 4.5-3.5s4.5 1.8 4.5 3.5c0 2.1-1.7 4-4.5 4s-4.5-1.9-4.5-4Z"/>
+    </svg>
+    <span>Biometrics (Touch/Face ID)</span>
+</a>''',
+    1,
+)
+DASH_HTML.write_text(html, encoding='utf-8')
+
+css = DASH_CSS.read_text(encoding='utf-8')
+mobile_badge = '@media (max-width:760px) { .command-kbd { display:none !important; }'
+if mobile_badge not in css:
+    css = css.replace(
+        '@media (max-width:760px) { .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }',
+        '@media (max-width:760px) { .command-kbd { display:none !important; } .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }',
+        1,
+    )
+css += '''
+
+/* Mobile ledger controls scroll horizontally instead of clipping counters. */
+@media (max-width:760px) {
+    #ledgerStreamTabs, .ledger-stream-tabs {
+        display:flex !important; flex-wrap:nowrap !important; overflow-x:auto !important; overflow-y:hidden !important;
+        min-width:0 !important; width:100% !important; scrollbar-width:none !important; -webkit-overflow-scrolling:touch !important;
+    }
+    #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
+    #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
+        flex:0 0 auto !important; min-width:max-content !important; white-space:nowrap !important;
+    }
+    #incomeList .btn-edit, #incomeList .btn-delete {
+        width:34px !important; height:34px !important; min-width:34px !important; min-height:34px !important;
+        padding:0 !important; border-radius:10px !important; display:inline-flex !important; align-items:center !important;
+        justify-content:center !important; flex:0 0 34px !important; box-sizing:border-box !important;
+    }
+    #incomeList .btn-edit svg, #incomeList .btn-delete svg { width:14px !important; height:14px !important; display:block !important; }
+}
+
+/* Theme switches must not restart metric reveal/hover animation state. */
+html.theme-transitioning .grid-4-metrics > .metric-card,
+html.theme-transitioning .grid-4-metrics > .metric-card * { animation:none !important; transition:none !important; }
+'''
+DASH_CSS.write_text(css, encoding='utf-8')
