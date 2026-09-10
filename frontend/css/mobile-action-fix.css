@@ -1,5 +1,14 @@
-/* Mobile action controls: hide decorative pseudo-elements that create stray bars/slivers. */
+/* Mobile action controls: keep both buttons readable and remove stray visual artifacts. */
 @media (max-width: 760px) {
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        isolation: isolate !important;
+    }
+
     .top-bar .add-expense-button::before,
     .top-bar .add-expense-button::after,
     .top-bar .add-income-button::before,
@@ -11,5 +20,14 @@
         animation: none !important;
         transform: none !important;
         box-shadow: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        gap: 6px !important;
     }
 }
