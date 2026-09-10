@@ -21,6 +21,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          from textwrap import indent
 
           dashboard = Path('frontend/js/dashboard.js')
           module = Path('frontend/js/modules/dashboard-effects.js')
@@ -78,7 +79,7 @@ jobs:
               if anchor not in source: raise RuntimeError('Dashboard DOM anchor missing')
               source = source.replace(anchor, anchor + binding, 1)
 
-          effect_body = '\n\n'.join('    ' + line for block in extracted for line in block.splitlines())
+          effect_body = '\n\n'.join(indent(block, '    ') for block in extracted)
           effect_module = '''/* Dashboard rendering effects and lightweight view animations. */
           (function () {
               "use strict";
@@ -117,9 +118,10 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add frontend/js frontend/dashboard.html
-          git diff --cached --check
           git rm .github/workflows/refactor-dashboard-effects-once.yml
+          git add -u
+          git diff --cached --check
           git commit -m 'refactor(js): extract dashboard rendering effects'
           git push origin HEAD:main
 
-# Trigger marker.
+# Trigger marker v2.
