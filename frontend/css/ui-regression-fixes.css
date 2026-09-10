@@ -123,7 +123,8 @@ html.theme-transitioning *::after {
         grid-auto-flow:row !important;
         align-items:center !important;
         justify-items:stretch !important;
-        gap:10px !important;
+        column-gap:12px !important;
+        row-gap:10px !important;
         width:100% !important;
         min-width:0 !important;
         overflow-x:hidden !important;
@@ -192,7 +193,7 @@ html.theme-transitioning *::after {
 }
 
 @media (max-width:480px) {
-    .top-bar-actions { gap:8px !important; padding-left:8px !important; padding-right:8px !important; }
+    .top-bar-actions { gap:8px !important; column-gap:12px !important; row-gap:8px !important; padding-left:8px !important; padding-right:8px !important; }
     .top-bar .add-expense-button,.top-bar .add-income-button { height:38px !important; padding:0 9px !important; font-size:12px !important; gap:5px !important; border-radius:9px !important; }
     .input-wrapper:has(> .input-icon) > input.form-input,.input-wrapper:has(> .input-icon) > textarea.form-input,.input-wrapper:has(> .input-icon) > select.form-input,
     .input-wrapper:has(> svg.input-icon) > input.form-input,.input-wrapper:has(> svg.input-icon) > textarea.form-input,.input-wrapper:has(> svg.input-icon) > select.form-input { padding-left:38px !important; }
