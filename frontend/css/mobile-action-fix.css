@@ -1,0 +1,15 @@
+/* Mobile action controls: hide decorative pseudo-elements that create stray bars/slivers. */
+@media (max-width: 760px) {
+    .top-bar .add-expense-button::before,
+    .top-bar .add-expense-button::after,
+    .top-bar .add-income-button::before,
+    .top-bar .add-income-button::after {
+        content: none !important;
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        animation: none !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+}
