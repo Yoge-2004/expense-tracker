@@ -129,13 +129,7 @@ public class ImportServiceImpl implements ImportService {
                     }
 
                     final String resolvedCat = catStr;
-                    Category category = categoryRepository.findByNameIgnoreCase(resolvedCat)
-                            .orElseGet(() -> {
-                                Category newCat = new Category();
-                                newCat.setName(resolvedCat);
-                                newCat.setUser(user);
-                                return categoryRepository.save(newCat);
-                            });
+                    Category category = resolveOrCreateCategoryForUser(resolvedCat, user);
 
                     Expense exp = new Expense();
                     exp.setExpenseDate(LocalDate.parse(dateStr));
@@ -178,16 +172,14 @@ public class ImportServiceImpl implements ImportService {
             for (ExpenseDto dto : dtos) {
                 Category category = null;
                 if (dto.getCategoryName() != null && !dto.getCategoryName().isBlank()) {
-                    category = categoryRepository.findByNameIgnoreCase(dto.getCategoryName().trim())
-                            .orElseGet(() -> {
-                                Category c = new Category();
-                                c.setName(dto.getCategoryName().trim());
-                                c.setUser(user);
-                                return categoryRepository.save(c);
-                            });
+                    category = resolveOrCreateCategoryForUser(dto.getCategoryName().trim(), user);
                 }
                 Expense expense = new Expense();
-                expense.setAmount(dto.getAmount() != null ? dto.getAmount() : BigDecimal.ZERO);
+                BigDecimal amount = dto.getAmount();
+                if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("Amount must be greater than zero");
+                }
+                expense.setAmount(amount);
                 expense.setDescription(dto.getDescription());
                 expense.setExpenseDate(dto.getExpenseDate() != null ? dto.getExpenseDate() : LocalDate.now());
                 expense.setCategory(category);
@@ -269,13 +261,7 @@ public class ImportServiceImpl implements ImportService {
 
                     String description = descCol != null ? getCellValueAsString(row.getCell(descCol)).trim() : "";
 
-                    Category category = categoryRepository.findByNameIgnoreCase(catName)
-                            .orElseGet(() -> {
-                                Category newCat = new Category();
-                                newCat.setName(catName);
-                                newCat.setUser(user);
-                                return categoryRepository.save(newCat);
-                            });
+                    Category category = resolveOrCreateCategoryForUser(catName, user);
 
                     Expense expense = new Expense();
                     expense.setAmount(amount);
@@ -595,5 +581,45 @@ public class ImportServiceImpl implements ImportService {
             }
         }
         return true;
+    }
+
+    /**
+     * Resolves an existing user-scoped or global category by name (case-insensitive),
+     * or creates a new user-scoped category if no match is found.
+     * <p>
+     * <b>Security:</b> Previously this method used {@code findByNameIgnoreCase} which
+     * returned ANY category with that name — including other users' private categories.
+     * That created an IDOR vulnerability where user A's imported expenses could be linked
+     * to user B's private category. This method now scopes lookups to (a) the importing
+     * user's own categories and (b) global (user_id IS NULL) categories only.
+     * </p>
+     *
+     * @param name the category name to resolve (must be non-blank)
+     * @param user the importing user (must be non-null)
+     * @return the resolved or newly created {@link Category}
+     */
+    private Category resolveOrCreateCategoryForUser(String name, User user) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Category name cannot be blank");
+        }
+        if (user == null) {
+            throw new IllegalArgumentException("User context required for category resolution");
+        }
+        String trimmed = name.trim();
+        // 1. Try user's own category first
+        Optional<Category> userCat = categoryRepository.findByUserAndNameIgnoreCase(user, trimmed);
+        if (userCat.isPresent()) {
+            return userCat.get();
+        }
+        // 2. Fall back to a global category (user_id IS NULL)
+        Optional<Category> globalCat = categoryRepository.findByUserIsNullAndNameIgnoreCase(trimmed);
+        if (globalCat.isPresent()) {
+            return globalCat.get();
+        }
+        // 3. Otherwise create a new user-scoped category
+        Category newCat = new Category();
+        newCat.setName(trimmed);
+        newCat.setUser(user);
+        return categoryRepository.save(newCat);
     }
 }

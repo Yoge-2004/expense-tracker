@@ -86,7 +86,7 @@ async function doSendOtp() {
             body: JSON.stringify({ email, name }),
         });
 
-        if (res && res.emailVerificationEnabled === 'false') {
+        if (res && (res.emailVerificationEnabled === false || res.emailVerificationEnabled === 'false')) {
             emailVerificationRequired = false;
             showToast('Email verification is not required. Click Create Account to finish.', 'info');
             document.getElementById('otpGroup').style.display = 'none';
@@ -111,10 +111,10 @@ async function doSendOtp() {
 }
 
 // Send OTP button
-document.getElementById('sendOtpBtn').addEventListener('click', doSendOtp);
+document.getElementById('sendOtpBtn')?.addEventListener('click', doSendOtp);
 
 // Resend OTP button
-document.getElementById('resendOtpBtn').addEventListener('click', async () => {
+document.getElementById('resendOtpBtn')?.addEventListener('click', async () => {
     const resendBtn = document.getElementById('resendOtpBtn');
     resendBtn.disabled = true;
     const name  = document.getElementById('reg-name').value.trim();
@@ -135,7 +135,7 @@ document.getElementById('resendOtpBtn').addEventListener('click', async () => {
 });
 
 // Final registration submit
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
+document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = document.getElementById('registerBtn');
     if (submitBtn?.disabled) return;

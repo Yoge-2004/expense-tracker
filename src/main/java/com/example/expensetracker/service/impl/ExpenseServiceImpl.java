@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -164,18 +165,21 @@ public class ExpenseServiceImpl implements ExpenseService {
      * @param expenseUpdates contains the new field values to apply
      * @param user           the user requesting the update; must own the expense
      * @return the updated and persisted {@link Expense} entity
-     * @throws RuntimeException if the expense is not found or does not belong to the user
+     * @throws IllegalArgumentException if the expense is not found
+     * @throws AccessDeniedException    if the expense does not belong to the user
      */
     @Override
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense updateExpense(Long expenseId, Expense expenseUpdates, User user) {
         log.info("Updating expense id={} for userId={}", expenseId, user.getId());
         Expense existing = expenseRepository.findById(expenseId)
-                .orElseThrow(() -> new RuntimeException("Expense not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
 
         if (!existing.getUser().getId().equals(user.getId())) {
             log.warn("Ownership mismatch: expense id={} does not belong to userId={}", expenseId, user.getId());
-            throw new RuntimeException("Expense does not belong to this user");
+            // Use AccessDeniedException (403) instead of RuntimeException (500) for ownership violations.
+            // GlobalExceptionHandler maps AccessDeniedException to 403 Forbidden.
+            throw new AccessDeniedException("Expense does not belong to this user");
         }
 
         if (expenseUpdates.getDescription() != null) {

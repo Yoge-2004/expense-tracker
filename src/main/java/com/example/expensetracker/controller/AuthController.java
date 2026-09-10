@@ -274,6 +274,17 @@ public class AuthController {
             return userService.registerUser(newUser);
         });
 
+        // SECURITY FIX: previously, a user whose account had been disabled or locked
+        // could still authenticate via Google Sign-In (the OAuth flow bypassed the
+        // standard Spring Security authentication path that checks these flags).
+        // Now we explicitly reject disabled/locked accounts with 401 Unauthorized,
+        // matching the standard login flow's behavior.
+        if (!user.isEnabled() || user.isAccountLocked()) {
+            log.warn("Google OAuth login rejected for disabled/locked account email={}", identity.email());
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Account is disabled or locked. Please contact support.");
+        }
+
         String token = jwtService.generateToken(user.getEmail());
         log.info("Google OAuth login successful for userId={}", user.getId());
         return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency(), user.hasSecurityPin()));

@@ -65,6 +65,25 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findByNameIgnoreCase(String name);
 
     /**
+     * Finds a user-scoped category by name (case-insensitive).
+     * Used to prevent cross-user category hijack during imports.
+     *
+     * @param user the {@link User} whose categories are searched
+     * @param name the category name to find
+     * @return an {@link Optional} containing the matching {@link Category} or empty if not found
+     */
+    Optional<Category> findByUserAndNameIgnoreCase(User user, String name);
+
+    /**
+     * Finds a global category (user_id IS NULL) by name (case-insensitive).
+     * Used to resolve shared categories during imports without leaking other users' categories.
+     *
+     * @param name the category name to find
+     * @return an {@link Optional} containing the matching global {@link Category} or empty if not found
+     */
+    Optional<Category> findByUserIsNullAndNameIgnoreCase(String name);
+
+    /**
      * Deletes all categories owned by the specified user.
      *
      * @param userId the ID of the owning user

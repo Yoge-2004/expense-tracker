@@ -2,11 +2,16 @@ const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
 const userName = localStorage.getItem("userName") || "User";
 
-if (!token || !userId) window.location.href = "index.html";
+if (!token || !userId) {
+    window.location.href = "index.html";
+    throw new Error("Redirecting to login: missing auth session");
+}
 
-// UI Setup
-document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
-document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
+// UI Setup (guarded against missing elements)
+const topBarP = document.querySelector(".top-bar p");
+if (topBarP) topBarP.textContent = `Welcome back, ${userName}`;
+const avatarEl = document.querySelector(".avatar");
+if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
 
 // Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
 const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
@@ -19,7 +24,11 @@ let userOnlyCategories = []; // subset of allCategories actually deletable (excl
 let allIncomes = [];
 let allSavingsGoals = [];
 let cachedBudgets = [];
-window.cachedBudgets = cachedBudgets;
+Object.defineProperty(window, 'cachedBudgets', {
+    configurable: true,
+    get: () => cachedBudgets,
+    set: (v) => { cachedBudgets = v; }
+});
 const chartState = window.DashboardChartState;
 
 
@@ -62,8 +71,9 @@ async function loadDashboard(skipCache = false) {
         allExpenses = cached.expenses || [];
         allCategories = cached.categories || [];
         renderDashboardData(cached.expenses, cached.categories);
-        renderIncomes(allIncomes || []);
-        renderSavingsGoals(allSavingsGoals || []);
+        // Note: allIncomes and allSavingsGoals are still [] at this point — they are only populated
+        // after the API call below. Calling renderIncomes([])/renderSavingsGoals([]) here would
+        // briefly wipe those sections. Defer their render to the post-API branch instead.
     } else {
         window.DashboardDom.showSkeletonLoading();
     }
@@ -669,7 +679,7 @@ function renderPieChart(expenses) {
     const categoryTotals = {};
     expenses.forEach(exp => {
         const cat = exp.categoryName || 'Uncategorized';
-        categoryTotals[cat] = (categoryTotals[cat] || 0) + exp.amount;
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
     });
 
     if (chartState.pieChart) chartState.pieChart.destroy();
@@ -703,7 +713,9 @@ function renderPieChart(expenses) {
 }
 
 function renderTrendChart(expenses) {
-    const ctx = document.getElementById('chartState.trendChart').getContext('2d');
+    const canvas = document.getElementById('trendChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
     const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
     const textColor = isLight ? '#6B6558' : '#A8A395';
@@ -711,7 +723,7 @@ function renderTrendChart(expenses) {
     const dailyTotals = {};
     expenses.forEach(exp => {
         const date = exp.expenseDate;
-        dailyTotals[date] = (dailyTotals[date] || 0) + exp.amount;
+        dailyTotals[date] = (dailyTotals[date] || 0) + Number(exp.amount || 0);
     });
 
     const { dates, values } = buildTrendSeries(dailyTotals);
@@ -760,7 +772,7 @@ function renderTrendChart(expenses) {
  * the daily trend line can show, since both mix the two together.
  */
 function renderRecurringSplitChart(expenses) {
-    const canvas = document.getElementById('chartState.recurringSplitChart');
+    const canvas = document.getElementById('recurringSplitChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
@@ -810,7 +822,7 @@ function renderRecurringSplitChart(expenses) {
  * overspending that a category or time-trend view can't show on its own.
  */
 function renderDayOfWeekChart(expenses) {
-    const canvas = document.getElementById('chartState.dayOfWeekChart');
+    const canvas = document.getElementById('dayOfWeekChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
@@ -860,7 +872,7 @@ function renderDayOfWeekChart(expenses) {
  * are visible at a glance without reading numbers.
  */
 function renderBudgetVsActualChart(budgets) {
-    const canvas = document.getElementById('chartState.budgetVsActualChart');
+    const canvas = document.getElementById('budgetVsActualChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
@@ -1057,10 +1069,8 @@ document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(btn => {
 
 elements.filterSearch.addEventListener('input', debounce(() => {
     applyFilters();
-    if (typeof applyIncomeFilters === 'function') {
-        applyIncomeFilters();
+    if (typeof applyIncomeFilters === 'function') applyIncomeFilters();
     renderFinancialInsights(allExpenses);
-    }
 }, 250));
 
 document.getElementById("resetFiltersBtn")?.addEventListener("click", () => {
@@ -1173,7 +1183,7 @@ function celebrateSuccess(x, y) {
 }
 
 function updateStats(expenses) {
-    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const total = expenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
     animateNumber(elements.totalAmount, total, true);
     // Not animateNumber() here: it unconditionally writes a bare number
     // (e.g. "5") to the element's textContent, which would clobber the
@@ -1778,7 +1788,8 @@ document.addEventListener("keydown", (e) => {
         elements.profileTrigger.focus();
     }
 });
-document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "index.html"; });
+// Note: logoutBtn is handled in biometrics.js (capture phase) to preserve theme/currency prefs.
+// Do not re-bind here — duplicate handlers caused inconsistent wipe behavior.
 
 const exportMonthlySummaryBtn = document.getElementById("exportMonthlySummaryBtn");
 if (exportMonthlySummaryBtn) {
@@ -3149,7 +3160,6 @@ window.renderIncomes = renderIncomes;
 function renderSavingsGoals(goals) {
     allSavingsGoals = Array.isArray(goals) ? goals : [];
     window.allSavingsGoals = allSavingsGoals;
-    allSavingsGoals = Array.isArray(goals) ? goals : [];
     const container = document.getElementById("savingsGoalsList");
     if (!container) return;
     if (!allSavingsGoals || allSavingsGoals.length === 0) {
@@ -4132,9 +4142,12 @@ emailReportBtn?.addEventListener("click", () => {
 
 
 // Dashboard refreshes are event-driven; tab visibility alone does not reset state or clear caches.
-
-
+// Throttled focus refresh: at most once per 60 seconds to avoid hammering the API on every alt-tab.
+let lastFocusRefresh = 0;
 window.addEventListener("focus", () => {
+    const now = Date.now();
+    if (now - lastFocusRefresh < 60000) return;
+    lastFocusRefresh = now;
     loadDashboard(true);
 });
 
@@ -4204,8 +4217,14 @@ function bindCategoryPillsScrollCues() {
         }
     });
 }
-document.addEventListener("DOMContentLoaded", bindCategoryPillsScrollCues);
-bindCategoryPillsScrollCues();
+// Use the standard ready() pattern — dashboard.js is loaded at the end of <body>, so
+// readyState is usually already "interactive" or "complete". Running both branches would
+// attach MutationObserver twice in some timing scenarios.
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCategoryPillsScrollCues, { once: true });
+} else {
+    bindCategoryPillsScrollCues();
+}
 
 function updateStreamBadges() {
     const expCount = (window.allExpenses || allExpenses || []).length;

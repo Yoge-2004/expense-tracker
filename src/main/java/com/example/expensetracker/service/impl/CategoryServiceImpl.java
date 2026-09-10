@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -79,6 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
      * @throws IllegalArgumentException if a category with this name already exists for the user
      */
     @Override
+    @Transactional
     @Caching(evict = {
         @CacheEvict(value = "userCategories", key = "#user.id"),
         @CacheEvict(value = "globalCategories", allEntries = true)
@@ -96,6 +98,10 @@ public class CategoryServiceImpl implements CategoryService {
         category.setName(name);
         category.setUser(user);
 
+        // CONCURRENCY NOTE: there is still a small TOCTOU window between existsByNameAndUser
+        // and save(). The DB-level unique constraint (uk_category_user_name on Category) is
+        // the source of truth — if two concurrent inserts slip through, the second one will
+        // throw DataIntegrityViolationException. GlobalExceptionHandler maps that to 409.
         Category saved = categoryRepository.save(category);
         log.info("Saved category '{}' with id={} for userId={}", name, saved.getId(), user.getId());
         return saved;

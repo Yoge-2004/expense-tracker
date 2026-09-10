@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -59,4 +60,23 @@ public interface SavingsGoalRepository extends JpaRepository<SavingsGoal, Long> 
     @Modifying
     @Query("DELETE FROM SavingsGoal s WHERE s.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
+
+    /**
+     * Atomically adds {@code amount} to the {@code currentAmount} of the savings goal
+     * identified by {@code goalId} and {@code user}, returning the number of rows affected.
+     * <p>
+     * Used by {@link com.example.expensetracker.service.impl.SavingsGoalServiceImpl#depositToGoal}
+     * to prevent the lost-update race that occurred when concurrent deposits both read the
+     * same {@code currentAmount}, both compute the same new total, and the last writer wins
+     * (silently losing one deposit).
+     * </p>
+     *
+     * @param goalId the savings goal ID
+     * @param user   the owning user
+     * @param amount the amount to add (must be &gt; 0)
+     * @return 1 if the row was updated, 0 otherwise (wrong goal ID or not owned by this user)
+     */
+    @Modifying
+    @Query("UPDATE SavingsGoal s SET s.currentAmount = COALESCE(s.currentAmount, 0) + :amount WHERE s.id = :goalId AND s.user = :user")
+    int addToCurrentAmount(@Param("goalId") Long goalId, @Param("user") User user, @Param("amount") BigDecimal amount);
 }

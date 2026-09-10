@@ -190,9 +190,11 @@ class ExpenseServiceImplTest {
 
     @Test
     void updateExpenseRejectsMissingExpense() {
+        // FIXED: previously threw RuntimeException (-> 500 INTERNAL_SERVER_ERROR via GlobalExceptionHandler).
+        // Now throws IllegalArgumentException (-> 400 BAD_REQUEST) for proper REST semantics.
         when(expenseRepository.findById(81L)).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> service.updateExpense(81L, new Expense(), owner));
 
         assertEquals("Expense not found", ex.getMessage());
@@ -206,7 +208,10 @@ class ExpenseServiceImplTest {
         existing.setUser(otherUser);
         when(expenseRepository.findById(82L)).thenReturn(Optional.of(existing));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        // FIXED: previously threw RuntimeException (-> 500). Now throws AccessDeniedException
+        // (-> 403 FORBIDDEN) for proper REST semantics on ownership violations.
+        org.springframework.security.access.AccessDeniedException ex = assertThrows(
+                org.springframework.security.access.AccessDeniedException.class,
                 () -> service.updateExpense(82L, new Expense(), owner));
 
         assertEquals("Expense does not belong to this user", ex.getMessage());

@@ -163,8 +163,16 @@ public class JwtService {
 
         final String username = extractUsername(token);
 
+        // SECURITY FIX: previously, a JWT kept working until natural expiry even after the
+        // user was disabled or locked (e.g. by an admin, or by repeated failed login
+        // attempts). We now also require the account to be enabled and non-locked at
+        // validation time, so disabling/locking a user immediately invalidates all their
+        // outstanding tokens.
         return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+                && !isTokenExpired(token)
+                && userDetails.isEnabled()
+                && userDetails.isAccountNonLocked()
+                && userDetails.isCredentialsNonExpired();
     }
 
     /**

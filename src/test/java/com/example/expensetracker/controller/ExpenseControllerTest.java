@@ -271,12 +271,14 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void deleteBudgetByIdMissingBudgetIsIdempotent() throws Exception {
+    void deleteBudgetByIdMissingBudgetReturns404() throws Exception {
+        // FIXED: previously a missing budget returned 200 OK (silent no-op), which allowed
+        // authenticated users to enumerate which budget IDs existed (403 vs 200). Now we
+        // throw NoSuchElementException -> 404 NOT_FOUND, matching REST conventions.
         when(budgetRepository.findById(404L)).thenReturn(Optional.empty());
 
         mockMvc.perform(delete("/api/expenses/budget/404"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Budget limit deleted successfully"));
+                .andExpect(status().isNotFound());
 
         verifyNoInteractions(userSecurity);
         verify(budgetRepository, never()).delete(any(Budget.class));
@@ -454,7 +456,11 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void deleteSubscriptionValidatesExistingOwnerAndDeletesById() throws Exception {
+    void deleteSubscriptionValidatesExistingOwnerAndDeletesEntity() throws Exception {
+        // FIXED: previously called deleteById(recId) which (a) didn't validate ownership for
+        // missing IDs (returned 200 OK with no error) and (b) threw EmptyResultDataAccessException
+        // -> 500 if the ID didn't exist. Now we findById + validateUserAccess + delete(entity),
+        // which gives correct 400 BAD_REQUEST for missing IDs and 403 for ownership mismatch.
         RecurringExpense rec = recurring(12L, new BigDecimal("119"), "Spotify", LocalDate.of(2026, 10, 5), "MONTHLY", food, user);
         when(recurringExpenseRepository.findById(12L)).thenReturn(Optional.of(rec));
 
@@ -463,7 +469,7 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$.message").value("Subscription cancelled successfully"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(recurringExpenseRepository).deleteById(12L);
+        verify(recurringExpenseRepository).delete(rec);
     }
 
     @Test

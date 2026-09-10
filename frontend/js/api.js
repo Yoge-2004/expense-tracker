@@ -243,7 +243,15 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         throw new Error(msg);
     }
 
-    const data = text ? JSON.parse(text) : null;
+    let data = null;
+    if (text) {
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            // Server returned a 2xx response with non-JSON body (proxy error page, empty string, etc.)
+            throw new Error("The server returned an unexpected response. Please try again.");
+        }
+    }
     if (method === "GET") apiCache.set(endpoint, { data, timestamp: Date.now() });
     return data;
 }
