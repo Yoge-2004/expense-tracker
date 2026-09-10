@@ -9,23 +9,7 @@ document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
 document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
 
 // Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
-const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate } = window.DashboardUtils;
-
-// Modal Scroll Lock Helpers
-function openModal(modalEl) {
-    if (!modalEl) return;
-    modalEl.classList.add("active");
-    document.body.classList.add("modal-open");
-}
-
-function closeModal(modalEl) {
-    if (!modalEl) return;
-    modalEl.classList.remove("active");
-    const anyActive = document.querySelector(".modal-overlay.active");
-    if (!anyActive) {
-        document.body.classList.remove("modal-open");
-    }
-}
+const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
 
 // Global State
 let allExpenses = [];
@@ -111,22 +95,6 @@ function initCurrencyPlaceholders() {
 }
 initCurrencyPlaceholders();
 
-// ── Category palette (consistent colors per category name) — muted ink/stamp tones ──
-const CATEGORY_PALETTE = [
-    { bg: 'rgba(199,154,62,0.12)', color: '#C79A3E' },  // gold
-    { bg: 'rgba(162,62,50,0.12)',  color: '#A23E32' },  // oxblood
-    { bg: 'rgba(76,122,120,0.12)', color: '#4C7A78' },  // teal
-    { bg: 'rgba(91,140,90,0.12)',  color: '#5B8C5A' },  // sage
-    { bg: 'rgba(139,94,52,0.12)',  color: '#8B5E34' },  // umber
-    { bg: 'rgba(176,107,92,0.12)', color: '#B06B5C' },  // terracotta
-    { bg: 'rgba(201,147,46,0.12)', color: '#C9932E' },  // mustard
-    { bg: 'rgba(107,114,128,0.12)',color: '#6B7280' },  // slate
-];
-function getCategoryColor(name) {
-    const idx = name ? name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % CATEGORY_PALETTE.length : 0;
-    return CATEGORY_PALETTE[idx];
-}
-
 function showSkeletonLoading() {
     // Metric card skeletons
     document.querySelectorAll('.metric-value').forEach(el => {
@@ -148,38 +116,6 @@ function showSkeletonLoading() {
 }
 
 // --- 1. INITIALIZATION ---
-// ── Local cache (stale-while-revalidate) ──────────────────────────────────
-// Shows the last-known dashboard state instantly on load, refreshes from
-// the server in the background, and falls back to this cache if the
-// server is briefly unreachable (e.g. a cold-starting Neon connection)
-// instead of leaving the UI stuck on skeletons or silently failing.
-const CACHE_VERSION = 1;
-function getCacheKey() { return `expenseCache_${userId}`; }
-
-function saveExpenseCache(expenses, categories) {
-    try {
-        localStorage.setItem(getCacheKey(), JSON.stringify({
-            v: CACHE_VERSION,
-            savedAt: Date.now(),
-            expenses,
-            categories,
-        }));
-    } catch (e) {
-        console.warn("Could not save expense cache:", e);
-    }
-}
-
-function loadExpenseCache() {
-    try {
-        const raw = localStorage.getItem(getCacheKey());
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (parsed.v !== CACHE_VERSION || !Array.isArray(parsed.expenses)) return null;
-        return parsed;
-    } catch (e) {
-        return null;
-    }
-}
 
 function renderDashboardData(expenses, categories) {
     allCategories = categories;
@@ -593,67 +529,6 @@ function renderFinancialInsights(expenses) {
 }
 
 window.renderFinancialInsights = renderFinancialInsights;
-
-// Keyboard Shortcuts & Search Bar Responsive Adaptation
-const isMacPlatform = /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-const kbdBadge = document.querySelector(".command-kbd");
-if (kbdBadge) {
-    kbdBadge.textContent = isMacPlatform ? "⌘K" : "Ctrl K";
-}
-
-function updateSearchPlaceholder() {
-    if (!elements.filterSearch) return;
-    if (window.innerWidth <= 600) {
-        elements.filterSearch.placeholder = "Search expenses & incomes...";
-    } else {
-        elements.filterSearch.placeholder = isMacPlatform ? "Search expenses & incomes (Press / or ⌘K)..." : "Search expenses & incomes (Press / or Ctrl+K)...";
-    }
-}
-window.addEventListener("resize", updateSearchPlaceholder);
-updateSearchPlaceholder();
-
-window.addEventListener("keydown", (e) => {
-    const isK = e.key === 'k' || e.key === 'K' || e.code === 'KeyK';
-    const isCmdOrCtrl = e.metaKey || e.ctrlKey;
-
-    if (isCmdOrCtrl && isK) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (elements.filterSearch) {
-            elements.filterSearch.focus();
-            elements.filterSearch.select();
-        }
-        return;
-    }
-
-    if (e.key === '/') {
-        const activeEl = document.activeElement;
-        const isEditing = activeEl && (
-            activeEl.tagName === 'INPUT' ||
-            activeEl.tagName === 'TEXTAREA' ||
-            activeEl.tagName === 'SELECT' ||
-            activeEl.isContentEditable
-        );
-
-        if (!isEditing) {
-            e.preventDefault();
-            if (elements.filterSearch) {
-                elements.filterSearch.focus();
-                elements.filterSearch.select();
-            }
-            return;
-        }
-    }
-
-    if (e.key === "Escape" && document.activeElement === elements.filterSearch) {
-        if (elements.filterSearch.value) {
-            elements.filterSearch.value = "";
-            elements.filterSearch.dispatchEvent(new Event('input', { bubbles: true }));
-        } else {
-            elements.filterSearch.blur();
-        }
-    }
-}, { capture: true });
 
 // --- 2. BUDGET LOGIC ---
 async function loadBudgets() {
@@ -1269,19 +1144,6 @@ document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(btn => {
     });
 });
 
-/**
- * Delays calling `fn` until `delay` ms have passed since the last call —
- * standard debounce so a rapid sequence of events (like keystrokes) only
- * triggers the expensive work once, after the user pauses.
- */
-function debounce(fn, delay) {
-    let timeoutId;
-    return (...args) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => fn(...args), delay);
-    };
-}
-
 elements.filterSearch.addEventListener('input', debounce(() => {
     applyFilters();
     if (typeof applyIncomeFilters === 'function') {
@@ -1455,20 +1317,6 @@ function renderList(expenses) {
             </div>
         </div>`;
     }).join("");
-}
-
-function getCategoryEmoji(name) {
-    const n = (name || '').toLowerCase();
-    if (n.includes('food') || n.includes('dining') || n.includes('restaurant')) return '🍔';
-    if (n.includes('transport') || n.includes('travel') || n.includes('uber')) return '🚗';
-    if (n.includes('shop') || n.includes('cloth') || n.includes('amazon')) return '🛍️';
-    if (n.includes('util') || n.includes('electric') || n.includes('water') || n.includes('bill')) return '⚡';
-    if (n.includes('entertain') || n.includes('movie') || n.includes('netflix')) return '🎬';
-    if (n.includes('health') || n.includes('medical') || n.includes('gym')) return '💊';
-    if (n.includes('edu') || n.includes('course') || n.includes('book')) return '📚';
-    if (n.includes('subscribe') || n.includes('saas') || n.includes('software')) return '💻';
-    if (n.includes('grocer') || n.includes('market') || n.includes('super')) return '🛒';
-    return '💳';
 }
 
 function populateCategoryDropdown(categories) {

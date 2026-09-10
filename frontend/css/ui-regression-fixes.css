@@ -8,15 +8,6 @@ html[data-theme="light"] #themeToggle .sun-icon { display:none !important; visib
 html[data-theme="light"] .theme-toggle-btn .moon-icon,
 html[data-theme="light"] #themeToggle .moon-icon { display:block !important; visibility:visible !important; }
 
-/* Theme swaps should be a single cheap style update, not a page-wide animation. */
-html.theme-transitioning *,
-html.theme-transitioning *::before,
-html.theme-transitioning *::after {
-    transition:none !important;
-    animation:none !important;
-    animation-play-state:paused !important;
-}
-
 .google-oauth-wrapper { position:relative !important; overflow:visible !important; isolation:isolate; }
 #googleOAuthBtn.btn-oauth {
     position:relative !important; z-index:1 !important; box-sizing:border-box !important; min-height:48px !important;
@@ -26,68 +17,6 @@ html.theme-transitioning *::after {
 #googleOAuthBtn svg,#googleOAuthBtn svg.google-g-icon { display:block !important; width:18px !important; height:18px !important; flex:0 0 18px !important; overflow:visible !important; }
 #googleOAuthBtn svg path { stroke:none !important; }
 #googleRealButton,.google-oauth-wrapper #googleRealButton,.google-oauth-wrapper .google-real-btn { display:none !important; }
-
-/* Restore leading field icons with stable geometry across auth/dashboard inputs. */
-.input-wrapper { position:relative !important; min-width:0 !important; }
-.input-wrapper > .input-icon,
-.input-wrapper > svg.input-icon {
-    position:absolute !important;
-    left:14px !important;
-    top:50% !important;
-    width:16px !important;
-    height:16px !important;
-    transform:translateY(-50%) !important;
-    display:block !important;
-    visibility:visible !important;
-    opacity:1 !important;
-    color:var(--text-muted) !important;
-    stroke:currentColor !important;
-    fill:none !important;
-    pointer-events:none !important;
-    z-index:5 !important;
-    flex:0 0 16px !important;
-}
-.input-wrapper > .form-input,
-.input-wrapper > input,
-.input-wrapper > textarea,
-.input-wrapper > select { min-width:0 !important; }
-
-/* Reserve space for fields that actually contain an icon. */
-.input-wrapper:has(> .input-icon) > input.form-input,
-.input-wrapper:has(> .input-icon) > textarea.form-input,
-.input-wrapper:has(> .input-icon) > select.form-input,
-.input-wrapper:has(> svg.input-icon) > input.form-input,
-.input-wrapper:has(> svg.input-icon) > textarea.form-input,
-.input-wrapper:has(> svg.input-icon) > select.form-input {
-    padding-left:42px !important;
-}
-
-/* Desktop command search gets enough space for real queries and its shortcut badge. */
-.top-bar-actions .command-search-wrapper {
-    width:clamp(320px,32vw,480px) !important;
-    min-width:320px !important;
-    box-sizing:border-box !important;
-}
-.command-search-wrapper { min-width:0 !important; }
-.command-search-input { min-width:0 !important; padding-right:78px !important; }
-.command-kbd {
-    min-width:58px !important;
-    width:auto !important;
-    height:28px !important;
-    padding:0 9px !important;
-    display:inline-flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    gap:2px !important;
-    border:1px solid var(--border) !important;
-    border-radius:8px !important;
-    font-size:11px !important;
-    font-weight:750 !important;
-    line-height:1 !important;
-    white-space:nowrap !important;
-    letter-spacing:.01em !important;
-    box-sizing:border-box !important;
-}
 
 .budget-item { position:relative !important; overflow:hidden !important; }
 .budget-item .budget-bar-track { display:block !important; position:relative !important; width:100% !important; height:8px !important; margin:10px 0 8px !important; padding:0 !important; overflow:hidden !important; border-radius:999px !important; box-sizing:border-box !important; background:var(--input-bg) !important; }
@@ -100,52 +29,30 @@ html.theme-transitioning *::after {
 
 .subs-tab-bar { min-width:0 !important; overflow-x:auto !important; overscroll-behavior-x:contain !important; scrollbar-width:none !important; }
 .subs-tab-bar::-webkit-scrollbar { display:none !important; }
-.subs-tab-btn,.subs-tab-btn:hover,.subs-tab-btn:active,.subs-tab-btn.active {
-    box-sizing:border-box !important; min-height:38px !important; padding:7px 16px !important; border-width:1px !important;
-    font-size:12px !important; font-weight:600 !important; line-height:1.2 !important; transform:none !important;
-    outline:none !important; white-space:nowrap !important; flex:0 0 auto !important;
-    transition:color .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease !important;
-    -webkit-tap-highlight-color:transparent !important;
-}
-.subs-tab-btn.active { font-weight:600 !important; }
+.subs-tab-btn,.subs-tab-btn:hover,.subs-tab-btn:active,.subs-tab-btn.active { box-sizing:border-box !important; min-height:38px !important; padding:7px 16px !important; border-width:1px !important; transform:none !important; outline:none !important; transition:color .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease !important; -webkit-tap-highlight-color:transparent !important; }
 .subs-tab-btn:focus-visible { outline:2px solid color-mix(in srgb,var(--primary) 60%,transparent) !important; outline-offset:2px !important; }
 
+.modal { overflow-y:auto !important; overflow-x:hidden !important; scrollbar-gutter:stable !important; clip-path:inset(0 round 24px) !important; -webkit-clip-path:inset(0 round 24px) !important; }
+.modal::-webkit-scrollbar-track { margin:28px 0 !important; border-radius:999px !important; }
+.modal::-webkit-scrollbar-thumb { min-height:24px !important; }
 #expenseList,#incomeList { min-width:0 !important; width:100% !important; box-sizing:border-box !important; }
 #expenseList .expense-item,#incomeList tbody tr { min-width:0 !important; box-sizing:border-box !important; }
 @media (max-width:700px) { .budget-item { padding:13px !important; } .budget-item .budget-bar-track { height:7px !important; margin-top:9px !important; } #incomeList tbody tr { width:100% !important; } }
+
+
 @media (max-width:760px) {
-    .command-kbd { display:none !important; }
-    .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; }
-    #ledgerStreamTabs,.ledger-stream-tabs {
-        display:flex !important; flex-wrap:nowrap !important; overflow-x:auto !important; overflow-y:hidden !important;
-        min-width:0 !important; width:100% !important; scrollbar-width:none !important; -webkit-overflow-scrolling:touch !important;
+    /* Top action buttons are touch controls; keep the decorative shine inside the control. */
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        flex:1 1 0 !important;
+        width:auto !important;
+        min-width:0 !important;
+        max-width:none !important;
+        overflow:hidden !important;
+        isolation:isolate !important;
     }
-    #ledgerStreamTabs::-webkit-scrollbar,.ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
-    #ledgerStreamTabs .stream-pill-btn,.ledger-stream-tabs .stream-pill-btn { flex:0 0 auto !important; min-width:max-content !important; white-space:nowrap !important; }
-    #incomeList .btn-edit,#incomeList .btn-delete {
-        width:34px !important; height:34px !important; min-width:34px !important; min-height:34px !important;
-        padding:0 !important; border-radius:10px !important; display:inline-flex !important; align-items:center !important;
-        justify-content:center !important; flex:0 0 34px !important; box-sizing:border-box !important;
+    .top-bar .add-expense-button::after,
+    .top-bar .add-income-button::after {
+        display:none !important;
     }
-    #incomeList .btn-edit svg,#incomeList .btn-delete svg { width:14px !important; height:14px !important; display:block !important; flex:0 0 14px !important; }
-    .top-bar { min-width:0 !important; }
-    .top-bar-actions { min-width:0 !important; flex-wrap:wrap !important; }
-    .top-bar .add-income-button,#openIncomeModalBtn { min-width:0 !important; max-width:100% !important; overflow:visible !important; }
-    .top-bar .add-income-button > svg,#openIncomeModalBtn > svg {
-        display:block !important; width:18px !important; height:18px !important; min-width:18px !important; min-height:18px !important;
-        flex:0 0 18px !important; flex-shrink:0 !important; stroke:#fff !important; color:#fff !important;
-    }
-    .profile-menu {
-        left:auto !important; right:0 !important; width:min(320px,calc(100vw - 24px)) !important;
-        min-width:0 !important; max-width:calc(100vw - 24px) !important; box-sizing:border-box !important;
-    }
-    .subs-tab-bar { max-width:100% !important; }
-}
-@media (max-width:480px) {
-    .top-bar .add-expense-button,.top-bar .add-income-button { height:38px !important; padding:0 12px !important; font-size:12px !important; gap:6px !important; border-radius:9px !important; }
-    .top-bar .add-income-button > span { min-width:0 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
-    .input-wrapper:has(> .input-icon) > input.form-input,.input-wrapper:has(> .input-icon) > textarea.form-input,.input-wrapper:has(> .input-icon) > select.form-input,
-    .input-wrapper:has(> svg.input-icon) > input.form-input,.input-wrapper:has(> svg.input-icon) > textarea.form-input,.input-wrapper:has(> svg.input-icon) > select.form-input { padding-left:38px !important; }
-    .input-wrapper > .input-icon,.input-wrapper > svg.input-icon { left:10px !important; width:14px !important; height:14px !important; max-width:14px !important; max-height:14px !important; flex-basis:14px !important; }
-    .profile-menu { width:calc(100vw - 20px) !important; max-width:calc(100vw - 20px) !important; right:-2px !important; }
 }
