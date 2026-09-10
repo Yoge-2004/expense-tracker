@@ -1,4 +1,4 @@
-/* Targeted fixes for auth, budget, and interaction regressions. */
+/* Targeted fixes for auth, dashboard, and interaction regressions. */
 html[data-theme="dark"] .theme-toggle-btn .sun-icon,
 html[data-theme="dark"] #themeToggle .sun-icon { display:block !important; visibility:visible !important; }
 html[data-theme="dark"] .theme-toggle-btn .moon-icon,
@@ -153,7 +153,6 @@ html.theme-transitioning *::after {
         isolation:isolate !important;
         transform:none !important;
     }
-    /* Prevent the global .btn-primary shine pseudo-element from becoming a bright vertical strip on mobile. */
     .top-bar-actions > #openModalBtn::after,
     .top-bar-actions > #openIncomeModalBtn::after {
         display:none !important;
@@ -182,10 +181,13 @@ html.theme-transitioning *::after {
     }
     .top-bar .add-expense-button > span,
     .top-bar .add-income-button > span {
+        flex:1 1 auto !important;
         min-width:0 !important;
+        max-width:100% !important;
         overflow:hidden !important;
         text-overflow:ellipsis !important;
         white-space:nowrap !important;
+        text-align:center !important;
     }
     .profile-menu {
         left:auto !important;
@@ -196,6 +198,28 @@ html.theme-transitioning *::after {
         box-sizing:border-box !important;
     }
     .subs-tab-bar { max-width:100% !important; }
+}
+
+@media (max-width:360px) {
+    .top-bar-actions {
+        grid-template-columns:minmax(0,1fr) !important;
+        row-gap:8px !important;
+        padding-left:8px !important;
+        padding-right:8px !important;
+    }
+    .top-bar-actions .command-search-wrapper { grid-column:1 !important; grid-row:1 !important; }
+    .top-bar-actions > #openModalBtn,
+    .top-bar-actions > #openIncomeModalBtn {
+        grid-column:1 !important;
+        grid-row:auto !important;
+        width:100% !important;
+        min-height:40px !important;
+        height:40px !important;
+    }
+    .top-bar-actions > .theme-toggle-btn,
+    .top-bar-actions > .user-profile { grid-row:auto !important; }
+    .top-bar .add-expense-button > span,
+    .top-bar .add-income-button > span { flex:0 1 auto !important; }
 }
 
 @media (max-width:480px) {
