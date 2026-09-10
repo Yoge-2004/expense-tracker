@@ -1,5 +1,6 @@
 package com.example.expensetracker.controller;
 
+import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.RateLimiterService;
 import com.example.expensetracker.service.FileDbSyncService;
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +34,12 @@ class SyncControllerTest {
 
     @MockitoBean FileDbSyncService syncService;
     @MockitoBean RateLimiterService rateLimiterService;
+    // FIXED: @WebMvcTest scans Filter beans (like JwtAuthenticationFilter) but NOT @Service beans
+    // (like JwtService). The filter's constructor requires JwtService, which was missing from
+    // the context → "bean of type JwtService could not be found" → 9 test errors. Adding a
+    // MockitoBean mock satisfies the dependency. Since addFilters=false, the filter never
+    // actually runs, so no methods need to be stubbed on the mock.
+    @MockitoBean JwtService jwtService;
 
     @BeforeEach
     void setUp() {

@@ -189,13 +189,17 @@ class ExpenseControllerTest {
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
+        // FIXED: previously expected 500 ("Unexpected error occurred") because the controller
+        // threw RuntimeException. Now the controller throws IllegalArgumentException("Category
+        // not found") which GlobalExceptionHandler maps to 400 BAD_REQUEST. This is the correct
+        // REST semantic — a missing category is a client error, not a server error.
         mockMvc.perform(put("/api/expenses/42/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"amount":225.00,"description":"Lunch","expenseDate":"2026-09-01","categoryId":999}
                                 """))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message").value("Unexpected error occurred"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Category not found"));
 
         verify(expenseService, never()).updateExpense(anyLong(), any(Expense.class), any(User.class));
     }
@@ -481,7 +485,10 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/api/expenses/user/7/export/csv"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=\"expenses.csv\""))
-                .andExpect(content().contentType("text/csv"))
+                // FIXED: use contentTypeCompatibleWith so the assertion is charset-agnostic.
+                // The controller now correctly sends "text/csv;charset=UTF-8" (per RFC 4180,
+                // without charset the default is ISO-8859-1 which corrupts non-ASCII text).
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andExpect(content().bytes(csv));
 
         verify(exportService).exportExpensesToCsv(user);

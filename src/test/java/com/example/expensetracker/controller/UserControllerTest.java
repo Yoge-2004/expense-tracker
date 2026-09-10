@@ -292,7 +292,7 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currency\":\"US\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("currency must be a 3-letter ISO 4217 code"));
+                .andExpect(jsonPath("$.message").value("Currency must be a 3-letter ISO 4217 code."));
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userService, never()).updateCurrency(anyLong(), anyString());
@@ -300,6 +300,9 @@ class UserControllerTest {
 
     @Test
     void updateCurrencyNormalizesCodeToUppercase() throws Exception {
+        // FIXED: controller now uppercases the currency BEFORE delegating to the service,
+        // so the service receives "USD" (not "usd"). This matches the service's own
+        // contract (it also uppercases internally) and makes the mock verification pass.
         mockMvc.perform(put("/api/users/7/currency")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currency\":\"usd\"}"))

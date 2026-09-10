@@ -213,7 +213,10 @@ class IncomeControllerTest {
         mockMvc.perform(get("/api/incomes/user/7/export/csv"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=\"incomes.csv\""))
-                .andExpect(content().contentType("text/csv"))
+                // FIXED: use contentTypeCompatibleWith so the assertion is charset-agnostic.
+                // The controller now correctly sends "text/csv;charset=UTF-8" (per RFC 4180,
+                // without charset the default is ISO-8859-1 which corrupts non-ASCII text).
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andExpect(content().bytes(bytes));
 
         verify(exportService).exportIncomesToCsv(user);
