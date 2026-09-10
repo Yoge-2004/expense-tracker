@@ -34,6 +34,8 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
     font-size:12px !important; line-height:1.2 !important; white-space:nowrap !important; transition:color .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease !important;
     -webkit-tap-highlight-color:transparent !important;
 }
+.subs-tab-btn { flex:1 1 0 !important; width:0 !important; min-width:0 !important; text-align:center !important; }
+.subs-tab-btn.active { font-weight:600 !important; }
 .subs-tab-btn:focus-visible { outline:2px solid color-mix(in srgb,var(--primary) 60%,transparent) !important; outline-offset:2px !important; }
 
 .modal { overflow-y:auto !important; overflow-x:hidden !important; scrollbar-gutter:stable !important; clip-path:inset(0 round 24px) !important; -webkit-clip-path:inset(0 round 24px) !important; }
@@ -61,83 +63,30 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
         padding:0 !important;
         box-sizing:border-box !important;
     }
-
-    .command-search-wrapper {
-        grid-column:1 / -1 !important;
-        grid-row:1 !important;
-        width:100% !important;
-        min-width:0 !important;
-        max-width:none !important;
-        margin-top:10px !important;
-    }
-
+    .command-search-wrapper { grid-column:1 / -1 !important; grid-row:1 !important; width:100% !important; min-width:0 !important; max-width:none !important; margin-top:10px !important; }
     .top-bar .add-expense-button,
     .top-bar .add-income-button {
-        width:100% !important;
-        min-width:0 !important;
-        max-width:none !important;
-        flex:none !important;
-        box-sizing:border-box !important;
-        overflow:hidden !important;
-        overflow-clip-margin:0 !important;
-        white-space:nowrap !important;
-        text-overflow:ellipsis !important;
-        isolation:isolate !important;
-        transform:none !important;
+        width:100% !important; min-width:0 !important; max-width:none !important; flex:none !important; box-sizing:border-box !important;
+        overflow:hidden !important; overflow-clip-margin:0 !important; white-space:nowrap !important; text-overflow:ellipsis !important; isolation:isolate !important; transform:none !important;
     }
-
     .top-bar .add-expense-button:hover,
     .top-bar .add-income-button:hover,
     .top-bar .add-expense-button:focus,
     .top-bar .add-income-button:focus,
     .top-bar .add-expense-button:active,
-    .top-bar .add-income-button:active {
-        transform:none !important;
-    }
-
-    .top-bar .add-expense-button::after,
-    .top-bar .add-income-button::after {
-        display:none !important;
-    }
-
-    .top-bar .add-expense-button > svg,
-    .top-bar .add-income-button > svg {
-        flex:0 0 18px !important;
-        width:18px !important;
-        height:18px !important;
-    }
-
-    .top-bar .add-expense-button > span,
-    .top-bar .add-income-button > span {
-        min-width:0 !important;
-        overflow:hidden !important;
-        text-overflow:ellipsis !important;
-        white-space:nowrap !important;
-    }
-
+    .top-bar .add-income-button:active { transform:none !important; }
+    .top-bar .add-expense-button::after,.top-bar .add-income-button::after { display:none !important; }
+    .top-bar .add-expense-button > svg,.top-bar .add-income-button > svg { flex:0 0 18px !important; width:18px !important; height:18px !important; }
+    .top-bar .add-expense-button > span,.top-bar .add-income-button > span { min-width:0 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
     .theme-toggle-btn { grid-column:1 !important; grid-row:3 !important; justify-self:start !important; }
     .user-profile { grid-column:2 !important; grid-row:3 !important; justify-self:end !important; min-width:0 !important; }
-
-    .profile-menu {
-        left:auto !important;
-        right:0 !important;
-        width:min(320px,calc(100vw - 24px)) !important;
-        min-width:0 !important;
-        max-width:calc(100vw - 24px) !important;
-        box-sizing:border-box !important;
-    }
+    .profile-menu { left:auto !important; right:0 !important; width:min(320px,calc(100vw - 24px)) !important; min-width:0 !important; max-width:calc(100vw - 24px) !important; box-sizing:border-box !important; }
+    .subs-tab-bar { max-width:100% !important; }
 }
 
 @media (max-width:480px) {
     .top-bar-actions { gap:8px !important; }
-    .top-bar .add-expense-button,
-    .top-bar .add-income-button {
-        height:38px !important;
-        padding:0 10px !important;
-        font-size:12px !important;
-        gap:6px !important;
-        border-radius:9px !important;
-    }
+    .top-bar .add-expense-button,.top-bar .add-income-button { height:38px !important; padding:0 10px !important; font-size:12px !important; gap:6px !important; border-radius:9px !important; }
     .input-wrapper:has(> .input-icon) > input.form-input,.input-wrapper:has(> .input-icon) > textarea.form-input,.input-wrapper:has(> .input-icon) > select.form-input,
     .input-wrapper:has(> svg.input-icon) > input.form-input,.input-wrapper:has(> svg.input-icon) > textarea.form-input,.input-wrapper:has(> svg.input-icon) > select.form-input { padding-left:38px !important; }
     .input-wrapper > .input-icon,.input-wrapper > svg.input-icon { left:10px !important; width:14px !important; height:14px !important; max-width:14px !important; max-height:14px !important; flex-basis:14px !important; }
