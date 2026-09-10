@@ -11,6 +11,35 @@ permissions:
   contents: read
 
 jobs:
+  dashboard-chart-refactor:
+    name: One-time dashboard chart refactor
+    if: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, 'chore(ci): run dashboard chart extraction on main') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Extract chart controllers
+        run: python3 scripts/extract-dashboard-charts.py
+      - name: Validate extracted JavaScript
+        run: |
+          set -euo pipefail
+          find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Commit extraction
+        run: |
+          if git diff --quiet -- frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html; then
+            echo "No dashboard chart refactor changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html
+          git commit -m "refactor(ui): extract dashboard chart controllers"
+          git push origin HEAD:main
+
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
