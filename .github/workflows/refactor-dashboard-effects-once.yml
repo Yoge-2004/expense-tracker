@@ -1,0 +1,191 @@
+name: Refactor dashboard effects once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-dashboard-effects-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Extract dashboard rendering effects
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          ROOT = Path('.').resolve()
+          dashboard = ROOT / 'frontend/js/dashboard.js'
+          module = ROOT / 'frontend/js/modules/dashboard-effects.js'
+          html = ROOT / 'frontend/dashboard.html'
+          mobile_css = ROOT / 'frontend/css/motion-extended/mobile-action-controls.css'
+
+          source = dashboard.read_text(encoding='utf-8')
+
+          def find_block(text: str, signature: str) -> tuple[int, int]:
+              start = text.index(signature)
+              brace = text.find('{', start)
+              if brace < 0:
+                  raise RuntimeError(f'Opening brace not found for {signature}')
+              depth = 0
+              quote = None
+              escaped = False
+              line_comment = False
+              block_comment = False
+              i = brace
+              while i < len(text):
+                  ch = text[i]
+                  nxt = text[i + 1] if i + 1 < len(text) else ''
+                  if line_comment:
+                      if ch == '\n':
+                          line_comment = False
+                      i += 1
+                      continue
+                  if block_comment:
+                      if ch == '*' and nxt == '/':
+                          block_comment = False
+                          i += 2
+                          continue
+                      i += 1
+                      continue
+                  if quote:
+                      if escaped:
+                          escaped = False
+                      elif ch == '\\':
+                          escaped = True
+                      elif ch == quote:
+                          quote = None
+                      i += 1
+                      continue
+                  if ch == '/' and nxt == '/':
+                      line_comment = True
+                      i += 2
+                      continue
+                  if ch == '/' and nxt == '*':
+                      block_comment = True
+                      i += 2
+                      continue
+                  if ch in "'\"`":
+                      quote = ch
+                      i += 1
+                      continue
+                  if ch == '{':
+                      depth += 1
+                  elif ch == '}':
+                      depth -= 1
+                      if depth == 0:
+                          end = i + 1
+                          while end < len(text) and text[end] in ' \t':
+                              end += 1
+                          if end < len(text) and text[end] == '\n':
+                              end += 1
+                          return start, end
+                  i += 1
+              raise RuntimeError(f'Unbalanced block for {signature}')
+
+          signatures = [
+              'function animateNumber(',
+              'function animatePercent(',
+              'function celebrateSuccess(',
+              'function updateStats(',
+          ]
+          extracted = {}
+          for signature in signatures:
+              start, end = find_block(source, signature)
+              extracted[signature] = source[start:end].strip()
+              source = source[:start] + source[end:]
+
+          # Remove the now-empty section header and adjacent blank run left behind.
+          source = source.replace('// --- 5. UI RENDERING HELPERS & NUMBER COUNT ANIMATION ---\n', '', 1)
+
+          effect_source = "\n\n".join(extracted[s] for s in signatures)
+          effect_module = f'''/* Dashboard rendering effects and lightweight view animations. */
+          (function () {{
+              "use strict";
+
+              const {{ formatCurrency }} = window.DashboardUtils;
+              const elements = window.DashboardDom.elements;
+
+              {effect_source}
+
+              window.DashboardEffects = Object.freeze({{
+                  animateNumber,
+                  animatePercent,
+                  celebrateSuccess,
+                  updateStats
+              }});
+              window.animateNumber = animateNumber;
+              window.animatePercent = animatePercent;
+              window.celebrateSuccess = celebrateSuccess;
+              window.updateStats = updateStats;
+          }})();
+          '''
+          module.write_text(effect_module, encoding='utf-8')
+
+          anchor = 'const elements = window.DashboardDom.elements;\n'
+          replacement = anchor + 'const { animateNumber, animatePercent, celebrateSuccess, updateStats } = window.DashboardEffects;\n'
+          if replacement not in source:
+              if anchor not in source:
+                  raise RuntimeError('Dashboard DOM anchor not found')
+              source = source.replace(anchor, replacement, 1)
+          dashboard.write_text(source, encoding='utf-8')
+
+          html_text = html.read_text(encoding='utf-8')
+          tag = '    <script src="js/modules/dashboard-effects.js"></script>\n'
+          marker = '    <script src="js/modules/dashboard-ui.js"></script>\n'
+          if 'js/modules/dashboard-effects.js' not in html_text:
+              if marker not in html_text:
+                  raise RuntimeError('Dashboard module marker not found')
+              html_text = html_text.replace(marker, marker + tag, 1)
+          html_text = html_text.replace('href="css/style.css"', 'href="css/style.css?v=20260911"', 1)
+          html_text = html_text.replace('href="css/motion-extended.css"', 'href="css/motion-extended.css?v=20260911"', 1)
+          html.write_text(html_text, encoding='utf-8')
+
+          css = mobile_css.read_text(encoding='utf-8')
+          global_guard = '''
+          /* Record actions never use the decorative primary-button shine layer. */
+          .top-bar-actions > #openModalBtn::before,
+          .top-bar-actions > #openModalBtn::after,
+          .top-bar-actions > #openIncomeModalBtn::before,
+          .top-bar-actions > #openIncomeModalBtn::after {
+              content: none !important;
+              display: none !important;
+              opacity: 0 !important;
+              visibility: hidden !important;
+              animation: none !important;
+              background: none !important;
+              box-shadow: none !important;
+          }
+          '''
+          if 'Record actions never use the decorative primary-button shine layer.' not in css:
+              css = css.rstrip() + '\n' + global_guard
+          mobile_css.write_text(css, encoding='utf-8')
+          PY
+
+      - name: Validate JavaScript syntax
+        run: |
+          find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Commit refactor
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/js frontend/dashboard.html frontend/css/motion-extended/mobile-action-controls.css
+          git diff --cached --check
+          git commit -m 'refactor(ui): extract dashboard rendering effects' || true
+
+          # Remove this one-shot workflow from the same commit so it cannot
+          # run again on the generated source commit.
+          git rm -f .github/workflows/refactor-dashboard-effects-once.yml
+          git add -u .github/workflows/refactor-dashboard-effects-once.yml
+          git commit --amend --no-edit
+          git push origin HEAD:main
