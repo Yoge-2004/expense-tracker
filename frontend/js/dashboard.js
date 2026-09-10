@@ -98,10 +98,6 @@ function renderFinancialInsights(expenses) {
 
 window.renderFinancialInsights = renderFinancialInsights;
 
-
-
-window.renderFinancialInsights = renderFinancialInsights;
-
 // --- 2. BUDGET LOGIC ---
 const dashboardBudgetController = window.DashboardBudget.createController({
     elements,
@@ -261,128 +257,28 @@ setBudgetForm?.addEventListener("submit", async (e) => {
 
 
 
-// --- 4. FILTERING (With Validation & Quick Presets) ---
-function applyFilters() {
-    let filtered = [...allExpenses];
-    const search = elements.filterSearch.value.toLowerCase().trim();
-    const startDate = elements.filterStartDate ? elements.filterStartDate.value : "";
-    const endDate = elements.filterEndDate ? elements.filterEndDate.value : "";
-
-    // Date Range Validation
-    if (startDate && endDate) {
-        if (startDate > endDate) {
-            showToast("Start date cannot be after end date.", "error");
-            elements.filterEndDate.value = "";
-            return;
-        }
-    }
-
-    // 1. Search
-    if (search) filtered = filtered.filter(e => (e.description && e.description.toLowerCase().includes(search)) || (e.categoryName && e.categoryName.toLowerCase().includes(search)));
-
-    // 2. Category
-    if (elements.filterCategory.value !== 'all') filtered = filtered.filter(e => e.categoryName === elements.filterCategory.value);
-
-    // 3. Date Range
-    if (startDate || endDate) {
-        if (startDate) filtered = filtered.filter(e => (e.expenseDate || '').split('T')[0] >= startDate);
-        if (endDate) filtered = filtered.filter(e => (e.expenseDate || '').split('T')[0] <= endDate);
-    } else {
-        if (elements.filterMonth.value !== 'all') filtered = filtered.filter(e => parseLocalDate(e.expenseDate).getMonth() === parseInt(elements.filterMonth.value));
-        if (elements.filterYear.value !== 'all') filtered = filtered.filter(e => parseLocalDate(e.expenseDate).getFullYear() === parseInt(elements.filterYear.value));
-    }
-
-    // 4. Sort with Timestamp Tie-Breaking (Ensures newly added expenses stay on top)
-    const sort = elements.filterSort.value;
-    filtered.sort((a, b) => {
-        if (sort === 'date-desc') {
-            const dDiff = new Date(b.expenseDate) - new Date(a.expenseDate);
-            if (dDiff !== 0) return dDiff;
-            if (b.createdAt && a.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
-            return (b.id || 0) - (a.id || 0);
-        }
-        if (sort === 'date-asc') {
-            const dDiff = new Date(a.expenseDate) - new Date(b.expenseDate);
-            if (dDiff !== 0) return dDiff;
-            if (a.createdAt && b.createdAt) return new Date(a.createdAt) - new Date(b.createdAt);
-            return (a.id || 0) - (b.id || 0);
-        }
-        if (sort === 'amount-desc') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
-        if (sort === 'amount-asc') return (Number(a.amount) || 0) - (Number(b.amount) || 0);
-        return 0;
-    });
-
-    updateStats(filtered);
-    renderPieChart(filtered);
-    renderList(filtered);
-    renderTrendChart(filtered);
-    renderRecurringSplitChart(filtered);
-    renderDayOfWeekChart(filtered);
-    renderFinancialInsights(filtered);
-}
-
-[elements.filterSort, elements.filterCategory, elements.filterStartDate, elements.filterEndDate, elements.filterMonth, elements.filterYear]
-    .filter(Boolean)
-    .forEach(el => el.addEventListener('input', () => {
-        if (el === elements.filterStartDate || el === elements.filterEndDate) {
-            document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(b => b.classList.remove("active"));
-        }
-        if (el === elements.filterCategory) {
-            syncCategoryPillSelection(elements.filterCategory.value);
-        }
-        applyFilters();
-    }));
-
-// Quick 1-tap Date Presets (Mobile & Desktop)
-document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        const preset = btn.getAttribute("data-preset");
-        const now = new Date();
-        const todayStr = getLocalDateString(now);
-
-        if (preset === "all") {
-            if (elements.filterStartDate) elements.filterStartDate.value = "";
-            if (elements.filterEndDate) elements.filterEndDate.value = "";
-        } else if (preset === "today") {
-            if (elements.filterStartDate) elements.filterStartDate.value = todayStr;
-            if (elements.filterEndDate) elements.filterEndDate.value = todayStr;
-        } else if (preset === "month") {
-            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-            if (elements.filterStartDate) elements.filterStartDate.value = getLocalDateString(firstDay);
-            if (elements.filterEndDate) elements.filterEndDate.value = todayStr;
-        } else if (preset === "last30") {
-            const past30 = new Date(now.getTime() - 30 * 86400000);
-            if (elements.filterStartDate) elements.filterStartDate.value = getLocalDateString(past30);
-            if (elements.filterEndDate) elements.filterEndDate.value = todayStr;
-        }
-        applyFilters();
-    });
+// --- 4. FILTERING ---
+const dashboardFilterController = window.DashboardFilters.createController({
+    elements,
+    getExpenses: () => allExpenses,
+    parseLocalDate,
+    getLocalDateString,
+    debounce,
+    showToast,
+    updateStats,
+    renderPieChart,
+    renderList,
+    renderTrendChart,
+    renderRecurringSplitChart,
+    renderDayOfWeekChart,
+    renderFinancialInsights,
+    syncCategoryPillSelection,
+    applyIncomeFilters: () => typeof applyIncomeFilters === "function" && applyIncomeFilters()
 });
 
-elements.filterSearch.addEventListener('input', debounce(() => {
-    applyFilters();
-    if (typeof applyIncomeFilters === 'function') applyIncomeFilters();
-    renderFinancialInsights(allExpenses);
-}, 250));
-
-document.getElementById("resetFiltersBtn")?.addEventListener("click", () => {
-    elements.filterSearch.value = "";
-    if (elements.filterStartDate) elements.filterStartDate.value = "";
-    if (elements.filterEndDate) elements.filterEndDate.value = "";
-    document.querySelectorAll("#datePresetsWrap .preset-btn").forEach(b => {
-        b.classList.toggle("active", b.getAttribute("data-preset") === "all");
-    });
-    elements.filterMonth.value = "all";
-    elements.filterYear.value = "all";
-    elements.filterCategory.value = "all";
-    elements.filterSort.value = "date-desc";
-    syncCategoryPillSelection("all");
-    applyFilters();
-});
-
+const applyFilters = dashboardFilterController.applyFilters;
+window.applyFilters = applyFilters;
+dashboardFilterController.wireControls();
 
 // --- 5. UI RENDERING HELPERS & NUMBER COUNT ANIMATION ---
 function animateNumber(el, target, isCurrency = false, showSign = false) {
