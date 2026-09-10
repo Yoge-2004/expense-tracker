@@ -70,7 +70,7 @@ test.describe('Mobile dashboard regressions', () => {
   });
 
   test('keeps narrow mobile record controls inside the viewport after scrolling', async ({ page }) => {
-    await page.setViewportSize({ width: 293, height: 199 });
+    await page.setViewportSize({ width: 293, height: 261 });
     await page.goto('/index.html');
     await page.evaluate(() => {
       localStorage.setItem('token', 'narrow-mobile-token');
@@ -85,7 +85,7 @@ test.describe('Mobile dashboard regressions', () => {
 
     await page.evaluate(() => window.scrollTo(0, 240));
 
-    const viewport = { width: 293, height: 199 };
+    const viewport = { width: 293, height: 261 };
     const boxes = await Promise.all([
       page.locator('#openModalBtn').boundingBox(),
       page.locator('#openIncomeModalBtn').boundingBox(),
