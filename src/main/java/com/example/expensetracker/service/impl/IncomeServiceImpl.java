@@ -55,6 +55,19 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public IncomeDto createIncome(IncomeRequest request, User user) {
+        // VALIDATION FIX: IncomeRequest uses @Positive on amount, but @Valid is only enforced
+        // at the controller layer. When this service is called from ImportServiceImpl (which
+        // constructs IncomeRequest programmatically without @Valid), negative/zero/null amounts
+        // would be silently persisted. Re-validate at the service boundary so all entry paths
+        // are covered.
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected income creation with non-positive amount={} for userId={}", request.getAmount(), user.getId());
+            throw new IllegalArgumentException("Income amount must be greater than zero");
+        }
+        if (request.getSource() == null || request.getSource().isBlank()) {
+            log.warn("Rejected income creation with blank source for userId={}", user.getId());
+            throw new IllegalArgumentException("Income source must not be blank");
+        }
         log.info("Creating income record for userId={}: amount={}, source={}", user.getId(), request.getAmount(), request.getSource());
         Income income = IncomeMapper.toEntity(request, user);
         if (Boolean.TRUE.equals(income.getIsRecurring())) {

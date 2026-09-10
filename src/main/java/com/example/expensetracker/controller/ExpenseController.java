@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -295,14 +296,21 @@ public class ExpenseController {
         log.info("Received request to update expense id={} for userId={}: amount={}, categoryId={}",
                 expenseId, userId, expenseDto.getAmount(), expenseDto.getCategoryId());
         User user = userService.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Expense expenseUpdates = new Expense();
         expenseUpdates.setDescription(expenseDto.getDescription());
         expenseUpdates.setAmount(expenseDto.getAmount());
         expenseUpdates.setExpenseDate(expenseDto.getExpenseDate());
         if (expenseDto.getCategoryId() != null) {
             Category category = categoryRepository.findById(expenseDto.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+            // Ownership check: prevent IDOR — user must not be able to assign another user's
+            // private category to their own expense. Global categories (user == null) are shared.
+            if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
+                log.warn("IDOR attempt: user {} tried to assign foreign category {} to expense {}",
+                        userId, expenseDto.getCategoryId(), expenseId);
+                throw new AccessDeniedException("Category does not belong to this user");
+            }
             expenseUpdates.setCategory(category);
         }
         Expense updated = expenseService.updateExpense(expenseId, expenseUpdates, user);
@@ -432,6 +440,12 @@ public class ExpenseController {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        // Ownership check: prevent IDOR — user must not be able to set a budget against
+        // another user's private category. Global categories (user == null) are shared.
+        if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
+            log.warn("IDOR attempt: user {} tried to set budget against foreign category {}", userId, dto.getCategoryId());
+            throw new AccessDeniedException("Category does not belong to this user");
+        }
         Budget budget = budgetRepository.findByUserAndCategoryId(user, dto.getCategoryId())
                 .orElse(new Budget());
         budget.setUser(user);
@@ -451,27 +465,24 @@ public class ExpenseController {
         description = """
             Deletes a single budget limit by its own database ID.
 
-            ⚠️ **Known authorization gap:** unlike every other mutating endpoint in
-            this controller, this one does not take a `userId` and never verifies
-            the budget belongs to the authenticated caller before deleting it — it
-            calls `budgetRepository.deleteById(budgetId)` directly. Any
-            authenticated user can delete any budget in the system if they know
-            or guess its ID. Prefer `DELETE /budget/user/{userId}/category/{categoryId}`
-            below, which is correctly scoped to the calling user, until this is
-            fixed to verify ownership first.
+            **Ownership check:** the budget's owning user must match the authenticated caller.
+            Returns 404 if the budget does not exist, and 403 if the caller does not own it.
             """
     )
-    @ApiResponse(responseCode = "200", description = "Budget deleted (or silently no-op if the ID didn't exist — deleteById does not throw on a missing row)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Budget deleted"),
+        @ApiResponse(responseCode = "403", description = "Budget belongs to a different user"),
+        @ApiResponse(responseCode = "404", description = "No budget found with that ID")
+    })
     @DeleteMapping("/budget/{budgetId}")
     public ResponseEntity<?> deleteBudgetById(
             @Parameter(description = "Database ID of the budget to delete.", required = true, example = "3")
             @PathVariable Long budgetId) {
         log.info("Deleting budget by budgetId={}", budgetId);
-        Budget budget = budgetRepository.findById(budgetId).orElse(null);
-        if (budget != null) {
-            userSecurity.validateUserAccess(budget.getUser().getId());
-            budgetRepository.delete(budget);
-        }
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Budget not found with id=" + budgetId));
+        userSecurity.validateUserAccess(budget.getUser().getId());
+        budgetRepository.delete(budget);
         log.info("Budget id={} deleted successfully", budgetId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget limit deleted successfully"));
     }
@@ -663,6 +674,10 @@ public class ExpenseController {
         firstExp.setDescription(dto.getDescription());
         firstExp.setExpenseDate(dto.getExpenseDate());
         firstExp.setCategory(category);
+        // Mark the seed expense as recurring so MonthlyReportServiceImpl's recurringTotal
+        // calculation (which filters by Expense::isRecurring) actually includes it.
+        // Without this flag the first occurrence was silently excluded from the report.
+        firstExp.setRecurring(true);
         expenseService.createExpense(firstExp, user);
         log.info("Recurring expense setup successfully with id={} for userId={}", rec.getId(), userId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Recurring Expense Setup Successfully"));
@@ -795,26 +810,46 @@ public class ExpenseController {
         RecurringExpense rec = recurringRepository.findById(recId)
                 .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
         userSecurity.validateUserAccess(rec.getUser().getId());
-        if (updates.containsKey("amount"))      rec.setAmount(new BigDecimal(updates.get("amount").toString()));
-        if (updates.containsKey("description")) rec.setDescription((String) updates.get("description"));
-        if (updates.containsKey("nextDueDate")) rec.setNextDueDate(LocalDate.parse((String) updates.get("nextDueDate")));
-        if (updates.containsKey("frequency")) {
-            String frequency = normalizeFrequency((String) updates.get("frequency"));
-            Integer intervalDays = "CUSTOM".equals(frequency)
-                    ? numberValue(updates.get("intervalDays")) : null;
-            if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
-                log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
-                throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
+        // Defensive per-field handling: previously used blind casts that produced
+        //   NPE  for null JSON values  -> 500 instead of 400
+        //   CCE  for type mismatches    -> 500 instead of 400
+        //   DateTimeParseException      -> 500 instead of 400
+        // Wrap each cast in a try/catch and rethrow as IllegalArgumentException so
+        // GlobalExceptionHandler maps to 400 Bad Request with a clear message.
+        try {
+            if (updates.containsKey("amount") && updates.get("amount") != null) {
+                rec.setAmount(new BigDecimal(String.valueOf(updates.get("amount"))));
             }
-            rec.setFrequency(frequency);
-            rec.setIntervalDays(intervalDays);
-        } else if (updates.containsKey("intervalDays") && "CUSTOM".equals(rec.getFrequency())) {
-            Integer intervalDays = numberValue(updates.get("intervalDays"));
-            if (intervalDays == null || intervalDays < 1) {
-                log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
-                throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
+            if (updates.containsKey("description") && updates.get("description") != null) {
+                rec.setDescription(String.valueOf(updates.get("description")));
             }
-            rec.setIntervalDays(intervalDays);
+            if (updates.containsKey("nextDueDate") && updates.get("nextDueDate") != null) {
+                rec.setNextDueDate(LocalDate.parse(String.valueOf(updates.get("nextDueDate"))));
+            }
+            if (updates.containsKey("frequency")) {
+                String frequency = normalizeFrequency((String) updates.get("frequency"));
+                Integer intervalDays = "CUSTOM".equals(frequency)
+                        ? numberValue(updates.get("intervalDays")) : null;
+                if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
+                    log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
+                    throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
+                }
+                rec.setFrequency(frequency);
+                rec.setIntervalDays(intervalDays);
+            } else if (updates.containsKey("intervalDays") && "CUSTOM".equals(rec.getFrequency())) {
+                Integer intervalDays = numberValue(updates.get("intervalDays"));
+                if (intervalDays == null || intervalDays < 1) {
+                    log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
+                    throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
+                }
+                rec.setIntervalDays(intervalDays);
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            // NumberFormatException, DateTimeParseException, ClassCastException all subclass RuntimeException
+            log.warn("Invalid field value while updating subscription id={}: {}", recId, e.getMessage());
+            throw new IllegalArgumentException("Invalid field value: " + e.getMessage(), e);
         }
         recurringRepository.save(rec);
         log.info("Subscription id={} updated successfully", recId);
@@ -861,11 +896,10 @@ public class ExpenseController {
             @PathVariable Long recId,
             @PathVariable(value = "userId", required = false) Long userId) {
         log.info("Received request to cancel recurring subscription id={}, userId={}", recId, userId);
-        RecurringExpense rec = recurringRepository.findById(recId).orElse(null);
-        if (rec != null) {
-            userSecurity.validateUserAccess(rec.getUser().getId());
-        }
-        recurringRepository.deleteById(recId);
+        RecurringExpense rec = recurringRepository.findById(recId)
+                .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
+        userSecurity.validateUserAccess(rec.getUser().getId());
+        recurringRepository.delete(rec);
         log.info("Subscription id={} cancelled successfully", recId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Subscription cancelled successfully"));
     }
@@ -906,7 +940,10 @@ public class ExpenseController {
         log.info("Expenses CSV export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.csv\"")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                // FIXED: specify charset=UTF-8 so non-ASCII characters in descriptions (currency
+                // symbols, accented names, emoji) are not corrupted. Without charset, text/csv
+                // defaults to ISO-8859-1 per RFC 4180.
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(bytes);
     }
 

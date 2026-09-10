@@ -82,6 +82,68 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
+    /**
+     * Handles DB unique-constraint violations (e.g. duplicate category name for the same user,
+     * duplicate monthly report log entry). Previously these were caught by the broader
+     * {@link #handleDatabaseUnavailable} handler which incorrectly returned 503 SERVICE_UNAVAILABLE.
+     * 409 CONFLICT is the correct semantic — the request itself is valid but conflicts with
+     * the current state of the resource.
+     */
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException ex,
+            HttpServletRequest request) {
+
+        String message = "A record with these details already exists.";
+        // Try to extract a more user-friendly hint from the underlying constraint name.
+        Throwable root = ex.getMostSpecificCause();
+        if (root != null && root.getMessage() != null) {
+            String lower = root.getMessage().toLowerCase(java.util.Locale.ROOT);
+            if (lower.contains("category") || lower.contains("uk_category")) {
+                message = "A category with this name already exists for this user.";
+            } else if (lower.contains("monthly_report_log") || lower.contains("report")) {
+                message = "A report for this period has already been generated.";
+            } else if (lower.contains("email")) {
+                message = "An account with this email already exists.";
+            }
+        }
+
+        log.warn("Data integrity violation at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                message,
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    /**
+     * Handles {@link org.springframework.web.server.ResponseStatusException} thrown by
+     * controllers (e.g. {@code WebAuthnController}) so the response shape matches the
+     * standard {@link ErrorResponse} schema used elsewhere.
+     */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(
+            org.springframework.web.server.ResponseStatusException ex,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        String reason = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+        log.warn("Response status {} at '{}': {}", status.value(), request.getRequestURI(), reason);
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                reason,
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(status).body(response);
+    }
+
     @ExceptionHandler({
         DatabaseUnavailableException.class,
         org.springframework.dao.DataAccessException.class,

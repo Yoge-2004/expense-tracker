@@ -189,13 +189,17 @@ class ExpenseControllerTest {
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(categoryRepository.findById(999L)).thenReturn(Optional.empty());
 
+        // FIXED: previously expected 500 ("Unexpected error occurred") because the controller
+        // threw RuntimeException. Now the controller throws IllegalArgumentException("Category
+        // not found") which GlobalExceptionHandler maps to 400 BAD_REQUEST. This is the correct
+        // REST semantic — a missing category is a client error, not a server error.
         mockMvc.perform(put("/api/expenses/42/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"amount":225.00,"description":"Lunch","expenseDate":"2026-09-01","categoryId":999}
                                 """))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message").value("Unexpected error occurred"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Category not found"));
 
         verify(expenseService, never()).updateExpense(anyLong(), any(Expense.class), any(User.class));
     }
@@ -271,12 +275,14 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void deleteBudgetByIdMissingBudgetIsIdempotent() throws Exception {
+    void deleteBudgetByIdMissingBudgetReturns404() throws Exception {
+        // FIXED: previously a missing budget returned 200 OK (silent no-op), which allowed
+        // authenticated users to enumerate which budget IDs existed (403 vs 200). Now we
+        // throw NoSuchElementException -> 404 NOT_FOUND, matching REST conventions.
         when(budgetRepository.findById(404L)).thenReturn(Optional.empty());
 
         mockMvc.perform(delete("/api/expenses/budget/404"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Budget limit deleted successfully"));
+                .andExpect(status().isNotFound());
 
         verifyNoInteractions(userSecurity);
         verify(budgetRepository, never()).delete(any(Budget.class));
@@ -454,7 +460,11 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void deleteSubscriptionValidatesExistingOwnerAndDeletesById() throws Exception {
+    void deleteSubscriptionValidatesExistingOwnerAndDeletesEntity() throws Exception {
+        // FIXED: previously called deleteById(recId) which (a) didn't validate ownership for
+        // missing IDs (returned 200 OK with no error) and (b) threw EmptyResultDataAccessException
+        // -> 500 if the ID didn't exist. Now we findById + validateUserAccess + delete(entity),
+        // which gives correct 400 BAD_REQUEST for missing IDs and 403 for ownership mismatch.
         RecurringExpense rec = recurring(12L, new BigDecimal("119"), "Spotify", LocalDate.of(2026, 10, 5), "MONTHLY", food, user);
         when(recurringExpenseRepository.findById(12L)).thenReturn(Optional.of(rec));
 
@@ -463,7 +473,7 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$.message").value("Subscription cancelled successfully"));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(recurringExpenseRepository).deleteById(12L);
+        verify(recurringExpenseRepository).delete(rec);
     }
 
     @Test
@@ -475,7 +485,10 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/api/expenses/user/7/export/csv"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=\"expenses.csv\""))
-                .andExpect(content().contentType("text/csv"))
+                // FIXED: use contentTypeCompatibleWith so the assertion is charset-agnostic.
+                // The controller now correctly sends "text/csv;charset=UTF-8" (per RFC 4180,
+                // without charset the default is ISO-8859-1 which corrupts non-ASCII text).
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andExpect(content().bytes(csv));
 
         verify(exportService).exportExpensesToCsv(user);

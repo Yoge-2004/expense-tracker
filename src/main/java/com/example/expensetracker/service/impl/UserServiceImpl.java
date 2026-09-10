@@ -73,6 +73,18 @@ public class UserServiceImpl implements UserService {
         user.setEnabled(true);
         if (user.getCurrency() == null || user.getCurrency().isBlank()) {
             user.setCurrency("INR");
+        } else {
+            // VALIDATION FIX: RegisterRequest.currency has @Pattern("^[A-Za-z]{3}$") but @Valid
+            // is only enforced at the controller layer. When registerUser is called from
+            // AuthController.oauthLogin (which constructs the User directly without @Valid),
+            // invalid currency codes like "USDOLLARS" or "123" would be silently persisted.
+            // Re-validate at the service boundary so all entry paths are covered.
+            String c = user.getCurrency().trim();
+            if (!c.matches("^[A-Za-z]{3}$")) {
+                throw new IllegalArgumentException(
+                        "Currency must be a 3-letter ISO 4217 code (got '" + c + "')");
+            }
+            user.setCurrency(c.toUpperCase(java.util.Locale.ROOT));
         }
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with id={}", savedUser.getId());

@@ -91,7 +91,11 @@
         parseLocalDate,
         escapeHtml,
         formatCurrency,
-        formatDate
+        formatDate,
+        getCategoryColor,
+        getCategoryEmoji,
+        debounce
     });
     window.escapeHtml = escapeHtml;
+    window.debounce = debounce;
 })();

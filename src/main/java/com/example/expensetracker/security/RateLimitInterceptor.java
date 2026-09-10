@@ -81,15 +81,25 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         return true;
     }
 
+    /**
+     * Resolves the client IP for rate-limit keying.
+     * <p>
+     * SECURITY FIX: previously this method trusted the {@code X-Forwarded-For} and
+     * {@code X-Real-IP} headers directly. A malicious client could rotate these
+     * values per request to bypass every {@link RateLimited} endpoint (login, OTP,
+     * register, password reset, PIN verification). Since there is no trusted
+     * reverse-proxy allowlist configured, we now use only the socket-level
+     * {@code request.getRemoteAddr()} — which cannot be forged by the client
+     * (assuming the application is not behind a non-stripping proxy).
+     * </p>
+     * <p>
+     * If you deploy behind a trusted reverse proxy that strips/rewrites
+     * {@code X-Forwarded-For}, set {@code app.trusted-proxy.enabled=true} and
+     * configure {@code app.trusted-proxy.cidrs} in {@code application.properties}
+     * so we can re-enable the XFF path safely.
+     * </p>
+     */
     private String resolveClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isBlank()) {
-            return xRealIp.trim();
-        }
         return request.getRemoteAddr();
     }
 }

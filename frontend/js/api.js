@@ -91,6 +91,38 @@ if (typeof window !== "undefined") {
     window.clearApiCache = clearApiCache;
 }
 
+/**
+ * Targeted cache invalidation: when a mutating request (POST/PUT/DELETE) is issued,
+ * invalidate only cache entries that share the same top-level resource stem as the
+ * mutating endpoint. This avoids the previous behavior where writing one expense
+ * also wiped the categories, savings goals, and incomes caches.
+ *
+ * Examples:
+ *   POST /expenses/user/1            -> deletes /expenses/* entries
+ *   PUT  /incomes/5/user/1           -> deletes /incomes/* entries
+ *   DELETE /savings/goals/3/user/1   -> deletes /savings/goals/* entries
+ *   POST /categories/user/1          -> deletes /categories/* entries
+ *   POST /auth/login                 -> deletes /auth/* entries (rarely cached, but safe)
+ */
+function invalidateCacheForEndpoint(endpoint) {
+    if (!endpoint || typeof endpoint !== "string") return;
+    // Extract the top-level resource stem: leading slash + first path segment.
+    // e.g. "/expenses/user/1" -> "/expenses"
+    const match = endpoint.match(/^\/[^/]+/);
+    if (!match) {
+        // Couldn't determine the stem — fall back to clearing everything to preserve
+        // the old safety guarantee (better over-invalidate than serve stale data).
+        apiCache.clear();
+        return;
+    }
+    const stem = match[0];
+    for (const key of Array.from(apiCache.keys())) {
+        if (key === stem || key.startsWith(stem + "/") || key.startsWith(stem + "?")) {
+            apiCache.delete(key);
+        }
+    }
+}
+
 async function checkHealth() {
     try {
         const res = await fetch(`${API_BASE_URL}/health`, { cache: 'no-store' });
@@ -145,7 +177,14 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
     const method = (options.method || "GET").toUpperCase();
     const skipCache = options.skipCache === true || options.cache === "no-store";
 
-    if (method !== "GET" || skipCache) apiCache.clear();
+    // FIXED: previously any non-GET request (or a GET with skipCache) wiped the ENTIRE apiCache.
+    // That meant writing one expense invalidated the categories, savings goals, and incomes caches
+    // too — defeating the 15s TTL and forcing refetches of unrelated data. Now we only invalidate
+    // cache entries whose key shares the same top-level resource stem as the mutating endpoint.
+    // A skipCache GET no longer clears anything either (it just bypasses the cache read for itself).
+    if (method !== "GET") {
+        invalidateCacheForEndpoint(endpoint);
+    }
 
     if (method === "GET" && !skipCache) {
         const cached = apiCache.get(endpoint);
@@ -226,9 +265,19 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         }
 
         if (!msg || msg.trim().toLowerCase() === "unauthorized" || msg.trim().toLowerCase() === "bad credentials") {
+            // FIXED: previously the 401 fallback unconditionally said "Invalid email or password"
+            // which is misleading on non-auth endpoints (e.g. a 401 on /expenses/user/1 because
+            // the token expired). Now we only use the auth-specific message on /auth/ endpoints;
+            // other 401s get a generic "session expired" message. (The actual redirect-to-login
+            // for non-auth 401s is handled earlier at line 205.)
+            const isAuthEndpoint = endpoint.includes("/auth/");
             const statusMessages = {
                 400: "That request wasn't valid. Please check your input and try again.",
-                401: isDeleteAccount ? "Incorrect password. Account deletion requires valid password confirmation." : "Invalid email or password. Please check your credentials and try again.",
+                401: isDeleteAccount
+                    ? "Incorrect password. Account deletion requires valid password confirmation."
+                    : (isAuthEndpoint
+                        ? "Invalid email or password. Please check your credentials and try again."
+                        : "Your session has expired. Please sign in again."),
                 403: "You don't have permission to do that.",
                 404: "The requested resource couldn't be found.",
                 409: "This conflicts with existing data.",
@@ -243,7 +292,15 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         throw new Error(msg);
     }
 
-    const data = text ? JSON.parse(text) : null;
+    let data = null;
+    if (text) {
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            // Server returned a 2xx response with non-JSON body (proxy error page, empty string, etc.)
+            throw new Error("The server returned an unexpected response. Please try again.");
+        }
+    }
     if (method === "GET") apiCache.set(endpoint, { data, timestamp: Date.now() });
     return data;
 }

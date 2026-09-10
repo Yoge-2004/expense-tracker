@@ -79,11 +79,16 @@ public class SyncController {
         ResponseEntity<Map<String, Object>> rateLimitError = rateLimit(clientIp);
         if (rateLimitError != null) return rateLimitError;
 
-        if (hasValidSyncToken(syncToken) || hasAuthenticatedSession()) return null;
+        // SECURITY FIX: previously this method accepted ANY authenticated session as
+        // authorization for global sync/backup operations (file-to-db, db-to-file).
+        // Those operations affect ALL users' data, so allowing any logged-in user to
+        // trigger them was a privilege-escalation / IDOR issue. Only the configured
+        // sync token (X-Sync-Token) is now accepted as authorization.
+        if (hasValidSyncToken(syncToken)) return null;
 
-        log.warn("Unauthorized local sync attempt");
+        log.warn("Unauthorized local sync attempt from ip={}", clientIp);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("status", "error", "message", "Unauthorized: valid sync token or authenticated session required."));
+                .body(Map.of("status", "error", "message", "Unauthorized: valid X-Sync-Token required for sync operations."));
     }
 
     private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {

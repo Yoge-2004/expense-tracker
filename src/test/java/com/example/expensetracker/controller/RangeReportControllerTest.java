@@ -4,8 +4,11 @@ import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.Income;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.repository.BudgetRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
+import com.example.expensetracker.repository.RecurringExpenseRepository;
+import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -29,6 +32,13 @@ class RangeReportControllerTest {
 
     @Mock ExpenseRepository expenses;
     @Mock IncomeRepository incomes;
+    // FIXED: RangeReportController has 7 constructor dependencies. The original test only
+    // mocked 4 (expenses, incomes, users, security), leaving savingsGoals, recurringExpenses,
+    // and budgets as null. When the controller called savingsGoals.findByUser(user), it NPE'd.
+    // Now all repository dependencies are mocked so the controller's export paths work.
+    @Mock SavingsGoalRepository savingsGoals;
+    @Mock RecurringExpenseRepository recurringExpenses;
+    @Mock BudgetRepository budgets;
     @Mock UserService users;
     @Mock UserSecurity security;
     @InjectMocks RangeReportController controller;
@@ -42,6 +52,10 @@ class RangeReportControllerTest {
                 expense(900, LocalDate.of(2026, 8, 31), "Outside", food)));
         when(incomes.findByUser(user)).thenReturn(List.of(income(3000, LocalDate.of(2026, 9, 5), "Salary"),
                 income(5000, LocalDate.of(2026, 10, 1), "Outside")));
+        // Stub the additional repository mocks so the controller's export path doesn't NPE.
+        when(savingsGoals.findByUser(user)).thenReturn(List.of());
+        when(recurringExpenses.findByUser(user)).thenReturn(List.of());
+        when(budgets.findByUser(user)).thenReturn(List.of());
 
         var response = controller.excel(7L, "2026-09-01", "2026-09-30", "INR");
 
@@ -61,6 +75,10 @@ class RangeReportControllerTest {
         when(users.findById(8L)).thenReturn(Optional.of(user));
         when(expenses.findByUser(user)).thenReturn(List.of(expense(250, LocalDate.of(2026, 1, 2), "Groceries", null)));
         when(incomes.findByUser(user)).thenReturn(List.of(income(1000, LocalDate.of(2026, 1, 1), "Salary")));
+        // Stub the additional repository mocks so the controller's export path doesn't NPE.
+        when(savingsGoals.findByUser(user)).thenReturn(List.of());
+        when(recurringExpenses.findByUser(user)).thenReturn(List.of());
+        when(budgets.findByUser(user)).thenReturn(List.of());
 
         var response = controller.pdf(8L, null, null, "USD");
 

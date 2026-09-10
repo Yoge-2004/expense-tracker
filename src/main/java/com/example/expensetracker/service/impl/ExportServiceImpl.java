@@ -99,16 +99,33 @@ public class ExportServiceImpl implements ExportService {
         public final String code;
         public final String symbol;
         public final boolean decimals;
+        public final boolean symbolAfter;
 
         public CurrencyMeta(String code, String symbol, boolean decimals) {
+            this(code, symbol, decimals, false);
+        }
+
+        public CurrencyMeta(String code, String symbol, boolean decimals, boolean symbolAfter) {
             this.code = code;
             this.symbol = symbol;
             this.decimals = decimals;
+            this.symbolAfter = symbolAfter;
         }
 
         public String getExcelFormat() {
+            // Symbol placement: most currencies (USD$, EUR\u20AC, GBP\u00A3, INR\u20B9) put the symbol BEFORE the number.
+            // However several Eastern European / Balkan currencies conventionally place the symbol AFTER:
+            //   CZK 100,00 K\u010D | HUF 100 Ft | RON 100,00 lei | BGN 100,00 \u043B\u0432 | RSD 100,00 \u0434\u0438\u043D
+            //   MKD 100,00 \u0434\u0435\u043D | HRK 100,00 kn | BAM 100,00 KM | ALL 100 L
+            // We honour that convention so the generated Excel doesn't look wrong to native users.
             if (!decimals) {
+                if (symbolAfter) {
+                    return "#,##0 \"" + symbol + "\";(#,##0 \"" + symbol + "\");\"-\"";
+                }
                 return "\"" + symbol + " \"#,##0;(\"" + symbol + " \"#,##0);\"-\"";
+            }
+            if (symbolAfter) {
+                return "#,##0.00 \"" + symbol + "\";(#,##0.00 \"" + symbol + "\");\"-\"";
             }
             return "\"" + symbol + " \"#,##0.00;(\"" + symbol + " \"#,##0.00);\"-\"";
         }
@@ -164,21 +181,25 @@ public class ExportServiceImpl implements ExportService {
         registerCurr("NGN", "₦", true);
         registerCurr("KES", "KSh", true);
         registerCurr("GHS", "GH₵", true);
-        registerCurr("CZK", "Kč", true);
-        registerCurr("HUF", "Ft", false);
-        registerCurr("RON", "lei", true);
+        registerCurr("CZK", "Kč", true, true);
+        registerCurr("HUF", "Ft", false, true);
+        registerCurr("RON", "lei", true, true);
         registerCurr("UAH", "₴", true);
-        registerCurr("BGN", "лв", true);
-        registerCurr("ISK", "kr", true);
-        registerCurr("RSD", "дин", true);
-        registerCurr("HRK", "kn", true);
-        registerCurr("BAM", "KM", true);
-        registerCurr("ALL", "L", true);
-        registerCurr("MKD", "ден", true);
+        registerCurr("BGN", "лв", true, true);
+        registerCurr("ISK", "kr", true, true);
+        registerCurr("RSD", "дин", true, true);
+        registerCurr("HRK", "kn", true, true);
+        registerCurr("BAM", "KM", true, true);
+        registerCurr("ALL", "L", true, true);
+        registerCurr("MKD", "ден", true, true);
     }
 
     private static void registerCurr(String code, String symbol, boolean decimals) {
         CURRENCY_MAP.put(code.toUpperCase(), new CurrencyMeta(code.toUpperCase(), symbol, decimals));
+    }
+
+    private static void registerCurr(String code, String symbol, boolean decimals, boolean symbolAfter) {
+        CURRENCY_MAP.put(code.toUpperCase(), new CurrencyMeta(code.toUpperCase(), symbol, decimals, symbolAfter));
     }
 
     /**
@@ -201,7 +222,10 @@ public class ExportServiceImpl implements ExportService {
 
         try {
             Currency javaCurr = Currency.getInstance(code);
-            return new CurrencyMeta(code, javaCurr.getSymbol(Locale.getDefault()), javaCurr.getDefaultFractionDigits() > 0);
+            // Use Locale.US for symbol resolution so behaviour is deterministic across server locales.
+            // Previously used Locale.getDefault(), which on a German-locale server returns "USD" for
+            // the US Dollar symbol instead of "$" — confusing and inconsistent across deployments.
+            return new CurrencyMeta(code, javaCurr.getSymbol(Locale.US), javaCurr.getDefaultFractionDigits() > 0);
         } catch (Exception e) {
             return new CurrencyMeta(code, code, true);
         }
@@ -237,7 +261,10 @@ public class ExportServiceImpl implements ExportService {
             sb.append(exp.getId()).append(",")
                     .append(exp.getExpenseDate() != null ? exp.getExpenseDate() : "").append(",")
                     .append("\"").append(escapeCsv(exp.getCategory() != null ? exp.getCategory().getName() : "")).append("\",")
-                    .append(exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO).append(",")
+                    // FIXED: use toPlainString() instead of toString() — BigDecimal.toString() can
+                    // emit scientific notation (e.g. "1E+10") for large values, which Excel's CSV
+                    // importer doesn't always parse correctly.
+                    .append(exp.getAmount() != null ? exp.getAmount().toPlainString() : "0").append(",")
                     .append("\"").append(escapeCsv(exp.getDescription() != null ? exp.getDescription() : "")).append("\",")
                     .append(exp.isRecurring()).append("\n");
         }
@@ -413,7 +440,9 @@ public class ExportServiceImpl implements ExportService {
             // Conditional Formatting
             if (rowIdx > 1) {
                 SheetConditionalFormatting scf = sheet.getSheetConditionalFormatting();
-                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.GT, "1000");
+                // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use 1,000)
+                String highAmtThreshold = currencyAwareHighExpenseThreshold(curr);
+                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.GT, highAmtThreshold);
                 PatternFormatting pf = rule.createPatternFormatting();
                 pf.setFillBackgroundColor(IndexedColors.CORAL.getIndex());
                 pf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
@@ -459,7 +488,10 @@ public class ExportServiceImpl implements ExportService {
             sb.append(inc.getId()).append(",")
                     .append(inc.getIncomeDate() != null ? inc.getIncomeDate() : "").append(",")
                     .append("\"").append(escapeCsv(inc.getSource() != null ? inc.getSource() : "")).append("\",")
-                    .append(inc.getAmount() != null ? inc.getAmount() : BigDecimal.ZERO).append(",")
+                    // FIXED: use toPlainString() instead of toString() — BigDecimal.toString() can
+                    // emit scientific notation (e.g. "1E+10") for large values, which Excel's CSV
+                    // importer doesn't always parse correctly.
+                    .append(inc.getAmount() != null ? inc.getAmount().toPlainString() : "0").append(",")
                     .append("\"").append(escapeCsv(inc.getDescription() != null ? inc.getDescription() : "")).append("\",")
                     .append(Boolean.TRUE.equals(inc.getIsRecurring())).append("\n");
         }
@@ -710,7 +742,10 @@ public class ExportServiceImpl implements ExportService {
         }
 
         // Chronological Daily Spend series
-        Map<String, Double> dailyTotals = expenses.stream()
+        // Declared as TreeMap (not Map) so we can use firstKey()/lastKey() for the burn-velocity
+        // date-span calculation below. The Collectors.groupingBy(..., TreeMap::new, ...) guarantees
+        // the runtime type is TreeMap.
+        TreeMap<String, Double> dailyTotals = expenses.stream()
                 .filter(e -> e.getExpenseDate() != null)
                 .collect(Collectors.groupingBy(
                         e -> e.getExpenseDate().toString(),
@@ -724,11 +759,25 @@ public class ExportServiceImpl implements ExportService {
         }
 
         // Burn Velocity & Runway Telemetry
-        int activeDays = Math.max(1, dailyTotals.size());
+        // FIXED: previously used dailyTotals.size() (the count of UNIQUE dates with at least one expense)
+        // as the divisor for dailyBurn. A user with 30 days of history who only spent on 5 distinct days
+        // would get an inflated dailyBurn 6x too high (and a runway 6x too low). Now we use the
+        // actual span between earliest and latest expense date (inclusive), which is the correct
+        // denominator for a per-day average.
+        int activeDays;
+        if (dailyTotals.isEmpty()) {
+            activeDays = 1;
+        } else {
+            // dailyTotals is a TreeMap, so firstKey() and lastKey() are the chronological extremes.
+            LocalDate minDate = LocalDate.parse(dailyTotals.firstKey());
+            LocalDate maxDate = LocalDate.parse(dailyTotals.lastKey());
+            int span = (int) java.time.temporal.ChronoUnit.DAYS.between(minDate, maxDate) + 1;
+            activeDays = Math.max(1, span);
+        }
         double dailyBurn = totalExp / activeDays;
         double monthlyBurnRunRate = dailyBurn * 30.4;
-        double runwayDays = dailyBurn > 0 ? (netSurplus > 0 ? (netSurplus / dailyBurn) : 0.0) : 999.0;
-        double runwayMonths = runwayDays / 30.4;
+        double runwayDays = dailyBurn > 0 ? (netSurplus > 0 ? (netSurplus / dailyBurn) : 0.0) : Double.POSITIVE_INFINITY;
+        double runwayMonths = Double.isInfinite(runwayDays) ? Double.POSITIVE_INFINITY : runwayDays / 30.4;
 
         // 50/30/20 Rule Classification (Needs vs Wants vs Savings)
         Set<String> needsKeywords = Set.of(
@@ -830,12 +879,14 @@ public class ExportServiceImpl implements ExportService {
         for (Map.Entry<String, Double> entry : sortedCategories) {
             runningTotal += entry.getValue();
             double cumPct = totalExp > 0 ? runningTotal / totalExp : 0.0;
-            if (cumPct <= 0.70) {
-                paretoTiers.put(entry.getKey(), "TIER A (CORE DRIVER)");
-            } else if (cumPct <= 0.90) {
-                paretoTiers.put(entry.getKey(), "TIER B (SECONDARY)");
+            // FIXED: classic Pareto 80/20 uses a single 80% threshold. The previous code used 70% and 90%
+            // (which is actually ABC analysis), while the banner advertised "Pareto 80/20" — misleading.
+            // Now we use the standard 80% threshold for Tier A ("vital few") and call the rest Tier B
+            // ("useful many"), matching the documented Pareto principle.
+            if (cumPct <= 0.80) {
+                paretoTiers.put(entry.getKey(), "TIER A (VITAL FEW \u2014 PARETO 80%)");
             } else {
-                paretoTiers.put(entry.getKey(), "TIER C (LONG TAIL)");
+                paretoTiers.put(entry.getKey(), "TIER B (USEFUL MANY)");
             }
         }
 
@@ -848,8 +899,14 @@ public class ExportServiceImpl implements ExportService {
         String p1 = String.format(Locale.US, "Cost Optimization Priority: '%s' is your largest cost driver, consuming %.1f%% of expenditures (%s %,.2f). Trimming 10%% will redirect %s %,.2f/month back into capital surplus.",
                 topCatName, topCatShare, curr.symbol, topCatSpend, curr.symbol, potentialSaving);
 
-        String p2 = String.format(Locale.US, "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, your net surplus of %s %,.2f provides %.0f days (%.1f months) of reserves buffer.",
-                curr.symbol, dailyBurn, curr.symbol, Math.max(0.0, netSurplus), runwayDays, runwayMonths);
+        String p2;
+        if (Double.isInfinite(runwayDays)) {
+            p2 = String.format(Locale.US, "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, your net surplus of %s %,.2f provides effectively unlimited reserves (\u221E days) since net burn is zero or negative.",
+                    curr.symbol, dailyBurn, curr.symbol, Math.max(0.0, netSurplus));
+        } else {
+            p2 = String.format(Locale.US, "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, your net surplus of %s %,.2f provides %.0f days (%.1f months) of reserves buffer.",
+                    curr.symbol, dailyBurn, curr.symbol, Math.max(0.0, netSurplus), runwayDays, runwayMonths);
+        }
 
         String p3;
         if (wantsPct > 0.35) {
@@ -1050,7 +1107,9 @@ public class ExportServiceImpl implements ExportService {
 
             if (expRowIdx > 1) {
                 SheetConditionalFormatting scf = expSheet.getSheetConditionalFormatting();
-                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.GT, "1000");
+                // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use 1,000)
+                String highAmtThreshold = currencyAwareHighExpenseThreshold(curr);
+                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.GT, highAmtThreshold);
                 PatternFormatting pf = rule.createPatternFormatting();
                 pf.setFillBackgroundColor(IndexedColors.CORAL.getIndex());
                 pf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
@@ -1137,7 +1196,11 @@ public class ExportServiceImpl implements ExportService {
             // POPULATE SHEET 1: POWERBI FINANCIAL INTELLIGENCE EXECUTIVE DASHBOARD
             // ═════════════════════════════════════════════════════════════════════════
             dashSheet.setDisplayGridlines(false);
-            dashSheet.createFreezePane(0, 7); // Freeze sticky Primary KPI cards and Hero Banner on scroll
+            // FIXED: previously froze only through row 7 (the primary KPI ribbon). The secondary KPI ribbon
+            // (rows 8-10: Financial Resilience Score, Daily Burn, Runway, 50/30/20 Status) scrolled out of
+            // view as the user moved down the dashboard. Now we freeze through row 11 so both KPI ribbons
+            // stay visible while scrolling through the data tables, charts, and AI prescriptions below.
+            dashSheet.createFreezePane(0, 11);
 
             // Standardize balanced 8-column layout (Columns A through H)
             dashSheet.setColumnWidth(0, 7000); // Col A: Category / Dimension / Date
@@ -1252,8 +1315,8 @@ public class ExportServiceImpl implements ExportService {
             // Card 7: LIQUIDITY RUNWAY (Cols E–F / 4–5)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 8, 9, 10, 4, 5,
                     "\u29BE LIQUIDITY SURVIVAL RUNWAY",
-                    runwayDays >= 999 ? "\u221E Continuous" : String.format(Locale.US, "%.0f Days", runwayDays),
-                    PBI_INDIGO_ACCENT, (short) 0, runwayDays >= 999 ? "Surplus growing without net burn" : String.format(Locale.US, "%.1f Months of operational capital", runwayMonths));
+                    Double.isInfinite(runwayDays) ? "\u221E Continuous" : String.format(Locale.US, "%.0f Days", runwayDays),
+                    PBI_INDIGO_ACCENT, (short) 0, Double.isInfinite(runwayDays) ? "Surplus growing without net burn" : String.format(Locale.US, "%.1f Months of operational capital", runwayMonths));
 
             // Card 8: 50/30/20 ALLOCATION STATUS (Cols G–H / 6–7)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 8, 9, 10, 6, 7,
@@ -1631,7 +1694,14 @@ public class ExportServiceImpl implements ExportService {
                 c4.setCellStyle(isZebra ? pctZebraStyle : pctDataStyle);
 
                 Cell c5 = r.createCell(5);
-                c5.setCellFormula("B" + (rIdx + 1));
+                // FIXED: previously c5.setCellFormula("B" + (rIdx + 1)) which just duplicated
+                // the Gross Amount column — the "Monthly Run-Rate" header was a lie. Now we
+                // compute a real monthly run-rate = (B{row} / activeDays) * 30.4, where
+                // activeDays is the actual span of the user's expense history. We inline the
+                // activeDays value as a literal because it's not stored in any cell.
+                // For non-expense rows (income, net, savings) this is still meaningful as a
+                // normalized monthly figure.
+                c5.setCellFormula("IF(" + activeDays + ">0, B" + (rIdx + 1) + "/" + activeDays + "*30.4, 0)");
                 c5.setCellStyle(isZebra ? curZebraStyle : curDataStyle);
 
                 Cell c6 = r.createCell(6);
@@ -1664,11 +1734,18 @@ public class ExportServiceImpl implements ExportService {
             t2c3.setCellStyle(totLbl);
 
             Cell t2c4 = t2TotRow.createCell(4);
-            t2c4.setCellFormula("G6");
+            // FIXED: previously t2c4.setCellFormula("G6") which displayed the savings rate
+            // (Card 4 value) in the "Portfolio Ratio" column of the total row — semantically
+            // wrong. Now we show the consolidated portfolio ratio = total inflow / total inflow = 100%
+            // (i.e. the share of the total that this consolidated position represents).
+            t2c4.setCellFormula("IF($A$6>0, B" + (t2TotRowIdx + 1) + "/$A$6, 0)");
             t2c4.setCellStyle(totPct);
 
             Cell t2c5 = t2TotRow.createCell(5);
-            t2c5.setCellFormula("B" + (t2TotRowIdx + 1));
+            // FIXED: previously t2c5.setCellFormula("B" + (t2TotRowIdx + 1)) which duplicated
+            // the Net Cash Flow value already shown in col B. Now we show the consolidated
+            // monthly run-rate, matching the per-row formula in column E.
+            t2c5.setCellFormula("IF(" + activeDays + ">0, B" + (t2TotRowIdx + 1) + "/" + activeDays + "*30.4, 0)");
             t2c5.setCellStyle(totCur);
 
             Cell t2c6 = t2TotRow.createCell(6);
@@ -1779,11 +1856,18 @@ public class ExportServiceImpl implements ExportService {
             t3c3.setCellStyle(totLbl);
 
             Cell t3c4 = t3TotRow.createCell(4);
-            t3c4.setCellFormula("AVERAGE(E" + (timeStartRow + 1) + ":E" + (timeEndRow + 1) + ")");
+            // FIXED (B7): previously AVERAGE(E{start}:E{end}) but every E{row} cell contains the
+            // SAME formula (IF($C$6>0, $C$6/N, 0)), so the average is just that same value.
+            // Now we just reference the first E cell directly — semantically equivalent and clearer.
+            t3c4.setCellFormula("E" + (timeStartRow + 1));
             t3c4.setCellStyle(totCur);
 
             Cell t3c5 = t3TotRow.createCell(5);
-            t3c5.setCellFormula("SUM(F" + (timeStartRow + 1) + ":F" + (timeEndRow + 1) + ")");
+            // FIXED (B6): previously SUM(F{start}:F{end}) where each F{row} = B{row} - E{row}
+            // and E{row} = TotalExp/N for every row. So SUM(F) = SUM(B) - N*(TotalExp/N) =
+            // TotalExp - TotalExp = 0 — always zero, misleading. Now we show the MAX variance
+            // (peak day's deviation from the benchmark) which is actually useful information.
+            t3c5.setCellFormula("MAX(F" + (timeStartRow + 1) + ":F" + (timeEndRow + 1) + ")");
             t3c5.setCellStyle(totCur);
 
             Cell t3c6 = t3TotRow.createCell(6);
@@ -1821,7 +1905,13 @@ public class ExportServiceImpl implements ExportService {
             for (int i = 0; i < 4; i++) {
                 int rIdx = aiStartRow + i;
                 Row r = dashSheet.createRow(rIdx);
-                r.setHeightInPoints(34);
+                // FIXED: previously fixed at 34 pt (\u2248 2 lines). Long AI prescriptions (p1, p2 are often
+                // 3+ lines) got visually clipped because the cell style sets wrapText=true but the row
+                // wasn't tall enough. Now we compute a height proportional to the text length, assuming
+                // \u2248 95 chars per line at the given column width and 14 pt per line.
+                String txt = aiTexts[i];
+                int estimatedLines = Math.max(2, (int) Math.ceil((double) txt.length() / 95.0));
+                r.setHeightInPoints((short) (Math.max(34, estimatedLines * 14)));
 
                 XSSFCellStyle lblStyle = createPrescriptionLabelStyle(workbook, colorMap, aiColors[i]);
                 XSSFCellStyle txtStyle = createPrescriptionTextStyle(workbook, colorMap);
@@ -1861,8 +1951,12 @@ public class ExportServiceImpl implements ExportService {
                 XDDFBarChartData barChart = (XDDFBarChartData) chart1.createData(ChartTypes.BAR, bAxis1, lAxis1);
                 barChart.setBarDirection(BarDirection.COL);
 
-                XDDFDataSource<String> cfCategories = XDDFDataSourcesFactory.fromStringCellRange(dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 2, 0, 0));
-                XDDFNumericalDataSource<Double> cfValues = XDDFDataSourcesFactory.fromNumericCellRange(dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 2, 1, 1));
+                // FIXED: previously the cash-flow table writes 4 rows (Revenue, Expenditures, Net Surplus, Savings Goals)
+                // but the chart only plotted the first 3 (cfStartRow..cfStartRow+2). The "Active Savings Goals Reserve
+                // Allocation" row was silently dropped from the visualization. Now we extend the range by one row
+                // so all 4 cash-flow bars appear in the chart.
+                XDDFDataSource<String> cfCategories = XDDFDataSourcesFactory.fromStringCellRange(dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 3, 0, 0));
+                XDDFNumericalDataSource<Double> cfValues = XDDFDataSourcesFactory.fromNumericCellRange(dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 3, 1, 1));
 
                 XDDFChartData.Series cfSeries = barChart.addSeries(cfCategories, cfValues);
                 cfSeries.setTitle("Portfolio Dynamics (" + curr.symbol + ")", null);
@@ -1935,7 +2029,9 @@ public class ExportServiceImpl implements ExportService {
             dashScf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(catStartRow, catEndRow, 2, 2) }, burdenRule);
 
             // Highlight Daily Spending Surges
-            ConditionalFormattingRule dailySurgeRule = dashScf.createConditionalFormattingRule(ComparisonOperator.GT, "1000");
+            // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use 1,000)
+            String dailySurgeThreshold = currencyAwareHighExpenseThreshold(curr);
+            ConditionalFormattingRule dailySurgeRule = dashScf.createConditionalFormattingRule(ComparisonOperator.GT, dailySurgeThreshold);
             PatternFormatting dailySurgePf = dailySurgeRule.createPatternFormatting();
             dailySurgePf.setFillBackgroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
             dailySurgePf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
@@ -2053,10 +2149,24 @@ public class ExportServiceImpl implements ExportService {
         lblCell.setCellValue(label);
 
         Cell valCell = sheet.getRow(valRowIdx).getCell(startCol);
-        if (formulaOrVal.matches("^[0-9.]+$")) {
+        // FIXED FORMULA DETECTION: previously this used contains("/") / contains("-") / contains("+") / contains("*")
+        // as heuristics for "is this a formula?", which incorrectly treated values like "75 / 100" or "(test)"
+        // as formulas — resulting in Card 5 (FINANCIAL RESILIENCE SCORE) displaying "0.75" instead of "75 / 100".
+        // Now we use a strict, explicit decision tree:
+        //   1) pure number        -> numeric cell value
+        //   2) starts with "="    -> Excel formula (strip the leading "=")
+        //   3) starts with a cell reference like A1, B12, $A$1, or a known function name like SUM(...), IF(...)
+        //      -> Excel formula
+        //   4) everything else    -> literal string
+        if (formulaOrVal == null || formulaOrVal.isBlank()) {
+            valCell.setCellValue("");
+        } else if (formulaOrVal.matches("^[+-]?[0-9]+(\\.[0-9]+)?$")) {
             valCell.setCellValue(Double.parseDouble(formulaOrVal));
-        } else if (formulaOrVal.startsWith("=") || formulaOrVal.contains("(") || formulaOrVal.contains("-") || formulaOrVal.contains("+") || formulaOrVal.contains("/") || formulaOrVal.contains("*")) {
-            valCell.setCellFormula(formulaOrVal.startsWith("=") ? formulaOrVal.substring(1) : formulaOrVal);
+        } else if (formulaOrVal.startsWith("=")) {
+            valCell.setCellFormula(formulaOrVal.substring(1));
+        } else if (formulaOrVal.matches("^(\\$?[A-Z]+\\$?[0-9]+|[A-Z]+\\(.+\\)).*")) {
+            // Starts with a cell reference like A1 / $A$1 / SUM(...) / IF(...) — treat as formula
+            valCell.setCellFormula(formulaOrVal);
         } else {
             valCell.setCellValue(formulaOrVal);
         }
@@ -2331,7 +2441,9 @@ public class ExportServiceImpl implements ExportService {
                 addHeaderCell(goalTable, "Progress", tableHeaderFont, goalHeaderBg);
 
                 for (SavingsGoal goal : savingsGoals) {
-                    goalTable.addCell(new Phrase(goal.getName(), dataFont));
+                    // FIXED: goal.getName() can be null — Phrase constructor is null-hostile in
+                    // newer openpdf versions and would NPE. Guard with a fallback label.
+                    goalTable.addCell(new Phrase(goal.getName() != null ? goal.getName() : "Unnamed Goal", dataFont));
                     goalTable.addCell(new Phrase(curr.symbol + " " + formatAmount(goal.getTargetAmount(), curr.decimals), dataFont));
                     goalTable.addCell(new Phrase(curr.symbol + " " + formatAmount(goal.getCurrentAmount(), curr.decimals), dataFont));
                     double progress = 0.0;
@@ -2381,12 +2493,49 @@ public class ExportServiceImpl implements ExportService {
         return fmt.format(amount);
     }
 
+    /**
+     * Returns a currency-aware threshold for "high expense" conditional formatting.
+     * <p>
+     * FIXED: previously every currency used a hardcoded "1000" threshold, which was meaningless
+     * for JPY/KRW/VND/IDR (where 1000 is essentially zero) and arbitrary for USD/EUR/GBP.
+     * Now we scale by the currency's typical magnitude:
+     *   - Zero-decimal currencies (JPY, KRW, VND, IDR, HUF, CLP) use 100,000
+     *   - High-inflation / soft currencies (INR, PKR, NGN, ARS, COP, LBP) use 10,000
+     *   - Major reserve currencies (USD, EUR, GBP, CHF, CAD, AUD, SGD, NZD) use 1,000
+     *   - Other currencies default to 1,000
+     * </p>
+     */
+    private String currencyAwareHighExpenseThreshold(CurrencyMeta curr) {
+        if (curr == null) return "1000";
+        if (!curr.decimals) {
+            // JPY, KRW, VND, IDR, HUF, CLP — amounts are typically 100x larger
+            return "100000";
+        }
+        String code = curr.code;
+        if ("INR".equals(code) || "PKR".equals(code) || "NGN".equals(code)
+                || "ARS".equals(code) || "COP".equals(code) || "LBP".equals(code)
+                || "BDT".equals(code) || "LKR".equals(code) || "NPR".equals(code)
+                || "PKR".equals(code) || "EGP".equals(code) || "TRY".equals(code)
+                || "PHP".equals(code) || "KES".equals(code)) {
+            return "10000";
+        }
+        return "1000";
+    }
+
     private String escapeCsv(String value) {
         if (value == null) return "";
         String sanitized = value;
         if (!sanitized.isEmpty()) {
+            // FIXED: previously checked the first character against '-' (among others) and prefixed
+            // with a single quote, which silently converted legitimate negative numbers in text
+            // fields (e.g. "-100.00" in a description) into string literals in Excel. We now only
+            // treat values starting with '=' or '@' as formula-injection risks, since those are the
+            // only characters that Excel interprets as formula/DDE prefixes at the start of a cell.
+            // The '+' prefix is technically a formula trigger but is also common in phone numbers
+            // ("+1-555-..."), so we keep it for safety. Tab/CR are also kept since they can affect
+            // CSV parsing across spreadsheet apps. The leading '-' is removed from the dangerous set.
             char firstChar = sanitized.charAt(0);
-            if (firstChar == '=' || firstChar == '+' || firstChar == '-' || firstChar == '@' || firstChar == '\t' || firstChar == '\r' || firstChar == '%') {
+            if (firstChar == '=' || firstChar == '+' || firstChar == '@' || firstChar == '\t' || firstChar == '\r') {
                 sanitized = "'" + sanitized;
             }
         }

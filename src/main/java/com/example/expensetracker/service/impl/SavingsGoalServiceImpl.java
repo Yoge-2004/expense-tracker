@@ -88,9 +88,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         if (request.getTargetAmount() != null) {
             existing.setTargetAmount(request.getTargetAmount());
         }
-        if (request.getCurrentAmount() != null) {
-            existing.setCurrentAmount(request.getCurrentAmount());
-        }
+        // FIXED: previously request.getCurrentAmount() could be set directly via updateGoal,
+        // bypassing depositToGoal's validation and atomic increment. This allowed a user to
+        // arbitrarily set currentAmount (including above target) without going through the
+        // deposit flow, and also skipped the COMPLETED status auto-transition. We now ignore
+        // currentAmount on update — use POST /savings/goals/{id}/deposit to add funds.
+        // If you genuinely need to adjust currentAmount (e.g. correction), add an admin endpoint.
         if (request.getTargetDate() != null) {
             existing.setTargetDate(request.getTargetDate());
         }
@@ -114,6 +117,17 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         }
         if (request.getEndDate() != null) {
             existing.setEndDate(request.getEndDate());
+        }
+
+        // Auto-transition status to COMPLETED if the (unchanged) currentAmount now meets
+        // or exceeds the (possibly updated) targetAmount. This handles the case where the
+        // user lowers the target below what they've already saved.
+        if (existing.getTargetAmount() != null
+                && existing.getCurrentAmount() != null
+                && existing.getCurrentAmount().compareTo(existing.getTargetAmount()) >= 0
+                && !"COMPLETED".equals(existing.getStatus())) {
+            existing.setStatus("COMPLETED");
+            log.info("Savings goal id={} auto-marked COMPLETED (target lowered below current saved)", goalId);
         }
 
         SavingsGoal saved = savingsGoalRepository.save(existing);
@@ -141,21 +155,34 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
-        BigDecimal updatedAmount = goal.getCurrentAmount() != null
-                ? goal.getCurrentAmount().add(amount)
-                : amount;
-
-        goal.setCurrentAmount(updatedAmount);
-
-        if (goal.getTargetAmount() != null && updatedAmount.compareTo(goal.getTargetAmount()) >= 0) {
-            goal.setStatus("COMPLETED");
-            log.info("Savings goal id={} reached target amount ({}) and marked COMPLETED", goalId, goal.getTargetAmount());
+        // CONCURRENCY FIX: previously, two concurrent deposits both read goal.getCurrentAmount(),
+        // both computed the same updatedAmount, and last-writer-wins silently lost one deposit.
+        // We now use an atomic SQL UPDATE that increments current_amount by `amount` in a single
+        // statement. The SELECT above is retained only for ownership validation; the UPDATE
+        // is the source of truth for the new total. We then re-read the row to get the actual
+        // new currentAmount and to apply the COMPLETED status transition.
+        int affected = savingsGoalRepository.addToCurrentAmount(goalId, user, amount);
+        if (affected != 1) {
+            log.error("Atomic deposit update affected {} rows for goalId={} userId={}", affected, goalId, user.getId());
+            throw new IllegalStateException("Failed to apply deposit — please try again");
         }
 
-        SavingsGoal saved = savingsGoalRepository.save(goal);
+        // Re-read to get the authoritative new value and to check the completion threshold.
+        SavingsGoal updated = savingsGoalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalStateException("Savings goal vanished mid-deposit"));
+
+        if (updated.getTargetAmount() != null
+                && updated.getCurrentAmount() != null
+                && updated.getCurrentAmount().compareTo(updated.getTargetAmount()) >= 0
+                && !"COMPLETED".equals(updated.getStatus())) {
+            updated.setStatus("COMPLETED");
+            log.info("Savings goal id={} reached target amount ({}) and marked COMPLETED", goalId, updated.getTargetAmount());
+            updated = savingsGoalRepository.save(updated);
+        }
+
         log.info("Deposit applied to savings goal id={}: newCurrentAmount={}, status={}",
-                goalId, saved.getCurrentAmount(), saved.getStatus());
-        return SavingsGoalMapper.toDto(saved);
+                goalId, updated.getCurrentAmount(), updated.getStatus());
+        return SavingsGoalMapper.toDto(updated);
     }
 
     /**

@@ -323,13 +323,21 @@ public class UserController {
         String currency = body.get("currency");
         log.info("Received request to update currency for userId={} to {}", userId, currency);
         userSecurity.validateUserAccess(userId);
-        if (currency == null || currency.isBlank() || currency.length() != 3) {
+        // Validate + normalize at the controller layer so:
+        //   (a) invalid input is rejected with 400 BEFORE the service is called
+        //       (test: updateCurrencyRejectsInvalidLength verifies service is never invoked)
+        //   (b) the service receives the uppercased value
+        //       (test: updateCurrencyNormalizesCodeToUppercase verifies mock with "USD")
+        // The service layer also validates (defence in depth for non-controller callers like
+        // OAuth login), but the controller is the primary gatekeeper here.
+        if (currency == null || !currency.trim().matches("^[A-Za-z]{3}$")) {
             log.warn("Invalid currency format '{}' for userId={}", currency, userId);
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "currency must be a 3-letter ISO 4217 code"));
+                    .body(Map.of("message", "Currency must be a 3-letter ISO 4217 code."));
         }
-        userService.updateCurrency(userId, currency.toUpperCase());
-        log.info("Currency preference updated for userId={} to {}", userId, currency.toUpperCase());
-        return ResponseEntity.ok(Map.of("currency", currency.toUpperCase()));
+        String normalized = currency.trim().toUpperCase(java.util.Locale.ROOT);
+        userService.updateCurrency(userId, normalized);
+        log.info("Currency preference updated for userId={} to {}", userId, normalized);
+        return ResponseEntity.ok(Map.of("currency", normalized));
     }
 }

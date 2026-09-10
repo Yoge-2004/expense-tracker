@@ -96,7 +96,7 @@ const GOOGLE_CLIENT_ID = "487469737581-k1idcre171eknatam925igofmc6jtk00.apps.goo
             if (typeof document.startViewTransition === "function" &&
                 !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
                 const transition = document.startViewTransition(applyTheme);
-                transition.finished.finally(() => root.classList.remove("theme-switching"));
+                transition.finished.finally(() => root.classList.remove("theme-switching")).catch(() => {});
             } else {
                 applyTheme();
                 requestAnimationFrame(() => root.classList.remove("theme-switching"));

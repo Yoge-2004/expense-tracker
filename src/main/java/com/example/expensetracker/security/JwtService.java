@@ -76,13 +76,11 @@ public class JwtService {
         log.info("JwtService successfully initialized with HMAC-SHA signing key (algorithm: HS256).");
     }
 
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-
-    public void setJwtExpiration(long jwtExpiration) {
-        this.jwtExpiration = jwtExpiration;
-    }
+    // SECURITY FIX: removed public setSecretKey() and setJwtExpiration() setters.
+    // These allowed any caller with a bean reference to reconfigure the JWT signing key
+    // or expiration at runtime — a security footgun. Configuration is now exclusively
+    // via constructor injection (@Value on the constructor parameters above).
+    // If tests need to override these values, use @TestPropertySource or @DynamicPropertySource.
 
     /**
      * Extracts username(email) from token.
@@ -163,8 +161,16 @@ public class JwtService {
 
         final String username = extractUsername(token);
 
+        // SECURITY FIX: previously, a JWT kept working until natural expiry even after the
+        // user was disabled or locked (e.g. by an admin, or by repeated failed login
+        // attempts). We now also require the account to be enabled and non-locked at
+        // validation time, so disabling/locking a user immediately invalidates all their
+        // outstanding tokens.
         return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+                && !isTokenExpired(token)
+                && userDetails.isEnabled()
+                && userDetails.isAccountNonLocked()
+                && userDetails.isCredentialsNonExpired();
     }
 
     /**

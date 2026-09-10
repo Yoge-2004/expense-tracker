@@ -41,6 +41,9 @@ public class RegisterRequest {
     private String securityPin;
 
     @Schema(description = "Preferred display currency (ISO 4217 3-letter code). Defaults to INR if omitted.", example = "INR")
+    @Pattern(
+            regexp = "^[A-Za-z]{3}$",
+            message = "Currency must be a 3-letter ISO 4217 code (e.g. INR, USD, EUR)")
     private String currency = "INR";
 
     public RegisterRequest() {}

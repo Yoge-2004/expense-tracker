@@ -208,10 +208,16 @@ public class AuthController {
             @Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
         String email = request.getEmail().trim();
         log.info("Password reset request received");
+        // FIXED: previously caught Exception (everything), which masked DB outages as a 200 OK
+        // "instructions have been prepared" response — misleading the user into thinking the
+        // reset email was sent when it wasn't. Now we only swallow expected exceptions
+        // (NoSuchElementException when the email doesn't exist — we don't want to leak that),
+        // and let infrastructure exceptions (DataAccessException, CannotCreateTransactionException)
+        // propagate so GlobalExceptionHandler returns 503 SERVICE_UNAVAILABLE.
         try {
             passwordResetService.requestReset(email);
-        } catch (Exception e) {
-            log.info("Password reset request processed without exposing account state: {}", e.getClass().getSimpleName());
+        } catch (java.util.NoSuchElementException e) {
+            log.info("Password reset request for unknown account processed without exposing account state");
         }
         return ResponseEntity.ok(Map.of(
             "message", "If an account exists for that email, recovery instructions have been prepared.",
@@ -273,6 +279,17 @@ public class AuthController {
             newUser.setCurrency("INR");
             return userService.registerUser(newUser);
         });
+
+        // SECURITY FIX: previously, a user whose account had been disabled or locked
+        // could still authenticate via Google Sign-In (the OAuth flow bypassed the
+        // standard Spring Security authentication path that checks these flags).
+        // Now we explicitly reject disabled/locked accounts with 401 Unauthorized,
+        // matching the standard login flow's behavior.
+        if (!user.isEnabled() || user.isAccountLocked()) {
+            log.warn("Google OAuth login rejected for disabled/locked account email={}", identity.email());
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Account is disabled or locked. Please contact support.");
+        }
 
         String token = jwtService.generateToken(user.getEmail());
         log.info("Google OAuth login successful for userId={}", user.getId());

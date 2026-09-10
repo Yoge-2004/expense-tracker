@@ -25,7 +25,20 @@ import java.util.List;
  * @see com.example.expensetracker.repository.CategoryRepository
  */
 @Entity
-@Table(name = "categories")
+@Table(
+    name = "categories",
+    uniqueConstraints = {
+        // CONCURRENCY FIX: previously uniqueness was only enforced by a non-atomic
+        // service-layer check (existsByNameAndUser + save). Two concurrent createCategory
+        // calls with the same name both passed the check and both inserted. This DB-level
+        // unique constraint is the source of truth — the second insert now fails with a
+        // DataIntegrityViolationException, which we map to 409 CONFLICT.
+        @UniqueConstraint(name = "uk_category_user_name", columnNames = {"name", "user_id"})
+    },
+    indexes = {
+        @Index(name = "idx_category_user_id", columnList = "user_id")
+    }
+)
 public class Category extends BaseEntity {
 
     /**
