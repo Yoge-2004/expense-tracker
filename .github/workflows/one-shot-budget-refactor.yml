@@ -1,0 +1,85 @@
+name: One-shot dashboard budget refactor
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    if: github.event.head_commit.author.name != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Extract budget controller
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          dashboard = Path('frontend/js/dashboard.js')
+          html = Path('frontend/dashboard.html')
+          workflow = Path('.github/workflows/one-shot-budget-refactor.yml')
+
+          src = dashboard.read_text(encoding='utf-8')
+          start_marker = 'async function loadBudgets() {'
+          end_marker = 'const setBudgetModal = document.getElementById("budgetModal");'
+          start = src.find(start_marker)
+          end = src.find(end_marker, start)
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('Budget controller block not found')
+
+          replacement = '''const dashboardBudgetController = window.DashboardBudget.createController({
+              elements,
+              userId,
+              apiRequest,
+              getCategoryColor,
+              getCategoryEmoji,
+              escapeHtml,
+              formatCurrency,
+              renderBudgetVsActualChart,
+              renderFinancialInsights,
+              showToast,
+              appConfirm: window.appConfirm,
+              openModal,
+              closeModal,
+              getCachedBudgets: () => cachedBudgets,
+              setCachedBudgets: (next) => {
+                  cachedBudgets = Array.isArray(next) ? next : [];
+              }
+          });
+
+          const loadBudgets = dashboardBudgetController.loadBudgets;
+          window.loadBudgets = loadBudgets;
+          window.deleteBudgetLimit = dashboardBudgetController.deleteBudgetLimit;
+
+          '''
+          src = src[:start] + replacement + src[end:]
+          dashboard.write_text(src, encoding='utf-8')
+
+          page = html.read_text(encoding='utf-8')
+          tag = '<script src="js/modules/dashboard-budget.js"></script>'
+          if tag not in page:
+              anchor = '<script src="js/modules/dashboard-data.js"></script>'
+              if anchor not in page:
+                  raise SystemExit('dashboard-data.js script tag not found')
+              page = page.replace(anchor, anchor + '\n    ' + tag, 1)
+              html.write_text(page, encoding='utf-8')
+          PY
+      - name: Validate frontend JavaScript
+        run: |
+          set -euo pipefail
+          find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Commit extraction and remove workflow
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/one-shot-budget-refactor.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/js/dashboard.js frontend/js/modules/dashboard-budget.js frontend/dashboard.html
+          git commit -m "refactor(js): extract dashboard budget controller"
+          git push origin HEAD:main
