@@ -39,30 +39,86 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
 #expenseList .expense-item,#incomeList tbody tr { min-width:0 !important; box-sizing:border-box !important; }
 @media (max-width:700px) { .budget-item { padding:13px !important; } .budget-item .budget-bar-track { height:7px !important; margin-top:9px !important; } #incomeList tbody tr { width:100% !important; } }
 
-
 @media (max-width:760px) {
-    /* Top action buttons are touch controls; keep the decorative shine inside the control. */
-    .top-bar .add-expense-button,
-    .top-bar .add-income-button {
-        flex:1 1 0 !important;
-        width:auto !important;
+    .top-bar-actions {
+        display:grid !important;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+        grid-auto-flow:row !important;
+        align-items:center !important;
+        justify-items:stretch !important;
+        gap:10px !important;
+        width:100% !important;
+        min-width:0 !important;
+        padding:0 !important;
+        box-sizing:border-box !important;
+    }
+
+    .command-search-wrapper {
+        grid-column:1 / -1 !important;
+        grid-row:1 !important;
+        width:100% !important;
         min-width:0 !important;
         max-width:none !important;
-        /* FIXED: was overflow:hidden which clipped the button text ("Record Expense" showed as
-           "cord Expe"). Now we use overflow:clip with overflow-clip-margin so the ::after shine
-           is still contained but the text is never clipped. As a fallback for browsers without
-           overflow-clip-margin support, we also set white-space:nowrap and text-overflow:ellipsis
-           so the text is at most truncated with an ellipsis (never silently clipped mid-character). */
-        overflow:visible !important;
-        overflow-clip-margin:12px !important;
+        margin-top:10px !important;
+    }
+
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+        flex:none !important;
+        box-sizing:border-box !important;
+        overflow:hidden !important;
+        overflow-clip-margin:0 !important;
         white-space:nowrap !important;
         text-overflow:ellipsis !important;
         isolation:isolate !important;
     }
+
+    .top-bar .add-expense-button { grid-column:1 !important; grid-row:2 !important; }
+    .top-bar .add-income-button { grid-column:2 !important; grid-row:2 !important; }
+
     .top-bar .add-expense-button::after,
     .top-bar .add-income-button::after {
-        /* Clip the shine to the button's rounded rect without clipping the text. */
-        clip-path:inset(0 round 12px) !important;
         display:none !important;
     }
+
+    .theme-toggle-btn {
+        grid-column:1 !important;
+        grid-row:3 !important;
+        justify-self:start !important;
+    }
+
+    .user-profile {
+        grid-column:2 !important;
+        grid-row:3 !important;
+        justify-self:end !important;
+        min-width:0 !important;
+    }
+
+    .profile-menu {
+        left:auto !important;
+        right:0 !important;
+        width:min(320px,calc(100vw - 24px)) !important;
+        min-width:0 !important;
+        max-width:calc(100vw - 24px) !important;
+        box-sizing:border-box !important;
+    }
+}
+
+@media (max-width:480px) {
+    .top-bar-actions { gap:8px !important; }
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        height:38px !important;
+        padding:0 10px !important;
+        font-size:12px !important;
+        gap:6px !important;
+        border-radius:9px !important;
+    }
+    .input-wrapper:has(> .input-icon) > input.form-input,.input-wrapper:has(> .input-icon) > textarea.form-input,.input-wrapper:has(> .input-icon) > select.form-input,
+    .input-wrapper:has(> svg.input-icon) > input.form-input,.input-wrapper:has(> svg.input-icon) > textarea.form-input,.input-wrapper:has(> svg.input-icon) > select.form-input { padding-left:38px !important; }
+    .input-wrapper > .input-icon,.input-wrapper > svg.input-icon { left:10px !important; width:14px !important; height:14px !important; max-width:14px !important; max-height:14px !important; flex-basis:14px !important; }
+    .profile-menu { width:calc(100vw - 20px) !important; max-width:calc(100vw - 20px) !important; right:-2px !important; }
 }
