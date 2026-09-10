@@ -148,9 +148,19 @@
         return showAppDialog("prompt", message, defaultValue);
     };
 
+    // dashboard.js already owns the click listeners for these controls. Remove
+    // redundant inline handlers before it initializes so there is a single
+    // event-binding path while preserving the existing global API.
+    function removeRedundantIncomeInlineHandlers() {
+        ["openIncomeModalBtn", "addIncomeTableBtn"].forEach(id => {
+            document.getElementById(id)?.removeAttribute("onclick");
+        });
+    }
+
     function init() {
         syncThemeIcons();
         installThemeGuard();
+        removeRedundantIncomeInlineHandlers();
     }
 
     if (document.readyState === "loading") {
