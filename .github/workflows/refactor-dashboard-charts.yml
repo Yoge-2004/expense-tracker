@@ -22,8 +22,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Skip if already extracted
-        id: guard
+      - name: Check dashboard chart extraction state
+        id: chart_guard
         run: |
           if test -s frontend/js/modules/dashboard-charts.js && grep -q 'js/modules/dashboard-charts.js' frontend/dashboard.html; then
             echo "already=true" >> "$GITHUB_OUTPUT"
@@ -31,33 +31,48 @@ jobs:
             echo "already=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check dashboard metric extraction state
+        id: metric_guard
+        run: |
+          if test -s frontend/js/modules/dashboard-metrics.js && grep -q 'js/modules/dashboard-metrics.js' frontend/dashboard.html; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Extract chart controllers
-        if: steps.guard.outputs.already != 'true'
+        if: steps.chart_guard.outputs.already != 'true'
         run: python3 scripts/extract-dashboard-charts.py
 
+      - name: Extract dashboard metrics
+        if: steps.metric_guard.outputs.already != 'true'
+        run: python3 scripts/extract-dashboard-metrics.py
+
       - name: Validate extracted JavaScript
-        if: steps.guard.outputs.already != 'true'
+        if: steps.chart_guard.outputs.already != 'true' || steps.metric_guard.outputs.already != 'true'
         run: |
           set -euo pipefail
           find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
-      - name: Verify dashboard chart module
-        if: steps.guard.outputs.already != 'true'
+      - name: Verify extracted dashboard modules
+        if: steps.chart_guard.outputs.already != 'true' || steps.metric_guard.outputs.already != 'true'
         run: |
           set -euo pipefail
           test -s frontend/js/modules/dashboard-charts.js
           grep -q 'js/modules/dashboard-charts.js' frontend/dashboard.html
           grep -q 'renderPieChart' frontend/js/dashboard.js
           grep -q 'renderTrendChart' frontend/js/dashboard.js
-          grep -q 'renderBudgetVsActualChart' frontend/js/dashboard.js
+          test -s frontend/js/modules/dashboard-metrics.js
+          grep -q 'js/modules/dashboard-metrics.js' frontend/dashboard.html
+          grep -q 'DashboardMetrics.updateProMetrics' frontend/js/dashboard.js
 
       - name: Commit refactor
-        if: steps.guard.outputs.already != 'true'
+        if: steps.chart_guard.outputs.already != 'true' || steps.metric_guard.outputs.already != 'true'
         run: |
-          if git diff --quiet -- frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html; then
-            echo "No chart extraction changes required."
+          if git diff --quiet -- frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/js/modules/dashboard-metrics.js frontend/dashboard.html; then
+            echo "No dashboard extraction changes required."
             exit 0
           fi
-          git add frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html
-          git commit -m "refactor(js): extract dashboard chart controllers"
+          git add frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/js/modules/dashboard-metrics.js frontend/dashboard.html
+          git commit -m "refactor(js): extract dashboard metric controller"
           git push origin HEAD:main
