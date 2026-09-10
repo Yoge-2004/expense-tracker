@@ -1,0 +1,41 @@
+name: Restore dashboard after accidental edit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-dashboard-after-bad-edit.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore dashboard from known-good commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin ad17e55245556df5d6a0d70740dd03b8e21b77cd --depth=1
+          git checkout FETCH_HEAD -- frontend/js/dashboard.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('frontend/js/dashboard.js')
+          s = p.read_text()
+          marker = '\nfunction parseLocalDate(value) {\n    const [year, month, day] = value.split(\'-\').map(Number);\n    return new Date(year, month - 1, day);\n}\n'
+          if marker in s:
+              s = s.replace(marker, '\n', 1)
+          p.write_text(s)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/js/dashboard.js
+          git commit -m 'fix: restore dashboard and remove duplicate date helper'
+          git push origin HEAD:main
+          rm -f .github/workflows/restore-dashboard-after-bad-edit.yml
+          git add -u .github/workflows/restore-dashboard-after-bad-edit.yml
+          git commit -m 'chore: remove temporary dashboard restore workflow'
+          git push origin HEAD:main
