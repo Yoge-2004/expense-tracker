@@ -1,0 +1,112 @@
+import { test, expect } from '@playwright/test';
+
+const emptyApi = async (page: Parameters<typeof test>[0] extends never ? never : any) => {
+  await page.route('**/api/**', async route => {
+    const url = route.request().url();
+    const headers = { 'content-type': 'application/json; charset=utf-8' };
+
+    if (url.includes('/api/webauthn/')) {
+      await route.continue();
+      return;
+    }
+
+    await route.fulfill({ status: 200, headers, body: '[]' });
+  });
+};
+
+test.describe('Mobile dashboard regressions', () => {
+  test('keeps Record Expense and Record Income controls separated and fully visible', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/index.html');
+    await page.evaluate(() => {
+      localStorage.setItem('token', 'ui-regression-test-token');
+      localStorage.setItem('userId', '1');
+      localStorage.setItem('userName', 'Mobile User');
+      localStorage.setItem('userEmail', 'mobile@example.com');
+    });
+
+    await emptyApi(page);
+    await page.goto('/dashboard.html');
+    await expect(page.locator('.top-bar')).toBeVisible();
+
+    const expense = page.locator('#openModalBtn');
+    const income = page.locator('#openIncomeModalBtn');
+    await expect(expense).toBeVisible();
+    await expect(income).toBeVisible();
+
+    const boxes = await Promise.all([
+      expense.boundingBox(),
+      income.boundingBox(),
+    ]);
+    expect(boxes[0]).not.toBeNull();
+    expect(boxes[1]).not.toBeNull();
+
+    const first = boxes[0]!;
+    const second = boxes[1]!;
+    expect(first.x + first.width).toBeLessThanOrEqual(second.x + 1);
+    expect(first.width).toBeGreaterThan(120);
+    expect(second.width).toBeGreaterThan(120);
+
+    const overflow = await page.evaluate(() => ({
+      expense: getComputedStyle(document.querySelector('#openModalBtn')!).overflow,
+      income: getComputedStyle(document.querySelector('#openIncomeModalBtn')!).overflow,
+    }));
+    expect(overflow.expense).toBe('hidden');
+    expect(overflow.income).toBe('hidden');
+  });
+
+  test('does not reload the dashboard spontaneously after initial navigation', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/index.html');
+    await page.evaluate(() => {
+      localStorage.setItem('token', 'refresh-regression-token');
+      localStorage.setItem('userId', '1');
+      localStorage.setItem('userName', 'Refresh Test');
+      localStorage.setItem('userEmail', 'refresh@example.com');
+    });
+
+    await emptyApi(page);
+    let mainFrameNavigations = 0;
+    page.on('framenavigated', frame => {
+      if (frame === page.mainFrame()) mainFrameNavigations += 1;
+    });
+
+    await page.goto('/dashboard.html');
+    mainFrameNavigations = 0;
+    await page.waitForTimeout(5000);
+
+    expect(mainFrameNavigations).toBe(0);
+    expect(page.url()).toContain('dashboard.html');
+  });
+
+  test('keeps ledger stream controls horizontally accessible on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/index.html');
+    await page.evaluate(() => {
+      localStorage.setItem('token', 'ledger-regression-token');
+      localStorage.setItem('userId', '1');
+      localStorage.setItem('userName', 'Ledger Test');
+    });
+
+    await emptyApi(page);
+    await page.goto('/dashboard.html');
+
+    const tabs = page.locator('#ledgerStreamTabs, .ledger-stream-tabs').first();
+    await expect(tabs).toBeVisible();
+
+    const metrics = await tabs.evaluate(el => {
+      const style = getComputedStyle(el);
+      return {
+        overflowX: style.overflowX,
+        clientWidth: el.clientWidth,
+        scrollWidth: el.scrollWidth,
+        children: Array.from(el.children).map(child => ({ width: (child as HTMLElement).getBoundingClientRect().width }))
+      };
+    });
+
+    expect(metrics.overflowX).toBe('auto');
+    expect(metrics.children.length).toBeGreaterThan(0);
+    expect(metrics.children.every(child => child.width > 0)).toBe(true);
+    expect(metrics.scrollWidth).toBeGreaterThanOrEqual(metrics.clientWidth);
+  });
+});
