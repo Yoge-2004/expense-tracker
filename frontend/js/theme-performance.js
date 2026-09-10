@@ -8,9 +8,12 @@
     function armThemeGuard() {
         root.classList.add("theme-transitioning");
         clearTimeout(releaseTimer);
+
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                releaseTimer = setTimeout(() => root.classList.remove("theme-transitioning"), 32);
+                releaseTimer = setTimeout(() => {
+                    root.classList.remove("theme-transitioning");
+                }, 180);
             });
         });
     }
@@ -19,4 +22,6 @@
         const toggle = event.target.closest?.(".theme-toggle-btn, #themeToggle");
         if (toggle) armThemeGuard();
     }, true);
+
+    document.addEventListener("themechange", armThemeGuard, true);
 })();
