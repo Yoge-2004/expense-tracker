@@ -69,6 +69,43 @@ test.describe('Mobile dashboard regressions', () => {
     expect(parseFloat(styles.actionPaddingRight)).toBeGreaterThanOrEqual(10);
   });
 
+  test('keeps narrow mobile record controls inside the viewport after scrolling', async ({ page }) => {
+    await page.setViewportSize({ width: 293, height: 199 });
+    await page.goto('/index.html');
+    await page.evaluate(() => {
+      localStorage.setItem('token', 'narrow-mobile-token');
+      localStorage.setItem('userId', '1');
+      localStorage.setItem('userName', 'Narrow Mobile');
+      localStorage.setItem('userEmail', 'narrow@example.com');
+    });
+
+    await emptyApi(page);
+    await page.goto('/dashboard.html');
+    await expect(page.locator('.top-bar')).toBeVisible();
+
+    await page.evaluate(() => window.scrollTo(0, 240));
+
+    const viewport = { width: 293, height: 199 };
+    const boxes = await Promise.all([
+      page.locator('#openModalBtn').boundingBox(),
+      page.locator('#openIncomeModalBtn').boundingBox(),
+    ]);
+    expect(boxes[0]).not.toBeNull();
+    expect(boxes[1]).not.toBeNull();
+
+    for (const box of boxes) {
+      const rect = box!;
+      expect(rect.x).toBeGreaterThanOrEqual(0);
+      expect(rect.x + rect.width).toBeLessThanOrEqual(viewport.width);
+      expect(rect.y).toBeGreaterThanOrEqual(0);
+      expect(rect.y + rect.height).toBeLessThanOrEqual(viewport.height);
+    }
+
+    const header = await page.locator('.top-bar').boundingBox();
+    expect(header).not.toBeNull();
+    expect(header!.y).toBeGreaterThanOrEqual(0);
+  });
+
   test('does not reload the dashboard spontaneously after initial navigation', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/index.html');
