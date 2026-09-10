@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-const emptyApi = async (page: Parameters<typeof test>[0] extends never ? never : any) => {
+const emptyApi = async (page: Page) => {
   await page.route('**/api/**', async route => {
     const url = route.request().url();
     const headers = { 'content-type': 'application/json; charset=utf-8' };
@@ -34,10 +34,7 @@ test.describe('Mobile dashboard regressions', () => {
     await expect(expense).toBeVisible();
     await expect(income).toBeVisible();
 
-    const boxes = await Promise.all([
-      expense.boundingBox(),
-      income.boundingBox(),
-    ]);
+    const boxes = await Promise.all([expense.boundingBox(), income.boundingBox()]);
     expect(boxes[0]).not.toBeNull();
     expect(boxes[1]).not.toBeNull();
 
@@ -100,7 +97,9 @@ test.describe('Mobile dashboard regressions', () => {
         overflowX: style.overflowX,
         clientWidth: el.clientWidth,
         scrollWidth: el.scrollWidth,
-        children: Array.from(el.children).map(child => ({ width: (child as HTMLElement).getBoundingClientRect().width }))
+        children: Array.from(el.children).map(child => ({
+          width: (child as HTMLElement).getBoundingClientRect().width
+        }))
       };
     });
 
