@@ -323,13 +323,19 @@ public class UserController {
         String currency = body.get("currency");
         log.info("Received request to update currency for userId={} to {}", userId, currency);
         userSecurity.validateUserAccess(userId);
-        if (currency == null || currency.isBlank() || currency.length() != 3) {
+        // FIXED: previously used `currency.length() != 3` which accepted "123" (non-alpha).
+        // The service layer uses `matches("^[A-Za-z]{3}$")` so the controller would return 200
+        // and then the service would throw 400 — inconsistent UX. Now both layers use the same
+        // regex, and the controller delegates validation to the service (single source of truth).
+        try {
+            userService.updateCurrency(userId, currency);
+        } catch (IllegalArgumentException e) {
             log.warn("Invalid currency format '{}' for userId={}", currency, userId);
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "currency must be a 3-letter ISO 4217 code"));
+                    .body(Map.of("message", e.getMessage()));
         }
-        userService.updateCurrency(userId, currency.toUpperCase());
-        log.info("Currency preference updated for userId={} to {}", userId, currency.toUpperCase());
-        return ResponseEntity.ok(Map.of("currency", currency.toUpperCase()));
+        String normalized = currency.toUpperCase(java.util.Locale.ROOT);
+        log.info("Currency preference updated for userId={} to {}", userId, normalized);
+        return ResponseEntity.ok(Map.of("currency", normalized));
     }
 }

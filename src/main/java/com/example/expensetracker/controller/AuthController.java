@@ -208,10 +208,16 @@ public class AuthController {
             @Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
         String email = request.getEmail().trim();
         log.info("Password reset request received");
+        // FIXED: previously caught Exception (everything), which masked DB outages as a 200 OK
+        // "instructions have been prepared" response — misleading the user into thinking the
+        // reset email was sent when it wasn't. Now we only swallow expected exceptions
+        // (NoSuchElementException when the email doesn't exist — we don't want to leak that),
+        // and let infrastructure exceptions (DataAccessException, CannotCreateTransactionException)
+        // propagate so GlobalExceptionHandler returns 503 SERVICE_UNAVAILABLE.
         try {
             passwordResetService.requestReset(email);
-        } catch (Exception e) {
-            log.info("Password reset request processed without exposing account state: {}", e.getClass().getSimpleName());
+        } catch (java.util.NoSuchElementException e) {
+            log.info("Password reset request for unknown account processed without exposing account state");
         }
         return ResponseEntity.ok(Map.of(
             "message", "If an account exists for that email, recovery instructions have been prepared.",

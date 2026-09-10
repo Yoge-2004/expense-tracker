@@ -249,7 +249,10 @@ public class IncomeController {
         log.info("Incomes CSV export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.csv\"")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                // FIXED: specify charset=UTF-8 so non-ASCII characters in descriptions (currency
+                // symbols, accented names, emoji) are not corrupted. Without charset, text/csv
+                // defaults to ISO-8859-1 per RFC 4180.
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(bytes);
     }
 

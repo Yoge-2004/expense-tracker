@@ -105,6 +105,16 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Override
     @Transactional(readOnly = true)
     public MonthlyReportDto generateMonthlyReport(Long userId, int year, int month) {
+        // FIXED: previously passed year/month straight to LocalDate.of() which throws
+        // DateTimeException for invalid values (month=13, year=-1, etc.). That exception
+        // was caught by GlobalExceptionHandler.handleGeneric -> 500 INTERNAL_SERVER_ERROR.
+        // Now we validate explicitly and throw IllegalArgumentException -> 400 BAD_REQUEST.
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("Month must be between 1 and 12 (got " + month + ")");
+        }
+        if (year < 1900 || year > 2100) {
+            throw new IllegalArgumentException("Year must be between 1900 and 2100 (got " + year + ")");
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
@@ -356,7 +366,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
      * {@inheritDoc}
      */
     @EventListener(ApplicationReadyEvent.class)
-    @Scheduled(cron = "0 0 * * * ?")
+    // FIXED: previously ran every hour ("0 0 * * * ?") which fired 720 times per month,
+    // each time scanning the DB for unsent reports. The alreadySent check made it
+    // idempotent but it was still wasteful. Now runs at 6 AM on days 1-3 of each month
+    // — catches the previous month's report soon after the month rolls over, with a
+    // 3-day window to handle timezone differences and downtime.
+    @Scheduled(cron = "0 0 6 1-3 * ?")
     @Transactional
     @Override
     public void sendAutomatedMonthlyReports() {

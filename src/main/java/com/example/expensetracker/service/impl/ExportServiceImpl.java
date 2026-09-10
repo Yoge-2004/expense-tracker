@@ -261,7 +261,10 @@ public class ExportServiceImpl implements ExportService {
             sb.append(exp.getId()).append(",")
                     .append(exp.getExpenseDate() != null ? exp.getExpenseDate() : "").append(",")
                     .append("\"").append(escapeCsv(exp.getCategory() != null ? exp.getCategory().getName() : "")).append("\",")
-                    .append(exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO).append(",")
+                    // FIXED: use toPlainString() instead of toString() — BigDecimal.toString() can
+                    // emit scientific notation (e.g. "1E+10") for large values, which Excel's CSV
+                    // importer doesn't always parse correctly.
+                    .append(exp.getAmount() != null ? exp.getAmount().toPlainString() : "0").append(",")
                     .append("\"").append(escapeCsv(exp.getDescription() != null ? exp.getDescription() : "")).append("\",")
                     .append(exp.isRecurring()).append("\n");
         }
@@ -485,7 +488,10 @@ public class ExportServiceImpl implements ExportService {
             sb.append(inc.getId()).append(",")
                     .append(inc.getIncomeDate() != null ? inc.getIncomeDate() : "").append(",")
                     .append("\"").append(escapeCsv(inc.getSource() != null ? inc.getSource() : "")).append("\",")
-                    .append(inc.getAmount() != null ? inc.getAmount() : BigDecimal.ZERO).append(",")
+                    // FIXED: use toPlainString() instead of toString() — BigDecimal.toString() can
+                    // emit scientific notation (e.g. "1E+10") for large values, which Excel's CSV
+                    // importer doesn't always parse correctly.
+                    .append(inc.getAmount() != null ? inc.getAmount().toPlainString() : "0").append(",")
                     .append("\"").append(escapeCsv(inc.getDescription() != null ? inc.getDescription() : "")).append("\",")
                     .append(Boolean.TRUE.equals(inc.getIsRecurring())).append("\n");
         }
@@ -1688,7 +1694,14 @@ public class ExportServiceImpl implements ExportService {
                 c4.setCellStyle(isZebra ? pctZebraStyle : pctDataStyle);
 
                 Cell c5 = r.createCell(5);
-                c5.setCellFormula("B" + (rIdx + 1));
+                // FIXED: previously c5.setCellFormula("B" + (rIdx + 1)) which just duplicated
+                // the Gross Amount column — the "Monthly Run-Rate" header was a lie. Now we
+                // compute a real monthly run-rate = (B{row} / activeDays) * 30.4, where
+                // activeDays is the actual span of the user's expense history. We inline the
+                // activeDays value as a literal because it's not stored in any cell.
+                // For non-expense rows (income, net, savings) this is still meaningful as a
+                // normalized monthly figure.
+                c5.setCellFormula("IF(" + activeDays + ">0, B" + (rIdx + 1) + "/" + activeDays + "*30.4, 0)");
                 c5.setCellStyle(isZebra ? curZebraStyle : curDataStyle);
 
                 Cell c6 = r.createCell(6);
@@ -1721,11 +1734,18 @@ public class ExportServiceImpl implements ExportService {
             t2c3.setCellStyle(totLbl);
 
             Cell t2c4 = t2TotRow.createCell(4);
-            t2c4.setCellFormula("G6");
+            // FIXED: previously t2c4.setCellFormula("G6") which displayed the savings rate
+            // (Card 4 value) in the "Portfolio Ratio" column of the total row — semantically
+            // wrong. Now we show the consolidated portfolio ratio = total inflow / total inflow = 100%
+            // (i.e. the share of the total that this consolidated position represents).
+            t2c4.setCellFormula("IF($A$6>0, B" + (t2TotRowIdx + 1) + "/$A$6, 0)");
             t2c4.setCellStyle(totPct);
 
             Cell t2c5 = t2TotRow.createCell(5);
-            t2c5.setCellFormula("B" + (t2TotRowIdx + 1));
+            // FIXED: previously t2c5.setCellFormula("B" + (t2TotRowIdx + 1)) which duplicated
+            // the Net Cash Flow value already shown in col B. Now we show the consolidated
+            // monthly run-rate, matching the per-row formula in column E.
+            t2c5.setCellFormula("IF(" + activeDays + ">0, B" + (t2TotRowIdx + 1) + "/" + activeDays + "*30.4, 0)");
             t2c5.setCellStyle(totCur);
 
             Cell t2c6 = t2TotRow.createCell(6);
@@ -1836,11 +1856,18 @@ public class ExportServiceImpl implements ExportService {
             t3c3.setCellStyle(totLbl);
 
             Cell t3c4 = t3TotRow.createCell(4);
-            t3c4.setCellFormula("AVERAGE(E" + (timeStartRow + 1) + ":E" + (timeEndRow + 1) + ")");
+            // FIXED (B7): previously AVERAGE(E{start}:E{end}) but every E{row} cell contains the
+            // SAME formula (IF($C$6>0, $C$6/N, 0)), so the average is just that same value.
+            // Now we just reference the first E cell directly — semantically equivalent and clearer.
+            t3c4.setCellFormula("E" + (timeStartRow + 1));
             t3c4.setCellStyle(totCur);
 
             Cell t3c5 = t3TotRow.createCell(5);
-            t3c5.setCellFormula("SUM(F" + (timeStartRow + 1) + ":F" + (timeEndRow + 1) + ")");
+            // FIXED (B6): previously SUM(F{start}:F{end}) where each F{row} = B{row} - E{row}
+            // and E{row} = TotalExp/N for every row. So SUM(F) = SUM(B) - N*(TotalExp/N) =
+            // TotalExp - TotalExp = 0 — always zero, misleading. Now we show the MAX variance
+            // (peak day's deviation from the benchmark) which is actually useful information.
+            t3c5.setCellFormula("MAX(F" + (timeStartRow + 1) + ":F" + (timeEndRow + 1) + ")");
             t3c5.setCellStyle(totCur);
 
             Cell t3c6 = t3TotRow.createCell(6);
@@ -2414,7 +2441,9 @@ public class ExportServiceImpl implements ExportService {
                 addHeaderCell(goalTable, "Progress", tableHeaderFont, goalHeaderBg);
 
                 for (SavingsGoal goal : savingsGoals) {
-                    goalTable.addCell(new Phrase(goal.getName(), dataFont));
+                    // FIXED: goal.getName() can be null — Phrase constructor is null-hostile in
+                    // newer openpdf versions and would NPE. Guard with a fallback label.
+                    goalTable.addCell(new Phrase(goal.getName() != null ? goal.getName() : "Unnamed Goal", dataFont));
                     goalTable.addCell(new Phrase(curr.symbol + " " + formatAmount(goal.getTargetAmount(), curr.decimals), dataFont));
                     goalTable.addCell(new Phrase(curr.symbol + " " + formatAmount(goal.getCurrentAmount(), curr.decimals), dataFont));
                     double progress = 0.0;

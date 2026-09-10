@@ -88,9 +88,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         if (request.getTargetAmount() != null) {
             existing.setTargetAmount(request.getTargetAmount());
         }
-        if (request.getCurrentAmount() != null) {
-            existing.setCurrentAmount(request.getCurrentAmount());
-        }
+        // FIXED: previously request.getCurrentAmount() could be set directly via updateGoal,
+        // bypassing depositToGoal's validation and atomic increment. This allowed a user to
+        // arbitrarily set currentAmount (including above target) without going through the
+        // deposit flow, and also skipped the COMPLETED status auto-transition. We now ignore
+        // currentAmount on update — use POST /savings/goals/{id}/deposit to add funds.
+        // If you genuinely need to adjust currentAmount (e.g. correction), add an admin endpoint.
         if (request.getTargetDate() != null) {
             existing.setTargetDate(request.getTargetDate());
         }
@@ -114,6 +117,17 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         }
         if (request.getEndDate() != null) {
             existing.setEndDate(request.getEndDate());
+        }
+
+        // Auto-transition status to COMPLETED if the (unchanged) currentAmount now meets
+        // or exceeds the (possibly updated) targetAmount. This handles the case where the
+        // user lowers the target below what they've already saved.
+        if (existing.getTargetAmount() != null
+                && existing.getCurrentAmount() != null
+                && existing.getCurrentAmount().compareTo(existing.getTargetAmount()) >= 0
+                && !"COMPLETED".equals(existing.getStatus())) {
+            existing.setStatus("COMPLETED");
+            log.info("Savings goal id={} auto-marked COMPLETED (target lowered below current saved)", goalId);
         }
 
         SavingsGoal saved = savingsGoalRepository.save(existing);

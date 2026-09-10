@@ -3392,18 +3392,51 @@ document.getElementById("resetIncomeFiltersBtn")?.addEventListener("click", rese
 
 incomeForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const id = document.getElementById("incomeId").value;
-    const isRecurring = document.getElementById("incomeIsRecurring").checked;
+    // FIXED: previously these getElementById calls had no null guards. If any form field
+    // was missing (e.g. a future refactor removes one), the handler would throw and the
+    // form would silently fail to submit. Now we cache the element references once and
+    // null-guard each one. We also validate amount is a positive number before sending.
+    const idEl = document.getElementById("incomeId");
+    const isRecurringEl = document.getElementById("incomeIsRecurring");
+    const sourceEl = document.getElementById("incomeSource");
+    const amountEl = document.getElementById("incomeAmount");
+    const dateEl = document.getElementById("incomeDate");
+    const descEl = document.getElementById("incomeDesc");
+    if (!sourceEl || !amountEl || !dateEl) {
+        showToast("Income form is missing required fields. Please reload the page.", "error");
+        return;
+    }
+    const id = idEl?.value || "";
+    const isRecurring = isRecurringEl?.checked || false;
     const frequency = isRecurring ? (document.getElementById("incomeRecurringFrequency")?.value || "MONTHLY") : null;
     const intervalDays = (isRecurring && frequency === "CUSTOM")
         ? (parseInt(document.getElementById("incomeRecurringIntervalDays")?.value, 10) || 1)
         : null;
 
+    const amountVal = parseFloat(amountEl.value);
+    if (!Number.isFinite(amountVal) || amountVal <= 0) {
+        showToast("Please enter a valid positive amount.", "error");
+        amountEl.classList.add("is-invalid");
+        return;
+    }
+    const dateVal = dateEl.value;
+    if (!dateVal) {
+        showToast("Please pick an income date.", "error");
+        dateEl.classList.add("is-invalid");
+        return;
+    }
+    const sourceVal = sourceEl.value.trim();
+    if (!sourceVal) {
+        showToast("Please enter an income source.", "error");
+        sourceEl.classList.add("is-invalid");
+        return;
+    }
+
     const payload = {
-        source: document.getElementById("incomeSource").value.trim(),
-        amount: parseFloat(document.getElementById("incomeAmount").value),
-        incomeDate: document.getElementById("incomeDate").value,
-        description: document.getElementById("incomeDesc").value.trim(),
+        source: sourceVal,
+        amount: amountVal,
+        incomeDate: dateVal,
+        description: (descEl?.value || "").trim(),
         isRecurring: isRecurring,
         frequency: frequency,
         intervalDays: intervalDays

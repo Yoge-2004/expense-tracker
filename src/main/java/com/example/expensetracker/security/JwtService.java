@@ -76,13 +76,11 @@ public class JwtService {
         log.info("JwtService successfully initialized with HMAC-SHA signing key (algorithm: HS256).");
     }
 
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-
-    public void setJwtExpiration(long jwtExpiration) {
-        this.jwtExpiration = jwtExpiration;
-    }
+    // SECURITY FIX: removed public setSecretKey() and setJwtExpiration() setters.
+    // These allowed any caller with a bean reference to reconfigure the JWT signing key
+    // or expiration at runtime — a security footgun. Configuration is now exclusively
+    // via constructor injection (@Value on the constructor parameters above).
+    // If tests need to override these values, use @TestPropertySource or @DynamicPropertySource.
 
     /**
      * Extracts username(email) from token.
