@@ -57,7 +57,7 @@ test.describe('Targeted UI regressions', () => {
 
   test('removes redundant income inline handlers while preserving the global API', async ({ page }) => {
     for (const selector of ['#openIncomeModalBtn', '#addIncomeTableBtn']) {
-      await expect(page.locator(selector)).toHaveAttribute('onclick', undefined);
+      await expect.poll(async () => page.locator(selector).getAttribute('onclick')).toBeNull();
     }
 
     await expect.poll(async () => page.evaluate(() => typeof window.openNewIncomeModal)).toBe('function');
