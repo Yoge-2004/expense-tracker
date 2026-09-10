@@ -69,18 +69,51 @@ const WebBiometrics = (() => {
         return options;
     };
 
-    const isAvailable = async () => {
-        if (!window.isSecureContext) return false;
-        if (!window.PublicKeyCredential || !navigator.credentials?.create || !navigator.credentials?.get) return false;
-        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
-            return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    const getDiagnostics = async () => {
+        const secureContext = Boolean(window.isSecureContext);
+        const webAuthnApi = Boolean(
+            window.PublicKeyCredential &&
+            navigator.credentials?.create &&
+            navigator.credentials?.get
+        );
+
+        let platformAuthenticator = null;
+        if (window.PublicKeyCredential && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
+            try {
+                platformAuthenticator = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            } catch (_) {
+                platformAuthenticator = false;
+            }
         }
-        return true;
+
+        let reason = "ok";
+        if (!secureContext) reason = "secure-context-required";
+        else if (!webAuthnApi) reason = "webauthn-api-unavailable";
+        else if (platformAuthenticator === false) reason = "platform-authenticator-unavailable";
+
+        return {
+            available: secureContext && webAuthnApi && platformAuthenticator !== false,
+            secureContext,
+            webAuthnApi,
+            platformAuthenticator,
+            origin: window.location.origin,
+            hostname: window.location.hostname,
+            reason
+        };
     };
 
+    const isAvailable = async () => (await getDiagnostics()).available;
+
     const enroll = async (_userEmail, _token) => {
-        if (!(await isAvailable())) {
-            throw new Error("Biometric authentication is not available in this browser or on this device.");
+        const diagnostics = await getDiagnostics();
+        if (!diagnostics.available) {
+            if (diagnostics.reason === "secure-context-required") {
+                throw new Error("Biometrics require HTTPS or a browser-trusted localhost origin.");
+            }
+            if (diagnostics.reason === "platform-authenticator-unavailable") {
+                throw new Error("No platform biometric authenticator is available on this device.");
+            }
+            throw new Error("WebAuthn is not available in this browser.");
         }
 
         const start = await apiRequest("/webauthn/register/options", { method: "POST" });
@@ -96,6 +129,7 @@ const WebBiometrics = (() => {
         } catch (error) {
             if (error?.name === "NotAllowedError") throw new Error("Biometric registration was cancelled or timed out.");
             if (error?.name === "InvalidStateError") throw new Error("A biometric credential is already registered on this device.");
+            if (error?.name === "SecurityError") throw new Error("This site's origin is not permitted for biometric authentication.");
             throw new Error(error?.message || "The device could not create a biometric credential.");
         }
         if (!credential) throw new Error("The device did not return a biometric credential.");
@@ -110,8 +144,15 @@ const WebBiometrics = (() => {
     };
 
     const authenticate = async () => {
-        if (!(await isAvailable())) {
-            throw new Error("Biometric authentication is not available in this browser or on this device.");
+        const diagnostics = await getDiagnostics();
+        if (!diagnostics.available) {
+            if (diagnostics.reason === "secure-context-required") {
+                throw new Error("Biometrics require HTTPS or a browser-trusted localhost origin.");
+            }
+            if (diagnostics.reason === "platform-authenticator-unavailable") {
+                throw new Error("No platform biometric authenticator is available on this device.");
+            }
+            throw new Error("WebAuthn is not available in this browser.");
         }
 
         const start = await apiRequest("/webauthn/login/options", {
@@ -129,6 +170,7 @@ const WebBiometrics = (() => {
             });
         } catch (error) {
             if (error?.name === "NotAllowedError") throw new Error("Biometric sign-in was cancelled or timed out.");
+            if (error?.name === "SecurityError") throw new Error("This site's origin is not permitted for biometric authentication.");
             throw new Error(error?.message || "The device could not verify your biometric credential.");
         }
         if (!credential) throw new Error("The device did not return a biometric assertion.");
@@ -145,7 +187,7 @@ const WebBiometrics = (() => {
         return finish;
     };
 
-    return Object.freeze({ isAvailable, enroll, authenticate });
+    return Object.freeze({ getDiagnostics, isAvailable, enroll, authenticate });
 })();
 
 window.WebBiometrics = WebBiometrics;
