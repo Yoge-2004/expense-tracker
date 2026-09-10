@@ -28,7 +28,7 @@ jobs:
         working-directory: e2e
         run: npm install --no-audit --no-fund
 
-      - name: Install Chromium
+      - name: Install Chromium browsers
         working-directory: e2e
         run: npx playwright install --with-deps chromium
 
@@ -44,12 +44,19 @@ jobs:
           cat /tmp/expense-tracker-frontend.log
           exit 1
 
-      - name: Run focused browser regressions
+      - name: Run WebAuthn browser regression
         working-directory: e2e
         env:
           CI: true
           BASE_URL: http://localhost:5500
-        run: npx playwright test tests/mobile-ui-regressions.spec.ts tests/biometrics.spec.ts --project=chromium
+        run: npx playwright test tests/biometrics.spec.ts --project=chromium
+
+      - name: Run mobile UI regressions on Pixel 7
+        working-directory: e2e
+        env:
+          CI: true
+          BASE_URL: http://localhost:5500
+        run: npx playwright test tests/mobile-ui-regressions.spec.ts --project=mobile-chrome
 
       - name: Upload Playwright report on failure
         if: failure()
