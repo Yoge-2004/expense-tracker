@@ -54,4 +54,12 @@ test.describe('Targeted UI regressions', () => {
     await page.locator('#themeToggle').click();
     await expect.poll(async () => root.getAttribute('data-theme')).toBe('dark');
   });
+
+  test('removes redundant income inline handlers while preserving the global API', async ({ page }) => {
+    for (const selector of ['#openIncomeModalBtn', '#addIncomeTableBtn']) {
+      await expect.poll(async () => page.locator(selector).getAttribute('onclick')).toBeNull();
+    }
+
+    await expect.poll(async () => page.evaluate(() => typeof window.openNewIncomeModal)).toBe('function');
+  });
 });
