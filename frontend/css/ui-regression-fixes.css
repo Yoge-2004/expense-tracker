@@ -8,6 +8,15 @@ html[data-theme="light"] #themeToggle .sun-icon { display:none !important; visib
 html[data-theme="light"] .theme-toggle-btn .moon-icon,
 html[data-theme="light"] #themeToggle .moon-icon { display:block !important; visibility:visible !important; }
 
+/* Theme swaps should be a single cheap style update, not a page-wide animation. */
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+    transition:none !important;
+    animation:none !important;
+    animation-play-state:paused !important;
+}
+
 .google-oauth-wrapper { position:relative !important; overflow:visible !important; isolation:isolate; }
 #googleOAuthBtn.btn-oauth {
     position:relative !important; z-index:1 !important; box-sizing:border-box !important; min-height:48px !important;
@@ -32,9 +41,11 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
 .subs-tab-btn,.subs-tab-btn:hover,.subs-tab-btn:active,.subs-tab-btn.active { box-sizing:border-box !important; min-height:38px !important; padding:7px 16px !important; border-width:1px !important; transform:none !important; outline:none !important; transition:color .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease !important; -webkit-tap-highlight-color:transparent !important; }
 .subs-tab-btn:focus-visible { outline:2px solid color-mix(in srgb,var(--primary) 60%,transparent) !important; outline-offset:2px !important; }
 
+/* Keep curved modal scrollbars inside the dialog bounds. */
 .modal { overflow-y:auto !important; overflow-x:hidden !important; scrollbar-gutter:stable !important; clip-path:inset(0 round 24px) !important; -webkit-clip-path:inset(0 round 24px) !important; }
-.modal::-webkit-scrollbar-track { margin:28px 0 !important; border-radius:999px !important; }
+.modal::-webkit-scrollbar-track { margin:8px 0 !important; border-radius:999px !important; }
 .modal::-webkit-scrollbar-thumb { min-height:24px !important; }
+
 #expenseList,#incomeList { min-width:0 !important; width:100% !important; box-sizing:border-box !important; }
 #expenseList .expense-item,#incomeList tbody tr { min-width:0 !important; box-sizing:border-box !important; }
 @media (max-width:700px) { .budget-item { padding:13px !important; } .budget-item .budget-bar-track { height:7px !important; margin-top:9px !important; } #incomeList tbody tr { width:100% !important; } }
