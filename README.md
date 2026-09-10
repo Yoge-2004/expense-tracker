@@ -318,7 +318,14 @@ expense-tracker/
 │   ├── components/              # Reusable mobile UI
 │   ├── constants/               # API/auth/config constants
 │   ├── context/                 # Authentication/theme state
-│   └── services/                # Backend/API integrations
+│   ├── services/                # Backend/API integrations
+│   ├── __tests__/               # Jest unit tests (currency, API, auth)
+│   └── e2e/                     # Detox E2E tests (login, dashboard)
+│
+├── e2e/                         # Playwright TypeScript E2E tests
+│   ├── tests/                   # login.spec.ts, dashboard.spec.ts, expenses.spec.ts
+│   ├── playwright.config.ts     # Playwright configuration
+│   └── package.json             # E2E test dependencies
 │
 ├── src/main/java/               # Spring Boot production code
 │   └── com/example/expensetracker/
@@ -333,11 +340,20 @@ expense-tracker/
 │       └── service/              # Business logic and sync
 │
 ├── src/test/                    # Backend tests and BDD scenarios
+│   ├── java/.../controller/     # JUnit + MockMvc controller tests
+│   ├── java/.../cucumber/       # Cucumber BDD step definitions
+│   ├── java/.../playwright/     # Playwright Java E2E tests
+│   └── resources/features/      # Cucumber .feature files (auth, expenses, export)
+│
+├── scripts/                     # Automation scripts
+│   ├── run-all-tests.sh         # Cross-platform test runner (Linux/macOS)
+│   ├── run-all-tests.bat        # Cross-platform test runner (Windows CMD)
+│   └── run-all-tests.ps1        # Cross-platform test runner (Windows PowerShell)
 ├── docs/images/                 # Documentation visual assets & screenshots
 ├── Dockerfile                   # Hugging Face production container
 ├── netlify.toml                 # Web deployment configuration
 ├── pom.xml                      # Maven project configuration
-└── run-tests.sh                 # Test convenience script
+└── run-tests.sh                 # Test convenience wrapper (→ scripts/run-all-tests.sh)
 ```
 
 ---
@@ -553,36 +569,257 @@ For the authoritative request/response schemas, use Swagger/OpenAPI generated di
 
 # 🧪 Testing
 
-The repository uses multiple test layers so that business logic, HTTP contracts, integrations, and browser behavior can be checked independently.
+The repository uses multiple test layers so that business logic, HTTP contracts, BDD scenarios, browser behavior, and mobile app logic can be checked independently.
 
-| Layer | Tooling | Focus |
-|---|---|---|
-| Unit | JUnit + Mockito | Business/service behavior. |
-| Controller | MockMvc / `@WebMvcTest` | HTTP endpoints and validation. |
-| BDD | Cucumber | Human-readable end-to-end scenarios. |
-| API integration | REST-Assured | HTTP-level integration behavior. |
-| Browser | Selenium / HtmlUnit | Frontend/authentication and responsive UI behavior. |
-| Static checks | TypeScript + JavaScript syntax checks | Client-side correctness. |
+## Test Suites Overview
 
-Run the complete Maven suite:
+| Suite | Tooling | Tests | Location | Focus |
+|---|---|---|---|---|
+| Backend unit + controller | JUnit + Mockito | 136 | `src/test/java/` | Business/service behavior, HTTP endpoints, validation |
+| Backend BDD | Cucumber + Spring Boot | 19 | `src/test/resources/features/` | Human-readable end-to-end scenarios |
+| Web E2E (Java) | Playwright + JUnit | 29 | `src/test/java/.../playwright/` | Browser automation against running app |
+| Web E2E (TypeScript) | Playwright Test | 162 | `e2e/tests/` | Cross-browser UI testing (login, dashboard, expenses) |
+| Mobile unit | Jest + jest-expo | 60+ | `mobile/__tests__/` | Currency service, API service, auth context |
+| Mobile E2E | Detox | 20+ | `mobile/e2e/` | iOS simulator / Android emulator flows |
+| Static checks | TypeScript + JavaScript syntax | — | CI workflow | Client-side type safety |
+
+## Quick Start — Run All Tests
+
+### Linux / macOS
 
 ```bash
-./mvnw test
+# From the repository root — runs backend + Playwright TS + mobile unit tests
+./run-tests.sh
+
+# Install dependencies first, then run all tests
+./run-tests.sh --install-deps
+
+# Run a specific suite
+./run-tests.sh --backend           # backend Java tests only
+./run-tests.sh --playwright-ts     # Playwright TypeScript E2E only
+./run-tests.sh --mobile-unit       # mobile Jest unit tests only
+./run-tests.sh --playwright-java   # Playwright Java E2E only
+
+# Run everything (including Playwright Java)
+./run-tests.sh --all
 ```
 
-Run the mobile TypeScript check:
+### Windows (Command Prompt / .bat)
+
+```cmd
+:: From the repository root
+scripts\run-all-tests.bat
+
+:: Install dependencies first, then run all tests
+scripts\run-all-tests.bat --install-deps
+
+:: Run a specific suite
+scripts\run-all-tests.bat --backend
+scripts\run-all-tests.bat --mobile-unit
+scripts\run-all-tests.bat --playwright-ts
+```
+
+### Windows (PowerShell / .ps1)
+
+```powershell
+# From the repository root
+.\scripts\run-all-tests.ps1
+
+# Install dependencies first, then run all tests
+.\scripts\run-all-tests.ps1 -InstallDeps
+
+# Run a specific suite
+.\scripts\run-all-tests.ps1 -Backend
+.\scripts\run-all-tests.ps1 -MobileUnit
+.\scripts\run-all-tests.ps1 -PlaywrightTs
+.\scripts\run-all-tests.ps1 -PlaywrightJava
+```
+
+## Individual Test Suites
+
+### 1. Backend Java Tests (JUnit + Mockito + Cucumber)
+
+**Prerequisites:** Java 26 (JDK), Maven (or use `./mvnw`)
+
+```bash
+# Run all backend tests (unit + controller + Cucumber BDD)
+./mvnw test
+
+# Run only Cucumber BDD scenarios
+./mvnw test -Dtest=CucumberTestRunner
+
+# Run a specific test class
+./mvnw test -Dtest=ExpenseControllerTest
+
+# Run with coverage report
+./mvnw test jacoco:report
+```
+
+**What's tested:**
+- 136 unit/controller tests covering all REST endpoints, service business logic, security, and exception handling
+- 19 Cucumber BDD scenarios across 3 feature files:
+  - `auth.feature` — registration, login, duplicate email, invalid currency, unauthenticated access
+  - `expenses.feature` — create, list, update, delete, cross-user authorization, budget setting
+  - `export.feature` — CSV, Excel, PDF exports for expenses, incomes, and financial statements
+
+### 2. Web E2E Tests — Playwright TypeScript (162 tests)
+
+**Prerequisites:** Node.js 18+, npm
+
+```bash
+cd e2e
+
+# First time only: install dependencies + browser binary
+npm install
+npx playwright install chromium
+
+# Run all tests (headless)
+npm test
+
+# Run with visible browser
+npm run test:headed
+
+# Run with Playwright UI mode (interactive debugging)
+npm run test:ui
+
+# Open the HTML test report
+npm run test:report
+```
+
+**What's tested (3 spec files):**
+- `login.spec.ts` (33 tests) — login form, OAuth, biometric, theme toggle, registration fields, forgot-password
+- `dashboard.spec.ts` (98 tests) — 5 chart canvases, 8 metric cards, expense form, table tabs, filters, budgets, savings goals, subscriptions, reports, profile menu, currency selector, responsive layout (mobile + tablet)
+- `expenses.spec.ts` (31 tests) — form interactions, tab switching, filter interactions, budget creation, savings goals, subscriptions, profile menu, currency selector, report period
+
+### 3. Web E2E Tests — Playwright Java (29 tests)
+
+**Prerequisites:** Java 26 (JDK), Maven, Playwright browser binary
+
+```bash
+# First time only: download Playwright browser binary
+./mvnw exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install chromium"
+
+# Run the Playwright Java E2E tests (disabled by default — enable with -Dplaywright=true)
+./mvnw test -Dtest=PlaywrightE2ETest -Dplaywright=true
+```
+
+**What's tested:**
+- Login page: form fields, Google OAuth, biometric, theme toggle, hero section
+- Registration page: all fields, currency selector, security PIN, OTP, 6-step progress indicator
+- Dashboard: 5 chart canvases, 8 metric cards, expense form fields, table tabs
+- Dashboard: filters, budgets, savings goals, subscriptions, reports, profile menu, currency selector
+- Auth redirect behavior
+
+### 4. Mobile App Unit Tests (Jest — 60+ tests)
+
+**Prerequisites:** Node.js 18+, npm
 
 ```bash
 cd mobile
-npm ci
-npm run ts:check
+
+# First time only: install dependencies
+npm install
+
+# Run all unit tests
+npm test
+
+# Watch mode (re-runs on file changes)
+npm run test:watch
+
+# With coverage report
+npm run test:coverage
+
+# CI mode (coverage + limited workers)
+npm run test:ci
 ```
 
-Run the convenience script:
+**What's tested:**
+- `currency.test.ts` (40+ tests) — `WORLD_CURRENCIES` registry validation, `getCurrencySymbol()` (case insensitivity, null/undefined, unknown codes), `formatCurrencyAmount()` (string input, null, NaN, large numbers, decimals, negative, zero)
+- `api.test.ts` (20+ tests) — `ApiError` class construction, defaults, `isTimeout`, `isNetworkError`, `isUnauthorized`, `validationErrors`, `rawPayload`, all `ApiErrorCode` variants
+- `auth-context.test.ts` — `AuthProvider` export validation, `useAuth` throws outside provider
+
+### 5. Mobile App E2E Tests (Detox — 20+ tests)
+
+**Prerequisites:** macOS (iOS) or Linux (Android), Detox CLI, simulator/emulator
 
 ```bash
-./run-tests.sh
+# Install Detox CLI globally
+npm install -g detox-cli
+
+cd mobile
+
+# ── iOS (macOS only) ──
+detox build -c ios.sim.debug       # build the app for iOS simulator
+detox test -c ios.sim.debug        # run E2E tests on iOS simulator
+
+# ── Android (macOS or Linux) ──
+detox build -c android.emu.debug   # build the app for Android emulator
+detox test -c android.emu.debug    # run E2E tests on Android emulator
 ```
+
+**What's tested:**
+- `login.e2e.ts` (10+ tests) — login screen rendering, form input, invalid credentials, Google OAuth, biometric login, navigation to register/forgot-password
+- `dashboard.e2e.ts` (10+ test) — dashboard metrics, bottom tab bar, charts, add expense flow (form, input, validation, save), subscriptions tab, profile tab (user info, theme toggle, logout)
+
+## Test Scripts
+
+The repository includes cross-platform test runner scripts:
+
+| File | Platform | Description |
+|---|---|---|
+| `run-tests.sh` | Linux / macOS | Root-level convenience wrapper |
+| `scripts/run-all-tests.sh` | Linux / macOS | Full-featured bash script with all options |
+| `scripts/run-all-tests.bat` | Windows (CMD) | Windows batch script |
+| `scripts/run-all-tests.ps1` | Windows (PowerShell) | PowerShell script with named parameters |
+
+### Script Options
+
+| Bash / .bat flag | PowerShell param | Description |
+|---|---|---|
+| `--backend` | `-Backend` | Run only backend Java tests |
+| `--playwright-java` | `-PlaywrightJava` | Run only Playwright Java E2E tests |
+| `--playwright-ts` | `-PlaywrightTs` | Run only Playwright TypeScript E2E tests |
+| `--mobile-unit` | `-MobileUnit` | Run only mobile Jest unit tests |
+| `--all` | `-All` | Run all test suites |
+| `--install-deps` | `-InstallDeps` | Install dependencies before running |
+
+## CI/CD Integration
+
+The GitHub Actions CI workflow (`.github/workflows/ci.yml`) runs automatically on every push and pull request:
+
+1. **Repository hygiene** — checks for secrets, formatting
+2. **Backend tests** — `./mvnw test` (136 unit/controller + 19 Cucumber BDD tests)
+3. **Web frontend checks** — JavaScript syntax validation + mobile TypeScript check
+
+To add mobile unit tests or Playwright E2E tests to CI, add these steps to your workflow:
+
+```yaml
+- name: Run mobile unit tests
+  working-directory: mobile
+  run: |
+    npm ci
+    npm run test:ci
+
+- name: Run Playwright E2E tests
+  working-directory: e2e
+  run: |
+    npm ci
+    npx playwright install chromium
+    npm test
+```
+
+## Prerequisites Summary
+
+| Tool | Version | Required for |
+|---|---|---|
+| Java JDK | 26+ | Backend tests, Playwright Java E2E |
+| Maven | 3.9+ (or use `./mvnw`) | Backend tests |
+| Node.js | 18+ | Playwright TS E2E, mobile unit tests |
+| npm | 9+ | Playwright TS E2E, mobile unit tests |
+| Playwright browsers | Chromium | Web E2E tests (Java + TypeScript) |
+| Detox CLI | latest | Mobile E2E tests |
+| Xcode | 15+ | Mobile iOS E2E (macOS only) |
+| Android Studio | latest | Mobile Android E2E |
 
 ![Automated tests](docs/images/development/tests.png)
 
