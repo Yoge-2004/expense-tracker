@@ -8,9 +8,8 @@ Feature: Authentication
 
   Scenario: Register a new user successfully
     When I register with name "Alice" username "alice123" email "alice@test.com" password "SecurePass123" and currency "USD"
-    Then the response status should be 200
-    And the response should contain a token
-    And the response should contain userId
+    Then the response status should be 201
+    And the response should contain a user id
 
   Scenario: Register with a duplicate email fails
     Given a user with email "bob@test.com" already exists

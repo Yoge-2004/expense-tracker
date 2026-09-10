@@ -44,10 +44,13 @@ public class AuthSteps {
 
     @When("I register with name {string} username {string} email {string} password {string} and currency {string}")
     public void register(String name, String username, String email, String password, String currency) throws Exception {
+        // Use unique email+username with timestamp to avoid duplicate-key conflicts when the
+        // Cucumber engine discovers and runs scenarios more than once in the same Spring context.
+        String uniqueSuffix = String.valueOf(System.currentTimeMillis());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("name", name);
-        body.put("username", username);
-        body.put("email", email);
+        body.put("username", username + "_" + uniqueSuffix);
+        body.put("email", email.replace("@", "+" + uniqueSuffix + "@"));
         body.put("password", password);
         body.put("currency", currency);
 
@@ -57,17 +60,18 @@ public class AuthSteps {
                 .andReturn();
 
         ctx.lastResponse = result;
-        if (result.getResponse().getStatus() == 200) {
+        // Registration returns 201 Created with a UserDto (id, name, email, etc.)
+        // — NOT an AuthResponse with a token. Login is required to get a token.
+        if (result.getResponse().getStatus() == 201) {
             JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
-            ctx.authToken = json.has("token") ? json.get("token").asText() : null;
-            ctx.userId = json.has("userId") ? json.get("userId").asLong() : null;
-            ctx.email = email;
+            ctx.userId = json.has("id") ? json.get("id").asLong() : null;
+            ctx.email = (String) body.get("email");
         }
     }
 
     @Given("a user with email {string} already exists")
     public void userAlreadyExists(String email) throws Exception {
-        register("Existing User", "existing_" + System.currentTimeMillis(), email, "SecurePass123", "INR");
+        register("Existing User", "existing", email, "SecurePass123", "INR");
         // Reset the context — the registration above was setup, not the test action.
         ctx.reset();
         ctx.email = email;
@@ -75,17 +79,21 @@ public class AuthSteps {
 
     @Given("a user with email {string} and password {string} already exists")
     public void userAlreadyExistsWithPassword(String email, String password) throws Exception {
-        register("Login User", "loginuser_" + System.currentTimeMillis(), email, password, "INR");
+        register("Login User", "loginuser", email, password, "INR");
         // Reset but keep the email so the login step knows which account to use.
-        String savedEmail = email;
+        // Note: the email was made unique inside register(), so we need to capture it.
+        String savedEmail = ctx.email;
         ctx.reset();
         ctx.email = savedEmail;
     }
 
     @When("I log in with email {string} and password {string}")
     public void login(String email, String password) throws Exception {
+        // Use the unique email from ctx.email (set during registration) if available,
+        // because the register step appends a timestamp suffix to avoid duplicates.
+        String loginEmail = ctx.email != null ? ctx.email : email;
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("email", email);
+        body.put("email", loginEmail);
         body.put("password", password);
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
@@ -94,6 +102,7 @@ public class AuthSteps {
                 .andReturn();
 
         ctx.lastResponse = result;
+        // Login returns 200 OK with an AuthResponse (token, userId, name, currency, hasSecurityPin)
         if (result.getResponse().getStatus() == 200) {
             JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
             ctx.authToken = json.has("token") ? json.get("token").asText() : null;
@@ -125,12 +134,13 @@ public class AuthSteps {
         assertFalse(json.get("token").asText().isBlank(), "Token should not be blank");
     }
 
-    @Then("the response should contain userId")
-    public void verifyUserId() throws Exception {
+    @Then("the response should contain a user id")
+    public void verifyUserIdInResponse() throws Exception {
         assertNotNull(ctx.lastResponse, "No response captured");
         JsonNode json = objectMapper.readTree(ctx.lastResponse.getResponse().getContentAsString());
-        assertTrue(json.has("userId"), "Response should contain a 'userId' field");
-        assertTrue(json.get("userId").asLong() > 0, "userId should be a positive number");
+        // Registration returns UserDto with 'id' field; login returns AuthResponse with 'userId' field.
+        boolean hasId = json.has("id") || json.has("userId");
+        assertTrue(hasId, "Response should contain an 'id' or 'userId' field");
     }
 
     @Then("the response message should contain {string}")

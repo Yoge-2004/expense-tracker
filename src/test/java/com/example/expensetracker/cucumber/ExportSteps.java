@@ -90,7 +90,7 @@ public class ExportSteps {
 
     // ─── Verification steps ───────────────────────────────────────────────────
 
-    @Then("the content type should be text/csv")
+    @Then("the content type should be text\\/csv")
     public void verifyContentTypeCsv() {
         assertNotNull(ctx.lastResponse, "No response captured");
         String contentType = ctx.lastResponse.getResponse().getContentType();
@@ -99,7 +99,7 @@ public class ExportSteps {
                 "Expected text/csv but was: " + contentType);
     }
 
-    @Then("the content type should be application/pdf")
+    @Then("the content type should be application\\/pdf")
     public void verifyContentTypePdf() {
         assertNotNull(ctx.lastResponse, "No response captured");
         String contentType = ctx.lastResponse.getResponse().getContentType();
