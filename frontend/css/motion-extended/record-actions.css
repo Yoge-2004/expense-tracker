@@ -1,0 +1,131 @@
+/* Stable responsive geometry for the dashboard record controls. */
+@media (max-width: 900px) {
+    .top-bar-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        grid-template-areas:
+            "search search"
+            "expense income"
+            "theme profile" !important;
+        align-items: center !important;
+        justify-items: stretch !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        gap: 10px 12px !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+    }
+
+    .top-bar-actions > .command-search-wrapper {
+        grid-area: search !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .top-bar-actions > #openModalBtn {
+        grid-area: expense !important;
+    }
+
+    .top-bar-actions > #openIncomeModalBtn {
+        grid-area: income !important;
+    }
+
+    .top-bar-actions > .theme-toggle-btn {
+        grid-area: theme !important;
+        justify-self: start !important;
+    }
+
+    .top-bar-actions > .user-profile {
+        grid-area: profile !important;
+        justify-self: end !important;
+    }
+
+    .top-bar-actions > #openModalBtn,
+    .top-bar-actions > #openIncomeModalBtn {
+        position: relative !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: clip !important;
+        box-sizing: border-box !important;
+        contain: paint !important;
+        isolation: isolate !important;
+        transform: none !important;
+        background-image: none !important;
+        white-space: nowrap !important;
+    }
+
+    .top-bar-actions > #openModalBtn::before,
+    .top-bar-actions > #openModalBtn::after,
+    .top-bar-actions > #openIncomeModalBtn::before,
+    .top-bar-actions > #openIncomeModalBtn::after {
+        content: none !important;
+        display: none !important;
+        width: 0 !important;
+        max-width: 0 !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        animation: none !important;
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    .top-bar-actions > #openModalBtn > svg,
+    .top-bar-actions > #openIncomeModalBtn > svg {
+        display: block !important;
+        flex: 0 0 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+    }
+
+    .top-bar-actions > #openModalBtn > span,
+    .top-bar-actions > #openIncomeModalBtn > span {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-bar-actions {
+        gap: 8px 10px !important;
+    }
+
+    .top-bar-actions > #openModalBtn,
+    .top-bar-actions > #openIncomeModalBtn {
+        height: 40px !important;
+        padding-inline: 8px !important;
+        gap: 5px !important;
+        font-size: 12px !important;
+        border-radius: 9px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .top-bar-actions {
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-template-areas:
+            "search"
+            "expense"
+            "income"
+            "theme"
+            "profile" !important;
+    }
+
+    .top-bar-actions > .theme-toggle-btn {
+        justify-self: start !important;
+    }
+
+    .top-bar-actions > .user-profile {
+        justify-self: end !important;
+    }
+}
