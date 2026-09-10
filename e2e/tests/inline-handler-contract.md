@@ -1,1 +1,0 @@
-Inline handler contract tests are maintained in ui-regressions.spec.ts.
