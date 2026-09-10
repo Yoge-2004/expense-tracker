@@ -1,0 +1,146 @@
+name: One-off dashboard fixes
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          dash = Path('frontend/js/dashboard.js')
+          text = dash.read_text(encoding='utf-8')
+
+          # Budget renderer crash: these names are properties of the mapped budget object.
+          text = text.replace('${formatCurrency(spent)} of ${formatCurrency(limit)}', '${formatCurrency(b.spent)} of ${formatCurrency(b.limit)}', 1)
+
+          # Remove the last browser-native confirmation dialog from the web dashboard.
+          text = text.replace(
+              'if (!confirm(`Delete category "${catName}"? This can\\\'t be undone.`)) return;',
+              'if (!(await window.appConfirm(`Delete category "${catName}"? This can\\\'t be undone.`))) return;',
+              1,
+          )
+
+          # Make the income action controls use the same compact icon-button treatment as expenses.
+          dash.write_text(text, encoding='utf-8')
+
+          html = Path('frontend/dashboard.html')
+          h = html.read_text(encoding='utf-8')
+          old = '<a href="#" id="biometricAuthBtn">🧬 Biometrics (Touch/Face ID)</a>'
+          new = '''<a href="#" id="biometricAuthBtn" class="profile-menu-action" aria-label="Biometrics (Touch/Face ID)">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 1-2 2h-2"/>
+                  <path d="M8 8c1.2-1.7 2.9-2.5 4-2.5S14.8 6.3 16 8M7.5 12c0-1.7 1.6-3.5 4.5-3.5s4.5 1.8 4.5 3.5c0 2.1-1.7 4-4.5 4s-4.5-1.9-4.5-4Z"/>
+              </svg>
+              <span>Biometrics (Touch/Face ID)</span>
+          </a>'''
+          if old in h:
+              h = h.replace(old, new, 1)
+          html.write_text(h, encoding='utf-8')
+
+          css = Path('frontend/css/ui-regression-fixes.css')
+          c = css.read_text(encoding='utf-8')
+
+          if '@media (max-width:760px) { .command-kbd { display:none !important; }' not in c:
+              c = c.replace(
+                  '@media (max-width:760px) { .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }',
+                  '@media (max-width:760px) { .command-kbd { display:none !important; } .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }',
+                  1,
+              )
+
+          c += '''
+
+/* Keep mobile ledger controls scrollable instead of clipping their counters. */
+@media (max-width:760px) {
+    #ledgerStreamTabs,
+    .ledger-stream-tabs {
+        display:flex !important;
+        flex-wrap:nowrap !important;
+        overflow-x:auto !important;
+        overflow-y:hidden !important;
+        min-width:0 !important;
+        width:100% !important;
+        -webkit-overflow-scrolling:touch !important;
+        scrollbar-width:none !important;
+    }
+    #ledgerStreamTabs::-webkit-scrollbar,
+    .ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
+    #ledgerStreamTabs .stream-pill-btn,
+    .ledger-stream-tabs .stream-pill-btn {
+        flex:0 0 auto !important;
+        min-width:max-content !important;
+        white-space:nowrap !important;
+    }
+
+    #incomeList .btn-edit,
+    #incomeList .btn-delete {
+        width:34px !important;
+        height:34px !important;
+        min-width:34px !important;
+        min-height:34px !important;
+        padding:0 !important;
+        border-radius:10px !important;
+        display:inline-flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        flex:0 0 34px !important;
+        box-sizing:border-box !important;
+    }
+    #incomeList .btn-edit svg,
+    #incomeList .btn-delete svg {
+        width:14px !important;
+        height:14px !important;
+        display:block !important;
+    }
+}
+
+/* Theme changes must not replay dashboard metric reveal/hover effects. */
+html.theme-transitioning .grid-4-metrics > .metric-card,
+html.theme-transitioning .grid-4-metrics > .metric-card * {
+    animation:none !important;
+    transition:none !important;
+}
+'''
+          css.write_text(c, encoding='utf-8')
+          PY
+
+      - name: Validate changed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/apply-dashboard-stabilization.py
+          test -f frontend/js/dashboard.js
+          grep -F '${formatCurrency(b.spent)} of ${formatCurrency(b.limit)}' frontend/js/dashboard.js
+          grep -F 'id="biometricAuthBtn"' frontend/dashboard.html
+          grep -F '.command-kbd { display:none !important; }' frontend/css/ui-regression-fixes.css
+
+      - name: Commit and remove temporary workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/one-off-dashboard-fixes.yml .github/workflows/one-off-dashboard-stabilization.yml scripts/apply-dashboard-stabilization.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/js/dashboard.js frontend/dashboard.html frontend/css/ui-regression-fixes.css
+          git add -u .github/workflows/one-off-dashboard-fixes.yml .github/workflows/one-off-dashboard-stabilization.yml scripts/apply-dashboard-stabilization.py
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git commit -m 'Fix dashboard budget rendering and mobile controls'
+          git push
