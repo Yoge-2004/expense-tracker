@@ -29,7 +29,11 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
 
 .subs-tab-bar { min-width:0 !important; overflow-x:auto !important; overscroll-behavior-x:contain !important; scrollbar-width:none !important; }
 .subs-tab-bar::-webkit-scrollbar { display:none !important; }
-.subs-tab-btn,.subs-tab-btn:hover,.subs-tab-btn:active,.subs-tab-btn.active { box-sizing:border-box !important; min-height:38px !important; padding:7px 16px !important; border-width:1px !important; transform:none !important; outline:none !important; transition:color .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease !important; -webkit-tap-highlight-color:transparent !important; }
+.subs-tab-btn,.subs-tab-btn:hover,.subs-tab-btn:active,.subs-tab-btn.active {
+    box-sizing:border-box !important; min-height:38px !important; padding:7px 16px !important; border-width:1px !important; transform:none !important; outline:none !important;
+    font-size:12px !important; line-height:1.2 !important; white-space:nowrap !important; transition:color .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease !important;
+    -webkit-tap-highlight-color:transparent !important;
+}
 .subs-tab-btn:focus-visible { outline:2px solid color-mix(in srgb,var(--primary) 60%,transparent) !important; outline-offset:2px !important; }
 
 .modal { overflow-y:auto !important; overflow-x:hidden !important; scrollbar-gutter:stable !important; clip-path:inset(0 round 24px) !important; -webkit-clip-path:inset(0 round 24px) !important; }
@@ -37,7 +41,12 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
 .modal::-webkit-scrollbar-thumb { min-height:24px !important; }
 #expenseList,#incomeList { min-width:0 !important; width:100% !important; box-sizing:border-box !important; }
 #expenseList .expense-item,#incomeList tbody tr { min-width:0 !important; box-sizing:border-box !important; }
-@media (max-width:700px) { .budget-item { padding:13px !important; } .budget-item .budget-bar-track { height:7px !important; margin-top:9px !important; } #incomeList tbody tr { width:100% !important; } }
+
+@media (max-width:700px) {
+    .budget-item { padding:13px !important; }
+    .budget-item .budget-bar-track { height:7px !important; margin-top:9px !important; }
+    #incomeList tbody tr { width:100% !important; }
+}
 
 @media (max-width:760px) {
     .top-bar-actions {
@@ -74,28 +83,40 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
         white-space:nowrap !important;
         text-overflow:ellipsis !important;
         isolation:isolate !important;
+        transform:none !important;
     }
 
-    .top-bar .add-expense-button { grid-column:1 !important; grid-row:2 !important; }
-    .top-bar .add-income-button { grid-column:2 !important; grid-row:2 !important; }
+    .top-bar .add-expense-button:hover,
+    .top-bar .add-income-button:hover,
+    .top-bar .add-expense-button:focus,
+    .top-bar .add-income-button:focus,
+    .top-bar .add-expense-button:active,
+    .top-bar .add-income-button:active {
+        transform:none !important;
+    }
 
     .top-bar .add-expense-button::after,
     .top-bar .add-income-button::after {
         display:none !important;
     }
 
-    .theme-toggle-btn {
-        grid-column:1 !important;
-        grid-row:3 !important;
-        justify-self:start !important;
+    .top-bar .add-expense-button > svg,
+    .top-bar .add-income-button > svg {
+        flex:0 0 18px !important;
+        width:18px !important;
+        height:18px !important;
     }
 
-    .user-profile {
-        grid-column:2 !important;
-        grid-row:3 !important;
-        justify-self:end !important;
+    .top-bar .add-expense-button > span,
+    .top-bar .add-income-button > span {
         min-width:0 !important;
+        overflow:hidden !important;
+        text-overflow:ellipsis !important;
+        white-space:nowrap !important;
     }
+
+    .theme-toggle-btn { grid-column:1 !important; grid-row:3 !important; justify-self:start !important; }
+    .user-profile { grid-column:2 !important; grid-row:3 !important; justify-self:end !important; min-width:0 !important; }
 
     .profile-menu {
         left:auto !important;
