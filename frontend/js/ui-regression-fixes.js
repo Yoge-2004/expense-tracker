@@ -22,18 +22,15 @@
 
     function installThemeGuard() {
         const root = document.documentElement;
-        let frame = 0;
         const update = () => {
-            root.classList.add("theme-transitioning");
-            cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(() => {
-                requestAnimationFrame(() => root.classList.remove("theme-transitioning"));
-            });
+            syncThemeIcons();
         };
         document.addEventListener("themechange", update);
         if (typeof MutationObserver !== "undefined") {
             new MutationObserver(records => {
-                if (records.some(r => r.type === "attributes" && r.attributeName === "data-theme")) update();
+                if (records.some(record => record.type === "attributes" && record.attributeName === "data-theme")) {
+                    syncThemeIcons();
+                }
             }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
         }
     }
@@ -108,9 +105,17 @@
             const previousFocus = document.activeElement;
             const ui = createDialog(kind, message, defaultValue);
             let settled = false;
+            let keyListenerActive = true;
+            const cleanup = () => {
+                if (keyListenerActive) {
+                    document.removeEventListener("keydown", onKey);
+                    keyListenerActive = false;
+                }
+            };
             const finish = value => {
                 if (settled) return;
                 settled = true;
+                cleanup();
                 ui.overlay.classList.remove("is-open");
                 setTimeout(() => ui.overlay.remove(), 160);
                 if (previousFocus && typeof previousFocus.focus === "function") previousFocus.focus();
@@ -123,10 +128,8 @@
             });
             const onKey = event => {
                 if (event.key === "Escape") {
-                    document.removeEventListener("keydown", onKey);
                     finish(kind === "confirm" ? false : null);
                 } else if (event.key === "Enter" && kind === "prompt" && document.activeElement === ui.input) {
-                    document.removeEventListener("keydown", onKey);
                     finish(ui.input.value);
                 }
             };
