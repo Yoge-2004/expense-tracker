@@ -1,0 +1,47 @@
+name: Fix dashboard runtime
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair dashboard runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          dash = Path('frontend/js/dashboard.js')
+          s = dash.read_text(encoding='utf-8')
+          pattern = r'\nfunction parseLocalDate\(value\) \{\n    const \[year, month, day\] = value\.split\(\x27-\x27\)\.map\(Number\);\n    return new Date\(year, month - 1, day\);\n\}\n'
+          s, n = re.subn(pattern, '\n', s, count=1)
+          if n != 1:
+              raise SystemExit(f'Could not remove duplicate parseLocalDate declaration: {n}')
+          dash.write_text(s, encoding='utf-8')
+
+          css = Path('frontend/css/dashboard/enhancements.css')
+          c = css.read_text(encoding='utf-8')
+          c, n = re.subn(r'@import url\("dashboard/enhancements/([^\"]+)"\);', r'@import url("enhancements/\1");', c)
+          if n != 12:
+              raise SystemExit(f'Expected 12 dashboard enhancement imports, changed {n}')
+          css.write_text(c, encoding='utf-8')
+          PY
+          node --check frontend/js/dashboard.js
+          test "$(grep -o 'function parseLocalDate' frontend/js/dashboard.js | wc -l)" -eq 0
+          ! grep -q 'url("dashboard/enhancements/' frontend/css/dashboard/enhancements.css
+          rm -f .github/workflows/fix-dashboard-runtime.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/js/dashboard.js frontend/css/dashboard/enhancements.css
+          git add -u .github/workflows/fix-dashboard-runtime.yml
+          git commit -m 'Fix dashboard syntax error and stylesheet paths'
+          git push
