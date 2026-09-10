@@ -5,35 +5,36 @@ on:
     branches: [main]
     paths:
       - 'scripts/apply-release-fixes.py'
-      - 'scripts/web-ui-fixes.py'
-      - 'scripts/web-polish-fixes.py'
+      - '.github/workflows/apply-release-fixes.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   patch:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
-      - name: Apply legacy release stabilization fixes
+      - name: Validate and apply deterministic fixes
+        shell: bash
         run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/apply-release-fixes.py
           python3 scripts/apply-release-fixes.py
-          python3 scripts/web-ui-fixes.py
-          python3 scripts/web-polish-fixes.py
 
       - name: Commit source fixes
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if git diff --quiet; then
             echo 'No source changes required.'
             exit 0
           fi
-          git add frontend
-          git commit -m 'fix(ui): apply legacy release stabilization fixes'
+          git add frontend/js/dashboard.js frontend/js/modules/dashboard-utils.js frontend/dashboard.html frontend/css/ui-regression-fixes.css
+          git commit -m 'fix(ui): stabilize dashboard runtime and mobile controls'
           git push origin HEAD:main
