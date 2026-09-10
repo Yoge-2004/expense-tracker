@@ -1,0 +1,33 @@
+name: Verify current web UI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Install E2E dependencies
+        working-directory: e2e
+        run: npm ci --no-audit --no-fund
+      - name: Install Chromium
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: Serve frontend
+        run: |
+          python3 -m http.server 5500 --directory frontend >/tmp/expense-tracker-frontend.log 2>&1 &
+          echo $! >/tmp/expense-tracker-frontend.pid
+      - name: Run focused mobile UI and WebAuthn checks
+        working-directory: e2e
+        run: npx playwright test tests/mobile-ui-regressions.spec.ts tests/biometrics.spec.ts --project=chromium
+      - name: Stop frontend
+        if: always()
+        run: |
+          if [ -f /tmp/expense-tracker-frontend.pid ]; then kill $(cat /tmp/expense-tracker-frontend.pid) || true; fi
