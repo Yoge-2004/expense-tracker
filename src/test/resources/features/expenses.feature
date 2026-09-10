@@ -23,7 +23,7 @@ Feature: Expense Management
     Given I have 3 expenses
     When I request all expenses for my user
     Then the response status should be 200
-    And the response should contain 3 expenses
+    And the response should contain at least 3 expenses
 
   Scenario: Update an existing expense
     Given I have an expense with amount 100.00 and description "Old description"

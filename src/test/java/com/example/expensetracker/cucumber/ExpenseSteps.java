@@ -170,6 +170,15 @@ public class ExpenseSteps {
                 "Expected " + expectedCount + " expenses but got " + json.size());
     }
 
+    @Then("the response should contain at least {int} expenses")
+    public void verifyExpenseCountAtLeast(int minCount) throws Exception {
+        assertNotNull(ctx.lastResponse, "No response captured");
+        JsonNode json = objectMapper.readTree(ctx.lastResponse.getResponse().getContentAsString());
+        assertTrue(json.isArray(), "Expected an array of expenses");
+        assertTrue(json.size() >= minCount,
+                "Expected at least " + minCount + " expenses but got " + json.size());
+    }
+
     @Given("I have an expense with amount {double} and description {string}")
     public void haveAnExpense(double amount, String description) throws Exception {
         categoryExists("Test Category");

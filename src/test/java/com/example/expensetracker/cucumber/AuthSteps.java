@@ -42,6 +42,34 @@ public class AuthSteps {
         // No-op — @SpringBootTest in CucumberSpringConfig already started the app with H2.
     }
 
+    @When("I register a new unique user with name {string} username {string} password {string} and currency {string}")
+    public void registerUniqueUser(String name, String username, String password, String currency) throws Exception {
+        // Generate a unique email+username to avoid duplicate-key conflicts when the Cucumber
+        // engine runs scenarios more than once in the same cached Spring context.
+        String uniqueSuffix = String.valueOf(System.nanoTime());
+        String uniqueEmail = "user" + uniqueSuffix + "@test.com";
+        String uniqueUsername = username + "_" + uniqueSuffix;
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("name", name);
+        body.put("username", uniqueUsername);
+        body.put("email", uniqueEmail);
+        body.put("password", password);
+        body.put("currency", currency);
+
+        MvcResult result = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn();
+
+        ctx.lastResponse = result;
+        if (result.getResponse().getStatus() == 201) {
+            JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+            ctx.userId = json.has("id") ? json.get("id").asLong() : null;
+            ctx.email = uniqueEmail;
+        }
+    }
+
     @When("I register with name {string} username {string} email {string} password {string} and currency {string}")
     public void register(String name, String username, String email, String password, String currency) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();

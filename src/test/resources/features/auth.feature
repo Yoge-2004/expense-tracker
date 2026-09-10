@@ -7,7 +7,7 @@ Feature: Authentication
     Given the application is running with a test database
 
   Scenario: Register a new user successfully
-    When I register with name "Alice" username "alice123" email "alice@test.com" password "SecurePass123" and currency "USD"
+    When I register a new unique user with name "Alice" username "alice123" password "SecurePass123" and currency "USD"
     Then the response status should be 201
     And the response should contain a user id
 
