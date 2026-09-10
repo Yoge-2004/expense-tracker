@@ -115,7 +115,10 @@ html.theme-transitioning *::after {
     #incomeList tbody tr { width:100% !important; }
 }
 
-@media (max-width:760px) {
+/* Mobile/tablet top-bar actions live in a dedicated 3-row grid so the
+   theme/profile controls cannot peek into the record-action row. */
+@media (max-width:900px) {
+    .command-kbd { display:none !important; }
     .top-bar-actions {
         display:grid !important;
         grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
@@ -153,7 +156,9 @@ html.theme-transitioning *::after {
         isolation:isolate !important;
         transform:none !important;
     }
+    .top-bar-actions > #openModalBtn::before,
     .top-bar-actions > #openModalBtn::after,
+    .top-bar-actions > #openIncomeModalBtn::before,
     .top-bar-actions > #openIncomeModalBtn::after {
         display:none !important;
         content:none !important;
@@ -198,28 +203,6 @@ html.theme-transitioning *::after {
         box-sizing:border-box !important;
     }
     .subs-tab-bar { max-width:100% !important; }
-}
-
-@media (max-width:360px) {
-    .top-bar-actions {
-        grid-template-columns:minmax(0,1fr) !important;
-        row-gap:8px !important;
-        padding-left:8px !important;
-        padding-right:8px !important;
-    }
-    .top-bar-actions .command-search-wrapper { grid-column:1 !important; grid-row:1 !important; }
-    .top-bar-actions > #openModalBtn,
-    .top-bar-actions > #openIncomeModalBtn {
-        grid-column:1 !important;
-        grid-row:auto !important;
-        width:100% !important;
-        min-height:40px !important;
-        height:40px !important;
-    }
-    .top-bar-actions > .theme-toggle-btn,
-    .top-bar-actions > .user-profile { grid-row:auto !important; }
-    .top-bar .add-expense-button > span,
-    .top-bar .add-income-button > span { flex:0 1 auto !important; }
 }
 
 @media (max-width:480px) {
