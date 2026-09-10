@@ -16,8 +16,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Apply dashboard fixes and JS utility extraction
-        shell: python
+        shell: bash
         run: |
+          set -euo pipefail
+          python3 - <<'PY'
           from pathlib import Path
           import re
 
@@ -29,7 +31,6 @@ jobs:
 
           s = dash.read_text(encoding="utf-8")
 
-          # Fix the production budget renderer crash caused by stale variable names.
           broken = '                    <div class="budget-status-row">\n                        <span>${formatCurrency(spent)} of ${formatCurrency(limit)}</span>'
           fixed = '                    <div class="budget-status-row">\n                        <span>${formatCurrency(b.spent)} of ${formatCurrency(b.limit)}</span>'
           if broken in s:
@@ -39,100 +40,98 @@ jobs:
           else:
               raise SystemExit("budget status renderer not found")
 
-          # Replace the one remaining browser-native category confirmation.
           native_confirm = '            if (!confirm(`Delete category "${catName}"? This can\\'t be undone.`)) return;'
           app_confirm = '            if (!(await window.appConfirm(`Delete category "${catName}"? This can\\'t be undone.`))) return;'
           if native_confirm in s:
               s = s.replace(native_confirm, app_confirm, 1)
 
-          # Extract shared formatting/date helpers into a standalone utility module.
           start = s.find('// Timezone-safe local date helpers')
           end = s.find('// Modal Scroll Lock Helpers')
           if start == -1 or end == -1 or end <= start:
               raise SystemExit("dashboard helper block boundaries not found")
 
           utility_block = '''// Shared dashboard utilities are maintained in js/modules/dashboard-utils.js.
-const {
-    getLocalDateString,
-    parseLocalDate,
-    escapeHtml,
-    formatCurrency,
-    formatDate,
-} = window.DashboardUtils;
-'''
+          const {
+              getLocalDateString,
+              parseLocalDate,
+              escapeHtml,
+              formatCurrency,
+              formatDate,
+          } = window.DashboardUtils;
+          '''
+          # Re-indent the loader block exactly as regular JavaScript source.
+          utility_block = utility_block.replace("\n          ", "\n", 5).strip("\n") + "\n"
           s = s[:start] + utility_block + '\n' + s[end:]
           dash.write_text(s, encoding="utf-8")
 
           utils = '''/* Shared, dependency-light dashboard utilities. */
-(function () {
-    "use strict";
+          (function () {
+              "use strict";
 
-    function getLocalDateString(date = new Date()) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-    }
+              function getLocalDateString(date = new Date()) {
+                  const year = date.getFullYear();
+                  const month = String(date.getMonth() + 1).padStart(2, "0");
+                  const day = String(date.getDate()).padStart(2, "0");
+                  return `${year}-${month}-${day}`;
+              }
 
-    function parseLocalDate(value) {
-        if (!value) return new Date();
-        if (value instanceof Date) return value;
-        const parts = String(value).split("T")[0].split("-");
-        if (parts.length === 3) {
-            return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        }
-        return new Date(value);
-    }
+              function parseLocalDate(value) {
+                  if (!value) return new Date();
+                  if (value instanceof Date) return value;
+                  const parts = String(value).split("T")[0].split("-");
+                  if (parts.length === 3) {
+                      return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                  }
+                  return new Date(value);
+              }
 
-    function escapeHtml(value) {
-        if (value == null) return "";
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/\"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+              function escapeHtml(value) {
+                  if (value == null) return "";
+                  return String(value)
+                      .replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/\"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+              }
 
-    function formatCurrency(amount) {
-        if (typeof window.formatGlobalCurrency === "function") {
-            return window.formatGlobalCurrency(amount);
-        }
-        const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "$";
-        return `${symbol} ${Number(amount || 0).toFixed(2)}`;
-    }
+              function formatCurrency(amount) {
+                  if (typeof window.formatGlobalCurrency === "function") {
+                      return window.formatGlobalCurrency(amount);
+                  }
+                  const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "$";
+                  return `${symbol} ${Number(amount || 0).toFixed(2)}`;
+              }
 
-    function formatDate(value) {
-        if (!value) return "";
-        return parseLocalDate(value).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        });
-    }
+              function formatDate(value) {
+                  if (!value) return "";
+                  return parseLocalDate(value).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                  });
+              }
 
-    window.DashboardUtils = Object.freeze({
-        getLocalDateString,
-        parseLocalDate,
-        escapeHtml,
-        formatCurrency,
-        formatDate,
-    });
-    window.escapeHtml = escapeHtml;
-})();
-'''
-          (scripts / "dashboard-utils.js").write_text(utils, encoding="utf-8")
+              window.DashboardUtils = Object.freeze({
+                  getLocalDateString,
+                  parseLocalDate,
+                  escapeHtml,
+                  formatCurrency,
+                  formatDate,
+              });
+              window.escapeHtml = escapeHtml;
+          })();
+          '''
+          (scripts / "dashboard-utils.js").write_text(utils.replace("\n          ", "\n").strip() + "\n", encoding="utf-8")
 
-          # Ensure the utility runs before dashboard.js while keeping the existing classic-script architecture.
           h = html.read_text(encoding="utf-8")
           if 'js/modules/dashboard-utils.js' not in h:
-              marker = re.search(r'(<script[^>]+src=["\']js/dashboard\.js(?:\?[^"\']*)?["\'][^>]*></script>)', h)
+              marker = re.search(r'(<script[^>]+src=["\']js/dashboard\\.js(?:\\?[^"\']*)?["\'][^>]*></script>)', h)
               if not marker:
                   raise SystemExit("dashboard.js script tag not found")
               util_tag = '    <script src="js/modules/dashboard-utils.js?v=20260910"></script>\n'
               h = h[:marker.start()] + util_tag + h[marker.start():]
 
-          # Replace the unsupported/renderer-dependent biometrics glyph with a stable SVG icon.
           bio_old = '<a href="#" id="biometricAuthBtn">🧬 Biometrics (Touch/Face ID)</a>'
           bio_new = '''<a href="#" id="biometricAuthBtn" class="profile-menu-action">
                             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -145,9 +144,6 @@ const {
               h = h.replace(bio_old, bio_new, 1)
           html.write_text(h, encoding="utf-8")
 
-          # Desktop-only shortcut badge. The keydown handler remains active, so a mobile browser
-          # that forwards Ctrl+K from an external keyboard can still use the shortcut without
-          # reserving visual space for a desktop affordance.
           c = css.read_text(encoding="utf-8")
           mobile_rule = '@media (max-width:760px) { .command-kbd { display:none !important; } .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }'
           old_mobile = '@media (max-width:760px) { .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }'
@@ -156,17 +152,19 @@ const {
           elif mobile_rule not in c:
               c += '\n' + mobile_rule + '\n'
 
-          # Keep metric cards visually static while the theme is being swapped.
-          c += '''
+          theme_rules = '''
 
-/* Theme changes must not replay card reveal/hover transforms. */
-html.theme-transitioning .grid-4-metrics > .metric-card,
-html.theme-transitioning .grid-4-metrics > .metric-card * {
-    animation:none !important;
-    transition:none !important;
-}
-'''
+          /* Theme changes must not replay card reveal/hover transforms. */
+          html.theme-transitioning .grid-4-metrics > .metric-card,
+          html.theme-transitioning .grid-4-metrics > .metric-card * {
+              animation:none !important;
+              transition:none !important;
+          }
+          '''
+          if 'html.theme-transitioning .grid-4-metrics > .metric-card' not in c:
+              c += theme_rules.replace("\n          ", "\n")
           css.write_text(c, encoding="utf-8")
+          PY
 
       - name: Remove one-off workflow and commit changes
         shell: bash
