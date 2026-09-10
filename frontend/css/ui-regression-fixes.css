@@ -193,10 +193,11 @@ html.theme-transitioning *::after {
 }
 
 @media (max-width:480px) {
-    .top-bar-actions { gap:8px !important; column-gap:12px !important; row-gap:8px !important; padding-left:8px !important; padding-right:8px !important; }
+    .top-bar-actions { gap:8px !important; column-gap:12px !important; row-gap:8px !important; padding-left:10px !important; padding-right:10px !important; }
     .top-bar .add-expense-button,.top-bar .add-income-button { height:38px !important; padding:0 9px !important; font-size:12px !important; gap:5px !important; border-radius:9px !important; }
     .input-wrapper:has(> .input-icon) > input.form-input,.input-wrapper:has(> .input-icon) > textarea.form-input,.input-wrapper:has(> .input-icon) > select.form-input,
     .input-wrapper:has(> svg.input-icon) > input.form-input,.input-wrapper:has(> svg.input-icon) > textarea.form-input,.input-wrapper:has(> svg.input-icon) > select.form-input { padding-left:38px !important; }
     .input-wrapper > .input-icon,.input-wrapper > svg.input-icon { left:10px !important; width:14px !important; height:14px !important; max-width:14px !important; max-height:14px !important; flex-basis:14px !important; }
+    .top-bar .add-expense-button > span,.top-bar .add-income-button > span { min-width:0 !important; max-width:100% !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
     .profile-menu { width:calc(100vw - 20px) !important; max-width:calc(100vw - 20px) !important; right:-2px !important; }
 }
