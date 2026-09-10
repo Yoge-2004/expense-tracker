@@ -1,10 +1,11 @@
-/* ==========================================================================
+/*
    MOTION SUITE — PART 2 ENTRY POINT
-   Ordered modules for scroll, touch, pointer, ambient and feedback motion.
-   ========================================================================== */
+   Ordered modules for scroll, touch, pointer, ambient, feedback, and mobile action safeguards.
+*/
 
 @import url("motion-extended/scroll.css");
 @import url("motion-extended/touch.css");
 @import url("motion-extended/pointer.css");
 @import url("motion-extended/ambient.css");
 @import url("motion-extended/feedback.css");
+@import url("motion-extended/mobile-action-controls.css");
