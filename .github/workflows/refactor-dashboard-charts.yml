@@ -10,26 +10,39 @@ permissions:
 
 jobs:
   extract:
-    if: ${{ !startsWith(github.event.head_commit.message, 'refactor(ui): extract dashboard chart controllers') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Skip if already extracted
+        id: guard
+        run: |
+          if test -s frontend/js/modules/dashboard-charts.js && grep -q 'js/modules/dashboard-charts.js' frontend/dashboard.html; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Extract chart controllers
+        if: steps.guard.outputs.already != 'true'
         run: python3 scripts/extract-dashboard-charts.py
 
       - name: Validate extracted JavaScript
+        if: steps.guard.outputs.already != 'true'
         run: |
           set -euo pipefail
           find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
       - name: Verify dashboard chart module
+        if: steps.guard.outputs.already != 'true'
         run: |
           set -euo pipefail
           test -s frontend/js/modules/dashboard-charts.js
@@ -39,11 +52,12 @@ jobs:
           grep -q 'renderBudgetVsActualChart' frontend/js/dashboard.js
 
       - name: Commit refactor
+        if: steps.guard.outputs.already != 'true'
         run: |
           if git diff --quiet -- frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html; then
-            echo "No refactor changes needed."
+            echo "No chart extraction changes required."
             exit 0
           fi
           git add frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html
-          git commit -m "refactor(ui): extract dashboard chart controllers"
+          git commit -m "refactor(js): extract dashboard chart controllers"
           git push origin HEAD:main
