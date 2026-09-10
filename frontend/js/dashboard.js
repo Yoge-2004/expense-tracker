@@ -38,91 +38,49 @@ const updateProMetrics = window.DashboardMetrics.updateProMetrics;
 
 // --- 1. INITIALIZATION ---
 
-function renderDashboardData(expenses, categories) {
-    allCategories = categories;
-    const incomingExpenses = (expenses && expenses.length > 0) ? expenses : ((window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : (allExpenses || []));
-    allExpenses = incomingExpenses.sort((a, b) => {
-        const dDiff = new Date(b.expenseDate) - new Date(a.expenseDate);
-        if (dDiff !== 0) return dDiff;
-        if (b.createdAt && a.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
-        return (b.id || 0) - (a.id || 0);
-    });
-
-    populateCategoryDropdown(allCategories);
-    populateFilterDropdowns(allCategories, allExpenses);
-    renderCategoryPills(allCategories);
-
-    applyFilters();
-    renderTrendChart(allExpenses);
-    loadBudgets();
-    updateProMetrics(allExpenses);
-}
-
-async function loadDashboard(skipCache = false) {
-    if (skipCache) {
-        if (typeof window.clearApiCache === "function") {
-            window.clearApiCache();
-        }
-        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
-    }
-    const cached = skipCache ? null : loadExpenseCache();
-    const renderedFromCache = !!cached;
-
-    if (cached) {
-        allExpenses = cached.expenses || [];
-        allCategories = cached.categories || [];
-        renderDashboardData(cached.expenses, cached.categories);
-        // Note: allIncomes and allSavingsGoals are still [] at this point — they are only populated
-        // after the API call below. Calling renderIncomes([])/renderSavingsGoals([]) here would
-        // briefly wipe those sections. Defer their render to the post-API branch instead.
-    } else {
-        window.DashboardDom.showSkeletonLoading();
-    }
-
-    try {
-        console.log("Loading Dashboard Data...");
-
-        const [expenses, globalCats, userCats, incomes, savingsGoals] = await Promise.all([
-            apiRequest(`/expenses/user/${userId}`, { skipCache }),
-            apiRequest(`/categories/global`, { skipCache }),
-            apiRequest(`/categories/user/${userId}`, { skipCache }),
-            apiRequest(`/incomes/user/${userId}`, { skipCache }).catch(err => { console.warn("Incomes fetch error:", err); return []; }),
-            apiRequest(`/savings/goals/user/${userId}`, { skipCache }).catch(err => { console.warn("Savings fetch error:", err); return []; })
-        ]);
-
-        allIncomes = Array.isArray(incomes) ? incomes : [];
-        allSavingsGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
-
-        // Merge Categories safely
-        const safeGlobal = Array.isArray(globalCats) ? globalCats : [];
-        const safeUser = Array.isArray(userCats) ? userCats : [];
-        const categories = [...safeGlobal, ...safeUser];
-        userOnlyCategories = safeUser;
-
-        renderDashboardData(expenses, categories);
-        renderIncomes(allIncomes);
-        renderSavingsGoals(allSavingsGoals);
-        updateCashFlowMetrics(expenses || [], allIncomes, allSavingsGoals);
-        saveExpenseCache(expenses, categories);
-
-    } catch (error) {
-        console.error("Critical Error:", error);
-        if (error.message.includes("User not found")) {
-            localStorage.clear();
-            window.location.href = "index.html";
-            return;
-        }
-        if (renderedFromCache) {
-            showToast("Couldn't reach the server — showing your last saved data.", "error");
-        } else {
-            showToast("Couldn't load your data. Check your connection and try again.", "error");
-            renderDashboardData([], []);
-        }
-        renderIncomes(allIncomes || []);
-        renderSavingsGoals(allSavingsGoals || []);
+const dashboardDataController = window.DashboardData.createController({
+    getState: () => ({
+        allExpenses,
+        allCategories,
+        allIncomes,
+        allSavingsGoals,
+        userOnlyCategories
+    }),
+    setState: (next) => {
+        if (Object.prototype.hasOwnProperty.call(next, "allExpenses")) allExpenses = next.allExpenses;
+        if (Object.prototype.hasOwnProperty.call(next, "allCategories")) allCategories = next.allCategories;
+        if (Object.prototype.hasOwnProperty.call(next, "allIncomes")) allIncomes = next.allIncomes;
+        if (Object.prototype.hasOwnProperty.call(next, "allSavingsGoals")) allSavingsGoals = next.allSavingsGoals;
+        if (Object.prototype.hasOwnProperty.call(next, "userOnlyCategories")) userOnlyCategories = next.userOnlyCategories;
+    },
+    getUserId: () => userId,
+    apiRequest,
+    getCacheKey: window.getCacheKey,
+    loadExpenseCache: window.loadExpenseCache,
+    saveExpenseCache: window.saveExpenseCache,
+    showSkeletonLoading: window.DashboardDom.showSkeletonLoading,
+    renderCategoryData: (categories, expenses) => {
+        populateCategoryDropdown(categories);
+        populateFilterDropdowns(categories, expenses);
+        renderCategoryPills(categories);
+        applyFilters();
+        renderTrendChart(expenses);
+    },
+    renderIncomes,
+    renderSavingsGoals,
+    updateCashFlowMetrics,
+    renderFinancialData: (expenses) => {
         loadBudgets();
-    }
-}
+        updateProMetrics(expenses);
+    },
+    showToast,
+    clearApiCache: window.clearApiCache
+});
+
+const renderDashboardData = dashboardDataController.renderDashboardData;
+const loadDashboard = dashboardDataController.loadDashboard;
+window.renderDashboardData = renderDashboardData;
+window.loadDashboard = loadDashboard;
 
 // --- PRO METRICS CALCULATION ---
 
