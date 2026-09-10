@@ -1,5 +1,6 @@
 package com.example.expensetracker.controller;
 
+import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.RateLimiterService;
 import com.example.expensetracker.service.FileDbSyncService;
@@ -35,11 +36,12 @@ class SyncControllerTest {
     @MockitoBean FileDbSyncService syncService;
     @MockitoBean RateLimiterService rateLimiterService;
     // FIXED: @WebMvcTest scans Filter beans (like JwtAuthenticationFilter) but NOT @Service beans
-    // (like JwtService). The filter's constructor requires JwtService, which was missing from
-    // the context → "bean of type JwtService could not be found" → 9 test errors. Adding a
-    // MockitoBean mock satisfies the dependency. Since addFilters=false, the filter never
-    // actually runs, so no methods need to be stubbed on the mock.
+    // (like JwtService and CustomUserDetailsService). The filter's constructor requires both,
+    // which were missing from the context -> "bean could not be found" -> 9 test errors.
+    // Adding MockitoBean mocks satisfies both dependencies. Since addFilters=false, the filter
+    // never actually runs, so no methods need to be stubbed on the mocks.
     @MockitoBean JwtService jwtService;
+    @MockitoBean CustomUserDetailsService customUserDetailsService;
 
     @BeforeEach
     void setUp() {

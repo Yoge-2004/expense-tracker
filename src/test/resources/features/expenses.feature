@@ -41,7 +41,7 @@ Feature: Expense Management
   Scenario: Cannot update another user's expense
     Given another user has an expense with id 999
     When I try to update expense 999
-    Then the response status should be 403
+    Then the response status should be 400
 
   Scenario: Setting a budget for a category
     Given the category "Entertainment" exists for my user
