@@ -65,13 +65,7 @@ jobs:
                   i += 1
               raise RuntimeError(f'Unbalanced function: {signature}')
 
-          signatures = [
-              'function animateNumber(',
-              'function animatePercent(',
-              'function celebrateSuccess(',
-              'function updateStats(',
-          ]
-
+          signatures = ['function animateNumber(', 'function animatePercent(', 'function celebrateSuccess(', 'function updateStats(']
           extracted = []
           for signature in signatures:
               block, source = extract(source, signature)
@@ -79,17 +73,19 @@ jobs:
 
           source = source.replace('// --- 5. UI RENDERING HELPERS & NUMBER COUNT ANIMATION ---\n', '', 1)
           anchor = 'const elements = window.DashboardDom.elements;\n'
-          if 'window.DashboardEffects' not in source:
+          binding = 'const { animateNumber, animatePercent, celebrateSuccess, updateStats } = window.DashboardEffects;\n'
+          if binding not in source:
               if anchor not in source: raise RuntimeError('Dashboard DOM anchor missing')
-              source = source.replace(anchor, anchor + 'const { animateNumber, animatePercent, celebrateSuccess, updateStats } = window.DashboardEffects;\n', 1)
+              source = source.replace(anchor, anchor + binding, 1)
 
+          effect_body = '\n\n'.join('    ' + line for block in extracted for line in block.splitlines())
           effect_module = '''/* Dashboard rendering effects and lightweight view animations. */
           (function () {
               "use strict";
               const { formatCurrency } = window.DashboardUtils;
               const elements = window.DashboardDom.elements;
 
-          ''' + '\n\n'.join('          ' + line for block in extracted for line in block.splitlines()) + '''
+          ''' + effect_body + '''
 
               window.DashboardEffects = Object.freeze({ animateNumber, animatePercent, celebrateSuccess, updateStats });
               window.animateNumber = animateNumber;
@@ -125,3 +121,5 @@ jobs:
           git rm .github/workflows/refactor-dashboard-effects-once.yml
           git commit -m 'refactor(js): extract dashboard rendering effects'
           git push origin HEAD:main
+
+# Trigger marker.
