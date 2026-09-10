@@ -16,25 +16,26 @@ def patch_dashboard_js() -> None:
     )
 
     text = text.replace(
-        'if (!confirm(`Delete category "${catName}"? This can\\'t be undone.`)) return;',
-        'if (!(await window.appConfirm(`Delete category "${catName}"? This can\\'t be undone.`))) return;',
+        "if (!confirm(`Delete category \"${catName}\"? This can't be undone.`)) return;",
+        "if (!(await window.appConfirm(`Delete category \"${catName}\"? This can't be undone.`))) return;",
         1,
     )
 
-    marker_start = "// Timezone-safe local date helpers"
-    marker_end = "// Modal Scroll Lock Helpers"
-    start = text.find(marker_start)
-    end = text.find(marker_end)
+    start_marker = "// Timezone-safe local date helpers"
+    end_marker = "// Modal Scroll Lock Helpers"
+    start = text.find(start_marker)
+    end = text.find(end_marker)
     if start != -1 and end > start and "window.DashboardUtils" not in text:
-        text = text[:start] + (
+        loader = (
             "// Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.\n"
             "const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate } = window.DashboardUtils;\n\n"
-        ) + text[end:]
+        )
+        text = text[:start] + loader + text[end:]
 
     DASHBOARD.write_text(text, encoding="utf-8")
 
 
-def patch_dashboard_utils() -> None:
+def write_dashboard_utils() -> None:
     UTILS.parent.mkdir(parents=True, exist_ok=True)
     UTILS.write_text(
         '''/* Shared, dependency-free dashboard utilities. */
@@ -117,13 +118,12 @@ def patch_dashboard_html() -> None:
     old_biometric = '<a href="#" id="biometricAuthBtn">🧬 Biometrics (Touch/Face ID)</a>'
     new_biometric = '''<a href="#" id="biometricAuthBtn" class="profile-menu-action" aria-label="Biometrics (Touch/Face ID)">
     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 0-2 2v-2"/>
+        <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 0 2-2v-2"/>
         <path d="M8 8c1.2-1.7 2.9-2.5 4-2.5S14.8 6.3 16 8M7.5 12c0-1.7 1.6-3.5 4.5-3.5s4.5 1.8 4.5 3.5c0 2.1-1.7 4-4.5 4s-4.5-1.9-4.5-4Z"/>
     </svg>
     <span>Biometrics (Touch/Face ID)</span>
 </a>'''
     text = text.replace(old_biometric, new_biometric, 1)
-
     DASHBOARD_HTML.write_text(text, encoding="utf-8")
 
 
@@ -135,7 +135,7 @@ def patch_ui_css() -> None:
     if ".command-kbd { display:none !important; }" not in text:
         text = text.replace(mobile_old, mobile_new, 1)
 
-    if "#ledgerStreamTabs, .ledger-stream-tabs" not in text or "overflow-x:auto !important" not in text:
+    if "#ledgerStreamTabs, .ledger-stream-tabs" not in text:
         text += '''
 
 /* Mobile ledger controls scroll instead of clipping. */
@@ -188,8 +188,8 @@ html.theme-transitioning .grid-4-metrics > .metric-card * {
 
 
 if __name__ == "__main__":
-    patch_dashboard()
-    patch_dashboard_utils()
+    patch_dashboard_js()
+    write_dashboard_utils()
     patch_dashboard_html()
     patch_ui_css()
     print("Dashboard stabilization fixes applied.")
