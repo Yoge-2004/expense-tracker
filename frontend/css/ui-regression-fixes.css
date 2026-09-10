@@ -39,8 +39,9 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
 #expenseList .expense-item,#incomeList tbody tr { min-width:0 !important; box-sizing:border-box !important; }
 @media (max-width:700px) { .budget-item { padding:13px !important; } .budget-item .budget-bar-track { height:7px !important; margin-top:9px !important; } #incomeList tbody tr { width:100% !important; } }
 
+
 @media (max-width:760px) {
-    /* Touch actions should remain visually contained and never expose hover/shine layers. */
+    /* Top action buttons are touch controls; keep the decorative shine inside the control. */
     .top-bar .add-expense-button,
     .top-bar .add-income-button {
         flex:1 1 0 !important;
@@ -49,23 +50,9 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
         max-width:none !important;
         overflow:hidden !important;
         isolation:isolate !important;
-        transform:none !important;
     }
-    .top-bar .add-expense-button::before,
     .top-bar .add-expense-button::after,
-    .top-bar .add-income-button::before,
     .top-bar .add-income-button::after {
-        content:none !important;
         display:none !important;
-        animation:none !important;
-        transform:none !important;
-    }
-    .top-bar .add-expense-button:hover,
-    .top-bar .add-expense-button:active,
-    .top-bar .add-expense-button:focus,
-    .top-bar .add-income-button:hover,
-    .top-bar .add-income-button:active,
-    .top-bar .add-income-button:focus {
-        transform:none !important;
     }
 }

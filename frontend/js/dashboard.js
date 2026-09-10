@@ -10,6 +10,7 @@ document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase()
 
 // Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
 const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
+const elements = window.DashboardDom.elements;
 
 // Global State
 let allExpenses = [];
@@ -19,101 +20,11 @@ let allIncomes = [];
 let allSavingsGoals = [];
 let cachedBudgets = [];
 window.cachedBudgets = cachedBudgets;
-let pieChart = null;
-let trendChart = null;
-let budgetVsActualChart = null;
-let recurringSplitChart = null;
-let dayOfWeekChart = null;
+const chartState = window.DashboardChartState;
 
-const elements = {
-    totalAmount: document.getElementById("totalAmount"),
-    expenseCount: document.getElementById("expenseCountText"),
-    expenseList: document.getElementById("expenseList"),
-    filterSearch: document.getElementById("filterSearch"),
-    filterSort: document.getElementById("filterSort"),
-    filterMonth: document.getElementById("filterMonth"),
-    filterYear: document.getElementById("filterYear"),
-    filterCategory: document.getElementById("filterCategory"),
-    filterStartDate: document.getElementById("filterStartDate"),
-    filterEndDate: document.getElementById("filterEndDate"),
-    modal: document.getElementById("expenseModal"),
-    categorySelect: document.getElementById("categorySelect"),
-    addCategoryBtn: document.getElementById("addCategoryBtn"),
-    addForm: document.getElementById("addExpenseForm"),
-    isRecurring: document.getElementById("isRecurring"),
-    recurringOptions: document.getElementById("recurringOptions"),
-    recurringFrequency: document.getElementById("recurringFrequency"),
-    customIntervalWrap: document.getElementById("customIntervalWrap"),
-    recurringIntervalDays: document.getElementById("recurringIntervalDays"),
-    profileMenu: document.getElementById("profileMenu"),
-    profileTrigger: document.getElementById("profileTrigger"),
-    toggleFiltersBtn: document.getElementById("toggleFiltersBtn"),
-    filterPanel: document.getElementById("filterPanel"),
-    themeToggle: document.getElementById("themeToggle"),
-    addBudgetBtn: document.getElementById("addBudgetBtn"),
-    budgetList: document.getElementById("budgetList"),
-    // Subscription Elements
-    manageSubsBtn: document.getElementById("manageSubsBtn"),
-    subsModal: document.getElementById("subsModal"),
-    subsList: document.getElementById("subsModalList") || document.getElementById("subsList"),
-    closeSubsBtn: document.getElementById("closeSubsModalBtn") || document.getElementById("closeSubsBtn"),
-    // Delete Account Elements
-    deleteAccountBtn: document.getElementById("deleteAccountBtn"),
-    deleteAccountModal: document.getElementById("deleteAccountModal"),
-    deletePasswordInput: document.getElementById("deletePasswordInput"),
-    deleteConfirmInput: document.getElementById("deleteConfirmInput"),
-    confirmDeleteAccountBtn: document.getElementById("confirmDeleteAccountBtn"),
-    cancelDeleteAccountBtn: document.getElementById("cancelDeleteAccountBtn")
-};
+
 
 // Immediate synchronization of metric cards with active currency
-function initCurrencyPlaceholders() {
-    const zeroCurr = formatCurrency(0);
-    if (elements.totalAmount && (elements.totalAmount.textContent.trim() === "—" || elements.totalAmount.textContent.includes("₹") || elements.totalAmount.textContent.includes("$"))) {
-        elements.totalAmount.textContent = zeroCurr;
-    }
-    const totalIncomeEl = document.getElementById("totalIncomeAmount");
-    if (totalIncomeEl && (totalIncomeEl.textContent.trim() === "—" || totalIncomeEl.textContent.includes("$"))) {
-        totalIncomeEl.textContent = zeroCurr;
-    }
-    const netCashFlowEl = document.getElementById("netCashFlowAmount");
-    if (netCashFlowEl && (netCashFlowEl.textContent.trim() === "—" || netCashFlowEl.textContent.includes("$"))) {
-        netCashFlowEl.textContent = zeroCurr;
-    }
-    const dailyBurnEl = document.getElementById("dailyBurnRate");
-    if (dailyBurnEl && (dailyBurnEl.textContent.includes("—") || dailyBurnEl.textContent.includes("₹"))) {
-        dailyBurnEl.textContent = `${zeroCurr} / day`;
-    }
-    const totalSavedProgress = document.getElementById("totalSavedProgress");
-    if (totalSavedProgress && (totalSavedProgress.textContent.includes("—") || totalSavedProgress.textContent.includes("$"))) {
-        totalSavedProgress.textContent = `Saved: ${zeroCurr}`;
-    }
-    const subsTotal = document.getElementById("subsMonthlyTotal");
-    if (subsTotal && (subsTotal.textContent.includes("—") || subsTotal.textContent.includes("₹"))) {
-        subsTotal.textContent = `${zeroCurr} / mo`;
-    }
-}
-initCurrencyPlaceholders();
-
-function showSkeletonLoading() {
-    // Metric card skeletons
-    document.querySelectorAll('.metric-value').forEach(el => {
-        el.dataset.realContent = el.textContent;
-        el.innerHTML = '<span class="skeleton skeleton-value"></span>';
-    });
-    // Expense list skeleton
-    if (elements.expenseList) {
-        elements.expenseList.innerHTML = Array.from({ length: 5 }, () =>
-            `<div class="skeleton skeleton-row"></div>`
-        ).join('');
-    }
-    // Budget list skeleton
-    if (elements.budgetList) {
-        elements.budgetList.innerHTML = Array.from({ length: 3 }, () =>
-            `<div class="skeleton skeleton-row" style="height:80px; margin-bottom:12px;"></div>`
-        ).join('');
-    }
-}
 
 // --- 1. INITIALIZATION ---
 
@@ -154,7 +65,7 @@ async function loadDashboard(skipCache = false) {
         renderIncomes(allIncomes || []);
         renderSavingsGoals(allSavingsGoals || []);
     } else {
-        showSkeletonLoading();
+        window.DashboardDom.showSkeletonLoading();
     }
 
     try {
@@ -549,7 +460,7 @@ async function loadBudgets() {
                 usageBadge.textContent = "No Budget Set";
                 usageBadge.className = "status-badge badge-outflow";
             }
-            if (budgetVsActualChart) { budgetVsActualChart.destroy(); budgetVsActualChart = null; }
+            if (chartState.budgetVsActualChart) { chartState.budgetVsActualChart.destroy(); chartState.budgetVsActualChart = null; }
             return;
         }
 
@@ -761,9 +672,9 @@ function renderPieChart(expenses) {
         categoryTotals[cat] = (categoryTotals[cat] || 0) + exp.amount;
     });
 
-    if (pieChart) pieChart.destroy();
+    if (chartState.pieChart) chartState.pieChart.destroy();
 
-    pieChart = new Chart(ctx, {
+    chartState.pieChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: Object.keys(categoryTotals),
@@ -792,7 +703,7 @@ function renderPieChart(expenses) {
 }
 
 function renderTrendChart(expenses) {
-    const ctx = document.getElementById('trendChart').getContext('2d');
+    const ctx = document.getElementById('chartState.trendChart').getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
     const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
     const textColor = isLight ? '#6B6558' : '#A8A395';
@@ -805,9 +716,9 @@ function renderTrendChart(expenses) {
 
     const { dates, values } = buildTrendSeries(dailyTotals);
 
-    if (trendChart) trendChart.destroy();
+    if (chartState.trendChart) chartState.trendChart.destroy();
 
-    trendChart = new Chart(ctx, {
+    chartState.trendChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: dates.map(formatTrendDate),
@@ -849,14 +760,14 @@ function renderTrendChart(expenses) {
  * the daily trend line can show, since both mix the two together.
  */
 function renderRecurringSplitChart(expenses) {
-    const canvas = document.getElementById('recurringSplitChart');
+    const canvas = document.getElementById('chartState.recurringSplitChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
     const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
     const textColor = isLight ? '#6B6558' : '#A8A395';
 
-    if (recurringSplitChart) recurringSplitChart.destroy();
+    if (chartState.recurringSplitChart) chartState.recurringSplitChart.destroy();
     if (!Array.isArray(expenses) || expenses.length === 0) return;
 
     let recurringTotal = 0;
@@ -867,7 +778,7 @@ function renderRecurringSplitChart(expenses) {
         if (isRecurring) recurringTotal += amt; else oneTimeTotal += amt;
     });
 
-    recurringSplitChart = new Chart(ctx, {
+    chartState.recurringSplitChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['Recurring', 'One-Time'],
@@ -899,7 +810,7 @@ function renderRecurringSplitChart(expenses) {
  * overspending that a category or time-trend view can't show on its own.
  */
 function renderDayOfWeekChart(expenses) {
-    const canvas = document.getElementById('dayOfWeekChart');
+    const canvas = document.getElementById('chartState.dayOfWeekChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
@@ -907,7 +818,7 @@ function renderDayOfWeekChart(expenses) {
     const textColor = isLight ? '#6B6558' : '#A8A395';
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    if (dayOfWeekChart) dayOfWeekChart.destroy();
+    if (chartState.dayOfWeekChart) chartState.dayOfWeekChart.destroy();
     if (!Array.isArray(expenses) || expenses.length === 0) return;
 
     const totalsByDay = [0, 0, 0, 0, 0, 0, 0];
@@ -917,7 +828,7 @@ function renderDayOfWeekChart(expenses) {
         totalsByDay[d.getDay()] += Number(exp.amount || 0);
     });
 
-    dayOfWeekChart = new Chart(ctx, {
+    chartState.dayOfWeekChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: dayLabels,
@@ -949,14 +860,14 @@ function renderDayOfWeekChart(expenses) {
  * are visible at a glance without reading numbers.
  */
 function renderBudgetVsActualChart(budgets) {
-    const canvas = document.getElementById('budgetVsActualChart');
+    const canvas = document.getElementById('chartState.budgetVsActualChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const isLight = document.body.getAttribute("data-theme") === "light";
     const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
     const textColor = isLight ? '#6B6558' : '#A8A395';
 
-    if (budgetVsActualChart) budgetVsActualChart.destroy();
+    if (chartState.budgetVsActualChart) chartState.budgetVsActualChart.destroy();
 
     if (!budgets || budgets.length === 0) {
         return; // Empty state is already handled by the budget list above this chart.
@@ -967,7 +878,7 @@ function renderBudgetVsActualChart(budgets) {
     const spent = budgets.map(b => Number(b.spent || 0));
     const overBudgetColors = budgets.map(b => (b.percentage > 100 ? '#C0392B' : '#C79A3E'));
 
-    budgetVsActualChart = new Chart(ctx, {
+    chartState.budgetVsActualChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels,
@@ -1666,49 +1577,49 @@ function updateChartsTheme() {
     const textColor = isLight ? '#6B6558' : '#A8A395';
     const borderColor = isLight ? '#FCFBF6' : '#10120E';
 
-    if (pieChart) {
-        if (pieChart.data?.datasets?.[0]) {
-            pieChart.data.datasets[0].borderColor = borderColor;
+    if (chartState.pieChart) {
+        if (chartState.pieChart.data?.datasets?.[0]) {
+            chartState.pieChart.data.datasets[0].borderColor = borderColor;
         }
-        if (pieChart.options?.plugins?.legend?.labels) {
-            pieChart.options.plugins.legend.labels.color = textColor;
+        if (chartState.pieChart.options?.plugins?.legend?.labels) {
+            chartState.pieChart.options.plugins.legend.labels.color = textColor;
         }
-        pieChart.update('none');
+        chartState.pieChart.update('none');
     }
 
-    if (trendChart) {
-        if (trendChart.options?.scales?.x?.ticks) trendChart.options.scales.x.ticks.color = textColor;
-        if (trendChart.options?.scales?.y?.ticks) trendChart.options.scales.y.ticks.color = textColor;
-        if (trendChart.options?.scales?.y?.grid) trendChart.options.scales.y.grid.color = gridColor;
-        if (trendChart.data?.datasets?.[0]) {
-            trendChart.data.datasets[0].pointBackgroundColor = isLight ? '#FCFBF6' : '#C79A3E';
+    if (chartState.trendChart) {
+        if (chartState.trendChart.options?.scales?.x?.ticks) chartState.trendChart.options.scales.x.ticks.color = textColor;
+        if (chartState.trendChart.options?.scales?.y?.ticks) chartState.trendChart.options.scales.y.ticks.color = textColor;
+        if (chartState.trendChart.options?.scales?.y?.grid) chartState.trendChart.options.scales.y.grid.color = gridColor;
+        if (chartState.trendChart.data?.datasets?.[0]) {
+            chartState.trendChart.data.datasets[0].pointBackgroundColor = isLight ? '#FCFBF6' : '#C79A3E';
         }
-        trendChart.update('none');
+        chartState.trendChart.update('none');
     }
 
-    if (recurringSplitChart) {
-        if (recurringSplitChart.options?.scales?.x?.ticks) recurringSplitChart.options.scales.x.ticks.color = textColor;
-        if (recurringSplitChart.options?.scales?.x?.grid) recurringSplitChart.options.scales.x.grid.color = gridColor;
-        if (recurringSplitChart.options?.scales?.y?.ticks) recurringSplitChart.options.scales.y.ticks.color = textColor;
-        recurringSplitChart.update('none');
+    if (chartState.recurringSplitChart) {
+        if (chartState.recurringSplitChart.options?.scales?.x?.ticks) chartState.recurringSplitChart.options.scales.x.ticks.color = textColor;
+        if (chartState.recurringSplitChart.options?.scales?.x?.grid) chartState.recurringSplitChart.options.scales.x.grid.color = gridColor;
+        if (chartState.recurringSplitChart.options?.scales?.y?.ticks) chartState.recurringSplitChart.options.scales.y.ticks.color = textColor;
+        chartState.recurringSplitChart.update('none');
     }
 
-    if (dayOfWeekChart) {
-        if (dayOfWeekChart.options?.scales?.x?.ticks) dayOfWeekChart.options.scales.x.ticks.color = textColor;
-        if (dayOfWeekChart.options?.scales?.y?.ticks) dayOfWeekChart.options.scales.y.ticks.color = textColor;
-        if (dayOfWeekChart.options?.scales?.y?.grid) dayOfWeekChart.options.scales.y.grid.color = gridColor;
-        dayOfWeekChart.update('none');
+    if (chartState.dayOfWeekChart) {
+        if (chartState.dayOfWeekChart.options?.scales?.x?.ticks) chartState.dayOfWeekChart.options.scales.x.ticks.color = textColor;
+        if (chartState.dayOfWeekChart.options?.scales?.y?.ticks) chartState.dayOfWeekChart.options.scales.y.ticks.color = textColor;
+        if (chartState.dayOfWeekChart.options?.scales?.y?.grid) chartState.dayOfWeekChart.options.scales.y.grid.color = gridColor;
+        chartState.dayOfWeekChart.update('none');
     }
 
-    if (budgetVsActualChart) {
-        if (budgetVsActualChart.data?.datasets?.[0]) {
-            budgetVsActualChart.data.datasets[0].backgroundColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)';
+    if (chartState.budgetVsActualChart) {
+        if (chartState.budgetVsActualChart.data?.datasets?.[0]) {
+            chartState.budgetVsActualChart.data.datasets[0].backgroundColor = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.12)';
         }
-        if (budgetVsActualChart.options?.scales?.x?.ticks) budgetVsActualChart.options.scales.x.ticks.color = textColor;
-        if (budgetVsActualChart.options?.scales?.y?.ticks) budgetVsActualChart.options.scales.y.ticks.color = textColor;
-        if (budgetVsActualChart.options?.scales?.y?.grid) budgetVsActualChart.options.scales.y.grid.color = gridColor;
-        if (budgetVsActualChart.options?.plugins?.legend?.labels) budgetVsActualChart.options.plugins.legend.labels.color = textColor;
-        budgetVsActualChart.update('none');
+        if (chartState.budgetVsActualChart.options?.scales?.x?.ticks) chartState.budgetVsActualChart.options.scales.x.ticks.color = textColor;
+        if (chartState.budgetVsActualChart.options?.scales?.y?.ticks) chartState.budgetVsActualChart.options.scales.y.ticks.color = textColor;
+        if (chartState.budgetVsActualChart.options?.scales?.y?.grid) chartState.budgetVsActualChart.options.scales.y.grid.color = gridColor;
+        if (chartState.budgetVsActualChart.options?.plugins?.legend?.labels) chartState.budgetVsActualChart.options.plugins.legend.labels.color = textColor;
+        chartState.budgetVsActualChart.update('none');
     }
 }
 window.updateChartsTheme = updateChartsTheme;
