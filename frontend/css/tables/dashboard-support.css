@@ -35,6 +35,9 @@
     align-items: center;
     gap: 6px;
     border-radius: 10px;
+    /* FIXED: prevent button text from wrapping or being clipped on narrow screens */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .dashboard-heading {

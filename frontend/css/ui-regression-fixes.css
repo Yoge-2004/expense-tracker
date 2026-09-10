@@ -48,11 +48,21 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
         width:auto !important;
         min-width:0 !important;
         max-width:none !important;
-        overflow:hidden !important;
+        /* FIXED: was overflow:hidden which clipped the button text ("Record Expense" showed as
+           "cord Expe"). Now we use overflow:clip with overflow-clip-margin so the ::after shine
+           is still contained but the text is never clipped. As a fallback for browsers without
+           overflow-clip-margin support, we also set white-space:nowrap and text-overflow:ellipsis
+           so the text is at most truncated with an ellipsis (never silently clipped mid-character). */
+        overflow:visible !important;
+        overflow-clip-margin:12px !important;
+        white-space:nowrap !important;
+        text-overflow:ellipsis !important;
         isolation:isolate !important;
     }
     .top-bar .add-expense-button::after,
     .top-bar .add-income-button::after {
+        /* Clip the shine to the button's rounded rect without clipping the text. */
+        clip-path:inset(0 round 12px) !important;
         display:none !important;
     }
 }
