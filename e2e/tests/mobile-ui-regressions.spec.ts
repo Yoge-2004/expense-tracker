@@ -40,8 +40,8 @@ test.describe('Mobile dashboard regressions', () => {
 
     const first = boxes[0]!;
     const second = boxes[1]!;
-    expect(first.x).toBeGreaterThanOrEqual(8);
-    expect(second.x + second.width).toBeLessThanOrEqual(375 - 8);
+    expect(first.x).toBeGreaterThanOrEqual(10);
+    expect(second.x + second.width).toBeLessThanOrEqual(375 - 10);
     expect(first.x + first.width).toBeLessThanOrEqual(second.x + 1);
     expect(second.x - (first.x + first.width)).toBeGreaterThanOrEqual(8);
     expect(first.width).toBeGreaterThan(120);
@@ -57,14 +57,16 @@ test.describe('Mobile dashboard regressions', () => {
         income: getComputedStyle(incomeEl).overflow,
         expenseAfter: expenseStyle.display,
         incomeAfter: incomeStyle.display,
-        actionPadding: getComputedStyle(document.querySelector('.top-bar-actions')!).paddingLeft,
+        actionPaddingLeft: getComputedStyle(document.querySelector('.top-bar-actions')!).paddingLeft,
+        actionPaddingRight: getComputedStyle(document.querySelector('.top-bar-actions')!).paddingRight,
       };
     });
     expect(styles.expense).toBe('hidden');
     expect(styles.income).toBe('hidden');
     expect(styles.expenseAfter).toBe('none');
     expect(styles.incomeAfter).toBe('none');
-    expect(parseFloat(styles.actionPadding)).toBeGreaterThanOrEqual(6);
+    expect(parseFloat(styles.actionPaddingLeft)).toBeGreaterThanOrEqual(10);
+    expect(parseFloat(styles.actionPaddingRight)).toBeGreaterThanOrEqual(10);
   });
 
   test('does not reload the dashboard spontaneously after initial navigation', async ({ page }) => {
