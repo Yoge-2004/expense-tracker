@@ -153,6 +153,12 @@ html.theme-transitioning *::after {
         isolation:isolate !important;
         transform:none !important;
     }
+    /* Prevent the global .btn-primary shine pseudo-element from becoming a bright vertical strip on mobile. */
+    .top-bar-actions > #openModalBtn::after,
+    .top-bar-actions > #openIncomeModalBtn::after {
+        display:none !important;
+        content:none !important;
+    }
     .top-bar-actions > #openModalBtn { grid-column:1 !important; }
     .top-bar-actions > #openIncomeModalBtn { grid-column:2 !important; }
     .top-bar-actions > .theme-toggle-btn {
