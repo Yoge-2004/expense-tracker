@@ -8,42 +8,8 @@ if (!token || !userId) window.location.href = "index.html";
 document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
 document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
 
-// Timezone-safe local date helpers (guarantees local timezone accuracy at 12:00 AM midnight)
-function getLocalDateString(d = new Date()) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-function parseLocalDate(dateString) {
-    if (!dateString) return new Date();
-    if (dateString instanceof Date) return dateString;
-    const parts = String(dateString).split('T')[0].split('-');
-    if (parts.length === 3) {
-        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-    }
-    return new Date(dateString);
-}
-
-// Helpers
-function escapeHtml(str) {
-    if (str == null) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-window.escapeHtml = escapeHtml;
-
-const formatCurrency = (amt) => (typeof formatGlobalCurrency === "function" ? formatGlobalCurrency(amt) : `${typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "$"} ${Number(amt || 0).toFixed(2)}`);
-const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const d = parseLocalDate(dateString);
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-};
+// Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
+const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate } = window.DashboardUtils;
 
 // Modal Scroll Lock Helpers
 function openModal(modalEl) {
@@ -760,7 +726,7 @@ async function loadBudgets() {
                         </div>
                     </div>
                     <div class="budget-status-row">
-                        <span>${formatCurrency(spent)} of ${formatCurrency(limit)}</span>
+                        <span>${formatCurrency(b.spent)} of ${formatCurrency(b.limit)}</span>
                         <strong class="budget-status-value" style="color:${barColor};">${Math.round(b.percentage || 0)}% used</strong>
                     </div>
                     <div class="budget-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(Math.max(Number(b.percentage || 0), 0), 100)}" aria-label="${escapeHtml(b.categoryName || b.category?.name || 'Budget')} utilization">
@@ -1815,7 +1781,7 @@ async function renderManageCategoriesList() {
         btn.addEventListener("click", async () => {
             const catId = btn.getAttribute("data-delete-category");
             const catName = btn.getAttribute("data-category-name");
-            if (!confirm(`Delete category "${catName}"? This can't be undone.`)) return;
+            if (!(await window.appConfirm(`Delete category "${catName}"? This can't be undone.`))) return;
             try {
                 await apiRequest(`/categories/${catId}/user/${userId}`, { method: "DELETE" });
                 allCategories = allCategories.filter(c => String(c.id) !== String(catId));

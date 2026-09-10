@@ -97,4 +97,50 @@ html.theme-transitioning *::after {
 #expenseList,#incomeList { min-width:0 !important; width:100% !important; box-sizing:border-box !important; }
 #expenseList .expense-item,#incomeList tbody tr { min-width:0 !important; box-sizing:border-box !important; }
 @media (max-width:700px) { .budget-item { padding:13px !important; } .budget-item .budget-bar-track { height:7px !important; margin-top:9px !important; } #incomeList tbody tr { width:100% !important; } }
-@media (max-width:760px) { .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }
+@media (max-width:760px) { .command-kbd { display:none !important; } .top-bar-actions .command-search-wrapper { width:100% !important; min-width:0 !important; } }
+
+
+/* Mobile ledger controls scroll instead of clipping. */
+@media (max-width:760px) {
+    #ledgerStreamTabs, .ledger-stream-tabs {
+        display:flex !important;
+        flex-wrap:nowrap !important;
+        overflow-x:auto !important;
+        overflow-y:hidden !important;
+        min-width:0 !important;
+        width:100% !important;
+        scrollbar-width:none !important;
+        -webkit-overflow-scrolling:touch !important;
+    }
+    #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
+    #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
+        flex:0 0 auto !important;
+        min-width:max-content !important;
+        white-space:nowrap !important;
+    }
+    #incomeList .btn-edit, #incomeList .btn-delete {
+        width:34px !important;
+        height:34px !important;
+        min-width:34px !important;
+        min-height:34px !important;
+        padding:0 !important;
+        border-radius:10px !important;
+        display:inline-flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        flex:0 0 34px !important;
+        box-sizing:border-box !important;
+    }
+    #incomeList .btn-edit svg, #incomeList .btn-delete svg {
+        width:14px !important;
+        height:14px !important;
+        display:block !important;
+    }
+}
+
+/* Theme switches must not replay dashboard metric effects. */
+html.theme-transitioning .grid-4-metrics > .metric-card,
+html.theme-transitioning .grid-4-metrics > .metric-card * {
+    animation:none !important;
+    transition:none !important;
+}

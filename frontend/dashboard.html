@@ -105,7 +105,13 @@
                         <a href="#" id="sendMonthlyReportBtn" style="display: none;">✉️ Email Monthly Report</a>
                         <a href="#" id="manageSubsBtn">🔄 Subscriptions</a>
                         <a href="#" id="securityPinBtn">🔒 Security PIN</a>
-                        <a href="#" id="biometricAuthBtn">🧬 Biometrics (Touch/Face ID)</a>
+                        <a href="#" id="biometricAuthBtn" class="profile-menu-action" aria-label="Biometrics (Touch/Face ID)">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M3 17v2a2 2 0 0 0 2 2h2M21 17v2a2 2 0 0 0 2-2v-2"/>
+        <path d="M8 8c1.2-1.7 2.9-2.5 4-2.5S14.8 6.3 16 8M7.5 12c0-1.7 1.6-3.5 4.5-3.5s4.5 1.8 4.5 3.5c0 2.1-1.7 4-4.5 4s-4.5-1.9-4.5-4Z"/>
+    </svg>
+    <span>Biometrics (Touch/Face ID)</span>
+</a>
                         <a href="#" id="logoutBtn">🚪 Logout</a>
                         <a href="#" id="deleteAccountBtn" style="color: #A23E32;">⚠️ Delete Account</a>
                     </div>
@@ -1077,6 +1083,7 @@
     <script src="js/animated-bg.js"></script>
     <script src="js/custom-controls.js"></script>
     <script src="js/biometrics.js?v=20260909-bio2"></script>
+    <script src="js/modules/dashboard-utils.js?v=20260910"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/motion.js"></script>
 </body>
