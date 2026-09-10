@@ -10,7 +10,7 @@ Feature: Expense Management
   Scenario: Create a new expense
     Given the category "Food" exists for my user
     When I create an expense with amount 50.00 description "Lunch" date "2026-09-10" and category "Food"
-    Then the response status should be 200
+    Then the response status should be 201
     And the expense should be saved with amount 50.00
     And the expense should have description "Lunch"
 

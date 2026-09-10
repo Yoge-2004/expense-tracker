@@ -44,13 +44,10 @@ public class AuthSteps {
 
     @When("I register with name {string} username {string} email {string} password {string} and currency {string}")
     public void register(String name, String username, String email, String password, String currency) throws Exception {
-        // Use unique email+username with timestamp to avoid duplicate-key conflicts when the
-        // Cucumber engine discovers and runs scenarios more than once in the same Spring context.
-        String uniqueSuffix = String.valueOf(System.currentTimeMillis());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("name", name);
-        body.put("username", username + "_" + uniqueSuffix);
-        body.put("email", email.replace("@", "+" + uniqueSuffix + "@"));
+        body.put("username", username);
+        body.put("email", email);
         body.put("password", password);
         body.put("currency", currency);
 
@@ -61,28 +58,24 @@ public class AuthSteps {
 
         ctx.lastResponse = result;
         // Registration returns 201 Created with a UserDto (id, name, email, etc.)
-        // — NOT an AuthResponse with a token. Login is required to get a token.
         if (result.getResponse().getStatus() == 201) {
             JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
             ctx.userId = json.has("id") ? json.get("id").asLong() : null;
-            ctx.email = (String) body.get("email");
+            ctx.email = email;
         }
     }
 
     @Given("a user with email {string} already exists")
     public void userAlreadyExists(String email) throws Exception {
-        register("Existing User", "existing", email, "SecurePass123", "INR");
-        // Reset the context — the registration above was setup, not the test action.
+        register("Existing User", "existing_" + System.currentTimeMillis(), email, "SecurePass123", "INR");
         ctx.reset();
         ctx.email = email;
     }
 
     @Given("a user with email {string} and password {string} already exists")
     public void userAlreadyExistsWithPassword(String email, String password) throws Exception {
-        register("Login User", "loginuser", email, password, "INR");
-        // Reset but keep the email so the login step knows which account to use.
-        // Note: the email was made unique inside register(), so we need to capture it.
-        String savedEmail = ctx.email;
+        register("Login User", "loginuser_" + System.currentTimeMillis(), email, password, "INR");
+        String savedEmail = ctx.email != null ? ctx.email : email;
         ctx.reset();
         ctx.email = savedEmail;
     }

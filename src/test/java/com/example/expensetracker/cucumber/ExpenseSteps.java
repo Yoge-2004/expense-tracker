@@ -33,8 +33,7 @@ public class ExpenseSteps {
 
     @Given("I am logged in as user {string} with password {string}")
     public void loggedInAs(String email, String password) throws Exception {
-        // First register (idempotent — if user already exists, the 400 is fine),
-        // then log in to get a fresh token.
+        // Register the user (ignore 400 if already exists from a prior scenario)
         Map<String, Object> regBody = new LinkedHashMap<>();
         regBody.put("name", "Test User");
         regBody.put("username", "testuser_" + System.currentTimeMillis());
@@ -49,6 +48,7 @@ public class ExpenseSteps {
                     .andReturn();
         } catch (Exception ignored) { }
 
+        // Log in to get a JWT token
         Map<String, Object> loginBody = new LinkedHashMap<>();
         loginBody.put("email", email);
         loginBody.put("password", password);
@@ -58,9 +58,19 @@ public class ExpenseSteps {
                         .content(objectMapper.writeValueAsString(loginBody)))
                 .andReturn();
 
+        // Guard against login failure — if the token is missing, subsequent steps will fail
+        // with a clear message rather than an NPE.
+        if (result.getResponse().getStatus() != 200) {
+            throw new IllegalStateException("Login failed in Background step: status="
+                    + result.getResponse().getStatus() + " body="
+                    + result.getResponse().getContentAsString());
+        }
         JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+        if (!json.has("token") || json.get("token").asText().isBlank()) {
+            throw new IllegalStateException("Login response missing token: " + json);
+        }
         ctx.authToken = json.get("token").asText();
-        ctx.userId = json.get("userId").asLong();
+        ctx.userId = json.has("userId") ? json.get("userId").asLong() : null;
         ctx.email = email;
     }
 
@@ -75,8 +85,13 @@ public class ExpenseSteps {
                         .content(objectMapper.writeValueAsString(body)))
                 .andReturn();
 
-        // If the category already exists (409), fetch the existing categories to find its ID.
-        if (result.getResponse().getStatus() == 409) {
+        // CategoryController returns 201 CREATED on success, 409 CONFLICT if duplicate.
+        int status = result.getResponse().getStatus();
+        if (status == 201) {
+            JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+            ctx.categoryId = json.get("id").asLong();
+        } else if (status == 409 || status == 400) {
+            // Category already exists — fetch the list to find its ID
             MvcResult listResult = mockMvc.perform(get("/api/categories/user/" + ctx.userId)
                             .header("Authorization", "Bearer " + ctx.authToken))
                     .andReturn();
@@ -87,9 +102,9 @@ public class ExpenseSteps {
                     return;
                 }
             }
-        } else if (result.getResponse().getStatus() == 200) {
-            JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
-            ctx.categoryId = json.get("id").asLong();
+        } else {
+            throw new IllegalStateException("Category creation failed: status=" + status
+                    + " body=" + result.getResponse().getContentAsString());
         }
     }
 
@@ -109,7 +124,8 @@ public class ExpenseSteps {
                 .andReturn();
 
         ctx.lastResponse = result;
-        if (result.getResponse().getStatus() == 200) {
+        // ExpenseController returns 201 CREATED on success
+        if (result.getResponse().getStatus() == 201) {
             JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
             ctx.expenseId = json.has("id") ? json.get("id").asLong() : null;
         }
