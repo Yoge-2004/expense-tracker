@@ -44,11 +44,12 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: /mobile-ui-regressions\.spec\.ts$/,
     },
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },
-      testMatch: /.*\.mobile\.spec\.ts/,
+      testMatch: /(?:\.mobile\.spec|mobile-ui-regressions\.spec)\.ts$/,
     },
   ],
 });
