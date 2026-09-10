@@ -59,6 +59,44 @@ jobs:
           npm ci --no-audit --no-fund
           npx tsc --noEmit
 
+  e2e:
+    name: Playwright UI and WebAuthn checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: e2e/package.json
+      - name: Install Playwright dependencies
+        working-directory: e2e
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Serve frontend
+        shell: bash
+        run: |
+          python3 -m http.server 5500 --directory frontend > /tmp/expense-tracker-frontend.log 2>&1 &
+          echo $! > /tmp/expense-tracker-frontend.pid
+      - name: Run focused mobile UI and WebAuthn E2E checks
+        working-directory: e2e
+        env:
+          BASE_URL: http://localhost:5500
+        run: |
+          npx playwright test tests/mobile-ui-regressions.spec.ts tests/biometrics.spec.ts --project=chromium
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-regression-artifacts
+          path: |
+            e2e/playwright-report/**
+            e2e/test-results/**
+            /tmp/expense-tracker-frontend.log
+          if-no-files-found: ignore
+          retention-days: 7
+
   repository:
     name: Repository hygiene
     runs-on: ubuntu-latest
