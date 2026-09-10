@@ -11,6 +11,7 @@
         box-sizing: border-box !important;
         isolation: isolate !important;
         transform: none !important;
+        background-image: none !important;
     }
 
     .top-bar-actions > #openModalBtn::before,
@@ -19,8 +20,13 @@
     .top-bar-actions > #openIncomeModalBtn::after {
         content: none !important;
         display: none !important;
+        width: 0 !important;
+        max-width: 0 !important;
         opacity: 0 !important;
         visibility: hidden !important;
+        animation: none !important;
+        background: none !important;
+        box-shadow: none !important;
     }
 
     .top-bar-actions > #openModalBtn > span,
@@ -40,5 +46,38 @@
         padding-inline: 7px !important;
         gap: 5px !important;
         font-size: 11.5px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .top-bar-actions {
+        grid-template-columns: minmax(0, 1fr) !important;
+        row-gap: 8px !important;
+    }
+
+    .top-bar-actions > #openModalBtn,
+    .top-bar-actions > #openIncomeModalBtn {
+        grid-column: 1 !important;
+        width: 100% !important;
+    }
+
+    .top-bar-actions > #openModalBtn {
+        grid-row: 2 !important;
+    }
+
+    .top-bar-actions > #openIncomeModalBtn {
+        grid-row: 3 !important;
+    }
+
+    .top-bar-actions > .theme-toggle-btn {
+        grid-column: 1 !important;
+        grid-row: 4 !important;
+        justify-self: start !important;
+    }
+
+    .top-bar-actions > .user-profile {
+        grid-column: 1 !important;
+        grid-row: 4 !important;
+        justify-self: end !important;
     }
 }
