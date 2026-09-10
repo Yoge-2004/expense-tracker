@@ -233,9 +233,6 @@
         z-index: 1000 !important;
         background: rgba(16, 18, 14, 0.94) !important;
         border-bottom: 1px solid rgba(var(--ink-rgb), 0.08) !important;
-    }
-
-    .top-bar {
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
@@ -332,6 +329,51 @@
     .auth-form-section { padding: 12px 12px 30px !important; }
 
     .auth-card {
-        padding: 26px 18px !important;
+        padding: 22px 16px 26px !important;
+    }
+
+    .auth-card-header {
+        margin-bottom: 16px !important;
+    }
+
+    .hero-float-cards {
+        gap: 8px !important;
+        margin-bottom: 6px !important;
+        padding: 0 !important;
+    }
+
+    .float-card, .perk-item {
+        padding: 8px 10px !important;
+        gap: 8px !important;
+    }
+
+    .float-card-icon, .perk-icon {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        border-radius: 8px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .float-card-icon svg, .perk-icon svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .float-card-value, .perk-title {
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .float-card-label, .perk-sub {
+        font-size: 9px !important;
+        line-height: 1.25 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
     }
 }
