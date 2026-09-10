@@ -81,3 +81,17 @@
         justify-self: end !important;
     }
 }
+
+/* Record controls never use the decorative primary-button shine layer. */
+.top-bar-actions > #openModalBtn::before,
+.top-bar-actions > #openModalBtn::after,
+.top-bar-actions > #openIncomeModalBtn::before,
+.top-bar-actions > #openIncomeModalBtn::after {
+    content: none !important;
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    animation: none !important;
+    background: none !important;
+    box-shadow: none !important;
+}
