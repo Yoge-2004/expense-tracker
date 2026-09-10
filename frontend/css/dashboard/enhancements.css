@@ -1,14 +1,14 @@
 /* EXPENSE TRACKER — DASHBOARD ENHANCEMENTS */
 /* Domain modules preserve the original cascade order while narrowing ownership. */
-@import url("dashboard/enhancements/loading.css");
-@import url("dashboard/enhancements/modal-polish.css");
-@import url("dashboard/enhancements/topbar.css");
-@import url("dashboard/enhancements/budget.css");
-@import url("dashboard/enhancements/navigation.css");
-@import url("dashboard/enhancements/feedback.css");
-@import url("dashboard/enhancements/auth-hero-support.css");
-@import url("dashboard/enhancements/insights.css");
-@import url("dashboard/enhancements/badges.css");
-@import url("dashboard/enhancements/form-behavior.css");
-@import url("dashboard/enhancements/scroll-loading.css");
-@import url("dashboard/enhancements/filter-panel.css");
+@import url("enhancements/loading.css");
+@import url("enhancements/modal-polish.css");
+@import url("enhancements/topbar.css");
+@import url("enhancements/budget.css");
+@import url("enhancements/navigation.css");
+@import url("enhancements/feedback.css");
+@import url("enhancements/auth-hero-support.css");
+@import url("enhancements/insights.css");
+@import url("enhancements/badges.css");
+@import url("enhancements/form-behavior.css");
+@import url("enhancements/scroll-loading.css");
+@import url("enhancements/filter-panel.css");

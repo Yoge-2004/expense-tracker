@@ -1141,10 +1141,6 @@ function buildTrendSeries(dailyTotals) {
     return { dates, values: dates.map(date => dailyTotals[date] || 0) };
 }
 
-function parseLocalDate(value) {
-    const [year, month, day] = value.split('-').map(Number);
-    return new Date(year, month - 1, day);
-}
 
 function toLocalDateKey(date) {
     const year = date.getFullYear();
