@@ -83,7 +83,7 @@ def find_function_end(text: str, signature: str) -> int:
 
 
 def extract(text: str, name: str) -> tuple[str, str]:
-    signature = f"function {name}(")
+    signature = f"function {name}("
     start = text.index(signature)
     end = find_function_end(text, signature)
     return text[start:end].strip(), text[:start] + text[end:]
@@ -92,7 +92,6 @@ def extract(text: str, name: str) -> tuple[str, str]:
 def transform(code: str) -> str:
     return (
         code
-        .replace("chartState.", "chartState.")
         .replace("formatCurrency(", "utils.formatCurrency(")
         .replace("parseLocalDate(", "utils.parseLocalDate(")
     )
@@ -123,7 +122,6 @@ def main() -> None:
         "",
     ]
 
-    # Helpers must be declared before the render functions that consume them.
     ordered = [
         "buildTrendSeries",
         "toLocalDateKey",
