@@ -1,0 +1,44 @@
+/* Final mobile action-button guard for the dashboard top bar. */
+@media (max-width: 760px) {
+    .top-bar-actions > #openModalBtn,
+    .top-bar-actions > #openIncomeModalBtn {
+        position: relative !important;
+        min-width: 0 !important;
+        min-inline-size: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        isolation: isolate !important;
+        transform: none !important;
+    }
+
+    .top-bar-actions > #openModalBtn::before,
+    .top-bar-actions > #openModalBtn::after,
+    .top-bar-actions > #openIncomeModalBtn::before,
+    .top-bar-actions > #openIncomeModalBtn::after {
+        content: none !important;
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    .top-bar-actions > #openModalBtn > span,
+    .top-bar-actions > #openIncomeModalBtn > span {
+        display: block !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-bar-actions > #openModalBtn,
+    .top-bar-actions > #openIncomeModalBtn {
+        padding-inline: 7px !important;
+        gap: 5px !important;
+        font-size: 11.5px !important;
+    }
+}
