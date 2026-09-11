@@ -20,10 +20,27 @@
     view-transition-name: metric-subs;
 }
 
-/* Keep theme colors transitioning for every metric-card variant even while
-   the broader page transition guard is active. */
+@keyframes metricThemeSwitch {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    45% {
+        opacity: 0.94;
+        transform: translateY(2px) scale(0.985);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* This is the visible card-level theme animation. Do not rely solely on
+   View Transition snapshots, because broad performance guards can disable
+   normal element animations during a theme switch. */
 html.theme-switching .grid-4-metrics > .metric-card,
 html.theme-transitioning .grid-4-metrics > .metric-card {
+    animation: metricThemeSwitch 240ms cubic-bezier(0.22, 1, 0.36, 1) !important;
     transition: background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
                 border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
                 box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1),
@@ -49,42 +66,17 @@ html.theme-transitioning .grid-4-metrics > .metric-card .link-action {
                 border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-@keyframes metricThemeOld {
-    from {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: scale(0.985) translateY(2px);
-    }
-}
-
-@keyframes metricThemeNew {
-    from {
-        opacity: 0;
-        transform: scale(0.985) translateY(-2px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
 ::view-transition-old(metric-inflow),
 ::view-transition-old(metric-outflow),
 ::view-transition-old(metric-netflow),
 ::view-transition-old(metric-savings),
-::view-transition-old(metric-subs) {
-    animation: metricThemeOld 240ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
+::view-transition-old(metric-subs),
 ::view-transition-new(metric-inflow),
 ::view-transition-new(metric-outflow),
 ::view-transition-new(metric-netflow),
 ::view-transition-new(metric-savings),
 ::view-transition-new(metric-subs) {
-    animation: metricThemeNew 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    animation: metricThemeSwitch 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 ::view-transition-group(metric-inflow),
@@ -97,6 +89,8 @@ html.theme-transitioning .grid-4-metrics > .metric-card .link-action {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    html.theme-switching .grid-4-metrics > .metric-card,
+    html.theme-transitioning .grid-4-metrics > .metric-card,
     ::view-transition-group(metric-inflow),
     ::view-transition-group(metric-outflow),
     ::view-transition-group(metric-netflow),
