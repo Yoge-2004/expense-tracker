@@ -24,7 +24,6 @@ const GOOGLE_CLIENT_ID = "487469737581-k1idcre171eknatam925igofmc6jtk00.apps.goo
         html.theme-switching .dashboard-container,
         html.theme-switching .auth-page,
         html.theme-switching .auth-card,
-        html.theme-switching .metric-card,
         html.theme-switching .chart-card,
         html.theme-switching .transactions-card,
         html.theme-switching .budget-card,
@@ -41,6 +40,27 @@ const GOOGLE_CLIENT_ID = "487469737581-k1idcre171eknatam925igofmc6jtk00.apps.goo
         html.theme-switching .profile-menu {
             transition-property: none !important;
             transition-duration: 0s !important;
+        }
+
+        /* Metric cards are small, high-value surfaces. Keep their normal
+           theme transition while the larger page surfaces stay guarded. */
+        html.theme-switching .grid-4-metrics > .metric-card {
+            transition: background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                        color 0.2s ease !important;
+        }
+
+        html.theme-switching .grid-4-metrics > .metric-card .card-label,
+        html.theme-switching .grid-4-metrics > .metric-card .metric-value,
+        html.theme-switching .grid-4-metrics > .metric-card .status-badge,
+        html.theme-switching .grid-4-metrics > .metric-card .metric-footer,
+        html.theme-switching .grid-4-metrics > .metric-card .metric-footer *,
+        html.theme-switching .grid-4-metrics > .metric-card .text-muted,
+        html.theme-switching .grid-4-metrics > .metric-card .link-action {
+            transition: color 0.2s ease,
+                        background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
 
         /* Cross-fade browser snapshots instead of repainting every surface. */
