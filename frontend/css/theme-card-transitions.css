@@ -1,0 +1,117 @@
+/* Per-card theme transition layer. Loaded last so it wins over performance guards. */
+
+.grid-4-metrics > .metric-card-inflow {
+    view-transition-name: metric-inflow;
+}
+
+.grid-4-metrics > .metric-card-outflow {
+    view-transition-name: metric-outflow;
+}
+
+.grid-4-metrics > .metric-card-netflow {
+    view-transition-name: metric-netflow;
+}
+
+.grid-4-metrics > .metric-card-savings {
+    view-transition-name: metric-savings;
+}
+
+.grid-4-metrics > .metric-card-subs {
+    view-transition-name: metric-subs;
+}
+
+/* Keep theme colors transitioning for every metric-card variant even while
+   the broader page transition guard is active. */
+html.theme-switching .grid-4-metrics > .metric-card,
+html.theme-transitioning .grid-4-metrics > .metric-card {
+    transition: background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s ease !important;
+}
+
+html.theme-switching .grid-4-metrics > .metric-card .card-label,
+html.theme-switching .grid-4-metrics > .metric-card .metric-value,
+html.theme-switching .grid-4-metrics > .metric-card .status-badge,
+html.theme-switching .grid-4-metrics > .metric-card .metric-footer,
+html.theme-switching .grid-4-metrics > .metric-card .metric-footer *,
+html.theme-switching .grid-4-metrics > .metric-card .text-muted,
+html.theme-switching .grid-4-metrics > .metric-card .link-action,
+html.theme-transitioning .grid-4-metrics > .metric-card .card-label,
+html.theme-transitioning .grid-4-metrics > .metric-card .metric-value,
+html.theme-transitioning .grid-4-metrics > .metric-card .status-badge,
+html.theme-transitioning .grid-4-metrics > .metric-card .metric-footer,
+html.theme-transitioning .grid-4-metrics > .metric-card .metric-footer *,
+html.theme-transitioning .grid-4-metrics > .metric-card .text-muted,
+html.theme-transitioning .grid-4-metrics > .metric-card .link-action {
+    transition: color 0.2s ease,
+                background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@keyframes metricThemeOld {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.985) translateY(2px);
+    }
+}
+
+@keyframes metricThemeNew {
+    from {
+        opacity: 0;
+        transform: scale(0.985) translateY(-2px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+::view-transition-old(metric-inflow),
+::view-transition-old(metric-outflow),
+::view-transition-old(metric-netflow),
+::view-transition-old(metric-savings),
+::view-transition-old(metric-subs) {
+    animation: metricThemeOld 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-new(metric-inflow),
+::view-transition-new(metric-outflow),
+::view-transition-new(metric-netflow),
+::view-transition-new(metric-savings),
+::view-transition-new(metric-subs) {
+    animation: metricThemeNew 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-group(metric-inflow),
+::view-transition-group(metric-outflow),
+::view-transition-group(metric-netflow),
+::view-transition-group(metric-savings),
+::view-transition-group(metric-subs) {
+    animation-duration: 240ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(metric-inflow),
+    ::view-transition-group(metric-outflow),
+    ::view-transition-group(metric-netflow),
+    ::view-transition-group(metric-savings),
+    ::view-transition-group(metric-subs),
+    ::view-transition-old(metric-inflow),
+    ::view-transition-old(metric-outflow),
+    ::view-transition-old(metric-netflow),
+    ::view-transition-old(metric-savings),
+    ::view-transition-old(metric-subs),
+    ::view-transition-new(metric-inflow),
+    ::view-transition-new(metric-outflow),
+    ::view-transition-new(metric-netflow),
+    ::view-transition-new(metric-savings),
+    ::view-transition-new(metric-subs) {
+        animation-duration: 0.01ms !important;
+    }
+}
