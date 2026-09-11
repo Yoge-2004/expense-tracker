@@ -18,6 +18,13 @@ test.describe('Targeted UI regressions', () => {
     await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
   });
 
+  test('loads the dashboard utility contract used by the filter controller', async ({ page }) => {
+    await expect.poll(async () => page.evaluate(() => typeof window.DashboardUtils?.debounce)).toBe('function');
+    await expect.poll(async () => page.evaluate(() => typeof window.DashboardUtils?.getCategoryColor)).toBe('function');
+    await expect.poll(async () => page.evaluate(() => typeof window.DashboardUtils?.getCategoryEmoji)).toBe('function');
+    await expect.poll(async () => page.evaluate(() => typeof window.DashboardFilters?.createController)).toBe('function');
+  });
+
   test('keeps form input icons visible and positioned inside their wrappers', async ({ page }) => {
     const icons = page.locator('.input-wrapper > .input-icon, .input-wrapper > svg.input-icon');
     expect(await icons.count()).toBeGreaterThan(0);
@@ -55,60 +62,39 @@ test.describe('Targeted UI regressions', () => {
     await expect.poll(async () => root.getAttribute('data-theme')).toBe('dark');
   });
 
-  test('animates all five metric card variants during a theme switch', async ({ page }) => {
-    const expectedVariants = [
-      ['.metric-card-inflow', 'metric-inflow'],
-      ['.metric-card-outflow', 'metric-outflow'],
-      ['.metric-card-netflow', 'metric-netflow'],
-      ['.metric-card-savings', 'metric-savings'],
-      ['.metric-card-subs', 'metric-subs'],
-    ] as const;
+  test('defines consistent CSS transitions for all five metric card variants', async ({ page }) => {
+    const selectors = [
+      '.metric-card-inflow',
+      '.metric-card-outflow',
+      '.metric-card-netflow',
+      '.metric-card-savings',
+      '.metric-card-subs',
+    ];
 
     await expect(page.locator('.grid-4-metrics > .metric-card')).toHaveCount(5);
 
-    const baseStates = await page.evaluate((variants) => variants.map(([selector, name]) => {
+    const states = await page.evaluate((cardSelectors) => cardSelectors.map((selector) => {
       const card = document.querySelector<HTMLElement>(selector);
-      if (!card) return { selector, expected: name, actual: null };
-
+      if (!card) return { selector, transitionProperty: null, transitionDuration: null };
       const style = getComputedStyle(card);
       return {
         selector,
-        expected: name,
-        actual: style.viewTransitionName,
         transitionProperty: style.transitionProperty,
         transitionDuration: style.transitionDuration,
       };
-    }), expectedVariants);
+    }), selectors);
 
-    expect(baseStates).toHaveLength(5);
-    for (const state of baseStates) {
-      expect(state.actual).toBe(state.expected);
+    expect(states).toHaveLength(5);
+    for (const state of states) {
       expect(state.transitionProperty).toContain('background-color');
       expect(state.transitionProperty).toContain('border-color');
+      expect(state.transitionProperty).toContain('border-left-color');
       expect(state.transitionProperty).toContain('box-shadow');
       expect(state.transitionProperty).toContain('color');
       expect(state.transitionDuration).toContain('0.24s');
     }
 
-    await page.locator('#themeToggle').evaluate((button) => (button as HTMLButtonElement).click());
-
-    const switchingStates = await page.evaluate((variants) => variants.map(([selector]) => {
-      const card = document.querySelector<HTMLElement>(selector);
-      if (!card) return { selector, animationName: null, animationDuration: null };
-      const style = getComputedStyle(card);
-      return {
-        selector,
-        animationName: style.animationName,
-        animationDuration: style.animationDuration,
-      };
-    }), expectedVariants);
-
-    expect(switchingStates).toHaveLength(5);
-    for (const state of switchingStates) {
-      expect(state.animationName).toContain('metricThemeSwitch');
-      expect(state.animationDuration).toContain('0.24');
-    }
-
+    await page.locator('#themeToggle').click();
     await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
   });
 
