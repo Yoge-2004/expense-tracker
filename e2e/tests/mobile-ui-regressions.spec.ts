@@ -69,7 +69,7 @@ test.describe('Mobile dashboard regressions', () => {
     expect(parseFloat(styles.actionPaddingRight)).toBeGreaterThanOrEqual(10);
   });
 
-  test('keeps narrow mobile record controls inside the viewport after scrolling', async ({ page }) => {
+  test('keeps narrow mobile record controls side by side after scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 293, height: 261 });
     await page.goto('/index.html');
     await page.evaluate(() => {
@@ -93,13 +93,18 @@ test.describe('Mobile dashboard regressions', () => {
     expect(boxes[0]).not.toBeNull();
     expect(boxes[1]).not.toBeNull();
 
-    for (const box of boxes) {
-      const rect = box!;
-      expect(rect.x).toBeGreaterThanOrEqual(0);
-      expect(rect.x + rect.width).toBeLessThanOrEqual(viewport.width);
-      expect(rect.y).toBeGreaterThanOrEqual(0);
-      expect(rect.y + rect.height).toBeLessThanOrEqual(viewport.height);
-    }
+    const expense = boxes[0]!;
+    const income = boxes[1]!;
+    expect(expense.x).toBeGreaterThanOrEqual(0);
+    expect(income.x + income.width).toBeLessThanOrEqual(viewport.width);
+    expect(expense.y).toBeGreaterThanOrEqual(0);
+    expect(income.y).toBeGreaterThanOrEqual(0);
+    expect(expense.y).toBeCloseTo(income.y, 1);
+    expect(expense.x + expense.width).toBeLessThanOrEqual(income.x + 1);
+    expect(income.x - (expense.x + expense.width)).toBeGreaterThanOrEqual(6);
+
+    const gridColumns = await page.locator('.top-bar-actions').evaluate(el => getComputedStyle(el).gridTemplateColumns);
+    expect(gridColumns.split(' ').length).toBe(2);
 
     const header = await page.locator('.top-bar').boundingBox();
     expect(header).not.toBeNull();
