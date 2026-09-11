@@ -112,23 +112,3 @@
         font-size: 12px !important;
     }
 }
-
-@media (max-width: 360px) {
-    .top-bar-actions {
-        grid-template-columns: minmax(0, 1fr) !important;
-        grid-template-areas:
-            "search"
-            "expense"
-            "income"
-            "theme"
-            "profile" !important;
-    }
-
-    .top-bar-actions > .theme-toggle-btn {
-        justify-self: start !important;
-    }
-
-    .top-bar-actions > .user-profile {
-        justify-self: end !important;
-    }
-}
