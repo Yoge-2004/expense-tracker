@@ -1,14 +1,6 @@
 /* Lightweight interaction and performance safeguards. */
 
-/* Theme changes stay visual without animating expensive geometry/effects across the whole page. */
-html.theme-transitioning *,
-html.theme-transitioning *::before,
-html.theme-transitioning *::after {
-    transition: none !important;
-    animation-play-state: paused !important;
-}
-
-/* Restore intentional focus feedback after the theme frame guard completes. */
+/* Theme transitions are owned by the active data-theme/CSS system. */
 .theme-toggle-btn,
 #themeToggle {
     transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease;
