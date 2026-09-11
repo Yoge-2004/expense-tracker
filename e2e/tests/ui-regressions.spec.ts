@@ -66,7 +66,7 @@ test.describe('Targeted UI regressions', () => {
 
     await expect(page.locator('.grid-4-metrics > .metric-card')).toHaveCount(5);
 
-    const variantStates = await page.evaluate((variants) => variants.map(([selector, name]) => {
+    const baseStates = await page.evaluate((variants) => variants.map(([selector, name]) => {
       const card = document.querySelector<HTMLElement>(selector);
       if (!card) return { selector, expected: name, actual: null };
 
@@ -80,8 +80,8 @@ test.describe('Targeted UI regressions', () => {
       };
     }), expectedVariants);
 
-    expect(variantStates).toHaveLength(5);
-    for (const state of variantStates) {
+    expect(baseStates).toHaveLength(5);
+    for (const state of baseStates) {
       expect(state.actual).toBe(state.expected);
       expect(state.transitionProperty).toContain('background-color');
       expect(state.transitionProperty).toContain('border-color');
@@ -90,8 +90,25 @@ test.describe('Targeted UI regressions', () => {
       expect(state.transitionDuration).toContain('0.24s');
     }
 
-    await expect(page.locator('#themeToggle')).toBeVisible();
-    await page.locator('#themeToggle').click();
+    await page.locator('#themeToggle').evaluate((button) => (button as HTMLButtonElement).click());
+
+    const switchingStates = await page.evaluate((variants) => variants.map(([selector]) => {
+      const card = document.querySelector<HTMLElement>(selector);
+      if (!card) return { selector, animationName: null, animationDuration: null };
+      const style = getComputedStyle(card);
+      return {
+        selector,
+        animationName: style.animationName,
+        animationDuration: style.animationDuration,
+      };
+    }), expectedVariants);
+
+    expect(switchingStates).toHaveLength(5);
+    for (const state of switchingStates) {
+      expect(state.animationName).toContain('metricThemeSwitch');
+      expect(state.animationDuration).toContain('0.24');
+    }
+
     await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
   });
 
