@@ -8,12 +8,19 @@
     transition: transform 0.25s var(--ease);
 }
 
-/* 196. Pointer: 3D tilt on cards, driven by --tilt-x/--tilt-y from motion.js */
+/* 196. Pointer: 3D tilt on cards, composed with the CSS theme-state motion. */
 .tilt-target {
     --tilt-x: 0deg;
     --tilt-y: 0deg;
+    --theme-card-y: 0px;
+    --theme-card-scale: 1;
     transition: transform 0.35s var(--ease);
-    transform: perspective(800px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
+    transform:
+        perspective(800px)
+        rotateX(var(--tilt-y, 0deg))
+        rotateY(var(--tilt-x, 0deg))
+        translateY(var(--theme-card-y, 0px))
+        scale(var(--theme-card-scale, 1));
     transform-style: preserve-3d;
 }
 

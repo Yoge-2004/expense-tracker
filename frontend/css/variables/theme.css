@@ -1,26 +1,21 @@
 /* Theme transition and light-mode token overrides. */
 body,
-.dashboard-layout,
+.dashboard-layout {
+    transition:
+        background-color 0.14s ease-out,
+        color 0.12s ease-out;
+}
+
 .top-bar,
 .card,
 .stat-card,
 .unified-ledger-card,
 .metric-card,
-.modal,
-.filter-panel,
-.insights-banner,
-.insight-metric-card,
-.auth-card,
-.auth-form-section,
-.auth-hero,
-.float-card,
-.perk-item,
-.recent-transactions,
-.profile-menu {
+.modal {
     transition:
-        background-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
-        color 0.18s ease;
+        background-color 0.16s ease-out,
+        border-color 0.16s ease-out,
+        color 0.14s ease-out;
 }
 
 [data-theme="light"] {

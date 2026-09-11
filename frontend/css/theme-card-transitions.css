@@ -1,28 +1,30 @@
-/* Theme transitions for the five dashboard metric cards.
-   JavaScript changes only the data-theme state; CSS owns the visual effect. */
+/* Theme motion for dashboard metric cards.
+   JavaScript changes only data-theme; CSS owns the interpolation.
+   The transform is composed with the pointer-tilt transform in pointer.css. */
 
 .grid-4-metrics > .metric-card-inflow,
 .grid-4-metrics > .metric-card-outflow,
 .grid-4-metrics > .metric-card-netflow,
 .grid-4-metrics > .metric-card-savings,
 .grid-4-metrics > .metric-card-subs {
+    --theme-card-y: 0px;
+    --theme-card-scale: 1;
     transition:
-        transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-        background-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
-        border-left-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
-        color 0.18s ease !important;
+        transform 0.20s cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 0.16s ease-out,
+        border-color 0.16s ease-out,
+        border-left-color 0.16s ease-out,
+        color 0.14s ease-out !important;
     transform-origin: center;
 }
 
-/* A small state-to-state lift/settle gives the metric row a visible theme
-   transformation without introducing a JavaScript animation controller. */
 [data-theme="light"] .grid-4-metrics > .metric-card-inflow,
 [data-theme="light"] .grid-4-metrics > .metric-card-outflow,
 [data-theme="light"] .grid-4-metrics > .metric-card-netflow,
 [data-theme="light"] .grid-4-metrics > .metric-card-savings,
 [data-theme="light"] .grid-4-metrics > .metric-card-subs {
-    transform: translateY(-3px) scale(1.008);
+    --theme-card-y: -3px;
+    --theme-card-scale: 1.008;
 }
 
 [data-theme="dark"] .grid-4-metrics > .metric-card-inflow,
@@ -30,15 +32,9 @@
 [data-theme="dark"] .grid-4-metrics > .metric-card-netflow,
 [data-theme="dark"] .grid-4-metrics > .metric-card-savings,
 [data-theme="dark"] .grid-4-metrics > .metric-card-subs {
-    transform: translateY(0) scale(1);
+    --theme-card-y: 0px;
+    --theme-card-scale: 1;
 }
-
-/* Stagger only the five theme-sensitive transforms. */
-.grid-4-metrics > .metric-card-inflow { transition-delay: 0s, 0s, 0s, 0s, 0s; }
-.grid-4-metrics > .metric-card-outflow { transition-delay: 0.03s, 0s, 0s, 0s, 0s; }
-.grid-4-metrics > .metric-card-netflow { transition-delay: 0.06s, 0s, 0s, 0s, 0s; }
-.grid-4-metrics > .metric-card-savings { transition-delay: 0.09s, 0s, 0s, 0s, 0s; }
-.grid-4-metrics > .metric-card-subs { transition-delay: 0.12s, 0s, 0s, 0s, 0s; }
 
 .grid-4-metrics > .metric-card-inflow .card-label,
 .grid-4-metrics > .metric-card-inflow .metric-value,
@@ -76,9 +72,9 @@
 .grid-4-metrics > .metric-card-subs .text-muted,
 .grid-4-metrics > .metric-card-subs .link-action {
     transition:
-        color 0.18s ease,
-        background-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.20s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        color 0.14s ease-out,
+        background-color 0.16s ease-out,
+        border-color 0.16s ease-out !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -123,7 +119,6 @@
     .grid-4-metrics > .metric-card-subs .text-muted,
     .grid-4-metrics > .metric-card-subs .link-action {
         transition-duration: 0.01ms !important;
-        transition-delay: 0s !important;
     }
 
     [data-theme="light"] .grid-4-metrics > .metric-card-inflow,

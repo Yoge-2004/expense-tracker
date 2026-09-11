@@ -92,7 +92,7 @@ test.describe('Targeted UI regressions', () => {
       expect(state.transitionProperty).toContain('border-left-color');
       expect(state.transitionProperty).toContain('color');
       expect(state.transitionProperty).not.toContain('box-shadow');
-      expect(state.transitionDuration).toContain('0.28s');
+      expect(state.transitionDuration).toContain('0.2s');
     }
 
     await page.locator('#themeToggle').click();
@@ -115,7 +115,7 @@ test.describe('Targeted UI regressions', () => {
 
     await page.locator('#themeToggle').click();
     await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(80);
 
     const during = await page.evaluate((cardSelectors) => cardSelectors.map((selector) => {
       const card = document.querySelector<HTMLElement>(selector);
