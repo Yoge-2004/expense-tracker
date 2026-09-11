@@ -1,12 +1,6 @@
-/* Theme motion for dashboard metric cards.
-   JavaScript changes only data-theme; CSS owns the interpolation.
-   The transform is composed with the pointer-tilt transform in pointer.css. */
+/* Metric-card theme motion — CSS owns the visual transition. */
 
-.grid-4-metrics > .metric-card-inflow,
-.grid-4-metrics > .metric-card-outflow,
-.grid-4-metrics > .metric-card-netflow,
-.grid-4-metrics > .metric-card-savings,
-.grid-4-metrics > .metric-card-subs {
+.grid-4-metrics > .metric-card {
     --theme-card-y: 0px;
     --theme-card-scale: 1;
     transition:
@@ -18,119 +12,56 @@
     transform-origin: center;
 }
 
-[data-theme="light"] .grid-4-metrics > .metric-card-inflow,
-[data-theme="light"] .grid-4-metrics > .metric-card-outflow,
-[data-theme="light"] .grid-4-metrics > .metric-card-netflow,
-[data-theme="light"] .grid-4-metrics > .metric-card-savings,
-[data-theme="light"] .grid-4-metrics > .metric-card-subs {
+[data-theme="light"] .grid-4-metrics > .metric-card {
     --theme-card-y: -3px;
     --theme-card-scale: 1.008;
 }
 
-[data-theme="dark"] .grid-4-metrics > .metric-card-inflow,
-[data-theme="dark"] .grid-4-metrics > .metric-card-outflow,
-[data-theme="dark"] .grid-4-metrics > .metric-card-netflow,
-[data-theme="dark"] .grid-4-metrics > .metric-card-savings,
-[data-theme="dark"] .grid-4-metrics > .metric-card-subs {
+[data-theme="dark"] .grid-4-metrics > .metric-card {
     --theme-card-y: 0px;
     --theme-card-scale: 1;
 }
 
-.grid-4-metrics > .metric-card-inflow .card-label,
-.grid-4-metrics > .metric-card-inflow .metric-value,
-.grid-4-metrics > .metric-card-inflow .status-badge,
-.grid-4-metrics > .metric-card-inflow .metric-footer,
-.grid-4-metrics > .metric-card-inflow .metric-footer *,
-.grid-4-metrics > .metric-card-inflow .text-muted,
-.grid-4-metrics > .metric-card-inflow .link-action,
-.grid-4-metrics > .metric-card-outflow .card-label,
-.grid-4-metrics > .metric-card-outflow .metric-value,
-.grid-4-metrics > .metric-card-outflow .status-badge,
-.grid-4-metrics > .metric-card-outflow .metric-footer,
-.grid-4-metrics > .metric-card-outflow .metric-footer *,
-.grid-4-metrics > .metric-card-outflow .text-muted,
-.grid-4-metrics > .metric-card-outflow .link-action,
-.grid-4-metrics > .metric-card-netflow .card-label,
-.grid-4-metrics > .metric-card-netflow .metric-value,
-.grid-4-metrics > .metric-card-netflow .status-badge,
-.grid-4-metrics > .metric-card-netflow .metric-footer,
-.grid-4-metrics > .metric-card-netflow .metric-footer *,
-.grid-4-metrics > .metric-card-netflow .text-muted,
-.grid-4-metrics > .metric-card-netflow .link-action,
-.grid-4-metrics > .metric-card-savings .card-label,
-.grid-4-metrics > .metric-card-savings .metric-value,
-.grid-4-metrics > .metric-card-savings .status-badge,
-.grid-4-metrics > .metric-card-savings .metric-footer,
-.grid-4-metrics > .metric-card-savings .metric-footer *,
-.grid-4-metrics > .metric-card-savings .text-muted,
-.grid-4-metrics > .metric-card-savings .link-action,
-.grid-4-metrics > .metric-card-subs .card-label,
-.grid-4-metrics > .metric-card-subs .metric-value,
-.grid-4-metrics > .metric-card-subs .status-badge,
-.grid-4-metrics > .metric-card-subs .metric-footer,
-.grid-4-metrics > .metric-card-subs .metric-footer *,
-.grid-4-metrics > .metric-card-subs .text-muted,
-.grid-4-metrics > .metric-card-subs .link-action {
+/* Compose theme motion with the existing pointer/tilt transform. */
+.grid-4-metrics > .metric-card {
+    transform:
+        perspective(800px)
+        rotateX(var(--tilt-y, 0deg))
+        rotateY(var(--tilt-x, 0deg))
+        translateY(var(--theme-card-y, 0px))
+        scale(var(--theme-card-scale, 1));
+}
+
+.grid-4-metrics > .metric-card :is(.card-label, .metric-value, .status-badge, .metric-footer, .text-muted, .link-action),
+.grid-4-metrics > .metric-card .metric-footer * {
     transition:
         color 0.14s ease-out,
         background-color 0.16s ease-out,
         border-color 0.16s ease-out !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .grid-4-metrics > .metric-card-inflow,
-    .grid-4-metrics > .metric-card-outflow,
-    .grid-4-metrics > .metric-card-netflow,
-    .grid-4-metrics > .metric-card-savings,
-    .grid-4-metrics > .metric-card-subs,
-    .grid-4-metrics > .metric-card-inflow .card-label,
-    .grid-4-metrics > .metric-card-inflow .metric-value,
-    .grid-4-metrics > .metric-card-inflow .status-badge,
-    .grid-4-metrics > .metric-card-inflow .metric-footer,
-    .grid-4-metrics > .metric-card-inflow .metric-footer *,
-    .grid-4-metrics > .metric-card-inflow .text-muted,
-    .grid-4-metrics > .metric-card-inflow .link-action,
-    .grid-4-metrics > .metric-card-outflow .card-label,
-    .grid-4-metrics > .metric-card-outflow .metric-value,
-    .grid-4-metrics > .metric-card-outflow .status-badge,
-    .grid-4-metrics > .metric-card-outflow .metric-footer,
-    .grid-4-metrics > .metric-card-outflow .metric-footer *,
-    .grid-4-metrics > .metric-card-outflow .text-muted,
-    .grid-4-metrics > .metric-card-outflow .link-action,
-    .grid-4-metrics > .metric-card-netflow .card-label,
-    .grid-4-metrics > .metric-card-netflow .metric-value,
-    .grid-4-metrics > .metric-card-netflow .status-badge,
-    .grid-4-metrics > .metric-card-netflow .metric-footer,
-    .grid-4-metrics > .metric-card-netflow .metric-footer *,
-    .grid-4-metrics > .metric-card-netflow .text-muted,
-    .grid-4-metrics > .metric-card-netflow .link-action,
-    .grid-4-metrics > .metric-card-savings .card-label,
-    .grid-4-metrics > .metric-card-savings .metric-value,
-    .grid-4-metrics > .metric-card-savings .status-badge,
-    .grid-4-metrics > .metric-card-savings .metric-footer,
-    .grid-4-metrics > .metric-card-savings .metric-footer *,
-    .grid-4-metrics > .metric-card-savings .text-muted,
-    .grid-4-metrics > .metric-card-savings .link-action,
-    .grid-4-metrics > .metric-card-subs .card-label,
-    .grid-4-metrics > .metric-card-subs .metric-value,
-    .grid-4-metrics > .metric-card-subs .status-badge,
-    .grid-4-metrics > .metric-card-subs .metric-footer,
-    .grid-4-metrics > .metric-card-subs .metric-footer *,
-    .grid-4-metrics > .metric-card-subs .text-muted,
-    .grid-4-metrics > .metric-card-subs .link-action {
-        transition-duration: 0.01ms !important;
-    }
+/* Theme toggles should not run the legacy shadow-pulse animation. */
+.theme-toggle-btn:active,
+#themeToggle:active {
+    animation: none !important;
+}
 
-    [data-theme="light"] .grid-4-metrics > .metric-card-inflow,
-    [data-theme="light"] .grid-4-metrics > .metric-card-outflow,
-    [data-theme="light"] .grid-4-metrics > .metric-card-netflow,
-    [data-theme="light"] .grid-4-metrics > .metric-card-savings,
-    [data-theme="light"] .grid-4-metrics > .metric-card-subs,
-    [data-theme="dark"] .grid-4-metrics > .metric-card-inflow,
-    [data-theme="dark"] .grid-4-metrics > .metric-card-outflow,
-    [data-theme="dark"] .grid-4-metrics > .metric-card-netflow,
-    [data-theme="dark"] .grid-4-metrics > .metric-card-savings,
-    [data-theme="dark"] .grid-4-metrics > .metric-card-subs {
+/* The canvas already has its own JS render loop; do not stack a second
+   full-screen CSS transform/opacity animation on top of it. */
+.animated-mesh-canvas {
+    animation: none !important;
+}
+
+/* Keep the decorative dashboard wash static so theme switching does not
+   animate another full-viewport layer. */
+.dashboard-container::before {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .grid-4-metrics > .metric-card,
+    .grid-4-metrics > .metric-card :is(.card-label, .metric-value, .status-badge, .metric-footer, .metric-footer *, .text-muted, .link-action) {
         transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
     }
 }
