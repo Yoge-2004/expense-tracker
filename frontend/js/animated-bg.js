@@ -94,9 +94,9 @@
                 { r: 231, g: 76,  b: 60,  a: 0.30 }, // Rich Coral
                 { r: 142, g: 68,  b: 173, a: 0.30 }, // Royal Orchid Violet
                 { r: 39,  g: 174, b: 96,  a: 0.30 }, // Spring Emerald
-                { r: 230, g: 126, b: 34,  a: 0.34 }, // Warm Tangerine
+                { r: 230, g: 126, b: 34, a: 0.34 }, // Warm Tangerine
                 { r: 26, g: 188, b: 156, a: 0.32 }, // Turquoise Mint
-                { r: 212, g: 175, b: 55,  a: 0.36 }  // Pure Gold
+                { r: 212, g: 175, b: 55, a: 0.36 }  // Pure Gold
             ]
         };
 
@@ -237,8 +237,11 @@
         // Keep it out of the critical theme-repaint window; CSS still owns the
         // actual theme transition on the page and metric cards.
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const TARGET_FPS = 40;
+        const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
         let animFrameId = null;
         let pauseUntil = 0;
+        let lastRenderTime = -Infinity;
 
         document.addEventListener('themechange', () => {
             clickBursts = [];
@@ -246,11 +249,12 @@
         });
 
         function render(time) {
-            if (time < pauseUntil) {
+            if (time < pauseUntil || time - lastRenderTime < FRAME_INTERVAL_MS) {
                 animFrameId = requestAnimationFrame(render);
                 return;
             }
 
+            lastRenderTime = time;
             mouseX += (targetMouseX - mouseX) * 0.06;
             mouseY += (targetMouseY - mouseY) * 0.06;
 
