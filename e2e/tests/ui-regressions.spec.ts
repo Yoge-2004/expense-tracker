@@ -55,6 +55,33 @@ test.describe('Targeted UI regressions', () => {
     await expect.poll(async () => root.getAttribute('data-theme')).toBe('dark');
   });
 
+  test('animates all metric cards consistently during a theme switch', async ({ page }) => {
+    const cards = page.locator('.grid-4-metrics > .metric-card');
+    await expect(cards).toHaveCount(5);
+
+    const transitionStates = await page.locator('#themeToggle').evaluate(() => {
+      const button = document.querySelector<HTMLButtonElement>('#themeToggle');
+      button?.click();
+
+      return Array.from(document.querySelectorAll('.grid-4-metrics > .metric-card')).map(card => {
+        const style = getComputedStyle(card);
+        return {
+          transitionProperty: style.transitionProperty,
+          transitionDuration: style.transitionDuration,
+        };
+      });
+    });
+
+    expect(transitionStates).toHaveLength(5);
+    for (const state of transitionStates) {
+      expect(state.transitionProperty).not.toBe('none');
+      expect(state.transitionProperty).toContain('background-color');
+      expect(state.transitionProperty).toContain('border-color');
+      expect(state.transitionProperty).toContain('box-shadow');
+      expect(state.transitionDuration).toContain('0.24s');
+    }
+  });
+
   test('removes redundant income inline handlers while preserving the global API', async ({ page }) => {
     for (const selector of ['#openIncomeModalBtn', '#addIncomeTableBtn']) {
       await expect.poll(async () => page.locator(selector).getAttribute('onclick')).toBeNull();
