@@ -62,7 +62,7 @@ test.describe('Targeted UI regressions', () => {
     await expect.poll(async () => root.getAttribute('data-theme')).toBe('dark');
   });
 
-  test('defines consistent CSS transitions for all five metric card variants', async ({ page }) => {
+  test('defines lightweight CSS transitions for all five metric card variants', async ({ page }) => {
     const selectors = [
       '.metric-card-inflow',
       '.metric-card-outflow',
@@ -86,16 +86,46 @@ test.describe('Targeted UI regressions', () => {
 
     expect(states).toHaveLength(5);
     for (const state of states) {
+      expect(state.transitionProperty).toContain('transform');
       expect(state.transitionProperty).toContain('background-color');
       expect(state.transitionProperty).toContain('border-color');
       expect(state.transitionProperty).toContain('border-left-color');
-      expect(state.transitionProperty).toContain('box-shadow');
       expect(state.transitionProperty).toContain('color');
-      expect(state.transitionDuration).toContain('0.24s');
+      expect(state.transitionProperty).not.toContain('box-shadow');
+      expect(state.transitionDuration).toContain('0.28s');
     }
 
     await page.locator('#themeToggle').click();
     await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
+  });
+
+  test('visibly transforms all five metric cards during a theme toggle', async ({ page }) => {
+    const selectors = [
+      '.metric-card-inflow',
+      '.metric-card-outflow',
+      '.metric-card-netflow',
+      '.metric-card-savings',
+      '.metric-card-subs',
+    ];
+
+    const before = await page.evaluate((cardSelectors) => cardSelectors.map((selector) => {
+      const card = document.querySelector<HTMLElement>(selector);
+      return card ? getComputedStyle(card).transform : null;
+    }), selectors);
+
+    await page.locator('#themeToggle').click();
+    await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
+    await page.waitForTimeout(150);
+
+    const during = await page.evaluate((cardSelectors) => cardSelectors.map((selector) => {
+      const card = document.querySelector<HTMLElement>(selector);
+      return card ? getComputedStyle(card).transform : null;
+    }), selectors);
+
+    expect(during).toHaveLength(5);
+    for (let i = 0; i < before.length; i += 1) {
+      expect(during[i]).not.toBe(before[i]);
+    }
   });
 
   test('animates all five metric cards on dashboard entrance', async ({ page }) => {
