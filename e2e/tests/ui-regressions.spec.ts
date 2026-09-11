@@ -55,31 +55,44 @@ test.describe('Targeted UI regressions', () => {
     await expect.poll(async () => root.getAttribute('data-theme')).toBe('dark');
   });
 
-  test('animates all metric cards consistently during a theme switch', async ({ page }) => {
-    const cards = page.locator('.grid-4-metrics > .metric-card');
-    await expect(cards).toHaveCount(5);
+  test('animates all five metric card variants during a theme switch', async ({ page }) => {
+    const expectedVariants = [
+      ['.metric-card-inflow', 'metric-inflow'],
+      ['.metric-card-outflow', 'metric-outflow'],
+      ['.metric-card-netflow', 'metric-netflow'],
+      ['.metric-card-savings', 'metric-savings'],
+      ['.metric-card-subs', 'metric-subs'],
+    ] as const;
 
-    const transitionStates = await page.locator('#themeToggle').evaluate(() => {
-      const button = document.querySelector<HTMLButtonElement>('#themeToggle');
-      button?.click();
+    await expect(page.locator('.grid-4-metrics > .metric-card')).toHaveCount(5);
 
-      return Array.from(document.querySelectorAll('.grid-4-metrics > .metric-card')).map(card => {
-        const style = getComputedStyle(card);
-        return {
-          transitionProperty: style.transitionProperty,
-          transitionDuration: style.transitionDuration,
-        };
-      });
-    });
+    const variantStates = await page.evaluate((variants) => variants.map(([selector, name]) => {
+      const card = document.querySelector<HTMLElement>(selector);
+      if (!card) return { selector, expected: name, actual: null };
 
-    expect(transitionStates).toHaveLength(5);
-    for (const state of transitionStates) {
-      expect(state.transitionProperty).not.toBe('none');
+      const style = getComputedStyle(card);
+      return {
+        selector,
+        expected: name,
+        actual: style.viewTransitionName,
+        transitionProperty: style.transitionProperty,
+        transitionDuration: style.transitionDuration,
+      };
+    }), expectedVariants);
+
+    expect(variantStates).toHaveLength(5);
+    for (const state of variantStates) {
+      expect(state.actual).toBe(state.expected);
       expect(state.transitionProperty).toContain('background-color');
       expect(state.transitionProperty).toContain('border-color');
       expect(state.transitionProperty).toContain('box-shadow');
+      expect(state.transitionProperty).toContain('color');
       expect(state.transitionDuration).toContain('0.24s');
     }
+
+    await expect(page.locator('#themeToggle')).toBeVisible();
+    await page.locator('#themeToggle').click();
+    await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
   });
 
   test('keeps both record controls on their intended primary gradients', async ({ page }) => {
