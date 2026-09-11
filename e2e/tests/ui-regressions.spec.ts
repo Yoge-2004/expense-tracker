@@ -98,6 +98,35 @@ test.describe('Targeted UI regressions', () => {
     await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
   });
 
+  test('animates all five metric cards on dashboard entrance', async ({ page }) => {
+    const selectors = [
+      '.metric-card-inflow',
+      '.metric-card-outflow',
+      '.metric-card-netflow',
+      '.metric-card-savings',
+      '.metric-card-subs',
+    ];
+
+    const states = await page.evaluate((cardSelectors) => cardSelectors.map((selector) => {
+      const card = document.querySelector<HTMLElement>(selector);
+      if (!card) return { selector, animationName: null, duration: null, delay: null };
+      const style = getComputedStyle(card);
+      return {
+        selector,
+        animationName: style.animationName,
+        duration: style.animationDuration,
+        delay: style.animationDelay,
+      };
+    }), selectors);
+
+    expect(states).toHaveLength(5);
+    for (const state of states) {
+      expect(state.animationName).toContain('staggeredSlideIn');
+      expect(state.duration).toContain('0.75s');
+      expect(state.delay).toMatch(/^(0s|0\.15s|0\.3s|0\.45s|0\.6s)$/);
+    }
+  });
+
   test('keeps both record controls on their intended primary gradients', async ({ page }) => {
     const backgrounds = await page.locator('#openModalBtn, #openIncomeModalBtn').evaluateAll((elements) =>
       elements.map(element => getComputedStyle(element).backgroundImage),
