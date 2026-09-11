@@ -144,7 +144,9 @@ test.describe('Targeted UI regressions', () => {
 
   test('pauses the expensive background renderer during the theme repaint', async ({ page }) => {
     const gradientCalls = await page.evaluate(() => new Promise<number>((resolve) => {
-      const context = window.CanvasRenderingContext2D?.prototype;
+      const context = typeof CanvasRenderingContext2D !== 'undefined'
+        ? CanvasRenderingContext2D.prototype
+        : null;
       if (!context) {
         resolve(0);
         return;
@@ -152,9 +154,9 @@ test.describe('Targeted UI regressions', () => {
 
       const original = context.createRadialGradient;
       let calls = 0;
-      context.createRadialGradient = function (...args) {
+      context.createRadialGradient = function (x0, y0, r0, x1, y1, r1) {
         calls += 1;
-        return original.apply(this, args);
+        return original.call(this, x0, y0, r0, x1, y1, r1);
       };
 
       document.querySelector<HTMLElement>('#themeToggle')?.click();
