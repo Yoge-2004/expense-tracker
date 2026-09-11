@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Sign In | ExpenseTracker Pro</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="css/style.css">
@@ -14,15 +14,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
     <script>
-        // Applies the saved theme (and syncs the browser tab color to match)
-        // before first paint, so there's no flash of the wrong theme/tab color.
+        // Apply the saved theme before first paint so the page and browser tab
+        // start in a supported theme without a flash of the wrong appearance.
         (function () {
             try {
-                var t = localStorage.getItem("theme") || "dark";
-                document.documentElement.setAttribute("data-theme", t);
-                var m = document.querySelector('meta[name="theme-color"]');
-                if (m) m.setAttribute("content", t === "light" ? "#F8F9FA" : "#10120E");
-            } catch (e) {}
+                var savedTheme = localStorage.getItem("theme");
+                var theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+                document.documentElement.setAttribute("data-theme", theme);
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute("content", theme === "light" ? "#F8F9FA" : "#10120E");
+            } catch (error) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
         })();
     </script>
     <meta name="robots" content="index, follow">
@@ -73,7 +76,7 @@
                             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
-                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
@@ -312,91 +315,7 @@
     <script src="js/auth.js"></script>
     <script src="js/password-toggle.js"></script>
     <script src="js/motion.js"></script>
-    <script>
-        // Adapt 24,810 card and subline to client location currency
-        (function() {
-            const SAVINGS_TABLE = {
-                INR: { amount: 24810, word: "rupee" },
-                USD: { amount: 2480, word: "dollar" },
-                EUR: { amount: 2350, word: "euro" },
-                GBP: { amount: 1980, word: "pound" },
-                JPY: { amount: 320000, word: "yen" },
-                CAD: { amount: 3100, word: "dollar" },
-                AUD: { amount: 3400, word: "dollar" },
-                CHF: { amount: 2200, word: "franc" },
-                AED: { amount: 8800, word: "dirham" },
-                SGD: { amount: 3150, word: "dollar" },
-                CNY: { amount: 16800, word: "yuan" },
-                BRL: { amount: 12400, word: "real" },
-                KRW: { amount: 3100000, word: "won" },
-                MXN: { amount: 42000, word: "peso" },
-                SEK: { amount: 24500, word: "krona" },
-                NOK: { amount: 25200, word: "krone" },
-                DKK: { amount: 16400, word: "krone" },
-                PLN: { amount: 9600, word: "złoty" },
-                ZAR: { amount: 42000, word: "rand" },
-                RUB: { amount: 215000, word: "ruble" },
-                IDR: { amount: 36000000, word: "rupiah" },
-                VND: { amount: 58000000, word: "dong" },
-                THB: { amount: 84000, word: "baht" },
-                PHP: { amount: 135000, word: "peso" },
-                MYR: { amount: 10800, word: "ringgit" },
-                NZD: { amount: 3800, word: "dollar" },
-                SAR: { amount: 9200, word: "riyal" },
-                TRY: { amount: 78000, word: "lira" },
-                PKR: { amount: 680000, word: "rupee" },
-                BDT: { amount: 285000, word: "taka" },
-                NGN: { amount: 3400000, word: "naira" }
-            };
-
-            function applyHeroCurrency(code) {
-                if (!code) return;
-                const amtEl = document.getElementById("heroSavedAmount");
-                const wordEl = document.getElementById("heroCurrencyWord");
-                if (!amtEl) return;
-
-                const cur = code.toUpperCase();
-                const info = (typeof getCurrencyInfo === "function" && getCurrencyInfo(cur)) || { code: cur, locale: "en-US", symbol: "$" };
-                const entry = SAVINGS_TABLE[cur];
-                const amt = entry ? entry.amount : 2480;
-                const word = entry ? entry.word : "penny";
-
-                try {
-                    amtEl.textContent = new Intl.NumberFormat(info.locale || "en-US", {
-                        style: "currency",
-                        currency: info.code,
-                        maximumFractionDigits: 0
-                    }).format(amt);
-                } catch (e) {
-                    amtEl.textContent = (info.symbol || "$") + amt.toLocaleString();
-                }
-
-                if (wordEl) {
-                    wordEl.textContent = word;
-                }
-            }
-
-            let detected = null;
-            const stored = localStorage.getItem("userCurrency");
-            if (stored && stored !== "None") {
-                detected = stored;
-            } else if (typeof detectLikelyCurrencyCode === "function") {
-                detected = detectLikelyCurrencyCode();
-            }
-
-            if (detected) {
-                applyHeroCurrency(detected);
-            }
-
-            if (!stored && typeof detectClientLocationCurrency === "function") {
-                detectClientLocationCurrency().then(locCode => {
-                    if (locCode && locCode !== detected) {
-                        applyHeroCurrency(locCode);
-                    }
-                }).catch(() => {});
-            }
-        })();
-    </script>
+    <script src="js/auth-page.js"></script>
 </body>
 
 </html>
