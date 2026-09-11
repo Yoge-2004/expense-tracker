@@ -214,3 +214,42 @@ html.theme-transitioning *::after {
     .top-bar .add-expense-button > span,.top-bar .add-income-button > span { min-width:0 !important; max-width:100% !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
     .profile-menu { width:calc(100vw - 20px) !important; max-width:calc(100vw - 20px) !important; right:-2px !important; }
 }
+
+
+/* Mobile ledger controls scroll instead of clipping. */
+@media (max-width:760px) {
+    #ledgerStreamTabs, .ledger-stream-tabs {
+        display:flex !important;
+        flex-wrap:nowrap !important;
+        overflow-x:auto !important;
+        overflow-y:hidden !important;
+        min-width:0 !important;
+        width:100% !important;
+        scrollbar-width:none !important;
+        -webkit-overflow-scrolling:touch !important;
+    }
+    #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
+    #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
+        flex:0 0 auto !important;
+        min-width:max-content !important;
+        white-space:nowrap !important;
+    }
+    #incomeList .btn-edit, #incomeList .btn-delete {
+        width:34px !important;
+        height:34px !important;
+        min-width:34px !important;
+        min-height:34px !important;
+        padding:0 !important;
+        border-radius:10px !important;
+        display:inline-flex !important;
+        align-items:center !important;
+        justify-content:center !important;
+        flex:0 0 34px !important;
+        box-sizing:border-box !important;
+    }
+    #incomeList .btn-edit svg, #incomeList .btn-delete svg {
+        width:14px !important;
+        height:14px !important;
+        display:block !important;
+    }
+}
