@@ -17,10 +17,10 @@ body,
 .perk-item,
 .recent-transactions,
 .profile-menu {
-    transition: background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1),
-                color 0.2s ease,
-                box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        background-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.20s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.18s ease;
 }
 
 [data-theme="light"] {
