@@ -1,39 +1,6 @@
-/* Shared UI regressions: theme controls, app dialogs, and lightweight interaction fixes. */
+/* Shared UI regressions: app dialogs and lightweight interaction fixes. */
 (function () {
     "use strict";
-
-    function syncThemeIcons() {
-        const theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-        if (typeof window.updateAllThemeIcons === "function") {
-            window.updateAllThemeIcons(theme);
-            return;
-        }
-        document.querySelectorAll(".theme-toggle-btn, #themeToggle").forEach(button => {
-            const sun = button.querySelector(".sun-icon");
-            const moon = button.querySelector(".moon-icon");
-            if (!sun || !moon) return;
-            const light = theme === "light";
-            sun.style.display = light ? "none" : "block";
-            moon.style.display = light ? "block" : "none";
-            button.setAttribute("aria-label", light ? "Switch to dark theme" : "Switch to light theme");
-            button.setAttribute("title", light ? "Switch to dark theme" : "Switch to light theme");
-        });
-    }
-
-    function installThemeGuard() {
-        const root = document.documentElement;
-        const update = () => {
-            syncThemeIcons();
-        };
-        document.addEventListener("themechange", update);
-        if (typeof MutationObserver !== "undefined") {
-            new MutationObserver(records => {
-                if (records.some(record => record.type === "attributes" && record.attributeName === "data-theme")) {
-                    syncThemeIcons();
-                }
-            }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-        }
-    }
 
     function addDialogStyles() {
         if (document.getElementById("appDialogStyles")) return;
@@ -158,8 +125,6 @@
     }
 
     function init() {
-        syncThemeIcons();
-        installThemeGuard();
         removeRedundantIncomeInlineHandlers();
     }
 
