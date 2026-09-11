@@ -82,6 +82,15 @@ test.describe('Targeted UI regressions', () => {
     }
   });
 
+  test('keeps both record controls on their intended primary gradients', async ({ page }) => {
+    const backgrounds = await page.locator('#openModalBtn, #openIncomeModalBtn').evaluateAll((elements) =>
+      elements.map(element => getComputedStyle(element).backgroundImage),
+    );
+
+    expect(backgrounds).toHaveLength(2);
+    expect(backgrounds.every(value => value.includes('linear-gradient'))).toBe(true);
+  });
+
   test('removes redundant income inline handlers while preserving the global API', async ({ page }) => {
     for (const selector of ['#openIncomeModalBtn', '#addIncomeTableBtn']) {
       await expect.poll(async () => page.locator(selector).getAttribute('onclick')).toBeNull();
