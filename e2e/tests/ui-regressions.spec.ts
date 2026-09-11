@@ -62,6 +62,20 @@ test.describe('Targeted UI regressions', () => {
     await expect.poll(async () => root.getAttribute('data-theme')).toBe('dark');
   });
 
+  test('does not stack expensive theme-click animations on the button or background canvas', async ({ page }) => {
+    const state = await page.evaluate(() => {
+      const button = document.querySelector<HTMLElement>('#themeToggle');
+      const canvas = document.querySelector<HTMLElement>('.animated-mesh-canvas');
+      return {
+        buttonAnimation: button ? getComputedStyle(button).animationName : null,
+        canvasAnimation: canvas ? getComputedStyle(canvas).animationName : null,
+      };
+    });
+
+    expect(state.buttonAnimation).not.toContain('themeShiftGlow');
+    expect(state.canvasAnimation).toBe('none');
+  });
+
   test('defines lightweight CSS transitions for all five metric card variants', async ({ page }) => {
     const selectors = [
       '.metric-card-inflow',
@@ -126,6 +140,33 @@ test.describe('Targeted UI regressions', () => {
     for (let i = 0; i < before.length; i += 1) {
       expect(during[i]).not.toBe(before[i]);
     }
+  });
+
+  test('pauses the expensive background renderer during the theme repaint', async ({ page }) => {
+    const gradientCalls = await page.evaluate(() => new Promise<number>((resolve) => {
+      const context = typeof CanvasRenderingContext2D !== 'undefined'
+        ? CanvasRenderingContext2D.prototype
+        : null;
+      if (!context) {
+        resolve(0);
+        return;
+      }
+
+      const original = context.createRadialGradient;
+      let calls = 0;
+      context.createRadialGradient = function (x0, y0, r0, x1, y1, r1) {
+        calls += 1;
+        return original.call(this, x0, y0, r0, x1, y1, r1);
+      };
+
+      document.querySelector<HTMLElement>('#themeToggle')?.click();
+      setTimeout(() => {
+        context.createRadialGradient = original;
+        resolve(calls);
+      }, 220);
+    }));
+
+    expect(gradientCalls).toBeLessThanOrEqual(1);
   });
 
   test('animates all five metric cards on dashboard entrance', async ({ page }) => {

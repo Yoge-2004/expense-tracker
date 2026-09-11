@@ -47,9 +47,13 @@
             isHovering = false;
         });
 
-        // Click sparkle burst effect
+        // Click sparkle burst effect. Theme toggles already trigger a large
+        // style/repaint pass, so avoid starting another canvas particle burst
+        // on the same interaction.
         let clickBursts = [];
         window.addEventListener('click', (e) => {
+            if (e.target.closest?.('.theme-toggle-btn, #themeToggle')) return;
+
             const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light';
             const burstCount = 16;
             const x = e.clientX;
@@ -91,7 +95,7 @@
                 { r: 142, g: 68,  b: 173, a: 0.30 }, // Royal Orchid Violet
                 { r: 39,  g: 174, b: 96,  a: 0.30 }, // Spring Emerald
                 { r: 230, g: 126, b: 34,  a: 0.34 }, // Warm Tangerine
-                { r: 26,  g: 188, b: 156, a: 0.32 }, // Turquoise Mint
+                { r: 26, g: 188, b: 156, a: 0.32 }, // Turquoise Mint
                 { r: 212, g: 175, b: 55,  a: 0.36 }  // Pure Gold
             ]
         };
@@ -229,15 +233,24 @@
 
         initOrbs();
 
-        // Was previously unconditional: this canvas ran its render loop
-        // forever regardless of the user's OS-level motion preference or
-        // whether the tab was even visible. prefersReducedMotion gates the
-        // loop from ever starting (drawing one static frame instead);
-        // visibilitychange stops/resumes it as the tab is hidden/shown,
-        // rather than relying on browser-specific background-tab throttling.
+        // This canvas is the most expensive continuous visual on the dashboard.
+        // Keep it out of the critical theme-repaint window; CSS still owns the
+        // actual theme transition on the page and metric cards.
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let animFrameId = null;
+        let pauseUntil = 0;
+
+        document.addEventListener('themechange', () => {
+            clickBursts = [];
+            pauseUntil = performance.now() + 260;
+        });
+
         function render(time) {
+            if (time < pauseUntil) {
+                animFrameId = requestAnimationFrame(render);
+                return;
+            }
+
             mouseX += (targetMouseX - mouseX) * 0.06;
             mouseY += (targetMouseY - mouseY) * 0.06;
 
