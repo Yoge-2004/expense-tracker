@@ -175,13 +175,6 @@ def patch_ui_css() -> None:
         display:block !important;
     }
 }
-
-/* Theme switches must not replay dashboard metric effects. */
-html.theme-transitioning .grid-4-metrics > .metric-card,
-html.theme-transitioning .grid-4-metrics > .metric-card * {
-    animation:none !important;
-    transition:none !important;
-}
 '''
 
     UI_FIXES.write_text(text, encoding="utf-8")
