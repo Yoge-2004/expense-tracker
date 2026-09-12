@@ -104,6 +104,9 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
+      - name: Check E2E TypeScript
+        working-directory: e2e
+        run: npm run typecheck
       - name: Serve frontend
         shell: bash
         run: |
