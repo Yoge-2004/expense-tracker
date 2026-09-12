@@ -17,7 +17,8 @@
 }
 
 .btn-oauth,
-.subs-tab-btn {
+.subs-tab-btn,
+.suggestion-chip {
     transition:
         background 0.2s ease,
         border-color 0.2s ease,
@@ -89,6 +90,29 @@
 .modal-overlay.active .modal,
 .modal-overlay.active .modal.active {
     animation: none !important;
+}
+
+/* Keyboard focus for custom controls must remain visible without relying on
+   browser-default outlines that are hidden by the component styles. */
+.custom-select-trigger:focus-visible,
+.custom-select-search:focus-visible,
+.cal-nav-btn:focus-visible,
+.cal-select:focus-visible,
+.cal-day-cell:focus-visible,
+.cal-btn-action:focus-visible,
+.cal-btn-done:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px;
+}
+
+.custom-select-trigger:focus:not(:focus-visible),
+.custom-select-search:focus:not(:focus-visible),
+.cal-nav-btn:focus:not(:focus-visible),
+.cal-select:focus:not(:focus-visible),
+.cal-day-cell:focus:not(:focus-visible),
+.cal-btn-action:focus:not(:focus-visible),
+.cal-btn-done:focus:not(:focus-visible) {
+    outline: none;
 }
 
 /* Existing viewport breakpoints remain the responsive ownership model. */
