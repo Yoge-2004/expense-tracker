@@ -35,7 +35,7 @@
     background: rgba(16, 18, 14, 0.88) !important;
     border-bottom: 1px solid rgba(var(--ink-rgb), 0.08) !important;
     transition:
-        background 0.3s,
+        background-color 0.3s,
         border-color 0.3s;
 }
 
@@ -108,7 +108,7 @@
 .profile-menu.active {
     opacity: 1;
     transform: scale(1) translateY(0);
-    pointer-events: all;
+    pointer-events: auto;
     animation: menuDown 0.2s var(--ease) both;
 }
 
@@ -118,7 +118,7 @@
     color: var(--text-main);
     border-bottom: 1px solid var(--border);
     transition:
-        background 0.18s var(--ease),
+        background-color 0.18s var(--ease),
         color 0.18s var(--ease),
         padding-left 0.18s var(--ease),
         transform 0.18s var(--ease);
@@ -226,7 +226,11 @@
     justify-content: center;
     gap: 8px;
     cursor: pointer;
-    transition: all 0.25s var(--ease) !important;
+    transition:
+        color 0.25s var(--ease),
+        border-color 0.25s var(--ease),
+        box-shadow 0.25s var(--ease),
+        transform 0.25s var(--ease) !important;
 }
 
 .add-income-button span,
