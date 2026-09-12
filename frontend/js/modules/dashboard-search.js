@@ -5,6 +5,7 @@
     const searchInput = () => document.getElementById("filterSearch");
     const isMacPlatform = /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     const kbdBadge = document.querySelector(".command-kbd");
+    let resizeFrameId = null;
 
     if (kbdBadge) kbdBadge.textContent = isMacPlatform ? "⌘K" : "Ctrl K";
 
@@ -20,7 +21,15 @@
         }
     }
 
-    window.addEventListener("resize", updateSearchPlaceholder);
+    function schedulePlaceholderUpdate() {
+        if (resizeFrameId !== null) return;
+        resizeFrameId = requestAnimationFrame(() => {
+            resizeFrameId = null;
+            updateSearchPlaceholder();
+        });
+    }
+
+    window.addEventListener("resize", schedulePlaceholderUpdate, { passive: true });
     updateSearchPlaceholder();
 
     window.addEventListener("keydown", (event) => {
