@@ -82,6 +82,23 @@
     transition: none;
 }
 
+/* Avoid persistent compositor reservations for a broad set of cards. The
+   legacy animation layer applies will-change globally even when cards are
+   idle; keep the hint only while pointer-driven elevation is actually used. */
+.metric-card,
+.card,
+.auth-card,
+.smart-intelligence-card {
+    will-change: auto;
+}
+
+.metric-card:hover,
+.card:hover,
+.auth-card:hover,
+.smart-intelligence-card:hover {
+    will-change: transform;
+}
+
 /* The overlay and modal shell previously reused the cinematic backdrop
    animation. Keep the backdrop blur static and leave the actual dialog
    entrance animation to modal-content/modal-dialog, which already owns the
