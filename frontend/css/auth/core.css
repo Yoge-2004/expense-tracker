@@ -101,7 +101,11 @@
 /* Restrained gold gradient — single hue, no shimmer animation */
 .btn-primary, button[type="submit"] {
     background: var(--primary-gradient) !important;
-    transition: all 0.35s var(--ease) !important;
+    transition:
+        background-color 0.35s var(--ease),
+        background-position 0.35s var(--ease),
+        transform 0.35s var(--ease),
+        box-shadow 0.35s var(--ease) !important;
     box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb), 0.35) !important;
 }
 
