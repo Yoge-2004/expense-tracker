@@ -66,6 +66,7 @@
         dialog.appendChild(actions);
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
+        overlay.setAttribute("aria-labelledby", title.id = `app-dialog-title-${Date.now()}`);
         return { overlay, dialog, input, cancel, accept };
     }
 
@@ -126,8 +127,121 @@
         });
     }
 
+    // Strengthen non-native controls that are intentionally kept for visual
+    // compatibility with the current custom selector implementation.
+    function initAccessibleCustomControls() {
+        const triggers = [
+            document.getElementById("currencySelectTrigger"),
+            document.getElementById("dashCurrencyTrigger")
+        ].filter(Boolean);
+
+        triggers.forEach(trigger => {
+            const wrapper = trigger.closest(".custom-select-wrapper");
+            const options = wrapper?.querySelector(".custom-select-options");
+            if (!wrapper) return;
+
+            trigger.setAttribute("role", "combobox");
+            trigger.setAttribute("tabindex", "0");
+            trigger.setAttribute("aria-haspopup", "listbox");
+            trigger.setAttribute("aria-expanded", wrapper.classList.contains("open") ? "true" : "false");
+
+            if (options) {
+                const list = options.querySelector(".custom-options-list") || options;
+                if (!list.id) list.id = `${trigger.id}-listbox`;
+                trigger.setAttribute("aria-controls", list.id);
+                options.querySelectorAll(".custom-option").forEach((option, index) => {
+                    option.setAttribute("role", "option");
+                    option.setAttribute("tabindex", "-1");
+                    option.setAttribute("aria-selected", option.classList.contains("selected") ? "true" : "false");
+                    if (!option.id) option.id = `${trigger.id}-option-${index}`;
+                });
+            }
+
+            trigger.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    trigger.click();
+                    return;
+                }
+                if (event.key === "Escape") {
+                    wrapper.classList.remove("open");
+                    trigger.setAttribute("aria-expanded", "false");
+                    return;
+                }
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault();
+                    if (!wrapper.classList.contains("open")) trigger.click();
+                    const optionNodes = Array.from(wrapper.querySelectorAll(".custom-option"))
+                        .filter(option => getComputedStyle(option).display !== "none" && !option.classList.contains("disabled"));
+                    const current = optionNodes.indexOf(document.activeElement);
+                    const step = event.key === "ArrowDown" ? 1 : -1;
+                    const target = optionNodes[current < 0 ? (event.key === "ArrowDown" ? 0 : optionNodes.length - 1) : Math.max(0, Math.min(optionNodes.length - 1, current + step))];
+                    target?.focus();
+                }
+            });
+
+            wrapper.addEventListener("click", () => {
+                trigger.setAttribute("aria-expanded", wrapper.classList.contains("open") ? "true" : "false");
+            });
+
+            const observer = new MutationObserver(() => {
+                trigger.setAttribute("aria-expanded", wrapper.classList.contains("open") ? "true" : "false");
+                wrapper.querySelectorAll(".custom-option").forEach(option => {
+                    option.setAttribute("aria-selected", option.classList.contains("selected") ? "true" : "false");
+                });
+            });
+            observer.observe(wrapper, { attributes: true, subtree: true, attributeFilter: ["class"] });
+
+            options?.addEventListener("keydown", event => {
+                const option = event.target.closest(".custom-option");
+                if (!option || option.classList.contains("disabled")) return;
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    option.click();
+                    trigger.focus();
+                } else if (event.key === "Escape") {
+                    wrapper.classList.remove("open");
+                    trigger.setAttribute("aria-expanded", "false");
+                    trigger.focus();
+                }
+            });
+        });
+    }
+
+    function initAccessibleGeneratedContent() {
+        document.querySelectorAll(".suggestion-chip").forEach(chip => {
+            if (chip.matches("button, a, input")) return;
+            chip.setAttribute("role", "button");
+            chip.setAttribute("tabindex", "0");
+            chip.setAttribute("aria-label", `Use suggested username ${chip.textContent.trim().replace(/^@/, "")}`);
+            chip.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    chip.click();
+                }
+            });
+        });
+
+        const filterSearch = document.getElementById("filterSearch");
+        if (filterSearch && !filterSearch.getAttribute("aria-label")) {
+            filterSearch.setAttribute("aria-label", "Search expenses and incomes");
+        }
+
+        document.querySelectorAll(".modal-overlay > .modal").forEach((modal, index) => {
+            modal.setAttribute("role", "dialog");
+            modal.setAttribute("aria-modal", "true");
+            const heading = modal.querySelector("h1, h2, h3, h4, [role='heading']");
+            if (heading) {
+                if (!heading.id) heading.id = `modal-heading-${index}`;
+                modal.setAttribute("aria-labelledby", heading.id);
+            }
+        });
+    }
+
     function init() {
         removeRedundantIncomeInlineHandlers();
+        initAccessibleCustomControls();
+        initAccessibleGeneratedContent();
     }
 
     if (document.readyState === "loading") {
