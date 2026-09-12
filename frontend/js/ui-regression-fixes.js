@@ -14,12 +14,14 @@
 .app-dialog-title{margin:0 0 8px;font-size:18px;font-weight:700}
 .app-dialog-message{margin:0;color:var(--text-muted,#a8a395);font-size:14px;line-height:1.55;white-space:pre-wrap}
 .app-dialog-input{width:100%;margin-top:16px;padding:12px 14px;box-sizing:border-box;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);color:var(--text-main);outline:none}
-.app-dialog-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.12)}
+.app-dialog-input:focus-visible{border-color:var(--primary);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.12)}
+.app-dialog-input:focus:not(:focus-visible){border-color:var(--border);box-shadow:none}
 .app-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
 .app-dialog-btn{min-width:92px;padding:10px 14px;border-radius:11px;border:1px solid var(--border);background:var(--input-bg);color:var(--text-main);font-weight:650;cursor:pointer}
 .app-dialog-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 .app-dialog-btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .app-dialog-btn:hover{filter:brightness(1.06)}
+.app-dialog-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 @media(max-width:520px){.app-dialog{padding:20px}.app-dialog-actions{display:grid;grid-template-columns:1fr 1fr}.app-dialog-btn{width:100%}}
         `;
         document.head.appendChild(style);
