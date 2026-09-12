@@ -45,7 +45,7 @@ function setGoogleButtonLoading(loading, message = "Connecting to Google...") {
         if (loading) {
             btn.classList.add("is-loading");
             btn.innerHTML = `
-                <div class="spinner-sm" style="display:inline-block; vertical-align:middle; margin-right:8px;"></div>
+                <div class="spinner-sm spinner-sm--oauth"></div>
                 <span>${message}</span>
             `;
         } else {
