@@ -126,6 +126,13 @@
     box-shadow: 0 14px 36px -10px rgba(var(--primary-rgb), 0.22), 0 0 18px rgba(var(--accent-rgb), 0.12) !important;
 }
 
+/* Runtime-authored loading indicator: layout belongs to CSS, state belongs to JS. */
+.spinner-sm--oauth {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
 @keyframes cardFloat1 {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-6px); }
