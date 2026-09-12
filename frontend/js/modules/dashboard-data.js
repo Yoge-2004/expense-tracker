@@ -21,7 +21,6 @@
             clearApiCache
         } = deps;
 
-        let activeLoadController = null;
         let loadSequence = 0;
 
         function renderDashboardData(expenses, categories) {
@@ -56,13 +55,10 @@
             if (!userId) return;
 
             // Dashboard refreshes can overlap (manual refresh, initial load,
-            // filter/page re-entry). Abort the older request tree so a stale
-            // response cannot overwrite newer dashboard state.
-            activeLoadController?.abort();
-            const controller = new AbortController();
-            activeLoadController = controller;
+            // filter/page re-entry). A monotonically increasing sequence means
+            // stale responses can finish normally without being allowed to
+            // overwrite the newest dashboard state.
             const requestSequence = ++loadSequence;
-            const requestOptions = { skipCache, signal: controller.signal };
 
             if (skipCache) {
                 if (typeof clearApiCache === "function") clearApiCache();
@@ -86,18 +82,17 @@
                 console.log("Loading Dashboard Data...");
 
                 const [expenses, globalCats, userCats, incomes, savingsGoals] = await Promise.all([
-                    apiRequest(`/expenses/user/${userId}`, requestOptions),
-                    apiRequest(`/categories/global`, requestOptions),
-                    apiRequest(`/categories/user/${userId}`, requestOptions),
-                    apiRequest(`/incomes/user/${userId}`, requestOptions)
-                        .catch(err => { if (err?.name !== "AbortError") console.warn("Incomes fetch error:", err); return []; }),
-                    apiRequest(`/savings/goals/user/${userId}`, requestOptions)
-                        .catch(err => { if (err?.name !== "AbortError") console.warn("Savings fetch error:", err); return []; })
+                    apiRequest(`/expenses/user/${userId}`, { skipCache }),
+                    apiRequest(`/categories/global`, { skipCache }),
+                    apiRequest(`/categories/user/${userId}`, { skipCache }),
+                    apiRequest(`/incomes/user/${userId}`, { skipCache })
+                        .catch(err => { console.warn("Incomes fetch error:", err); return []; }),
+                    apiRequest(`/savings/goals/user/${userId}`, { skipCache })
+                        .catch(err => { console.warn("Savings fetch error:", err); return []; })
                 ]);
 
-                // An older request may still resolve after its sibling requests.
-                // Only the newest load is allowed to publish state to the UI.
-                if (controller.signal.aborted || requestSequence !== loadSequence) return;
+                // Only the newest dashboard load is allowed to publish state.
+                if (requestSequence !== loadSequence) return;
 
                 const allIncomes = Array.isArray(incomes) ? incomes : [];
                 const allSavingsGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
@@ -117,7 +112,9 @@
                 updateCashFlowMetrics(expenses || [], allIncomes, allSavingsGoals);
                 saveExpenseCache(expenses, categories);
             } catch (error) {
-                if (error?.name === "AbortError" || controller.signal.aborted || requestSequence !== loadSequence) return;
+                // An older failed request must not surface an error after a newer
+                // refresh has already taken ownership of the dashboard state.
+                if (requestSequence !== loadSequence) return;
 
                 console.error("Critical Error:", error);
                 if (error?.message?.includes("User not found")) {
@@ -135,8 +132,6 @@
                 }
                 renderIncomes(Array.isArray(state.allIncomes) ? state.allIncomes : []);
                 renderSavingsGoals(Array.isArray(state.allSavingsGoals) ? state.allSavingsGoals : []);
-            } finally {
-                if (activeLoadController === controller) activeLoadController = null;
             }
         }
 
