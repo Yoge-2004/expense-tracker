@@ -47,6 +47,7 @@ input::-ms-clear {
 
 /* Money/count fields: type the number, no native spinner arrows */
 input[type="number"] {
+    appearance: textfield;
     -moz-appearance: textfield;
 }
 input[type="number"]::-webkit-outer-spin-button,
