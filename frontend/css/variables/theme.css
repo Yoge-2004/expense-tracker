@@ -19,6 +19,7 @@ body,
 }
 
 [data-theme="light"] {
+    color-scheme: light;
     --bg-dark: #EEF1F6;
     --card-bg: #FFFFFF;
     --card-bg-hover: #FFFFFF;
@@ -72,4 +73,8 @@ body,
     --metric-subs: #7C3AED;
     --metric-subs-rgb: 124, 58, 237;
     --metric-subs-glow: rgba(124, 58, 237, 0.15);
+}
+
+:root {
+    color-scheme: dark;
 }
