@@ -82,6 +82,11 @@
     border-color: var(--primary);
 }
 
+.custom-select-trigger:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 .custom-select-wrapper.open .custom-select-trigger {
     border-color: var(--primary);
     box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.18);
@@ -162,8 +167,17 @@
     border-color: var(--primary);
 }
 
+.custom-select-search:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 .custom-select-emerald .custom-select-search:focus {
     border-color: #10b981;
+}
+
+.custom-select-emerald .custom-select-search:focus-visible {
+    outline-color: #10b981;
 }
 
 .custom-options-list {
