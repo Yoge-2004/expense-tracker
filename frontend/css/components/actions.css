@@ -16,7 +16,7 @@ button[type="submit"] {
     color: #ffffff;
     letter-spacing: -0.01em;
     cursor: pointer;
-    transition: all 0.3s var(--ease);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), filter 0.3s var(--ease);
     box-shadow: var(--shadow-glow);
     display: inline-flex;
     align-items: center;
@@ -51,7 +51,7 @@ button[type="submit"]:active {
     color: var(--text-main);
     letter-spacing: -0.01em;
     cursor: pointer;
-    transition: all 0.25s var(--ease);
+    transition: background-color 0.25s var(--ease), border-color 0.25s var(--ease), color 0.25s var(--ease), transform 0.25s var(--ease);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -85,7 +85,7 @@ button[type="submit"]:active {
     color: #ffffff !important;
     letter-spacing: -0.01em;
     cursor: pointer;
-    transition: all 0.25s var(--ease);
+    transition: background 0.25s var(--ease), box-shadow 0.25s var(--ease), filter 0.25s var(--ease), transform 0.25s var(--ease);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -117,7 +117,7 @@ button[type="submit"]:active {
     border-radius: 14px;
     color: var(--text-main);
     font-size: 15px;
-    transition: all 0.3s var(--ease);
+    transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
     backdrop-filter: blur(10px);
 }
 
@@ -129,7 +129,7 @@ button[type="submit"]:active {
     color: var(--text-muted);
     font-size: 14px;
     pointer-events: none;
-    transition: all 0.25s var(--ease);
+    transition: top 0.25s var(--ease), font-size 0.25s var(--ease), color 0.25s var(--ease), background-color 0.25s var(--ease);
     padding: 0 6px;
     border-radius: 4px;
 }
@@ -257,7 +257,7 @@ button[type="submit"]:active {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     cursor: pointer;
 }
 
@@ -314,6 +314,6 @@ button[type="submit"]:active {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
     padding: 0;
 }
