@@ -20,7 +20,7 @@
 
 .filter-toolbar.active {
     opacity: 1;
-    pointer-events: all;
+    pointer-events: auto;
     max-height: 700px;
     padding: 16px;
     margin-bottom: 16px;
