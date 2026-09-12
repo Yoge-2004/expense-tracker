@@ -21,6 +21,9 @@
             clearApiCache
         } = deps;
 
+        let activeLoadController = null;
+        let loadSequence = 0;
+
         function renderDashboardData(expenses, categories) {
             const state = getState();
             const safeCategories = Array.isArray(categories) ? categories : [];
@@ -29,7 +32,10 @@
                 ? expenses
                 : ((window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : currentExpenses);
 
-            const sortedExpenses = incomingExpenses.sort((a, b) => {
+            // Sort a copy so cached/shared arrays are not mutated in place. This
+            // keeps state ownership explicit and prevents one render from changing
+            // the order observed by another consumer of the same array.
+            const sortedExpenses = [...incomingExpenses].sort((a, b) => {
                 const dDiff = new Date(b.expenseDate) - new Date(a.expenseDate);
                 if (dDiff !== 0) return dDiff;
                 if (b.createdAt && a.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
@@ -48,6 +54,15 @@
         async function loadDashboard(skipCache = false) {
             const userId = getUserId();
             if (!userId) return;
+
+            // Dashboard refreshes can overlap (manual refresh, initial load,
+            // filter/page re-entry). Abort the older request tree so a stale
+            // response cannot overwrite newer dashboard state.
+            activeLoadController?.abort();
+            const controller = new AbortController();
+            activeLoadController = controller;
+            const requestSequence = ++loadSequence;
+            const requestOptions = { skipCache, signal: controller.signal };
 
             if (skipCache) {
                 if (typeof clearApiCache === "function") clearApiCache();
@@ -71,14 +86,18 @@
                 console.log("Loading Dashboard Data...");
 
                 const [expenses, globalCats, userCats, incomes, savingsGoals] = await Promise.all([
-                    apiRequest(`/expenses/user/${userId}`, { skipCache }),
-                    apiRequest(`/categories/global`, { skipCache }),
-                    apiRequest(`/categories/user/${userId}`, { skipCache }),
-                    apiRequest(`/incomes/user/${userId}`, { skipCache })
-                        .catch(err => { console.warn("Incomes fetch error:", err); return []; }),
-                    apiRequest(`/savings/goals/user/${userId}`, { skipCache })
-                        .catch(err => { console.warn("Savings fetch error:", err); return []; })
+                    apiRequest(`/expenses/user/${userId}`, requestOptions),
+                    apiRequest(`/categories/global`, requestOptions),
+                    apiRequest(`/categories/user/${userId}`, requestOptions),
+                    apiRequest(`/incomes/user/${userId}`, requestOptions)
+                        .catch(err => { if (err?.name !== "AbortError") console.warn("Incomes fetch error:", err); return []; }),
+                    apiRequest(`/savings/goals/user/${userId}`, requestOptions)
+                        .catch(err => { if (err?.name !== "AbortError") console.warn("Savings fetch error:", err); return []; })
                 ]);
+
+                // An older request may still resolve after its sibling requests.
+                // Only the newest load is allowed to publish state to the UI.
+                if (controller.signal.aborted || requestSequence !== loadSequence) return;
 
                 const allIncomes = Array.isArray(incomes) ? incomes : [];
                 const allSavingsGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
@@ -98,6 +117,8 @@
                 updateCashFlowMetrics(expenses || [], allIncomes, allSavingsGoals);
                 saveExpenseCache(expenses, categories);
             } catch (error) {
+                if (error?.name === "AbortError" || controller.signal.aborted || requestSequence !== loadSequence) return;
+
                 console.error("Critical Error:", error);
                 if (error?.message?.includes("User not found")) {
                     localStorage.clear();
@@ -114,6 +135,8 @@
                 }
                 renderIncomes(Array.isArray(state.allIncomes) ? state.allIncomes : []);
                 renderSavingsGoals(Array.isArray(state.allSavingsGoals) ? state.allSavingsGoals : []);
+            } finally {
+                if (activeLoadController === controller) activeLoadController = null;
             }
         }
 
