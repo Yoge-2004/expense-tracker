@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -36,6 +36,13 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const reducedMotion = useReducedMotion();
   const isDisabled = disabled || loading;
+
+  useEffect(() => {
+    return () => {
+      // Stop any in-flight native animation before the component is removed.
+      scaleAnim.stopAnimation();
+    };
+  }, [scaleAnim]);
 
   const handlePressIn = () => {
     if (isDisabled || reducedMotion) return;
