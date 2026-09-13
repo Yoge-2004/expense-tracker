@@ -6,7 +6,7 @@
  * - Hardware-backed SecureStore with automatic AsyncStorage fallback for resilience.
  * - In-memory GET query cache with dynamic mutation invalidation.
  * - Automated cold-start database recovery retries with exponential backoff.
- * - AbortController 15-second request timeouts.
+ * - AbortController request timeouts and caller cancellation support.
  * - Automated session teardown and token purge on HTTP 401 Unauthorized.
  */
 
@@ -25,8 +25,13 @@ const NAME_KEY = 'user_name';
 // Resilience & Network Constants
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
-const REQUEST_TIMEOUT_MS = 15000; // 15s timeout
-const CACHE_TTL_MS = 15000; // 15s cache TTL
+const REQUEST_TIMEOUT_MS = 15000;
+const CACHE_TTL_MS = 15000;
+
+/** Optional application-specific request flags layered on top of RequestInit. */
+export type ApiRequestOptions = RequestInit & {
+  skipAuthRedirect?: boolean;
+};
 
 /**
  * Standardized API error categorization codes.
@@ -54,7 +59,7 @@ export class ApiError extends Error {
   public readonly isTimeout: boolean;
   public readonly isNetworkError: boolean;
   public readonly isUnauthorized: boolean;
-  public readonly rawPayload?: any;
+  public readonly rawPayload?: unknown;
 
   constructor(params: {
     message: string;
@@ -63,7 +68,7 @@ export class ApiError extends Error {
     endpoint?: string;
     method?: string;
     validationErrors?: Record<string, string>;
-    rawPayload?: any;
+    rawPayload?: unknown;
   }) {
     super(params.message);
     this.name = 'ApiError';
@@ -77,35 +82,36 @@ export class ApiError extends Error {
     this.isNetworkError = params.code === 'NETWORK_OFFLINE';
     this.isUnauthorized = params.status === 401;
 
-    // Maintain standard prototype chain
     Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
 
-/**
- * In-memory response cache for idempotent GET queries.
- */
-const apiCache = new Map<string, { data: any; timestamp: number }>();
+/** In-memory response cache for idempotent GET queries. */
+const apiCache = new Map<string, { data: unknown; timestamp: number }>();
 
 /**
- * Persists an item safely to SecureStore, falling back to AsyncStorage if hardware keystore fails.
+ * Persists an item safely to SecureStore, falling back to AsyncStorage if the
+ * device keystore is unavailable. A complete persistence failure is surfaced
+ * to the caller so authentication is never reported as successful while the
+ * credentials could not be stored.
  */
 async function safeStorageSet(key: string, value: string): Promise<void> {
   try {
     await SecureStore.setItemAsync(key, value);
+    return;
   } catch (secureError) {
     console.warn(`[API] SecureStore setItem failed for ${key}, falling back to AsyncStorage:`, secureError);
-    try {
-      await AsyncStorage.setItem(`fallback_${key}`, value);
-    } catch (asyncError) {
-      console.error(`[API] Critical: Both SecureStore and AsyncStorage failed for ${key}:`, asyncError);
-    }
+  }
+
+  try {
+    await AsyncStorage.setItem(`fallback_${key}`, value);
+  } catch (asyncError) {
+    console.error(`[API] Critical: Both SecureStore and AsyncStorage failed for ${key}:`, asyncError);
+    throw asyncError;
   }
 }
 
-/**
- * Reads an item safely from SecureStore or AsyncStorage fallback.
- */
+/** Reads an item safely from SecureStore or AsyncStorage fallback. */
 async function safeStorageGet(key: string): Promise<string | null> {
   try {
     const val = await SecureStore.getItemAsync(key);
@@ -122,37 +128,28 @@ async function safeStorageGet(key: string): Promise<string | null> {
   }
 }
 
-/**
- * Removes an item from both SecureStore and AsyncStorage fallback.
- */
+/** Removes an item from both SecureStore and AsyncStorage fallback. */
 async function safeStorageDelete(key: string): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(key);
-  } catch (e) {
-    // Ignore non-critical deletion errors
+  } catch {
+    // Best-effort cleanup; the fallback is still removed below.
   }
   try {
     await AsyncStorage.removeItem(`fallback_${key}`);
-  } catch (e) {
-    // Ignore non-critical deletion errors
+  } catch {
+    // Best-effort cleanup.
   }
 }
 
-/**
- * Persists the authenticated user session.
- *
- * @param token - Signed JWT bearer token.
- * @param userId - Unique user integer ID string.
- * @param name - Display name of the user.
- * @throws {ApiError} If persistence fails completely.
- */
+/** Persists the authenticated user session. */
 export async function saveSession(token: string, userId: string, name: string): Promise<void> {
   try {
     apiCache.clear();
     await safeStorageSet(TOKEN_KEY, token);
     await safeStorageSet(USER_ID_KEY, userId);
     await safeStorageSet(NAME_KEY, name || 'Tracker');
-  } catch (error: any) {
+  } catch (error) {
     console.error('[API] Failed to persist secure session:', error);
     throw new ApiError({
       message: 'Could not securely save authentication credentials.',
@@ -161,81 +158,76 @@ export async function saveSession(token: string, userId: string, name: string): 
   }
 }
 
-/**
- * Clears all cached tokens and session state.
- */
+/** Clears all cached tokens and session state. */
 export async function clearSession(): Promise<void> {
   apiCache.clear();
-  await safeStorageDelete(TOKEN_KEY);
-  await safeStorageDelete(USER_ID_KEY);
-  await safeStorageDelete(NAME_KEY);
+  await Promise.all([safeStorageDelete(TOKEN_KEY), safeStorageDelete(USER_ID_KEY), safeStorageDelete(NAME_KEY)]);
 }
 
-/**
- * Retrieves the currently active user session.
- */
+/** Retrieves the currently active user session. */
 export async function getSession(): Promise<{
   token: string | null;
   userId: string | null;
   name: string | null;
 }> {
-  const token = await safeStorageGet(TOKEN_KEY);
-  const userId = await safeStorageGet(USER_ID_KEY);
-  const name = await safeStorageGet(NAME_KEY);
+  const [token, userId, name] = await Promise.all([
+    safeStorageGet(TOKEN_KEY),
+    safeStorageGet(USER_ID_KEY),
+    safeStorageGet(NAME_KEY),
+  ]);
   return { token, userId, name };
 }
 
-/**
- * Clears in-memory GET query cache.
- */
+/** Clears in-memory GET query cache. */
 export function invalidateApiCache(): void {
   apiCache.clear();
 }
 
-/**
- * Extracts and formats user-friendly error messages and validation fields from backend error payloads.
- */
+/** Extracts and formats user-friendly error messages and validation fields. */
 function extractErrorDetails(
   text: string,
   status: number
-): { message: string; code: ApiErrorCode; validationErrors?: Record<string, string>; payload?: any } {
+): { message: string; code: ApiErrorCode; validationErrors?: Record<string, string>; payload?: unknown } {
   let message = '';
   let code: ApiErrorCode = 'UNKNOWN';
   let validationErrors: Record<string, string> | undefined;
-  let parsedJson: any = null;
+  let parsedJson: unknown = null;
 
   if (text) {
     try {
-      parsedJson = JSON.parse(text);
-      if (parsedJson) {
-        if (parsedJson.message) message = parsedJson.message;
-        else if (parsedJson.error) message = parsedJson.error;
+      parsedJson = JSON.parse(text) as unknown;
+      if (typeof parsedJson === 'object' && parsedJson !== null) {
+        const payload = parsedJson as Record<string, unknown>;
+        if (typeof payload.message === 'string') message = payload.message;
+        else if (typeof payload.error === 'string') message = payload.error;
 
-        // Parse nested Spring Boot field validation errors
-        if (Array.isArray(parsedJson.errors)) {
+        if (Array.isArray(payload.errors)) {
           validationErrors = {};
-          parsedJson.errors.forEach((err: any) => {
-            if (err.field && err.defaultMessage) {
-              validationErrors![err.field] = err.defaultMessage;
+          for (const err of payload.errors) {
+            if (typeof err !== 'object' || err === null) continue;
+            const item = err as Record<string, unknown>;
+            if (typeof item.field === 'string' && typeof item.defaultMessage === 'string') {
+              validationErrors[item.field] = item.defaultMessage;
             }
-          });
-          const fieldMsgs = Object.values(validationErrors).join(', ');
-          if (fieldMsgs) {
-            message = message ? `${message}: ${fieldMsgs}` : fieldMsgs;
           }
-        } else if (typeof parsedJson.errors === 'object' && parsedJson.errors !== null) {
-          validationErrors = parsedJson.errors;
+          const fieldMsgs = Object.values(validationErrors).join(', ');
+          if (fieldMsgs) message = message ? `${message}: ${fieldMsgs}` : fieldMsgs;
+        } else if (typeof payload.errors === 'object' && payload.errors !== null) {
+          const fieldErrors = payload.errors as Record<string, unknown>;
+          const stringErrors: Record<string, string> = {};
+          for (const [field, value] of Object.entries(fieldErrors)) {
+            if (typeof value === 'string') stringErrors[field] = value;
+          }
+          if (Object.keys(stringErrors).length > 0) validationErrors = stringErrors;
         }
       }
     } catch {
-      // Non-JSON response text
       if (text.length > 0 && text.length < 250 && !text.includes('<!DOCTYPE') && !text.includes('<html>')) {
         message = text;
       }
     }
   }
 
-  // Categorize code based on HTTP status
   if (status === 400) {
     code = validationErrors ? 'VALIDATION_ERROR' : 'UNKNOWN';
     if (!message) message = 'Invalid request payload or parameters.';
@@ -256,26 +248,25 @@ function extractErrorDetails(
     if (!message) message = 'Internal server error occurred. Please try again later.';
   }
 
-  return { message: message || `Server returned error (${status}).`, code, validationErrors, payload: parsedJson };
+  return {
+    message: message || `Server returned error (${status}).`,
+    code,
+    validationErrors,
+    payload: parsedJson,
+  };
 }
 
 /**
- * Dispatches an HTTP request with built-in timeout, retry, caching, and ApiError handling.
- *
- * @param endpoint - Relative endpoint path (e.g. `/expenses/user/1`).
- * @param options - Standard fetch RequestInit configuration.
- * @param attempt - Internal retry counter.
- * @returns Parsed JSON or null for 204 No Content.
- * @throws {ApiError}
+ * Dispatches an HTTP request with built-in timeout, caller cancellation,
+ * retry safety, caching, and ApiError handling.
  */
 export async function apiRequest(
   endpoint: string,
-  options: RequestInit = {},
+  options: ApiRequestOptions = {},
   attempt = 0
-): Promise<any> {
+): Promise<unknown> {
   const method = (options.method || 'GET').toUpperCase();
 
-  // Cache handling
   if (method !== 'GET') {
     apiCache.clear();
   } else {
@@ -285,7 +276,6 @@ export async function apiRequest(
     }
   }
 
-  // Retrieve token
   const session = await getSession();
   const token = session.token;
 
@@ -298,32 +288,43 @@ export async function apiRequest(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  // AbortController setup
   const controller = new AbortController();
+  const externalSignal = options.signal;
+  const handleExternalAbort = () => controller.abort();
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', handleExternalAbort, { once: true });
+    }
+  }
+
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers,
       signal: controller.signal,
+      headers,
     });
-  } catch (networkError: any) {
-    clearTimeout(timeoutId);
+  } catch (networkError: unknown) {
+    const errorName = networkError instanceof Error ? networkError.name : '';
+    const wasCallerCancelled = externalSignal?.aborted === true;
 
-    // Timeout
-    if (networkError.name === 'AbortError') {
+    if (errorName === 'AbortError') {
       throw new ApiError({
-        message: 'The network request timed out after 15 seconds. Please check your connection.',
+        message: wasCallerCancelled
+          ? 'The network request was cancelled.'
+          : 'The network request timed out after 15 seconds. Please check your connection.',
         status: 0,
-        code: 'TIMEOUT',
+        code: wasCallerCancelled ? 'UNKNOWN' : 'TIMEOUT',
         endpoint,
         method,
       });
     }
 
-    // Network reachability / Offline
     const devMessage = __DEV__
       ? `Cannot reach backend at ${API_BASE_URL}. Ensure server is running.`
       : 'Unable to connect to server. Please check your internet connection.';
@@ -337,15 +338,18 @@ export async function apiRequest(
     });
   } finally {
     clearTimeout(timeoutId);
+    externalSignal?.removeEventListener('abort', handleExternalAbort);
   }
 
-  // Retry logic for DB Cold-Start (503)
-  if (response.status === 503 && attempt < MAX_RETRIES) {
+  // A 503 retry is safe only for idempotent/read operations. Never replay a
+  // POST/PUT/PATCH/DELETE automatically because a server-side write may have
+  // succeeded even when the client received a transient response.
+  const retryableMethod = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+  if (response.status === 503 && retryableMethod && attempt < MAX_RETRIES) {
     await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
     return apiRequest(endpoint, options, attempt + 1);
   }
 
-  // HTTP 204 No Content
   if (response.status === 204) {
     return null;
   }
@@ -354,11 +358,10 @@ export async function apiRequest(
 
   if (!response.ok) {
     const { message, code, validationErrors, payload } = extractErrorDetails(text, response.status);
+    const isDeleteAccount = method === 'DELETE' && endpoint.includes('/users/');
+    const isLoginOrVerify = endpoint.includes('/auth/login') || endpoint.includes('/verify-security-pin');
+    const shouldSkipPurge = options.skipAuthRedirect || isDeleteAccount || isLoginOrVerify;
 
-    // Auto purge session on unauthenticated 401 (unless logging in or re-authenticating/deleting account)
-    const isDeleteAccount = method === "DELETE" && endpoint.includes("/users/");
-    const isLoginOrVerify = endpoint.includes("/auth/login") || endpoint.includes("/verify-security-pin");
-    const shouldSkipPurge = (options as any)?.skipAuthRedirect || isDeleteAccount || isLoginOrVerify;
     if (response.status === 401 && !shouldSkipPurge) {
       await clearSession();
     }
@@ -374,16 +377,16 @@ export async function apiRequest(
     });
   }
 
-  let responseData: any = null;
+  let responseData: unknown = null;
   if (text) {
     try {
-      responseData = JSON.parse(text);
+      responseData = JSON.parse(text) as unknown;
     } catch {
       responseData = text;
     }
   }
 
-  if (method === 'GET' && responseData) {
+  if (method === 'GET' && responseData !== null) {
     apiCache.set(endpoint, { data: responseData, timestamp: Date.now() });
   }
 
