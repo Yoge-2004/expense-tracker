@@ -1,8 +1,6 @@
 /**
  * @file _layout.tsx
  * @description Top-level Expo Router Layout and Navigation Graph.
- * Configures font loading, authentication guard redirects, splash loader,
- * and wraps the entire application within the global ErrorBoundary, AuthProvider, and AlertProvider.
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -12,8 +10,6 @@ import { AlertProvider } from '../context/AlertContext';
 import { ActivityIndicator, View, Text, Animated, StyleSheet, StatusBar } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useFonts } from 'expo-font';
-
-WebBrowser.maybeCompleteAuthSession();
 import { Fraunces_500Medium, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
 import {
   HankenGrotesk_400Regular,
@@ -29,17 +25,28 @@ import {
 import { Colors } from '../constants/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { scheduleDailyExpenseReminders, getDailyRemindersEnabled } from '../services/notifications';
+import { useReducedMotion } from '../hooks/useReducedMotion';
+
+WebBrowser.maybeCompleteAuthSession();
 
 function SplashLoader() {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     const fade = Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 400,
+      duration: reducedMotion ? 0 : 400,
       useNativeDriver: true,
     });
+
+    fade.start();
+
+    if (reducedMotion) {
+      pulseAnim.setValue(1);
+      return () => fade.stop();
+    }
 
     const pulse = Animated.loop(
       Animated.sequence([
@@ -48,7 +55,6 @@ function SplashLoader() {
       ])
     );
 
-    fade.start();
     pulse.start();
 
     return () => {
@@ -57,7 +63,7 @@ function SplashLoader() {
       fadeAnim.stopAnimation();
       pulseAnim.stopAnimation();
     };
-  }, [fadeAnim, pulseAnim]);
+  }, [fadeAnim, pulseAnim, reducedMotion]);
 
   return (
     <Animated.View style={[splashStyles.container, { opacity: fadeAnim }]}>
@@ -76,45 +82,13 @@ function SplashLoader() {
 }
 
 const splashStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.dark.bg,
-    gap: 8,
-  },
-  iconWrapper: {
-    position: 'relative',
-    marginBottom: 16,
-  },
-  iconGlow: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(199,154,62,0.15)',
-    top: -10,
-    left: -10,
-  },
-  icon: {
-    fontSize: 56,
-  },
-  brand: {
-    fontSize: 26,
-    fontWeight: '600',
-    color: Colors.dark.ink,
-    letterSpacing: -0.5,
-  },
-  pro: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.dark.gold,
-    letterSpacing: 2,
-    marginTop: -2,
-  },
-  loadingBar: {
-    marginTop: 24,
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.bg, gap: 8 },
+  iconWrapper: { position: 'relative', marginBottom: 16 },
+  iconGlow: { position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(199,154,62,0.15)', top: -10, left: -10 },
+  icon: { fontSize: 56 },
+  brand: { fontSize: 26, fontWeight: '600', color: Colors.dark.ink, letterSpacing: -0.5 },
+  pro: { fontSize: 11, fontWeight: '700', color: Colors.dark.gold, letterSpacing: 2, marginTop: -2 },
+  loadingBar: { marginTop: 24 },
 });
 
 function RootLayoutNav() {
@@ -127,7 +101,6 @@ function RootLayoutNav() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(tabs)';
-
     if (!token && inAuthGroup) {
       remindersInitialized.current = false;
       router.replace('/login');
@@ -141,15 +114,11 @@ function RootLayoutNav() {
 
     remindersInitialized.current = true;
     getDailyRemindersEnabled().then((enabled) => {
-      if (enabled) {
-        scheduleDailyExpenseReminders().catch(() => {});
-      }
+      if (enabled) scheduleDailyExpenseReminders().catch(() => {});
     });
   }, [isLoading, token]);
 
-  if (isLoading) {
-    return <SplashLoader />;
-  }
+  if (isLoading) return <SplashLoader />;
 
   return (
     <>
@@ -185,9 +154,7 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  if (!fontsLoaded) {
-    return <SplashLoader />;
-  }
+  if (!fontsLoaded) return <SplashLoader />;
 
   return (
     <ErrorBoundary>
