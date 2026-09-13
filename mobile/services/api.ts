@@ -13,16 +13,13 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// ────────────────── API Configuration ──────────────────
 const REMOTE_API_URL = 'https://yoge-2004-expense-tracker-backend.hf.space/api';
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || REMOTE_API_URL;
 
-// Storage Keys
 const TOKEN_KEY = 'auth_token';
 const USER_ID_KEY = 'user_id';
 const NAME_KEY = 'user_name';
 
-// Resilience & Network Constants
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
 const REQUEST_TIMEOUT_MS = 15000;
@@ -33,9 +30,6 @@ export type ApiRequestOptions = RequestInit & {
   skipAuthRedirect?: boolean;
 };
 
-/**
- * Standardized API error categorization codes.
- */
 export type ApiErrorCode =
   | 'TIMEOUT'
   | 'NETWORK_OFFLINE'
@@ -47,9 +41,6 @@ export type ApiErrorCode =
   | 'DATABASE_WARMUP'
   | 'UNKNOWN';
 
-/**
- * Custom typed exception class representing API, Network, or Server errors.
- */
 export class ApiError extends Error {
   public readonly status: number;
   public readonly code: ApiErrorCode;
@@ -81,20 +72,12 @@ export class ApiError extends Error {
     this.isTimeout = params.code === 'TIMEOUT';
     this.isNetworkError = params.code === 'NETWORK_OFFLINE';
     this.isUnauthorized = params.status === 401;
-
     Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
 
-/** In-memory response cache for idempotent GET queries. */
-const apiCache = new Map<string, { data: unknown; timestamp: number }>();
+const apiCache = new Map<string, { data: any; timestamp: number }>();
 
-/**
- * Persists an item safely to SecureStore, falling back to AsyncStorage if the
- * device keystore is unavailable. A complete persistence failure is surfaced
- * to the caller so authentication is never reported as successful while the
- * credentials could not be stored.
- */
 async function safeStorageSet(key: string, value: string): Promise<void> {
   try {
     await SecureStore.setItemAsync(key, value);
@@ -111,7 +94,6 @@ async function safeStorageSet(key: string, value: string): Promise<void> {
   }
 }
 
-/** Reads an item safely from SecureStore or AsyncStorage fallback. */
 async function safeStorageGet(key: string): Promise<string | null> {
   try {
     const val = await SecureStore.getItemAsync(key);
@@ -128,12 +110,11 @@ async function safeStorageGet(key: string): Promise<string | null> {
   }
 }
 
-/** Removes an item from both SecureStore and AsyncStorage fallback. */
 async function safeStorageDelete(key: string): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {
-    // Best-effort cleanup; the fallback is still removed below.
+    // Best-effort cleanup.
   }
   try {
     await AsyncStorage.removeItem(`fallback_${key}`);
@@ -142,7 +123,6 @@ async function safeStorageDelete(key: string): Promise<void> {
   }
 }
 
-/** Persists the authenticated user session. */
 export async function saveSession(token: string, userId: string, name: string): Promise<void> {
   try {
     apiCache.clear();
@@ -158,13 +138,11 @@ export async function saveSession(token: string, userId: string, name: string): 
   }
 }
 
-/** Clears all cached tokens and session state. */
 export async function clearSession(): Promise<void> {
   apiCache.clear();
   await Promise.all([safeStorageDelete(TOKEN_KEY), safeStorageDelete(USER_ID_KEY), safeStorageDelete(NAME_KEY)]);
 }
 
-/** Retrieves the currently active user session. */
 export async function getSession(): Promise<{
   token: string | null;
   userId: string | null;
@@ -178,12 +156,10 @@ export async function getSession(): Promise<{
   return { token, userId, name };
 }
 
-/** Clears in-memory GET query cache. */
 export function invalidateApiCache(): void {
   apiCache.clear();
 }
 
-/** Extracts and formats user-friendly error messages and validation fields. */
 function extractErrorDetails(
   text: string,
   status: number
@@ -256,15 +232,11 @@ function extractErrorDetails(
   };
 }
 
-/**
- * Dispatches an HTTP request with built-in timeout, caller cancellation,
- * retry safety, caching, and ApiError handling.
- */
 export async function apiRequest(
   endpoint: string,
   options: ApiRequestOptions = {},
   attempt = 0
-): Promise<unknown> {
+): Promise<any> {
   const method = (options.method || 'GET').toUpperCase();
 
   if (method !== 'GET') {
@@ -284,9 +256,7 @@ export async function apiRequest(
     ...options.headers,
   });
 
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
+  if (token) headers.set('Authorization', `Bearer ${token}`);
 
   const controller = new AbortController();
   const externalSignal = options.signal;
@@ -315,9 +285,7 @@ export async function apiRequest(
 
     if (errorName === 'AbortError') {
       throw new ApiError({
-        message: wasCallerCancelled
-          ? 'The network request was cancelled.'
-          : 'The network request timed out after 15 seconds. Please check your connection.',
+        message: wasCallerCancelled ? 'The network request was cancelled.' : 'The network request timed out after 15 seconds. Please check your connection.',
         status: 0,
         code: wasCallerCancelled ? 'UNKNOWN' : 'TIMEOUT',
         endpoint,
@@ -341,18 +309,14 @@ export async function apiRequest(
     externalSignal?.removeEventListener('abort', handleExternalAbort);
   }
 
-  // A 503 retry is safe only for idempotent/read operations. Never replay a
-  // POST/PUT/PATCH/DELETE automatically because a server-side write may have
-  // succeeded even when the client received a transient response.
+  // Only retry idempotent reads after a 503. Never replay a write automatically.
   const retryableMethod = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
   if (response.status === 503 && retryableMethod && attempt < MAX_RETRIES) {
     await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
     return apiRequest(endpoint, options, attempt + 1);
   }
 
-  if (response.status === 204) {
-    return null;
-  }
+  if (response.status === 204) return null;
 
   const text = await response.text();
 
@@ -362,9 +326,7 @@ export async function apiRequest(
     const isLoginOrVerify = endpoint.includes('/auth/login') || endpoint.includes('/verify-security-pin');
     const shouldSkipPurge = options.skipAuthRedirect || isDeleteAccount || isLoginOrVerify;
 
-    if (response.status === 401 && !shouldSkipPurge) {
-      await clearSession();
-    }
+    if (response.status === 401 && !shouldSkipPurge) await clearSession();
 
     throw new ApiError({
       message,
@@ -377,10 +339,10 @@ export async function apiRequest(
     });
   }
 
-  let responseData: unknown = null;
+  let responseData: any = null;
   if (text) {
     try {
-      responseData = JSON.parse(text) as unknown;
+      responseData = JSON.parse(text);
     } catch {
       responseData = text;
     }
