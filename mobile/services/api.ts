@@ -232,6 +232,39 @@ function extractErrorDetails(
   };
 }
 
+function waitForRetry(ms: number, signal: AbortSignal | undefined, endpoint: string, method: string): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(new ApiError({
+      message: 'The network request was cancelled.',
+      status: 0,
+      code: 'UNKNOWN',
+      endpoint,
+      method,
+    }));
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+
+    const onAbort = () => {
+      clearTimeout(timeoutId);
+      signal?.removeEventListener('abort', onAbort);
+      reject(new ApiError({
+        message: 'The network request was cancelled.',
+        status: 0,
+        code: 'UNKNOWN',
+        endpoint,
+        method,
+      }));
+    };
+
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
 export async function apiRequest(
   endpoint: string,
   options: ApiRequestOptions = {},
@@ -312,7 +345,7 @@ export async function apiRequest(
   // Only retry idempotent reads after a 503. Never replay a write automatically.
   const retryableMethod = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
   if (response.status === 503 && retryableMethod && attempt < MAX_RETRIES) {
-    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
+    await waitForRetry(RETRY_DELAY_MS * (attempt + 1), externalSignal, endpoint, method);
     return apiRequest(endpoint, options, attempt + 1);
   }
 
