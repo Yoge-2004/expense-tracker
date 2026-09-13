@@ -48,7 +48,7 @@ test.describe('Critical UI regressions', () => {
     const modal = page.locator('#incomeModal');
     const dialog = modal.locator(':scope > .modal');
 
-    await expect(trigger).toHaveAttribute('onclick', '');
+    await expect(trigger).not.toHaveAttribute('onclick');
     await page.locator('#openIncomeModalBtn').click();
     await expect(modal).toHaveClass(/active/);
     await expect.poll(async () => dialog.evaluate(element => Number.parseFloat(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
