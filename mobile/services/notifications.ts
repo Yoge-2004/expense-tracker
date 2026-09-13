@@ -65,7 +65,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
         description: 'Twice-daily reminders to keep your expense ledger up to date.',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#D4AF37',       // gold — matches app brand color
+        lightColor: '#D4AF37',
         enableVibrate: true,
         showBadge: true,
       }).catch(() => {});
@@ -82,9 +82,10 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  * Schedules two daily recurring reminders (1:30 PM and 8:30 PM).
  */
 export async function scheduleDailyExpenseReminders(): Promise<boolean> {
+  // Expo Go cannot schedule these notifications in the current runtime. Do not
+  // report success or persist an enabled state when nothing was scheduled.
   if (isExpoGo || !Notifications) {
-    await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, 'true');
-    return true;
+    return false;
   }
   try {
     const hasPermission = await requestNotificationPermissions();
