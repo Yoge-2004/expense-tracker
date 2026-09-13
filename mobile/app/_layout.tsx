@@ -35,19 +35,29 @@ function SplashLoader() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
+    const fade = Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
-    }).start();
+    });
 
-    Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
       ])
-    ).start();
-  }, []);
+    );
+
+    fade.start();
+    pulse.start();
+
+    return () => {
+      fade.stop();
+      pulse.stop();
+      fadeAnim.stopAnimation();
+      pulseAnim.stopAnimation();
+    };
+  }, [fadeAnim, pulseAnim]);
 
   return (
     <Animated.View style={[splashStyles.container, { opacity: fadeAnim }]}>
@@ -111,6 +121,7 @@ function RootLayoutNav() {
   const { token, isLoading, theme } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const remindersInitialized = useRef(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -118,17 +129,23 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(tabs)';
 
     if (!token && inAuthGroup) {
+      remindersInitialized.current = false;
       router.replace('/login');
     } else if (token && !inAuthGroup) {
       router.replace('/(tabs)');
-      // Initialize automatic 2x daily expense reminder schedule
-      getDailyRemindersEnabled().then((enabled) => {
-        if (enabled) {
-          scheduleDailyExpenseReminders().catch(() => {});
-        }
-      });
     }
-  }, [token, isLoading, segments]);
+  }, [token, isLoading, segments, router]);
+
+  useEffect(() => {
+    if (isLoading || !token || remindersInitialized.current) return;
+
+    remindersInitialized.current = true;
+    getDailyRemindersEnabled().then((enabled) => {
+      if (enabled) {
+        scheduleDailyExpenseReminders().catch(() => {});
+      }
+    });
+  }, [isLoading, token]);
 
   if (isLoading) {
     return <SplashLoader />;
@@ -145,27 +162,12 @@ function RootLayoutNav() {
           animationDuration: 250,
         }}
       >
-      <Stack.Screen
-        name="login"
-        options={{ animation: 'fade' }}
-      />
-      <Stack.Screen
-        name="register"
-        options={{ animation: 'slide_from_right' }}
-      />
-      <Stack.Screen
-        name="forgot-password"
-        options={{ animation: 'slide_from_right' }}
-      />
-      <Stack.Screen
-        name="expo-auth-session"
-        options={{ animation: 'none' }}
-      />
-      <Stack.Screen
-        name="(tabs)"
-        options={{ animation: 'fade' }}
-      />
-    </Stack>
+        <Stack.Screen name="login" options={{ animation: 'fade' }} />
+        <Stack.Screen name="register" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="expo-auth-session" options={{ animation: 'none' }} />
+        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+      </Stack>
     </>
   );
 }
