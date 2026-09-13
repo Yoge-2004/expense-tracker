@@ -99,15 +99,9 @@
     will-change: transform;
 }
 
-/* The overlay and modal shell previously reused the cinematic backdrop
-   animation. Keep the backdrop blur static and leave the actual dialog
-   entrance animation to modal-content/modal-dialog, which already owns the
-   supported 3D entrance keyframe. */
-.modal-overlay.active,
-.modal-overlay.active .modal,
-.modal-overlay.active .modal.active {
-    animation: none !important;
-}
+/* Preserve the existing modal lifecycle and animation ownership. The modal
+   visibility state is established by the existing active-state animations,
+   so this modernization layer must not override them. */
 
 /* Keyboard focus for custom controls must remain visible without relying on
    browser-default outlines that are hidden by the component styles. */
