@@ -83,11 +83,15 @@ jobs:
         run: |
           set -euo pipefail
           find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
       - name: Check mobile TypeScript
         working-directory: mobile
-        run: |
-          npm ci --no-audit --no-fund
-          npx tsc --noEmit
+        run: npx tsc --noEmit
+      - name: Run mobile Jest suite
+        working-directory: mobile
+        run: npm test -- --ci --coverage --maxWorkers=2
 
   e2e:
     name: Playwright UI and WebAuthn checks
