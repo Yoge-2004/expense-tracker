@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
-import { Animated, TouchableWithoutFeedback, ViewStyle, StyleProp } from 'react-native';
+import { Animated, Pressable, ViewStyle, StyleProp } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface AnimatedCardProps {
   children: React.ReactNode;
@@ -20,12 +21,14 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   enableHaptics = true,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
 
   const handlePressIn = () => {
     if (disabled) return;
     if (enableHaptics) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
+    if (reducedMotion) return;
     Animated.spring(scaleAnim, {
       toValue: scaleTo,
       useNativeDriver: true,
@@ -35,7 +38,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   };
 
   const handlePressOut = () => {
-    if (disabled) return;
+    if (disabled || reducedMotion) return;
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
@@ -45,15 +48,17 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   };
 
   return (
-    <TouchableWithoutFeedback
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityState={{ disabled }}
+      onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || !onPress}
     >
-      <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[style, { transform: [{ scale: reducedMotion ? 1 : scaleAnim }] }]}>
         {children}
       </Animated.View>
-    </TouchableWithoutFeedback>
+    </Pressable>
   );
 };
