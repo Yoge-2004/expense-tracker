@@ -30,11 +30,20 @@
         let targetMouseX = mouseX;
         let targetMouseY = mouseY;
         let isHovering = false;
+        let isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light';
 
-        window.addEventListener('resize', () => {
+        let resizeFrameId = null;
+        function resizeCanvas() {
+            resizeFrameId = null;
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             initOrbs();
+        }
+
+        window.addEventListener('resize', () => {
+            if (resizeFrameId === null) {
+                resizeFrameId = requestAnimationFrame(resizeCanvas);
+            }
         }, { passive: true });
 
         window.addEventListener('mousemove', (e) => {
@@ -54,7 +63,6 @@
         window.addEventListener('click', (e) => {
             if (e.target.closest?.('.theme-toggle-btn, #themeToggle')) return;
 
-            const isLight = document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light';
             const burstCount = 16;
             const x = e.clientX;
             const y = e.clientY;
@@ -79,29 +87,29 @@
         // Vibrant multi-hue palette for rich dynamic aura in both themes
         const PALETTES = {
             dark: [
-                { r: 212, g: 175, b: 55,  a: 0.40 }, // Radiant Amber Gold
-                { r: 76,  g: 175, b: 160, a: 0.35 }, // Emerald Teal
-                { r: 231, g: 76,  b: 60,  a: 0.30 }, // Coral Crimson
-                { r: 155, g: 89,  b: 182, a: 0.28 }, // Amethyst Purple
-                { r: 52,  g: 152, b: 219, a: 0.30 }, // Azure Sky
-                { r: 241, g: 196, b: 15,  a: 0.32 }, // Sunburst Gold
-                { r: 46,  g: 204, b: 113, a: 0.26 }, // Mint Emerald
-                { r: 230, g: 126, b: 34,  a: 0.28 }  // Warm Amber
+                { r: 212, g: 175, b: 55,  a: 0.40 },
+                { r: 76,  g: 175, b: 160, a: 0.35 },
+                { r: 231, g: 76,  b: 60,  a: 0.30 },
+                { r: 155, g: 89,  b: 182, a: 0.28 },
+                { r: 52,  g: 152, b: 219, a: 0.30 },
+                { r: 241, g: 196, b: 15,  a: 0.32 },
+                { r: 46,  g: 204, b: 113, a: 0.26 },
+                { r: 230, g: 126, b: 34,  a: 0.28 }
             ],
             light: [
-                { r: 199, g: 154, b: 62,  a: 0.38 }, // Rich Honey Gold
-                { r: 41,  g: 128, b: 185, a: 0.34 }, // Vibrant Azure
-                { r: 231, g: 76,  b: 60,  a: 0.30 }, // Rich Coral
-                { r: 142, g: 68,  b: 173, a: 0.30 }, // Royal Orchid Violet
-                { r: 39,  g: 174, b: 96,  a: 0.30 }, // Spring Emerald
-                { r: 230, g: 126, b: 34, a: 0.34 }, // Warm Tangerine
-                { r: 26, g: 188, b: 156, a: 0.32 }, // Turquoise Mint
-                { r: 212, g: 175, b: 55, a: 0.36 }  // Pure Gold
+                { r: 199, g: 154, b: 62,  a: 0.38 },
+                { r: 41, g: 128, b: 185, a: 0.34 },
+                { r: 231, g: 76,  b: 60,  a: 0.30 },
+                { r: 142, g: 68,  b: 173, a: 0.30 },
+                { r: 39, g: 174, b: 96,  a: 0.30 },
+                { r: 230, g: 126, b: 34, a: 0.34 },
+                { r: 26, g: 188, b: 156, a: 0.32 },
+                { r: 212, g: 175, b: 55, a: 0.36 }
             ]
         };
 
         function isLightTheme() {
-            return document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light';
+            return isLight;
         }
 
         class AuroraOrb {
@@ -122,15 +130,13 @@
                 this.pulseAngle = Math.random() * Math.PI * 2;
             }
 
-            update(time, palette, isLight) {
+            update(time, palette, lightTheme) {
                 this.angle += this.angleSpeed;
                 this.pulseAngle += this.pulseSpeed;
 
-                // Fluid wave displacement
                 this.x += this.vx + Math.sin(this.angle) * 1.3;
                 this.y += this.vy + Math.cos(this.angle * 0.8) * 1.3;
 
-                // React smoothly to mouse movement
                 const dx = mouseX - this.x;
                 const dy = mouseY - this.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -139,7 +145,6 @@
                     this.y += (dy / dist) * 0.6;
                 }
 
-                // Bounce gently within boundaries
                 if (this.x < -this.radius * 0.4) this.vx = Math.abs(this.vx);
                 if (this.x > width + this.radius * 0.4) this.vx = -Math.abs(this.vx);
                 if (this.y < -this.radius * 0.4) this.vy = Math.abs(this.vy);
@@ -153,7 +158,7 @@
                     this.x, this.y, currentRadius
                 );
 
-                if (isLight) {
+                if (lightTheme) {
                     gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.85})`);
                     gradient.addColorStop(0.35, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.45})`);
                     gradient.addColorStop(0.75, `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a * 0.12})`);
@@ -172,7 +177,6 @@
             }
         }
 
-        // Floating Stardust Particles & Constellations
         class StardustParticle {
             constructor() {
                 this.reset();
@@ -183,13 +187,13 @@
                 this.y = Math.random() * height;
                 this.size = Math.random() * 2.4 + 0.8;
                 this.vx = (Math.random() - 0.5) * 0.4;
-                this.vy = -(0.25 + Math.random() * 0.55); // float upward
+                this.vy = -(0.25 + Math.random() * 0.55);
                 this.opacity = Math.random() * 0.7 + 0.2;
                 this.twinkleSpeed = 0.02 + Math.random() * 0.03;
                 this.twinkleAngle = Math.random() * Math.PI * 2;
             }
 
-            update(isLight) {
+            update(lightTheme) {
                 this.x += this.vx;
                 this.y += this.vy;
                 this.twinkleAngle += this.twinkleSpeed;
@@ -202,12 +206,9 @@
                 if (this.x > width + 10) this.x = -10;
 
                 const currentAlpha = Math.max(0.12, Math.min(0.9, this.opacity + Math.sin(this.twinkleAngle) * 0.3));
-
-                if (isLight) {
-                    ctx.fillStyle = `rgba(160, 115, 30, ${currentAlpha * 0.8})`;
-                } else {
-                    ctx.fillStyle = `rgba(240, 215, 140, ${currentAlpha})`;
-                }
+                ctx.fillStyle = lightTheme
+                    ? `rgba(160, 115, 30, ${currentAlpha * 0.8})`
+                    : `rgba(240, 215, 140, ${currentAlpha})`;
 
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -226,24 +227,36 @@
                 orbs.push(new AuroraOrb(i));
             }
             particles = [];
-            for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const particleCount = Math.min(52, Math.max(26, Math.floor(width / 28)));
+            for (let i = 0; i < particleCount; i++) {
                 particles.push(new StardustParticle());
             }
         }
 
         initOrbs();
 
-        // This canvas is the most expensive continuous visual on the dashboard.
-        // Keep it out of the critical theme-repaint window; CSS still owns the
-        // actual theme transition on the page and metric cards.
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let prefersReducedMotion = motionMediaQuery.matches;
         const TARGET_FPS = 40;
         const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
         let animFrameId = null;
         let pauseUntil = 0;
         let lastRenderTime = -Infinity;
 
-        document.addEventListener('themechange', () => {
+        function stopAnimation() {
+            if (animFrameId !== null) {
+                cancelAnimationFrame(animFrameId);
+                animFrameId = null;
+            }
+        }
+
+        function startAnimation() {
+            if (prefersReducedMotion || document.hidden || animFrameId !== null) return;
+            animFrameId = requestAnimationFrame(render);
+        }
+
+        document.addEventListener('themechange', (event) => {
+            isLight = event.detail?.theme === 'light';
             clickBursts = [];
             pauseUntil = performance.now() + 260;
         });
@@ -254,30 +267,23 @@
                 return;
             }
 
+            animFrameId = null;
             lastRenderTime = time;
             mouseX += (targetMouseX - mouseX) * 0.06;
             mouseY += (targetMouseY - mouseY) * 0.06;
 
-            const isLight = isLightTheme();
+            const lightTheme = isLightTheme();
             ctx.clearRect(0, 0, width, height);
+            ctx.globalCompositeOperation = lightTheme ? 'source-over' : 'screen';
+            const palette = lightTheme ? PALETTES.light : PALETTES.dark;
 
-            if (isLight) {
-                ctx.globalCompositeOperation = 'source-over';
-            } else {
-                ctx.globalCompositeOperation = 'screen';
-            }
-
-            const palette = isLight ? PALETTES.light : PALETTES.dark;
-
-            // 1. Draw glowing aurora orbs
             for (let i = 0; i < orbs.length; i++) {
-                orbs[i].update(time, palette, isLight);
+                orbs[i].update(time, palette, lightTheme);
             }
 
-            // 2. Draw mouse halo orb
             if (isHovering) {
                 const mouseGrad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 240);
-                if (isLight) {
+                if (lightTheme) {
                     mouseGrad.addColorStop(0, 'rgba(199, 154, 62, 0.22)');
                     mouseGrad.addColorStop(0.5, 'rgba(41, 128, 185, 0.10)');
                     mouseGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -292,13 +298,11 @@
                 ctx.fill();
             }
 
-            // 3. Draw stardust particles
             ctx.globalCompositeOperation = 'source-over';
             for (let i = 0; i < particles.length; i++) {
-                particles[i].update(isLight);
+                particles[i].update(lightTheme);
             }
 
-            // 4. Draw click burst sparks
             for (let i = clickBursts.length - 1; i >= 0; i--) {
                 const p = clickBursts[i];
                 p.x += p.vx;
@@ -320,26 +324,42 @@
 
             if (!document.hidden && !prefersReducedMotion) {
                 animFrameId = requestAnimationFrame(render);
-            } else {
-                animFrameId = null;
             }
         }
 
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && !prefersReducedMotion && animFrameId === null) {
-                animFrameId = requestAnimationFrame(render);
+            if (document.hidden) {
+                stopAnimation();
+            } else if (!prefersReducedMotion) {
+                startAnimation();
             }
         });
 
-        if (prefersReducedMotion) {
-            render(); // one static frame, no loop
+        const handleMotionPreferenceChange = (event) => {
+            prefersReducedMotion = event.matches;
+            if (prefersReducedMotion) {
+                stopAnimation();
+                render(performance.now());
+            } else {
+                startAnimation();
+            }
+        };
+
+        if (typeof motionMediaQuery.addEventListener === 'function') {
+            motionMediaQuery.addEventListener('change', handleMotionPreferenceChange);
         } else {
-            animFrameId = requestAnimationFrame(render);
+            motionMediaQuery.addListener(handleMotionPreferenceChange);
+        }
+
+        if (prefersReducedMotion) {
+            render(performance.now());
+        } else {
+            startAnimation();
         }
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAnimatedBackground);
+        document.addEventListener('DOMContentLoaded', initAnimatedBackground, { once: true });
     } else {
         initAnimatedBackground();
     }

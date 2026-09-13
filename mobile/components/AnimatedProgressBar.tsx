@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface AnimatedProgressBarProps {
-  progress: number; // Percentage value between 0 and 100
+  progress: number;
   height?: number;
   backgroundColor?: string;
   fillColor?: string;
@@ -17,22 +18,33 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
   style,
 }) => {
   const animatedWidth = useRef(new Animated.Value(0)).current;
-
-  const clampedProgress = Math.min(Math.max(progress, 0), 100);
+  const reducedMotion = useReducedMotion();
+  const numericProgress = Number(progress);
+  const clampedProgress = Number.isFinite(numericProgress) ? Math.min(Math.max(numericProgress, 0), 100) : 0;
 
   useEffect(() => {
-    Animated.timing(animatedWidth, {
+    animatedWidth.stopAnimation();
+
+    if (reducedMotion) {
+      animatedWidth.setValue(clampedProgress);
+      return;
+    }
+
+    const animation = Animated.timing(animatedWidth, {
       toValue: clampedProgress,
       duration: 800,
-      useNativeDriver: false, // width animation requires layout driver
-    }).start();
-  }, [clampedProgress]);
+      useNativeDriver: false,
+    });
+    animation.start();
+
+    return () => animation.stop();
+  }, [animatedWidth, clampedProgress, reducedMotion]);
 
   const getDynamicColor = () => {
     if (fillColor) return fillColor;
-    if (clampedProgress >= 100) return '#A23E32'; // Over budget — oxblood
-    if (clampedProgress >= 80) return '#C9932E'; // Approaching limit — amber
-    return '#5B8C5A'; // Healthy — sage
+    if (clampedProgress >= 100) return '#A23E32';
+    if (clampedProgress >= 80) return '#C9932E';
+    return '#5B8C5A';
   };
 
   const widthInterpolated = animatedWidth.interpolate({
@@ -41,28 +53,19 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
   });
 
   return (
-    <View style={[styles.container, { height, backgroundColor }, style]}>
+    <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: clampedProgress }}
+      style={[styles.container, { height, backgroundColor }, style]}
+    >
       <Animated.View
-        style={[
-          styles.fill,
-          {
-            height,
-            backgroundColor: getDynamicColor(),
-            width: widthInterpolated,
-          },
-        ]}
+        style={[styles.fill, { height, backgroundColor: getDynamicColor(), width: widthInterpolated }]}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  fill: {
-    borderRadius: 999,
-  },
+  container: { width: '100%', borderRadius: 999, overflow: 'hidden' },
+  fill: { borderRadius: 999 },
 });

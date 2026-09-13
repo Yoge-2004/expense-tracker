@@ -21,6 +21,8 @@
             clearApiCache
         } = deps;
 
+        let loadSequence = 0;
+
         function renderDashboardData(expenses, categories) {
             const state = getState();
             const safeCategories = Array.isArray(categories) ? categories : [];
@@ -29,7 +31,10 @@
                 ? expenses
                 : ((window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : currentExpenses);
 
-            const sortedExpenses = incomingExpenses.sort((a, b) => {
+            // Sort a copy so cached/shared arrays are not mutated in place. This
+            // keeps state ownership explicit and prevents one render from changing
+            // the order observed by another consumer of the same array.
+            const sortedExpenses = [...incomingExpenses].sort((a, b) => {
                 const dDiff = new Date(b.expenseDate) - new Date(a.expenseDate);
                 if (dDiff !== 0) return dDiff;
                 if (b.createdAt && a.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
@@ -48,6 +53,12 @@
         async function loadDashboard(skipCache = false) {
             const userId = getUserId();
             if (!userId) return;
+
+            // Dashboard refreshes can overlap (manual refresh, initial load,
+            // filter/page re-entry). A monotonically increasing sequence means
+            // stale responses can finish normally without being allowed to
+            // overwrite the newest dashboard state.
+            const requestSequence = ++loadSequence;
 
             if (skipCache) {
                 if (typeof clearApiCache === "function") clearApiCache();
@@ -80,6 +91,9 @@
                         .catch(err => { console.warn("Savings fetch error:", err); return []; })
                 ]);
 
+                // Only the newest dashboard load is allowed to publish state.
+                if (requestSequence !== loadSequence) return;
+
                 const allIncomes = Array.isArray(incomes) ? incomes : [];
                 const allSavingsGoals = Array.isArray(savingsGoals) ? savingsGoals : [];
                 const safeGlobal = Array.isArray(globalCats) ? globalCats : [];
@@ -98,6 +112,10 @@
                 updateCashFlowMetrics(expenses || [], allIncomes, allSavingsGoals);
                 saveExpenseCache(expenses, categories);
             } catch (error) {
+                // An older failed request must not surface an error after a newer
+                // refresh has already taken ownership of the dashboard state.
+                if (requestSequence !== loadSequence) return;
+
                 console.error("Critical Error:", error);
                 if (error?.message?.includes("User not found")) {
                     localStorage.clear();

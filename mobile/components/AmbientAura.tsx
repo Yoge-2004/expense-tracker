@@ -4,8 +4,8 @@
  * Matches the website's dark/light mesh glow effects without taxing GPU performance.
  */
 
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Animated, useWindowDimensions } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 
 interface AmbientAuraProps {
@@ -20,12 +20,37 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
   const { theme } = useAuth();
   const { width, height } = useWindowDimensions();
   const isLight = theme === 'light';
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   const orb1Anim = useRef(new Animated.Value(0)).current;
   const orb2Anim = useRef(new Animated.Value(0)).current;
   const orb3Anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let mounted = true;
+
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (mounted) setReduceMotion(enabled);
+      })
+      .catch(() => {});
+
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      orb1Anim.stopAnimation();
+      orb2Anim.stopAnimation();
+      orb3Anim.stopAnimation();
+      return;
+    }
+
     const createDrift = (anim: Animated.Value, duration: number) => {
       return Animated.loop(
         Animated.sequence([
@@ -56,7 +81,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
       drift2.stop();
       drift3.stop();
     };
-  }, []);
+  }, [reduceMotion, orb1Anim, orb2Anim, orb3Anim]);
 
   const orb1TranslateX = orb1Anim.interpolate({
     inputRange: [0, 1],

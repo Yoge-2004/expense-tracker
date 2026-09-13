@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:debug": "PWDEBUG=1 playwright test",
@@ -13,8 +14,8 @@
     "install-deps": "playwright install-deps chromium"
   },
   "devDependencies": {
-    "@playwright/test": "^1.51.0",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.13.4",
+    "typescript": "^7.0.2"
   }
 }

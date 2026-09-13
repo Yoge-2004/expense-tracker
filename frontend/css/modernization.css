@@ -1,0 +1,152 @@
+/* ==========================================================================
+   MODERNIZATION — PLATFORM & ACCESSIBILITY HARDENING
+   Purpose: keep effective motion property-scoped and honor reduced-motion
+   preferences without changing the product's visual language.
+   ========================================================================== */
+
+/* Legacy controls previously used `transition: all`; scope transitions to
+   properties that their interaction states actually change. */
+.server-status-badge {
+    transition:
+        background 0.3s ease,
+        border-color 0.3s ease,
+        color 0.3s ease,
+        box-shadow 0.3s ease,
+        opacity 0.3s ease,
+        transform 0.3s ease;
+}
+
+.btn-oauth,
+.subs-tab-btn,
+.suggestion-chip {
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.stream-pill-btn {
+    transition:
+        background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#cancelDeleteAccountBtn,
+#confirmDeleteAccountBtn {
+    transition:
+        background 0.25s var(--ease),
+        border-color 0.25s var(--ease),
+        color 0.25s var(--ease),
+        box-shadow 0.25s var(--ease),
+        transform 0.25s var(--ease);
+}
+
+.monthly-report-actions .btn-text-icon,
+.monthly-report-actions .monthly-report-email-btn {
+    transition:
+        background 0.2s var(--ease),
+        border-color 0.2s var(--ease),
+        color 0.2s var(--ease),
+        box-shadow 0.2s var(--ease),
+        transform 0.2s var(--ease),
+        opacity 0.2s var(--ease);
+}
+
+.period-chip,
+.period-month-chip {
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease,
+        opacity 0.18s ease;
+}
+
+/* The ledger itself is layout-driven; avoid animating grid geometry when
+   view state changes. */
+.unified-ledger-card {
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+}
+
+.unified-ledger-grid {
+    transition: none;
+}
+
+/* Avoid persistent compositor reservations for a broad set of cards. The
+   legacy animation layer applies will-change globally even when cards are
+   idle; keep the hint only while pointer-driven elevation is actually used. */
+.metric-card,
+.card,
+.auth-card,
+.smart-intelligence-card {
+    will-change: auto;
+}
+
+.metric-card:hover,
+.card:hover,
+.auth-card:hover,
+.smart-intelligence-card:hover {
+    will-change: transform;
+}
+
+/* The overlay and modal shell previously reused the cinematic backdrop
+   animation. Keep the backdrop blur static and leave the actual dialog
+   entrance animation to modal-content/modal-dialog, which already owns the
+   supported 3D entrance keyframe. */
+.modal-overlay.active,
+.modal-overlay.active .modal,
+.modal-overlay.active .modal.active {
+    animation: none !important;
+}
+
+/* Keyboard focus for custom controls must remain visible without relying on
+   browser-default outlines that are hidden by the component styles. */
+.custom-select-trigger:focus-visible,
+.custom-select-search:focus-visible,
+.cal-nav-btn:focus-visible,
+.cal-select:focus-visible,
+.cal-day-cell:focus-visible,
+.cal-btn-action:focus-visible,
+.cal-btn-done:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px;
+}
+
+.custom-select-trigger:focus:not(:focus-visible),
+.custom-select-search:focus:not(:focus-visible),
+.cal-nav-btn:focus:not(:focus-visible),
+.cal-select:focus:not(:focus-visible),
+.cal-day-cell:focus:not(:focus-visible),
+.cal-btn-action:focus:not(:focus-visible),
+.cal-btn-done:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Existing viewport breakpoints remain the responsive ownership model. */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        animation-delay: 0s !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
+}

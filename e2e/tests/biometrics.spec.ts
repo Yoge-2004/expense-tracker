@@ -84,8 +84,13 @@ test.describe('WebAuthn biometrics', () => {
       });
     });
 
+    const biometrics = await page.evaluate(() => window.WebBiometrics);
+    if (!biometrics) throw new Error('WebBiometrics is not loaded');
+
     const enrollResult = await page.evaluate(async () => {
-      return await window.WebBiometrics.enroll('webauthn@example.com', 'webauthn-e2e-token');
+      const api = window.WebBiometrics;
+      if (!api) throw new Error('WebBiometrics is not loaded');
+      return await api.enroll('webauthn@example.com', 'webauthn-e2e-token');
     });
 
     const registered = await registerFinish;
@@ -130,7 +135,9 @@ test.describe('WebAuthn biometrics', () => {
     });
 
     const authResult = await page.evaluate(async () => {
-      return await window.WebBiometrics.authenticate();
+      const api = window.WebBiometrics;
+      if (!api) throw new Error('WebBiometrics is not loaded');
+      return await api.authenticate();
     });
 
     expect(authResult.token).toBe('verified-jwt');

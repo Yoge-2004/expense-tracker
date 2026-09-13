@@ -1,30 +1,21 @@
 /**
  * @file NumberTicker.tsx
- * @description Smooth 60fps interpolation component mimicking the web dashboard's
- * `countUp` animation on KPI metric cards.
+ * @description Smooth numeric interpolation component for KPI metric cards.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, TextStyle, StyleProp } from 'react-native';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface NumberTickerProps {
-  /** Target numeric value to count towards. */
   value: number;
-  /** Optional string prefix (e.g. "₹", "$"). */
   prefix?: string;
-  /** Optional string suffix (e.g. "%", " /mo"). */
   suffix?: string;
-  /** Transition duration in milliseconds (default: 850ms). */
   duration?: number;
-  /** Style for the rendered text container. */
   style?: StyleProp<TextStyle>;
-  /** Number of decimal places to format. */
   decimals?: number;
 }
 
-/**
- * Animated number ticker with easeOutBack interpolation.
- */
 export const NumberTicker: React.FC<NumberTickerProps> = ({
   value,
   prefix = '',
@@ -33,52 +24,59 @@ export const NumberTicker: React.FC<NumberTickerProps> = ({
   style,
   decimals = 0,
 }) => {
-  const safeTargetVal = isNaN(value) ? 0 : Number(value);
+  const safeTargetVal = Number.isFinite(Number(value)) ? Number(value) : 0;
   const [displayVal, setDisplayVal] = useState(safeTargetVal);
-  const prevValRef = useRef(0);
-  const startTimeRef = useRef<number | null>(null);
+  const prevValRef = useRef(safeTargetVal);
   const animationFrameRef = useRef<number | null>(null);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     const startVal = prevValRef.current;
     const targetVal = safeTargetVal;
-    startTimeRef.current = null;
 
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (reducedMotion || startVal === targetVal) {
+      setDisplayVal(targetVal);
+      prevValRef.current = targetVal;
+      return;
+    }
+
+    let startTime: number | null = null;
     const animate = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const progress = Math.min((timestamp - startTimeRef.current) / Math.max(duration, 1), 1);
+      if (startTime === null) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / Math.max(duration, 1), 1);
+      const eased = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
+      const current = startVal + (targetVal - startVal) * Math.min(Math.max(eased, 0), 1);
 
-      // Smooth ease-out curve matching website motion.js: easeOutBack
-      const ease = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
-      const current = startVal + (targetVal - startVal) * Math.min(Math.max(ease, 0), 1);
-
-      setDisplayVal(isNaN(current) ? 0 : current);
+      setDisplayVal(Number.isFinite(current) ? current : targetVal);
 
       if (progress < 1) {
         animationFrameRef.current = requestAnimationFrame(animate);
       } else {
-        setDisplayVal(targetVal);
+        animationFrameRef.current = null;
         prevValRef.current = targetVal;
+        setDisplayVal(targetVal);
       }
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (animationFrameRef.current) {
+      if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
-  }, [safeTargetVal, duration]);
+  }, [duration, reducedMotion, safeTargetVal]);
 
-  const formattedNumber = (isNaN(displayVal) ? 0 : displayVal).toLocaleString('en-IN', {
+  const formattedNumber = displayVal.toLocaleString('en-IN', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
 
-  return (
-    <Text style={style}>
-      {prefix}{formattedNumber}{suffix}
-    </Text>
-  );
+  return <Text style={style}>{prefix}{formattedNumber}{suffix}</Text>;
 };
