@@ -132,6 +132,13 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
     await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, 'true');
     return true;
   } catch (error) {
+    // Scheduling is transactional: if either reminder fails, remove any reminder
+    // that may already have been created so storage never reports a false state.
+    if (Notifications) {
+      await Notifications.cancelScheduledNotificationAsync(MIDDAY_NOTIFICATION_ID).catch(() => {});
+      await Notifications.cancelScheduledNotificationAsync(EVENING_NOTIFICATION_ID).catch(() => {});
+    }
+    await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, 'false').catch(() => {});
     console.warn('[Notifications] Failed to schedule daily reminders:', error);
     return false;
   }
