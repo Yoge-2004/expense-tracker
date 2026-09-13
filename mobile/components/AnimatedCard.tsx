@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, ViewStyle, StyleProp } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -7,6 +7,7 @@ interface AnimatedCardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
+  accessibilityLabel?: string;
   scaleTo?: number;
   disabled?: boolean;
   enableHaptics?: boolean;
@@ -16,12 +17,19 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   children,
   style,
   onPress,
+  accessibilityLabel,
   scaleTo = 0.97,
   disabled = false,
   enableHaptics = true,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    return () => {
+      scaleAnim.stopAnimation();
+    };
+  }, [scaleAnim]);
 
   const handlePressIn = () => {
     if (disabled) return;
@@ -50,6 +58,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   return (
     <Pressable
       accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? accessibilityLabel : undefined}
       accessibilityState={{ disabled }}
       onPress={onPress}
       onPressIn={handlePressIn}
