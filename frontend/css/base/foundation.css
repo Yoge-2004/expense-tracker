@@ -1,4 +1,4 @@
-/* ========================================================================== */
+/* ==========================================================================
    EXPENSE TRACKER — BASE.CSS
    Module: Foundation (Reset, Base Typography, Global Scrollbars)
    ========================================================================== */
@@ -23,8 +23,8 @@
     display: none !important;
 }
 
-/* Theme changes are instantaneous. A populated expense ledger should never
-   interpolate hundreds of color-bearing elements during a mode switch. */
+/* Theme changes are intentionally instantaneous. A populated expense ledger
+   should never interpolate hundreds of color-bearing elements at once. */
 
 input::-ms-reveal,
 input::-ms-clear {
