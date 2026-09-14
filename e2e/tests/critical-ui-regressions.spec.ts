@@ -18,14 +18,26 @@ test.describe('Critical UI regressions', () => {
     await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
   });
 
-  test('preserves the shared font import in the stylesheet contract', async ({ page }) => {
-    const stylesheet = await page.evaluate(async () => fetch('/css/style.css').then(response => response.text()));
+  test('loads and applies the restored web fonts', async ({ page }) => {
+    const fontState = await page.evaluate(async () => {
+      await document.fonts.ready;
+      const body = getComputedStyle(document.body).fontFamily;
+      const display = getComputedStyle(document.querySelector('.metric-value')!).fontFamily;
+      const bodyFontLoaded = document.fonts.check('16px "Hanken Grotesk"');
+      const displayFontLoaded = document.fonts.check('16px "Fraunces"');
+      const monoFontLoaded = document.fonts.check('16px "IBM Plex Mono"');
+      const fontLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[href*="fonts.googleapis.com/css2"]'))
+        .map(link => link.href);
+      return { body, display, bodyFontLoaded, displayFontLoaded, monoFontLoaded, fontLinks };
+    });
 
-    expect(stylesheet).toContain('@import url');
-    expect(stylesheet).toContain('fonts.googleapis.com');
-    expect(stylesheet).toContain('Fraunces');
-    expect(stylesheet).toContain('Hanken+Grotesk');
-    expect(stylesheet).toContain('IBM+Plex+Mono');
+    expect(fontState.body).toContain('Hanken Grotesk');
+    expect(fontState.display).toContain('Fraunces');
+    expect(fontState.bodyFontLoaded).toBe(true);
+    expect(fontState.displayFontLoaded).toBe(true);
+    expect(fontState.monoFontLoaded).toBe(true);
+    expect(fontState.fontLinks.length).toBeGreaterThan(0);
+    expect(fontState.fontLinks.every(href => href.includes('v=20260914-font1'))).toBe(true);
   });
 
   test('opens and visibly renders the expense modal', async ({ page }) => {
@@ -61,8 +73,6 @@ test.describe('Critical UI regressions', () => {
     const expenses = page.locator('#subsTabExpensesBtn');
     const incomes = page.locator('#subsTabIncomesBtn');
 
-    // The subscription control lives inside the account menu; exercise the
-    // actual user path instead of clicking a hidden descendant directly.
     await page.locator('#profileTrigger').click();
     await expect(page.locator('#profileMenu')).toBeVisible();
     await page.locator('#manageSubsBtn').click();
@@ -88,6 +98,29 @@ test.describe('Critical UI regressions', () => {
     expect(afterIncome[0]).toEqual(before[0]);
     expect(afterIncome[1]).toEqual(before[1]);
     expect(afterExpense).toEqual(before[0]);
+  });
+
+  test('switches theme atomically without animating the populated dashboard', async ({ page }) => {
+    await page.locator('#themeToggle').click();
+
+    const duringSwitch = await page.evaluate(() => {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const sample = document.querySelector<HTMLElement>('.expense-item, .metric-card, .card');
+      return {
+        theme: document.documentElement.getAttribute('data-theme'),
+        switching: document.documentElement.classList.contains('theme-switching'),
+        sampleTransitionDuration: sample ? getComputedStyle(sample).transitionDuration : null,
+        rootTransitionDuration: rootStyle.transitionDuration,
+      };
+    });
+
+    expect(duringSwitch.theme).toBe('light');
+    expect(duringSwitch.switching).toBe(true);
+    expect(duringSwitch.sampleTransitionDuration).toBe('0s');
+    expect(duringSwitch.rootTransitionDuration).toBe('0s');
+
+    await page.waitForTimeout(50);
+    await expect.poll(async () => page.evaluate(() => document.documentElement.classList.contains('theme-switching'))).toBe(false);
   });
 
   test('uses a non-purple subscription metric token in both themes', async ({ page }) => {
