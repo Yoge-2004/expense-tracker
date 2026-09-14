@@ -5,6 +5,14 @@
     const utils = window.DashboardUtils;
     const chartState = window.DashboardChartState;
 
+    // Chart.js falls back to its own built-in Helvetica/Arial stack for any
+    // font config that doesn't set `family` explicitly (axis ticks, tooltips,
+    // most legends below never did). Setting this once here makes every chart
+    // element inherit the project's body typeface without touching each config.
+    if (typeof Chart !== "undefined") {
+        Chart.defaults.font.family = "'Hanken Grotesk', sans-serif";
+    }
+
     function buildTrendSeries(dailyTotals) {
         const availableDates = Object.keys(dailyTotals).sort();
         if (!availableDates.length) return { dates: [], values: [] };
