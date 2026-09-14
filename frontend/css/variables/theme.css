@@ -1,23 +1,4 @@
-/* Theme transition and light-mode token overrides. */
-body,
-.dashboard-layout {
-    transition:
-        background-color 0.14s ease-out,
-        color 0.12s ease-out;
-}
-
-.top-bar,
-.card,
-.stat-card,
-.unified-ledger-card,
-.metric-card,
-.modal {
-    transition:
-        background-color 0.16s ease-out,
-        border-color 0.16s ease-out,
-        color 0.14s ease-out;
-}
-
+/* Theme tokens. Theme switching is intentionally instantaneous on the dashboard;\n   the performance guard suppresses any component-level transitions during the toggle. */
 [data-theme="light"] {
     color-scheme: light;
     --bg-dark: #EEF1F6;
