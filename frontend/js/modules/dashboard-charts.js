@@ -328,6 +328,14 @@
         }
     }
 
+    // Preserve the established dashboard globals for legacy call sites.
+    window.renderPieChart = renderPieChart;
+    window.renderTrendChart = renderTrendChart;
+    window.renderRecurringSplitChart = renderRecurringSplitChart;
+    window.renderDayOfWeekChart = renderDayOfWeekChart;
+    window.renderBudgetVsActualChart = renderBudgetVsActualChart;
+    window.updateChartsTheme = updateChartsTheme;
+
     window.DashboardCharts = {
         buildTrendSeries,
         getTrendGradient,
