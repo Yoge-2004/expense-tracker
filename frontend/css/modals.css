@@ -538,9 +538,13 @@
 }
 
 .stream-pill-btn.active {
+    /* font-weight intentionally matches the base 600, not bumped to 700:
+       a heavier weight renders wider (font-weight isn't smoothly
+       interpolated), so the pill was snapping wider on selection and
+       nudging every tab after it in this nowrap/scrolling row. Active
+       state is already unambiguous via background/border/shadow. */
     background: var(--card-bg, rgba(255, 255, 255, 0.08));
     color: var(--text-main);
-    font-weight: 700;
     border-color: var(--border);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
