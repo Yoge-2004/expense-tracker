@@ -70,9 +70,9 @@ body,
     --metric-savings: #B45309;
     --metric-savings-rgb: 180, 83, 9;
     --metric-savings-glow: rgba(180, 83, 9, 0.15);
-    --metric-subs: #7C3AED;
-    --metric-subs-rgb: 124, 58, 237;
-    --metric-subs-glow: rgba(124, 58, 237, 0.15);
+    --metric-subs: #B54858;
+    --metric-subs-rgb: 181, 72, 88;
+    --metric-subs-glow: rgba(181, 72, 88, 0.15);
 }
 
 :root {
