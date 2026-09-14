@@ -56,4 +56,50 @@ test.describe('Critical UI regressions', () => {
     await page.keyboard.press('Escape');
     await expect(modal).not.toHaveClass(/active/);
   });
+
+  test('keeps subscription tabs the same size while switching state', async ({ page }) => {
+    const expenses = page.locator('#subsTabExpensesBtn');
+    const incomes = page.locator('#subsTabIncomesBtn');
+
+    await page.locator('#manageSubsBtn').click();
+    await expect(expenses).toBeVisible();
+    await expect(incomes).toBeVisible();
+
+    const before = await Promise.all([
+      expenses.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+      incomes.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+    ]);
+
+    await incomes.click();
+    await expect(incomes).toHaveClass(/active/);
+    const afterIncome = await Promise.all([
+      expenses.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+      incomes.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+    ]);
+
+    await expenses.click();
+    await expect(expenses).toHaveClass(/active/);
+    const afterExpense = await expenses.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height }));
+
+    expect(afterIncome[0]).toEqual(before[0]);
+    expect(afterIncome[1]).toEqual(before[1]);
+    expect(afterExpense).toEqual(before[0]);
+  });
+
+  test('uses a non-purple subscription metric token in both themes', async ({ page }) => {
+    const colors = await page.evaluate(() => {
+      const root = document.documentElement;
+      const read = () => getComputedStyle(root).getPropertyValue('--metric-subs').trim();
+      const dark = read();
+      root.setAttribute('data-theme', 'light');
+      const light = read();
+      root.setAttribute('data-theme', 'dark');
+      return { dark, light };
+    });
+
+    expect(colors.dark).toBe('#C0565E');
+    expect(colors.light).toBe('#B54858');
+    expect(colors.dark).not.toBe('#8B5CF6');
+    expect(colors.light).not.toBe('#7C3AED');
+  });
 });
