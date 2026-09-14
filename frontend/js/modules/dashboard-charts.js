@@ -75,7 +75,7 @@
                         position: 'right',
                         labels: {
                             color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
-                            font: { size: 13, family: "'Plus Jakarta Sans', sans-serif", weight: '600' },
+                            font: { size: 13, family: 'Hanken Grotesk, sans-serif', weight: '600' },
                             boxWidth: 12, padding: 14, usePointStyle: true
                         }
                     }
@@ -235,7 +235,7 @@
         if (chartState.budgetVsActualChart) chartState.budgetVsActualChart.destroy();
 
         if (!budgets || budgets.length === 0) {
-            return; // Empty state is already handled by the budget list above this chart.
+            return;
         }
 
         const labels = budgets.map(b => b.categoryName || 'Uncategorized');
@@ -328,10 +328,14 @@
         }
     }
 
-    window.renderPieChart = renderPieChart;
-    window.renderTrendChart = renderTrendChart;
-    window.renderRecurringSplitChart = renderRecurringSplitChart;
-    window.renderDayOfWeekChart = renderDayOfWeekChart;
-    window.renderBudgetVsActualChart = renderBudgetVsActualChart;
-    window.updateChartsTheme = updateChartsTheme;
+    window.DashboardCharts = {
+        buildTrendSeries,
+        getTrendGradient,
+        renderPieChart,
+        renderTrendChart,
+        renderRecurringSplitChart,
+        renderDayOfWeekChart,
+        renderBudgetVsActualChart,
+        updateChartsTheme
+    };
 })();
