@@ -7,25 +7,15 @@
  * transitions are suppressed for the two frames around the actual toggle,
  * then normal hover/focus motion resumes.
  *
- * This file also cache-busts the explicit Google Fonts stylesheet once per
- * page load so an older cached font CSS response cannot silently keep the
- * dashboard on its fallback font after the typography was restored.
+ * Font cache-busting lives directly on each page's Google Fonts <link href>
+ * (?v=...) rather than here: rewriting the href from JS after the browser
+ * had already started fetching the original URL forced a second, redundant
+ * fetch of the whole font stylesheet on every page load.
  */
 (function () {
     "use strict";
 
     const THEME_SWITCH_CLASS = "theme-switching";
-    const FONT_CACHE_BUSTER = "20260914-font1";
-
-    function cacheBustGoogleFonts() {
-        if (typeof document === "undefined") return;
-        document.querySelectorAll('link[rel="stylesheet"][href*="fonts.googleapis.com/css2"]').forEach((link) => {
-            const href = link.getAttribute("href");
-            if (!href || href.includes(FONT_CACHE_BUSTER)) return;
-            const separator = href.includes("?") ? "&" : "?";
-            link.setAttribute("href", `${href}${separator}v=${FONT_CACHE_BUSTER}`);
-        });
-    }
 
     function beginThemeSwitch() {
         document.documentElement.classList.add(THEME_SWITCH_CLASS);
@@ -37,8 +27,6 @@
     }
 
     if (typeof document !== "undefined") {
-        cacheBustGoogleFonts();
-
         // Capture phase runs before the existing theme button listener in api.js.
         document.addEventListener("click", (event) => {
             const target = event.target instanceof Element ? event.target : null;
