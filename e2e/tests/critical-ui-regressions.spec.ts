@@ -61,6 +61,10 @@ test.describe('Critical UI regressions', () => {
     const expenses = page.locator('#subsTabExpensesBtn');
     const incomes = page.locator('#subsTabIncomesBtn');
 
+    // The subscription control lives inside the account menu; exercise the
+    // actual user path instead of clicking a hidden descendant directly.
+    await page.locator('#profileTrigger').click();
+    await expect(page.locator('#profileMenu')).toBeVisible();
     await page.locator('#manageSubsBtn').click();
     await expect(expenses).toBeVisible();
     await expect(incomes).toBeVisible();
