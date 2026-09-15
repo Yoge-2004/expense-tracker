@@ -186,12 +186,9 @@
     position: relative;
     z-index: 1;
     overflow: visible !important;
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
     transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
-                background 0.2s var(--ease),
+                background-color 0.2s var(--ease),
                 border-color 0.2s var(--ease),
                 color 0.2s var(--ease);
 }

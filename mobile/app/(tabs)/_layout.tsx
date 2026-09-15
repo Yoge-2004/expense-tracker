@@ -53,7 +53,6 @@ export default function TabLayout() {
   const c = Colors[theme];
   const isLight = theme === 'light';
 
-  // Ensure ample bottom space on Android 3-button/gesture bar and iOS Home indicator
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 16 : 10);
   const tabHeight = 60 + bottomInset;
 
@@ -88,6 +87,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Dashboard',
+          tabBarAccessibilityLabel: 'Dashboard',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               name={focused ? 'grid' : 'grid-outline'}
@@ -129,6 +129,7 @@ export default function TabLayout() {
         })}
         options={{
           title: 'Add Record',
+          tabBarAccessibilityLabel: 'Add record',
           tabBarIcon: () => (
             <View
               style={[
@@ -149,6 +150,7 @@ export default function TabLayout() {
         name="subscriptions"
         options={{
           title: 'Subscriptions',
+          tabBarAccessibilityLabel: 'Subscriptions',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               name={focused ? 'repeat' : 'repeat-outline'}
@@ -165,6 +167,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          tabBarAccessibilityLabel: 'Profile and settings',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
               name={focused ? 'person' : 'person-outline'}

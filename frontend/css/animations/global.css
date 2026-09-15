@@ -36,7 +36,7 @@
 /* Navigation Links Dynamic Underline */
 .nav-link, .sidebar-nav a, .tab-btn {
     position: relative;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 .nav-link:hover, .sidebar-nav a:hover, .tab-btn:hover {
     transform: translateX(4px) !important;
@@ -45,7 +45,7 @@
 
 /* Category & Filter Pill Spring Scale */
 .category-pill, .filter-chip, .suggestion-chip, .currency-chip {
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 .category-pill:hover, .filter-chip:hover, .suggestion-chip:hover, .currency-chip:hover {
     transform: translateY(-2px) scale(1.05) !important;
@@ -55,7 +55,7 @@
 
 /* Form Input Glowing Micro-Interactions */
 .form-input, select {
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 .form-input:hover {
     border-color: rgba(var(--primary-rgb), 0.5) !important;

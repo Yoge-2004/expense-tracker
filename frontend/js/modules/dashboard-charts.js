@@ -5,6 +5,14 @@
     const utils = window.DashboardUtils;
     const chartState = window.DashboardChartState;
 
+    // Chart.js falls back to its own built-in Helvetica/Arial stack for any
+    // font config that doesn't set `family` explicitly (axis ticks, tooltips,
+    // most legends below never did). Setting this once here makes every chart
+    // element inherit the project's body typeface without touching each config.
+    if (typeof Chart !== "undefined") {
+        Chart.defaults.font.family = "'Hanken Grotesk', sans-serif";
+    }
+
     function buildTrendSeries(dailyTotals) {
         const availableDates = Object.keys(dailyTotals).sort();
         if (!availableDates.length) return { dates: [], values: [] };
@@ -75,7 +83,7 @@
                         position: 'right',
                         labels: {
                             color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
-                            font: { size: 13, family: "'Plus Jakarta Sans', sans-serif", weight: '600' },
+                            font: { size: 13, family: 'Hanken Grotesk, sans-serif', weight: '600' },
                             boxWidth: 12, padding: 14, usePointStyle: true
                         }
                     }
@@ -235,7 +243,7 @@
         if (chartState.budgetVsActualChart) chartState.budgetVsActualChart.destroy();
 
         if (!budgets || budgets.length === 0) {
-            return; // Empty state is already handled by the budget list above this chart.
+            return;
         }
 
         const labels = budgets.map(b => b.categoryName || 'Uncategorized');
@@ -328,10 +336,22 @@
         }
     }
 
+    // Preserve the established dashboard globals for legacy call sites.
     window.renderPieChart = renderPieChart;
     window.renderTrendChart = renderTrendChart;
     window.renderRecurringSplitChart = renderRecurringSplitChart;
     window.renderDayOfWeekChart = renderDayOfWeekChart;
     window.renderBudgetVsActualChart = renderBudgetVsActualChart;
     window.updateChartsTheme = updateChartsTheme;
+
+    window.DashboardCharts = {
+        buildTrendSeries,
+        getTrendGradient,
+        renderPieChart,
+        renderTrendChart,
+        renderRecurringSplitChart,
+        renderDayOfWeekChart,
+        renderBudgetVsActualChart,
+        updateChartsTheme
+    };
 })();

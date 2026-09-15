@@ -154,7 +154,7 @@
     color: var(--text-main);
     font-size: 14px;
     font-family: inherit;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     outline: none !important;
     box-sizing: border-box;
 }
@@ -227,7 +227,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition: all 0.25s var(--ease);
+    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
     box-sizing: border-box;
 }
 
@@ -270,7 +270,7 @@
     opacity: 0;
     visibility: hidden;
     transform: translateY(-8px);
-    transition: all 0.25s var(--ease);
+    transition: opacity 0.25s var(--ease), visibility 0.25s var(--ease), transform 0.25s var(--ease);
     padding: 8px;
     display: none;
     scrollbar-width: thin;
@@ -328,7 +328,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition: all 0.2s var(--ease);
+    transition: background-color 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease);
 }
 
 .custom-option:hover {
@@ -359,7 +359,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.3s var(--ease);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), filter 0.3s var(--ease);
     box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb),0.35);
 }
 
@@ -421,7 +421,7 @@
     color: var(--primary);
     margin-right: 8px;
     flex-shrink: 0;
-    transition: all 0.3s var(--ease);
+    transition: background-color 0.3s var(--ease), color 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
 .step-dot-done {
     background: var(--primary) !important;
@@ -442,7 +442,7 @@
     height: 3px;
     border-radius: 2px;
     background: var(--border);
-    transition: background 0.3s var(--ease);
+    transition: background-color 0.3s var(--ease);
 }
 .strength-label {
     font-size: 10px;
