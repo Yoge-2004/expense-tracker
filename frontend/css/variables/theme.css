@@ -25,6 +25,13 @@
     --accent-gradient: linear-gradient(135deg, #FF6B6B 0%, #E74C3C 100%);
     --accent-glow: rgba(231, 76, 60, 0.25);
 
+    /* Text/icon-safe variants for light theme (see tokens.css for rationale).
+       Darkened rather than lightened since the surface is now light. */
+    --accent-text: #DF2E1B;
+    --danger-text: #EB1515;
+    --success-text: #0C855D;
+    --metric-subs-text: #B54858;
+
     --highlight: #0EA5E9;
     --highlight-gradient: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
 

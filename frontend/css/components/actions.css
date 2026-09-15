@@ -181,7 +181,7 @@ button[type="submit"]:active {
 
 .password-toggle:hover,
 .password-toggle:focus-visible {
-    color: var(--accent);
+    color: var(--accent-text);
     outline: none;
 }
 
@@ -205,7 +205,7 @@ button[type="submit"]:active {
 }
 
 .brand-logo span {
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .btn-icon {
@@ -289,7 +289,7 @@ button[type="submit"]:active {
     background: rgba(var(--accent-rgb), 0.1);
     border: 1px solid rgba(var(--accent-rgb), 0.3);
     border-radius: 8px;
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     justify-content: center;
