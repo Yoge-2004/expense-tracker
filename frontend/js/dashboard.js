@@ -14,7 +14,7 @@ const avatarEl = document.querySelector(".avatar");
 if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
 
 // Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
-const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
+const { getLocalDateString, parseLocalDate, escapeHtml, jsAttrEscape, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
 const elements = window.DashboardDom.elements;
 const { animateNumber, animatePercent, celebrateSuccess, updateStats } = window.DashboardEffects;
 
@@ -107,6 +107,7 @@ const dashboardBudgetController = window.DashboardBudget.createController({
     getCategoryColor,
     getCategoryEmoji,
     escapeHtml,
+    jsAttrEscape,
     formatCurrency,
     renderBudgetVsActualChart,
     renderFinancialInsights,
@@ -1481,7 +1482,7 @@ function renderSubsModalContent() {
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="openEditSubscription(${sub.id}, '${escapeHtml(sub.description).replace(/'/g, "\\'")}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
+                    <button onclick="openEditSubscription(${sub.id}, '${jsAttrEscape(sub.description)}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
                     <button onclick="cancelSubscription(${sub.id}, event)" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
@@ -1529,7 +1530,7 @@ function renderSubsModalContent() {
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="closeModal(elements.subsModal); document.getElementById('depositGoalId').value = '${goal.id}'; const dt = document.getElementById('savingsDepositTitle'); if(dt) dt.textContent='Contribute to ${escapeHtml(goal.name)}'; openModal(document.getElementById('savingsDepositModal'));" class="btn-primary btn-small" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:5px 12px; cursor:pointer;" title="Contribute Installment">
+                    <button onclick="closeModal(elements.subsModal); document.getElementById('depositGoalId').value = '${goal.id}'; const dt = document.getElementById('savingsDepositTitle'); if(dt) dt.textContent='Contribute to ${jsAttrEscape(goal.name)}'; openModal(document.getElementById('savingsDepositModal'));" class="btn-primary btn-small" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:5px 12px; cursor:pointer;" title="Contribute Installment">
                         + Deposit
                     </button>
                 </div>

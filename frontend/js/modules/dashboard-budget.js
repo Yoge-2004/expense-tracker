@@ -10,6 +10,7 @@
             getCategoryColor,
             getCategoryEmoji,
             escapeHtml,
+            jsAttrEscape,
             formatCurrency,
             renderBudgetVsActualChart,
             renderFinancialInsights,
@@ -62,7 +63,7 @@
                         const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
                         const startStr = b.startDate || '';
                         const endStr = b.endDate || '';
-                        const safeName = escapeHtml(b.categoryName || 'Budget').replace(/'/g, "\\'");
+                        const safeName = jsAttrEscape(b.categoryName || 'Budget');
 
                         return `
                         <div class="budget-item">
