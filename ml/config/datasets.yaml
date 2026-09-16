@@ -1,0 +1,14 @@
+# Raw datasets are intentionally kept outside Git.
+# Each entry must provide either path or dataset_id.
+# Convert external datasets to the common columns: text, label, source.
+
+datasets:
+  - source: banking77
+    dataset_id: PolyAI/banking77
+    split: train
+    text_column: text
+    label_column: category
+
+  # Add the previously selected Indian/global transaction datasets here using
+  # local paths or their exact Hugging Face dataset IDs after download/access
+  # has been verified. The loader does not guess column names.
