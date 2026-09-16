@@ -24,6 +24,10 @@ def split_dataset(frame: pd.DataFrame, seed: int = 42, test_size: float = .15, v
         raise ValueError("test_size and validation_size must be positive and sum to less than 1")
 
     data = frame.copy()
+    if "source" not in data:
+        data["source"] = "unknown"
+    else:
+        data["source"] = data["source"].fillna("unknown").astype(str)
     data["_text_hash"] = data["text"].map(_hash_text)
     data = data.drop_duplicates("_text_hash").reset_index(drop=True)
     india_mask = data["source"].str.contains(r"india|indian|finee|synthetic", case=False, regex=True, na=False)
