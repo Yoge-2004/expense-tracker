@@ -16,7 +16,7 @@ def test_master_manifest_has_pipeline_version(tmp_path, monkeypatch):
     monkeypatch.setattr("expense_ml.master_pipeline.train_tfidf", lambda train, cfg: DummyModel())
     monkeypatch.setattr(
         "expense_ml.master_pipeline.evaluate_model",
-        lambda model, frame, name: EvaluationResult(
+        lambda model, frame, name, **kwargs: EvaluationResult(
             model_name=name,
             accuracy=1.0,
             macro_f1=1.0,
@@ -38,4 +38,4 @@ def test_master_manifest_has_pipeline_version(tmp_path, monkeypatch):
         tmp_path,
         include_transformer=False,
     )
-    assert manifest["pipeline_version"] == "1.0.0"
+    assert manifest["pipeline_version"] == "1.1.0"
