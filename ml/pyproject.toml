@@ -19,6 +19,7 @@ dependencies = [
   "torch>=2.5,<3",
   "accelerate>=1.2,<2",
   "evaluate>=0.4,<1",
+  "matplotlib>=3.9,<4",
 ]
 
 [project.optional-dependencies]
