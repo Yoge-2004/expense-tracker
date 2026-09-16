@@ -3,12 +3,15 @@
 Typical notebook usage:
     !python /kaggle/working/expense-tracker/ml/kaggle_train.py
 
-The notebook can attach multiple Kaggle datasets under /kaggle/input. Set
-EXPENSE_ML_CONFIG to a config file whose `path` values point into that tree.
+The standard three datasets are fetched automatically from Hugging Face using
+`ml/config/datasets.yaml`, normalized, cached under /kaggle/working, and then
+passed to the master pipeline.
 
 Useful overrides:
     EXPENSE_ML_OUTPUT=/kaggle/working/expense-ml-runs
-    EXPENSE_ML_KAGGLE_INPUT=/kaggle/input
+    EXPENSE_ML_DATA_CACHE=/kaggle/working/expense-ml-data
+    EXPENSE_ML_CONFIG=/kaggle/working/kaggle_datasets.yaml
+    EXPENSE_ML_FORCE_FETCH=1
     EXPENSE_ML_CPU_THREADS=auto
     EXPENSE_ML_DATALOADER_WORKERS=8
     EXPENSE_ML_BATCH_SIZE=32
@@ -18,6 +21,7 @@ Useful overrides:
 """
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -32,17 +36,52 @@ def install_local_package() -> None:
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-e", str(ROOT)], check=True)
 
 
+def _load_yaml(path: Path) -> dict:
+    import yaml
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+def fetch_standard_datasets(config_path: Path, cache_dir: Path, progress: bool = True) -> Path:
+    from expense_ml.data.fetch import fetch_configured_datasets
+    from expense_ml.data.prepare import save_prepared
+
+    raw = _load_yaml(config_path)
+    datasets = raw.get("datasets", [])
+    if not datasets:
+        raise ValueError(f"No datasets configured in {config_path}.")
+
+    frame, manifest = fetch_configured_datasets(
+        datasets,
+        cache_dir=cache_dir,
+        progress=progress,
+        force=os.getenv("EXPENSE_ML_FORCE_FETCH") == "1",
+    )
+    prepared = cache_dir / "transactions.parquet"
+    save_prepared(frame, prepared)
+    (cache_dir / "fetch_manifest.json").write_text(
+        json.dumps(manifest, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({"prepared": str(prepared), "datasets": manifest}, indent=2))
+    return prepared
+
+
 def main() -> None:
+    install_local_package()
     from expense_ml.resources import configure_resources
 
     resource_info = configure_resources()
-    print("ML resources:", resource_info)
-    install_local_package()
-    from expense_ml.master_pipeline import main as pipeline_main
+    print("ML resources:", json.dumps(resource_info, indent=2))
 
     output = Path(os.getenv("EXPENSE_ML_OUTPUT", "/kaggle/working/expense-ml-runs"))
+    cache_dir = Path(os.getenv("EXPENSE_ML_DATA_CACHE", "/kaggle/working/expense-ml-data"))
     config = Path(os.getenv("EXPENSE_ML_CONFIG", str(ROOT / "config" / "datasets.yaml")))
-    prepared = Path(os.getenv("EXPENSE_ML_PREPARED", str(output / "prepared" / "transactions.parquet")))
+    prepared = Path(os.getenv("EXPENSE_ML_PREPARED", str(cache_dir / "transactions.parquet")))
+
+    if not prepared.exists() or os.getenv("EXPENSE_ML_FORCE_FETCH") == "1":
+        prepared = fetch_standard_datasets(config, cache_dir, progress=True)
+
+    from expense_ml.master_pipeline import main as pipeline_main
 
     argv = ["--config", str(config), "--prepared", str(prepared), "--output", str(output)]
     if os.getenv("EXPENSE_ML_NO_TRANSFORMER") == "1":
