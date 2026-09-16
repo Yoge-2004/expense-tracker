@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
@@ -16,8 +14,8 @@ def train_transformer(train_frame: pd.DataFrame, validation_frame: pd.DataFrame,
     seed_everything(config.seed)
     labels = sorted(train_frame["label"].unique().tolist())
     label2id = {label: i for i, label in enumerate(labels)}
-    tokenizer = TransformerCategoryModel.build(config.transformer_name, labels, config.max_length).tokenizer
-    model = TransformerCategoryModel.build(config.transformer_name, labels, config.max_length).model
+    base = TransformerCategoryModel.build(config.transformer_name, labels, config.max_length)
+    tokenizer, model = base.tokenizer, base.model
     train = Dataset.from_pandas(train_frame[["text", "label"]], preserve_index=False)
     valid = Dataset.from_pandas(validation_frame[["text", "label"]], preserve_index=False)
 
