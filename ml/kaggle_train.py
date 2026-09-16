@@ -1,13 +1,19 @@
-"""
-Kaggle entrypoint for Expense Tracker ML.
+"""Kaggle entrypoint for the Expense Tracker ML master pipeline.
 
-Run from the ml/ directory:
-    python kaggle_train.py
+Typical notebook usage:
+    !python /kaggle/working/expense-tracker/ml/kaggle_train.py
 
-Environment overrides:
+The notebook can attach multiple Kaggle datasets under /kaggle/input. Set
+EXPENSE_ML_CONFIG to a config file whose `path` values point into that tree.
+
+Useful overrides:
     EXPENSE_ML_OUTPUT=/kaggle/working/expense-ml-runs
-    EXPENSE_ML_CONFIG=ml/config/datasets.yaml
-    EXPENSE_ML_PREPARED=ml/data/prepared/transactions.parquet
+    EXPENSE_ML_KAGGLE_INPUT=/kaggle/input
+    EXPENSE_ML_CPU_THREADS=auto
+    EXPENSE_ML_DATALOADER_WORKERS=8
+    EXPENSE_ML_BATCH_SIZE=32
+    EXPENSE_ML_EVAL_BATCH_SIZE=64
+    EXPENSE_ML_MIXED_PRECISION=auto
     EXPENSE_ML_NO_TRANSFORMER=1
 """
 from __future__ import annotations
@@ -27,12 +33,16 @@ def install_local_package() -> None:
 
 
 def main() -> None:
+    from expense_ml.resources import configure_resources
+
+    resource_info = configure_resources()
+    print("ML resources:", resource_info)
     install_local_package()
     from expense_ml.master_pipeline import main as pipeline_main
 
     output = Path(os.getenv("EXPENSE_ML_OUTPUT", "/kaggle/working/expense-ml-runs"))
     config = Path(os.getenv("EXPENSE_ML_CONFIG", str(ROOT / "config" / "datasets.yaml")))
-    prepared = Path(os.getenv("EXPENSE_ML_PREPARED", str(ROOT / "data" / "prepared" / "transactions.parquet")))
+    prepared = Path(os.getenv("EXPENSE_ML_PREPARED", str(output / "prepared" / "transactions.parquet")))
 
     argv = ["--config", str(config), "--prepared", str(prepared), "--output", str(output)]
     if os.getenv("EXPENSE_ML_NO_TRANSFORMER") == "1":
