@@ -5,27 +5,39 @@ import hashlib
 import json
 
 import pandas as pd
+from tqdm.auto import tqdm
 
 from .loaders import load_huggingface, load_local
 from .normalize import prepare_dataframe
 
 
-def load_configured_datasets(config: list[dict], base_dir: Path) -> pd.DataFrame:
+def load_configured_datasets(
+    config: list[dict],
+    base_dir: Path,
+    *,
+    progress: bool = True,
+    normalize_chunk_size: int = 250_000,
+) -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
-    for item in config:
+    bar = tqdm(config, total=len(config), unit="dataset", desc="Loading datasets", disable=not progress)
+    for item in bar:
         source = item["source"]
         text_column = item["text_column"]
         label_column = item["label_column"]
+        bar.set_postfix(source=source[:28])
         if item.get("path"):
             frame = load_local(base_dir / item["path"], text_column, label_column, source)
         elif item.get("dataset_id"):
-            frame = load_huggingface(item["dataset_id"], text_column, label_column, source, item.get("split", "train"))
+            frame = load_huggingface(
+                item["dataset_id"], text_column, label_column, source, item.get("split", "train")
+            )
         else:
             raise ValueError(f"Dataset '{source}' needs either path or dataset_id")
         frames.append(frame)
     if not frames:
         raise ValueError("No datasets configured")
-    return prepare_dataframe(pd.concat(frames, ignore_index=True))
+    merged = pd.concat(frames, ignore_index=True)
+    return prepare_dataframe(merged, progress=progress, chunk_size=normalize_chunk_size)
 
 
 def fingerprint(frame: pd.DataFrame) -> str:
