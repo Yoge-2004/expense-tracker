@@ -20,6 +20,7 @@ dependencies = [
   "accelerate>=1.2,<2",
   "evaluate>=0.4,<1",
   "matplotlib>=3.9,<4",
+  "tqdm>=4.67,<5",
 ]
 
 [project.optional-dependencies]
