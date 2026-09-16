@@ -6,6 +6,7 @@ import json
 
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
+from tqdm.auto import tqdm
 
 
 @dataclass
@@ -19,11 +20,31 @@ class EvaluationResult:
     samples: int
 
 
-def evaluate_model(model, frame: pd.DataFrame, model_name: str) -> EvaluationResult:
-    predictions = model.predict(frame["text"].tolist())
+def evaluate_model(
+    model,
+    frame: pd.DataFrame,
+    model_name: str,
+    *,
+    batch_size: int = 8192,
+    progress: bool = True,
+) -> EvaluationResult:
+    if batch_size < 1:
+        raise ValueError("batch_size must be >= 1")
     truth = frame["label"].tolist()
-    labels = sorted(set(truth) | set(predictions.labels))
-    return EvaluationResult(model_name=model_name, accuracy=float(accuracy_score(truth, predictions.labels)), macro_f1=float(f1_score(truth, predictions.labels, average="macro", zero_division=0)), weighted_f1=float(f1_score(truth, predictions.labels, average="weighted", zero_division=0)), report=classification_report(truth, predictions.labels, labels=labels, output_dict=True, zero_division=0), confusion_matrix=confusion_matrix(truth, predictions.labels, labels=labels).tolist(), samples=len(frame))
+    predicted: list[str] = []
+    iterator = range(0, len(frame), batch_size)
+    for start in tqdm(iterator, total=(len(frame) + batch_size - 1) // batch_size, unit="batch", desc=f"Evaluating {model_name}", disable=not progress):
+        predicted.extend(model.predict(frame["text"].iloc[start : start + batch_size].tolist()).labels)
+    labels = sorted(set(truth) | set(predicted))
+    return EvaluationResult(
+        model_name=model_name,
+        accuracy=float(accuracy_score(truth, predicted)),
+        macro_f1=float(f1_score(truth, predicted, average="macro", zero_division=0)),
+        weighted_f1=float(f1_score(truth, predicted, average="weighted", zero_division=0)),
+        report=classification_report(truth, predicted, labels=labels, output_dict=True, zero_division=0),
+        confusion_matrix=confusion_matrix(truth, predicted, labels=labels).tolist(),
+        samples=len(frame),
+    )
 
 
 def save_result(result: EvaluationResult, output: Path) -> None:
