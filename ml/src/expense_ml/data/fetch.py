@@ -49,7 +49,6 @@ def fetch_huggingface_dataset(
 
     if target.exists() and metadata_path.exists() and not force:
         frame = pd.read_parquet(target)
-        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         return frame, FetchedDataset(source, dataset_id, split, len(frame), str(target), True)
 
     dataset = load_dataset(dataset_id, split=split, cache_dir=str(cache_dir) if cache_dir else None)
