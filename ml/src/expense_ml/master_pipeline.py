@@ -99,11 +99,14 @@ def train_all(frame: pd.DataFrame, cfg: TrainingConfig, run_dir: Path, include_t
 
         _stage(bar, "TF-IDF + Logistic Regression")
         tfidf = train_tfidf(splits.train, run_cfg)
-        tfidf_result = evaluate_model(tfidf, splits.test, "tfidf")
+        tfidf_result = evaluate_model(tfidf, splits.test, "tfidf", batch_size=cfg.eval_batch_size, progress=cfg.progress)
         save_result(tfidf_result, run_dir / "reports" / "tfidf_test.json")
         save_classification_figures(tfidf_result, plots_dir, "TFIDF")
         results.append(asdict(tfidf_result))
         manifest["models"]["category_tfidf"] = {"status": "trained", "artifact": "models/category-tfidf"}
+        if len(splits.india_holdout):
+            india_result = evaluate_model(tfidf, splits.india_holdout, "tfidf-india", batch_size=cfg.eval_batch_size, progress=cfg.progress)
+            save_result(india_result, run_dir / "reports" / "tfidf_india_test.json")
         bar.update(1)
 
         _stage(bar, "Transformer classifier")
@@ -111,14 +114,14 @@ def train_all(frame: pd.DataFrame, cfg: TrainingConfig, run_dir: Path, include_t
             try:
                 from .train_transformer import train_transformer
                 transformer = train_transformer(splits.train, splits.validation, run_cfg)
-                transformer_result = evaluate_model(transformer, splits.test, "transformer")
+                transformer_result = evaluate_model(transformer, splits.test, "transformer", batch_size=cfg.eval_batch_size, progress=cfg.progress)
                 save_result(transformer_result, run_dir / "reports" / "transformer_test.json")
                 save_classification_figures(transformer_result, plots_dir, "Transformer")
                 results.append(asdict(transformer_result))
-                manifest["models"]["category_transformer"] = {
-                    "status": "trained",
-                    "artifact": "models/category-transformer",
-                }
+                if len(splits.india_holdout):
+                    india_result = evaluate_model(transformer, splits.india_holdout, "transformer-india", batch_size=cfg.eval_batch_size, progress=cfg.progress)
+                    save_result(india_result, run_dir / "reports" / "transformer_india_test.json")
+                manifest["models"]["category_transformer"] = {"status": "trained", "artifact": "models/category-transformer"}
             except Exception as exc:
                 manifest["models"]["category_transformer"] = {"status": "skipped", "reason": str(exc)}
         else:
@@ -187,12 +190,7 @@ def load_input(config_path: Path, prepared_path: Path) -> tuple[pd.DataFrame, Tr
     cfg = TrainingConfig.from_env(TrainingConfig.from_mapping({**cfg.__dict__, "datasets": datasets}))
     if prepared_path.exists():
         return pd.read_parquet(prepared_path), cfg
-    frame = load_configured_datasets(
-        cfg.datasets,
-        cfg.data_dir,
-        progress=cfg.progress,
-        normalize_chunk_size=cfg.normalize_chunk_size,
-    )
+    frame = load_configured_datasets(cfg.datasets, cfg.data_dir, progress=cfg.progress, normalize_chunk_size=cfg.normalize_chunk_size)
     save_prepared(frame, prepared_path)
     return frame, cfg
 
