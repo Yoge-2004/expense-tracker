@@ -2,40 +2,42 @@
 
 ## 1. Create the Kaggle notebook
 
-Open the repository's `ml/notebooks/kaggle_master_training.ipynb` and upload it as a Kaggle Notebook. In the notebook's **Add Input** panel, attach one or more Kaggle datasets.
+Open the repository's `ml/notebooks/kaggle_master_training.ipynb` and upload it as a Kaggle Notebook. Enable a GPU runtime and use **Run All**.
 
-Kaggle mounts attached datasets below:
+The standard training datasets are fetched automatically from Hugging Face; manual Kaggle dataset attachments are not required for the default run.
+
+## 2. Automatic dataset fetch
+
+The repository manifest contains the verified standard sources and their schemas:
+
+```text
+mitulshah/transaction-categorization
+Ranjit0034/finee-dataset
+Sumeetgpt/indian-transaction-categorization-synthetic
+```
+
+The notebook calls `expense_ml.data.fetch.fetch_configured_datasets()`. Each source is downloaded with the Hugging Face `datasets` library, normalized into the common `text`, `label`, `source` schema, and cached under:
+
+```text
+/kaggle/working/expense-ml-data/
+├── normalized/
+├── transactions.parquet
+└── fetch_manifest.json
+```
+
+`tqdm` shows both per-source row progress and overall dataset-source progress. A later notebook rerun reuses the normalized Parquet cache. Set `EXPENSE_ML_FORCE_FETCH=1` to refresh it.
+
+## 3. Optional additional Kaggle data
+
+You can still use Kaggle's **Add Input** panel when experimenting with another CSV/Parquet dataset. Attached files appear below:
 
 ```text
 /kaggle/input/<dataset-name>/...
 ```
 
-The notebook prints that directory tree so you can copy the exact paths into `KAGGLE_DATASETS`.
+Create a separate runtime YAML that maps those files to `source`, `text_column`, and `label_column`, then invoke the master pipeline with that config. The standard automatic Hugging Face fetch remains independent of attached inputs.
 
-## 2. Attach multiple datasets/files
-
-The master pipeline accepts multiple local CSV/Parquet files through the YAML dataset list. Example:
-
-```python
-KAGGLE_DATASETS = [
-    {
-        "source": "global",
-        "path": "/kaggle/input/global-transaction-categorization/data.csv",
-        "text_column": "transaction_description",
-        "label_column": "category",
-    },
-    {
-        "source": "finee-india",
-        "path": "/kaggle/input/finee-dataset/train.csv",
-        "text_column": "input",
-        "label_column": "output.category",
-    },
-]
-```
-
-The notebook writes these entries to a temporary Kaggle YAML configuration and runs the same master pipeline used outside Kaggle.
-
-## 3. Resource controls
+## 4. Resource controls
 
 Defaults are designed for Kaggle GPU sessions, but every value can be overridden with environment variables:
 
@@ -50,13 +52,13 @@ EXPENSE_ML_DUPLICATE_MAX_ROWS=500000
 EXPENSE_ML_NORMALIZE_CHUNK_SIZE=250000
 ```
 
-`auto` CPU threading uses the available logical CPUs. Hugging Face tokenization and the Transformer DataLoader use configurable worker processes. CUDA uses FP16 automatically when enabled by the detected environment, with BF16 selected when explicitly requested or supported.
+`auto` CPU threading uses the available logical CPUs. Hugging Face tokenization and the Transformer DataLoader use configurable worker processes. CUDA uses automatic mixed precision when supported/configured.
 
-## 4. Progress reporting
+## 5. Progress reporting
 
-`tqdm` reports dataset loading, chunked normalization, model evaluation, master pipeline stages, and Transformer tokenization/training. Hugging Face Trainer's own progress bar remains enabled unless `EXPENSE_ML_NO_PROGRESS=1` is set.
+`tqdm` reports dataset fetches, pipeline stages, evaluation batches, and tokenization. Hugging Face Trainer keeps its own epoch/step progress display.
 
-## 5. Outputs
+## 6. Outputs
 
 Each run is written to `/kaggle/working/expense-ml-runs/<run-id>/`:
 
@@ -69,8 +71,8 @@ reports/
   figures/*.png
 ```
 
-The manifest records the detected CPU/GPU resources, seed, platform, trained/skipped models, and artifact locations.
+The fetch directory additionally contains `fetch_manifest.json`, including source IDs, split names, row counts, normalized cache paths, and whether a source came from cache.
 
-## 6. Multi-GPU note
+## 7. Multi-GPU note
 
-A normal Kaggle notebook process is typically one training process. The pipeline fully uses the visible GPU for that process and uses CPU workers to feed it. When a Kaggle environment exposes multiple GPUs, launch a distributed job with `torchrun` rather than expecting a single notebook process to automatically coordinate every device.
+A normal Kaggle notebook process is typically one training process. The pipeline fully uses the visible GPU for that process and uses CPU workers to feed it. When a Kaggle environment exposes multiple GPUs, launch distributed training with `torchrun` rather than expecting a single notebook process to coordinate every device.
