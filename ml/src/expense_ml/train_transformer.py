@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -7,10 +9,17 @@ from .config import TrainingConfig, seed_everything
 from .models.transformer import TransformerCategoryModel
 
 
+def _workers(config: TrainingConfig) -> int:
+    if config.dataloader_workers is not None:
+        return max(0, config.dataloader_workers)
+    return max(1, min((os.cpu_count() or 2) // 2, 8))
+
+
 def _precision_flags(config: TrainingConfig) -> tuple[bool, bool]:
-    if config.mixed_precision.lower() == "fp16":
+    mode = config.mixed_precision.lower()
+    if mode == "fp16":
         return True, False
-    if config.mixed_precision.lower() == "bf16":
+    if mode == "bf16":
         return False, True
     try:
         import torch
@@ -32,14 +41,28 @@ def train_transformer(train_frame: pd.DataFrame, validation_frame: pd.DataFrame,
     tokenizer, model = base.tokenizer, base.model
     train = Dataset.from_pandas(train_frame[["text", "label"]], preserve_index=False)
     valid = Dataset.from_pandas(validation_frame[["text", "label"]], preserve_index=False)
+    workers = _workers(config)
+    tokenization_workers = max(1, workers)
 
     def tokenize(batch):
         encoded = tokenizer(batch["text"], truncation=True, max_length=config.max_length)
         encoded["labels"] = [label2id[x] for x in batch["label"]]
         return encoded
 
-    train = train.map(tokenize, batched=True, remove_columns=["text", "label"], desc="Tokenizing train")
-    valid = valid.map(tokenize, batched=True, remove_columns=["text", "label"], desc="Tokenizing validation")
+    train = train.map(
+        tokenize,
+        batched=True,
+        num_proc=tokenization_workers,
+        remove_columns=["text", "label"],
+        desc="Tokenizing train",
+    )
+    valid = valid.map(
+        tokenize,
+        batched=True,
+        num_proc=tokenization_workers,
+        remove_columns=["text", "label"],
+        desc="Tokenizing validation",
+    )
 
     def metrics(eval_pred):
         from sklearn.metrics import accuracy_score, f1_score
@@ -52,12 +75,7 @@ def train_transformer(train_frame: pd.DataFrame, validation_frame: pd.DataFrame,
         }
 
     fp16, bf16 = _precision_flags(config)
-    workers = config.dataloader_workers
-    if workers is None:
-        import os
-        workers = max(1, min((os.cpu_count() or 2) // 2, 8))
-    use_workers = workers > 0
-
+    cuda = torch_available_cuda()
     args = TrainingArguments(
         output_dir=str(config.model_dir / "training"),
         learning_rate=config.learning_rate,
@@ -73,14 +91,15 @@ def train_transformer(train_frame: pd.DataFrame, validation_frame: pd.DataFrame,
         logging_strategy="steps",
         logging_steps=100,
         report_to="none",
+        disable_tqdm=not config.progress,
         seed=config.seed,
         data_seed=config.seed,
         save_total_limit=2,
         fp16=fp16,
         bf16=bf16,
         dataloader_num_workers=workers,
-        dataloader_pin_memory=config.pin_memory and torch_available_cuda(),
-        dataloader_persistent_workers=config.persistent_workers and use_workers,
+        dataloader_pin_memory=config.pin_memory and cuda,
+        dataloader_persistent_workers=config.persistent_workers and workers > 0,
         tf32=tf32_available(),
     )
     trainer = Trainer(
