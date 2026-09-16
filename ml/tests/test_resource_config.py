@@ -5,7 +5,7 @@ from expense_ml.train_transformer import _workers
 from expense_ml.config import TrainingConfig
 
 
-def test_configure_resources_uses_explicit_cpu_thread_limit():
+def test_configure_resources_uses_explicit_cpu_thread_limit(monkeypatch):
     configure_resources(cpu_threads=3)
     assert os.environ["OMP_NUM_THREADS"] == "3"
     assert os.environ["MKL_NUM_THREADS"] == "3"
@@ -22,3 +22,9 @@ def test_configure_resources_reports_device_without_requiring_torch():
 
 def test_transformer_worker_count_honors_explicit_setting():
     assert _workers(TrainingConfig(dataloader_workers=4)) == 4
+
+
+def test_auto_cpu_thread_env_is_accepted(monkeypatch):
+    monkeypatch.setenv("EXPENSE_ML_CPU_THREADS", "auto")
+    config = TrainingConfig.from_env()
+    assert config.cpu_threads is None
