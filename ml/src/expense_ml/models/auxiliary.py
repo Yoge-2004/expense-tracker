@@ -35,8 +35,11 @@ class MerchantSimilarityIndex:
         self.merchants = merchants
 
     @classmethod
-    def fit(cls, texts: list[str]) -> "MerchantSimilarityIndex":
+    def fit(cls, texts: list[str], max_merchants: int = 100_000) -> "MerchantSimilarityIndex":
         merchants = sorted({_merchant_key(x) for x in texts if _merchant_key(x)})
+        if len(merchants) > max_merchants:
+            rng = np.random.default_rng(42)
+            merchants = sorted(rng.choice(merchants, size=max_merchants, replace=False).tolist())
         if not merchants:
             raise ValueError("No merchant-like text was available for indexing.")
         vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 5), min_df=1, sublinear_tf=True)
@@ -60,7 +63,10 @@ class DuplicateSimilarityModel:
         self.matrix = matrix
 
     @classmethod
-    def fit(cls, texts: list[str]) -> "DuplicateSimilarityModel":
+    def fit(cls, texts: list[str], max_rows: int = 200_000) -> "DuplicateSimilarityModel":
+        if len(texts) > max_rows:
+            rng = np.random.default_rng(42)
+            texts = rng.choice(np.asarray(texts, dtype=object), size=max_rows, replace=False).tolist()
         vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=1, sublinear_tf=True)
         matrix = vectorizer.fit_transform(texts)
         return cls(vectorizer, matrix)
