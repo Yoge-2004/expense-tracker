@@ -13,7 +13,7 @@ python -m pip install -e '.[dev]'
 
 ## Prepare and train locally
 
-Raw datasets are not committed. Configure `config/datasets.yaml` with exact dataset IDs or local files and their column names.
+Raw datasets are not committed. The default `config/datasets.yaml` contains the verified Hugging Face dataset IDs and their column mappings.
 
 ```bash
 python -m expense_ml.cli prepare
@@ -22,9 +22,19 @@ python -m expense_ml.cli train --model both
 
 The master pipeline writes timestamped runs under `artifacts/master-runs/` with models, JSON metrics, Markdown reports, and high-resolution PNG figures. `tqdm` shows progress for loading, normalization, evaluation, and pipeline stages.
 
-## Kaggle
+## Kaggle — automatic dataset fetching
 
-Use `notebooks/kaggle_master_training.ipynb` for GPU training. The notebook can attach multiple Kaggle datasets through **Add Input**; attached files appear under `/kaggle/input/<dataset-name>/...`. Set its `KAGGLE_DATASETS` list with the exact file path and source/text/label columns, and it will generate a temporary runtime YAML before invoking the same master pipeline.
+Use `notebooks/kaggle_master_training.ipynb` with a Kaggle GPU and **Run All**. You do not need to manually upload or attach the standard training datasets. The notebook reads `config/datasets.yaml` and downloads these datasets from Hugging Face automatically:
+
+```text
+mitulshah/transaction-categorization
+Ranjit0034/finee-dataset
+Sumeetgpt/indian-transaction-categorization-synthetic
+```
+
+The normalized datasets are cached under `/kaggle/working/expense-ml-data/`, combined into `transactions.parquet`, and then reused by the master training pipeline. Set `EXPENSE_ML_FORCE_FETCH=1` to refresh them.
+
+Additional Kaggle datasets can still be attached through **Add Input** when you want to experiment with local CSV/Parquet data; those are separate from the standard automatic Hugging Face fetch.
 
 See `docs/kaggle-training.md` for the complete setup and resource controls.
 
@@ -47,7 +57,7 @@ CPU operations use configurable threading; Transformer tokenization/DataLoader u
 
 ## Current datasets
 
-The default manifest includes `PolyAI/banking77` because it is a public, reproducible banking-intent dataset. The previously discussed global and Indian transaction-category datasets must be added by their verified dataset IDs or local paths before they are included in a production training run; their schemas are intentionally not guessed by this repository.
+The default category-training manifest uses the three verified Hugging Face sources above. `PolyAI/banking77` is not used as a default expense-category dataset because it is a banking-intent dataset rather than the target expense-category taxonomy.
 
 ## Reproducibility and data safety
 
