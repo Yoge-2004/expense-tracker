@@ -8,6 +8,15 @@ import random
 import numpy as np
 
 
+def _optional_int(value: str | None) -> int | None:
+    if value is None or value.strip().lower() == "auto":
+        return None
+    parsed = int(value)
+    if parsed < 1:
+        raise ValueError("numeric resource settings must be >= 1")
+    return parsed
+
+
 @dataclass(frozen=True)
 class TrainingConfig:
     seed: int = 42
@@ -69,8 +78,10 @@ class TrainingConfig:
             "EXPENSE_ML_DUPLICATE_MAX_ROWS": "duplicate_max_rows",
         }
         for env_name, field_name in scalar_ints.items():
-            if os.getenv(env_name):
-                updates[field_name] = int(os.environ[env_name])
+            raw = os.getenv(env_name)
+            if raw:
+                parsed = _optional_int(raw) if field_name in {"cpu_threads", "torch_threads", "dataloader_workers"} else int(raw)
+                updates[field_name] = parsed
         if os.getenv("EXPENSE_ML_MIXED_PRECISION"):
             updates["mixed_precision"] = os.environ["EXPENSE_ML_MIXED_PRECISION"]
         if os.getenv("EXPENSE_ML_NO_PROGRESS") == "1":
