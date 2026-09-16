@@ -5,6 +5,15 @@ from pathlib import Path
 import pandas as pd
 
 
+def _column(frame: pd.DataFrame, name: str) -> pd.Series:
+    if "." not in name:
+        return frame[name]
+    current = frame[name.split(".")[0]]
+    for part in name.split(".")[1:]:
+        current = current.map(lambda value: value.get(part) if isinstance(value, dict) else None)
+    return current
+
+
 def load_local(path: str | Path, text_column: str, label_column: str, source: str) -> pd.DataFrame:
     path = Path(path)
     if path.suffix.lower() == ".csv":
@@ -13,7 +22,7 @@ def load_local(path: str | Path, text_column: str, label_column: str, source: st
         frame = pd.read_parquet(path)
     else:
         raise ValueError(f"Unsupported dataset format: {path.suffix}")
-    return pd.DataFrame({"text": frame[text_column], "label": frame[label_column], "source": source})
+    return pd.DataFrame({"text": _column(frame, text_column), "label": _column(frame, label_column), "source": source})
 
 
 def load_huggingface(dataset_id: str, text_column: str, label_column: str, source: str, split: str = "train") -> pd.DataFrame:
@@ -21,4 +30,4 @@ def load_huggingface(dataset_id: str, text_column: str, label_column: str, sourc
 
     dataset = load_dataset(dataset_id, split=split)
     frame = dataset.to_pandas()
-    return pd.DataFrame({"text": frame[text_column], "label": frame[label_column], "source": source})
+    return pd.DataFrame({"text": _column(frame, text_column), "label": _column(frame, label_column), "source": source})
