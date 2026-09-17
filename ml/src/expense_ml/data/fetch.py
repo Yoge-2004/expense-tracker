@@ -37,7 +37,7 @@ def _extract_label(row: dict, label_column: str):
     return current
 
 
-def _extract_finee_chatml(row: dict) -> tuple[str, str]:
+def _extract_finee_chatml(row: dict) -> tuple[str, str | None]:
     messages = row.get("messages")
     if not isinstance(messages, list):
         raise ValueError("FinEE ChatML row must contain a list-valued 'messages' field.")
@@ -85,7 +85,7 @@ def _extract_finee_chatml(row: dict) -> tuple[str, str]:
         raise ValueError("FinEE assistant JSON must be an object.")
     category = payload.get("category")
     if category is None or not str(category).strip():
-        raise ValueError("FinEE assistant JSON does not contain a non-empty 'category'.")
+        return transaction_text, None
 
     return transaction_text, str(category)
 
