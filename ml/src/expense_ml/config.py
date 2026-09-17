@@ -32,6 +32,8 @@ class TrainingConfig:
     minimum_macro_f1: float = 0.90
     minimum_country_macro_f1: float = 0.85
     minimum_india_macro_f1: float = 0.85
+    minimum_confidence_coverage: float = 0.75
+    minimum_high_confidence_accuracy: float = 0.98
     minimum_country_samples: int = 100
     batch_size: int = 16
     eval_batch_size: int = 64
@@ -52,6 +54,38 @@ class TrainingConfig:
     progress: bool = True
     kaggle_input_dir: Path = Path("/kaggle/input")
     datasets: list[dict] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if not 0 < self.test_size < 1 or not 0 < self.validation_size < 1 or self.test_size + self.validation_size >= 1:
+            raise ValueError("test_size and validation_size must be positive and sum to less than 1")
+        for name in (
+            "confidence_threshold",
+            "minimum_accuracy",
+            "minimum_macro_f1",
+            "minimum_country_macro_f1",
+            "minimum_india_macro_f1",
+            "minimum_confidence_coverage",
+            "minimum_high_confidence_accuracy",
+        ):
+            value = float(getattr(self, name))
+            if not 0 <= value <= 1:
+                raise ValueError(f"{name} must be between 0 and 1")
+        if self.max_length < 8:
+            raise ValueError("max_length must be >= 8")
+        for name in (
+            "batch_size",
+            "eval_batch_size",
+            "epochs",
+            "gradient_accumulation_steps",
+            "baseline_max_rows",
+            "transformer_max_rows",
+            "max_merchants",
+            "duplicate_max_rows",
+            "normalize_chunk_size",
+            "minimum_country_samples",
+        ):
+            if int(getattr(self, name)) < 1:
+                raise ValueError(f"{name} must be >= 1")
 
     @classmethod
     def from_mapping(cls, values: dict) -> "TrainingConfig":
@@ -95,10 +129,13 @@ class TrainingConfig:
                 updates[field_name] = parsed
 
         scalar_floats = {
+            "EXPENSE_ML_CONFIDENCE_THRESHOLD": "confidence_threshold",
             "EXPENSE_ML_MINIMUM_ACCURACY": "minimum_accuracy",
             "EXPENSE_ML_MINIMUM_MACRO_F1": "minimum_macro_f1",
             "EXPENSE_ML_MINIMUM_COUNTRY_MACRO_F1": "minimum_country_macro_f1",
             "EXPENSE_ML_MINIMUM_INDIA_MACRO_F1": "minimum_india_macro_f1",
+            "EXPENSE_ML_MINIMUM_CONFIDENCE_COVERAGE": "minimum_confidence_coverage",
+            "EXPENSE_ML_MINIMUM_HIGH_CONFIDENCE_ACCURACY": "minimum_high_confidence_accuracy",
         }
         for env_name, field_name in scalar_floats.items():
             raw = os.getenv(env_name)
