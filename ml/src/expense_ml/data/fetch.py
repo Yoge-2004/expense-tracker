@@ -62,10 +62,20 @@ def fetch_huggingface_dataset(
             token=hf_token,
         )
     except DatasetNotFoundError as exc:
-        if "gated dataset" in str(exc).lower() and not hf_token:
+        message = str(exc).lower()
+        if "gated dataset" in message:
+            if not hf_token:
+                raise RuntimeError(
+                    f"Hugging Face dataset '{dataset_id}' is gated and requires authentication. "
+                    "In Kaggle, attach a Secret named 'HF_TOKEN' containing a Hugging Face "
+                    "access token with permission to this dataset, then rerun training. "
+                    "The Hugging Face account must also have accepted/requested access to the dataset."
+                ) from exc
             raise RuntimeError(
-                f"Hugging Face dataset '{dataset_id}' is gated and requires authentication. "
-                "Set HF_TOKEN in the environment (with access to the dataset) and rerun training."
+                f"Hugging Face authentication was provided, but access to gated dataset "
+                f"'{dataset_id}' was not granted. Open the dataset in Hugging Face, "
+                "accept/request its access terms for your account, verify the token belongs "
+                "to that account, and rerun training."
             ) from exc
         raise
 
