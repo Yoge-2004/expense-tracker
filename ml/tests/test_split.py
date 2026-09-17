@@ -30,6 +30,26 @@ def test_split_is_deterministic_and_has_no_exact_text_leakage():
         assert set(left["text"]) & set(right["text"]) == set()
     combined_partition_texts = set().union(*(set(part["text"]) for part in (a.train, a.validation, a.test, a.india_holdout)))
     assert "repeated merchant" in combined_partition_texts
+    assert "repeated merchant" not in set(a.india_holdout["text"])
+
+
+def test_cross_country_duplicate_is_excluded_from_india_holdout():
+    frame = pd.DataFrame(
+        [
+            {"text": "same narration", "label": "food", "source": "global", "country": "USA"},
+            {"text": "same narration", "label": "food", "source": "global", "country": "India"},
+        ]
+        + [
+            {"text": f"india {i}", "label": "food", "source": "global", "country": "India"}
+            for i in range(100)
+        ]
+        + [
+            {"text": f"usa {i}", "label": "transportation", "source": "global", "country": "USA"}
+            for i in range(100)
+        ]
+    )
+    result = split_dataset(frame, seed=17, test_size=.2, validation_size=.1)
+    assert "same narration" not in set(result.india_holdout["text"])
 
 
 def test_split_uses_country_metadata_for_india_holdout():
