@@ -142,6 +142,15 @@ def split_dataset(
         data["country"] = "unknown"
     data["source"] = data["source"].fillna("unknown").astype(str)
     data["country"] = data["country"].fillna("unknown").astype(str)
+
+    data, conflict_summary = remove_conflicting_text_groups(data)
+    if conflict_summary["rows_removed"]:
+        print(
+            "Removed ambiguous duplicate-text groups before splitting: "
+            f"{conflict_summary['conflicting_text_groups']} groups / "
+            f"{conflict_summary['rows_removed']} rows"
+        )
+
     data["_group"] = data["text"].fillna("").astype(str).map(_hash_text)
     _validate_group_labels(data)
 
