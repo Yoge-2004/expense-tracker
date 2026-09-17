@@ -9,17 +9,19 @@ def test_normalize_text_collapses_whitespace_and_unicode():
     assert normalize_text("  Café\u00a0Coffee  ") == "café coffee"
 
 
-def test_prepare_dataframe_drops_empty_and_duplicate_rows():
+def test_prepare_dataframe_removes_empty_rows_and_exact_duplicates():
     frame = pd.DataFrame(
         {
-            "text": ["Food  Shop", "food shop", None],
-            "label": ["Food", "food", "Food"],
-            "source": ["a", "b", "a"],
+            "text": ["Food  Shop", "food shop", "food shop"],
+            "label": ["Food", "food", "food"],
+            "source": ["a", "b", "b"],
+            "country": ["USA", "India", "India"],
         }
     )
     result = prepare_dataframe(frame)
-    assert len(result) == 1
-    assert result.iloc[0]["text"] == "food shop"
+    assert len(result) == 2
+    assert set(result["source"]) == {"a", "b"}
+    assert set(result["country"]) == {"USA", "India"}
 
 
 def test_taxonomy_maps_source_labels_to_stable_categories():
