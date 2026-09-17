@@ -23,7 +23,6 @@ class EvaluationResult:
     high_confidence_accuracy: float | None
 
 
-
 def evaluate_model(
     model,
     frame: pd.DataFrame,
@@ -54,6 +53,12 @@ def evaluate_model(
         prediction = model.predict(frame["text"].iloc[start : start + batch_size].tolist())
         predicted.extend(prediction.labels)
         confidences.extend(float(value) for value in prediction.confidence)
+
+    if len(predicted) != len(truth) or len(confidences) != len(truth):
+        raise ValueError(
+            f"Model '{model_name}' returned an invalid prediction count: "
+            f"labels={len(predicted)}, confidence={len(confidences)}, expected={len(truth)}"
+        )
 
     labels = sorted(set(truth) | set(predicted))
     high_conf_mask = [score >= confidence_threshold for score in confidences]
@@ -111,6 +116,7 @@ def validate_quality(
     *,
     minimum_accuracy: float,
     minimum_macro_f1: float,
+    minimum_confidence_coverage: float = 0.0,
     minimum_high_confidence_accuracy: float | None = None,
 ) -> None:
     failures = []
@@ -118,15 +124,19 @@ def validate_quality(
         failures.append(f"accuracy={result.accuracy:.4f} < {minimum_accuracy:.4f}")
     if result.macro_f1 < minimum_macro_f1:
         failures.append(f"macro_f1={result.macro_f1:.4f} < {minimum_macro_f1:.4f}")
-    if (
-        minimum_high_confidence_accuracy is not None
-        and result.high_confidence_accuracy is not None
-        and result.high_confidence_accuracy < minimum_high_confidence_accuracy
-    ):
+    if result.confidence_coverage < minimum_confidence_coverage:
         failures.append(
-            f"high_confidence_accuracy={result.high_confidence_accuracy:.4f} < "
-            f"{minimum_high_confidence_accuracy:.4f}"
+            f"confidence_coverage={result.confidence_coverage:.4f} < "
+            f"{minimum_confidence_coverage:.4f}"
         )
+    if minimum_high_confidence_accuracy is not None:
+        if result.high_confidence_accuracy is None:
+            failures.append("high_confidence_accuracy is unavailable because no predictions met the confidence threshold")
+        elif result.high_confidence_accuracy < minimum_high_confidence_accuracy:
+            failures.append(
+                f"high_confidence_accuracy={result.high_confidence_accuracy:.4f} < "
+                f"{minimum_high_confidence_accuracy:.4f}"
+            )
     if failures:
         raise ValueError(f"Quality gate failed for {result.model_name}: " + "; ".join(failures))
 
