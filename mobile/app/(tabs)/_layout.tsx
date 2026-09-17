@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, type ColorValue } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ import { Colors } from '../../constants/theme';
 interface TabIconProps {
   name: string;
   focused: boolean;
-  color: any;
+  color: ColorValue | string;
   label: string;
   activeColor: string;
 }

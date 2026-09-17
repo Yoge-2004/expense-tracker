@@ -95,7 +95,7 @@
         selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
 
         function renderOptions() {
-            optionsList.innerHTML = "";
+            optionsList.replaceChildren();
             const options = Array.from(selectEl.options);
 
             // Toggle search bar visibility
@@ -529,7 +529,7 @@
             if (currentPickerTarget && popover.style.display === "block") {
                 positionCalendarPicker(currentPickerTarget, popover);
             }
-        });
+        }, { passive: true });
 
         return popover;
     }
@@ -564,7 +564,7 @@
             syncCustomSelect(yearSel);
         }
 
-        grid.innerHTML = "";
+        grid.replaceChildren();
 
         const firstDayIndex = new Date(calViewYear, calViewMonth, 1).getDay(); // 0 = Sun
         const daysInCurrentMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();

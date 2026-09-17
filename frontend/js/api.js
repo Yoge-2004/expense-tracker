@@ -208,9 +208,24 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
     }
     let response;
+    let fetchSignal = options.signal;
+    let timeoutTimer = null;
+    if (!fetchSignal) {
+        if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+            fetchSignal = AbortSignal.timeout(options.timeout || 25000);
+        } else {
+            const controller = new AbortController();
+            timeoutTimer = setTimeout(() => controller.abort(), options.timeout || 25000);
+            fetchSignal = controller.signal;
+        }
+    } else if (typeof AbortSignal !== "undefined" && typeof AbortSignal.any === "function" && typeof AbortSignal.timeout === "function") {
+        fetchSignal = AbortSignal.any([fetchSignal, AbortSignal.timeout(options.timeout || 25000)]);
+    }
+
     try {
-        response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+        response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers, signal: fetchSignal });
     } catch (error) {
+        if (timeoutTimer) clearTimeout(timeoutTimer);
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
             await new Promise(r => setTimeout(r, 2500));
@@ -219,6 +234,7 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         updateServerStatus(false, "Connecting...");
         throw new Error("Unable to connect to the server. Please check your connection and try again.");
     } finally {
+        if (timeoutTimer) clearTimeout(timeoutTimer);
         if (showRequestLoading) {
             activeRequests -= 1;
             if (activeRequests === 0) setLoading(false);
@@ -557,4 +573,3 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => ripple.remove(), 600);
     });
 });
-

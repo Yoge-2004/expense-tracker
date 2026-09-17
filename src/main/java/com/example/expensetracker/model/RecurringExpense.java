@@ -67,7 +67,7 @@ public class RecurringExpense {
      * The expense category associated with each auto-generated occurrence.
      * Stored as a foreign key ({@code category_id}) in the database.
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
@@ -75,7 +75,7 @@ public class RecurringExpense {
      * The user who owns and is billed for this recurring expense.
      * Stored as a foreign key ({@code user_id}) in the database.
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 

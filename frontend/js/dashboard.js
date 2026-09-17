@@ -2845,7 +2845,7 @@ function renderPeriodPickerUI() {
     if (!reportYearChips || !reportMonthGrid) return;
 
     // Render Year Chips
-    reportYearChips.innerHTML = "";
+    reportYearChips.replaceChildren();
     periodAvailableYears.forEach(y => {
         const isSelected = y === selectedReportYear;
         const chip = document.createElement("button");
@@ -2866,7 +2866,7 @@ function renderPeriodPickerUI() {
     });
 
     // Render Month Grid
-    reportMonthGrid.innerHTML = "";
+    reportMonthGrid.replaceChildren();
     ALL_REPORT_MONTHS.forEach(m => {
         const isValid = isPeriodMonthValid(m.num, selectedReportYear);
         const isSelected = m.num === selectedReportMonth;

@@ -236,6 +236,7 @@ public class ExportServiceImpl implements ExportService {
      * @param incomeRepository the income persistence repository
      * @param savingsGoalRepository the savings goal persistence repository
      */
+    @Autowired
     public ExportServiceImpl(ExpenseRepository expenseRepository,
                              IncomeRepository incomeRepository,
                              SavingsGoalRepository savingsGoalRepository,

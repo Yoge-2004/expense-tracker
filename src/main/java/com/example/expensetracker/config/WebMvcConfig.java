@@ -25,11 +25,15 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    @Value("${app.cache.static-max-age:86400}")
-    private long staticMaxAgeSeconds;
+    private final long staticMaxAgeSeconds;
+    private final RateLimitInterceptor rateLimitInterceptor;
 
-    @Autowired(required = false)
-    private RateLimitInterceptor rateLimitInterceptor;
+    public WebMvcConfig(
+            @Value("${app.cache.static-max-age:86400}") long staticMaxAgeSeconds,
+            @Autowired(required = false) RateLimitInterceptor rateLimitInterceptor) {
+        this.staticMaxAgeSeconds = staticMaxAgeSeconds;
+        this.rateLimitInterceptor = rateLimitInterceptor;
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

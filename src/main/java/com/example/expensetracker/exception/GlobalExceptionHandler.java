@@ -172,16 +172,9 @@ public class GlobalExceptionHandler {
             AuthenticationException ex,
             HttpServletRequest request) {
 
-        Throwable rootCause = ex.getCause();
-        while (rootCause != null) {
-            if (rootCause instanceof org.springframework.dao.DataAccessException
-                    || rootCause instanceof org.springframework.transaction.CannotCreateTransactionException
-                    || rootCause instanceof org.hibernate.exception.JDBCConnectionException
-                    || rootCause instanceof java.sql.SQLException
-                    || rootCause instanceof DatabaseUnavailableException) {
-                return handleDatabaseUnavailable((Exception) rootCause, request);
-            }
-            rootCause = rootCause.getCause();
+        Exception dbCause = findDatabaseUnavailableCause(ex);
+        if (dbCause != null) {
+            return handleDatabaseUnavailable(dbCause, request);
         }
 
         String message = (ex.getMessage() != null && !ex.getMessage().isBlank() && !"Bad credentials".equalsIgnoreCase(ex.getMessage()))
@@ -241,16 +234,9 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
 
-        Throwable rootCause = ex.getCause();
-        while (rootCause != null) {
-            if (rootCause instanceof org.springframework.dao.DataAccessException
-                    || rootCause instanceof org.springframework.transaction.CannotCreateTransactionException
-                    || rootCause instanceof org.hibernate.exception.JDBCConnectionException
-                    || rootCause instanceof java.sql.SQLException
-                    || rootCause instanceof DatabaseUnavailableException) {
-                return handleDatabaseUnavailable((Exception) rootCause, request);
-            }
-            rootCause = rootCause.getCause();
+        Exception dbCause = findDatabaseUnavailableCause(ex);
+        if (dbCause != null) {
+            return handleDatabaseUnavailable(dbCause, request);
         }
 
         log.error("Unhandled exception at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
@@ -355,5 +341,20 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(response);
+    }
+
+    private Exception findDatabaseUnavailableCause(Throwable throwable) {
+        Throwable current = throwable != null ? throwable.getCause() : null;
+        while (current != null) {
+            if (current instanceof org.springframework.dao.DataAccessException
+                    || current instanceof org.springframework.transaction.CannotCreateTransactionException
+                    || current instanceof org.hibernate.exception.JDBCConnectionException
+                    || current instanceof java.sql.SQLException
+                    || current instanceof DatabaseUnavailableException) {
+                return (Exception) current;
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 }

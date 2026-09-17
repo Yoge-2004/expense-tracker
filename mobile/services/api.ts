@@ -232,7 +232,7 @@ function extractErrorDetails(
   };
 }
 
-function waitForRetry(ms: number, signal: AbortSignal | undefined, endpoint: string, method: string): Promise<void> {
+function waitForRetry(ms: number, signal: AbortSignal | null | undefined, endpoint: string, method: string): Promise<void> {
   if (signal?.aborted) {
     return Promise.reject(new ApiError({
       message: 'The network request was cancelled.',
