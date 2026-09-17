@@ -74,7 +74,6 @@
         overflow-y: visible !important;
         overflow: visible !important;
         scrollbar-width: none !important;
-        -ms-overflow-style: none !important;
     }
 
     .auth-hero {

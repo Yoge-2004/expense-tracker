@@ -317,7 +317,6 @@
     overflow-y: auto !important;
     overflow-x: hidden !important;
     overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
     padding: 0 !important;
     display: flex !important;
     flex-direction: column !important;

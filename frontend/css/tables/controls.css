@@ -62,8 +62,6 @@
     padding: 4px 8px 4px 4px;
     box-sizing: border-box;
     scrollbar-width: none !important; /* Firefox */
-    -ms-overflow-style: none !important; /* IE 10+ */
-    -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
 }
 

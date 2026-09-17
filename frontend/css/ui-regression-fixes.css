@@ -216,7 +216,6 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
         min-width:0 !important;
         width:100% !important;
         scrollbar-width:none !important;
-        -webkit-overflow-scrolling:touch !important;
     }
     #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
     #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
