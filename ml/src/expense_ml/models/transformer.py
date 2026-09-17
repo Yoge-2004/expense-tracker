@@ -25,6 +25,8 @@ class TransformerCategoryModel:
     def build(cls, model_name: str, labels: list[str], max_length: int = 96):
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+        if len(labels) < 2:
+            raise ValueError("TransformerCategoryModel.build requires at least two labels.")
         label2id = {label: i for i, label in enumerate(labels)}
         id2label = {i: label for label, i in label2id.items()}
         tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -39,11 +41,14 @@ class TransformerCategoryModel:
     def predict(self, texts, top_n: int = 3) -> PredictionBatch:
         import torch
 
-        if top_n < 1 or top_n > len(self.labels):
-            raise ValueError("top_n must be between 1 and the number of model labels")
+        if top_n < 1:
+            raise ValueError("top_n must be >= 1")
         values = list(texts)
         if not values:
             return PredictionBatch([], [], [])
+        effective_top_n = min(top_n, len(self.labels))
+        if effective_top_n < 1:
+            raise ValueError("The model has no learned labels")
 
         self.model.eval()
         device = next(self.model.parameters()).device
@@ -57,10 +62,18 @@ class TransformerCategoryModel:
         inputs = {key: value.to(device) for key, value in inputs.items()}
         with torch.inference_mode():
             probabilities = torch.softmax(self.model(**inputs).logits, dim=-1).cpu().numpy()
-        order = np.argsort(-probabilities, axis=1)[:, :top_n]
+        if probabilities.shape[1] != len(self.labels):
+            raise ValueError(
+                f"Model output has {probabilities.shape[1]} classes but metadata contains "
+                f"{len(self.labels)} labels."
+            )
+        order = np.argsort(-probabilities, axis=1)[:, :effective_top_n]
         labels = [self.labels[int(row[0])] for row in order]
         confidence = [float(probabilities[i, row[0]]) for i, row in enumerate(order)]
-        top_k = [[(self.labels[int(j)], float(probabilities[i, j])) for j in row] for i, row in enumerate(order)]
+        top_k = [
+            [(self.labels[int(j)], float(probabilities[i, j])) for j in row]
+            for i, row in enumerate(order)
+        ]
         return PredictionBatch(labels, confidence, top_k)
 
     def save(self, path: Path) -> None:
@@ -80,9 +93,15 @@ class TransformerCategoryModel:
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
         metadata = json.loads((path / "metadata.json").read_text(encoding="utf-8"))
+        labels = metadata["labels"]
+        if len(labels) < 2:
+            raise ValueError("Saved transformer metadata must contain at least two labels.")
+        model = AutoModelForSequenceClassification.from_pretrained(path)
+        if getattr(model.config, "num_labels", len(labels)) != len(labels):
+            raise ValueError("Saved transformer model label count does not match metadata.")
         return cls(
-            AutoModelForSequenceClassification.from_pretrained(path),
+            model,
             AutoTokenizer.from_pretrained(path),
-            metadata["labels"],
+            labels,
             metadata["max_length"],
         )
