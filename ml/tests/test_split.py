@@ -1,6 +1,6 @@
 import pandas as pd
 
-from expense_ml.data.split import split_dataset
+from expense_ml.data.split import split_dataset, remove_conflicting_text_groups
 
 
 def test_split_is_deterministic_and_has_no_exact_text_leakage():
@@ -66,3 +66,21 @@ def test_split_uses_country_metadata_for_india_holdout():
     result = split_dataset(frame, seed=11, test_size=.2, validation_size=.1)
     assert len(result.india_holdout) > 0
     assert set(result.india_holdout["country"]) == {"India"}
+
+
+def test_conflicting_text_groups_are_removed_before_splitting():
+    frame = pd.DataFrame(
+        [
+            {"text": "ambiguous narration", "label": "food_dining", "source": "global", "country": "USA"},
+            {"text": "ambiguous narration", "label": "shopping_retail", "source": "finee", "country": "India"},
+            {"text": "clear food", "label": "food_dining", "source": "global", "country": "USA"},
+            {"text": "clear transport", "label": "transportation", "source": "global", "country": "USA"},
+        ]
+    )
+
+    cleaned, summary = remove_conflicting_text_groups(frame)
+
+    assert "ambiguous narration" not in set(cleaned["text"])
+    assert set(cleaned["text"]) == {"clear food", "clear transport"}
+    assert summary["conflicting_text_groups"] == 1
+    assert summary["rows_removed"] == 2
