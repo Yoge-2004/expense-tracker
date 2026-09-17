@@ -55,6 +55,10 @@ SOURCE_LABEL_MAP: Mapping[str, Mapping[str, str]] = {
         "transfer": "financial_services",
         "salary": "income",
         "emi": "financial_services",
+        # The fixed canonical taxonomy has no dedicated credit/reversal class.
+        # Keep these non-expense adjustments out of earned-income reporting.
+        "cashback": "financial_services",
+        "refund": "financial_services",
     },
     "synthetic-indian-transactions": {
         "groceries": "food_dining",
