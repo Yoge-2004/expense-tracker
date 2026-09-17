@@ -1,11 +1,7 @@
-# Category-classification datasets for the Expense Intelligence training pipeline.
-# Raw data is downloaded by the Hugging Face datasets library and is never
-# committed to this repository.
-#
-# The global dataset provides cross-country coverage (USA, UK, Canada,
-# Australia, India). FinEE adds Indian banking-message coverage, including
-# multilingual transaction narrations. The synthetic Indian dataset adds
-# explicit Indian narration/category examples.
+# Training datasets for the Expense Intelligence category classifier.
+# Every source is normalized into the explicit canonical taxonomy in
+# expense_ml.data.taxonomy. Unknown source labels fail preparation.
+# Raw datasets are never committed to Git.
 
 datasets:
   - source: global-transaction-categorization
@@ -13,6 +9,9 @@ datasets:
     split: train
     text_column: transaction_description
     label_column: category
+    country_column: country
+    currency_column: currency
+    normalize_chunk_size: 250000
 
   - source: finee-india
     dataset_id: Ranjit0034/finee-dataset
@@ -20,9 +19,17 @@ datasets:
     format: finee-chatml
     text_column: messages
     label_column: messages
+    default_country: India
+    default_currency: INR
+    default_language: multilingual
+    normalize_chunk_size: 25000
 
   - source: synthetic-indian-transactions
     dataset_id: Sumeetgpt/indian-transaction-categorization-synthetic
     split: train
     text_column: text
     label_column: category
+    default_country: India
+    default_currency: INR
+    default_language: en
+    normalize_chunk_size: 25000
