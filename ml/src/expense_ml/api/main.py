@@ -52,9 +52,11 @@ def _service() -> InferenceService:
 
 @app.get("/health")
 def health() -> dict:
-    if _registry is not None:
-        return {"status": "ok", "model": _registry.metadata()}
-    return {"status": "degraded", "model_error": _load_error or "model not loaded"}
+    try:
+        service = _service()
+    except HTTPException:
+        return {"status": "degraded", "model_error": _load_error or "model not loaded"}
+    return {"status": "ok", "model": service.registry.metadata()}
 
 
 @app.post("/api/v1/classify", response_model=ClassificationResponse)
