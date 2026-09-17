@@ -60,22 +60,7 @@ jobs:
         env:
           CI: true
           BASE_URL: http://localhost:5500
-        run: npx playwright test tests/critical-ui-regressions.spec.ts --project=chromium --reporter=list 2>&1 | tee /tmp/crit.log
-
-      - name: TEMP diagnostic - surface failure via API
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python3 - <<'PY' > /tmp/body.json
-          import json
-          txt = open('/tmp/crit.log', errors='replace').read()[-5500:]
-          print(json.dumps({"body": "### TEMP: critical-ui-regressions output\n```\n" + txt + "\n```"}))
-          PY
-          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/29/comments" \
-            --data-binary @/tmp/body.json > /dev/null
+        run: npx playwright test tests/critical-ui-regressions.spec.ts --project=chromium
 
       - name: Run mobile UI regressions on Pixel 7
         working-directory: e2e
