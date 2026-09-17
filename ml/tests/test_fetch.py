@@ -133,6 +133,39 @@ def test_fetch_huggingface_dataset_skips_finee_rows_without_category(tmp_path, m
     assert frame.loc[0, "label"] == "food_dining"
 
 
+def test_fetch_huggingface_dataset_maps_finee_cashback_and_refund(tmp_path, monkeypatch):
+    from expense_ml.data import fetch as fetch_module
+
+    fake = [
+        {
+            "messages": [
+                {"role": "user", "content": "Extract financial entities from: Cashback credited"},
+                {"role": "assistant", "content": '{"amount": 50.0, "category": "cashback"}'},
+            ]
+        },
+        {
+            "messages": [
+                {"role": "user", "content": "Extract financial entities from: Refund credited"},
+                {"role": "assistant", "content": '{"amount": 100.0, "category": "refund"}'},
+            ]
+        },
+    ]
+    monkeypatch.setattr("datasets.load_dataset", lambda *args, **kwargs: fake)
+
+    frame, _ = fetch_module.fetch_huggingface_dataset(
+        dataset_id="Ranjit0034/finee-dataset",
+        text_column="messages",
+        label_column="messages",
+        source="finee-india",
+        cache_dir=tmp_path,
+        progress=False,
+        dataset_format="finee-chatml",
+    )
+
+    assert frame["source_label"].tolist() == ["cashback", "refund"]
+    assert frame["label"].tolist() == ["financial_services", "financial_services"]
+
+
 def test_fetch_huggingface_dataset_rejects_unknown_finee_category(tmp_path, monkeypatch):
     from expense_ml.data import fetch as fetch_module
 
