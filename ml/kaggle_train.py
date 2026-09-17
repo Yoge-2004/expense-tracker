@@ -18,6 +18,11 @@ Useful overrides:
     EXPENSE_ML_EVAL_BATCH_SIZE=64
     EXPENSE_ML_MIXED_PRECISION=auto
     EXPENSE_ML_NO_TRANSFORMER=1
+
+Hugging Face authentication:
+    Set HF_TOKEN in the environment, or attach a Kaggle Secret named
+    `HF_TOKEN`. The secret is copied into the child training process without
+    ever being printed.
 """
 from __future__ import annotations
 
@@ -36,8 +41,28 @@ def install_local_package() -> None:
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-e", str(ROOT)], check=True)
 
 
+def configure_huggingface_auth() -> bool:
+    """Load HF_TOKEN from the environment or Kaggle Secrets."""
+    token = os.getenv("HF_TOKEN")
+    if token:
+        os.environ["HF_TOKEN"] = token.strip()
+        return bool(os.environ["HF_TOKEN"])
+
+    try:
+        from kaggle_secrets import UserSecretsClient
+
+        token = UserSecretsClient().get_secret("HF_TOKEN")
+    except Exception:
+        return False
+
+    if token:
+        os.environ["HF_TOKEN"] = token.strip()
+    return bool(os.environ.get("HF_TOKEN"))
+
+
 def _load_yaml(path: Path) -> dict:
     import yaml
+
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
@@ -72,6 +97,9 @@ def main() -> None:
 
     resource_info = configure_resources()
     print("ML resources:", json.dumps(resource_info, indent=2))
+
+    hf_authenticated = configure_huggingface_auth()
+    print(f"Hugging Face authentication: {'available' if hf_authenticated else 'not available'}")
 
     output = Path(os.getenv("EXPENSE_ML_OUTPUT", "/kaggle/working/expense-ml-runs"))
     cache_dir = Path(os.getenv("EXPENSE_ML_DATA_CACHE", "/kaggle/working/expense-ml-data"))
