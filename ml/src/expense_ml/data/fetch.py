@@ -15,7 +15,7 @@ from .normalize import prepare_dataframe
 from .taxonomy import SOURCE_LABEL_MAP
 
 
-NORMALIZATION_VERSION = "2.1"
+NORMALIZATION_VERSION = "2.2"
 
 
 @dataclass(frozen=True)
