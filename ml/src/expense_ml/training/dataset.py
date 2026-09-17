@@ -26,6 +26,23 @@ def feedback_fingerprint(records: list[FeedbackRecord]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def training_data_fingerprint(frame: pd.DataFrame) -> str:
+    """Create a deterministic fingerprint for the complete training corpus."""
+    columns = [
+        column
+        for column in ("text", "label", "source", "country", "currency", "language", "record_id")
+        if column in frame
+    ]
+    payload = (
+        frame.loc[:, columns]
+        .fillna("")
+        .astype(str)
+        .sort_values(columns)
+        .to_json(orient="records", force_ascii=False)
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def build_training_frame(
     base_frame: pd.DataFrame,
     feedback_records: list[FeedbackRecord],
