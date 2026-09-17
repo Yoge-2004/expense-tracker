@@ -6,8 +6,8 @@ def test_fetch_configured_datasets_normalizes_multiple_sources(tmp_path, monkeyp
     from expense_ml.data import fetch as fetch_module
 
     fake = [
-        {"text": "Swiggy order", "category": "Food"},
-        {"text": "Uber ride", "category": "Transport"},
+        {"text": "Swiggy order", "category": "Food & Dining"},
+        {"text": "Uber ride", "category": "Transportation"},
     ]
     monkeypatch.setattr(fetch_module, "pd", pd)
     monkeypatch.setattr("datasets.load_dataset", lambda *args, **kwargs: fake)
@@ -15,11 +15,13 @@ def test_fetch_configured_datasets_normalizes_multiple_sources(tmp_path, monkeyp
     frame, manifests = fetch_module.fetch_configured_datasets(
         [
             {
-                "source": "demo",
+                "source": "global-transaction-categorization",
                 "dataset_id": "demo/dataset",
                 "split": "train",
                 "text_column": "text",
                 "label_column": "category",
+                "default_country": "USA",
+                "default_currency": "USD",
             }
         ],
         tmp_path,
@@ -27,9 +29,10 @@ def test_fetch_configured_datasets_normalizes_multiple_sources(tmp_path, monkeyp
     )
 
     assert list(frame.columns) == ["text", "label", "source", "source_label", "country", "currency", "language", "record_id"]
-    assert len(frame) == 2
+    assert frame["label"].tolist() == ["food_dining", "transportation"]
+    assert frame["country"].tolist() == ["USA", "USA"]
     assert manifests[0]["dataset_id"] == "demo/dataset"
-    assert (tmp_path / "normalized" / "demo.parquet").exists()
+    assert (tmp_path / "normalized" / "global-transaction-categorization.parquet").exists()
 
 
 def test_fetch_huggingface_dataset_passes_hf_token(tmp_path, monkeypatch):
@@ -39,15 +42,33 @@ def test_fetch_huggingface_dataset_passes_hf_token(tmp_path, monkeypatch):
 
     def fake_load_dataset(*args, **kwargs):
         captured.update(kwargs)
-        return [{"text": "Swiggy order", "category": "Food"}]
+        return [{"text": "Swiggy order", "category": "Food & Dining"}]
 
     monkeypatch.setattr("datasets.load_dataset", fake_load_dataset)
     monkeypatch.setenv("HF_TOKEN", "test-token")
     fetch_module.fetch_huggingface_dataset(
         dataset_id="demo/dataset", text_column="text", label_column="category",
-        source="demo-token", cache_dir=tmp_path, progress=False,
+        source="global-transaction-categorization", cache_dir=tmp_path, progress=False,
     )
     assert captured["token"] == "test-token"
+
+
+def test_fetch_huggingface_dataset_rejects_unmapped_source(tmp_path, monkeypatch):
+    from expense_ml.data import fetch as fetch_module
+
+    monkeypatch.setattr(
+        "datasets.load_dataset",
+        lambda *args, **kwargs: [{"text": "example", "category": "Food"}],
+    )
+    with pytest.raises(ValueError, match="No canonical taxonomy mapping"):
+        fetch_module.fetch_huggingface_dataset(
+            dataset_id="new/source",
+            text_column="text",
+            label_column="category",
+            source="new-source",
+            cache_dir=tmp_path,
+            progress=False,
+        )
 
 
 def test_fetch_huggingface_dataset_extracts_finee_chatml_category(tmp_path, monkeypatch):
