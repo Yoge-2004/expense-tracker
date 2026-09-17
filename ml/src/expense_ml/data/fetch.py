@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+import hashlib
 import json
 import os
+from pathlib import Path
+import re
 
 import pandas as pd
 from tqdm.auto import tqdm
 
 from .normalize import prepare_dataframe
+
+
+NORMALIZATION_VERSION = "2.0"
 
 
 @dataclass(frozen=True)
@@ -51,10 +56,17 @@ def _extract_finee_chatml(row: dict) -> tuple[str, str]:
     if not isinstance(assistant_content, str) or not assistant_content.strip():
         raise ValueError("FinEE ChatML row has no non-empty assistant message content.")
 
+    transaction_text = re.sub(
+        r"^\s*extract financial entities from\s*:\s*",
+        "",
+        user_content.strip(),
+        flags=re.IGNORECASE,
+    )
+
     payload_text = assistant_content.strip()
     if payload_text.startswith("```"):
         lines = payload_text.splitlines()
-        if lines and lines[0].startswith("```"):
+        if lines and lines[0].strip().startswith("```"):
             lines = lines[1:]
         if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
@@ -73,7 +85,7 @@ def _extract_finee_chatml(row: dict) -> tuple[str, str]:
     if category is None or not str(category).strip():
         raise ValueError("FinEE assistant JSON does not contain a non-empty 'category'.")
 
-    return user_content, str(category)
+    return transaction_text, str(category)
 
 
 def _extract_training_fields(
@@ -92,6 +104,23 @@ def _extract_training_fields(
     return row[text_column], _extract_label(row, label_column)
 
 
+def _metadata_value(batch: dict, column: str | None, index: int, default: str) -> object:
+    if column and column in batch:
+        return batch[column][index]
+    return default
+
+
+def _cache_is_current(metadata_path: Path, dataset_format: str | None) -> bool:
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return (
+        metadata.get("normalization_version") == NORMALIZATION_VERSION
+        and metadata.get("dataset_format") == dataset_format
+    )
+
+
 def fetch_huggingface_dataset(
     dataset_id: str,
     text_column: str,
@@ -102,8 +131,15 @@ def fetch_huggingface_dataset(
     progress: bool = True,
     force: bool = False,
     dataset_format: str | None = None,
+    country_column: str | None = None,
+    currency_column: str | None = None,
+    language_column: str | None = None,
+    default_country: str = "unknown",
+    default_currency: str = "unknown",
+    default_language: str = "unknown",
+    normalize_chunk_size: int = 250_000,
 ) -> tuple[pd.DataFrame, FetchedDataset]:
-    """Fetch one Hugging Face dataset, normalize it, and cache the normalized rows."""
+    """Fetch a Hugging Face dataset using bounded batches and cache normalized rows."""
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
 
@@ -112,7 +148,12 @@ def fetch_huggingface_dataset(
     target = target_dir / f"{source}.parquet"
     metadata_path = target.with_suffix(".json")
 
-    if target.exists() and metadata_path.exists() and not force:
+    if (
+        target.exists()
+        and metadata_path.exists()
+        and not force
+        and _cache_is_current(metadata_path, dataset_format)
+    ):
         frame = pd.read_parquet(target)
         return frame, FetchedDataset(source, dataset_id, split, len(frame), str(target), True)
 
@@ -131,35 +172,70 @@ def fetch_huggingface_dataset(
                 raise RuntimeError(
                     f"Hugging Face dataset '{dataset_id}' is gated and requires authentication. "
                     "In Kaggle, attach a Secret named 'HF_TOKEN' containing a Hugging Face "
-                    "access token with permission to this dataset, then rerun training. "
-                    "The Hugging Face account must also have accepted/requested access to the dataset."
+                    "access token with permission to this dataset."
                 ) from exc
             raise RuntimeError(
                 f"Hugging Face authentication was provided, but access to gated dataset "
-                f"'{dataset_id}' was not granted. Open the dataset in Hugging Face, "
-                "accept/request its access terms for your account, verify the token belongs "
-                "to that account, and rerun training."
+                f"'{dataset_id}' was not granted for that token."
             ) from exc
         raise
 
-    rows = []
-    for row in tqdm(
-        dataset,
-        total=len(dataset),
+    chunks: list[pd.DataFrame] = []
+    total = len(dataset)
+    outer = tqdm(
+        range(0, total, normalize_chunk_size),
+        total=(total + normalize_chunk_size - 1) // normalize_chunk_size,
         desc=f"Fetching {source}",
-        unit="rows",
+        unit="chunks",
         disable=not progress,
-    ):
-        text, label = _extract_training_fields(
-            row,
-            dataset_id=dataset_id,
-            text_column=text_column,
-            label_column=label_column,
-            dataset_format=dataset_format,
+    )
+    for start in outer:
+        stop = min(start + normalize_chunk_size, total)
+        batch = dataset[start:stop]
+        batch_rows = []
+        batch_size = stop - start
+        for index in range(batch_size):
+            row = {key: values[index] for key, values in batch.items()}
+            text, label = _extract_training_fields(
+                row,
+                dataset_id=dataset_id,
+                text_column=text_column,
+                label_column=label_column,
+                dataset_format=dataset_format,
+            )
+            country = _metadata_value(batch, country_column, index, default_country)
+            currency = _metadata_value(batch, currency_column, index, default_currency)
+            language = _metadata_value(batch, language_column, index, default_language)
+            raw_id = f"{source}:{start + index}:{text}:{label}"
+            record_id = hashlib.sha1(raw_id.encode("utf-8")).hexdigest()
+            batch_rows.append(
+                {
+                    "text": text,
+                    "label": label,
+                    "source": source,
+                    "source_label": label,
+                    "country": country,
+                    "currency": currency,
+                    "language": language,
+                    "record_id": record_id,
+                }
+            )
+        batch_frame = prepare_dataframe(
+            pd.DataFrame(batch_rows),
+            progress=progress,
+            chunk_size=normalize_chunk_size,
+            canonicalize=True,
+            strict_taxonomy=True,
         )
-        rows.append({"text": text, "label": label, "source": source})
+        chunks.append(batch_frame)
+        outer.set_postfix(rows=stop)
 
-    frame = prepare_dataframe(pd.DataFrame(rows))
+    frame = prepare_dataframe(
+        pd.concat(chunks, ignore_index=True),
+        progress=progress,
+        chunk_size=normalize_chunk_size,
+        canonicalize=False,
+    )
     frame.to_parquet(target, index=False)
     metadata_path.write_text(
         json.dumps(
@@ -169,12 +245,15 @@ def fetch_huggingface_dataset(
                 "split": split,
                 "rows": len(frame),
                 "dataset_format": dataset_format,
+                "normalization_version": NORMALIZATION_VERSION,
+                "countries": sorted(frame["country"].dropna().unique().tolist()) if "country" in frame else [],
+                "categories": sorted(frame["label"].dropna().unique().tolist()),
             },
             indent=2,
         ),
         encoding="utf-8",
     )
-    return frame, FetchedDataset(source, dataset_id, split, len(frame), str(target), False)
+    return FetchedDataset(source, dataset_id, split, len(frame), str(target), False)
 
 
 def fetch_configured_datasets(
@@ -199,6 +278,13 @@ def fetch_configured_datasets(
             progress=progress,
             force=force,
             dataset_format=item.get("format"),
+            country_column=item.get("country_column"),
+            currency_column=item.get("currency_column"),
+            language_column=item.get("language_column"),
+            default_country=item.get("default_country", "unknown"),
+            default_currency=item.get("default_currency", "unknown"),
+            default_language=item.get("default_language", "unknown"),
+            normalize_chunk_size=item.get("normalize_chunk_size", 250_000),
         )
         frames.append(frame)
         manifests.append(
@@ -214,4 +300,5 @@ def fetch_configured_datasets(
 
     if not frames:
         raise ValueError("No Hugging Face datasets with dataset_id were configured.")
-    return prepare_dataframe(pd.concat(frames, ignore_index=True)), manifests
+    combined = prepare_dataframe(pd.concat(frames, ignore_index=True), progress=progress, chunk_size=250_000)
+    return combined, manifests
