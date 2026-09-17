@@ -3,10 +3,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 
-# Broad primary taxonomy intentionally follows the strongest cross-country
-# category dataset. Source-specific labels are mapped into these stable IDs so
-# the classifier never learns spelling variants such as "food", "Food & Dining",
-# or "Eating Out" as unrelated classes.
 CANONICAL_CATEGORIES: tuple[str, ...] = (
     "food_dining",
     "transportation",
@@ -33,8 +29,6 @@ DISPLAY_NAMES: Mapping[str, str] = {
     "charity_donations": "Charity & Donations",
 }
 
-# All mappings are explicit. A newly appearing source label must fail the
-# preparation step rather than being silently assigned an incorrect category.
 SOURCE_LABEL_MAP: Mapping[str, Mapping[str, str]] = {
     "global-transaction-categorization": {
         "food & dining": "food_dining",
@@ -89,7 +83,9 @@ def canonicalize_category(label: str, source: str) -> str:
     normalized = str(label).strip().casefold()
     mapping = SOURCE_LABEL_MAP.get(source)
     if mapping is None:
-        return normalized
+        raise ValueError(
+            f"No canonical taxonomy mapping is registered for configured source '{source}'."
+        )
     try:
         return mapping[normalized]
     except KeyError as exc:
