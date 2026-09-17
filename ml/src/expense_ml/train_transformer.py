@@ -12,37 +12,57 @@ from .models.transformer import TransformerCategoryModel
 def _workers(config: TrainingConfig) -> int:
     if config.dataloader_workers is not None:
         return max(0, config.dataloader_workers)
-    return max(1, min((os.cpu_count() or 2) // 2, 8))
+    return max(1, min((os.cpu_count() or 2) // 2, 4))
 
 
 def _precision_flags(config: TrainingConfig) -> tuple[bool, bool]:
-    mode = config.mixed_precision.lower()
+    mode = config.mixed_precision.strip().lower()
     if mode == "fp16":
+        if not torch_available_cuda():
+            raise ValueError("FP16 mixed precision requires CUDA")
         return True, False
     if mode == "bf16":
-        return False, True
-    try:
+        if not torch_available_cuda():
+            raise ValueError("BF16 mixed precision requires CUDA")
         import torch
-        if torch.cuda.is_available():
-            return True, bool(torch.cuda.is_bf16_supported())
-    except ImportError:
-        pass
-    return False, False
+        if not torch.cuda.is_bf16_supported():
+            raise ValueError("BF16 was requested but the active CUDA device does not support it")
+        return False, True
+    if mode not in {"auto", "none", "off"}:
+        raise ValueError("mixed_precision must be one of: auto, none, fp16, bf16")
+    if mode in {"none", "off"} or not torch_available_cuda():
+        return False, False
+    import torch
+    if torch.cuda.is_bf16_supported():
+        return False, True
+    return True, False
 
 
-def train_transformer(train_frame: pd.DataFrame, validation_frame: pd.DataFrame, config: TrainingConfig) -> TransformerCategoryModel:
+def train_transformer(
+    train_frame: pd.DataFrame,
+    validation_frame: pd.DataFrame,
+    config: TrainingConfig,
+) -> TransformerCategoryModel:
     from datasets import Dataset
     from transformers import DataCollatorWithPadding, EarlyStoppingCallback, Trainer, TrainingArguments
 
+    if train_frame.empty or validation_frame.empty:
+        raise ValueError("Transformer training requires non-empty train and validation frames.")
+    train_labels = set(train_frame["label"])
+    validation_labels = set(validation_frame["label"])
+    unseen = sorted(validation_labels - train_labels)
+    if unseen:
+        raise ValueError(f"Validation contains labels absent from training data: {unseen}")
+
     seed_everything(config.seed)
-    labels = sorted(train_frame["label"].unique().tolist())
+    labels = sorted(train_labels)
     label2id = {label: i for i, label in enumerate(labels)}
     base = TransformerCategoryModel.build(config.transformer_name, labels, config.max_length)
     tokenizer, model = base.tokenizer, base.model
     train = Dataset.from_pandas(train_frame[["text", "label"]], preserve_index=False)
     valid = Dataset.from_pandas(validation_frame[["text", "label"]], preserve_index=False)
     workers = _workers(config)
-    tokenization_workers = max(1, workers)
+    tokenization_workers = max(1, min(workers, 4))
 
     def tokenize(batch):
         encoded = tokenizer(batch["text"], truncation=True, max_length=config.max_length)
