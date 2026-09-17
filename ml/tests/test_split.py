@@ -6,7 +6,8 @@ from expense_ml.data.split import split_dataset
 def test_split_is_deterministic_and_has_no_exact_text_leakage():
     rows = []
     for i in range(50):
-        rows.append({"text": f"merchant {i}", "label": "food" if i % 2 else "transport", "source": "global", "country": "USA"})
+        rows.append({"text": f"merchant {i}", "label": "food", "source": "global", "country": "USA"})
+        rows.append({"text": f"merchant {i + 50}", "label": "transportation", "source": "global", "country": "Canada"})
     rows.extend(
         [
             {"text": "repeated merchant", "label": "food", "source": "global", "country": "USA"},
@@ -27,16 +28,18 @@ def test_split_is_deterministic_and_has_no_exact_text_leakage():
         (a.test, a.india_holdout),
     ):
         assert set(left["text"]) & set(right["text"]) == set()
+    combined_partition_texts = set().union(*(set(part["text"]) for part in (a.train, a.validation, a.test, a.india_holdout)))
+    assert "repeated merchant" in combined_partition_texts
 
 
 def test_split_uses_country_metadata_for_india_holdout():
     frame = pd.DataFrame(
         [
-            {"text": f"india {i}", "label": "food" if i % 2 else "transport", "source": "global", "country": "India"}
+            {"text": f"india {i}", "label": "food", "source": "global", "country": "India"}
             for i in range(100)
         ]
         + [
-            {"text": f"usa {i}", "label": "food" if i % 2 else "transport", "source": "global", "country": "USA"}
+            {"text": f"usa {i}", "label": "transportation", "source": "global", "country": "USA"}
             for i in range(100)
         ]
     )
