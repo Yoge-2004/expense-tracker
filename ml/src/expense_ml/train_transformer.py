@@ -40,19 +40,24 @@ def _precision_flags(config: TrainingConfig) -> tuple[bool, bool]:
 
 def train_transformer(
     train_frame: pd.DataFrame,
-    validation_frame: pd.DataFrame,
+    validation_frame: pd.DataFrame | None,
     config: TrainingConfig,
 ) -> TransformerCategoryModel:
     from datasets import Dataset
     from transformers import DataCollatorWithPadding, EarlyStoppingCallback, Trainer, TrainingArguments
 
-    if train_frame.empty or validation_frame.empty:
-        raise ValueError("Transformer training requires non-empty train and validation frames.")
+    if train_frame.empty:
+        raise ValueError("Transformer training requires a non-empty train frame.")
+    if validation_frame is not None and validation_frame.empty:
+        raise ValueError("A provided Transformer validation frame cannot be empty.")
+
     train_labels = set(train_frame["label"])
-    validation_labels = set(validation_frame["label"])
-    unseen = sorted(validation_labels - train_labels)
-    if unseen:
-        raise ValueError(f"Validation contains labels absent from training data: {unseen}")
+    if len(train_labels) < 2:
+        raise ValueError("Transformer training requires at least two distinct labels.")
+    if validation_frame is not None:
+        unseen = sorted(set(validation_frame["label"]) - train_labels)
+        if unseen:
+            raise ValueError(f"Validation contains labels absent from training data: {unseen}")
 
     seed_everything(config.seed)
     labels = sorted(train_labels)
@@ -60,7 +65,11 @@ def train_transformer(
     base = TransformerCategoryModel.build(config.transformer_name, labels, config.max_length)
     tokenizer, model = base.tokenizer, base.model
     train = Dataset.from_pandas(train_frame[["text", "label"]], preserve_index=False)
-    valid = Dataset.from_pandas(validation_frame[["text", "label"]], preserve_index=False)
+    valid = (
+        Dataset.from_pandas(validation_frame[["text", "label"]], preserve_index=False)
+        if validation_frame is not None
+        else None
+    )
     workers = _workers(config)
     tokenization_workers = max(1, min(workers, 4))
 
@@ -76,13 +85,14 @@ def train_transformer(
         remove_columns=["text", "label"],
         desc="Tokenizing train",
     )
-    valid = valid.map(
-        tokenize,
-        batched=True,
-        num_proc=tokenization_workers,
-        remove_columns=["text", "label"],
-        desc="Tokenizing validation",
-    )
+    if valid is not None:
+        valid = valid.map(
+            tokenize,
+            batched=True,
+            num_proc=tokenization_workers,
+            remove_columns=["text", "label"],
+            desc="Tokenizing validation",
+        )
 
     def metrics(eval_pred):
         from sklearn.metrics import accuracy_score, f1_score
@@ -96,6 +106,7 @@ def train_transformer(
 
     fp16, bf16 = _precision_flags(config)
     cuda = torch_available_cuda()
+    has_validation = valid is not None
     args = TrainingArguments(
         output_dir=str(config.model_dir / "training"),
         learning_rate=config.learning_rate,
@@ -103,11 +114,11 @@ def train_transformer(
         per_device_eval_batch_size=config.eval_batch_size,
         gradient_accumulation_steps=config.gradient_accumulation_steps,
         num_train_epochs=config.epochs,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-        metric_for_best_model="macro_f1",
-        greater_is_better=True,
+        eval_strategy="epoch" if has_validation else "no",
+        save_strategy="epoch" if has_validation else "no",
+        load_best_model_at_end=has_validation,
+        metric_for_best_model="macro_f1" if has_validation else None,
+        greater_is_better=True if has_validation else None,
         logging_strategy="steps",
         logging_steps=100,
         report_to="none",
@@ -122,6 +133,7 @@ def train_transformer(
         dataloader_persistent_workers=config.persistent_workers and workers > 0,
         tf32=tf32_available(),
     )
+    callbacks = [EarlyStoppingCallback(early_stopping_patience=2)] if has_validation else []
     trainer = Trainer(
         model=model,
         args=args,
@@ -129,8 +141,8 @@ def train_transformer(
         eval_dataset=valid,
         processing_class=tokenizer,
         data_collator=DataCollatorWithPadding(tokenizer),
-        compute_metrics=metrics,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
+        compute_metrics=metrics if has_validation else None,
+        callbacks=callbacks,
     )
     trainer.train()
     wrapper = TransformerCategoryModel(model, tokenizer, labels, config.max_length)
