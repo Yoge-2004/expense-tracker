@@ -24,6 +24,18 @@ def test_prepare_dataframe_removes_empty_rows_and_exact_duplicates():
     assert set(result["country"]) == {"USA", "India"}
 
 
+def test_prepare_dataframe_preserves_canonical_category_ids():
+    frame = pd.DataFrame(
+        {
+            "text": ["food transaction", "transport transaction"],
+            "label": ["food_dining", "transportation"],
+            "source": ["prepared"] * 2,
+        }
+    )
+    result = prepare_dataframe(frame)
+    assert result["label"].tolist() == ["food_dining", "transportation"]
+
+
 def test_taxonomy_maps_source_labels_to_stable_categories():
     assert canonicalize_category("Food & Dining", "global-transaction-categorization") == "food_dining"
     assert canonicalize_category("food", "finee-india") == "food_dining"
