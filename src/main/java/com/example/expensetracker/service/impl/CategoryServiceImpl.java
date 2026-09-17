@@ -72,16 +72,26 @@ public class CategoryServiceImpl implements CategoryService {
         @CacheEvict(value = "globalCategories", allEntries = true)
     })
     public Category createCategory(String name, User user) {
-        log.info("Creating category '{}' for userId={}", name, user.getId());
-        if (categoryRepository.existsByNameAndUser(name, user)) {
-            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}", name, user.getId());
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected category creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (name == null || name.isBlank()) {
+            log.warn("Rejected category creation with blank name for userId={}", user.getId());
+            throw new IllegalArgumentException("Category name cannot be blank");
+        }
+
+        String trimmedName = name.trim();
+        log.info("Creating category '{}' for userId={}", trimmedName, user.getId());
+        if (categoryRepository.existsByNameAndUser(trimmedName, user)) {
+            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}", trimmedName, user.getId());
             throw new IllegalArgumentException(
-                    "Category '" + name + "' already exists for this user"
+                    "Category '" + trimmedName + "' already exists for this user"
             );
         }
 
         Category category = new Category();
-        category.setName(name);
+        category.setName(trimmedName);
         category.setUser(user);
 
         // CONCURRENCY NOTE: there is still a small TOCTOU window between existsByNameAndUser
@@ -89,7 +99,7 @@ public class CategoryServiceImpl implements CategoryService {
         // the source of truth — if two concurrent inserts slip through, the second one will
         // throw DataIntegrityViolationException. GlobalExceptionHandler maps that to 409.
         Category saved = categoryRepository.save(category);
-        log.info("Saved category '{}' with id={} for userId={}", name, saved.getId(), user.getId());
+        log.info("Saved category '{}' with id={} for userId={}", trimmedName, saved.getId(), user.getId());
         return saved;
     }
 
@@ -105,6 +115,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Cacheable(value = "userCategories", key = "#user.id")
     public List<Category> getUserCategories(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading categories for userId={}", user.getId());
         List<Category> categories = categoryRepository.findByUser(user);
         log.debug("Loaded {} categories for userId={}", categories.size(), user.getId());
@@ -146,6 +159,12 @@ public class CategoryServiceImpl implements CategoryService {
         @CacheEvict(value = "globalCategories", allEntries = true)
     })
     public void deleteCategory(Long categoryId, User user) {
+        if (categoryId == null) {
+            throw new IllegalArgumentException("Category ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Deleting category id={} for userId={}", categoryId, user.getId());
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));

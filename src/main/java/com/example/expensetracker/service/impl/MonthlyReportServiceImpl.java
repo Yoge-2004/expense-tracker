@@ -4,6 +4,7 @@ import com.example.expensetracker.dto.ExpenseDto;
 import com.example.expensetracker.dto.IncomeDto;
 import com.example.expensetracker.dto.MonthlyReportDto;
 import com.example.expensetracker.dto.SavingsGoalDto;
+import com.example.expensetracker.exception.EmailDeliveryException;
 import com.example.expensetracker.mapper.ExpenseMapper;
 import com.example.expensetracker.mapper.IncomeMapper;
 import com.example.expensetracker.mapper.SavingsGoalMapper;
@@ -21,8 +22,8 @@ import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.MonthlyReportService;
 import jakarta.mail.internet.MimeMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -33,9 +34,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.HtmlUtils;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -80,10 +78,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Override
     @Transactional(readOnly = true)
     public MonthlyReportDto generateMonthlyReport(Long userId, int year, int month) {
-        // FIXED: previously passed year/month straight to LocalDate.of() which throws
-        // DateTimeException for invalid values (month=13, year=-1, etc.). That exception
-        // was caught by GlobalExceptionHandler.handleGeneric -> 500 INTERNAL_SERVER_ERROR.
-        // Now we validate explicitly and throw IllegalArgumentException -> 400 BAD_REQUEST.
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         if (month < 1 || month > 12) {
             throw new IllegalArgumentException("Month must be between 1 and 12 (got " + month + ")");
         }
@@ -265,13 +262,23 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Override
     @Transactional
     public void sendMonthlyReportEmail(Long userId, int year, int month) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("Month must be between 1 and 12 (got " + month + ")");
+        }
+        if (year < 1900 || year > 2100) {
+            throw new IllegalArgumentException("Year must be between 1900 and 2100 (got " + year + ")");
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
         if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank() || mailSenderProvider.getIfAvailable() == null) {
-            log.info("Email delivery disabled or unconfigured. Audit logging report generation for userId={}", userId);
-            saveReportLog(user, year, month, true, "Email delivery disabled or unconfigured - report log recorded");
-            return;
+            log.warn("Email delivery disabled or unconfigured for userId={}", userId);
+            saveReportLog(user, year, month, false, "Email delivery disabled or unconfigured");
+            throw new EmailDeliveryException("Email delivery is disabled or unconfigured on this server.");
         }
 
         try {
@@ -281,7 +288,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
             if (mailSender == null) {
                 saveReportLog(user, year, month, false, "JavaMailSender not available");
-                return;
+                throw new EmailDeliveryException("Email delivery service is currently unavailable.");
             }
 
             MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -293,10 +300,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             mailSender.send(mimeMessage);
             log.info("Successfully dispatched monthly report email to {} for period {}", user.getEmail(), report.period());
             saveReportLog(user, year, month, true, null);
+        } catch (EmailDeliveryException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to send monthly report email to user {}: {}", user.getEmail(), e.getMessage(), e);
             saveReportLog(user, year, month, false, e.getMessage());
-            throw new RuntimeException("Could not send monthly report email: " + e.getMessage(), e);
+            throw new EmailDeliveryException("Could not send monthly report email: " + e.getMessage(), e);
         }
     }
 
@@ -306,6 +315,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Override
     @Transactional(readOnly = true)
     public String generateMonthlyReportHtml(Long userId, int year, int month) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
         MonthlyReportDto report = generateMonthlyReport(userId, year, month);
@@ -705,14 +717,14 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 categoryRows.length() > 0 ? categoryRows.toString() : "<tr><td colspan='3' style='padding: 12px; color: #a8a395;'>No spending recorded this month.</td></tr>",
                 budgetCards.length() > 0 ? budgetCards.toString() : "<div style='color: #a8a395; font-size: 13px;'>No category budgets configured for this period.</div>",
                 topExpenseRows.length() > 0 ? """
-                    <div class="section-title">💳 Largest Outflow Transactions</div>
-                    <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+                    <div class=\"section-title\">💳 Largest Outflow Transactions</div>
+                    <table style=\"width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;\">
                       <thead>
-                        <tr style="color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;">
-                          <th style="padding: 6px 12px;">Date</th>
-                          <th style="padding: 6px 12px;">Description</th>
-                          <th style="padding: 6px 12px;">Category</th>
-                          <th style="padding: 6px 12px; text-align: right;">Amount</th>
+                        <tr style=\"color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;\">
+                          <th style=\"padding: 6px 12px;\">Date</th>
+                          <th style=\"padding: 6px 12px;\">Description</th>
+                          <th style=\"padding: 6px 12px;\">Category</th>
+                          <th style=\"padding: 6px 12px; text-align: right;\">Amount</th>
                         </tr>
                       </thead>
                       <tbody>

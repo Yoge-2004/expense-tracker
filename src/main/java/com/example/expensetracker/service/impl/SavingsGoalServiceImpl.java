@@ -35,6 +35,23 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto createGoal(SavingsGoalRequest request, User user) {
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected savings goal creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (request == null) {
+            log.warn("Rejected null savings goal request for userId={}", user.getId());
+            throw new IllegalArgumentException("Savings goal request cannot be null");
+        }
+        if (request.name() == null || request.name().isBlank()) {
+            log.warn("Rejected savings goal creation with blank name for userId={}", user.getId());
+            throw new IllegalArgumentException("Goal name cannot be blank");
+        }
+        if (request.targetAmount() == null || request.targetAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected non-positive savings goal target={} for userId={}", request.targetAmount(), user.getId());
+            throw new IllegalArgumentException("Target amount must be greater than zero");
+        }
+
         log.info("Creating savings goal for userId={}: name={}, targetAmount={}",
                 user.getId(), request.name(), request.targetAmount());
         SavingsGoal goal = SavingsGoalMapper.toEntity(request, user);
@@ -48,6 +65,9 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
      */
     @Override
     public List<SavingsGoalDto> getUserGoals(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading savings goals for userId={}", user.getId());
         List<SavingsGoalDto> goals = savingsGoalRepository.findByUser(user)
                 .stream()
@@ -63,6 +83,19 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto updateGoal(Long goalId, SavingsGoalRequest request, User user) {
+        if (goalId == null) {
+            throw new IllegalArgumentException("Goal ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Savings goal request cannot be null");
+        }
+        if (request.targetAmount() != null && request.targetAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Target amount must be greater than zero");
+        }
+
         log.info("Updating savings goal id={} for userId={}", goalId, user.getId());
         SavingsGoal existing = savingsGoalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
@@ -131,6 +164,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto depositToGoal(Long goalId, BigDecimal amount, User user) {
+        if (goalId == null) {
+            throw new IllegalArgumentException("Goal ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Processing deposit of {} to savings goal id={} for userId={}", amount, goalId, user.getId());
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             log.warn("Rejected non-positive deposit amount={} for goalId={}", amount, goalId);
@@ -181,6 +220,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public void deleteGoal(Long goalId, User user) {
+        if (goalId == null) {
+            throw new IllegalArgumentException("Goal ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Deleting savings goal id={} for userId={}", goalId, user.getId());
         SavingsGoal goal = savingsGoalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
@@ -199,6 +244,9 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
      */
     @Override
     public List<SavingsGoalDto> getRecurringGoals(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading recurring savings goals for userId={}", user.getId());
         List<SavingsGoalDto> list = savingsGoalRepository.findByUserAndIsRecurringTrue(user)
                 .stream()

@@ -1,6 +1,7 @@
 package com.example.expensetracker.service.impl;
 
 import com.example.expensetracker.dto.MonthlyReportDto;
+import com.example.expensetracker.exception.EmailDeliveryException;
 import com.example.expensetracker.model.*;
 import com.example.expensetracker.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -136,6 +137,12 @@ class MonthlyReportServiceImplTest {
     }
 
     @Test
+    @DisplayName("generateMonthlyReport: throws IllegalArgumentException when userId is null")
+    void generateMonthlyReport_nullUserId() {
+        assertThrows(IllegalArgumentException.class, () -> reportService.generateMonthlyReport(null, 2026, 8));
+    }
+
+    @Test
     @DisplayName("generateMonthlyReport: throws IllegalArgumentException when month is invalid")
     void generateMonthlyReport_invalidMonth() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -182,13 +189,30 @@ class MonthlyReportServiceImplTest {
     }
 
     @Test
-    @DisplayName("sendMonthlyReportEmail: logs attempt when mail delivery is disabled")
-    void sendMonthlyReportEmail_disabledMailLogs() {
+    @DisplayName("generateMonthlyReportHtml: throws IllegalArgumentException when userId is null")
+    void generateMonthlyReportHtml_nullUserId() {
+        assertThrows(IllegalArgumentException.class, () -> reportService.generateMonthlyReportHtml(null, 2026, 8));
+    }
+
+    @Test
+    @DisplayName("sendMonthlyReportEmail: throws EmailDeliveryException and records failure log when mail delivery is disabled")
+    void sendMonthlyReportEmail_disabledMailThrowsAndLogs() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(reportLogRepository.findByUserAndReportYearAndReportMonth(testUser, 2026, 8))
                 .thenReturn(Optional.empty());
 
-        assertDoesNotThrow(() -> reportService.sendMonthlyReportEmail(1L, 2026, 8));
+        EmailDeliveryException ex = assertThrows(EmailDeliveryException.class,
+                () -> reportService.sendMonthlyReportEmail(1L, 2026, 8));
+        assertTrue(ex.getMessage().contains("Email delivery is disabled or unconfigured"));
+
         verify(reportLogRepository).save(any(MonthlyReportLog.class));
+    }
+
+    @Test
+    @DisplayName("sendMonthlyReportEmail: throws IllegalArgumentException on invalid params")
+    void sendMonthlyReportEmail_invalidParams() {
+        assertThrows(IllegalArgumentException.class, () -> reportService.sendMonthlyReportEmail(null, 2026, 8));
+        assertThrows(IllegalArgumentException.class, () -> reportService.sendMonthlyReportEmail(1L, 2026, 0));
+        assertThrows(IllegalArgumentException.class, () -> reportService.sendMonthlyReportEmail(1L, 1800, 8));
     }
 }

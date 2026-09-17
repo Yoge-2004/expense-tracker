@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -64,6 +65,23 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense createExpense(Expense expense, User user) {
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected expense creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (expense == null) {
+            log.warn("Rejected null expense creation for userId={}", user.getId());
+            throw new IllegalArgumentException("Expense cannot be null");
+        }
+        if (expense.getAmount() == null || expense.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected non-positive expense amount={} for userId={}", expense.getAmount(), user.getId());
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
+        }
+        if (expense.getExpenseDate() == null) {
+            log.warn("Rejected expense creation with null date for userId={}", user.getId());
+            throw new IllegalArgumentException("Expense date cannot be null");
+        }
+
         log.info("Creating expense for userId={}: amount={}, date={}, categoryId={}",
                 user.getId(), expense.getAmount(), expense.getExpenseDate(),
                 expense.getCategory() != null ? expense.getCategory().getId() : null);
@@ -104,6 +122,9 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Cacheable(value = "userExpenses", key = "#user.id")
     public List<Expense> getUserExpenses(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading expenses from DB/Cache for userId={}", user.getId());
         List<Expense> expenses = expenseRepository.findByUser(user);
         log.debug("Loaded {} expense records for userId={}", expenses.size(), user.getId());
@@ -128,6 +149,12 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public void deleteExpense(Long expenseId, User user) {
+        if (expenseId == null) {
+            throw new IllegalArgumentException("Expense ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Deleting expense id={} for userId={}", expenseId, user.getId());
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() ->
@@ -163,6 +190,18 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense updateExpense(Long expenseId, Expense expenseUpdates, User user) {
+        if (expenseId == null) {
+            throw new IllegalArgumentException("Expense ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (expenseUpdates == null) {
+            throw new IllegalArgumentException("Expense updates cannot be null");
+        }
+        if (expenseUpdates.getAmount() != null && expenseUpdates.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
+        }
         log.info("Updating expense id={} for userId={}", expenseId, user.getId());
         Expense existing = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("Expense not found"));

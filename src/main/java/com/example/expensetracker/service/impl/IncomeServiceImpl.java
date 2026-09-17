@@ -44,6 +44,14 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public IncomeDto createIncome(IncomeRequest request, User user) {
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected income creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (request == null) {
+            log.warn("Rejected null income request for userId={}", user.getId());
+            throw new IllegalArgumentException("Income request cannot be null");
+        }
         // VALIDATION FIX: IncomeRequest uses @Positive on amount, but @Valid is only enforced
         // at the controller layer. When this service is called from ImportServiceImpl (which
         // constructs IncomeRequest programmatically without @Valid), negative/zero/null amounts
@@ -85,6 +93,9 @@ public class IncomeServiceImpl implements IncomeService {
     @Override
     @Cacheable(value = "userIncomes", key = "#user.id")
     public List<IncomeDto> getUserIncomes(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Retrieving user incomes for userId={}", user.getId());
         List<IncomeDto> list = incomeRepository.findByUser(user)
                 .stream()
@@ -101,6 +112,18 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public IncomeDto updateIncome(Long incomeId, IncomeRequest request, User user) {
+        if (incomeId == null) {
+            throw new IllegalArgumentException("Income ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Income request cannot be null");
+        }
+        if (request.amount() != null && request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Income amount must be greater than zero");
+        }
         log.info("Updating income id={} for userId={}", incomeId, user.getId());
         Income existing = incomeRepository.findById(incomeId)
                 .orElseThrow(() -> new IllegalArgumentException("Income not found"));
@@ -156,6 +179,12 @@ public class IncomeServiceImpl implements IncomeService {
     @Transactional
     @CacheEvict(value = "userIncomes", key = "#user.id")
     public void deleteIncome(Long incomeId, User user) {
+        if (incomeId == null) {
+            throw new IllegalArgumentException("Income ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Deleting income id={} for userId={}", incomeId, user.getId());
         Income existing = incomeRepository.findById(incomeId)
                 .orElseThrow(() -> new IllegalArgumentException("Income not found"));
@@ -175,6 +204,15 @@ public class IncomeServiceImpl implements IncomeService {
      */
     @Override
     public CashFlowSummaryDto getCashFlowSummary(User user, int year, int month) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("Month must be between 1 and 12 (got " + month + ")");
+        }
+        if (year < 1900 || year > 2100) {
+            throw new IllegalArgumentException("Year must be between 1900 and 2100 (got " + year + ")");
+        }
         log.info("Computing cash flow summary for userId={}, period={}-{}", user.getId(), year, month);
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());

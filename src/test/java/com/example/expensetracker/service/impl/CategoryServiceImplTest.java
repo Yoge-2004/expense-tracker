@@ -64,6 +64,32 @@ class CategoryServiceImplTest {
     }
 
     @Test
+    @DisplayName("createCategory throws IllegalArgumentException when user is null")
+    void createCategory_nullUser_throwsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                service.createCategory("Groceries", null)
+        );
+        assertEquals("User must be specified", ex.getMessage());
+        verifyNoInteractions(categoryRepository);
+    }
+
+    @Test
+    @DisplayName("createCategory throws IllegalArgumentException when name is null or blank")
+    void createCategory_nullOrBlankName_throwsIllegalArgumentException() {
+        IllegalArgumentException exNull = assertThrows(IllegalArgumentException.class, () ->
+                service.createCategory(null, owner)
+        );
+        assertEquals("Category name cannot be blank", exNull.getMessage());
+
+        IllegalArgumentException exBlank = assertThrows(IllegalArgumentException.class, () ->
+                service.createCategory("   ", owner)
+        );
+        assertEquals("Category name cannot be blank", exBlank.getMessage());
+
+        verifyNoInteractions(categoryRepository);
+    }
+
+    @Test
     @DisplayName("createCategory throws IllegalArgumentException when category name already exists for user")
     void createCategory_duplicate_throwsIllegalArgumentException() {
         when(categoryRepository.existsByNameAndUser("Groceries", owner)).thenReturn(true);
@@ -93,6 +119,13 @@ class CategoryServiceImplTest {
     }
 
     @Test
+    @DisplayName("getUserCategories throws IllegalArgumentException when user is null")
+    void getUserCategories_nullUser_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.getUserCategories(null));
+        verifyNoInteractions(categoryRepository);
+    }
+
+    @Test
     @DisplayName("getGlobalCategories loads categories with null user")
     void getGlobalCategories_returnsGlobals() {
         Category globalCat = new Category();
@@ -106,6 +139,24 @@ class CategoryServiceImplTest {
         assertEquals(1, results.size());
         assertEquals("General", results.get(0).getName());
         verify(categoryRepository).findByUserIsNull();
+    }
+
+    @Test
+    @DisplayName("deleteCategory throws IllegalArgumentException when categoryId is null")
+    void deleteCategory_nullCategoryId_throwsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                service.deleteCategory(null, owner)
+        );
+        assertEquals("Category ID cannot be null", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("deleteCategory throws IllegalArgumentException when user is null")
+    void deleteCategory_nullUser_throwsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                service.deleteCategory(1L, null)
+        );
+        assertEquals("User must be specified", ex.getMessage());
     }
 
     @Test

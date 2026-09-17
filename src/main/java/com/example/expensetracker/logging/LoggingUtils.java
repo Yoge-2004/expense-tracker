@@ -32,7 +32,8 @@ public final class LoggingUtils {
     }
 
     /**
-     * Sanitizes a log message string by removing carriage returns and line feeds to prevent log injection.
+     * Sanitizes a log message string by replacing carriage returns and line feeds (including CRLF)
+     * with a single underscore to prevent log injection / log forging.
      *
      * @param value raw input string
      * @return sanitized string
@@ -41,6 +42,6 @@ public final class LoggingUtils {
         if (value == null) {
             return "";
         }
-        return value.replaceAll("[\\r\\n]", "_");
+        return value.replaceAll("\r\n|[\r\n]", "_");
     }
 }

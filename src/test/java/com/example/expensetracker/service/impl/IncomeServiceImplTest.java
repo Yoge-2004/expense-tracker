@@ -48,6 +48,19 @@ class IncomeServiceImplTest {
     }
 
     @Test
+    @DisplayName("createIncome throws IllegalArgumentException when user is null")
+    void createIncome_nullUser_throwsException() {
+        IncomeRequest req = new IncomeRequest(BigDecimal.valueOf(100), "Salary", null, LocalDate.now(), false, null, null);
+        assertThrows(IllegalArgumentException.class, () -> service.createIncome(req, null));
+    }
+
+    @Test
+    @DisplayName("createIncome throws IllegalArgumentException when request is null")
+    void createIncome_nullRequest_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.createIncome(null, user));
+    }
+
+    @Test
     @DisplayName("createIncome rejects non-positive or null amount")
     void createIncome_invalidAmount_throwsException() {
         IncomeRequest nullReq = new IncomeRequest(null, "Salary", "Bonus", LocalDate.now(), false, null, null);
@@ -139,6 +152,32 @@ class IncomeServiceImplTest {
     }
 
     @Test
+    @DisplayName("getUserIncomes throws IllegalArgumentException when user is null")
+    void getUserIncomes_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.getUserIncomes(null));
+    }
+
+    @Test
+    @DisplayName("updateIncome throws IllegalArgumentException when incomeId is null")
+    void updateIncome_nullId_throwsException() {
+        IncomeRequest req = new IncomeRequest(BigDecimal.valueOf(100), "Interest", null, null, null, null, null);
+        assertThrows(IllegalArgumentException.class, () -> service.updateIncome(null, req, user));
+    }
+
+    @Test
+    @DisplayName("updateIncome throws IllegalArgumentException when user is null")
+    void updateIncome_nullUser_throwsException() {
+        IncomeRequest req = new IncomeRequest(BigDecimal.valueOf(100), "Interest", null, null, null, null, null);
+        assertThrows(IllegalArgumentException.class, () -> service.updateIncome(1L, req, null));
+    }
+
+    @Test
+    @DisplayName("updateIncome throws IllegalArgumentException when request is null")
+    void updateIncome_nullRequest_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.updateIncome(1L, null, user));
+    }
+
+    @Test
     @DisplayName("updateIncome throws IllegalArgumentException when income not found")
     void updateIncome_notFound_throwsException() {
         when(incomeRepository.findById(999L)).thenReturn(Optional.empty());
@@ -181,6 +220,13 @@ class IncomeServiceImplTest {
         assertEquals("New Source", updated.source());
         assertEquals("Updated notes", updated.description());
         verify(incomeRepository).save(income);
+    }
+
+    @Test
+    @DisplayName("deleteIncome throws when incomeId or user is null")
+    void deleteIncome_nullParams_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.deleteIncome(null, user));
+        assertThrows(IllegalArgumentException.class, () -> service.deleteIncome(1L, null));
     }
 
     @Test
@@ -242,6 +288,15 @@ class IncomeServiceImplTest {
         assertEquals(50.0, summary.savingsRate());
         assertEquals(2, summary.incomeCount());
         assertEquals(1, summary.expenseCount());
+    }
+
+    @Test
+    @DisplayName("getCashFlowSummary throws IllegalArgumentException on invalid month or year or null user")
+    void getCashFlowSummary_invalidParams_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.getCashFlowSummary(null, 2026, 9));
+        assertThrows(IllegalArgumentException.class, () -> service.getCashFlowSummary(user, 2026, 0));
+        assertThrows(IllegalArgumentException.class, () -> service.getCashFlowSummary(user, 2026, 13));
+        assertThrows(IllegalArgumentException.class, () -> service.getCashFlowSummary(user, 1800, 5));
     }
 
     @Test
