@@ -25,6 +25,8 @@ import org.openpdf.text.Phrase;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,6 +46,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/reports")
 public class RangeReportController {
+
+    private static final Logger log = LoggerFactory.getLogger(RangeReportController.class);
 
     private static final MediaType XLSX = MediaType.parseMediaType(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -80,14 +84,17 @@ public class RangeReportController {
         security.validateUserAccess(userId);
         User user = user(userId);
         Range range = Range.of(from, to);
+        log.info("Generating executive Excel report for userId={}, range='{}', currency='{}'", userId, range.label(), currency);
         Data data = data(user, range);
+        byte[] bytes = excel(data, range, currency);
+        log.info("Executive Excel report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(XLSX)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Dashboard.xlsx")
                                 .build().toString())
-                .body(excel(data, range, currency));
+                .body(bytes);
     }
 
     @GetMapping("/user/{userId}/export/range/pdf")
@@ -98,14 +105,17 @@ public class RangeReportController {
         security.validateUserAccess(userId);
         User user = user(userId);
         Range range = Range.of(from, to);
+        log.info("Generating executive PDF report for userId={}, range='{}', currency='{}'", userId, range.label(), currency);
         Data data = data(user, range);
+        byte[] bytes = pdf(data, range, currency, user.getName());
+        log.info("Executive PDF report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Report.pdf")
                                 .build().toString())
-                .body(pdf(data, range, currency, user.getName()));
+                .body(bytes);
     }
 
     private User user(Long id) {
@@ -295,6 +305,7 @@ public class RangeReportController {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception ex) {
+            log.error("Failed to generate executive Excel report: {}", ex.getMessage(), ex);
             throw new IllegalStateException("Unable to create executive Excel report", ex);
         }
     }
@@ -356,6 +367,7 @@ public class RangeReportController {
             doc.close();
             return out.toByteArray();
         } catch (Exception ex) {
+            log.error("Failed to generate executive PDF report: {}", ex.getMessage(), ex);
             throw new IllegalStateException("Unable to create executive PDF report", ex);
         }
     }
@@ -480,15 +492,19 @@ public class RangeReportController {
 
     private static String symbol(String c) {
         if (c == null || c.isBlank()) return "₹";
-        return switch (c.toUpperCase(Locale.ROOT)) {
-            case "USD" -> "$";
-            case "EUR" -> "€";
-            case "GBP" -> "£";
-            case "JPY" -> "¥";
-            case "AED" -> "AED";
-            case "INR" -> "₹";
-            default -> c.toUpperCase(Locale.ROOT);
-        };
+        try {
+            return Currency.getInstance(c.trim().toUpperCase(Locale.ROOT)).getSymbol(Locale.ROOT);
+        } catch (Exception ignored) {
+            return switch (c.toUpperCase(Locale.ROOT)) {
+                case "USD" -> "$";
+                case "EUR" -> "€";
+                case "GBP" -> "£";
+                case "JPY" -> "¥";
+                case "AED" -> "AED";
+                case "INR" -> "₹";
+                default -> c.toUpperCase(Locale.ROOT);
+            };
+        }
     }
 
     private static XSSFCellStyle style(XSSFWorkbook workbook, String bg, String fg, boolean bold, int size) {

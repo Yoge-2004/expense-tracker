@@ -1,5 +1,6 @@
 package com.example.expensetracker.security;
 
+import com.example.expensetracker.logging.CorrelationIdFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,6 +9,7 @@ import io.jsonwebtoken.JwtException;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -98,6 +100,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                MDC.put(CorrelationIdFilter.USER_MDC_KEY, userEmail);
                 log.debug("Successfully authenticated user '{}' for path: {}", userEmail, request.getRequestURI());
             } else {
                 log.warn("JWT token invalid for user '{}' on path: {}", userEmail, request.getRequestURI());

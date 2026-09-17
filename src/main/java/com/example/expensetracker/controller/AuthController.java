@@ -1,6 +1,7 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.*;
+import com.example.expensetracker.logging.LoggingUtils;
 import com.example.expensetracker.mapper.UserMapper;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.CustomUserDetails;
@@ -52,24 +53,24 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
     private final UserService userService;
-    private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final JwtService jwtService;
     private final PasswordResetService passwordResetService;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @Value("${app.auth.email-verification-enabled:false}")
     private boolean emailVerificationEnabled;
 
     public AuthController(AuthenticationManager authenticationManager,
-                          JwtService jwtService,
                           UserService userService,
-                          GoogleIdTokenVerifier googleIdTokenVerifier,
-                          PasswordResetService passwordResetService) {
+                          JwtService jwtService,
+                          PasswordResetService passwordResetService,
+                          GoogleIdTokenVerifier googleIdTokenVerifier) {
         this.authenticationManager = authenticationManager;
-        this.jwtService = jwtService;
         this.userService = userService;
-        this.googleIdTokenVerifier = googleIdTokenVerifier;
+        this.jwtService = jwtService;
         this.passwordResetService = passwordResetService;
+        this.googleIdTokenVerifier = googleIdTokenVerifier;
     }
 
     @Operation(summary = "Get auth configuration",
@@ -81,10 +82,14 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("emailVerificationEnabled", emailVerificationEnabled));
     }
 
-    @Operation(summary = "Login",
-        description = "Authenticates a registered user and issues a signed JWT Bearer token including preferred currency.")
+    @Operation(summary = "Login with credentials",
+        description = """
+            Authenticates a user by email/username and password.
+            Returns a JWT Bearer token valid for 24 hours upon success.
+            Rate limited to **10 requests per minute** per IP address.
+            """)
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Login successful — JWT token returned",
+        @ApiResponse(responseCode = "200", description = "Authentication successful",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = AuthResponse.class),
                 examples = @ExampleObject(name = "auth-login-200",
@@ -105,7 +110,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(
             @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
         String identifier = request.email() != null ? request.email().trim() : "";
-        log.info("Login attempt received");
+        log.info("Login attempt received for user identifier={}", LoggingUtils.maskEmail(identifier));
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(identifier, request.password()));
 
@@ -150,7 +155,7 @@ public class AuthController {
     @RateLimited(key = "auth-signup-otp", maxRequests = 5, windowSeconds = 300, message = "Too many OTP requests. Please try again in %d seconds.")
     public ResponseEntity<Map<String, String>> sendSignupOtp(
             @Valid @org.springframework.web.bind.annotation.RequestBody SignupOtpRequest request) {
-        log.info("Request received to send signup OTP");
+        log.info("Request received to send signup OTP for email={}", LoggingUtils.maskEmail(request.email()));
         passwordResetService.sendSignupOtp(request.email(), request.name());
         return ResponseEntity.ok(Map.of(
             "message", "If this email is eligible, a verification code has been dispatched.",
@@ -183,7 +188,7 @@ public class AuthController {
     @RateLimited(key = "auth-register", maxRequests = 10, windowSeconds = 60, message = "Too many registration attempts. Please try again in %d seconds.")
     public ResponseEntity<UserDto> register(
             @Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
-        log.info("Registration request received");
+        log.info("Registration request received for email={}, username={}", LoggingUtils.maskEmail(request.email()), request.username());
         if (emailVerificationEnabled || (request.otp() != null && !request.otp().isBlank() && !"BYPASS".equalsIgnoreCase(request.otp()))) {
             passwordResetService.verifySignupOtp(request.email(), request.otp());
         }
@@ -216,7 +221,7 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> forgotPassword(
             @Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
         String email = request.email().trim();
-        log.info("Password reset request received");
+        log.info("Password reset request received for email={}", LoggingUtils.maskEmail(email));
         // FIXED: previously caught Exception (everything), which masked DB outages as a 200 OK
         // "instructions have been prepared" response — misleading the user into thinking the
         // reset email was sent when it wasn't. Now we only swallow expected exceptions
@@ -253,10 +258,10 @@ public class AuthController {
     @RateLimited(key = "auth-reset-password", maxRequests = 5, windowSeconds = 600, message = "Too many password reset attempts. Please try again in %d seconds.")
     public ResponseEntity<Void> resetPassword(
             @Valid @org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
-        log.info("Password reset execution requested");
+        log.info("Password reset execution requested for email={}", LoggingUtils.maskEmail(request.email()));
         String code = request.resolveVerificationCode();
         passwordResetService.resetPassword(request.email(), code, request.newPassword());
-        log.info("Password successfully updated");
+        log.info("Password successfully updated for email={}", LoggingUtils.maskEmail(request.email()));
         return ResponseEntity.ok().build();
     }
 
@@ -278,7 +283,7 @@ public class AuthController {
             @Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request) {
         log.info("Google OAuth login verification initiated");
         GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.idToken());
-        log.info("Google OAuth token verified for email={}", identity.email());
+        log.info("Google OAuth token verified for email={}", LoggingUtils.maskEmail(identity.email()));
 
         User user = userService.findByEmail(identity.email()).orElseGet(() -> {
             User newUser = new User();
@@ -308,7 +313,7 @@ public class AuthController {
             newUser.setUsername(targetUsername);
 
             log.info("Auto-registering new user via Google OAuth: email={}, username={}, currency={}",
-                    newUser.getEmail(), newUser.getUsername(), newUser.getCurrency());
+                    LoggingUtils.maskEmail(newUser.getEmail()), newUser.getUsername(), newUser.getCurrency());
             return userService.registerUser(newUser);
         });
 
@@ -318,7 +323,7 @@ public class AuthController {
         // Now we explicitly reject disabled/locked accounts with 401 Unauthorized,
         // matching the standard login flow's behavior.
         if (!user.isEnabled() || user.isAccountLocked()) {
-            log.warn("Google OAuth login rejected for disabled/locked account email={}", identity.email());
+            log.warn("Google OAuth login rejected for disabled/locked account email={}", LoggingUtils.maskEmail(identity.email()));
             throw new org.springframework.security.authentication.BadCredentialsException(
                     "Account is disabled or locked. Please contact support.");
         }

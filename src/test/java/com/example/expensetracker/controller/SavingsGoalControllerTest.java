@@ -160,6 +160,22 @@ class SavingsGoalControllerTest {
     }
 
     @Test
+    void depositWithQueryParamReturnsUpdatedGoalAndPassesAmount() throws Exception {
+        SavingsGoalDto updated = goal(10L, "Emergency Fund", "100000", "75000", "2026-12-31", "IN_PROGRESS", 75);
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(savingsGoalService.depositToGoal(eq(10L), eq(new BigDecimal("20000")), same(user))).thenReturn(updated);
+
+        mockMvc.perform(post("/api/savings/goals/10/deposit/user/7?amount=20000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentAmount").value(75000))
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.progressPercentage").value(75.0));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(savingsGoalService).depositToGoal(10L, new BigDecimal("20000"), user);
+    }
+
+    @Test
     void depositRejectsNonPositiveAmountBeforeService() throws Exception {
         mockMvc.perform(post("/api/savings/goals/10/deposit/user/7")
                         .contentType(MediaType.APPLICATION_JSON)

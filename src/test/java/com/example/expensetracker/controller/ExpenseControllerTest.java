@@ -444,6 +444,23 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void updateSubscriptionChangesCategoryAndValidatesOwnership() throws Exception {
+        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix", LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
+        Category utilities = Category.builder().id(2L).name("Utilities").user(user).build();
+        when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));
+        when(categoryRepository.findById(2L)).thenReturn(Optional.of(utilities));
+
+        mockMvc.perform(put("/api/expenses/recurring/9/user/7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"categoryId\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Subscription updated successfully"));
+
+        verify(recurringExpenseRepository).save(argThat(updated ->
+                updated.getCategory() != null && Long.valueOf(2L).equals(updated.getCategory().getId())));
+    }
+
+    @Test
     void updateSubscriptionRejectsInvalidCustomInterval() throws Exception {
         RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix", LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
         when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));

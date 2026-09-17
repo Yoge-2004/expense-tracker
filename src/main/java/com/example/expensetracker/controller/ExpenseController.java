@@ -825,6 +825,20 @@ public class ExpenseController {
             if (updates.containsKey("nextDueDate") && updates.get("nextDueDate") != null) {
                 rec.setNextDueDate(LocalDate.parse(String.valueOf(updates.get("nextDueDate"))));
             }
+            if (updates.containsKey("categoryId") || updates.containsKey("category")) {
+                Object catVal = updates.containsKey("categoryId") ? updates.get("categoryId") : updates.get("category");
+                if (catVal == null || "".equals(catVal)) {
+                    rec.setCategory(null);
+                } else {
+                    Long catId = Long.valueOf(String.valueOf(catVal));
+                    Category category = categoryRepository.findById(catId)
+                            .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                    if (category.getUser() != null && !category.getUser().getId().equals(rec.getUser().getId())) {
+                        throw new IllegalArgumentException("Category does not belong to this user");
+                    }
+                    rec.setCategory(category);
+                }
+            }
             if (updates.containsKey("frequency")) {
                 String frequency = normalizeFrequency((String) updates.get("frequency"));
                 Integer intervalDays = "CUSTOM".equals(frequency)

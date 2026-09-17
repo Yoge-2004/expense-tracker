@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -58,9 +59,10 @@ public class SavingsGoalController {
      *
      * @param savingsGoalService the savings goal service
      * @param userService the user service
-     * @param userSecurity the user security component
+     * @param userSecurity user access security validator
      */
-    public SavingsGoalController(SavingsGoalService savingsGoalService, UserService userService,
+    public SavingsGoalController(SavingsGoalService savingsGoalService,
+                                 UserService userService,
                                  com.example.expensetracker.security.UserSecurity userSecurity) {
         this.savingsGoalService = savingsGoalService;
         this.userService = userService;
@@ -68,13 +70,13 @@ public class SavingsGoalController {
     }
 
     /**
-     * Creates a new savings goal for the user.
+     * Creates a new savings goal for the authenticated user.
      *
      * @param userId user identifier
      * @param request savings goal creation payload
-     * @return response entity with created savings goal and HTTP 201
+     * @return created savings goal with 201 Created status
      */
-    @Operation(summary = "Create savings goal", description = "Creates a new savings goal for the user.")
+    @Operation(summary = "Create savings goal", description = "Creates a new savings goal target for the user.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Savings goal created successfully",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SavingsGoalDto.class))),
@@ -156,10 +158,12 @@ public class SavingsGoalController {
 
     /**
      * Records a deposit contribution towards a savings goal.
+     * Accepts either a JSON request body ({"amount": ...}) or a query parameter (?amount=...).
      *
      * @param goalId goal identifier
      * @param userId user identifier
-     * @param request deposit amount payload
+     * @param request deposit amount payload (optional if amount query param provided)
+     * @param amount deposit amount query param (optional if request body provided)
      * @return updated savings goal with updated balance and progress percentage
      */
     @Operation(summary = "Deposit to savings goal", description = "Adds a contribution towards the savings goal. Automatically sets status to COMPLETED if target reached.")
@@ -175,13 +179,23 @@ public class SavingsGoalController {
             @PathVariable Long goalId,
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
-            @Valid @RequestBody SavingsDepositRequest request) {
+            @Valid @RequestBody(required = false) SavingsDepositRequest request,
+            @RequestParam(required = false) BigDecimal amount) {
+        BigDecimal effectiveAmount = null;
+        if (request != null && request.amount() != null) {
+            effectiveAmount = request.amount();
+        } else if (amount != null) {
+            effectiveAmount = amount;
+        }
+        if (effectiveAmount == null || effectiveAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be positive");
+        }
         userSecurity.validateUserAccess(userId);
         log.info("Received deposit contribution to savings goal id={} for userId={}: depositAmount={}",
-                goalId, userId, request.amount());
+                goalId, userId, effectiveAmount);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        SavingsGoalDto updated = savingsGoalService.depositToGoal(goalId, request.amount(), user);
+        SavingsGoalDto updated = savingsGoalService.depositToGoal(goalId, effectiveAmount, user);
         log.info("Deposit applied to savings goal id={} for userId={}, newSavedAmount={}, status={}",
                 goalId, userId, updated.currentAmount(), updated.status());
         return ResponseEntity.ok(updated);

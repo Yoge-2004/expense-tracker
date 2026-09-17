@@ -1,6 +1,7 @@
 package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +26,11 @@ import java.util.List;
  */
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
 
     /**
@@ -77,6 +83,7 @@ public class User {
     /**
      * Failed consecutive Security PIN attempts counter (lockout threshold: 5).
      */
+    @Builder.Default
     @Column(name = "failed_pin_attempts")
     private Integer failedPinAttempts = 0;
 
@@ -108,6 +115,7 @@ public class User {
      * Defaults to {@code "INR"}. Stored and returned in every auth response
      * so clients can format monetary values consistently across devices.
      */
+    @Builder.Default
     @Column(nullable = false, length = 3)
     private String currency = "INR";
 
@@ -118,120 +126,6 @@ public class User {
      */
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Expense> expenses;
-
-    /**
-     * Constructs an empty {@code User}.
-     * Required by JPA and for Jackson deserialisation.
-     */
-    public User() {}
-
-    /**
-     * Returns the unique database identifier of this user.
-     *
-     * @return the user ID
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Sets the unique database identifier of this user.
-     *
-     * @param id the user ID to set
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * Returns the full display name of this user.
-     *
-     * @return the user's display name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the full display name of this user.
-     *
-     * @param name the display name to set; must not be blank
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Returns this user's unique login handle, distinct from their display name.
-     *
-     * @return the user's username, or {@code null} for accounts created before
-     *         this field existed
-     */
-    public String getUsername() {
-        return username;
-    }
-
-    /**
-     * Sets this user's unique login handle.
-     *
-     * @param username the username to set
-     */
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    /**
-     * Returns the unique email address used as this user's login identifier.
-     *
-     * @return the user's email address
-     */
-    public String getEmail() {
-        return email;
-    }
-
-    /**
-     * Sets the unique email address for this user.
-     *
-     * @param email the email address to set; must be unique across all users
-     */
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    /**
-     * Returns the BCrypt-encoded password for this user's account.
-     *
-     * @return the encoded password string (never the plain-text original)
-     */
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * Sets the BCrypt-encoded password for this user's account.
-     *
-     * <p>The caller is responsible for encoding the password before passing it here.</p>
-     * Plain-text passwords must never be stored directly.
-     *
-     * @param password the BCrypt-encoded password to set
-     */
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    /**
-     * Returns the BCrypt-encoded Security PIN for this user's account.
-     */
-    public String getSecurityPinHash() {
-        return securityPinHash;
-    }
-
-    /**
-     * Sets the BCrypt-encoded Security PIN for this user's account.
-     */
-    public void setSecurityPinHash(String securityPinHash) {
-        this.securityPinHash = securityPinHash;
-    }
 
     /**
      * Helper to verify if user has set a Security PIN.
@@ -246,86 +140,5 @@ public class User {
 
     public void setFailedPinAttempts(int failedPinAttempts) {
         this.failedPinAttempts = failedPinAttempts;
-    }
-
-    public LocalDateTime getPinLockedUntil() {
-        return pinLockedUntil;
-    }
-
-    public void setPinLockedUntil(LocalDateTime pinLockedUntil) {
-        this.pinLockedUntil = pinLockedUntil;
-    }
-
-    /**
-     * Returns whether this user account is enabled and permitted to authenticate.
-     *
-     * @return {@code true} if the account is active; {@code false} if disabled
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Sets the enabled status of this user account.
-     *
-     * @param enabled {@code true} to activate; {@code false} to disable
-     */
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    /**
-     * Returns whether this user account is locked.
-     *
-     * @return {@code true} if the account is locked and cannot log in;
-     *         {@code false} if access is permitted
-     */
-    public boolean isAccountLocked() {
-        return accountLocked;
-    }
-
-    /**
-     * Sets the locked status of this user account.
-     *
-     * @param accountLocked {@code true} to lock the account; {@code false} to unlock it
-     */
-    public void setAccountLocked(boolean accountLocked) {
-        this.accountLocked = accountLocked;
-    }
-
-    /**
-     * Returns the list of expense records owned by this user.
-     *
-     * @return a list of {@link Expense} entities; may be empty
-     */
-    public List<Expense> getExpenses() {
-        return expenses;
-    }
-
-    /**
-     * Sets the list of expense records owned by this user.
-     *
-     * @param expenses the list of {@link Expense} entities to associate
-     */
-    public void setExpenses(List<Expense> expenses) {
-        this.expenses = expenses;
-    }
-
-    /**
-     * Returns the ISO 4217 currency code of the user's preferred display currency.
-     *
-     * @return the currency code (e.g. {@code "INR"}, {@code "USD"})
-     */
-    public String getCurrency() {
-        return currency;
-    }
-
-    /**
-     * Sets the ISO 4217 currency code of the user's preferred display currency.
-     *
-     * @param currency the 3-letter ISO code to set (e.g. {@code "INR"})
-     */
-    public void setCurrency(String currency) {
-        this.currency = currency;
     }
 }

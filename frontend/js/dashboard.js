@@ -1187,11 +1187,52 @@ function exportIncomesClientSideExcel() {
     triggerFileDownload(blob, "incomes.xlsx");
 }
 
-// Fetching as a blob keeps the token out of URL history and server logs.
+// Helper to track file upload progress with XMLHttpRequest
+function uploadFileWithProgress(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
+        if (currentToken) {
+            xhr.setRequestHeader("Authorization", `Bearer ${currentToken}`);
+        }
+        if (xhr.upload && typeof onProgress === "function") {
+            xhr.upload.onprogress = (evt) => {
+                if (evt.lengthComputable && evt.total > 0) {
+                    const percent = Math.round((evt.loaded / evt.total) * 100);
+                    onProgress(percent, evt.loaded, evt.total);
+                }
+            };
+        }
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const json = JSON.parse(xhr.responseText);
+                    resolve(json);
+                } catch (_) {
+                    resolve({ message: xhr.responseText || "Import completed successfully" });
+                }
+            } else {
+                let errMsg = `Upload failed with status ${xhr.status}`;
+                try {
+                    const errObj = JSON.parse(xhr.responseText);
+                    errMsg = errObj.message || errObj.error || errMsg;
+                } catch (_) {
+                    if (xhr.responseText) errMsg = xhr.responseText;
+                }
+                reject(new Error(errMsg));
+            }
+        };
+        xhr.onerror = () => reject(new Error("Network failure during file upload. Please check connection."));
+        xhr.send(formData);
+    });
+}
+
+// Fetching with streaming chunks keeps the token safe and displays download progress.
 async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fallbackFn = null) {
     showToast(loadingMessage, "info");
     try {
-        const currentToken = localStorage.getItem("token") || authToken || token;
+        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
         const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
         const sep = url.includes("?") ? "&" : "?";
         const finalUrl = `${url}${sep}currency=${encodeURIComponent(activeCurr)}`;
@@ -1215,7 +1256,27 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
         const match = disposition.match(/filename="?([^"]+)"?/);
         const filename = match ? match[1] : fallbackFilename;
 
-        const blob = await res.blob();
+        let blob;
+        const contentLength = res.headers.get("Content-Length");
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        if (res.body && typeof res.body.getReader === "function") {
+            const reader = res.body.getReader();
+            const chunks = [];
+            let received = 0;
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                received += value.length;
+                if (total > 0) {
+                    const pct = Math.round((received / total) * 100);
+                    showToast(`Downloading ${filename}... ${pct}%`, "info");
+                }
+            }
+            blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
+        } else {
+            blob = await res.blob();
+        }
         triggerFileDownload(blob, filename);
         showToast(`${filename} downloaded successfully.`, "success");
     } catch (err) {
@@ -1275,21 +1336,10 @@ importFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        setLoading(true, "Importing file...");
-        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("token") || token}`
-            },
-            body: formData
+        setLoading(true, "Preparing upload...");
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct) => {
+            setLoading(true, `Uploading ${fname} (${pct}%)...`);
         });
-
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || "Import failed");
-        }
-
-        const data = await res.json();
         if (data.failedRows > 0) {
             showToast(`${data.imported} imported, ${data.failedRows} row(s) skipped — see console for details.`, data.imported > 0 ? "info" : "error");
             console.warn("Import row errors:", data.errors);
@@ -1482,7 +1532,7 @@ function renderSubsModalContent() {
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="openEditSubscription(${sub.id}, '${jsAttrEscape(sub.description)}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
+                    <button onclick="openEditSubscription(${sub.id}, '${jsAttrEscape(sub.description)}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1}, ${sub.categoryId || 'null'})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
                     <button onclick="cancelSubscription(${sub.id}, event)" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
@@ -1636,10 +1686,11 @@ window.deleteIncomeFromSubsModal = async (incId) => {
 const editSubModal = document.getElementById("editSubModal");
 const editSubForm = document.getElementById("editSubForm");
 
-window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTHLY', intervalDays = 1) => {
+window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTHLY', intervalDays = 1, categoryId = null) => {
     const editSubCatSelect = document.getElementById("editSubCategory");
     if (editSubCatSelect && allCategories && allCategories.length > 0) {
-        editSubCatSelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+        editSubCatSelect.innerHTML = allCategories.map(c => `<option value="${c.id}"${categoryId && String(c.id) === String(categoryId) ? ' selected' : ''}>${escapeHtml(c.name)}</option>`).join("");
+        if (categoryId) editSubCatSelect.value = categoryId;
         if (window.syncCustomSelect) window.syncCustomSelect(editSubCatSelect);
     }
     document.getElementById("editSubId").value = id;
@@ -1685,7 +1736,9 @@ editSubForm?.addEventListener("submit", async (e) => {
         return showToast("Custom interval must be at least 1 day", "error");
     }
 
+    const categoryId = document.getElementById("editSubCategory")?.value;
     const body = { description: desc, amount, nextDueDate, frequency };
+    if (categoryId) body.categoryId = parseInt(categoryId);
     if (frequency === "CUSTOM") body.intervalDays = intervalDaysRaw;
 
     submitBtn.disabled = true;
@@ -2716,21 +2769,10 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        setLoading(true, "Importing income streams...");
-        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("token") || token}`
-            },
-            body: formData
+        setLoading(true, "Preparing income upload...");
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct) => {
+            setLoading(true, `Uploading ${fname} (${pct}%)...`);
         });
-
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || "Incomes import failed");
-        }
-
-        const data = await res.json();
         showToast(data.message || "Incomes imported successfully!", "success");
         if (typeof window.clearApiCache === "function") window.clearApiCache();
         try { localStorage.removeItem(getCacheKey()); } catch (_) {}

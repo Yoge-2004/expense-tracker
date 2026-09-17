@@ -1,6 +1,8 @@
 package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 /**
@@ -18,6 +20,11 @@ import java.time.LocalDateTime;
 @Table(name = "monthly_report_logs", uniqueConstraints = {
     @UniqueConstraint(name = "uk_user_report_period", columnNames = {"user_id", "report_year", "report_month"})
 })
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MonthlyReportLog {
 
     @Id
@@ -43,8 +50,6 @@ public class MonthlyReportLog {
     @Column(name = "error_message")
     private String errorMessage;
 
-    public MonthlyReportLog() {}
-
     public MonthlyReportLog(User user, int reportYear, int reportMonth, LocalDateTime sentAt, boolean sentSuccessfully, String errorMessage) {
         this.user = user;
         this.reportYear = reportYear;
@@ -53,25 +58,4 @@ public class MonthlyReportLog {
         this.sentSuccessfully = sentSuccessfully;
         this.errorMessage = errorMessage;
     }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-
-    public int getReportYear() { return reportYear; }
-    public void setReportYear(int reportYear) { this.reportYear = reportYear; }
-
-    public int getReportMonth() { return reportMonth; }
-    public void setReportMonth(int reportMonth) { this.reportMonth = reportMonth; }
-
-    public LocalDateTime getSentAt() { return sentAt; }
-    public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
-
-    public boolean isSentSuccessfully() { return sentSuccessfully; }
-    public void setSentSuccessfully(boolean sentSuccessfully) { this.sentSuccessfully = sentSuccessfully; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
 }

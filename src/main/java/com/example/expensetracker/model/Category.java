@@ -1,6 +1,7 @@
 package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.util.List;
 
@@ -28,17 +29,17 @@ import java.util.List;
 @Table(
     name = "categories",
     uniqueConstraints = {
-        // CONCURRENCY FIX: previously uniqueness was only enforced by a non-atomic
-        // service-layer check (existsByNameAndUser + save). Two concurrent createCategory
-        // calls with the same name both passed the check and both inserted. This DB-level
-        // unique constraint is the source of truth — the second insert now fails with a
-        // DataIntegrityViolationException, which we map to 409 CONFLICT.
         @UniqueConstraint(name = "uk_category_user_name", columnNames = {"name", "user_id"})
     },
     indexes = {
         @Index(name = "idx_category_user_id", columnList = "user_id")
     }
 )
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Category extends BaseEntity {
 
     /**
@@ -71,83 +72,4 @@ public class Category extends BaseEntity {
      */
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private List<Expense> expenses;
-
-    /**
-     * Constructs an empty {@code Category}.
-     * Required by JPA and for Jackson deserialisation.
-     */
-    public Category() {}
-
-    /**
-     * Returns the unique database identifier of this category.
-     *
-     * @return the category ID
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Sets the unique database identifier of this category.
-     *
-     * @param id the category ID to set
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * Returns the human-readable name of this category.
-     *
-     * @return the category name (e.g., "Food", "Transport")
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the human-readable name of this category.
-     *
-     * @param name the category name to set; must not be blank
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Returns the user who owns this category, or {@code null} for global categories.
-     *
-     * @return the owning {@link User}, or {@code null} if this is a global category
-     */
-    public User getUser() {
-        return user;
-    }
-
-    /**
-     * Sets the user who owns this category.
-     * Pass {@code null} to mark this category as a global (system-level) category.
-     *
-     * @param user the owning user, or {@code null} for a global category
-     */
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    /**
-     * Returns the list of expenses classified under this category.
-     *
-     * @return a list of associated {@link Expense} entities; may be empty
-     */
-    public List<Expense> getExpenses() {
-        return expenses;
-    }
-
-    /**
-     * Sets the list of expenses classified under this category.
-     *
-     * @param expenses the list of {@link Expense} entities to associate
-     */
-    public void setExpenses(List<Expense> expenses) {
-        this.expenses = expenses;
-    }
 }

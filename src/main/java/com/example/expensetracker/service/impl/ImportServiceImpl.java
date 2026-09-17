@@ -81,6 +81,7 @@ public class ImportServiceImpl implements ImportService {
         }
 
         List<String> rowErrors = new ArrayList<>();
+        Map<String, Category> categoryCache = new HashMap<>();
         int count = 0;
 
         try (BufferedReader reader = new BufferedReader(
@@ -129,7 +130,7 @@ public class ImportServiceImpl implements ImportService {
                     }
 
                     final String resolvedCat = catStr;
-                    Category category = resolveOrCreateCategoryForUser(resolvedCat, user);
+                    Category category = resolveOrCreateCategoryForUser(resolvedCat, user, categoryCache);
 
                     Expense exp = new Expense();
                     exp.setExpenseDate(LocalDate.parse(dateStr));
@@ -168,11 +169,12 @@ public class ImportServiceImpl implements ImportService {
 
         try {
             List<ExpenseDto> dtos = objectMapper.readValue(file.getInputStream(), new TypeReference<List<ExpenseDto>>() {});
+            Map<String, Category> categoryCache = new HashMap<>();
             int count = 0;
             for (ExpenseDto dto : dtos) {
                 Category category = null;
                 if (dto.categoryName() != null && !dto.categoryName().isBlank()) {
-                    category = resolveOrCreateCategoryForUser(dto.categoryName().trim(), user);
+                    category = resolveOrCreateCategoryForUser(dto.categoryName().trim(), user, categoryCache);
                 }
                 Expense expense = new Expense();
                 BigDecimal amount = dto.amount();
@@ -206,6 +208,7 @@ public class ImportServiceImpl implements ImportService {
         }
         int count = 0;
         List<String> errors = new ArrayList<>();
+        Map<String, Category> categoryCache = new HashMap<>();
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheet("Expenses");
@@ -261,7 +264,7 @@ public class ImportServiceImpl implements ImportService {
 
                     String description = descCol != null ? getCellValueAsString(row.getCell(descCol)).trim() : "";
 
-                    Category category = resolveOrCreateCategoryForUser(catName, user);
+                    Category category = resolveOrCreateCategoryForUser(catName, user, categoryCache);
 
                     Expense expense = new Expense();
                     expense.setAmount(amount);
@@ -599,6 +602,10 @@ public class ImportServiceImpl implements ImportService {
      * @return the resolved or newly created {@link Category}
      */
     private Category resolveOrCreateCategoryForUser(String name, User user) {
+        return resolveOrCreateCategoryForUser(name, user, null);
+    }
+
+    private Category resolveOrCreateCategoryForUser(String name, User user, Map<String, Category> categoryCache) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Category name cannot be blank");
         }
@@ -606,20 +613,30 @@ public class ImportServiceImpl implements ImportService {
             throw new IllegalArgumentException("User context required for category resolution");
         }
         String trimmed = name.trim();
+        String cacheKey = trimmed.toLowerCase();
+        if (categoryCache != null && categoryCache.containsKey(cacheKey)) {
+            return categoryCache.get(cacheKey);
+        }
         // 1. Try user's own category first
         Optional<Category> userCat = categoryRepository.findByUserAndNameIgnoreCase(user, trimmed);
         if (userCat.isPresent()) {
-            return userCat.get();
+            Category cat = userCat.get();
+            if (categoryCache != null) categoryCache.put(cacheKey, cat);
+            return cat;
         }
         // 2. Fall back to a global category (user_id IS NULL)
         Optional<Category> globalCat = categoryRepository.findByUserIsNullAndNameIgnoreCase(trimmed);
         if (globalCat.isPresent()) {
-            return globalCat.get();
+            Category cat = globalCat.get();
+            if (categoryCache != null) categoryCache.put(cacheKey, cat);
+            return cat;
         }
         // 3. Otherwise create a new user-scoped category
         Category newCat = new Category();
         newCat.setName(trimmed);
         newCat.setUser(user);
-        return categoryRepository.save(newCat);
+        Category saved = categoryRepository.save(newCat);
+        if (categoryCache != null) categoryCache.put(cacheKey, saved);
+        return saved;
     }
 }

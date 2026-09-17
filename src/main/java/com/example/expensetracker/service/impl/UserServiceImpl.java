@@ -134,6 +134,7 @@ public class UserServiceImpl implements UserService {
         user.setFailedPinAttempts(0);
         user.setPinLockedUntil(null);
         userRepository.save(user);
+        log.info("Security PIN updated successfully for userId={}", userId);
     }
 
     @Override
@@ -147,10 +148,12 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
+            log.warn("Security PIN verification blocked: userId={} is locked until {}", userId, user.getPinLockedUntil());
             throw new IllegalStateException("Security PIN verification temporarily locked");
         }
 
         if (user.getSecurityPinHash() == null || user.getSecurityPinHash().isBlank()) {
+            log.warn("Security PIN verification rejected: no PIN set for userId={}", userId);
             throw new IllegalStateException("No security PIN has been set");
         }
 
@@ -158,6 +161,7 @@ public class UserServiceImpl implements UserService {
             user.setFailedPinAttempts(0);
             user.setPinLockedUntil(null);
             userRepository.save(user);
+            log.info("Security PIN verified successfully for userId={}", userId);
             return true;
         }
 
@@ -165,6 +169,9 @@ public class UserServiceImpl implements UserService {
         user.setFailedPinAttempts(attempts);
         if (attempts >= 5) {
             user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
+            log.warn("Security PIN verification locked out for 15 minutes for userId={} after {} attempts", userId, attempts);
+        } else {
+            log.warn("Security PIN verification failed for userId={}, failedAttempts={}", userId, attempts);
         }
         userRepository.save(user);
         return false;
@@ -180,6 +187,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setCurrency(currency.toUpperCase(java.util.Locale.ROOT));
         userRepository.save(user);
+        log.info("Currency updated successfully for userId={} to {}", userId, user.getCurrency());
     }
 
     @Override
@@ -188,6 +196,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        log.warn("Initiating full cascading account deletion for userId={}", userId);
         reportLogRepository.deleteByUserId(userId);
         webAuthnCredentialRepository.deleteByUserId(userId);
         expenseRepository.deleteByUserId(userId);
@@ -197,6 +206,7 @@ public class UserServiceImpl implements UserService {
         savingsGoalRepository.deleteByUserId(userId);
         categoryRepository.deleteByUserId(userId);
         userRepository.delete(user);
+        log.info("Account deletion completed for userId={}", userId);
     }
 
     @Override

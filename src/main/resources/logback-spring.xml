@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <conversionRule conversionWord="mask"
+                    converterClass="com.example.expensetracker.logging.MaskingPatternConverter" />
+
+    <property name="LOG_PATH" value="${LOG_PATH:-logs}" />
+    <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH}/application.log}" />
+    <property name="ERROR_LOG_FILE" value="${LOG_PATH}/error.log" />
+
+    <!-- Colorized Console Appender for Development & Interactive Local Running -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%mask(%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%blue(%15.15t)] %cyan([traceId=%X{traceId:-system}]) %yellow([user=%X{userEmail:-anonymous}]) %logger{36} - %msg%n%throwable)</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Production Rolling File Appender for All Application Logs -->
+    <appender name="APPLICATION_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/archived/application-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%mask(%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%t] [traceId=%X{traceId:-system}] [user=%X{userEmail:-anonymous}] [clientIp=%X{clientIp:-none}] %logger{40} - %msg%n%throwable)</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Production Dedicated Error Log Appender (WARN and ERROR only) -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${ERROR_LOG_FILE}</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/archived/error-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%mask(%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%t] [traceId=%X{traceId:-system}] [user=%X{userEmail:-anonymous}] [clientIp=%X{clientIp:-none}] %logger{40} - %msg%n%throwable)</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Asynchronous Appenders to prevent virtual thread or I/O thread blocking -->
+    <appender name="ASYNC_APPLICATION_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="APPLICATION_FILE" />
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE" />
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- Development / Default Profile -->
+    <springProfile name="dev | default">
+        <logger name="com.example.expensetracker" level="INFO" />
+        <logger name="org.springframework.web" level="INFO" />
+        <logger name="org.springframework.security" level="INFO" />
+        <logger name="org.hibernate.SQL" level="WARN" />
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+    <!-- Production Profile -->
+    <springProfile name="prod">
+        <logger name="com.example.expensetracker" level="INFO" />
+        <logger name="org.springframework.web" level="WARN" />
+        <logger name="org.springframework.security" level="INFO" />
+        <logger name="org.hibernate.SQL" level="WARN" />
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="ASYNC_APPLICATION_FILE" />
+            <appender-ref ref="ASYNC_ERROR_FILE" />
+        </root>
+    </springProfile>
+
+    <!-- Test Profile -->
+    <springProfile name="test">
+        <logger name="com.example.expensetracker" level="INFO" />
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.hibernate" level="WARN" />
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+
+</configuration>
