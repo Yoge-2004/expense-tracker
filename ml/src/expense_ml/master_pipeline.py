@@ -82,11 +82,7 @@ def _read_fetch_manifest(prepared_path: Path) -> list[dict]:
 
 
 def _assert_split_label_coverage(splits, expected_labels: set[str]) -> None:
-    checks = {
-        "train": splits.train,
-        "validation": splits.validation,
-        "test": splits.test,
-    }
+    checks = {"train": splits.train, "validation": splits.validation, "test": splits.test}
     failures = []
     for name, frame in checks.items():
         actual = set(frame["label"].dropna().astype(str))
@@ -99,6 +95,11 @@ def _assert_split_label_coverage(splits, expected_labels: set[str]) -> None:
 
 def _model_key(name: str) -> str:
     return "category_transformer" if name == "transformer" else "category_tfidf"
+
+
+def _final_training_frame(splits, max_rows: int, seed: int) -> pd.DataFrame:
+    combined = pd.concat([splits.train, splits.validation], ignore_index=True)
+    return balanced_training_sample(combined, max_rows, seed)
 
 
 def train_all(
@@ -152,7 +153,19 @@ def train_all(
         run_dir / "reports" / "dataset_summary.json",
     )
 
-    stages = ["dataset-validation", "split", "tfidf", "transformer", "merchant", "duplicates", "anomaly", "forecast", "reports"]
+    stages = [
+        "dataset-validation",
+        "split",
+        "tfidf-validation",
+        "transformer-validation",
+        "model-selection",
+        "final-test",
+        "merchant",
+        "duplicates",
+        "anomaly",
+        "forecast",
+        "reports",
+    ]
     validation_results = []
     trained_models: dict[str, object] = {}
     validation_country_metrics: dict[str, dict[str, dict]] = {}
@@ -196,7 +209,7 @@ def train_all(
             run_dir / "reports" / "training_sampling.json",
         )
 
-        _stage(bar, "TF-IDF + Logistic Regression")
+        _stage(bar, "TF-IDF + Logistic Regression — validation")
         tfidf = train_tfidf(train_sample, run_cfg)
         tfidf_validation = evaluate_model(
             tfidf,
@@ -228,7 +241,7 @@ def train_all(
         }
         bar.update(1)
 
-        _stage(bar, "Transformer classifier")
+        _stage(bar, "Transformer classifier — validation")
         if include_transformer:
             if splits.validation.empty:
                 raise ValueError("Transformer training requires a non-empty validation split.")
@@ -290,8 +303,17 @@ def train_all(
         write_json(validation_comparison, run_dir / "reports" / "model_selection_validation.json")
         bar.update(1)
 
-        _stage(bar, "Final test evaluation")
-        selected_model = trained_models[selected]
+        _stage(bar, "Final refit + untouched test evaluation")
+        if selected == "transformer":
+            from .train_transformer import train_transformer
+
+            final_train = _final_training_frame(splits, cfg.transformer_max_rows, cfg.seed + 10)
+            selected_model = train_transformer(final_train, None, run_cfg)
+        else:
+            final_train = _final_training_frame(splits, cfg.baseline_max_rows, cfg.seed + 10)
+            selected_model = train_tfidf(final_train, run_cfg)
+        trained_models[selected] = selected_model
+        manifest["models"][_model_key(selected)]["final_training_rows"] = len(final_train)
         selected_test = evaluate_model(
             selected_model,
             splits.test,
@@ -356,6 +378,7 @@ def train_all(
             "selected": selected,
             "selected_validation": asdict(selected_validation),
             "selected_test": asdict(selected_test),
+            "final_refit_training_rows": len(final_train),
             "accepted": True,
         }
         write_json(final_comparison, run_dir / "reports" / "model_comparison.json")
@@ -431,7 +454,12 @@ def train_all(
             forecaster, forecast = SpendingForecastModel.fit(splits.train, run_cfg.seed)
             forecaster.save(models_dir / "spending-forecast")
             write_json(
-                {"mae": forecast.mae, "rmse": forecast.rmse, "r2": forecast.r2, "holdout_days": len(forecast.actual)},
+                {
+                    "mae": forecast.mae,
+                    "rmse": forecast.rmse,
+                    "r2": forecast.r2,
+                    "holdout_days": len(forecast.actual),
+                },
                 run_dir / "reports" / "spending_forecast.json",
             )
             save_spending_forecast(forecast.actual, forecast.predicted, plots_dir)
