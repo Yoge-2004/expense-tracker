@@ -126,12 +126,14 @@ def validate_quality(
         failures.append(f"macro_f1={result.macro_f1:.4f} < {minimum_macro_f1:.4f}")
     if result.confidence_coverage < minimum_confidence_coverage:
         failures.append(
-            f"confidence_coverage={result.confidence_coverage:.4f} < "
-            f"{minimum_confidence_coverage:.4f}"
+            f"confidence_coverage={result.confidence_coverage:.4f} < {minimum_confidence_coverage:.4f}"
         )
     if minimum_high_confidence_accuracy is not None:
         if result.high_confidence_accuracy is None:
-            failures.append("high_confidence_accuracy is unavailable because no predictions met the confidence threshold")
+            failures.append(
+                "high_confidence_accuracy is unavailable because no predictions met "
+                "the confidence threshold"
+            )
         elif result.high_confidence_accuracy < minimum_high_confidence_accuracy:
             failures.append(
                 f"high_confidence_accuracy={result.high_confidence_accuracy:.4f} < "
@@ -141,12 +143,8 @@ def validate_quality(
         raise ValueError(f"Quality gate failed for {result.model_name}: " + "; ".join(failures))
 
 
-def save_result(result: EvaluationResult, output: Path) -> None:
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(asdict(result), indent=2), encoding="utf-8")
-
-
-def compare_models(results: list[EvaluationResult]) -> dict:
+def compare_validation_results(results: list[EvaluationResult]) -> dict:
+    """Select the candidate strictly from validation metrics."""
     if not results:
         return {"models": [], "selection_metric": "macro_f1", "selected": None}
     selected = max(results, key=lambda result: (result.macro_f1, result.accuracy, result.weighted_f1))
@@ -155,3 +153,8 @@ def compare_models(results: list[EvaluationResult]) -> dict:
         "selection_metric": "macro_f1",
         "selected": selected.model_name,
     }
+
+
+def save_result(result: EvaluationResult, output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(asdict(result), indent=2), encoding="utf-8")
