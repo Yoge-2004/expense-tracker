@@ -30,6 +30,68 @@ def _extract_label(row: dict, label_column: str):
     return current
 
 
+def _extract_finee_chatml(row: dict) -> tuple[str, str]:
+    messages = row.get("messages")
+    if not isinstance(messages, list):
+        raise ValueError("FinEE ChatML row must contain a list-valued 'messages' field.")
+
+    user_content = None
+    assistant_content = None
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        role = message.get("role")
+        if role == "user" and user_content is None:
+            user_content = message.get("content")
+        elif role == "assistant" and assistant_content is None:
+            assistant_content = message.get("content")
+
+    if not isinstance(user_content, str) or not user_content.strip():
+        raise ValueError("FinEE ChatML row has no non-empty user message content.")
+    if not isinstance(assistant_content, str) or not assistant_content.strip():
+        raise ValueError("FinEE ChatML row has no non-empty assistant message content.")
+
+    payload_text = assistant_content.strip()
+    if payload_text.startswith("```"):
+        lines = payload_text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        payload_text = "\n".join(lines).strip()
+        if payload_text.lower().startswith("json"):
+            payload_text = payload_text[4:].lstrip()
+
+    try:
+        payload = json.loads(payload_text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("FinEE assistant content is not valid JSON.") from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError("FinEE assistant JSON must be an object.")
+    category = payload.get("category")
+    if category is None or not str(category).strip():
+        raise ValueError("FinEE assistant JSON does not contain a non-empty 'category'.")
+
+    return user_content, str(category)
+
+
+def _extract_training_fields(
+    row: dict,
+    *,
+    dataset_id: str,
+    text_column: str,
+    label_column: str,
+    dataset_format: str | None,
+) -> tuple[object, object]:
+    if dataset_format == "finee-chatml":
+        return _extract_finee_chatml(row)
+
+    if text_column not in row:
+        raise KeyError(f"Dataset '{dataset_id}' does not contain text column '{text_column}'.")
+    return row[text_column], _extract_label(row, label_column)
+
+
 def fetch_huggingface_dataset(
     dataset_id: str,
     text_column: str,
@@ -39,6 +101,7 @@ def fetch_huggingface_dataset(
     cache_dir: str | Path | None = None,
     progress: bool = True,
     force: bool = False,
+    dataset_format: str | None = None,
 ) -> tuple[pd.DataFrame, FetchedDataset]:
     """Fetch one Hugging Face dataset, normalize it, and cache the normalized rows."""
     from datasets import load_dataset
@@ -87,15 +150,14 @@ def fetch_huggingface_dataset(
         unit="rows",
         disable=not progress,
     ):
-        if text_column not in row:
-            raise KeyError(f"Dataset '{dataset_id}' does not contain text column '{text_column}'.")
-        rows.append(
-            {
-                "text": row[text_column],
-                "label": _extract_label(row, label_column),
-                "source": source,
-            }
+        text, label = _extract_training_fields(
+            row,
+            dataset_id=dataset_id,
+            text_column=text_column,
+            label_column=label_column,
+            dataset_format=dataset_format,
         )
+        rows.append({"text": text, "label": label, "source": source})
 
     frame = prepare_dataframe(pd.DataFrame(rows))
     frame.to_parquet(target, index=False)
@@ -106,6 +168,7 @@ def fetch_huggingface_dataset(
                 "dataset_id": dataset_id,
                 "split": split,
                 "rows": len(frame),
+                "dataset_format": dataset_format,
             },
             indent=2,
         ),
@@ -128,13 +191,14 @@ def fetch_configured_datasets(
     for item in tqdm(sources, desc="Dataset sources", unit="dataset", disable=not progress):
         frame, fetched = fetch_huggingface_dataset(
             dataset_id=item["dataset_id"],
-            text_column=item["text_column"],
-            label_column=item["label_column"],
+            text_column=item.get("text_column", ""),
+            label_column=item.get("label_column", ""),
             source=item["source"],
             split=item.get("split", "train"),
             cache_dir=cache_dir,
             progress=progress,
             force=force,
+            dataset_format=item.get("format"),
         )
         frames.append(frame)
         manifests.append(
