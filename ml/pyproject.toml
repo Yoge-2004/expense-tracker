@@ -42,3 +42,6 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint.per-file-ignores]
+"src/expense_ml/master_pipeline.py" = ["F401"]
