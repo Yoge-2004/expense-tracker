@@ -10,8 +10,12 @@ def publish_candidate(
     revision: str,
     token: str,
     private: bool = True,
+    production_revision: str = "production",
+    space_repo_id: str | None = None,
+    space_url: str | None = None,
+    model_type: str | None = None,
 ) -> dict:
-    """Publish a validated candidate to an immutable version branch on the Hub."""
+    """Publish a versioned candidate, advance production, and restart the Space."""
     if not candidate_dir.exists():
         raise FileNotFoundError(f"Candidate directory does not exist: {candidate_dir}")
     model_dir = candidate_dir / "model"
@@ -24,12 +28,15 @@ def publish_candidate(
 
     api = HfApi(token=token)
     api.create_repo(repo_id=repo_id, repo_type="model", private=private, exist_ok=True)
-    try:
-        api.create_branch(repo_id=repo_id, repo_type="model", branch=revision, revision="main")
-    except Exception as exc:
-        # A concurrent/retried automation run may have already created the branch.
-        if "already exists" not in str(exc).lower():
-            raise
+
+    for target_revision in (revision, production_revision):
+        api.create_branch(
+            repo_id=repo_id,
+            repo_type="model",
+            branch=target_revision,
+            revision="main",
+            exist_ok=True,
+        )
 
     api.upload_folder(
         repo_id=repo_id,
@@ -38,18 +45,61 @@ def publish_candidate(
         revision=revision,
         commit_message=f"Publish Expense Tracker candidate {revision}",
     )
-    manifest = candidate_dir / "manifest.json"
-    if manifest.exists():
-        api.upload_file(
-            path_or_fileobj=str(manifest),
-            path_in_repo="manifest.json",
-            repo_id=repo_id,
-            repo_type="model",
-            revision=revision,
-            commit_message=f"Publish candidate metadata {revision}",
-        )
+    for filename in ("manifest.json", "metrics.json", "promotion.json"):
+        path = candidate_dir / filename
+        if path.exists():
+            api.upload_file(
+                path_or_fileobj=str(path),
+                path_in_repo=filename,
+                repo_id=repo_id,
+                repo_type="model",
+                revision=revision,
+                commit_message=f"Publish candidate metadata {filename}",
+            )
+
+    api.upload_folder(
+        repo_id=repo_id,
+        repo_type="model",
+        folder_path=str(model_dir),
+        revision=production_revision,
+        commit_message=f"Promote Expense Tracker candidate {revision} to {production_revision}",
+    )
+    for filename in ("manifest.json", "metrics.json"):
+        path = candidate_dir / filename
+        if path.exists():
+            api.upload_file(
+                path_or_fileobj=str(path),
+                path_in_repo=filename,
+                repo_id=repo_id,
+                repo_type="model",
+                revision=production_revision,
+                commit_message=f"Promote candidate metadata {filename} to {production_revision}",
+            )
+
+    restarted = False
+    if space_repo_id:
+        values = api.get_space_variables(repo_id=space_repo_id)
+        desired = {
+            "MODEL_ID": repo_id,
+            "MODEL_REVISION": production_revision,
+        }
+        if model_type:
+            desired["MODEL_TYPE"] = model_type
+        for key, value in desired.items():
+            existing = values.get(key)
+            if existing is None or str(existing.value) != value:
+                api.add_space_variable(repo_id=space_repo_id, key=key, value=value)
+        # A production branch update does not change Space configuration, so
+        # explicitly restart to invalidate the model-loading process.
+        api.restart_space(repo_id=space_repo_id, token=token)
+        restarted = True
+
     return {
         "repo_id": repo_id,
         "revision": revision,
-        "model_ref": f"hf://{repo_id}@{revision}",
+        "production_revision": production_revision,
+        "model_ref": f"hf://{repo_id}@{production_revision}",
+        "space_repo_id": space_repo_id,
+        "space_url": space_url,
+        "space_restarted": restarted,
     }
