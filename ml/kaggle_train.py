@@ -41,6 +41,27 @@ def install_local_package() -> None:
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-e", str(ROOT)], check=True)
 
 
+def print_code_provenance() -> None:
+    """Print the exact repository commit and taxonomy loaded by this process."""
+    repo = ROOT.parent
+    try:
+        commit = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            text=True,
+            stderr=subprocess.STDOUT,
+        ).strip()
+    except subprocess.CalledProcessError as exc:
+        commit = f"unavailable ({exc.output.strip()})"
+
+    from expense_ml.data import taxonomy
+
+    finee_mapping = taxonomy.SOURCE_LABEL_MAP.get("finee-india", {})
+    print("ML repository commit:", commit)
+    print("ML taxonomy module:", taxonomy.__file__)
+    print("FinEE cashback mapping:", finee_mapping.get("cashback"))
+    print("FinEE refund mapping:", finee_mapping.get("refund"))
+
+
 def configure_huggingface_auth() -> bool:
     """Load HF_TOKEN from the environment or Kaggle Secrets."""
     token = os.getenv("HF_TOKEN")
@@ -93,6 +114,7 @@ def fetch_standard_datasets(config_path: Path, cache_dir: Path, progress: bool =
 
 def main() -> None:
     install_local_package()
+    print_code_provenance()
     from expense_ml.resources import configure_resources
 
     resource_info = configure_resources()
