@@ -1,20 +1,62 @@
-/* Expense Tracker stylesheet manifest. Import order defines the cascade. */
+/* Expense Tracker stylesheet manifest.
+
+   CASCADE LAYERS
+   --------------
+   Layer order is declared once, below, and is what decides precedence — not
+   the order of the @import lines and not selector specificity.
+
+   `legacy` holds the entire pre-existing stylesheet, including the separate
+   motion-extended.css chain that each HTML page links after this file. All of
+   it sits in ONE layer deliberately: within a single layer the cascade behaves
+   exactly as unlayered CSS, so this migration changes nothing about how the
+   existing ~2,300 !important declarations resolve against each other.
+
+   That matters, because !important REVERSES across layers — an !important in
+   an earlier layer beats one in a later layer. Splitting the existing files
+   across several layers in one pass would silently invert every one of those
+   declarations. Files should be lifted out of `legacy` into real layers one
+   subtree at a time, each verified on its own.
+
+   Anything in a layer after `legacy` wins on normal declarations without
+   needing !important. That is the point of the exercise.
+
+   BROWSER BASELINE
+   ----------------
+   @layer has no progressive-enhancement path: a browser that doesn't support
+   it drops the whole stylesheet rather than degrading. That was checked
+   against the project's real baseline rather than assumed, per
+   HANDOFF_MODERNIZATION.md §12, and it costs nothing here:
+
+     @layer          Chrome 99  / Safari 15.4  (Mar 2022)
+     :has()          Chrome 105 / Safari 15.4  — load-bearing in
+                     ui-regression-fixes.css (input-icon padding)
+     bare 100dvh     Chrome 108 / Safari 15.4  — load-bearing in
+                     auth/core.css:9, no fallback on that line
+
+   The app already requires a newer engine than @layer does, so every browser
+   that can render this correctly today already supports layers. If a future
+   change removes the :has() and dvh dependencies and widens the baseline back
+   past early 2022, revisit this. */
+
+@layer legacy, motion-system;
+
 /* Fonts are loaded explicitly by each HTML document to avoid nested @import latency. */
-@import url("variables.css");
-@import url("base.css");
-@import url("components.css");
-@import url("auth.css");
-@import url("dashboard.css");
-@import url("metrics.css");
-@import url("tables.css");
-@import url("charts.css");
-@import url("modals.css");
-@import url("reports.css");
-@import url("animations.css");
-@import url("responsive.css");
-@import url("auth-input-overflow-fix.css");
-@import url("ui-regression-fixes.css");
-@import url("interaction-performance.css");
-@import url("mobile-action-fix.css");
-@import url("modernization.css");
-@import url("motion-system.css");
+
+@import url("variables.css") layer(legacy);
+@import url("base.css") layer(legacy);
+@import url("components.css") layer(legacy);
+@import url("auth.css") layer(legacy);
+@import url("dashboard.css") layer(legacy);
+@import url("metrics.css") layer(legacy);
+@import url("tables.css") layer(legacy);
+@import url("charts.css") layer(legacy);
+@import url("modals.css") layer(legacy);
+@import url("reports.css") layer(legacy);
+@import url("animations.css") layer(legacy);
+@import url("responsive.css") layer(legacy);
+@import url("auth-input-overflow-fix.css") layer(legacy);
+@import url("ui-regression-fixes.css") layer(legacy);
+@import url("interaction-performance.css") layer(legacy);
+@import url("mobile-action-fix.css") layer(legacy);
+@import url("modernization.css") layer(legacy);
+@import url("motion-system.css") layer(motion-system);
