@@ -6,11 +6,7 @@ import pandas as pd
 
 
 def balanced_training_sample(frame: pd.DataFrame, max_rows: int, seed: int) -> pd.DataFrame:
-    """Deterministically sample across country/source/class groups.
-
-    The evaluation sets are never sampled; this helper is used only for the
-    computationally expensive training stages.
-    """
+    """Deterministically sample across country/source/class groups without replacement."""
     if max_rows < 1:
         raise ValueError("max_rows must be >= 1")
     if len(frame) <= max_rows:
@@ -22,20 +18,25 @@ def balanced_training_sample(frame: pd.DataFrame, max_rows: int, seed: int) -> p
 
     grouped = frame.groupby(group_columns, dropna=False, sort=False)
     per_group_cap = max(1, math.ceil(max_rows / grouped.ngroups))
-    pieces: list[pd.DataFrame] = []
+    sampled_indices: list[int] = []
     for _, group in grouped:
         n = min(len(group), per_group_cap)
-        pieces.append(group.sample(n=n, random_state=seed))
+        sampled_indices.extend(group.sample(n=n, random_state=seed).index.tolist())
 
-    sampled = pd.concat(pieces, ignore_index=True) if pieces else frame.iloc[0:0].copy()
-    if len(sampled) > max_rows:
-        sampled = sampled.sample(n=max_rows, random_state=seed)
-    elif len(sampled) < max_rows:
-        remaining = frame.drop(index=sampled.index, errors="ignore")
-        if len(remaining):
-            needed = min(max_rows - len(sampled), len(remaining))
-            sampled = pd.concat(
-                [sampled, remaining.sample(n=needed, random_state=seed + 1)],
-                ignore_index=True,
+    selected = frame.loc[sampled_indices]
+    if len(selected) > max_rows:
+        selected = selected.sample(n=max_rows, random_state=seed)
+    elif len(selected) < max_rows:
+        remaining = frame.drop(index=selected.index)
+        needed = min(max_rows - len(selected), len(remaining))
+        if needed:
+            selected = pd.concat(
+                [selected, remaining.sample(n=needed, random_state=seed + 1)],
+                ignore_index=False,
             )
-    return sampled.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+
+    if len(selected) != max_rows:
+        raise AssertionError("Balanced sampler failed to produce the requested number of unique rows.")
+    if selected.index.has_duplicates:
+        raise AssertionError("Balanced sampler selected the same source row more than once.")
+    return selected.sample(frac=1.0, random_state=seed).reset_index(drop=True)
