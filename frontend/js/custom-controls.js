@@ -344,7 +344,8 @@
             "budgetPeriod",
             "editSubCategory",
             "editSubFrequency",
-            "incomeRecurringFrequency"
+            "incomeRecurringFrequency",
+            "goalFrequency"
         ];
 
         selectIds.forEach(id => {

@@ -4,61 +4,49 @@ import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.RecurringExpense;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.RecurringExpenseRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Scheduled service that automatically generates expense records for due
- * recurring (subscription-style) expenses.
+ * Scheduled background service that processes recurring expense subscriptions
+ * (e.g. Netflix, Spotify, gym memberships).
  *
- * <p>This service runs daily at midnight using a cron expression and scans all
- * {@link RecurringExpense} records whose {@code nextDueDate} is on or before today.
- * For each due record it:</p>
+ * <p><b>How it works:</b></p>
  * <ol>
- *   <li>Creates a new {@link Expense} record with a description suffixed by {@code " (Auto)"}.</li>
- *   <li>Persists the new expense to the database.</li>
- *   <li>Advances the {@code nextDueDate} on the {@link RecurringExpense} by one month.</li>
+ *   <li>The cron job runs every night at midnight (00:00).</li>
+ *   <li>It queries the database for all {@link RecurringExpense} records where
+ *       {@code nextDueDate <= today}.</li>
+ *   <li>For each matching record, it creates a real {@link Expense} entry
+ *       with the subscription's amount, category, and user, tagging the description
+ *       with {@code " (Auto)"} to indicate it was generated automatically.</li>
+ *   <li>It then advances the {@code nextDueDate} by one calendar month
+ *       (or configured interval) and saves the updated recurring rule.</li>
  * </ol>
  *
- * <p>Scheduling is enabled at the application level by the
- * {@code @EnableScheduling} annotation on
- * {@link com.example.expensetracker.ExpenseTrackerSystemApplication}.</p>
+ * <p><b>Catch-up on startup:</b> If the application was shut down when midnight
+ * arrived, the {@link #onApplicationReady()} method executes the same check
+ * immediately on boot so no recurring expenses are dropped.</p>
  *
  * @author Yogeshwaran
  * @version 1.0
  * @see RecurringExpense
- * @see RecurringExpenseRepository
- * @see ExpenseRepository
+ * @see Expense
  */
-@Service
+@Slf4j
+@Component
+@RequiredArgsConstructor
 public class RecurringExpenseScheduler {
 
-    private static final Logger log = LoggerFactory.getLogger(RecurringExpenseScheduler.class);
-
-    /** Repository for querying recurring expense records that are due. */
     private final RecurringExpenseRepository recurringExpenseRepository;
-
-    /** Repository for persisting auto-generated expense records. */
     private final ExpenseRepository expenseRepository;
-
-    /**
-     * Constructs a {@code RecurringExpenseScheduler} with the required repositories.
-     *
-     * @param recurringExpenseRepository repository for reading and updating recurring expenses
-     * @param expenseRepository          repository for saving auto-generated expense entries
-     */
-    public RecurringExpenseScheduler(RecurringExpenseRepository recurringExpenseRepository,
-                                     ExpenseRepository expenseRepository) {
-        this.recurringExpenseRepository = recurringExpenseRepository;
-        this.expenseRepository = expenseRepository;
-    }
 
     /**
      * Processes all recurring expenses that are due on or before today.
@@ -73,6 +61,7 @@ public class RecurringExpenseScheduler {
      *
      * <p>Cron expression: {@code "0 0 0 * * *"} — runs at 00:00:00 every day.</p>
      */
+    @Transactional
     @Scheduled(cron = "0 0 0 * * *")
     public void processRecurringExpenses() {
         log.info("Processing due recurring expenses...");
@@ -80,53 +69,59 @@ public class RecurringExpenseScheduler {
                 recurringExpenseRepository.findByNextDueDateLessThanEqual(LocalDate.now());
 
         int processedCount = 0;
+        int failedCount = 0;
         for (RecurringExpense rec : dueExpenses) {
-            // Catch up every missed occurrence and preserve its actual due date.
-            while (!rec.getNextDueDate().isAfter(LocalDate.now())) {
-                Expense expense = new Expense();
-                expense.setAmount(rec.getAmount());
-                expense.setDescription(rec.getDescription() + " (Auto)");
-                expense.setExpenseDate(rec.getNextDueDate());
-                expense.setUser(rec.getUser());
-                expense.setCategory(rec.getCategory());
-                expenseRepository.save(expense);
-                rec.setNextDueDate(nextOccurrence(rec));
-                processedCount++;
+            try {
+                // Catch up every missed occurrence and preserve its actual due date.
+                while (!rec.getNextDueDate().isAfter(LocalDate.now())) {
+                    Expense expense = new Expense();
+                    expense.setAmount(rec.getAmount());
+                    expense.setDescription(rec.getDescription() + " (Auto)");
+                    expense.setExpenseDate(rec.getNextDueDate());
+                    expense.setUser(rec.getUser());
+                    expense.setCategory(rec.getCategory());
+                    expenseRepository.save(expense);
+                    rec.setNextDueDate(nextOccurrence(rec));
+                    processedCount++;
+                }
+                recurringExpenseRepository.save(rec);
+            } catch (Exception itemEx) {
+                failedCount++;
+                log.error("CRITICAL: Failed to process recurring expense subscription id={} for userId={}: {}",
+                        rec.getId(), rec.getUser() != null ? rec.getUser().getId() : "null", itemEx.getMessage(), itemEx);
             }
-            recurringExpenseRepository.save(rec);
         }
-        log.info("Finished processing recurring expenses. Processed {} occurrences.", processedCount);
+        log.info("Finished processing recurring expenses. Processed {} occurrences, {} failures.", processedCount, failedCount);
     }
 
     /**
      * Catches up on any missed recurring expenses when the application starts up.
      *
      * <p>This ensures that if the server was sleeping or offline at midnight when the
-     * cron job was scheduled to run, any due expenses will be processed as soon as
-     * the application boots up.</p>
+     * scheduled job was due, pending subscriptions are still processed as soon
+     * as the application boots.</p>
      */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        try {
-            log.info("Application is ready. Checking for any missed recurring expenses...");
-            processRecurringExpenses();
-        } catch (Exception e) {
-            log.error("Error checking missed recurring expenses on startup: {}, continuing application boot.", e.getMessage(), e);
-        }
+        log.info("Application ready: running startup check for missed recurring expenses...");
+        processRecurringExpenses();
     }
 
-    private LocalDate nextOccurrence(RecurringExpense recurringExpense) {
-        LocalDate current = recurringExpense.getNextDueDate() != null ? recurringExpense.getNextDueDate() : LocalDate.now();
-        String freq = recurringExpense.getFrequency() != null ? recurringExpense.getFrequency().toUpperCase() : "MONTHLY";
-        int interval = recurringExpense.getIntervalDays() != null && recurringExpense.getIntervalDays() > 0
-                ? recurringExpense.getIntervalDays() : 1;
-        LocalDate next = switch (freq) {
-            case "DAILY" -> current.plusDays(1);
-            case "WEEKLY" -> current.plusWeeks(1);
-            case "YEARLY" -> current.plusYears(1);
-            case "CUSTOM" -> current.plusDays(interval);
-            default -> current.plusMonths(1);
+    /**
+     * Advances the due date of a recurring expense to its next occurrence based on frequency.
+     */
+    private LocalDate nextOccurrence(RecurringExpense rec) {
+        String freq = rec.getFrequency();
+        if (freq == null || freq.isBlank()) freq = "MONTHLY";
+        return switch (freq.toUpperCase()) {
+            case "DAILY"   -> rec.getNextDueDate().plusDays(1);
+            case "WEEKLY"  -> rec.getNextDueDate().plusWeeks(1);
+            case "YEARLY"  -> rec.getNextDueDate().plusYears(1);
+            case "CUSTOM"  -> {
+                int days = rec.getIntervalDays() != null && rec.getIntervalDays() > 0 ? rec.getIntervalDays() : 30;
+                yield rec.getNextDueDate().plusDays(days);
+            }
+            default        -> rec.getNextDueDate().plusMonths(1);
         };
-        return next.isAfter(current) ? next : current.plusDays(1);
     }
 }

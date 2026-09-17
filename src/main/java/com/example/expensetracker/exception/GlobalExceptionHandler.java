@@ -2,8 +2,7 @@ package com.example.expensetracker.exception;
 
 import com.example.expensetracker.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -13,12 +12,16 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.bind.MissingPathVariableException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 /**
  * Global exception handler for the Expense Tracker REST API.
@@ -32,10 +35,9 @@ import java.util.NoSuchElementException;
  * @version 1.0
  * @see ErrorResponse
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
@@ -43,6 +45,23 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         log.warn("Bad request at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(
+            BadRequestException ex,
+            HttpServletRequest request) {
+
+        log.warn("Bad request exception at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -71,6 +90,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(
+            ConflictException ex,
+            HttpServletRequest request) {
+
+        log.warn("Conflict exception at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(
             NoSuchElementException ex,
@@ -82,6 +118,57 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND.value(),
                 HttpStatus.NOT_FOUND.getReasonPhrase(),
                 ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(
+            ResourceNotFoundException ex,
+            HttpServletRequest request) {
+
+        log.warn("Resource not found exception at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEntityNotFound(
+            jakarta.persistence.EntityNotFoundException ex,
+            HttpServletRequest request) {
+
+        log.warn("Entity not found at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                ex.getMessage() != null && !ex.getMessage().isBlank() ? ex.getMessage() : "Requested entity not found",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.dao.EmptyResultDataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleEmptyResultDataAccess(
+            org.springframework.dao.EmptyResultDataAccessException ex,
+            HttpServletRequest request) {
+
+        log.warn("Empty result data access at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                "Requested resource was not found.",
                 request.getRequestURI()
         );
 
@@ -111,6 +198,10 @@ public class GlobalExceptionHandler {
                 message = "A report for this period has already been generated.";
             } else if (lower.contains("email")) {
                 message = "An account with this email already exists.";
+            } else if (lower.contains("foreign key") || lower.contains("fk_")) {
+                message = "Referenced entity does not exist or violates relational integrity.";
+            } else if (lower.contains("not-null") || lower.contains("null value")) {
+                message = "Required data field is missing in request.";
             }
         }
 
@@ -138,7 +229,8 @@ public class GlobalExceptionHandler {
 
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
         String reason = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
-        log.warn("Response status {} at '{}': {}", status.value(), request.getRequestURI(), reason);
+
+        log.warn("ResponseStatusException ({}) at '{}': {}", status.value(), request.getRequestURI(), reason);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 status.value(),
@@ -151,17 +243,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-        DatabaseUnavailableException.class,
-        org.springframework.dao.DataAccessException.class,
-        org.springframework.transaction.CannotCreateTransactionException.class,
-        org.hibernate.exception.JDBCConnectionException.class,
-        java.sql.SQLException.class
+            org.springframework.dao.DataAccessException.class,
+            org.springframework.transaction.CannotCreateTransactionException.class,
+            org.hibernate.exception.JDBCConnectionException.class,
+            DatabaseUnavailableException.class
     })
     public ResponseEntity<ErrorResponse> handleDatabaseUnavailable(
             Exception ex,
             HttpServletRequest request) {
 
-        log.error("Database unavailable at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        log.error("Database connection failure at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.SERVICE_UNAVAILABLE.value(),
@@ -183,16 +274,17 @@ public class GlobalExceptionHandler {
             return handleDatabaseUnavailable(dbCause, request);
         }
 
-        String message = (ex.getMessage() != null && !ex.getMessage().isBlank() && !"Bad credentials".equalsIgnoreCase(ex.getMessage()))
-                ? ex.getMessage()
-                : "Invalid email/username or password";
+        String msg = ex.getMessage();
+        if ("Bad credentials".equalsIgnoreCase(msg)) {
+            msg = "Invalid email/username or password";
+        }
 
-        log.warn("Authentication failed at '{}': {}", request.getRequestURI(), message);
+        log.warn("Authentication failed at '{}': {}", request.getRequestURI(), msg);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Authentication Failed",
-                message,
+                msg,
                 request.getRequestURI()
         );
 
@@ -236,7 +328,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingParameter(
+    public ResponseEntity<ErrorResponse> handleMissingRequestParameter(
             MissingServletRequestParameterException ex,
             HttpServletRequest request) {
 
@@ -245,7 +337,41 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Required parameter '" + ex.getParameterName() + "' is missing.",
+                "Required request parameter '" + ex.getParameterName() + "' is missing",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MissingPathVariableException.class)
+    public ResponseEntity<ErrorResponse> handleMissingPathVariable(
+            MissingPathVariableException ex,
+            HttpServletRequest request) {
+
+        log.warn("Missing path variable at '{}': variable='{}'", request.getRequestURI(), ex.getVariableName());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Required path variable '" + ex.getVariableName() + "' is missing",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestHeader(
+            MissingRequestHeaderException ex,
+            HttpServletRequest request) {
+
+        log.warn("Missing request header at '{}': header='{}'", request.getRequestURI(), ex.getHeaderName());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Required request header '" + ex.getHeaderName() + "' is missing",
                 request.getRequestURI()
         );
 
@@ -257,12 +383,12 @@ public class GlobalExceptionHandler {
             MultipartException ex,
             HttpServletRequest request) {
 
-        log.warn("Multipart request exception at '{}': {}", request.getRequestURI(), ex.getMessage());
+        log.warn("Multipart request failure at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Multipart request failed: " + ex.getMessage(),
+                "Required multipart file part is missing.",
                 request.getRequestURI()
         );
 
@@ -274,12 +400,12 @@ public class GlobalExceptionHandler {
             HttpRequestMethodNotSupportedException ex,
             HttpServletRequest request) {
 
-        log.warn("HTTP method not supported at '{}': {}", request.getRequestURI(), ex.getMessage());
+        log.warn("HTTP method '{}' not supported for URI '{}'", ex.getMethod(), request.getRequestURI());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.METHOD_NOT_ALLOWED.value(),
                 HttpStatus.METHOD_NOT_ALLOWED.getReasonPhrase(),
-                ex.getMessage(),
+                "Request method '" + ex.getMethod() + "' is not supported for this endpoint",
                 request.getRequestURI()
         );
 
@@ -291,12 +417,12 @@ public class GlobalExceptionHandler {
             HttpMediaTypeNotSupportedException ex,
             HttpServletRequest request) {
 
-        log.warn("Media type not supported at '{}': {}", request.getRequestURI(), ex.getMessage());
+        log.warn("HTTP Content-Type '{}' not supported for URI '{}'", ex.getContentType(), request.getRequestURI());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE.getReasonPhrase(),
-                ex.getMessage(),
+                "Content-Type '" + ex.getContentType() + "' is not supported",
                 request.getRequestURI()
         );
 
@@ -308,12 +434,12 @@ public class GlobalExceptionHandler {
             HttpMediaTypeNotAcceptableException ex,
             HttpServletRequest request) {
 
-        log.warn("Media type not acceptable at '{}': {}", request.getRequestURI(), ex.getMessage());
+        log.warn("Acceptable media types cannot be produced for URI '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_ACCEPTABLE.value(),
                 HttpStatus.NOT_ACCEPTABLE.getReasonPhrase(),
-                ex.getMessage(),
+                "Could not produce acceptable response format requested by Accept header",
                 request.getRequestURI()
         );
 
@@ -325,12 +451,12 @@ public class GlobalExceptionHandler {
             NoResourceFoundException ex,
             HttpServletRequest request) {
 
-        log.warn("Resource not found at '{}': {}", request.getRequestURI(), ex.getResourcePath());
+        log.warn("No static or routed resource found at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
                 HttpStatus.NOT_FOUND.getReasonPhrase(),
-                "Resource not found: " + ex.getResourcePath(),
+                "Requested resource not found: " + request.getRequestURI(),
                 request.getRequestURI()
         );
 
@@ -338,16 +464,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationError(
+    public ResponseEntity<ErrorResponse> handleValidationErrors(
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
 
-        String message = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
+        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .findFirst()
-                .orElse("Validation error");
+                .toList();
+        String message = String.join(", ", errors);
 
         log.warn("Validation error at '{}': {}", request.getRequestURI(), message);
         ErrorResponse response = new ErrorResponse(
@@ -361,12 +485,33 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException ex,
+            HttpServletRequest request) {
+
+        String violations = ex.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining(", "));
+
+        log.warn("Constraint violation at '{}': {}", request.getRequestURI(), violations);
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                violations,
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMessageNotReadable(
             org.springframework.http.converter.HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
-        log.warn("Malformed JSON payload at '{}': {}", request.getRequestURI(), ex.getMessage());
+        log.warn("Message not readable at '{}': {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -429,6 +574,57 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(response);
     }
 
+    @ExceptionHandler(EmailDeliveryException.class)
+    public ResponseEntity<ErrorResponse> handleEmailDeliveryException(
+            EmailDeliveryException ex,
+            HttpServletRequest request) {
+
+        log.error("Email delivery failed at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.mail.MailException.class)
+    public ResponseEntity<ErrorResponse> handleMailException(
+            org.springframework.mail.MailException ex,
+            HttpServletRequest request) {
+
+        log.error("Mail service error at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+                "Email delivery service is currently unavailable: " + ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
+    @ExceptionHandler(org.springframework.web.context.request.async.AsyncRequestTimeoutException.class)
+    public ResponseEntity<ErrorResponse> handleAsyncTimeout(
+            org.springframework.web.context.request.async.AsyncRequestTimeoutException ex,
+            HttpServletRequest request) {
+
+        log.warn("Async request timeout at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(),
+                "Request processing timed out. Please try again.",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(
             Exception ex,
@@ -440,6 +636,7 @@ public class GlobalExceptionHandler {
         }
 
         log.error("Unhandled exception at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),

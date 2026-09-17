@@ -31,7 +31,7 @@ public class WebAuthnCredential {
     @Column(name = "public_key_cose", nullable = false)
     private String publicKeyCose;
 
-    @Column(name = "user_handle", nullable = false, unique = true, length = 512)
+    @Column(name = "user_handle", nullable = false, length = 512)
     private String userHandle;
 
     @Column(name = "signature_count", nullable = false)

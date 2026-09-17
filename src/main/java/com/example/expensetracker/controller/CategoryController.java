@@ -20,8 +20,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,23 +48,17 @@ import java.util.List;
         All endpoints require a valid **JWT Bearer token**.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
 
-    private static final Logger log = LoggerFactory.getLogger(CategoryController.class);
-
     private final CategoryService categoryService;
     private final UserService userService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    public CategoryController(CategoryService categoryService, UserService userService,
-                              com.example.expensetracker.security.UserSecurity userSecurity) {
-        this.categoryService = categoryService;
-        this.userService = userService;
-        this.userSecurity = userSecurity;
-    }
 
     // ─── POST /api/categories/user/{userId} ─────────────────────────────
 

@@ -1,54 +1,29 @@
 package com.example.expensetracker.service;
 
-import org.springframework.stereotype.Service;
-
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Backward-compatible facade for legacy sync endpoints.
- * Database backup persistence is exclusively handled by the encrypted
- * Hugging Face snapshot/failover service.
+ * Service interface for database synchronization and backup operations.
  */
-@Service
-public class FileDbSyncService {
-    private final HuggingFaceDatabaseFailoverService failoverService;
+public interface FileDbSyncService {
 
-    public FileDbSyncService(HuggingFaceDatabaseFailoverService failoverService) {
-        this.failoverService = failoverService;
-    }
+    /**
+     * Creates a database snapshot backup and synchronizes it.
+     */
+    Map<String, Object> syncDbToFile();
 
-    /** Legacy name retained for API compatibility; creates an encrypted HF snapshot. */
-    public synchronized Map<String, Object> syncDbToFile() {
-        return backupResult("Database snapshot → Hugging Face");
-    }
+    /**
+     * Restores the database from file storage.
+     */
+    Map<String, Object> syncFileToDb();
 
-    /** Plaintext file imports are intentionally disabled. */
-    public synchronized Map<String, Object> syncFileToDb() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("status", "skipped");
-        result.put("message", "Plaintext file-to-database sync is disabled; encrypted Hugging Face failover hydration is used instead.");
-        return result;
-    }
+    /**
+     * Uploads the encrypted database snapshot backup to Hugging Face.
+     */
+    Map<String, Object> pushJsonBackupToHuggingFace();
 
-    /** Legacy endpoint compatibility: push the encrypted snapshot to Hugging Face. */
-    public synchronized Map<String, Object> pushJsonBackupToHuggingFace() {
-        return backupResult("Encrypted database snapshot → Hugging Face");
-    }
-
-    /** Legacy endpoint compatibility: hydration is managed by the failover service. */
-    public synchronized Map<String, Object> downloadJsonBackupFromHuggingFace() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("status", "managed");
-        result.put("message", "Encrypted Hugging Face snapshot hydration is managed by the failover service during application startup.");
-        return result;
-    }
-
-    private Map<String, Object> backupResult(String operation) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        boolean success = failoverService.backupCurrentDatabase();
-        result.put("status", success ? "success" : "error");
-        result.put("message", success ? operation + " completed successfully." : operation + " failed or is not configured.");
-        return result;
-    }
+    /**
+     * Downloads and restores the database backup from Hugging Face.
+     */
+    Map<String, Object> downloadJsonBackupFromHuggingFace();
 }

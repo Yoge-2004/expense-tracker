@@ -3,26 +3,42 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.WebAuthnService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * REST controller providing passkey / WebAuthn passwordless authentication endpoints.
+ *
+ * <p>Flow:
+ * <ul>
+ *   <li><b>Registration:</b> authenticated user calls {@code /register/options} to obtain the
+ *       PublicKeyCredentialCreationOptions challenge, then submits the authenticator response
+ *       to {@code /register/finish} to bind the credential to their account.</li>
+ *   <li><b>Login:</b> unauthenticated visitor calls {@code /login/options} to get the assertion
+ *       challenge, then presents the signed assertion to {@code /login/finish} which validates
+ *       the signature and generates a JWT.</li>
+ * </ul>
+ */
+@Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/webauthn")
 public class WebAuthnController {
-
-    private static final Logger log = LoggerFactory.getLogger(WebAuthnController.class);
 
     private final WebAuthnService webAuthnService;
     private final UserRepository users;
 
-    public WebAuthnController(WebAuthnService webAuthnService, UserRepository users) {
-        this.webAuthnService = webAuthnService;
-        this.users = users;
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, Object>> status(Authentication authentication) {
+        User user = currentUser(authentication);
+        boolean enabled = webAuthnService.isWebAuthnEnabled(user);
+        log.info("Checking WebAuthn status for userId={}, enabled={}", user.getId(), enabled);
+        return ResponseEntity.ok(Map.of("enabled", enabled, "userId", user.getId()));
     }
 
     @PostMapping("/register/options")
@@ -35,11 +51,13 @@ public class WebAuthnController {
     @PostMapping("/register/finish")
     public ResponseEntity<Map<String, String>> registrationFinish(
         Authentication authentication,
-        @RequestBody WebAuthnFinishRequest request
+        @RequestBody(required = false) WebAuthnFinishRequest request
     ) {
         User user = currentUser(authentication);
-        log.info("Completing WebAuthn registration for userId={}, transactionId={}", user.getId(), request.transactionId());
-        webAuthnService.finishRegistration(user, request.transactionId(), request.credential());
+        String txId = request != null ? request.transactionId() : null;
+        String cred = request != null ? request.credential() : null;
+        log.info("Completing WebAuthn registration for userId={}, transactionId={}", user.getId(), txId);
+        webAuthnService.finishRegistration(user, txId, cred);
         log.info("WebAuthn registration finished successfully for userId={}", user.getId());
         return ResponseEntity.ok(Map.of("message", "Biometric sign-in is now enabled on this device."));
     }
@@ -51,10 +69,12 @@ public class WebAuthnController {
     }
 
     @PostMapping("/login/finish")
-    public ResponseEntity<Map<String, Object>> loginFinish(@RequestBody WebAuthnFinishRequest request) {
-        log.info("Completing WebAuthn biometric login for transactionId={}", request.transactionId());
-        Map<String, Object> result = webAuthnService.finishAuthentication(request.transactionId(), request.credential());
-        log.info("WebAuthn biometric login successful for transactionId={}", request.transactionId());
+    public ResponseEntity<Map<String, Object>> loginFinish(@RequestBody(required = false) WebAuthnFinishRequest request) {
+        String txId = request != null ? request.transactionId() : null;
+        String cred = request != null ? request.credential() : null;
+        log.info("Completing WebAuthn biometric login for transactionId={}", txId);
+        Map<String, Object> result = webAuthnService.finishAuthentication(txId, cred);
+        log.info("WebAuthn biometric login successful for transactionId={}", txId);
         return ResponseEntity.ok(result);
     }
 
@@ -68,7 +88,7 @@ public class WebAuthnController {
     }
 
     private User currentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || authentication.getName() == null) {
             log.warn("WebAuthn endpoint accessed without valid authentication");
             throw new org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.UNAUTHORIZED, "Authentication required."
@@ -84,5 +104,8 @@ public class WebAuthnController {
             });
     }
 
-    public record WebAuthnFinishRequest(String transactionId, String credential) {}
+    public record WebAuthnFinishRequest(
+            String transactionId,
+            String credential
+    ) {}
 }

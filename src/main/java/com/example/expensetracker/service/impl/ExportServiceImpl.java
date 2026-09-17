@@ -29,10 +29,10 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xddf.usermodel.chart.*;
 import org.apache.poi.xssf.usermodel.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
@@ -65,10 +65,10 @@ import java.util.stream.Collectors;
  *
  * @author Yogeshwaran
  */
+@Slf4j
 @Service
+@Transactional(readOnly = true)
 public class ExportServiceImpl implements ExportService {
-
-    private static final Logger logger = LoggerFactory.getLogger(ExportServiceImpl.class);
 
     // Modern PowerBI Corporate Palette (24-bit RGB)
     private static final Color PBI_DARK_SLATE    = new Color(15, 23, 42);    // #0F172A
@@ -285,7 +285,7 @@ public class ExportServiceImpl implements ExportService {
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(dtos);
         } catch (Exception e) {
-            logger.error("Failed to export expenses to JSON for user {}", user.getId(), e);
+            log.error("Failed to export expenses to JSON for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting expenses to JSON", e);
         }
     }
@@ -351,7 +351,7 @@ public class ExportServiceImpl implements ExportService {
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
-            logger.error("Failed to export expenses to PDF for user {}", user.getId(), e);
+            log.error("Failed to export expenses to PDF for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting expenses to PDF", e);
         }
     }
@@ -471,13 +471,13 @@ public class ExportServiceImpl implements ExportService {
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
             } catch (Exception evalEx) {
-                logger.debug("Formula evaluation note: {}", evalEx.getMessage());
+                log.debug("Formula evaluation note: {}", evalEx.getMessage());
             }
 
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            logger.error("Failed to export expenses to Excel for user {}", user.getId(), e);
+            log.error("Failed to export expenses to Excel for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting expenses to Excel", e);
         }
     }
@@ -512,7 +512,7 @@ public class ExportServiceImpl implements ExportService {
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(dtos);
         } catch (Exception e) {
-            logger.error("Failed to export incomes to JSON for user {}", user.getId(), e);
+            log.error("Failed to export incomes to JSON for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting incomes to JSON", e);
         }
     }
@@ -578,7 +578,7 @@ public class ExportServiceImpl implements ExportService {
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
-            logger.error("Failed to export incomes to PDF for user {}", user.getId(), e);
+            log.error("Failed to export incomes to PDF for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting incomes to PDF", e);
         }
     }
@@ -690,13 +690,13 @@ public class ExportServiceImpl implements ExportService {
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
             } catch (Exception evalEx) {
-                logger.debug("Formula evaluation note: {}", evalEx.getMessage());
+                log.debug("Formula evaluation note: {}", evalEx.getMessage());
             }
 
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            logger.error("Failed to export incomes to Excel for user {}", user.getId(), e);
+            log.error("Failed to export incomes to Excel for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting incomes to Excel", e);
         }
     }
@@ -2015,7 +2015,7 @@ public class ExportServiceImpl implements ExportService {
                 chart3.plot(lineChart);
 
             } catch (Exception chartEx) {
-                logger.warn("Native XDDF Chart generation note: {}", chartEx.getMessage());
+                log.warn("Native XDDF Chart generation note: {}", chartEx.getMessage());
             }
 
             // 7. Rich Native Conditional Formatting Across Dashboard
@@ -2051,13 +2051,13 @@ public class ExportServiceImpl implements ExportService {
             try {
                 XSSFFormulaEvaluator.evaluateAllFormulaCells(workbook);
             } catch (Exception evalEx) {
-                logger.debug("Pre-evaluating formulas note: {}", evalEx.getMessage());
+                log.debug("Pre-evaluating formulas note: {}", evalEx.getMessage());
             }
 
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            logger.error("Failed to export financial workbook to Excel for user {}", user.getId(), e);
+            log.error("Failed to export financial workbook to Excel for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting financial workbook to Excel", e);
         }
     }
@@ -2466,7 +2466,7 @@ public class ExportServiceImpl implements ExportService {
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
-            logger.error("Failed to export financial statement PDF for user {}", user.getId(), e);
+            log.error("Failed to export financial statement PDF for user {}", user.getId(), e);
             throw new RuntimeException("Error exporting financial statement to PDF", e);
         }
     }

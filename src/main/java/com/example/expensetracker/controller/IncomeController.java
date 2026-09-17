@@ -18,8 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -46,12 +46,12 @@ import java.util.List;
         All endpoints require Bearer JWT authentication.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/incomes")
 public class IncomeController {
-
-    private static final Logger log = LoggerFactory.getLogger(IncomeController.class);
 
     private final IncomeService incomeService;
     private final UserService userService;
@@ -59,26 +59,6 @@ public class IncomeController {
     private final ImportService importService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    /**
-     * Constructs {@link IncomeController} with required services.
-     *
-     * @param incomeService the income service
-     * @param userService the user service
-     * @param exportService the export service
-     * @param importService the import service
-     * @param userSecurity the user security component
-     */
-    public IncomeController(IncomeService incomeService,
-                            UserService userService,
-                            ExportService exportService,
-                            ImportService importService,
-                            com.example.expensetracker.security.UserSecurity userSecurity) {
-        this.incomeService = incomeService;
-        this.userService = userService;
-        this.exportService = exportService;
-        this.importService = importService;
-        this.userSecurity = userSecurity;
-    }
 
     /**
      * Creates a new income entry for a user.
@@ -253,6 +233,7 @@ public class IncomeController {
                 // symbols, accented names, emoji) are not corrupted. Without charset, text/csv
                 // defaults to ISO-8859-1 per RFC 4180.
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -269,6 +250,7 @@ public class IncomeController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.json\"")
                 .contentType(MediaType.APPLICATION_JSON)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -289,6 +271,7 @@ public class IncomeController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -309,6 +292,7 @@ public class IncomeController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"incomes.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 

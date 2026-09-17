@@ -2,37 +2,40 @@ package com.example.expensetracker.service;
 
 import com.example.expensetracker.model.Income;
 import com.example.expensetracker.repository.IncomeRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Scheduled service that automatically generates concrete income records for due
- * recurring income streams (daily wages, weekly paychecks, monthly salaries, etc.).
+ * Scheduled background service that processes recurring income streams
+ * (salary, dividends, rental income, freelance retainers).
+ *
+ * <p>Operates identically to {@link RecurringExpenseScheduler}: runs daily at midnight,
+ * queries all recurring {@link Income} records with {@code nextDueDate <= today},
+ * generates concrete {@link Income} entries, and steps {@code nextDueDate} forward.</p>
  *
  * @author Yogeshwaran
  * @version 1.0
+ * @see Income
  */
-@Service
+@Slf4j
+@Component
+@RequiredArgsConstructor
 public class RecurringIncomeScheduler {
 
-    private static final Logger log = LoggerFactory.getLogger(RecurringIncomeScheduler.class);
-
     private final IncomeRepository incomeRepository;
-
-    public RecurringIncomeScheduler(IncomeRepository incomeRepository) {
-        this.incomeRepository = incomeRepository;
-    }
 
     /**
      * Processes all recurring income streams that are due on or before today.
      */
+    @Transactional
     @Scheduled(cron = "0 0 0 * * *")
     public void processRecurringIncomes() {
         log.info("Processing due recurring incomes...");
@@ -40,48 +43,55 @@ public class RecurringIncomeScheduler {
                 incomeRepository.findByIsRecurringTrueAndNextDueDateLessThanEqual(LocalDate.now());
 
         int processedCount = 0;
+        int failedCount = 0;
         for (Income rec : dueIncomes) {
-            while (rec.getNextDueDate() != null && !rec.getNextDueDate().isAfter(LocalDate.now())) {
-                Income concrete = new Income();
-                concrete.setAmount(rec.getAmount());
-                concrete.setSource(rec.getSource());
-                String baseDesc = rec.getDescription() != null && !rec.getDescription().isBlank()
-                        ? rec.getDescription() : rec.getSource();
-                concrete.setDescription(baseDesc + " (Auto)");
-                concrete.setIncomeDate(rec.getNextDueDate());
-                concrete.setUser(rec.getUser());
-                concrete.setIsRecurring(false);
-                incomeRepository.save(concrete);
+            try {
+                while (rec.getNextDueDate() != null && !rec.getNextDueDate().isAfter(LocalDate.now())) {
+                    Income concrete = new Income();
+                    concrete.setAmount(rec.getAmount());
+                    concrete.setSource(rec.getSource());
+                    String baseDesc = rec.getDescription() != null && !rec.getDescription().isBlank()
+                            ? rec.getDescription() : rec.getSource();
+                    concrete.setDescription(baseDesc + " (Auto)");
+                    concrete.setIncomeDate(rec.getNextDueDate());
+                    concrete.setUser(rec.getUser());
+                    concrete.setIsRecurring(false);
+                    incomeRepository.save(concrete);
 
-                rec.setNextDueDate(nextOccurrence(rec));
-                processedCount++;
+                    rec.setNextDueDate(nextOccurrence(rec));
+                    processedCount++;
+                }
+                incomeRepository.save(rec);
+            } catch (Exception itemEx) {
+                failedCount++;
+                log.error("CRITICAL: Failed to process recurring income id={} for userId={}: {}",
+                        rec.getId(), rec.getUser() != null ? rec.getUser().getId() : "null", itemEx.getMessage(), itemEx);
             }
-            incomeRepository.save(rec);
         }
-        log.info("Finished processing recurring incomes. Processed {} occurrences.", processedCount);
+        log.info("Finished processing recurring incomes. Processed {} occurrences, {} failures.", processedCount, failedCount);
     }
 
+    /**
+     * Catches up on any missed recurring incomes when the application starts up.
+     */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
-        try {
-            log.info("Application is ready. Checking for any missed recurring incomes...");
-            processRecurringIncomes();
-        } catch (Exception e) {
-            log.error("Error checking missed recurring incomes on startup: {}, continuing application boot.", e.getMessage(), e);
-        }
+        log.info("Application ready: running startup check for missed recurring incomes...");
+        processRecurringIncomes();
     }
 
-    public static LocalDate nextOccurrence(Income income) {
-        LocalDate base = income.getNextDueDate() != null ? income.getNextDueDate() : income.getIncomeDate();
-        if (base == null) base = LocalDate.now();
-        String freq = income.getFrequency() != null ? income.getFrequency().toUpperCase() : "MONTHLY";
-        Integer interval = income.getIntervalDays() != null && income.getIntervalDays() > 0 ? income.getIntervalDays() : 1;
-        return switch (freq) {
-            case "DAILY" -> base.plusDays(1);
-            case "WEEKLY" -> base.plusWeeks(1);
-            case "YEARLY" -> base.plusYears(1);
-            case "CUSTOM" -> base.plusDays(interval);
-            default -> base.plusMonths(1);
+    private LocalDate nextOccurrence(Income rec) {
+        String freq = rec.getFrequency();
+        if (freq == null || freq.isBlank()) freq = "MONTHLY";
+        return switch (freq.toUpperCase()) {
+            case "DAILY"   -> rec.getNextDueDate().plusDays(1);
+            case "WEEKLY"  -> rec.getNextDueDate().plusWeeks(1);
+            case "YEARLY"  -> rec.getNextDueDate().plusYears(1);
+            case "CUSTOM"  -> {
+                int days = rec.getIntervalDays() != null && rec.getIntervalDays() > 0 ? rec.getIntervalDays() : 30;
+                yield rec.getNextDueDate().plusDays(days);
+            }
+            default        -> rec.getNextDueDate().plusMonths(1);
         };
     }
 }

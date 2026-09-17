@@ -25,8 +25,8 @@ import org.openpdf.text.Phrase;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,11 +43,11 @@ import java.util.stream.Collectors;
  * Every export includes expenses, incomes, savings goals, subscriptions,
  * budgets, and the derived cash-flow summary for the selected period.
  */
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/reports")
 public class RangeReportController {
-
-    private static final Logger log = LoggerFactory.getLogger(RangeReportController.class);
 
     private static final MediaType XLSX = MediaType.parseMediaType(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -60,21 +60,6 @@ public class RangeReportController {
     private final UserService users;
     private final UserSecurity security;
 
-    public RangeReportController(ExpenseRepository expenses,
-                                  IncomeRepository incomes,
-                                  SavingsGoalRepository savingsGoals,
-                                  RecurringExpenseRepository recurringExpenses,
-                                  BudgetRepository budgets,
-                                  UserService users,
-                                  UserSecurity security) {
-        this.expenses = expenses;
-        this.incomes = incomes;
-        this.savingsGoals = savingsGoals;
-        this.recurringExpenses = recurringExpenses;
-        this.budgets = budgets;
-        this.users = users;
-        this.security = security;
-    }
 
     @GetMapping("/user/{userId}/export/range/excel")
     public ResponseEntity<byte[]> excel(@PathVariable Long userId,
@@ -90,6 +75,7 @@ public class RangeReportController {
         log.info("Executive Excel report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(XLSX)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Dashboard.xlsx")
@@ -111,6 +97,7 @@ public class RangeReportController {
         log.info("Executive PDF report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Report.pdf")

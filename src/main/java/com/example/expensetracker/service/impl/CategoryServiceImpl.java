@@ -3,9 +3,11 @@ package com.example.expensetracker.service.impl;
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
+import com.example.expensetracker.repository.ExpenseRepository;
+import com.example.expensetracker.repository.RecurringExpenseRepository;
 import com.example.expensetracker.service.CategoryService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -35,40 +37,24 @@ import java.util.List;
  * @see CategoryService
  * @see CategoryRepository
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
-
-    private static final Logger log = LoggerFactory.getLogger(CategoryServiceImpl.class);
 
     /** Repository used for category persistence and querying. */
     private final CategoryRepository categoryRepository;
-    private final com.example.expensetracker.repository.ExpenseRepository expenseRepository;
-    private final com.example.expensetracker.repository.RecurringExpenseRepository recurringExpenseRepository;
-
-    /**
-     * Constructs a {@code CategoryServiceImpl} with the required repositories.
-     *
-     * @param categoryRepository the JPA repository for {@link Category} entities
-     * @param expenseRepository  used to check whether a category is referenced
-     *                           by any one-off expense before deletion
-     * @param recurringExpenseRepository used to check whether a category is
-     *                           referenced by any recurring expense/subscription
-     *                           before deletion
-     */
-    public CategoryServiceImpl(CategoryRepository categoryRepository,
-                                com.example.expensetracker.repository.ExpenseRepository expenseRepository,
-                                com.example.expensetracker.repository.RecurringExpenseRepository recurringExpenseRepository) {
-        this.categoryRepository = categoryRepository;
-        this.expenseRepository = expenseRepository;
-        this.recurringExpenseRepository = recurringExpenseRepository;
-    }
+    private final ExpenseRepository expenseRepository;
+    private final RecurringExpenseRepository recurringExpenseRepository;
 
     /**
      * {@inheritDoc}
      *
      * <p>Before creating the category, checks whether a category with the same name
      * already exists for the specified user using
-     * {@link CategoryRepository#existsByNameAndUser(String, User)}.\n     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
+     * {@link CategoryRepository#existsByNameAndUser(String, User)}.
+     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
      * to enforce per-user uniqueness of category names.</p>
      *
      * <p>After a successful save, both the per-user cache and the global categories
@@ -154,6 +140,7 @@ public class CategoryServiceImpl implements CategoryService {
      * referenced by either a one-off expense or a recurring subscription.</p>
      */
     @Override
+    @Transactional
     @Caching(evict = {
         @CacheEvict(value = "userCategories", key = "#user.id"),
         @CacheEvict(value = "globalCategories", allEntries = true)

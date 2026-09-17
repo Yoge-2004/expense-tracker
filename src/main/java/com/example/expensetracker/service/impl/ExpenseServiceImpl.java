@@ -6,12 +6,13 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.service.ExpenseService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -30,28 +31,17 @@ import java.util.List;
  * @see ExpenseRepository
  * @see CategoryRepository
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ExpenseServiceImpl implements ExpenseService {
-
-    private static final Logger log = LoggerFactory.getLogger(ExpenseServiceImpl.class);
 
     /** Repository for expense persistence and querying. */
     private final ExpenseRepository expenseRepository;
 
     /** Repository for category lookups during ownership validation. */
     private final CategoryRepository categoryRepository;
-
-    /**
-     * Constructs an {@code ExpenseServiceImpl} with the required repositories.
-     *
-     * @param expenseRepository  the JPA repository for {@link Expense} entities
-     * @param categoryRepository the JPA repository for {@link Category} entities
-     */
-    public ExpenseServiceImpl(ExpenseRepository expenseRepository,
-                              CategoryRepository categoryRepository) {
-        this.expenseRepository = expenseRepository;
-        this.categoryRepository = categoryRepository;
-    }
 
     /**
      * {@inheritDoc}
@@ -71,6 +61,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      *                                  a different user
      */
     @Override
+    @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense createExpense(Expense expense, User user) {
         log.info("Creating expense for userId={}: amount={}, date={}, categoryId={}",
@@ -105,8 +96,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      * {@inheritDoc}
      *
      * <p>Result is cached in {@code userExpenses} keyed by {@code user.id}.
-     * This avoids repeated SQL round-trips to Neon on every dashboard reload.
-     * Cache is evicted on any write (create, update, delete) for this user.</p>
+     * This avoids repeated SQL round-trips to Neon on every dashboard reload.</p>
      *
      * @param user the owner of the expenses to retrieve
      * @return a list of all {@link Expense} records owned by the user
@@ -135,6 +125,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      *                                  belong to the given user
      */
     @Override
+    @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public void deleteExpense(Long expenseId, User user) {
         log.info("Deleting expense id={} for userId={}", expenseId, user.getId());
@@ -169,6 +160,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      * @throws AccessDeniedException    if the expense does not belong to the user
      */
     @Override
+    @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense updateExpense(Long expenseId, Expense expenseUpdates, User user) {
         log.info("Updating expense id={} for userId={}", expenseId, user.getId());

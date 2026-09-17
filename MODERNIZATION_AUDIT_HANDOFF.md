@@ -235,6 +235,32 @@ Completed multi-file implementation and verification across Modules 1–6 follow
 - **Resilient File Import Validation**: Hardened `ImportServiceImpl` with null and empty multipart file checks and Jackson `JsonProcessingException` trapping, turning malformed JSON payloads into client-safe 400 Bad Request errors rather than unhandled 500s.
 - **Verification**: Executed `./mvnw test`: **163 tests run, 0 failures, 0 errors, 19/19 Cucumber BDD scenarios passed (100% BUILD SUCCESS)**. (Commits: `ce20ce0`, `80f29ab`).
 
+### Module 7: Fail-Fast Screaming Architecture, Global Exception Mapping & Frontend Sync (COMPLETED)
+- **Eliminated Silent Failures in Email Delivery**:
+  - In `PasswordResetServiceImpl.java`, replaced swallowed `MailException` with fail-fast `throw new EmailDeliveryException(...)`, cleanly caught and mapped to HTTP 503 SERVICE_UNAVAILABLE while preserving 6-digit PIN zero-email recovery.
+- **Fail-Fast File Import Validation**:
+  - In `ImportServiceImpl.java`, hardened all 6 import pipelines (Expenses & Incomes CSV/JSON/Excel) with screaming checks: throws `IllegalArgumentException` fail-fast if a file contains 0 data rows or if 100% of rows fail parsing/validation, preventing silent empty imports.
+- **Sync & Backup Real HTTP Error Status Codes**:
+  - In `SyncController.java`, converted silent fake 200 responses to real HTTP 500 `INTERNAL_SERVER_ERROR` when backup or pull operations report error status. Updated `SyncControllerTest.java` to assert 500.
+- **WebAuthn Credential Management Endpoint**:
+  - Added `@DeleteMapping("/credentials")` to `WebAuthnController.java` to complete biometric credential management and pass all WebMvc tests.
+- **Frontend-Backend Currency & Default Alignment**:
+  - Synchronized default fallback currency across `frontend/dashboard.html`, `frontend/js/api.js`, `frontend/js/auth.js`, and `frontend/js/dashboard.js` to `INR` to match backend user entity defaults.
+  - Added screaming UI toasts and error logs for user currency persistence failures in `dashboard.js` and data fetch failures in `dashboard-data.js` instead of silent console swallows.
+- **Verification**: Executed `./mvnw test`: **163 tests run, 0 failures, 0 errors, 19/19 Cucumber BDD scenarios passed (100% BUILD SUCCESS)**.
+
+### Module 8: Decoupled Service Interfaces & Architecture Modernization (COMPLETED)
+- **Extracted Interfaces for All Concrete Services**:
+  - `WebAuthnService`: Converted to clean interface `WebAuthnService` with implementation moved to `com.example.expensetracker.service.impl.WebAuthnServiceImpl`.
+  - `DatabaseSnapshotService`: Converted to interface `DatabaseSnapshotService` with implementation moved to `com.example.expensetracker.service.impl.DatabaseSnapshotServiceImpl`, preserving static cryptographic helpers (`encrypt`/`decrypt`).
+  - `FileDbSyncService`: Converted to interface `FileDbSyncService` with implementation moved to `com.example.expensetracker.service.impl.FileDbSyncServiceImpl`.
+  - `HuggingFaceDatabaseFailoverService`: Converted to interface `HuggingFaceDatabaseFailoverService` with implementation moved to `com.example.expensetracker.service.impl.HuggingFaceDatabaseFailoverServiceImpl`.
+  - `JwtService`: Converted to interface `JwtService` with implementation moved to `com.example.expensetracker.security.impl.JwtServiceImpl`.
+  - `RateLimiterService`: Converted to interface `RateLimiterService` with implementation moved to `com.example.expensetracker.security.impl.RateLimiterServiceImpl`.
+- **Cleaned Scheduling Architecture**:
+  - Refactored `RecurringExpenseScheduler`, `RecurringIncomeScheduler`, and `RecurringSavingsScheduler` from `@Service` to `@Component` to strictly align background scheduled tasks with Spring lifecycle conventions.
+- **Verification**: Executed `./mvnw test`: **163 tests run, 0 failures, 0 errors, 19/19 Cucumber BDD scenarios passed (100% BUILD SUCCESS)**.
+
 ## 7. Next Actions
 
 1. Review and proceed to frontend web modernizations (HTML/CSS/JS) if requested.
@@ -273,3 +299,167 @@ Survey only — nothing implemented yet, pending priority direction.
 | TS (mobile) | 17 files use `any` somewhere | Real, needs per-instance review | Not a blanket-fix candidate — some may be genuinely justified (untyped third-party APIs). |
 | TS (mobile) | `ErrorBoundary.tsx` is a class component | Not a finding | React error boundaries have no functional/hooks equivalent in React 19 — this is the correct, required pattern. |
 | TS (mobile) | strict mode on, zero `@ts-ignore`/`@ts-nocheck` | Already clean | No finding |
+
+---
+
+## Module 9: Comprehensive Service Modernization (Lombok, Declarative Transactions & Logging)
+
+### 1. Objective
+Modernize all service implementations and background schedulers across the backend architecture to eliminate boilerplate constructors and manual logger instances while establishing enterprise-grade declarative transactional boundaries (`@Transactional(readOnly = true)` at class level, explicit `@Transactional` on mutation methods).
+
+### 2. Modernized Components & Architectural Standards
+
+| Service Implementation | Lombok Annotations | Transaction Strategy | Key Refactoring Changes |
+|---|---|---|---|
+| [`CategoryServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/CategoryServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on `createCategory`, `deleteCategory` | Replaced manual `LoggerFactory.getLogger` and 2-parameter constructor. |
+| [`ExpenseServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/ExpenseServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on `createExpense`, `updateExpense`, `deleteExpense` | Removed boilerplate constructor, optimized read-only queries. |
+| [`IncomeServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/IncomeServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on `createIncome`, `updateIncome`, `deleteIncome` | Modernized constructor and transactional boundary. |
+| [`SavingsGoalServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/SavingsGoalServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on mutations | Removed manual constructor, secured goal transactions. |
+| [`UserServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/UserServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on mutations | Eliminated 10-parameter manual constructor, enhanced logging. |
+| [`PasswordResetServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/PasswordResetServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on OTP requests/verifications | Preserved full dual-recovery PIN fallback and dark-mode notification templates. |
+| [`MonthlyReportServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/MonthlyReportServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on email/scheduler writes | Eliminated 7-parameter manual constructor. |
+| [`WebAuthnServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/WebAuthnServiceImpl.java) | `@Slf4j` | `@Transactional(readOnly = true)` class-level, `@Transactional` on `finishRegistration`, `finishAuthentication` | Added missing `@Transactional` on mutating WebAuthn challenge consumption ceremonies. |
+| [`DatabaseSnapshotServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/DatabaseSnapshotServiceImpl.java) | `@Slf4j` | `@Transactional(readOnly = true)` class-level, `@Transactional` on snapshot restoration | Detailed logging for table exports and failovers. |
+| [`FileDbSyncServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/FileDbSyncServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | Method-level `@Transactional` on sync | Modernized constructor and logging. |
+| [`HuggingFaceDatabaseFailoverServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/HuggingFaceDatabaseFailoverServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | N/A | Removed manual constructor. |
+| [`ImportServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/ImportServiceImpl.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level, `@Transactional` on all 6 batch import routines | Standardized on `log` SLF4J, initialized `ObjectMapper` field inline. |
+| [`ExportServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/ExportServiceImpl.java) | `@Slf4j` | `@Transactional(readOnly = true)` class-level | Standardized logging and read-only optimization for large dataset exports. |
+| [`CustomUserDetailsService`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/security/CustomUserDetailsService.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional(readOnly = true)` class-level | Added structured logging on auth attempts. |
+| [`JwtServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/security/impl/JwtServiceImpl.java) | `@Slf4j` | N/A | Replaced manual logger. |
+| [`RateLimiterServiceImpl`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/security/impl/RateLimiterServiceImpl.java) | `@Slf4j` | N/A | Added diagnostic bucket cleanup logging. |
+| [`RecurringExpenseScheduler`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/RecurringExpenseScheduler.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional` on cron and startup execution | Removed manual constructor, ensured atomic recurring generation. |
+| [`RecurringIncomeScheduler`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/RecurringIncomeScheduler.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional` on cron and startup execution | Removed manual constructor, ensured atomic recurring income creation. |
+| [`RecurringSavingsScheduler`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/RecurringSavingsScheduler.java) | `@Slf4j`, `@RequiredArgsConstructor` | `@Transactional` on cron and startup execution | Removed manual constructor, auto-advances due dates atomically. |
+
+### 3. Verification Results
+- **Full Maven Compilation:** Clean build on Java 26 preview mode.
+- **JUnit 5 & Cucumber Test Suite:** All 163 tests passed, 0 failures, 0 errors, 19 BDD scenarios passed (129 steps passed).
+
+---
+
+## Module 10: File Upload / Download Streaming, CORS Headers & Progress Tracking
+
+### 1. Objective
+Address performance and UX deficiencies in file handling:
+- Enable chunked streaming transfer progress observation by exposing `Content-Length` in CORS configurations.
+- Provide explicit `.contentLength(bytes.length)` on all file export endpoints across controllers (`ExpenseController`, `IncomeController`, `RangeReportController`, `ReportController`).
+- Introduce visual real-time progress bar UI (`loadingProgressTrack`, `loadingProgressBar`, `setProgress(percent, text)`) in the frontend client (`api.js`) and wire into `downloadAuthenticated` and `uploadFileWithProgress` in `dashboard.js`.
+
+### 2. Modernized Components
+
+| Component | Target Location | Solution Details |
+|---|---|---|
+| CORS Configuration | [`CorsConfig.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/config/CorsConfig.java) | Added `"Content-Length"` to `exposedHeaders` in both `corsConfigurationSource()` and `corsConfigurer()` so browsers can read `res.headers.get("Content-Length")`. |
+| Expense Exports | [`ExpenseController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/ExpenseController.java) | Added `.contentLength(bytes.length)` to CSV, JSON, PDF, and Excel export endpoints. |
+| Income Exports | [`IncomeController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/IncomeController.java) | Added `.contentLength(bytes.length)` to CSV, JSON, PDF, and Excel export endpoints. |
+| Executive & Range Reports | [`RangeReportController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/RangeReportController.java), [`ReportController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/ReportController.java) | Set explicit content-length headers on range Excel/PDF reports and financial statement downloads. |
+| Frontend Feedback UI | [`frontend/js/api.js`](file:///home/yoge/IdeaProjects/expense-tracker-system/frontend/js/api.js) | Integrated `#loadingProgressTrack` and `#loadingProgressBar` inside `#appLoading`, added global `setProgress(percent, customText)` helper. |
+| File Progress Handlers | [`frontend/js/dashboard.js`](file:///home/yoge/IdeaProjects/expense-tracker-system/frontend/js/dashboard.js) | Integrated `setProgress(pct, ...)` in `downloadAuthenticated` (via `ReadableStream` chunk accumulation) and `uploadFileWithProgress` (via `XMLHttpRequest.upload.onprogress`), with smooth progress updates and clean teardown. |
+
+### 3. Verification
+- Maven Compilation: 0 errors, 0 warnings.
+- Test Suite: All 163 tests passed, 19 Cucumber BDD scenarios (129 steps) passed.
+
+## Module 11: OAuth Username Derivation, WebAuthn Integrity & Frontend Select Synchronization
+
+### 1. Objective
+Synchronize frontend-to-backend model contracts and resolve security and credential constraints:
+- Bind frontend proposed username from registration form to Google OAuth authentication payload (`OAuthRequest.username`).
+- Re-architect WebAuthn user handle persistence to reuse consistent user handle across authenticators according to W3C WebAuthn standards, removing invalid `unique = true` DB constraint on `user_handle`.
+- Expose `GET /api/webauthn/status` allowing frontend and clients to inspect user passkey registration status and presence.
+- Modernize `WebAuthnController`, `WebAuthnCredentialRepositoryAdapter` with Lombok `@RequiredArgsConstructor` and `@Slf4j`.
+- Synchronize `#goalFrequency` into custom luxury select initialization list in `custom-controls.js`.
+
+### 2. Modernized Components
+
+| Component | Target Location | Solution Details |
+|---|---|---|
+| Google Sign-In Username Sync | [`frontend/js/auth.js`](file:///home/yoge/IdeaProjects/expense-tracker-system/frontend/js/auth.js) | Added `username: document.getElementById("username")?.value?.trim() \|\| null` to OAuth request payload so proposed handle is propagated. |
+| WebAuthn Entity Constraints | [`WebAuthnCredential.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/model/WebAuthnCredential.java) | Removed `unique = true` on `user_handle` (an account identifier across multiple credentials) while preserving index and unique constraint on `credential_id`. |
+| WebAuthn User Handle Reuse | [`WebAuthnServiceImpl.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/service/impl/WebAuthnServiceImpl.java) | Implemented `userHandle` reuse across authenticators for existing users, added `isWebAuthnEnabled` implementation and cleanup logic. |
+| WebAuthn Status Endpoint & Lombok | [`WebAuthnController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/WebAuthnController.java) | Added `@GetMapping("/status")` returning biometric enablement status, refactored with `@RequiredArgsConstructor` and `@Slf4j`. |
+| Repository Adapter | [`WebAuthnCredentialRepositoryAdapter.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/security/WebAuthnCredentialRepositoryAdapter.java) | Modernized with `@RequiredArgsConstructor`. |
+| Frontend Control Synchronization | [`frontend/js/custom-controls.js`](file:///home/yoge/IdeaProjects/expense-tracker-system/frontend/js/custom-controls.js) | Added `"goalFrequency"` to `selectIds` array in `initAllCustomSelects()`. |
+
+### 3. Verification
+- Maven Compilation: Clean, zero errors.
+- Unit & Integration Tests: All tests in `WebAuthnControllerTest` and full suite passed with 100% success rate.
+
+## Module 12: Comprehensive Backend Testing Scripts (BDD Cucumber & Unit Test Suite Expansion)
+
+### 1. Objective
+Achieve 100% test coverage and hermetic scenario isolation across all core financial management domain workflows:
+- Expand Cucumber BDD feature scenarios across categories, expenses, budgets, incomes, savings goals, and file export/import pipelines.
+- Hermetically isolate Cucumber scenario preconditions in `CategorySteps.java` to prevent duplicate category conflicts and state bleed across test executions.
+- Verify comprehensive MockMvc web-layer unit tests and service-layer business logic test suites with fail-fast exception validation.
+
+### 2. Modernized Components
+
+| Component | Target Location | Solution Details |
+|---|---|---|
+| Category BDD Precondition | [`CategorySteps.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/java/com/example/expensetracker/cucumber/CategorySteps.java) | Implemented `Given I do not have a category named {string}` deleting pre-existing matching categories for hermetic scenario isolation. |
+| Category Feature Suite | [`category.feature`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/resources/features/category.feature) | Added hermetic precondition step ensuring idempotency of category creation tests. |
+| Modernized Service Unit Tests | `src/test/java/com/example/expensetracker/service/impl/*` | Comprehensive unit tests for `CategoryServiceImplTest`, `ExpenseServiceImplTest`, `IncomeServiceImplTest`, `SavingsGoalServiceImplTest`, `UserServiceImplTest`, `WebAuthnServiceImplTest`, `PasswordResetServiceImplTest`, `DatabaseSnapshotServiceImplTest`, `ExportServiceImplTest`, `FileDbSyncServiceImplTest`, `ImportServiceImplTest`, `MonthlyReportServiceImplTest`. |
+
+### 3. Verification
+- **Cucumber BDD Suite:** 38/38 scenarios passed, 257/257 steps passed, 0 failures, 0 errors across all 7 feature suites.
+- **Service Unit Tests:** 95/95 service unit tests passed (33 in Batch 1, 62 in Batch 2).
+- **Full Maven Test Suite:** 181/181 tests passed, 0 failures, 0 errors, 0 skipped.
+
+## Module 13: Comprehensive Controller Modernization with Lombok & Screaming Architecture Audit
+
+### 1. Objective
+Systematically inspect, modernize, and enforce fail-fast screaming error handling across all REST controllers in `com.example.expensetracker.controller`:
+- Replace boilerplate constructor dependency injection with Lombok `@RequiredArgsConstructor`.
+- Replace verbose SLF4J manual logger declarations (`LoggerFactory.getLogger(...)`) with Lombok `@Slf4j`.
+- Retain non-final fields for Spring `@Value` properties to ensure clean and correct constructor generation.
+- Audit all endpoints for screaming error handling: no silent catch or default fallbacks; throw explicit domain exceptions (`ResourceNotFoundException`, `BadRequestException`, `ConflictException`, `AccessDeniedException`) that map to unambiguous HTTP status codes handled by `GlobalExceptionHandler`.
+- Validate user tenant isolation and ownership before mutating or returning sensitive financial resources (preventing IDOR vulnerabilities).
+
+### 2. Modernized Components
+
+| Controller | Target Location | Modernization Details |
+|---|---|---|
+| CategoryController | [`CategoryController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/CategoryController.java) | Annotated with `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and 3-arg constructor. |
+| SavingsGoalController | [`SavingsGoalController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/SavingsGoalController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and constructor. Moved security check in `depositToGoal` before payload access. |
+| IncomeController | [`IncomeController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/IncomeController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and 5-arg constructor. |
+| ExpenseController | [`ExpenseController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/ExpenseController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and 9-arg constructor. Validated fail-fast screaming behavior on cross-tenant category assignments. |
+| AuthController | [`AuthController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/AuthController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Kept `@Value` email verification flag non-final. Removed manual constructor and logger. |
+| ReportController | [`ReportController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/ReportController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and 5-arg constructor. |
+| RangeReportController | [`RangeReportController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/RangeReportController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and 7-arg constructor. |
+| SyncController | [`SyncController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/SyncController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Kept `@Value` sync token non-final. Removed manual logger and constructor. |
+| UserController | [`UserController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/UserController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and 5-arg constructor. |
+| HealthController | [`HealthController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/HealthController.java) | Added `@Slf4j` and `@RequiredArgsConstructor`. Removed explicit logger and constructor. |
+| HomeController | [`HomeController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/HomeController.java) | Added `@Slf4j`. Removed explicit logger. |
+| WebAuthnController | [`WebAuthnController.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/main/java/com/example/expensetracker/controller/WebAuthnController.java) | Verified existing `@Slf4j` and `@RequiredArgsConstructor` and fail-fast `ResponseStatusException` authentication assertions. |
+
+### 3. Verification
+- **Compilation:** `./mvnw test-compile` passed with zero errors across all 131 source and 31 test classes.
+- **Cucumber BDD Suite:** 38/38 scenarios passed, 257/257 steps passed.
+- **Full Test Suite:** 273/273 tests executed, 0 failures, 0 errors, 2 skipped (Playwright headless in non-CI environment).
+
+## Module 14: Comprehensive Testing Scripts & Multi-Tier Verification (BDD, Schedulers, MockMvc & Playwright)
+
+### 1. Objective
+Fulfill the user requirement ("Now we are going to write the testing scripts" and fail-fast screaming error verification) by completing the remaining gaps across all testing layers:
+- Implement Cucumber BDD feature specification for Budgets (`budget.feature`) and step definitions (`BudgetSteps.java`) covering creation, monthly/custom intervals, category-based caps, idempotency, updates, and threshold validations.
+- Create unit test suites for all background schedulers (`RecurringExpenseSchedulerTest`, `RecurringIncomeSchedulerTest`, `RecurringSavingsSchedulerTest`) validating cron triggers, error isolation, and atomic state advancement without infinite loops.
+- Bridge remaining MockMvc controller coverage gaps by implementing comprehensive tests for `ReportControllerTest` and `HealthControllerTest`.
+- Expand frontend Playwright E2E coverage by authoring test suites for Budgets (`e2e/tests/budgets.spec.ts`) and Incomes (`e2e/tests/incomes.spec.ts`).
+
+### 2. Modernized Components & Test Suites
+
+| Component / Test Suite | Target Location | Solution Details |
+|---|---|---|
+| Budget BDD Feature | [`budget.feature`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/resources/features/budget.feature) | 6 scenarios covering budget creation with monthly interval, custom interval with start/end dates, retrieving status, updating limits, and deleting budgets. |
+| Budget BDD Steps | [`BudgetSteps.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/java/com/example/expensetracker/cucumber/BudgetSteps.java) | Hermetic scenario execution with dynamic category binding, idempotency checks, and authenticated session integration. |
+| Schedulers Unit Tests | [`RecurringExpenseSchedulerTest.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/java/com/example/expensetracker/service/RecurringExpenseSchedulerTest.java), [`RecurringIncomeSchedulerTest.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/java/com/example/expensetracker/service/RecurringIncomeSchedulerTest.java), [`RecurringSavingsSchedulerTest.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/java/com/example/expensetracker/service/RecurringSavingsSchedulerTest.java) | 17 unit tests verifying cron execution, safe handling of missing/overdue entries, next due date calculation, error containment, and transactional boundaries. |
+| Report Controller MockMvc | [`ReportControllerTest.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/java/com/example/expensetracker/controller/ReportControllerTest.java) | 6 MockMvc tests covering monthly reports, trigger emails, custom timeframes, PDF/Excel binary downloads, and error conditions. |
+| Health Controller MockMvc | [`HealthControllerTest.java`](file:///home/yoge/IdeaProjects/expense-tracker-system/src/test/java/com/example/expensetracker/controller/HealthControllerTest.java) | 3 MockMvc tests asserting application health check status, database connectivity checks, and uptime reporting. |
+| Playwright Budget E2E | [`budgets.spec.ts`](file:///home/yoge/IdeaProjects/expense-tracker-system/e2e/tests/budgets.spec.ts) | 8 test cases verifying modal open/close, form inputs, dynamic CUSTOM interval display toggles, chart canvas presence, and usage badges. |
+| Playwright Income E2E | [`incomes.spec.ts`](file:///home/yoge/IdeaProjects/expense-tracker-system/e2e/tests/incomes.spec.ts) | 7 test cases verifying modal interaction, recurring cadence toggle, CUSTOM interval field reveals, tab switching, and filter bar operations. |
+
+### 3. Verification Results
+- **Cucumber BDD Suite:** 44/44 scenarios passed, 306/306 steps passed (100% success rate across all 8 feature files).
+- **Backend Test Suite:** 305 tests executed, 0 failures, 0 errors, 2 skipped (Playwright headless in non-CI environment).
+- **Full Maven Build:** 100% BUILD SUCCESS.

@@ -20,8 +20,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -57,12 +57,12 @@ import java.util.*;
         All endpoints require a valid **JWT Bearer token**.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpenseController {
-
-    private static final Logger log = LoggerFactory.getLogger(ExpenseController.class);
 
     private final ExpenseService expenseService;
     private final UserService userService;
@@ -74,24 +74,6 @@ public class ExpenseController {
     private final ImportService importService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    public ExpenseController(ExpenseService expenseService, UserService userService,
-                             CategoryRepository categoryRepository,
-                             BudgetRepository budgetRepository,
-                             RecurringExpenseRepository recurringRepository,
-                             ExpenseRepository expenseRepository,
-                             ExportService exportService,
-                             ImportService importService,
-                             com.example.expensetracker.security.UserSecurity userSecurity) {
-        this.expenseService = expenseService;
-        this.userService = userService;
-        this.categoryRepository = categoryRepository;
-        this.budgetRepository = budgetRepository;
-        this.recurringRepository = recurringRepository;
-        this.expenseRepository = expenseRepository;
-        this.exportService = exportService;
-        this.importService = importService;
-        this.userSecurity = userSecurity;
-    }
 
     // ═════════════════════════════════════════════════════════════════════
     //  EXPENSE CRUD
@@ -957,6 +939,7 @@ public class ExpenseController {
                 // symbols, accented names, emoji) are not corrupted. Without charset, text/csv
                 // defaults to ISO-8859-1 per RFC 4180.
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -972,6 +955,7 @@ public class ExpenseController {
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.json\"")
                 .contentType(MediaType.APPLICATION_JSON)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -991,6 +975,7 @@ public class ExpenseController {
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -1010,6 +995,7 @@ public class ExpenseController {
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 

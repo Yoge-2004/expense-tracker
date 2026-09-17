@@ -10,8 +10,8 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.service.IncomeService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -28,24 +28,14 @@ import java.util.List;
  *
  * @author Yogeshwaran
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class IncomeServiceImpl implements IncomeService {
-
-    private static final Logger log = LoggerFactory.getLogger(IncomeServiceImpl.class);
 
     private final IncomeRepository incomeRepository;
     private final ExpenseRepository expenseRepository;
-
-    /**
-     * Constructs {@link IncomeServiceImpl} with required repositories.
-     *
-     * @param incomeRepository the income repository
-     * @param expenseRepository the expense repository
-     */
-    public IncomeServiceImpl(IncomeRepository incomeRepository, ExpenseRepository expenseRepository) {
-        this.incomeRepository = incomeRepository;
-        this.expenseRepository = expenseRepository;
-    }
 
     /**
      * {@inheritDoc}
@@ -93,7 +83,6 @@ public class IncomeServiceImpl implements IncomeService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true)
     @Cacheable(value = "userIncomes", key = "#user.id")
     public List<IncomeDto> getUserIncomes(User user) {
         log.debug("Retrieving user incomes for userId={}", user.getId());
@@ -185,7 +174,6 @@ public class IncomeServiceImpl implements IncomeService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true)
     public CashFlowSummaryDto getCashFlowSummary(User user, int year, int month) {
         log.info("Computing cash flow summary for userId={}, period={}-{}", user.getId(), year, month);
         LocalDate startDate = LocalDate.of(year, month, 1);

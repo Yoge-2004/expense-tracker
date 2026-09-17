@@ -684,7 +684,7 @@ const currencySelector = document.getElementById("currencySelector");
 
 function syncCurrencyDropdown(currCode) {
     if (typeof WORLD_CURRENCIES === "undefined") return;
-    const activeCurr = currCode || (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "USD");
+    const activeCurr = currCode || (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "INR");
     const item = WORLD_CURRENCIES.find(c => c.code === activeCurr) || WORLD_CURRENCIES[0];
     if (currencySelector) currencySelector.value = item.code;
     if (dashCurrLabel && item) dashCurrLabel.textContent = `${item.flag} ${item.code} (${item.symbol})`;
@@ -703,7 +703,7 @@ function syncCurrencyDropdown(currCode) {
 
 if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined") {
     const optionsContainer = dashCurrWrapper.querySelector(".custom-select-options");
-    const activeCurr = typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "USD";
+    const activeCurr = typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "INR";
     if (currencySelector) currencySelector.value = activeCurr;
 
     optionsContainer.innerHTML = `
@@ -753,8 +753,14 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
 
             localStorage.setItem("userCurrency", newCurr);
             if (typeof setCurrencySymbol === "function") setCurrencySymbol(newCurr);
-            apiRequest(`/users/${userId}/currency`, { method: "PUT", body: JSON.stringify({ currency: newCurr }) }).catch(err => console.warn("Failed to persist currency preference:", err));
-            showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
+            apiRequest(`/users/${userId}/currency`, { method: "PUT", body: JSON.stringify({ currency: newCurr }) })
+                .then(() => {
+                    showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
+                })
+                .catch(err => {
+                    console.error("Failed to persist currency preference:", err);
+                    showToast(`Failed to sync currency preference to server: ${err.message || "Network error"}`, "error");
+                });
             refreshAllCurrencyDisplays();
         });
     });
@@ -1230,7 +1236,13 @@ function uploadFileWithProgress(url, formData, onProgress) {
 
 // Fetching with streaming chunks keeps the token safe and displays download progress.
 async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fallbackFn = null) {
-    showToast(loadingMessage, "info");
+    if (typeof setProgress === "function") {
+        setProgress(0, loadingMessage);
+    } else if (typeof setLoading === "function") {
+        setLoading(true, loadingMessage);
+    } else {
+        showToast(loadingMessage, "info");
+    }
     try {
         const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
         const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
@@ -1270,7 +1282,14 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
                 received += value.length;
                 if (total > 0) {
                     const pct = Math.round((received / total) * 100);
-                    showToast(`Downloading ${filename}... ${pct}%`, "info");
+                    if (typeof setProgress === "function") {
+                        setProgress(pct, `Downloading ${filename} (${pct}%)...`);
+                    }
+                } else {
+                    const kb = Math.round(received / 1024);
+                    if (typeof setProgress === "function") {
+                        setProgress(null, `Downloading ${filename} (${kb} KB received)...`);
+                    }
                 }
             }
             blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
@@ -1291,6 +1310,9 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
             }
         }
         showToast(err.message || "Export failed", "error");
+    } finally {
+        if (typeof setProgress === "function") setProgress(null);
+        if (typeof setLoading === "function") setLoading(false);
     }
 }
 
@@ -1336,10 +1358,23 @@ importFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        setLoading(true, "Preparing upload...");
-        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct) => {
-            setLoading(true, `Uploading ${fname} (${pct}%)...`);
+        if (typeof setProgress === "function") {
+            setProgress(0, `Preparing to upload ${fname}...`);
+        } else {
+            setLoading(true, "Preparing upload...");
+        }
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
+            const loadedKb = Math.round(loaded / 1024);
+            const totalKb = Math.round(total / 1024);
+            if (typeof setProgress === "function") {
+                setProgress(pct, `Uploading ${fname} (${pct}% - ${loadedKb}/${totalKb} KB)...`);
+            } else {
+                setLoading(true, `Uploading ${fname} (${pct}%)...`);
+            }
         });
+        if (typeof setProgress === "function") {
+            setProgress(100, "Processing imported data on server...");
+        }
         if (data.failedRows > 0) {
             showToast(`${data.imported} imported, ${data.failedRows} row(s) skipped — see console for details.`, data.imported > 0 ? "info" : "error");
             console.warn("Import row errors:", data.errors);
@@ -1356,6 +1391,7 @@ importFileInput?.addEventListener("change", async (e) => {
     } catch (err) {
         showToast(err.message, "error");
     } finally {
+        if (typeof setProgress === "function") setProgress(null);
         setLoading(false);
         importFileInput.value = "";
     }
@@ -2769,10 +2805,23 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        setLoading(true, "Preparing income upload...");
-        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct) => {
-            setLoading(true, `Uploading ${fname} (${pct}%)...`);
+        if (typeof setProgress === "function") {
+            setProgress(0, `Preparing to upload ${fname}...`);
+        } else {
+            setLoading(true, "Preparing income upload...");
+        }
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
+            const loadedKb = Math.round(loaded / 1024);
+            const totalKb = Math.round(total / 1024);
+            if (typeof setProgress === "function") {
+                setProgress(pct, `Uploading ${fname} (${pct}% - ${loadedKb}/${totalKb} KB)...`);
+            } else {
+                setLoading(true, `Uploading ${fname} (${pct}%)...`);
+            }
         });
+        if (typeof setProgress === "function") {
+            setProgress(100, "Processing imported income records...");
+        }
         showToast(data.message || "Incomes imported successfully!", "success");
         if (typeof window.clearApiCache === "function") window.clearApiCache();
         try { localStorage.removeItem(getCacheKey()); } catch (_) {}
@@ -2780,6 +2829,7 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
     } catch (err) {
         showToast(err.message, "error");
     } finally {
+        if (typeof setProgress === "function") setProgress(null);
         setLoading(false);
         importIncomeFileInput.value = "";
     }

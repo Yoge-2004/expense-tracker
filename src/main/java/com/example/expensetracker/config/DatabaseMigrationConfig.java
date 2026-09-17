@@ -1,7 +1,7 @@
 package com.example.expensetracker.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -27,15 +27,13 @@ import java.sql.Statement;
  * <p>Runs via {@link ApplicationStartedEvent} at {@code @Order(1)}, before
  * most other startup logic, so later beans can assume these columns exist.</p>
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class DatabaseMigrationConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabaseMigrationConfig.class);
     private final DataSource dataSource;
 
-    public DatabaseMigrationConfig(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     @EventListener(ApplicationStartedEvent.class)
     @Order(1)

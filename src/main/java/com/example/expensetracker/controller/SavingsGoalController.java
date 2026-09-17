@@ -16,8 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -43,31 +43,17 @@ import java.util.List;
         All endpoints require Bearer JWT authentication.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/savings/goals")
 public class SavingsGoalController {
 
-    private static final Logger log = LoggerFactory.getLogger(SavingsGoalController.class);
-
     private final SavingsGoalService savingsGoalService;
     private final UserService userService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    /**
-     * Constructs {@link SavingsGoalController} with required services.
-     *
-     * @param savingsGoalService the savings goal service
-     * @param userService the user service
-     * @param userSecurity user access security validator
-     */
-    public SavingsGoalController(SavingsGoalService savingsGoalService,
-                                 UserService userService,
-                                 com.example.expensetracker.security.UserSecurity userSecurity) {
-        this.savingsGoalService = savingsGoalService;
-        this.userService = userService;
-        this.userSecurity = userSecurity;
-    }
 
     /**
      * Creates a new savings goal for the authenticated user.
@@ -181,6 +167,7 @@ public class SavingsGoalController {
             @PathVariable Long userId,
             @Valid @RequestBody(required = false) SavingsDepositRequest request,
             @RequestParam(required = false) BigDecimal amount) {
+        userSecurity.validateUserAccess(userId);
         BigDecimal effectiveAmount = null;
         if (request != null && request.amount() != null) {
             effectiveAmount = request.amount();
@@ -190,7 +177,6 @@ public class SavingsGoalController {
         if (effectiveAmount == null || effectiveAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Deposit amount must be positive");
         }
-        userSecurity.validateUserAccess(userId);
         log.info("Received deposit contribution to savings goal id={} for userId={}: depositAmount={}",
                 goalId, userId, effectiveAmount);
         User user = userService.findById(userId)

@@ -12,8 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +27,12 @@ import java.util.Map;
     name = "Reports",
     description = "Monthly financial summaries and complete financial exports. All endpoints require Bearer JWT authentication."
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/reports")
 public class ReportController {
-
-    private static final Logger log = LoggerFactory.getLogger(ReportController.class);
 
     private final MonthlyReportService monthlyReportService;
     private final ExportService exportService;
@@ -40,17 +40,6 @@ public class ReportController {
     private final com.example.expensetracker.security.UserSecurity userSecurity;
     private final RangeReportController rangeReportController;
 
-    public ReportController(MonthlyReportService monthlyReportService,
-                            ExportService exportService,
-                            UserService userService,
-                            com.example.expensetracker.security.UserSecurity userSecurity,
-                            RangeReportController rangeReportController) {
-        this.monthlyReportService = monthlyReportService;
-        this.exportService = exportService;
-        this.userService = userService;
-        this.userSecurity = userSecurity;
-        this.rangeReportController = rangeReportController;
-    }
 
     @Operation(summary = "Get monthly financial report JSON",
             description = "Aggregates total inflow, outflow, net savings, savings rate, category allocations, budget status, and top expenses.")
@@ -117,6 +106,7 @@ public class ReportController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-summary.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(response.getBody() != null ? response.getBody().length : 0)
                 .body(response.getBody());
     }
 
@@ -133,6 +123,7 @@ public class ReportController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-statement.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(response.getBody() != null ? response.getBody().length : 0)
                 .body(response.getBody());
     }
 }

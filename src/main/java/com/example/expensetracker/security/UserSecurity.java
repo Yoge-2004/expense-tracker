@@ -1,8 +1,7 @@
 package com.example.expensetracker.security;
 
 import com.example.expensetracker.model.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,10 +17,9 @@ import java.util.Objects;
  * @author Yogeshwaran
  * @version 1.0
  */
+@Slf4j
 @Component("userSecurity")
 public class UserSecurity {
-
-    private static final Logger log = LoggerFactory.getLogger(UserSecurity.class);
 
     public boolean isCurrentUser(Long userId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

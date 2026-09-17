@@ -8,23 +8,23 @@ import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.OtpDeliveryListener;
 import com.example.expensetracker.service.PasswordResetService;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /**
  * Implements {@link PasswordResetService} — see that interface for the
@@ -41,10 +41,11 @@ import java.time.temporal.ChronoUnit;
  *   external SMTP/email delivery. Includes brute-force lockout protection (5 attempts).</li>
  * </ul>
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PasswordResetServiceImpl implements PasswordResetService {
-
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetServiceImpl.class);
 
     private static final int OTP_TTL_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 5;
@@ -61,18 +62,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     @Value("${app.mail.enabled:false}")
     private boolean mailEnabled;
-
-    public PasswordResetServiceImpl(UserRepository userRepository,
-                                     PasswordResetOtpRepository otpRepository,
-                                     PasswordEncoder passwordEncoder,
-                                     ObjectProvider<JavaMailSender> mailSenderProvider,
-                                     ObjectProvider<OtpDeliveryListener> otpDeliveryListenerProvider) {
-        this.userRepository = userRepository;
-        this.otpRepository = otpRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.mailSenderProvider = mailSenderProvider;
-        this.otpDeliveryListenerProvider = otpDeliveryListenerProvider;
-    }
 
     @Override
     @Transactional

@@ -86,9 +86,17 @@
                     apiRequest(`/categories/global`, { skipCache }),
                     apiRequest(`/categories/user/${userId}`, { skipCache }),
                     apiRequest(`/incomes/user/${userId}`, { skipCache })
-                        .catch(err => { console.warn("Incomes fetch error:", err); return []; }),
+                        .catch(err => {
+                            console.error("Incomes fetch error:", err);
+                            if (typeof showToast === "function") showToast("Failed to load income records: " + (err.message || "Network error"), "error");
+                            return [];
+                        }),
                     apiRequest(`/savings/goals/user/${userId}`, { skipCache })
-                        .catch(err => { console.warn("Savings fetch error:", err); return []; })
+                        .catch(err => {
+                            console.error("Savings fetch error:", err);
+                            if (typeof showToast === "function") showToast("Failed to load savings goals: " + (err.message || "Network error"), "error");
+                            return [];
+                        })
                 ]);
 
                 // Only the newest dashboard load is allowed to publish state.

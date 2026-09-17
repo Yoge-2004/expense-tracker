@@ -7,8 +7,8 @@ import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.service.SavingsGoalService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,21 +21,13 @@ import java.util.List;
  *
  * @author Yogeshwaran
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SavingsGoalServiceImpl implements SavingsGoalService {
 
-    private static final Logger log = LoggerFactory.getLogger(SavingsGoalServiceImpl.class);
-
     private final SavingsGoalRepository savingsGoalRepository;
-
-    /**
-     * Constructs {@link SavingsGoalServiceImpl} with required repository.
-     *
-     * @param savingsGoalRepository the savings goal repository
-     */
-    public SavingsGoalServiceImpl(SavingsGoalRepository savingsGoalRepository) {
-        this.savingsGoalRepository = savingsGoalRepository;
-    }
 
     /**
      * {@inheritDoc}
@@ -55,7 +47,6 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true)
     public List<SavingsGoalDto> getUserGoals(User user) {
         log.debug("Loading savings goals for userId={}", user.getId());
         List<SavingsGoalDto> goals = savingsGoalRepository.findByUser(user)
@@ -207,7 +198,6 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true)
     public List<SavingsGoalDto> getRecurringGoals(User user) {
         log.debug("Loading recurring savings goals for userId={}", user.getId());
         List<SavingsGoalDto> list = savingsGoalRepository.findByUserAndIsRecurringTrue(user)

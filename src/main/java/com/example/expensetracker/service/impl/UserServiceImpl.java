@@ -3,8 +3,8 @@ package com.example.expensetracker.service.impl;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.*;
 import com.example.expensetracker.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +16,11 @@ import java.util.Optional;
  * Concrete implementation of {@link UserService} providing business logic
  * for user registration, lookup, password management, and account deletion.
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
-
-    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -31,28 +32,6 @@ public class UserServiceImpl implements UserService {
     private final SavingsGoalRepository savingsGoalRepository;
     private final MonthlyReportLogRepository reportLogRepository;
     private final WebAuthnCredentialRepository webAuthnCredentialRepository;
-
-    public UserServiceImpl(UserRepository userRepository,
-                           PasswordEncoder passwordEncoder,
-                           ExpenseRepository expenseRepository,
-                           CategoryRepository categoryRepository,
-                           BudgetRepository budgetRepository,
-                           RecurringExpenseRepository recurringRepository,
-                           IncomeRepository incomeRepository,
-                           SavingsGoalRepository savingsGoalRepository,
-                           MonthlyReportLogRepository reportLogRepository,
-                           WebAuthnCredentialRepository webAuthnCredentialRepository) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.expenseRepository = expenseRepository;
-        this.categoryRepository = categoryRepository;
-        this.budgetRepository = budgetRepository;
-        this.recurringRepository = recurringRepository;
-        this.incomeRepository = incomeRepository;
-        this.savingsGoalRepository = savingsGoalRepository;
-        this.reportLogRepository = reportLogRepository;
-        this.webAuthnCredentialRepository = webAuthnCredentialRepository;
-    }
 
     @Override
     @Transactional

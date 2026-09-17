@@ -2,8 +2,7 @@ package com.example.expensetracker.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -21,10 +20,9 @@ import org.springframework.web.bind.annotation.GetMapping;
  * could otherwise trigger a native browser login prompt on a plain
  * navigation. The redirect itself remains useful purely for discoverability.</p>
  */
+@Slf4j
 @Controller
 public class HomeController {
-
-    private static final Logger log = LoggerFactory.getLogger(HomeController.class);
 
     @Operation(
         summary = "Redirect to API documentation",

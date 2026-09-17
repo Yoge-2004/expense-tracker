@@ -19,8 +19,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -46,11 +46,11 @@ import java.util.UUID;
         2. Call `POST /api/auth/register` with all fields + the OTP — account is created.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
-    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
@@ -61,17 +61,6 @@ public class AuthController {
     @Value("${app.auth.email-verification-enabled:false}")
     private boolean emailVerificationEnabled;
 
-    public AuthController(AuthenticationManager authenticationManager,
-                          UserService userService,
-                          JwtService jwtService,
-                          PasswordResetService passwordResetService,
-                          GoogleIdTokenVerifier googleIdTokenVerifier) {
-        this.authenticationManager = authenticationManager;
-        this.userService = userService;
-        this.jwtService = jwtService;
-        this.passwordResetService = passwordResetService;
-        this.googleIdTokenVerifier = googleIdTokenVerifier;
-    }
 
     @Operation(summary = "Get auth configuration",
         description = "Returns public configuration flags like whether email OTP verification is required.")

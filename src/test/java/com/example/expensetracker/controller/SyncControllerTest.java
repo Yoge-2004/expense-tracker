@@ -46,7 +46,7 @@ class SyncControllerTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(controller, "syncSecretKey", "sync-secret");
-        when(rateLimiterService.tryAcquire(anyString(), eq(15), any(Duration.class))).thenReturn(true);
+        when(rateLimiterService.tryAcquire(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         SecurityContextHolder.clearContext();
     }
 
@@ -160,7 +160,7 @@ class SyncControllerTest {
         when(syncService.downloadJsonBackupFromHuggingFace()).thenReturn(Map.of("status", "error", "message", "backup unavailable"));
 
         mockMvc.perform(post("/api/sync/pull-from-hf").header("X-Sync-Token", "sync-secret"))
-                .andExpect(status().isOk())
+                .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value("error"))
                 .andExpect(jsonPath("$.message").value("backup unavailable"));
 
@@ -170,7 +170,7 @@ class SyncControllerTest {
 
     @Test
     void rateLimitBlocksSyncBeforeServiceInvocation() throws Exception {
-        when(rateLimiterService.tryAcquire(anyString(), eq(15), any(Duration.class))).thenReturn(false);
+        when(rateLimiterService.tryAcquire(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
 
         mockMvc.perform(post("/api/sync/file-to-db").header("X-Sync-Token", "sync-secret"))
                 .andExpect(status().isTooManyRequests())

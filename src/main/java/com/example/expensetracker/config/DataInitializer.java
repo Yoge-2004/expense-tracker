@@ -2,8 +2,8 @@ package com.example.expensetracker.config;
 
 import com.example.expensetracker.model.*;
 import com.example.expensetracker.repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
@@ -29,11 +29,11 @@ import java.util.Optional;
  * @author Yogeshwaran
  * @version 1.0
  */
+@Slf4j
 @Component
 @Profile("!test")
+@RequiredArgsConstructor
 public class DataInitializer {
-
-    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
@@ -44,23 +44,6 @@ public class DataInitializer {
     private final RecurringExpenseRepository recurringExpenseRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public DataInitializer(UserRepository userRepository,
-                           CategoryRepository categoryRepository,
-                           ExpenseRepository expenseRepository,
-                           IncomeRepository incomeRepository,
-                           SavingsGoalRepository savingsGoalRepository,
-                           BudgetRepository budgetRepository,
-                           RecurringExpenseRepository recurringExpenseRepository,
-                           PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.categoryRepository = categoryRepository;
-        this.expenseRepository = expenseRepository;
-        this.incomeRepository = incomeRepository;
-        this.savingsGoalRepository = savingsGoalRepository;
-        this.budgetRepository = budgetRepository;
-        this.recurringExpenseRepository = recurringExpenseRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(10)

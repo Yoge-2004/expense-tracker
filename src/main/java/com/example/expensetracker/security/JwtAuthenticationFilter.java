@@ -7,8 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import io.jsonwebtoken.JwtException;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,10 +28,10 @@ import java.io.IOException;
  * @see JwtService
  * @see CustomUserDetailsService
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     /** Service used to parse, validate, and extract claims from JWT tokens. */
     private final JwtService jwtService;
@@ -45,11 +45,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @param jwtService         the service responsible for JWT operations
      * @param userDetailsService the service for loading {@link UserDetails} by email
      */
-    public JwtAuthenticationFilter(JwtService jwtService,
-                                   CustomUserDetailsService userDetailsService) {
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-    }
 
     /**
      * Performs JWT extraction, validation, and security context population

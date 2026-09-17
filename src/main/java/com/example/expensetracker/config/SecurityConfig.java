@@ -3,8 +3,8 @@ package com.example.expensetracker.config;
 import com.example.expensetracker.security.JwtAuthenticationFilter;
 import com.example.expensetracker.security.RestAccessDeniedHandler;
 import com.example.expensetracker.security.RestAuthenticationEntryPoint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -16,11 +16,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
-
     private static final String CSP_POLICY =
             "default-src 'self'; " +
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com; " +
@@ -37,13 +37,6 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          RestAuthenticationEntryPoint restAuthenticationEntryPoint,
-                          RestAccessDeniedHandler restAccessDeniedHandler) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
-        this.restAccessDeniedHandler = restAccessDeniedHandler;
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

@@ -34,6 +34,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.HtmlUtils;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -51,10 +54,11 @@ import java.util.*;
  *
  * @author Yogeshwaran
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MonthlyReportServiceImpl implements MonthlyReportService {
-
-    private static final Logger log = LoggerFactory.getLogger(MonthlyReportServiceImpl.class);
 
     private final UserRepository userRepository;
     private final ExpenseRepository expenseRepository;
@@ -69,33 +73,6 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
     @Value("${app.mail.enabled:false}")
     private boolean mailEnabled;
-
-    /**
-     * Constructs a new {@link MonthlyReportServiceImpl} with required dependencies.
-     *
-     * @param userRepository repository for user entity lookups
-     * @param expenseRepository repository for expense data access
-     * @param incomeRepository repository for income data access
-     * @param savingsGoalRepository repository for savings goals data access
-     * @param budgetRepository repository for budget limits lookups
-     * @param reportLogRepository repository for audit logging report dispatches
-     * @param mailSenderProvider lazy provider for JavaMailSender bean
-     */
-    public MonthlyReportServiceImpl(UserRepository userRepository,
-                                    ExpenseRepository expenseRepository,
-                                    IncomeRepository incomeRepository,
-                                    SavingsGoalRepository savingsGoalRepository,
-                                    BudgetRepository budgetRepository,
-                                    MonthlyReportLogRepository reportLogRepository,
-                                    ObjectProvider<JavaMailSender> mailSenderProvider) {
-        this.userRepository = userRepository;
-        this.expenseRepository = expenseRepository;
-        this.incomeRepository = incomeRepository;
-        this.savingsGoalRepository = savingsGoalRepository;
-        this.budgetRepository = budgetRepository;
-        this.reportLogRepository = reportLogRepository;
-        this.mailSenderProvider = mailSenderProvider;
-    }
 
     /**
      * {@inheritDoc}

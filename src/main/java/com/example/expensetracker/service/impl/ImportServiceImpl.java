@@ -15,8 +15,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.poi.ss.usermodel.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,49 +26,40 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 /**
- * Production implementation of {@link ImportService} responsible for reading,
- * parsing, validating, and bulk-importing financial data from CSV, JSON, and Microsoft Excel files.
+ * Production implementation of {@link ImportService} supporting CSV, JSON, and Excel (.xlsx)
+ * batch ingestion for expenses and income streams.
  *
- * <p>Key characteristics:
+ * <h3>Key design decisions:</h3>
  * <ul>
- *   <li><b>Dynamic column ordering:</b> Columns are identified by header name (case-insensitive) rather than fixed column index across CSV and Excel formats.</li>
- *   <li><b>Fault-tolerant partial imports:</b> Individual row failures are captured and reported, allowing valid rows to persist without aborting the entire dataset.</li>
- *   <li><b>Dynamic Category resolution:</b> Creates missing personal categories on-the-fly for the user when importing expenses.</li>
- *   <li><b>Multi-format Excel support:</b> Seamlessly parses both legacy {@code .xls} and modern {@code .xlsx} workbooks.</li>
+ *   <li><b>Fault tolerance:</b> individual row failures do not abort the entire batch.
+ *       Instead, successful rows are committed and failed rows are captured with line numbers
+ *       and specific reason messages in the response payload.</li>
+ *   <li><b>User isolation:</b> all imported records are strictly associated with the
+ *       authenticated {@link User}. Category resolution ensures users only see their own
+ *       custom categories or system globals — no cross-user category pollution.</li>
+ *   <li><b>Flexible column mappings:</b> headers are matched case-insensitively with common
+ *       aliases (e.g. "cost", "price", "amount" all map to amount).</li>
  * </ul>
- * </p>
  *
  * @author Yogeshwaran
+ * @version 1.0
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ImportServiceImpl implements ImportService {
-
-    private static final Logger logger = LoggerFactory.getLogger(ImportServiceImpl.class);
 
     private final ExpenseService expenseService;
     private final IncomeService incomeService;
     private final CategoryRepository categoryRepository;
-    private final ObjectMapper objectMapper;
-
-    /**
-     * Constructs a new {@code ImportServiceImpl} with necessary services and repositories.
-     *
-     * @param expenseService the expense management service
-     * @param incomeService the income management service
-     * @param categoryRepository repository for querying and saving expense categories
-     */
-    public ImportServiceImpl(ExpenseService expenseService,
-                             IncomeService incomeService,
-                             CategoryRepository categoryRepository) {
-        this.expenseService = expenseService;
-        this.incomeService = incomeService;
-        this.categoryRepository = categoryRepository;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-    }
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     // ─────────────────────────────────────────────────────────────────────────
     // EXPENSE IMPORTS
@@ -148,8 +139,15 @@ public class ImportServiceImpl implements ImportService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("Failed to read expense CSV file for user {}", user.getId(), e);
+            log.error("Failed to read expense CSV file for user {}", user.getId(), e);
             throw new RuntimeException("Failed to read CSV file: " + e.getMessage(), e);
+        }
+
+        if (count == 0 && rowErrors.isEmpty()) {
+            throw new IllegalArgumentException("CSV file contains no expense data rows to import");
+        }
+        if (count == 0 && !rowErrors.isEmpty()) {
+            throw new IllegalArgumentException("Failed to import expenses: all " + rowErrors.size() + " rows failed (" + String.join("; ", rowErrors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -170,6 +168,9 @@ public class ImportServiceImpl implements ImportService {
 
         try {
             List<ExpenseDto> dtos = objectMapper.readValue(file.getInputStream(), new TypeReference<List<ExpenseDto>>() {});
+            if (dtos == null || dtos.isEmpty()) {
+                throw new IllegalArgumentException("JSON file contains no expenses to import");
+            }
             Map<String, Category> categoryCache = new HashMap<>();
             int count = 0;
             for (ExpenseDto dto : dtos) {
@@ -198,10 +199,10 @@ public class ImportServiceImpl implements ImportService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (JsonProcessingException e) {
-            logger.warn("Malformed JSON file during expense import for user {}: {}", user.getId(), e.getMessage());
+            log.warn("Malformed JSON file during expense import for user {}: {}", user.getId(), e.getMessage());
             throw new IllegalArgumentException("Malformed JSON file: " + e.getOriginalMessage(), e);
         } catch (Exception e) {
-            logger.error("Failed to import expenses from JSON for user {}", user.getId(), e);
+            log.error("Failed to import expenses from JSON for user {}", user.getId(), e);
             throw new RuntimeException("Error importing expenses from JSON: " + e.getMessage(), e);
         }
     }
@@ -288,8 +289,15 @@ public class ImportServiceImpl implements ImportService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("Failed to parse Excel file for expenses", e);
+            log.error("Failed to parse Excel file for expenses", e);
             throw new RuntimeException("Failed to read Excel workbook: " + e.getMessage(), e);
+        }
+
+        if (count == 0 && errors.isEmpty()) {
+            throw new IllegalArgumentException("Excel sheet contains no expense data rows to import");
+        }
+        if (count == 0 && !errors.isEmpty()) {
+            throw new IllegalArgumentException("Failed to import expenses: all " + errors.size() + " rows failed (" + String.join("; ", errors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -377,8 +385,15 @@ public class ImportServiceImpl implements ImportService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("Failed to read income CSV file for user {}", user.getId(), e);
+            log.error("Failed to read income CSV file for user {}", user.getId(), e);
             throw new RuntimeException("Failed to read CSV file: " + e.getMessage(), e);
+        }
+
+        if (count == 0 && rowErrors.isEmpty()) {
+            throw new IllegalArgumentException("CSV file contains no income data rows to import");
+        }
+        if (count == 0 && !rowErrors.isEmpty()) {
+            throw new IllegalArgumentException("Failed to import incomes: all " + rowErrors.size() + " rows failed (" + String.join("; ", rowErrors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -399,6 +414,9 @@ public class ImportServiceImpl implements ImportService {
 
         try {
             List<IncomeDto> dtos = objectMapper.readValue(file.getInputStream(), new TypeReference<List<IncomeDto>>() {});
+            if (dtos == null || dtos.isEmpty()) {
+                throw new IllegalArgumentException("JSON file contains no incomes to import");
+            }
             int count = 0;
             for (IncomeDto dto : dtos) {
                 IncomeRequest req = new IncomeRequest(
@@ -419,10 +437,10 @@ public class ImportServiceImpl implements ImportService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (JsonProcessingException e) {
-            logger.warn("Malformed JSON file during income import for user {}: {}", user.getId(), e.getMessage());
+            log.warn("Malformed JSON file during income import for user {}: {}", user.getId(), e.getMessage());
             throw new IllegalArgumentException("Malformed JSON file: " + e.getOriginalMessage(), e);
         } catch (Exception e) {
-            logger.error("Failed to import incomes from JSON for user {}", user.getId(), e);
+            log.error("Failed to import incomes from JSON for user {}", user.getId(), e);
             throw new RuntimeException("Error importing incomes from JSON: " + e.getMessage(), e);
         }
     }
@@ -512,8 +530,15 @@ public class ImportServiceImpl implements ImportService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("Failed to parse Excel file for incomes", e);
+            log.error("Failed to parse Excel file for incomes", e);
             throw new RuntimeException("Failed to read Excel workbook: " + e.getMessage(), e);
+        }
+
+        if (count == 0 && errors.isEmpty()) {
+            throw new IllegalArgumentException("Excel sheet contains no income data rows to import");
+        }
+        if (count == 0 && !errors.isEmpty()) {
+            throw new IllegalArgumentException("Failed to import incomes: all " + errors.size() + " rows failed (" + String.join("; ", errors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -531,7 +556,7 @@ public class ImportServiceImpl implements ImportService {
 
     private Map<String, Integer> parseHeader(String headerLine) {
         Map<String, Integer> col = new HashMap<>();
-        String[] headers = headerLine.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+        String[] headers = headerLine.split(",(?=(?:[^\"\"]*\"[^\"\"]*\")*[^\"\"]*$)", -1);
         for (int i = 0; i < headers.length; i++) {
             String name = headers[i].trim().replaceAll("^\"|\"$", "").toLowerCase(Locale.ROOT);
             col.put(name, i);
@@ -559,9 +584,9 @@ public class ImportServiceImpl implements ImportService {
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
             case FORMULA -> {
                 try {
-                    yield String.valueOf(cell.getNumericCellValue());
-                } catch (Exception e) {
                     yield cell.getStringCellValue();
+                } catch (Exception e) {
+                    yield String.valueOf(cell.getNumericCellValue());
                 }
             }
             default -> "";
@@ -569,44 +594,55 @@ public class ImportServiceImpl implements ImportService {
     }
 
     private LocalDate parseCellDate(Cell cell, String fallbackStr) {
-        if (cell != null && cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-            return cell.getLocalDateTimeCellValue().toLocalDate();
+        if (cell != null && DateUtil.isCellDateFormatted(cell)) {
+            Date d = cell.getDateCellValue();
+            return d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         }
-        if (fallbackStr == null || fallbackStr.isBlank()) {
-            throw new IllegalArgumentException("Date cannot be blank");
+        String s = fallbackStr.trim();
+        List<DateTimeFormatter> formatters = List.of(
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+                DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                DateTimeFormatter.ofPattern("yyyy/MM/dd")
+        );
+        for (DateTimeFormatter fmt : formatters) {
+            try {
+                return LocalDate.parse(s, fmt);
+            } catch (DateTimeParseException ignored) {}
         }
-        return LocalDate.parse(fallbackStr.trim());
+        throw new IllegalArgumentException("Unrecognised date format: '" + s + "'. Expected YYYY-MM-DD, DD/MM/YYYY, etc.");
     }
 
     private BigDecimal parseCellAmount(Cell cell) {
         if (cell == null) return null;
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return BigDecimal.valueOf(cell.getNumericCellValue());
-        }
-        String s = getCellValueAsString(cell).replace("$", "").replace(",", "").trim();
-        if (s.isBlank()) return null;
-        return new BigDecimal(s);
+        return switch (cell.getCellType()) {
+            case NUMERIC -> BigDecimal.valueOf(cell.getNumericCellValue());
+            case STRING -> {
+                String clean = cell.getStringCellValue().replaceAll("[^0-9.\\-]", "").trim();
+                yield clean.isEmpty() ? null : new BigDecimal(clean);
+            }
+            default -> null;
+        };
     }
 
     private boolean isRowEmpty(Row row) {
         for (Cell c : row) {
-            if (c.getCellType() != CellType.BLANK && !getCellValueAsString(c).trim().isEmpty()) {
-                return false;
-            }
+            if (!getCellValueAsString(c).isBlank()) return false;
         }
         return true;
     }
 
     /**
-     * Resolves an existing user-scoped or global category by name (case-insensitive),
-     * or creates a new user-scoped category if no match is found.
-     * <p>
-     * <b>Security:</b> Scopes lookups to (a) the importing
-     * user's own categories and (b) global (user_id IS NULL) categories only.
-     * </p>
+     * Resolves a category by name for the given user, or falls back to a global category,
+     * or creates a new user-scoped category if none exists.
      *
-     * @param name the category name to resolve (must be non-blank)
-     * @param user the importing user (must be non-null)
+     * <p>An optional in-memory cache map can be passed to avoid repeated DB queries during
+     * large batch imports. Pass {@code null} if no caching is desired.</p>
+     *
+     * @param name the raw category name from the import file
+     * @param user the owning user
+     * @param categoryCache optional cache map (name lowercase -&gt; Category entity)
      * @return the resolved or newly created {@link Category}
      */
     private Category resolveOrCreateCategoryForUser(String name, User user) {

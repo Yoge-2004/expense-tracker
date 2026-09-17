@@ -2,8 +2,8 @@ package com.example.expensetracker.config;
 
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.repository.CategoryRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -24,15 +24,13 @@ import java.util.List;
  * through the user-facing delete endpoint, only these five ever exist as
  * global, and this is where they're created.</p>
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class CategoryInitializer {
 
-    private static final Logger log = LoggerFactory.getLogger(CategoryInitializer.class);
     private final CategoryRepository categoryRepository;
 
-    public CategoryInitializer(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
-    }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(1)

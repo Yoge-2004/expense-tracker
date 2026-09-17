@@ -83,11 +83,13 @@ async function handleCredentialResponse(credentialResponse) {
     setGoogleButtonLoading(true, "Signing you in...");
     try {
         const payload = parseJwtPayload(credentialResponse.credential);
-        const preferredCurrency = localStorage.getItem("userCurrency") || "USD";
+        const preferredUsername = document.getElementById("username")?.value?.trim() || null;
+        const preferredCurrency = localStorage.getItem("userCurrency") || "INR";
         const response = await apiRequest("/auth/oauth/google", {
             method: "POST",
             body: JSON.stringify({
                 idToken: credentialResponse.credential,
+                username: preferredUsername,
                 currency: preferredCurrency
             })
         });

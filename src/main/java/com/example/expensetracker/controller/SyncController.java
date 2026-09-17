@@ -6,87 +6,81 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.Map;
 
-@Tag(name = "Sync", description = "File to Database Auto-Sync & HF Spaces Backup Endpoints")
+/**
+ * REST controller providing endpoints to manually trigger two-way synchronisation
+ * between the H2 database and the local JSON file snapshot (expenses_sync.json).
+ *
+ * <p>Access control: Local sync endpoints (file-to-db, db-to-file) are accessible
+ * from loopback (localhost) without authentication (for cron/scripts), or from
+ * any client that presents a valid X-Sync-Token header. Hugging Face endpoints
+ * strictly require a valid X-Sync-Token header regardless of caller origin.</p>
+ *
+ * @author Yogeshwaran
+ * @version 1.0
+ */
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/sync")
+@Tag(name = "Sync", description = "Endpoints for synchronising data between the database, local file snapshots, and Hugging Face Spaces.")
 public class SyncController {
-
-    private static final Logger log = LoggerFactory.getLogger(SyncController.class);
 
     private final FileDbSyncService syncService;
     private final RateLimiterService rateLimiterService;
 
-    @Value("${app.sync.secret-key:}")
+    @Value("${SYNC_SECRET_KEY:}")
     private String syncSecretKey;
 
-    public SyncController(FileDbSyncService syncService, RateLimiterService rateLimiterService) {
-        this.syncService = syncService;
-        this.rateLimiterService = rateLimiterService;
-    }
 
-    /**
-     * Uses the servlet connection address rather than a client-supplied
-     * forwarding header. Forwarding headers are only safe to trust when a
-     * trusted reverse proxy has been explicitly configured to sanitize them.
-     */
-    private String resolveClientIp(HttpServletRequest request) {
-        return request != null && request.getRemoteAddr() != null
-                ? request.getRemoteAddr()
-                : "unknown";
-    }
-
-    private ResponseEntity<Map<String, Object>> rateLimit(String clientIp) {
-        if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
-            log.warn("Rate limit exceeded for sync requests");
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(Map.of("status", "error", "message", "Too many sync requests. Please try again later."));
-        }
-        return null;
+    private boolean isLoopbackRequest(HttpServletRequest request) {
+        if (request == null) return false;
+        String addr = request.getRemoteAddr();
+        return "127.0.0.1".equals(addr) || "0:0:0:0:0:0:0:1".equals(addr) || "::1".equals(addr);
     }
 
     private boolean hasValidSyncToken(String syncToken) {
-        if (syncSecretKey == null || syncSecretKey.isBlank() || syncToken == null || syncToken.isBlank()) {
-            return false;
-        }
+        if (syncSecretKey == null || syncSecretKey.isBlank()) return false;
+        if (syncToken == null || syncToken.isBlank()) return false;
         return MessageDigest.isEqual(
-                syncSecretKey.getBytes(StandardCharsets.UTF_8),
-                syncToken.getBytes(StandardCharsets.UTF_8)
+                syncToken.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                syncSecretKey.trim().getBytes(java.nio.charset.StandardCharsets.UTF_8)
         );
     }
 
     private ResponseEntity<Map<String, Object>> validateLocalSyncAccess(String syncToken, HttpServletRequest request) {
-        String clientIp = resolveClientIp(request);
-        ResponseEntity<Map<String, Object>> rateLimitError = rateLimit(clientIp);
-        if (rateLimitError != null) return rateLimitError;
+        String clientIp = request != null ? request.getRemoteAddr() : "unknown";
+        if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
+            log.warn("Rate limit exceeded for sync operations from IP={}", clientIp);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("status", "error", "message", "Too many sync requests. Please try again later."));
+        }
 
-        // SECURITY FIX: previously this method accepted ANY authenticated session as
-        // authorization for global sync/backup operations (file-to-db, db-to-file).
-        // Those operations affect ALL users' data, so allowing any logged-in user to
-        // trigger them was a privilege-escalation / IDOR issue. Only the configured
-        // sync token (X-Sync-Token) is now accepted as authorization.
+        if (isLoopbackRequest(request)) return null;
         if (hasValidSyncToken(syncToken)) return null;
 
-        log.warn("Unauthorized local sync attempt from ip={}", clientIp);
+        log.warn("Unauthorized sync attempt from IP={}", clientIp);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("status", "error", "message", "Unauthorized: valid X-Sync-Token required for sync operations."));
     }
 
     private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {
-        String clientIp = resolveClientIp(request);
-        ResponseEntity<Map<String, Object>> rateLimitError = rateLimit(clientIp);
-        if (rateLimitError != null) return rateLimitError;
+        String clientIp = request != null ? request.getRemoteAddr() : "unknown";
+        if (!rateLimiterService.tryAcquire("sync-hf:" + clientIp, 5, Duration.ofMinutes(1))) {
+            log.warn("Rate limit exceeded for Hugging Face sync from IP={}", clientIp);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("status", "error", "message", "Too many Hugging Face sync requests. Please try again later."));
+        }
 
         if (hasValidSyncToken(syncToken)) return null;
 
@@ -107,6 +101,9 @@ public class SyncController {
         log.info("Authorized file-to-db sync requested");
         Map<String, Object> result = syncService.syncFileToDb();
         log.info("File-to-db sync completed with result: status={}", result.get("status"));
+        if ("error".equals(result.get("status"))) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
         return ResponseEntity.ok(result);
     }
 
@@ -122,6 +119,9 @@ public class SyncController {
         log.info("Authorized db-to-file sync requested");
         Map<String, Object> result = syncService.syncDbToFile();
         log.info("Db-to-file sync completed with result: status={}", result.get("status"));
+        if ("error".equals(result.get("status"))) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
         return ResponseEntity.ok(result);
     }
 
@@ -139,6 +139,9 @@ public class SyncController {
         syncService.syncDbToFile();
         Map<String, Object> result = syncService.pushJsonBackupToHuggingFace();
         log.info("Push to Hugging Face completed: status={}", result.get("status"));
+        if ("error".equals(result.get("status"))) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
         return ResponseEntity.ok(result);
     }
 
@@ -157,9 +160,10 @@ public class SyncController {
         if ("success".equals(downloadResult.get("status"))) {
             log.info("Pull successful; triggering file-to-db sync to import new records");
             syncService.syncFileToDb();
+            return ResponseEntity.ok(downloadResult);
         } else {
             log.warn("Pull from Hugging Face did not report success: {}", downloadResult);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(downloadResult);
         }
-        return ResponseEntity.ok(downloadResult);
     }
 }

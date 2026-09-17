@@ -18,7 +18,13 @@ function ensureFeedbackUi() {
     document.getElementById("appToastRegion")?.remove();
     document.body.insertAdjacentHTML("beforeend", `
         <div id="appLoading" class="app-loading" aria-live="polite" aria-busy="true">
-            <span class="spinner" aria-hidden="true"></span><span id="loadingText">Connecting to the server…</span>
+            <span class="spinner" aria-hidden="true"></span>
+            <div class="loading-body" style="display:flex; flex-direction:column; gap:4px; min-width:180px;">
+                <span id="loadingText">Connecting to the server…</span>
+                <div id="loadingProgressTrack" class="loading-progress-track" style="display:none; width:100%; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; overflow:hidden;">
+                    <div id="loadingProgressBar" class="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
+                </div>
+            </div>
         </div>
         <div id="serverStatusBadge" class="server-status-badge online" title="Server Status">
             <span class="status-dot"></span><span id="statusText">Connected</span>
@@ -40,16 +46,49 @@ function updateServerStatus(online, message = "Connected") {
     }
 }
 
+function setProgress(percent, customText) {
+    ensureFeedbackUi();
+    const loader = document.getElementById("appLoading");
+    const loadingText = document.getElementById("loadingText");
+    const track = document.getElementById("loadingProgressTrack");
+    const bar = document.getElementById("loadingProgressBar");
+
+    clearTimeout(loadingTimer);
+    if (!loader) return;
+
+    if (customText && loadingText) {
+        loadingText.textContent = customText;
+    }
+
+    if (percent != null && percent >= 0) {
+        if (track) track.style.display = "block";
+        const clamped = Math.min(100, Math.max(0, Math.round(percent)));
+        if (bar) bar.style.width = `${clamped}%`;
+        loader.classList.add("visible");
+    } else {
+        if (track) track.style.display = "none";
+        if (bar) bar.style.width = "0%";
+    }
+}
+if (typeof window !== "undefined") {
+    window.setProgress = setProgress;
+}
+
 function setLoading(isLoading, customText = "Connecting to the server…") {
     ensureFeedbackUi();
     const loader = document.getElementById("appLoading");
     const loadingText = document.getElementById("loadingText");
+    const track = document.getElementById("loadingProgressTrack");
+    const bar = document.getElementById("loadingProgressBar");
+
     if (loadingText) loadingText.textContent = customText;
     clearTimeout(loadingTimer);
     if (!loader) return;
     if (isLoading) {
         loadingTimer = setTimeout(() => loader.classList.add("visible"), 200);
     } else {
+        if (track) track.style.display = "none";
+        if (bar) bar.style.width = "0%";
         loader.classList.remove("visible");
     }
 }
@@ -523,10 +562,10 @@ function getCurrenciesSortedByLikelihood() {
     return [detectedItem, ...WORLD_CURRENCIES.filter(c => c.code !== detected)];
 }
 
-function getSelectedCurrency() { return localStorage.getItem("userCurrency") || "USD"; }
+function getSelectedCurrency() { return localStorage.getItem("userCurrency") || "INR"; }
 function getCurrencyInfo(code) {
     const c = code || getSelectedCurrency();
-    return WORLD_CURRENCIES.find(item => item.code === c) || WORLD_CURRENCIES[0];
+    return WORLD_CURRENCIES.find(item => item.code === c) || WORLD_CURRENCIES.find(item => item.code === "INR") || WORLD_CURRENCIES[0];
 }
 function getCurrencySymbol() { return getCurrencyInfo().symbol; }
 function formatGlobalCurrency(amt) {
