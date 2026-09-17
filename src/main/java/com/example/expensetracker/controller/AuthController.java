@@ -103,10 +103,10 @@ public class AuthController {
     @RateLimited(key = "auth-login", maxRequests = 10, windowSeconds = 60, message = "Too many login attempts. Please try again in %d seconds.")
     public ResponseEntity<AuthResponse> login(
             @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
-        String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
+        String identifier = request.email() != null ? request.email().trim() : "";
         log.info("Login attempt received");
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
+                new UsernamePasswordAuthenticationToken(identifier, request.password()));
 
         User user = null;
         if (auth.getPrincipal() instanceof CustomUserDetails cud) {
@@ -142,7 +142,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> sendSignupOtp(
             @Valid @org.springframework.web.bind.annotation.RequestBody SignupOtpRequest request) {
         log.info("Request received to send signup OTP");
-        passwordResetService.sendSignupOtp(request.getEmail(), request.getName());
+        passwordResetService.sendSignupOtp(request.email(), request.name());
         return ResponseEntity.ok(Map.of(
             "message", "If this email is eligible, a verification code has been dispatched.",
             "emailVerificationEnabled", String.valueOf(emailVerificationEnabled)
@@ -175,18 +175,18 @@ public class AuthController {
     public ResponseEntity<UserDto> register(
             @Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
         log.info("Registration request received");
-        if (emailVerificationEnabled || (request.getOtp() != null && !request.getOtp().isBlank() && !"BYPASS".equalsIgnoreCase(request.getOtp()))) {
-            passwordResetService.verifySignupOtp(request.getEmail(), request.getOtp());
+        if (emailVerificationEnabled || (request.otp() != null && !request.otp().isBlank() && !"BYPASS".equalsIgnoreCase(request.otp()))) {
+            passwordResetService.verifySignupOtp(request.email(), request.otp());
         }
 
         User user = new User();
-        user.setName(request.getName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-        user.setCurrency(request.getCurrency());
-        if (request.getSecurityPin() != null && !request.getSecurityPin().isBlank()) {
-            user.setSecurityPinHash(request.getSecurityPin().trim());
+        user.setName(request.name());
+        user.setUsername(request.username());
+        user.setEmail(request.email());
+        user.setPassword(request.password());
+        user.setCurrency(request.currency());
+        if (request.securityPin() != null && !request.securityPin().isBlank()) {
+            user.setSecurityPinHash(request.securityPin().trim());
         }
         User registeredUser = userService.registerUser(user);
         log.info("User registered successfully with id={}", registeredUser.getId());
@@ -206,7 +206,7 @@ public class AuthController {
     @RateLimited(key = "auth-forgot-password", maxRequests = 5, windowSeconds = 300, message = "Too many password recovery requests. Please try again in %d seconds.")
     public ResponseEntity<Map<String, Object>> forgotPassword(
             @Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
-        String email = request.getEmail().trim();
+        String email = request.email().trim();
         log.info("Password reset request received");
         // FIXED: previously caught Exception (everything), which masked DB outages as a 200 OK
         // "instructions have been prepared" response — misleading the user into thinking the
@@ -246,7 +246,7 @@ public class AuthController {
             @Valid @org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
         log.info("Password reset execution requested");
         String code = request.resolveVerificationCode();
-        passwordResetService.resetPassword(request.getEmail(), code, request.getNewPassword());
+        passwordResetService.resetPassword(request.email(), code, request.newPassword());
         log.info("Password successfully updated");
         return ResponseEntity.ok().build();
     }
@@ -268,7 +268,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> oauthLogin(
             @Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request) {
         log.info("Google OAuth login verification initiated");
-        GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.getIdToken());
+        GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.idToken());
         log.info("Google OAuth token verified");
 
         User user = userService.findByEmail(identity.email()).orElseGet(() -> {

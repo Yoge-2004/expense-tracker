@@ -171,17 +171,17 @@ public class ImportServiceImpl implements ImportService {
             int count = 0;
             for (ExpenseDto dto : dtos) {
                 Category category = null;
-                if (dto.getCategoryName() != null && !dto.getCategoryName().isBlank()) {
-                    category = resolveOrCreateCategoryForUser(dto.getCategoryName().trim(), user);
+                if (dto.categoryName() != null && !dto.categoryName().isBlank()) {
+                    category = resolveOrCreateCategoryForUser(dto.categoryName().trim(), user);
                 }
                 Expense expense = new Expense();
-                BigDecimal amount = dto.getAmount();
+                BigDecimal amount = dto.amount();
                 if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
                     throw new IllegalArgumentException("Amount must be greater than zero");
                 }
                 expense.setAmount(amount);
-                expense.setDescription(dto.getDescription());
-                expense.setExpenseDate(dto.getExpenseDate() != null ? dto.getExpenseDate() : LocalDate.now());
+                expense.setDescription(dto.description());
+                expense.setExpenseDate(dto.expenseDate() != null ? dto.expenseDate() : LocalDate.now());
                 expense.setCategory(category);
 
                 expenseService.createExpense(expense, user);
@@ -393,11 +393,11 @@ public class ImportServiceImpl implements ImportService {
             int count = 0;
             for (IncomeDto dto : dtos) {
                 IncomeRequest req = new IncomeRequest(
-                        dto.getAmount() != null ? dto.getAmount() : BigDecimal.ZERO,
-                        dto.getSource() != null ? dto.getSource() : "General",
-                        dto.getDescription(),
-                        dto.getIncomeDate() != null ? dto.getIncomeDate() : LocalDate.now(),
-                        dto.getIsRecurring() != null ? dto.getIsRecurring() : false
+                        dto.amount() != null ? dto.amount() : BigDecimal.ZERO,
+                        dto.source() != null ? dto.source() : "General",
+                        dto.description(),
+                        dto.incomeDate() != null ? dto.incomeDate() : LocalDate.now(),
+                        dto.isRecurring() != null ? dto.isRecurring() : false
                 );
                 incomeService.createIncome(req, user);
                 count++;

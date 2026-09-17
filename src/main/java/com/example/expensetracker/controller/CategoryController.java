@@ -135,10 +135,10 @@ public class CategoryController {
             @PathVariable Long userId,
             @Valid @org.springframework.web.bind.annotation.RequestBody CategoryRequest request) {
         userSecurity.validateUserAccess(userId);
-        log.info("Received request to create category for userId={}: name='{}'", userId, request.getName());
+        log.info("Received request to create category for userId={}: name='{}'", userId, request.name());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Category category = categoryService.createCategory(request.getName(), user);
+        Category category = categoryService.createCategory(request.name(), user);
         log.info("Category created successfully with id={} for userId={}", category.getId(), userId);
         return new ResponseEntity<>(CategoryMapper.toDto(category), HttpStatus.CREATED);
     }
@@ -199,7 +199,7 @@ public class CategoryController {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<CategoryDto> categories = categoryService.getUserCategories(user)
-                .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
+                .stream().map(CategoryMapper::toDto).toList();
         log.info("Retrieved {} user categories for userId={}", categories.size(), userId);
         return ResponseEntity.ok(categories);
     }
@@ -251,7 +251,7 @@ public class CategoryController {
     public ResponseEntity<List<CategoryDto>> getGlobalCategories() {
         log.debug("Fetching global categories");
         List<CategoryDto> categories = categoryService.getGlobalCategories()
-                .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
+                .stream().map(CategoryMapper::toDto).toList();
         log.info("Retrieved {} global categories", categories.size());
         return ResponseEntity.ok(categories);
     }

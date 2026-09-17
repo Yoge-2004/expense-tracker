@@ -177,7 +177,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     Math.round(pct * 10.0) / 10.0
             ));
         }
-        categoryBreakdown.sort((a, b) -> b.getTotalAmount().compareTo(a.getTotalAmount()));
+        categoryBreakdown.sort((a, b) -> b.totalAmount().compareTo(a.totalAmount()));
 
         // Budget Adherence
         List<Budget> budgets = budgetRepository.findByUser(user);
@@ -211,18 +211,18 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 .sorted(Comparator.comparing(Expense::getAmount).reversed())
                 .limit(5)
                 .map(ExpenseMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
 
         // Incomes DTOs
         List<IncomeDto> incomeDtos = incomes.stream()
                 .sorted(Comparator.comparing(Income::getIncomeDate).reversed())
                 .map(IncomeMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
 
         // Savings Goals DTOs
         List<SavingsGoalDto> savingsGoalDtos = savingsGoals.stream()
                 .map(SavingsGoalMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
 
         String currency = user.getCurrency() != null ? user.getCurrency() : "INR";
         String monthTitle = Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " " + year;
@@ -234,14 +234,14 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     currency, totalIncome, currency, netCashFlow, savingsRate));
         }
         if (!savingsGoalDtos.isEmpty()) {
-            long completedGoals = savingsGoalDtos.stream().filter(g -> "COMPLETED".equalsIgnoreCase(g.getStatus())).count();
+            long completedGoals = savingsGoalDtos.stream().filter(g -> "COMPLETED".equalsIgnoreCase(g.status())).count();
             insights.add(String.format("🎯 Savings Progress: Tracking <strong>%d savings goals</strong> (%d achieved milestones).",
                     savingsGoalDtos.size(), completedGoals));
         }
         if (!categoryBreakdown.isEmpty()) {
             MonthlyReportDto.CategoryReportDto topCat = categoryBreakdown.get(0);
             insights.add(String.format("💡 Primary Driver: <strong>%s</strong> accounted for <strong>%.1f%%</strong> (%s %s) of total monthly outflow.",
-                    topCat.getCategoryName(), topCat.getPercentage(), currency, topCat.getTotalAmount()));
+                    topCat.categoryName(), topCat.percentage(), currency, topCat.totalAmount()));
         }
         insights.add(String.format("📈 Spending Velocity: You averaged <strong>%s %s / day</strong> across %d days.",
                 currency, dailyAverage, daysInMonth));
@@ -263,29 +263,28 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             insights.add("✨ No recorded transactions for this period. Your budget remained completely untouched.");
         }
 
-        MonthlyReportDto dto = new MonthlyReportDto();
-        dto.setPeriod(monthTitle);
-        dto.setYear(year);
-        dto.setMonth(month);
-        dto.setTotalOutflow(totalOutflow);
-        dto.setTotalIncome(totalIncome);
-        dto.setNetCashFlow(netCashFlow);
-        dto.setSavingsRate(savingsRate);
-        dto.setCurrency(currency);
-        dto.setTransactionCount(expenses.size());
-        dto.setDailyAverage(dailyAverage);
-        dto.setHighestExpenseAmount(highestExpenseAmount);
-        dto.setHighestExpenseDescription(highestExpenseDescription);
-        dto.setRecurringTotal(recurringTotal);
-        dto.setBudgetHealthScore(budgetHealthScore);
-        dto.setInsights(insights);
-        dto.setCategoryBreakdown(categoryBreakdown);
-        dto.setBudgetStatuses(budgetStatuses);
-        dto.setTopExpenses(topExpenses);
-        dto.setIncomes(incomeDtos);
-        dto.setSavingsGoals(savingsGoalDtos);
-
-        return dto;
+        return new MonthlyReportDto(
+                monthTitle,
+                year,
+                month,
+                totalOutflow,
+                totalIncome,
+                netCashFlow,
+                savingsRate,
+                currency,
+                expenses.size(),
+                dailyAverage,
+                highestExpenseAmount,
+                highestExpenseDescription,
+                recurringTotal,
+                insights,
+                budgetHealthScore,
+                categoryBreakdown,
+                budgetStatuses,
+                topExpenses,
+                incomeDtos,
+                savingsGoalDtos
+        );
     }
 
     /**
@@ -324,12 +323,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(user.getEmail());
-            helper.setSubject("📊 Executive Monthly Financial Report — " + report.getPeriod());
+            helper.setSubject("📊 Executive Monthly Financial Report — " + report.period());
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
             saveReportLog(user, year, month, true, null);
-            log.info("Executive monthly report email successfully sent to {} for {}.", user.getEmail(), report.getPeriod());
+            log.info("Executive monthly report email successfully sent to {} for {}.", user.getEmail(), report.period());
         } catch (Exception e) {
             log.error("Failed to send monthly report email to {} for {}/{}", user.getEmail(), month, year, e);
             saveReportLog(user, year, month, false, e.getMessage());
@@ -415,7 +414,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     private String buildMonthlyReportHtml(String userName, MonthlyReportDto report) {
         // Categories
         StringBuilder categoryRows = new StringBuilder();
-        for (MonthlyReportDto.CategoryReportDto c : report.getCategoryBreakdown()) {
+        for (MonthlyReportDto.CategoryReportDto c : report.categoryBreakdown()) {
             categoryRows.append("""
                 <tr>
                     <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08); font-weight: 600; color: #ece7d8;">%s</td>
@@ -424,15 +423,15 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <span style="display: inline-block; background: rgba(199, 154, 62, 0.12); color: #c79a3e; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">%.1f%%</span>
                     </td>
                 </tr>
-                """.formatted(escapeHtml(c.getCategoryName()), report.getCurrency(), c.getTotalAmount(), c.getPercentage()));
+                """.formatted(escapeHtml(c.categoryName()), report.currency(), c.totalAmount(), c.percentage()));
         }
 
         // Budgets
         StringBuilder budgetCards = new StringBuilder();
-        for (MonthlyReportDto.BudgetReportDto b : report.getBudgetStatuses()) {
-            String badgeColor = b.getUsagePercentage() > 100 ? "#ef4444" : (b.getUsagePercentage() > 80 ? "#f59e0b" : "#10b981");
-            String badgeText = b.getUsagePercentage() > 100 ? "Exceeded" : (b.getUsagePercentage() > 80 ? "Near Limit" : "On Track");
-            double barWidth = Math.min(b.getUsagePercentage(), 100.0);
+        for (MonthlyReportDto.BudgetReportDto b : report.budgetStatuses()) {
+            String badgeColor = b.usagePercentage() > 100 ? "#ef4444" : (b.usagePercentage() > 80 ? "#f59e0b" : "#10b981");
+            String badgeText = b.usagePercentage() > 100 ? "Exceeded" : (b.usagePercentage() > 80 ? "Near Limit" : "On Track");
+            double barWidth = Math.min(b.usagePercentage(), 100.0);
             budgetCards.append("""
                 <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -447,17 +446,17 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <span>Limit: <strong>%s %s</strong></span>
                     </div>
                 </div>
-                """.formatted(escapeHtml(b.getCategoryName()), badgeColor, badgeText, b.getUsagePercentage(), badgeColor, barWidth, report.getCurrency(), b.getSpentAmount(), report.getCurrency(), b.getLimitAmount()));
+                """.formatted(escapeHtml(b.categoryName()), badgeColor, badgeText, b.usagePercentage(), badgeColor, barWidth, report.currency(), b.spentAmount(), report.currency(), b.limitAmount()));
         }
 
         // Savings Goals
         StringBuilder savingsCards = new StringBuilder();
-        if (report.getSavingsGoals() != null && !report.getSavingsGoals().isEmpty()) {
-            for (SavingsGoalDto g : report.getSavingsGoals()) {
-                boolean completed = "COMPLETED".equalsIgnoreCase(g.getStatus()) || g.getProgressPercentage() >= 100.0;
+        if (report.savingsGoals() != null && !report.savingsGoals().isEmpty()) {
+            for (SavingsGoalDto g : report.savingsGoals()) {
+                boolean completed = "COMPLETED".equalsIgnoreCase(g.status()) || g.progressPercentage() >= 100.0;
                 String badgeColor = completed ? "#10b981" : "#3b82f6";
-                String badgeText = completed ? "Achieved 🎉" : String.format("%.1f%%", g.getProgressPercentage());
-                double barWidth = Math.min(g.getProgressPercentage(), 100.0);
+                String badgeText = completed ? "Achieved 🎉" : String.format("%.1f%%", g.progressPercentage());
+                double barWidth = Math.min(g.progressPercentage(), 100.0);
                 savingsCards.append("""
                     <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -473,24 +472,24 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         </div>
                     </div>
                     """.formatted(
-                        escapeHtml(g.getName()),
+                        escapeHtml(g.name()),
                         badgeColor,
                         badgeText,
                         badgeColor,
                         barWidth,
-                        report.getCurrency(),
-                        g.getCurrentAmount(),
-                        report.getCurrency(),
-                        g.getTargetAmount(),
-                        g.getTargetDate() != null ? " · Due " + g.getTargetDate().toString() : ""
+                        report.currency(),
+                        g.currentAmount(),
+                        report.currency(),
+                        g.targetAmount(),
+                        g.targetDate() != null ? " · Due " + g.targetDate().toString() : ""
                     ));
             }
         }
 
         // Incomes Rows
         StringBuilder incomeRows = new StringBuilder();
-        if (report.getIncomes() != null && !report.getIncomes().isEmpty()) {
-            for (IncomeDto inc : report.getIncomes()) {
+        if (report.incomes() != null && !report.incomes().isEmpty()) {
+            for (IncomeDto inc : report.incomes()) {
                 incomeRows.append("""
                     <tr>
                         <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; color: #a8a395;">%s</td>
@@ -499,19 +498,19 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); text-align: right; font-weight: 700; color: #10b981;">+ %s %s</td>
                     </tr>
                     """.formatted(
-                        inc.getIncomeDate() != null ? inc.getIncomeDate().toString() : "—",
-                        escapeHtml(inc.getDescription() != null && !inc.getDescription().isBlank() ? inc.getDescription() : "Income Inflow"),
-                        escapeHtml(inc.getSource() != null ? inc.getSource() : "General"),
-                        report.getCurrency(),
-                        inc.getAmount()
+                        inc.incomeDate() != null ? inc.incomeDate().toString() : "—",
+                        escapeHtml(inc.description() != null && !inc.description().isBlank() ? inc.description() : "Income Inflow"),
+                        escapeHtml(inc.source() != null ? inc.source() : "General"),
+                        report.currency(),
+                        inc.amount()
                     ));
             }
         }
 
         // Executive Insights
         StringBuilder insightItems = new StringBuilder();
-        if (report.getInsights() != null) {
-            for (String insight : report.getInsights()) {
+        if (report.insights() != null) {
+            for (String insight : report.insights()) {
                 insightItems.append("""
                     <div style="padding: 10px 14px; background: rgba(199, 154, 62, 0.06); border-left: 3px solid #c79a3e; border-radius: 0 8px 8px 0; margin-bottom: 8px; font-size: 13px; color: #ece7d8; line-height: 1.5;">
                         %s
@@ -522,8 +521,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
         // Top Expenses
         StringBuilder topExpenseRows = new StringBuilder();
-        if (report.getTopExpenses() != null && !report.getTopExpenses().isEmpty()) {
-            for (ExpenseDto exp : report.getTopExpenses()) {
+        if (report.topExpenses() != null && !report.topExpenses().isEmpty()) {
+            for (ExpenseDto exp : report.topExpenses()) {
                 topExpenseRows.append("""
                     <tr>
                         <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; color: #a8a395;">%s</td>
@@ -532,11 +531,11 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); text-align: right; font-weight: 700; color: #ef4444;">- %s %s</td>
                     </tr>
                     """.formatted(
-                        exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "—",
-                        escapeHtml(exp.getDescription() != null && !exp.getDescription().isBlank() ? exp.getDescription() : "General Expense"),
-                        escapeHtml(exp.getCategoryName() != null ? exp.getCategoryName() : "General"),
-                        report.getCurrency(),
-                        exp.getAmount()
+                        exp.expenseDate() != null ? exp.expenseDate().toString() : "—",
+                        escapeHtml(exp.description() != null && !exp.description().isBlank() ? exp.description() : "General Expense"),
+                        escapeHtml(exp.categoryName() != null ? exp.categoryName() : "General"),
+                        report.currency(),
+                        exp.amount()
                     ));
             }
         }
@@ -720,23 +719,23 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             </body>
             </html>
             """.formatted(
-                report.getPeriod(),
+                report.period(),
                 userName != null ? userName : "User",
-                report.getCurrency(),
-                report.getTotalOutflow(),
-                report.getTransactionCount(),
-                report.getCurrency(),
-                report.getTotalIncome(),
-                report.getSavingsRate(),
-                report.getCurrency(),
-                report.getNetCashFlow(),
-                report.getCurrency(),
-                report.getDailyAverage(),
-                report.getBudgetHealthScore(),
-                report.getCurrency(),
-                report.getHighestExpenseAmount(),
-                report.getCurrency(),
-                report.getRecurringTotal(),
+                report.currency(),
+                report.totalOutflow(),
+                report.transactionCount(),
+                report.currency(),
+                report.totalIncome(),
+                report.savingsRate(),
+                report.currency(),
+                report.netCashFlow(),
+                report.currency(),
+                report.dailyAverage(),
+                report.budgetHealthScore(),
+                report.currency(),
+                report.highestExpenseAmount(),
+                report.currency(),
+                report.recurringTotal(),
                 insightItems.toString(),
                 incomeRows.length() > 0 ? incomeRows.toString() : "<tr><td colspan='4' style='padding: 12px; color: #a8a395;'>No income recorded this month.</td></tr>",
                 savingsCards.length() > 0 ? savingsCards.toString() : "<div style='color: #a8a395; font-size: 13px;'>No active savings goals configured. Start a savings goal in your dashboard!</div>",
@@ -758,7 +757,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                       </tbody>
                     </table>
                     """.formatted(topExpenseRows.toString()) : "",
-                report.getPeriod()
+                report.period()
             );
     }
 }

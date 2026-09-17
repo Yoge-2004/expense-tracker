@@ -101,11 +101,11 @@ public class IncomeController {
             @Valid @RequestBody IncomeRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to create income for userId={}: amount={}, source={}, date={}, recurring={}",
-                userId, request.getAmount(), request.getSource(), request.getIncomeDate(), request.getIsRecurring());
+                userId, request.amount(), request.source(), request.incomeDate(), request.isRecurring());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         IncomeDto created = incomeService.createIncome(request, user);
-        log.info("Income successfully created with id={} for userId={}", created.getId(), userId);
+        log.info("Income successfully created with id={} for userId={}", created.id(), userId);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -159,7 +159,7 @@ public class IncomeController {
             @Valid @RequestBody IncomeRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to update income id={} for userId={}: amount={}, source={}",
-                incomeId, userId, request.getAmount(), request.getSource());
+                incomeId, userId, request.amount(), request.source());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         IncomeDto updated = incomeService.updateIncome(incomeId, request, user);
@@ -229,7 +229,7 @@ public class IncomeController {
         log.info("Generating cash flow summary for userId={}, period={}-{}", userId, targetYear, String.format("%02d", targetMonth));
         CashFlowSummaryDto summary = incomeService.getCashFlowSummary(user, targetYear, targetMonth);
         log.info("Cash flow summary generated for userId={}: totalIncome={}, totalExpense={}, netSavings={}, savingsRate={}%",
-                userId, summary.getTotalIncome(), summary.getTotalExpense(), summary.getNetSavings(), summary.getSavingsRate());
+                userId, summary.totalIncome(), summary.totalExpense(), summary.netSavings(), summary.savingsRate());
         return ResponseEntity.ok(summary);
     }
 

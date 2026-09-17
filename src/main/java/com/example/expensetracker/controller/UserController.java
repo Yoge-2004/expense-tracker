@@ -274,14 +274,14 @@ public class UserController {
 
         boolean verified = false;
         if (request != null) {
-            if (request.getPassword() != null && !request.getPassword().isBlank()) {
-                verified = passwordEncoder.matches(request.getPassword(), user.getPassword());
-            } else if (request.getSecurityPin() != null && !request.getSecurityPin().isBlank()) {
-                verified = userService.verifySecurityPin(userId, request.getSecurityPin().trim());
-            } else if (request.getGoogleIdToken() != null && !request.getGoogleIdToken().isBlank()) {
+            if (request.password() != null && !request.password().isBlank()) {
+                verified = passwordEncoder.matches(request.password(), user.getPassword());
+            } else if (request.securityPin() != null && !request.securityPin().isBlank()) {
+                verified = userService.verifySecurityPin(userId, request.securityPin().trim());
+            } else if (request.googleIdToken() != null && !request.googleIdToken().isBlank()) {
                 try {
                     GoogleIdTokenVerifier.VerifiedIdentity identity =
-                            googleIdTokenVerifier.verify(request.getGoogleIdToken());
+                            googleIdTokenVerifier.verify(request.googleIdToken());
                     verified = identity.email() != null && identity.email().equalsIgnoreCase(user.getEmail());
                 } catch (Exception e) {
                     log.warn("Google ID token verification failed during account deletion for userId={}: {}", userId, e.getMessage());
@@ -292,7 +292,7 @@ public class UserController {
 
         if (!verified) {
             log.warn("Account deletion denied for userId={}: Invalid or missing credentials confirmation", userId);
-            boolean hasPassword = request != null && request.getPassword() != null && !request.getPassword().isBlank();
+            boolean hasPassword = request != null && request.password() != null && !request.password().isBlank();
             String errorMsg = hasPassword
                     ? "Incorrect password. Account deletion requires valid password confirmation."
                     : "Invalid or missing password confirmation. Account deletion requires re-authentication.";

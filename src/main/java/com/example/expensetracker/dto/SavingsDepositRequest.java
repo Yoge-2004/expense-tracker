@@ -12,34 +12,9 @@ import java.math.BigDecimal;
  * @author Yogeshwaran
  */
 @Schema(description = "Request body for making a deposit towards a savings goal")
-public class SavingsDepositRequest {
-
-    @Schema(description = "Contribution deposit amount to add to savings goal balance", example = "5000.00", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "Deposit amount is required")
-    @Positive(message = "Deposit amount must be greater than zero")
-    private BigDecimal amount;
-
-    /**
-     * Default constructor.
-     */
-    public SavingsDepositRequest() {}
-
-    /**
-     * Parameterized constructor.
-     *
-     * @param amount deposit contribution amount
-     */
-    public SavingsDepositRequest(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    /** @return Deposit amount */
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    /** @param amount Deposit amount */
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-}
+public record SavingsDepositRequest(
+        @Schema(description = "Contribution deposit amount to add to savings goal balance", example = "5000.00", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull(message = "Deposit amount is required")
+        @Positive(message = "Deposit amount must be greater than zero")
+        BigDecimal amount
+) {}

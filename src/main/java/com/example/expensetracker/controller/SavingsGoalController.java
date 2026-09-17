@@ -88,11 +88,11 @@ public class SavingsGoalController {
             @Valid @RequestBody SavingsGoalRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to create savings goal for userId={}: name={}, targetAmount={}, targetDate={}",
-                userId, request.getName(), request.getTargetAmount(), request.getTargetDate());
+                userId, request.name(), request.targetAmount(), request.targetDate());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         SavingsGoalDto created = savingsGoalService.createGoal(request, user);
-        log.info("Savings goal created with id={} for userId={}", created.getId(), userId);
+        log.info("Savings goal created with id={} for userId={}", created.id(), userId);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -146,7 +146,7 @@ public class SavingsGoalController {
             @Valid @RequestBody SavingsGoalRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to update savings goal id={} for userId={}: name={}, targetAmount={}",
-                goalId, userId, request.getName(), request.getTargetAmount());
+                goalId, userId, request.name(), request.targetAmount());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         SavingsGoalDto updated = savingsGoalService.updateGoal(goalId, request, user);
@@ -178,12 +178,12 @@ public class SavingsGoalController {
             @Valid @RequestBody SavingsDepositRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received deposit contribution to savings goal id={} for userId={}: depositAmount={}",
-                goalId, userId, request.getAmount());
+                goalId, userId, request.amount());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        SavingsGoalDto updated = savingsGoalService.depositToGoal(goalId, request.getAmount(), user);
+        SavingsGoalDto updated = savingsGoalService.depositToGoal(goalId, request.amount(), user);
         log.info("Deposit applied to savings goal id={} for userId={}, newSavedAmount={}, status={}",
-                goalId, userId, updated.getCurrentAmount(), updated.getStatus());
+                goalId, userId, updated.currentAmount(), updated.status());
         return ResponseEntity.ok(updated);
     }
 

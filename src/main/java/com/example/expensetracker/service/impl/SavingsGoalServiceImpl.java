@@ -45,7 +45,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Transactional
     public SavingsGoalDto createGoal(SavingsGoalRequest request, User user) {
         log.info("Creating savings goal for userId={}: name={}, targetAmount={}",
-                user.getId(), request.getName(), request.getTargetAmount());
+                user.getId(), request.name(), request.targetAmount());
         SavingsGoal goal = SavingsGoalMapper.toEntity(request, user);
         SavingsGoal saved = savingsGoalRepository.save(goal);
         log.info("Savings goal created with id={} for userId={}", saved.getId(), user.getId());
@@ -62,7 +62,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         List<SavingsGoalDto> goals = savingsGoalRepository.findByUser(user)
                 .stream()
                 .map(SavingsGoalMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
         log.debug("Loaded {} savings goals for userId={}", goals.size(), user.getId());
         return goals;
     }
@@ -82,11 +82,11 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
-        if (request.getName() != null) {
-            existing.setName(request.getName());
+        if (request.name() != null) {
+            existing.setName(request.name());
         }
-        if (request.getTargetAmount() != null) {
-            existing.setTargetAmount(request.getTargetAmount());
+        if (request.targetAmount() != null) {
+            existing.setTargetAmount(request.targetAmount());
         }
         // FIXED: previously request.getCurrentAmount() could be set directly via updateGoal,
         // bypassing depositToGoal's validation and atomic increment. This allowed a user to
@@ -94,29 +94,29 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         // deposit flow, and also skipped the COMPLETED status auto-transition. We now ignore
         // currentAmount on update — use POST /savings/goals/{id}/deposit to add funds.
         // If you genuinely need to adjust currentAmount (e.g. correction), add an admin endpoint.
-        if (request.getTargetDate() != null) {
-            existing.setTargetDate(request.getTargetDate());
+        if (request.targetDate() != null) {
+            existing.setTargetDate(request.targetDate());
         }
-        if (request.getStatus() != null) {
-            existing.setStatus(request.getStatus());
+        if (request.status() != null) {
+            existing.setStatus(request.status());
         }
-        if (request.getIsRecurring() != null) {
-            existing.setIsRecurring(request.getIsRecurring());
+        if (request.isRecurring() != null) {
+            existing.setIsRecurring(request.isRecurring());
         }
-        if (request.getRecurringAmount() != null) {
-            existing.setRecurringAmount(request.getRecurringAmount());
+        if (request.recurringAmount() != null) {
+            existing.setRecurringAmount(request.recurringAmount());
         }
-        if (request.getFrequency() != null) {
-            existing.setFrequency(request.getFrequency());
+        if (request.frequency() != null) {
+            existing.setFrequency(request.frequency());
         }
-        if (request.getIntervalDays() != null) {
-            existing.setIntervalDays(request.getIntervalDays());
+        if (request.intervalDays() != null) {
+            existing.setIntervalDays(request.intervalDays());
         }
-        if (request.getNextDueDate() != null) {
-            existing.setNextDueDate(request.getNextDueDate());
+        if (request.nextDueDate() != null) {
+            existing.setNextDueDate(request.nextDueDate());
         }
-        if (request.getEndDate() != null) {
-            existing.setEndDate(request.getEndDate());
+        if (request.endDate() != null) {
+            existing.setEndDate(request.endDate());
         }
 
         // Auto-transition status to COMPLETED if the (unchanged) currentAmount now meets
@@ -214,7 +214,7 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         List<SavingsGoalDto> list = savingsGoalRepository.findByUserAndIsRecurringTrue(user)
                 .stream()
                 .map(SavingsGoalMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
         log.debug("Loaded {} recurring savings goals for userId={}", list.size(), user.getId());
         return list;
     }

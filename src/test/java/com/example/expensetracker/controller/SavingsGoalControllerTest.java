@@ -183,11 +183,11 @@ class SavingsGoalControllerTest {
 
     @Test
     void getRecurringGoalsValidatesUserAndReturnsRecurringSubset() throws Exception {
-        SavingsGoalDto recurring = goal(12L, "Monthly SIP", "120000", "30000", "2027-06-30", "IN_PROGRESS", 25);
-        recurring.setIsRecurring(true);
-        recurring.setRecurringAmount(new BigDecimal("10000"));
-        recurring.setFrequency("MONTHLY");
-        recurring.setNextDueDate(LocalDate.of(2026, 10, 1));
+        SavingsGoalDto recurring = new SavingsGoalDto(
+                12L, "Monthly SIP", new BigDecimal("120000"), new BigDecimal("30000"),
+                LocalDate.of(2027, 6, 30), "IN_PROGRESS", 25,
+                true, new BigDecimal("10000"), "MONTHLY", null, LocalDate.of(2026, 10, 1), null
+        );
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(savingsGoalService.getRecurringGoals(user)).thenReturn(List.of(recurring));
 
@@ -214,14 +214,20 @@ class SavingsGoalControllerTest {
 
     private static SavingsGoalDto goal(Long id, String name, String target, String current,
                                        String targetDate, String status, double progress) {
-        SavingsGoalDto dto = new SavingsGoalDto();
-        dto.setId(id);
-        dto.setName(name);
-        dto.setTargetAmount(new BigDecimal(target));
-        dto.setCurrentAmount(new BigDecimal(current));
-        dto.setTargetDate(LocalDate.parse(targetDate));
-        dto.setStatus(status);
-        dto.setProgressPercentage(progress);
-        return dto;
+        return new SavingsGoalDto(
+                id,
+                name,
+                new BigDecimal(target),
+                new BigDecimal(current),
+                LocalDate.parse(targetDate),
+                status,
+                progress,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 }

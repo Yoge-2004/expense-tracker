@@ -159,15 +159,15 @@ public class ExpenseController {
             @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to create expense for userId={}: amount={}, date={}, categoryId={}",
-                userId, request.getAmount(), request.getExpenseDate(), request.getCategoryId());
+                userId, request.amount(), request.expenseDate(), request.categoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Expense expense = new Expense();
-        expense.setAmount(request.getAmount());
-        expense.setDescription(request.getDescription());
-        expense.setExpenseDate(request.getExpenseDate());
+        expense.setAmount(request.amount());
+        expense.setDescription(request.description());
+        expense.setExpenseDate(request.expenseDate());
         Category category = new Category();
-        category.setId(request.getCategoryId());
+        category.setId(request.categoryId());
         expense.setCategory(category);
         Expense saved = expenseService.createExpense(expense, user);
         log.info("Expense created successfully with id={} for userId={}", saved.getId(), userId);
@@ -223,7 +223,7 @@ public class ExpenseController {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<ExpenseDto> expenses = expenseService.getUserExpenses(user)
-                .stream().map(ExpenseMapper::toDto).collect(Collectors.toList());
+                .stream().map(ExpenseMapper::toDto).toList();
         log.info("Retrieved {} expense records for userId={}", expenses.size(), userId);
         return ResponseEntity.ok(expenses);
     }
@@ -294,21 +294,21 @@ public class ExpenseController {
             @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseDto expenseDto) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to update expense id={} for userId={}: amount={}, categoryId={}",
-                expenseId, userId, expenseDto.getAmount(), expenseDto.getCategoryId());
+                expenseId, userId, expenseDto.amount(), expenseDto.categoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Expense expenseUpdates = new Expense();
-        expenseUpdates.setDescription(expenseDto.getDescription());
-        expenseUpdates.setAmount(expenseDto.getAmount());
-        expenseUpdates.setExpenseDate(expenseDto.getExpenseDate());
-        if (expenseDto.getCategoryId() != null) {
-            Category category = categoryRepository.findById(expenseDto.getCategoryId())
+        expenseUpdates.setDescription(expenseDto.description());
+        expenseUpdates.setAmount(expenseDto.amount());
+        expenseUpdates.setExpenseDate(expenseDto.expenseDate());
+        if (expenseDto.categoryId() != null) {
+            Category category = categoryRepository.findById(expenseDto.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             // Ownership check: prevent IDOR — user must not be able to assign another user's
             // private category to their own expense. Global categories (user == null) are shared.
             if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
                 log.warn("IDOR attempt: user {} tried to assign foreign category {} to expense {}",
-                        userId, expenseDto.getCategoryId(), expenseId);
+                        userId, expenseDto.categoryId(), expenseId);
                 throw new AccessDeniedException("Category does not belong to this user");
             }
             expenseUpdates.setCategory(category);
@@ -430,33 +430,33 @@ public class ExpenseController {
             @org.springframework.web.bind.annotation.RequestBody BudgetDto dto) {
         userSecurity.validateUserAccess(userId);
         log.info("Setting budget for userId={}, categoryId={}: limitAmount={}, period={}",
-                userId, dto.getCategoryId(), dto.getLimitAmount(), dto.getPeriod());
-        if (dto.getLimitAmount() == null || dto.getLimitAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                userId, dto.categoryId(), dto.limitAmount(), dto.period());
+        if (dto.limitAmount() == null || dto.limitAmount().compareTo(BigDecimal.ZERO) <= 0) {
             log.warn("Rejected budget for userId={}: limitAmount must be greater than zero", userId);
             return ResponseEntity.badRequest()
                     .body(Collections.singletonMap("error", "Budget limit must be a positive number"));
         }
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Category category = categoryRepository.findById(dto.getCategoryId())
+        Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
         // Ownership check: prevent IDOR — user must not be able to set a budget against
         // another user's private category. Global categories (user == null) are shared.
         if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
-            log.warn("IDOR attempt: user {} tried to set budget against foreign category {}", userId, dto.getCategoryId());
+            log.warn("IDOR attempt: user {} tried to set budget against foreign category {}", userId, dto.categoryId());
             throw new AccessDeniedException("Category does not belong to this user");
         }
-        Budget budget = budgetRepository.findByUserAndCategoryId(user, dto.getCategoryId())
+        Budget budget = budgetRepository.findByUserAndCategoryId(user, dto.categoryId())
                 .orElse(new Budget());
         budget.setUser(user);
         budget.setCategory(category);
-        budget.setLimitAmount(dto.getLimitAmount());
-        budget.setPeriod(dto.getPeriod() != null ? dto.getPeriod() : "MONTHLY");
-        budget.setIntervalDays("CUSTOM".equalsIgnoreCase(budget.getPeriod()) ? dto.getIntervalDays() : null);
-        budget.setStartDate(dto.getStartDate());
-        budget.setEndDate(dto.getEndDate());
+        budget.setLimitAmount(dto.limitAmount());
+        budget.setPeriod(dto.period() != null ? dto.period() : "MONTHLY");
+        budget.setIntervalDays("CUSTOM".equalsIgnoreCase(budget.getPeriod()) ? dto.intervalDays() : null);
+        budget.setStartDate(dto.startDate());
+        budget.setEndDate(dto.endDate());
         budgetRepository.save(budget);
-        log.info("Budget saved successfully for userId={}, categoryId={}", userId, dto.getCategoryId());
+        log.info("Budget saved successfully for userId={}, categoryId={}", userId, dto.categoryId());
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget set successfully"));
     }
 
@@ -580,7 +580,7 @@ public class ExpenseController {
                     start,
                     end
             );
-        }).collect(Collectors.toList());
+        }).toList();
         log.info("Generated budget status for {} budgets for userId={}", statusList.size(), userId);
         return ResponseEntity.ok(statusList);
     }
@@ -649,30 +649,30 @@ public class ExpenseController {
             @org.springframework.web.bind.annotation.RequestBody ExpenseDto dto) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to setup recurring expense for userId={}: amount={}, frequency={}, intervalDays={}, categoryId={}",
-                userId, dto.getAmount(), dto.getFrequency(), dto.getIntervalDays(), dto.getCategoryId());
+                userId, dto.amount(), dto.frequency(), dto.intervalDays(), dto.categoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Category category = categoryRepository.findById(dto.getCategoryId())
+        Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
         RecurringExpense rec = new RecurringExpense();
-        rec.setAmount(dto.getAmount());
-        rec.setDescription(dto.getDescription());
-        String frequency = normalizeFrequency(dto.getFrequency());
-        Integer intervalDays = "CUSTOM".equals(frequency) ? dto.getIntervalDays() : null;
+        rec.setAmount(dto.amount());
+        rec.setDescription(dto.description());
+        String frequency = normalizeFrequency(dto.frequency());
+        Integer intervalDays = "CUSTOM".equals(frequency) ? dto.intervalDays() : null;
         if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
             log.warn("Invalid intervalDays={} for custom recurring expense userId={}", intervalDays, userId);
             throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
         }
         rec.setFrequency(frequency);
         rec.setIntervalDays(intervalDays);
-        rec.setNextDueDate(nextOccurrence(dto.getExpenseDate(), frequency, intervalDays));
+        rec.setNextDueDate(nextOccurrence(dto.expenseDate(), frequency, intervalDays));
         rec.setCategory(category);
         rec.setUser(user);
         recurringRepository.save(rec);
         Expense firstExp = new Expense();
-        firstExp.setAmount(dto.getAmount());
-        firstExp.setDescription(dto.getDescription());
-        firstExp.setExpenseDate(dto.getExpenseDate());
+        firstExp.setAmount(dto.amount());
+        firstExp.setDescription(dto.description());
+        firstExp.setExpenseDate(dto.expenseDate());
         firstExp.setCategory(category);
         // Mark the seed expense as recurring so MonthlyReportServiceImpl's recurringTotal
         // calculation (which filters by Expense::isRecurring) actually includes it.
@@ -745,7 +745,7 @@ public class ExpenseController {
             map.put("categoryId", sub.getCategory() != null ? sub.getCategory().getId() : null);
             map.put("categoryName", sub.getCategory() != null ? sub.getCategory().getName() : "Uncategorized");
             return map;
-        }).collect(Collectors.toList());
+        }).toList();
         log.info("Retrieved {} recurring subscriptions for userId={}", response.size(), userId);
         return ResponseEntity.ok(response);
     }

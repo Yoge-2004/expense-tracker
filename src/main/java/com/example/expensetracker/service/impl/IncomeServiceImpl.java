@@ -60,15 +60,15 @@ public class IncomeServiceImpl implements IncomeService {
         // constructs IncomeRequest programmatically without @Valid), negative/zero/null amounts
         // would be silently persisted. Re-validate at the service boundary so all entry paths
         // are covered.
-        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("Rejected income creation with non-positive amount={} for userId={}", request.getAmount(), user.getId());
+        if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected income creation with non-positive amount={} for userId={}", request.amount(), user.getId());
             throw new IllegalArgumentException("Income amount must be greater than zero");
         }
-        if (request.getSource() == null || request.getSource().isBlank()) {
+        if (request.source() == null || request.source().isBlank()) {
             log.warn("Rejected income creation with blank source for userId={}", user.getId());
             throw new IllegalArgumentException("Income source must not be blank");
         }
-        log.info("Creating income record for userId={}: amount={}, source={}", user.getId(), request.getAmount(), request.getSource());
+        log.info("Creating income record for userId={}: amount={}, source={}", user.getId(), request.amount(), request.source());
         Income income = IncomeMapper.toEntity(request, user);
         if (Boolean.TRUE.equals(income.getIsRecurring())) {
             if (income.getFrequency() == null || income.getFrequency().isBlank()) {
@@ -101,7 +101,7 @@ public class IncomeServiceImpl implements IncomeService {
         List<IncomeDto> list = incomeRepository.findByUser(user)
                 .stream()
                 .map(IncomeMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
         log.debug("Loaded {} income records for userId={}", list.size(), user.getId());
         return list;
     }
@@ -123,23 +123,23 @@ public class IncomeServiceImpl implements IncomeService {
             throw new IllegalArgumentException("Income does not belong to this user");
         }
 
-        if (request.getAmount() != null) {
-            existing.setAmount(request.getAmount());
+        if (request.amount() != null) {
+            existing.setAmount(request.amount());
         }
-        if (request.getSource() != null) {
-            existing.setSource(request.getSource());
+        if (request.source() != null) {
+            existing.setSource(request.source());
         }
-        if (request.getDescription() != null) {
-            existing.setDescription(request.getDescription());
+        if (request.description() != null) {
+            existing.setDescription(request.description());
         }
-        if (request.getIncomeDate() != null) {
-            existing.setIncomeDate(request.getIncomeDate());
+        if (request.incomeDate() != null) {
+            existing.setIncomeDate(request.incomeDate());
         }
-        if (request.getIsRecurring() != null) {
-            existing.setIsRecurring(request.getIsRecurring());
-            if (Boolean.TRUE.equals(request.getIsRecurring())) {
-                existing.setFrequency(request.getFrequency() != null ? request.getFrequency() : (existing.getFrequency() != null ? existing.getFrequency() : "MONTHLY"));
-                existing.setIntervalDays(request.getIntervalDays() != null ? request.getIntervalDays() : (existing.getIntervalDays() != null ? existing.getIntervalDays() : 1));
+        if (request.isRecurring() != null) {
+            existing.setIsRecurring(request.isRecurring());
+            if (Boolean.TRUE.equals(request.isRecurring())) {
+                existing.setFrequency(request.frequency() != null ? request.frequency() : (existing.getFrequency() != null ? existing.getFrequency() : "MONTHLY"));
+                existing.setIntervalDays(request.intervalDays() != null ? request.intervalDays() : (existing.getIntervalDays() != null ? existing.getIntervalDays() : 1));
                 if (existing.getNextDueDate() == null && existing.getIncomeDate() != null) {
                     existing.setNextDueDate(calculateNextOccurrence(existing.getIncomeDate(), existing.getFrequency(), existing.getIntervalDays()));
                 }
@@ -149,11 +149,11 @@ public class IncomeServiceImpl implements IncomeService {
                 existing.setNextDueDate(null);
             }
         }
-        if (request.getFrequency() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
-            existing.setFrequency(request.getFrequency());
+        if (request.frequency() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
+            existing.setFrequency(request.frequency());
         }
-        if (request.getIntervalDays() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
-            existing.setIntervalDays(request.getIntervalDays());
+        if (request.intervalDays() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
+            existing.setIntervalDays(request.intervalDays());
         }
 
         Income saved = incomeRepository.save(existing);

@@ -118,13 +118,13 @@ public class RangeReportController {
                 .filter(x -> range.contains(x.getExpenseDate()))
                 .sorted(Comparator.comparing(Expense::getExpenseDate,
                         Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
+                .toList();
 
         List<Income> i = incomes.findByUser(user).stream()
                 .filter(x -> range.contains(x.getIncomeDate()))
                 .sorted(Comparator.comparing(Income::getIncomeDate,
                         Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
+                .toList();
 
         // Savings goals and subscriptions are configurations, so they are exported
         // when active for the user rather than discarded by the date filter.

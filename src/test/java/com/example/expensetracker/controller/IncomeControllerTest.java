@@ -286,13 +286,17 @@ class IncomeControllerTest {
 
     private static IncomeDto income(Long id, String amount, String source, String description,
                                     String date, boolean recurring) {
-        IncomeDto dto = new IncomeDto();
-        dto.setId(id);
-        dto.setAmount(new BigDecimal(amount));
-        dto.setSource(source);
-        dto.setDescription(description);
-        dto.setIncomeDate(LocalDate.parse(date));
-        dto.setIsRecurring(recurring);
-        return dto;
+        return new IncomeDto(
+                id,
+                new BigDecimal(amount),
+                source,
+                description,
+                LocalDate.parse(date),
+                recurring,
+                null,
+                null,
+                null,
+                null
+        );
     }
 }

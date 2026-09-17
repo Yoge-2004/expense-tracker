@@ -88,9 +88,7 @@ public class ExportServiceImpl implements ExportService {
     private final IncomeRepository incomeRepository;
     private final SavingsGoalRepository savingsGoalRepository;
     private final ObjectMapper objectMapper;
-
-    @Autowired(required = false)
-    private BudgetRepository budgetRepository;
+    private final BudgetRepository budgetRepository;
 
     /**
      * Currency configuration metadata record.
@@ -240,12 +238,20 @@ public class ExportServiceImpl implements ExportService {
      */
     public ExportServiceImpl(ExpenseRepository expenseRepository,
                              IncomeRepository incomeRepository,
-                             SavingsGoalRepository savingsGoalRepository) {
+                             SavingsGoalRepository savingsGoalRepository,
+                             @Autowired(required = false) BudgetRepository budgetRepository) {
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
         this.savingsGoalRepository = savingsGoalRepository;
+        this.budgetRepository = budgetRepository;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
+    }
+
+    public ExportServiceImpl(ExpenseRepository expenseRepository,
+                             IncomeRepository incomeRepository,
+                             SavingsGoalRepository savingsGoalRepository) {
+        this(expenseRepository, incomeRepository, savingsGoalRepository, null);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -274,7 +280,7 @@ public class ExportServiceImpl implements ExportService {
     @Override
     public byte[] exportExpensesToJson(User user) {
         List<Expense> expenses = expenseRepository.findByUser(user);
-        List<ExpenseDto> dtos = expenses.stream().map(ExpenseMapper::toDto).collect(Collectors.toList());
+        List<ExpenseDto> dtos = expenses.stream().map(ExpenseMapper::toDto).toList();
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(dtos);
         } catch (Exception e) {
@@ -501,7 +507,7 @@ public class ExportServiceImpl implements ExportService {
     @Override
     public byte[] exportIncomesToJson(User user) {
         List<Income> incomes = incomeRepository.findByUser(user);
-        List<IncomeDto> dtos = incomes.stream().map(IncomeMapper::toDto).collect(Collectors.toList());
+        List<IncomeDto> dtos = incomes.stream().map(IncomeMapper::toDto).toList();
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(dtos);
         } catch (Exception e) {
@@ -872,7 +878,7 @@ public class ExportServiceImpl implements ExportService {
         // Pareto 80/20 Analysis & Sorting
         List<Map.Entry<String, Double>> sortedCategories = categoryTotals.entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .collect(Collectors.toList());
+                .toList();
 
         double runningTotal = 0.0;
         Map<String, String> paretoTiers = new HashMap<>();
