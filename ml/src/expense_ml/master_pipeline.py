@@ -13,7 +13,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from .config import TrainingConfig
-from .data.prepare import fingerprint, load_configured_datasets, save_prepared
+from .data.prepare import load_configured_datasets, save_prepared
 from .data.sampling import balanced_training_sample
 from .data.split import split_dataset
 from .data.taxonomy import CANONICAL_CATEGORIES
@@ -82,17 +82,6 @@ def _stage(bar, name: str) -> None:
     bar.refresh()
 
 
-def _dataset_manifest(prepared_path: Path) -> list[dict]:
-    manifest_path = prepared_path.parent / "fetch_manifest.json"
-    if not manifest_path.exists():
-        return []
-    try:
-        value = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return []
-    return value if isinstance(value, list) else []
-
-
 def _country_gate(country_metrics: dict[str, dict], minimum_macro_f1: float) -> None:
     failures = []
     for country, result in country_metrics.items():
@@ -125,12 +114,13 @@ def train_all(
         "seed": cfg.seed,
         "taxonomy_categories": list(CANONICAL_CATEGORIES),
         "resources": resources,
+        "datasets": [],
         "models": {},
     }
 
     frame = _text_frame(frame)
-    if not set(frame["label"]).issubset(CANONICAL_CATEGORIES):
-        unexpected = sorted(set(frame["label"]) - set(CANONICAL_CATEGORIES))
+    unexpected = sorted(set(frame["label"]) - set(CANONICAL_CATEGORIES))
+    if unexpected:
         raise ValueError(f"Prepared data contains non-canonical labels: {unexpected}")
 
     write_json(
@@ -156,6 +146,10 @@ def train_all(
         "forecast",
         "reports",
     ]
+    results = []
+    country_metrics_by_model: dict[str, dict[str, dict]] = {}
+    india_results: dict[str, object] = {}
+
     with tqdm(total=len(stages), unit="stage", desc="ML pipeline", disable=not cfg.progress) as bar:
         _stage(bar, "Dataset validation")
         save_dataset_figures(frame, plots_dir)
@@ -164,17 +158,19 @@ def train_all(
 
         _stage(bar, "Leakage-safe split")
         splits = split_dataset(frame, cfg.seed, cfg.test_size, cfg.validation_size)
-        split_summary = {
-            "train_rows": len(splits.train),
-            "validation_rows": len(splits.validation),
-            "test_rows": len(splits.test),
-            "india_holdout_rows": len(splits.india_holdout),
-            "train_fingerprint": _frame_fingerprint(splits.train),
-            "validation_fingerprint": _frame_fingerprint(splits.validation),
-            "test_fingerprint": _frame_fingerprint(splits.test),
-            "india_holdout_fingerprint": _frame_fingerprint(splits.india_holdout),
-        }
-        write_json(split_summary, run_dir / "reports" / "split_summary.json")
+        write_json(
+            {
+                "train_rows": len(splits.train),
+                "validation_rows": len(splits.validation),
+                "test_rows": len(splits.test),
+                "india_holdout_rows": len(splits.india_holdout),
+                "train_fingerprint": _frame_fingerprint(splits.train),
+                "validation_fingerprint": _frame_fingerprint(splits.validation),
+                "test_fingerprint": _frame_fingerprint(splits.test),
+                "india_holdout_fingerprint": _frame_fingerprint(splits.india_holdout),
+            },
+            run_dir / "reports" / "split_summary.json",
+        )
         bar.update(1)
 
         train_sample = balanced_training_sample(splits.train, cfg.baseline_max_rows, cfg.seed)
@@ -204,7 +200,7 @@ def train_all(
         )
         save_result(tfidf_result, run_dir / "reports" / "tfidf_test.json")
         save_classification_figures(tfidf_result, plots_dir, "TFIDF")
-        tfidf_countries = evaluate_by_country(
+        country_metrics_by_model["tfidf"] = evaluate_by_country(
             tfidf,
             splits.test,
             "tfidf",
@@ -213,21 +209,15 @@ def train_all(
             confidence_threshold=cfg.confidence_threshold,
             progress=cfg.progress,
         )
-        write_json(tfidf_countries, run_dir / "reports" / "tfidf_country_metrics.json")
+        write_json(country_metrics_by_model["tfidf"], run_dir / "reports" / "tfidf_country_metrics.json")
         manifest["models"]["category_tfidf"] = {
             "status": "trained",
             "artifact": "models/category-tfidf",
             "test_macro_f1": tfidf_result.macro_f1,
             "test_accuracy": tfidf_result.accuracy,
         }
-        validate_quality(
-            tfidf_result,
-            minimum_accuracy=cfg.minimum_accuracy,
-            minimum_macro_f1=cfg.minimum_macro_f1,
-        )
-        _country_gate(tfidf_countries, cfg.minimum_country_macro_f1)
         if len(splits.india_holdout):
-            india_result = evaluate_model(
+            india_results["tfidf"] = evaluate_model(
                 tfidf,
                 splits.india_holdout,
                 "tfidf-india",
@@ -235,19 +225,13 @@ def train_all(
                 confidence_threshold=cfg.confidence_threshold,
                 progress=cfg.progress,
             )
-            save_result(india_result, run_dir / "reports" / "tfidf_india_test.json")
-            validate_quality(
-                india_result,
-                minimum_accuracy=cfg.minimum_accuracy,
-                minimum_macro_f1=cfg.minimum_india_macro_f1,
-            )
+            save_result(india_results["tfidf"], run_dir / "reports" / "tfidf_india_test.json")
+        results.append(tfidf_result)
         bar.update(1)
-
-        results = [tfidf_result]
 
         _stage(bar, "Transformer classifier")
         if include_transformer:
-            if len(splits.validation) == 0:
+            if splits.validation.empty:
                 raise ValueError("Transformer training requires a non-empty validation split.")
             from .train_transformer import train_transformer
 
@@ -262,7 +246,7 @@ def train_all(
             )
             save_result(transformer_result, run_dir / "reports" / "transformer_test.json")
             save_classification_figures(transformer_result, plots_dir, "Transformer")
-            transformer_countries = evaluate_by_country(
+            country_metrics_by_model["transformer"] = evaluate_by_country(
                 transformer,
                 splits.test,
                 "transformer",
@@ -271,21 +255,18 @@ def train_all(
                 confidence_threshold=cfg.confidence_threshold,
                 progress=cfg.progress,
             )
-            write_json(transformer_countries, run_dir / "reports" / "transformer_country_metrics.json")
+            write_json(
+                country_metrics_by_model["transformer"],
+                run_dir / "reports" / "transformer_country_metrics.json",
+            )
             manifest["models"]["category_transformer"] = {
                 "status": "trained",
                 "artifact": "models/category-transformer",
                 "test_macro_f1": transformer_result.macro_f1,
                 "test_accuracy": transformer_result.accuracy,
             }
-            validate_quality(
-                transformer_result,
-                minimum_accuracy=cfg.minimum_accuracy,
-                minimum_macro_f1=cfg.minimum_macro_f1,
-            )
-            _country_gate(transformer_countries, cfg.minimum_country_macro_f1)
             if len(splits.india_holdout):
-                india_result = evaluate_model(
+                india_results["transformer"] = evaluate_model(
                     transformer,
                     splits.india_holdout,
                     "transformer-india",
@@ -293,11 +274,9 @@ def train_all(
                     confidence_threshold=cfg.confidence_threshold,
                     progress=cfg.progress,
                 )
-                save_result(india_result, run_dir / "reports" / "transformer_india_test.json")
-                validate_quality(
-                    india_result,
-                    minimum_accuracy=cfg.minimum_accuracy,
-                    minimum_macro_f1=cfg.minimum_india_macro_f1,
+                save_result(
+                    india_results["transformer"],
+                    run_dir / "reports" / "transformer_india_test.json",
                 )
             results.append(transformer_result)
         else:
@@ -342,7 +321,7 @@ def train_all(
         if "amount" not in frame.columns:
             manifest["models"]["transaction_anomaly"] = {
                 "status": "not_applicable",
-                "reason": "No amount feature is present in the category-classification datasets.",
+                "reason": "No amount feature is present in the configured category datasets.",
             }
         else:
             anomaly, scored = TransactionAnomalyModel.fit(frame, run_cfg.seed)
@@ -392,14 +371,37 @@ def train_all(
 
         _stage(bar, "Reports and export manifest")
         comparison = compare_models(results)
-        if not comparison["selected"]:
-            raise ValueError("No category model completed successfully.")
         selected = comparison["selected"]
+        if not selected:
+            raise ValueError("No category model completed successfully.")
+        selected_result = next(result for result in results if result.model_name == selected)
+
+        # The selected artifact is accepted only if it clears every configured
+        # quality gate on unseen data. A low-scoring training run therefore
+        # cannot be mistaken for a production-ready model.
+        validate_quality(
+            selected_result,
+            minimum_accuracy=cfg.minimum_accuracy,
+            minimum_macro_f1=cfg.minimum_macro_f1,
+            minimum_high_confidence_accuracy=cfg.minimum_accuracy,
+        )
+        _country_gate(country_metrics_by_model.get(selected, {}), cfg.minimum_country_macro_f1)
+        selected_india = india_results.get(selected)
+        if selected_india is not None:
+            validate_quality(
+                selected_india,
+                minimum_accuracy=cfg.minimum_accuracy,
+                minimum_macro_f1=cfg.minimum_india_macro_f1,
+                minimum_high_confidence_accuracy=cfg.minimum_india_macro_f1,
+            )
+
         selected_key = "category_transformer" if selected == "transformer" else "category_tfidf"
         manifest["selected_model"] = {
             "name": selected,
             "artifact": manifest["models"][selected_key]["artifact"],
             "selection_metric": "macro_f1",
+            "test_accuracy": selected_result.accuracy,
+            "test_macro_f1": selected_result.macro_f1,
         }
         save_model_comparison([asdict(result) for result in results], plots_dir)
         comparison["quality_thresholds"] = {
@@ -408,7 +410,9 @@ def train_all(
             "minimum_country_macro_f1": cfg.minimum_country_macro_f1,
             "minimum_india_macro_f1": cfg.minimum_india_macro_f1,
         }
+        comparison["accepted"] = True
         write_json(comparison, run_dir / "reports" / "model_comparison.json")
+        manifest["datasets"] = _dataset_manifest(Path(run_dir.parent.parent) / "transactions.parquet")
         write_json(manifest, run_dir / "manifest.json")
         write_master_report(manifest, run_dir / "reports")
         bar.update(1)
