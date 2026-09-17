@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
-from pathlib import Path
+import hashlib
 import json
+from pathlib import Path
 import platform
 import sys
 
@@ -12,9 +13,17 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from .config import TrainingConfig
-from .data.prepare import load_configured_datasets, save_prepared
+from .data.prepare import fingerprint, load_configured_datasets, save_prepared
+from .data.sampling import balanced_training_sample
 from .data.split import split_dataset
-from .evaluate import evaluate_model, save_result
+from .data.taxonomy import CANONICAL_CATEGORIES
+from .evaluate import (
+    compare_models,
+    evaluate_by_country,
+    evaluate_model,
+    save_result,
+    validate_quality,
+)
 from .models.auxiliary import (
     DuplicateSimilarityModel,
     MerchantSimilarityIndex,
@@ -35,7 +44,7 @@ from .resources import configure_resources
 from .train_baseline import train_tfidf
 
 
-PIPELINE_VERSION = "1.1.0"
+PIPELINE_VERSION = "2.0.0"
 
 
 def _run_id() -> str:
@@ -44,40 +53,109 @@ def _run_id() -> str:
 
 def _text_frame(frame: pd.DataFrame) -> pd.DataFrame:
     out = frame.copy()
-    if "text" not in out or "label" not in out:
-        raise ValueError("Prepared data must contain text and label columns.")
+    required = {"text", "label"}
+    missing = required - set(out.columns)
+    if missing:
+        raise ValueError(f"Prepared data is missing required columns: {sorted(missing)}")
     out["text"] = out["text"].fillna("").astype(str)
     out["label"] = out["label"].fillna("").astype(str)
-    return out[(out["text"].str.strip() != "") & (out["label"].str.strip() != "")].reset_index(drop=True)
+    out = out[(out["text"].str.strip() != "") & (out["label"].str.strip() != "")]
+    if "source" not in out:
+        out["source"] = "unknown"
+    if "country" not in out:
+        out["country"] = "unknown"
+    out["source"] = out["source"].fillna("unknown").astype(str)
+    out["country"] = out["country"].fillna("unknown").astype(str)
+    return out.reset_index(drop=True)
 
 
-def _stage(bar, name: str):
+def _frame_fingerprint(frame: pd.DataFrame) -> str:
+    columns = [c for c in ("text", "label", "source", "country", "currency") if c in frame]
+    payload = frame.loc[:, columns].sort_values(columns).to_json(
+        orient="records", force_ascii=False
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _stage(bar, name: str) -> None:
     bar.set_description(name)
     bar.refresh()
 
 
-def train_all(frame: pd.DataFrame, cfg: TrainingConfig, run_dir: Path, include_transformer: bool = True) -> dict:
+def _dataset_manifest(prepared_path: Path) -> list[dict]:
+    manifest_path = prepared_path.parent / "fetch_manifest.json"
+    if not manifest_path.exists():
+        return []
+    try:
+        value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+    return value if isinstance(value, list) else []
+
+
+def _country_gate(country_metrics: dict[str, dict], minimum_macro_f1: float) -> None:
+    failures = []
+    for country, result in country_metrics.items():
+        score = float(result["macro_f1"])
+        if score < minimum_macro_f1:
+            failures.append(f"{country}: macro_f1={score:.4f} < {minimum_macro_f1:.4f}")
+    if failures:
+        raise ValueError("Country quality gate failed: " + "; ".join(failures))
+
+
+def train_all(
+    frame: pd.DataFrame,
+    cfg: TrainingConfig,
+    run_dir: Path,
+    include_transformer: bool = True,
+) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
     plots_dir = run_dir / "reports" / "figures"
     models_dir = run_dir / "models"
     run_cfg = replace(cfg, artifacts_dir=models_dir, model_dir=models_dir / "category-transformer")
     resources = configure_resources(cfg.cpu_threads, torch_threads=cfg.torch_threads)
-    results = []
+
     manifest = {
+        "status": "running",
         "run_id": run_dir.name,
         "pipeline_version": PIPELINE_VERSION,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "python": sys.version,
         "platform": platform.platform(),
         "seed": cfg.seed,
+        "taxonomy_categories": list(CANONICAL_CATEGORIES),
         "resources": resources,
         "models": {},
     }
 
     frame = _text_frame(frame)
-    write_json({"rows": len(frame), "classes": int(frame["label"].nunique())}, run_dir / "reports" / "dataset_summary.json")
+    if not set(frame["label"]).issubset(CANONICAL_CATEGORIES):
+        unexpected = sorted(set(frame["label"]) - set(CANONICAL_CATEGORIES))
+        raise ValueError(f"Prepared data contains non-canonical labels: {unexpected}")
 
-    stages = ["dataset-validation", "split", "tfidf", "transformer", "merchant", "duplicates", "anomaly", "forecast", "reports"]
+    write_json(
+        {
+            "rows": len(frame),
+            "classes": int(frame["label"].nunique()),
+            "fingerprint": _frame_fingerprint(frame),
+            "class_counts": frame["label"].value_counts().to_dict(),
+            "country_counts": frame["country"].value_counts().to_dict(),
+            "source_counts": frame["source"].value_counts().to_dict(),
+        },
+        run_dir / "reports" / "dataset_summary.json",
+    )
+
+    stages = [
+        "dataset-validation",
+        "split",
+        "tfidf",
+        "transformer",
+        "merchant",
+        "duplicates",
+        "anomaly",
+        "forecast",
+        "reports",
+    ]
     with tqdm(total=len(stages), unit="stage", desc="ML pipeline", disable=not cfg.progress) as bar:
         _stage(bar, "Dataset validation")
         save_dataset_figures(frame, plots_dir)
@@ -86,98 +164,257 @@ def train_all(frame: pd.DataFrame, cfg: TrainingConfig, run_dir: Path, include_t
 
         _stage(bar, "Leakage-safe split")
         splits = split_dataset(frame, cfg.seed, cfg.test_size, cfg.validation_size)
-        write_json(
-            {
-                "train_rows": len(splits.train),
-                "validation_rows": len(splits.validation),
-                "test_rows": len(splits.test),
-                "india_holdout_rows": len(splits.india_holdout),
-            },
-            run_dir / "reports" / "split_summary.json",
-        )
+        split_summary = {
+            "train_rows": len(splits.train),
+            "validation_rows": len(splits.validation),
+            "test_rows": len(splits.test),
+            "india_holdout_rows": len(splits.india_holdout),
+            "train_fingerprint": _frame_fingerprint(splits.train),
+            "validation_fingerprint": _frame_fingerprint(splits.validation),
+            "test_fingerprint": _frame_fingerprint(splits.test),
+            "india_holdout_fingerprint": _frame_fingerprint(splits.india_holdout),
+        }
+        write_json(split_summary, run_dir / "reports" / "split_summary.json")
         bar.update(1)
 
+        train_sample = balanced_training_sample(splits.train, cfg.baseline_max_rows, cfg.seed)
+        transformer_sample = balanced_training_sample(splits.train, cfg.transformer_max_rows, cfg.seed + 1)
+        write_json(
+            {
+                "full_train_rows": len(splits.train),
+                "baseline_rows": len(train_sample),
+                "transformer_rows": len(transformer_sample),
+                "baseline_country_counts": train_sample["country"].value_counts().to_dict(),
+                "transformer_country_counts": transformer_sample["country"].value_counts().to_dict(),
+                "baseline_class_counts": train_sample["label"].value_counts().to_dict(),
+                "transformer_class_counts": transformer_sample["label"].value_counts().to_dict(),
+            },
+            run_dir / "reports" / "training_sampling.json",
+        )
+
         _stage(bar, "TF-IDF + Logistic Regression")
-        tfidf = train_tfidf(splits.train, run_cfg)
-        tfidf_result = evaluate_model(tfidf, splits.test, "tfidf", batch_size=cfg.eval_batch_size, progress=cfg.progress)
+        tfidf = train_tfidf(train_sample, run_cfg)
+        tfidf_result = evaluate_model(
+            tfidf,
+            splits.test,
+            "tfidf",
+            batch_size=cfg.eval_batch_size,
+            confidence_threshold=cfg.confidence_threshold,
+            progress=cfg.progress,
+        )
         save_result(tfidf_result, run_dir / "reports" / "tfidf_test.json")
         save_classification_figures(tfidf_result, plots_dir, "TFIDF")
-        results.append(asdict(tfidf_result))
-        manifest["models"]["category_tfidf"] = {"status": "trained", "artifact": "models/category-tfidf"}
+        tfidf_countries = evaluate_by_country(
+            tfidf,
+            splits.test,
+            "tfidf",
+            minimum_samples=cfg.minimum_country_samples,
+            batch_size=cfg.eval_batch_size,
+            confidence_threshold=cfg.confidence_threshold,
+            progress=cfg.progress,
+        )
+        write_json(tfidf_countries, run_dir / "reports" / "tfidf_country_metrics.json")
+        manifest["models"]["category_tfidf"] = {
+            "status": "trained",
+            "artifact": "models/category-tfidf",
+            "test_macro_f1": tfidf_result.macro_f1,
+            "test_accuracy": tfidf_result.accuracy,
+        }
+        validate_quality(
+            tfidf_result,
+            minimum_accuracy=cfg.minimum_accuracy,
+            minimum_macro_f1=cfg.minimum_macro_f1,
+        )
+        _country_gate(tfidf_countries, cfg.minimum_country_macro_f1)
         if len(splits.india_holdout):
-            india_result = evaluate_model(tfidf, splits.india_holdout, "tfidf-india", batch_size=cfg.eval_batch_size, progress=cfg.progress)
+            india_result = evaluate_model(
+                tfidf,
+                splits.india_holdout,
+                "tfidf-india",
+                batch_size=cfg.eval_batch_size,
+                confidence_threshold=cfg.confidence_threshold,
+                progress=cfg.progress,
+            )
             save_result(india_result, run_dir / "reports" / "tfidf_india_test.json")
+            validate_quality(
+                india_result,
+                minimum_accuracy=cfg.minimum_accuracy,
+                minimum_macro_f1=cfg.minimum_india_macro_f1,
+            )
         bar.update(1)
+
+        results = [tfidf_result]
 
         _stage(bar, "Transformer classifier")
         if include_transformer:
-            try:
-                from .train_transformer import train_transformer
-                transformer = train_transformer(splits.train, splits.validation, run_cfg)
-                transformer_result = evaluate_model(transformer, splits.test, "transformer", batch_size=cfg.eval_batch_size, progress=cfg.progress)
-                save_result(transformer_result, run_dir / "reports" / "transformer_test.json")
-                save_classification_figures(transformer_result, plots_dir, "Transformer")
-                results.append(asdict(transformer_result))
-                if len(splits.india_holdout):
-                    india_result = evaluate_model(transformer, splits.india_holdout, "transformer-india", batch_size=cfg.eval_batch_size, progress=cfg.progress)
-                    save_result(india_result, run_dir / "reports" / "transformer_india_test.json")
-                manifest["models"]["category_transformer"] = {"status": "trained", "artifact": "models/category-transformer"}
-            except Exception as exc:
-                manifest["models"]["category_transformer"] = {"status": "skipped", "reason": str(exc)}
+            if len(splits.validation) == 0:
+                raise ValueError("Transformer training requires a non-empty validation split.")
+            from .train_transformer import train_transformer
+
+            transformer = train_transformer(transformer_sample, splits.validation, run_cfg)
+            transformer_result = evaluate_model(
+                transformer,
+                splits.test,
+                "transformer",
+                batch_size=cfg.eval_batch_size,
+                confidence_threshold=cfg.confidence_threshold,
+                progress=cfg.progress,
+            )
+            save_result(transformer_result, run_dir / "reports" / "transformer_test.json")
+            save_classification_figures(transformer_result, plots_dir, "Transformer")
+            transformer_countries = evaluate_by_country(
+                transformer,
+                splits.test,
+                "transformer",
+                minimum_samples=cfg.minimum_country_samples,
+                batch_size=cfg.eval_batch_size,
+                confidence_threshold=cfg.confidence_threshold,
+                progress=cfg.progress,
+            )
+            write_json(transformer_countries, run_dir / "reports" / "transformer_country_metrics.json")
+            manifest["models"]["category_transformer"] = {
+                "status": "trained",
+                "artifact": "models/category-transformer",
+                "test_macro_f1": transformer_result.macro_f1,
+                "test_accuracy": transformer_result.accuracy,
+            }
+            validate_quality(
+                transformer_result,
+                minimum_accuracy=cfg.minimum_accuracy,
+                minimum_macro_f1=cfg.minimum_macro_f1,
+            )
+            _country_gate(transformer_countries, cfg.minimum_country_macro_f1)
+            if len(splits.india_holdout):
+                india_result = evaluate_model(
+                    transformer,
+                    splits.india_holdout,
+                    "transformer-india",
+                    batch_size=cfg.eval_batch_size,
+                    confidence_threshold=cfg.confidence_threshold,
+                    progress=cfg.progress,
+                )
+                save_result(india_result, run_dir / "reports" / "transformer_india_test.json")
+                validate_quality(
+                    india_result,
+                    minimum_accuracy=cfg.minimum_accuracy,
+                    minimum_macro_f1=cfg.minimum_india_macro_f1,
+                )
+            results.append(transformer_result)
         else:
             manifest["models"]["category_transformer"] = {"status": "disabled"}
         bar.update(1)
 
         _stage(bar, "Merchant similarity")
-        try:
-            merchant = MerchantSimilarityIndex.fit(frame["text"].tolist(), max_merchants=cfg.max_merchants)
-            merchant.save(models_dir / "merchant-similarity")
-            write_json({"unique_merchants": len(merchant.merchants), "cap": cfg.max_merchants}, run_dir / "reports" / "merchant_index.json")
-            manifest["models"]["merchant_similarity"] = {"status": "trained", "artifact": "models/merchant-similarity"}
-        except Exception as exc:
-            manifest["models"]["merchant_similarity"] = {"status": "skipped", "reason": str(exc)}
+        merchant_sample = balanced_training_sample(frame, cfg.max_merchants, cfg.seed + 3)
+        merchant = MerchantSimilarityIndex.fit(
+            merchant_sample["text"].tolist(), max_merchants=cfg.max_merchants
+        )
+        merchant.save(models_dir / "merchant-similarity")
+        manifest["models"]["merchant_similarity"] = {
+            "status": "trained",
+            "artifact": "models/merchant-similarity",
+        }
         bar.update(1)
 
         _stage(bar, "Duplicate similarity")
-        try:
-            duplicate = DuplicateSimilarityModel.fit(frame["text"].tolist(), max_rows=cfg.duplicate_max_rows)
-            pairs = duplicate.duplicate_pairs()
-            duplicate.save(models_dir / "duplicate-similarity")
-            write_json({"indexed_rows": min(len(frame), cfg.duplicate_max_rows), "candidate_pairs": len(pairs), "threshold": 0.92, "examples": pairs[:1000]}, run_dir / "reports" / "duplicate_candidates.json")
-            manifest["models"]["duplicate_similarity"] = {"status": "trained", "artifact": "models/duplicate-similarity"}
-        except Exception as exc:
-            manifest["models"]["duplicate_similarity"] = {"status": "skipped", "reason": str(exc)}
+        duplicate_sample = balanced_training_sample(frame, cfg.duplicate_max_rows, cfg.seed + 4)
+        duplicate = DuplicateSimilarityModel.fit(
+            duplicate_sample["text"].tolist(), max_rows=cfg.duplicate_max_rows
+        )
+        pairs = duplicate.duplicate_pairs()
+        duplicate.save(models_dir / "duplicate-similarity")
+        write_json(
+            {
+                "indexed_rows": len(duplicate_sample),
+                "candidate_pairs": len(pairs),
+                "threshold": 0.92,
+                "examples": pairs[:1000],
+            },
+            run_dir / "reports" / "duplicate_candidates.json",
+        )
+        manifest["models"]["duplicate_similarity"] = {
+            "status": "trained",
+            "artifact": "models/duplicate-similarity",
+        }
         bar.update(1)
 
         _stage(bar, "Transaction anomaly detection")
-        try:
+        if "amount" not in frame.columns:
+            manifest["models"]["transaction_anomaly"] = {
+                "status": "not_applicable",
+                "reason": "No amount feature is present in the category-classification datasets.",
+            }
+        else:
             anomaly, scored = TransactionAnomalyModel.fit(frame, run_cfg.seed)
             anomaly.save(models_dir / "transaction-anomaly")
             save_anomaly_figure(scored["anomaly_score"].to_numpy(), plots_dir)
-            write_json({"rows": len(scored), "anomalies": int(scored["is_anomaly"].sum()), "anomaly_rate": float(scored["is_anomaly"].mean()), "features": anomaly.feature_columns}, run_dir / "reports" / "anomaly_report.json")
-            manifest["models"]["transaction_anomaly"] = {"status": "trained", "artifact": "models/transaction-anomaly"}
-        except Exception as exc:
-            manifest["models"]["transaction_anomaly"] = {"status": "skipped", "reason": str(exc)}
+            write_json(
+                {
+                    "rows": len(scored),
+                    "anomalies": int(scored["is_anomaly"].sum()),
+                    "anomaly_rate": float(scored["is_anomaly"].mean()),
+                    "features": anomaly.feature_columns,
+                },
+                run_dir / "reports" / "anomaly_report.json",
+            )
+            manifest["models"]["transaction_anomaly"] = {
+                "status": "trained",
+                "artifact": "models/transaction-anomaly",
+            }
         bar.update(1)
 
         _stage(bar, "Spending forecast")
-        try:
+        date_columns = {"date", "transaction_date", "timestamp", "datetime"}
+        amount_columns = {"amount", "value", "transaction_amount"}
+        if not date_columns.intersection(frame.columns) or not amount_columns.intersection(frame.columns):
+            manifest["models"]["spending_forecast"] = {
+                "status": "not_applicable",
+                "reason": "Category datasets do not provide transaction date and amount fields.",
+            }
+        else:
             forecaster, forecast = SpendingForecastModel.fit(frame, run_cfg.seed)
             forecaster.save(models_dir / "spending-forecast")
-            write_json({"mae": forecast.mae, "rmse": forecast.rmse, "r2": forecast.r2, "holdout_days": len(forecast.actual)}, run_dir / "reports" / "spending_forecast.json")
+            write_json(
+                {
+                    "mae": forecast.mae,
+                    "rmse": forecast.rmse,
+                    "r2": forecast.r2,
+                    "holdout_days": len(forecast.actual),
+                },
+                run_dir / "reports" / "spending_forecast.json",
+            )
             save_spending_forecast(forecast.actual, forecast.predicted, plots_dir)
-            manifest["models"]["spending_forecast"] = {"status": "trained", "artifact": "models/spending-forecast"}
-        except Exception as exc:
-            manifest["models"]["spending_forecast"] = {"status": "skipped", "reason": str(exc)}
+            manifest["models"]["spending_forecast"] = {
+                "status": "trained",
+                "artifact": "models/spending-forecast",
+            }
         bar.update(1)
 
         _stage(bar, "Reports and export manifest")
-        save_model_comparison(results, plots_dir)
-        write_json({"models": results, "selection_metric": "macro_f1"}, run_dir / "reports" / "model_comparison.json")
+        comparison = compare_models(results)
+        if not comparison["selected"]:
+            raise ValueError("No category model completed successfully.")
+        selected = comparison["selected"]
+        selected_key = "category_transformer" if selected == "transformer" else "category_tfidf"
+        manifest["selected_model"] = {
+            "name": selected,
+            "artifact": manifest["models"][selected_key]["artifact"],
+            "selection_metric": "macro_f1",
+        }
+        save_model_comparison([asdict(result) for result in results], plots_dir)
+        comparison["quality_thresholds"] = {
+            "minimum_accuracy": cfg.minimum_accuracy,
+            "minimum_macro_f1": cfg.minimum_macro_f1,
+            "minimum_country_macro_f1": cfg.minimum_country_macro_f1,
+            "minimum_india_macro_f1": cfg.minimum_india_macro_f1,
+        }
+        write_json(comparison, run_dir / "reports" / "model_comparison.json")
         write_json(manifest, run_dir / "manifest.json")
         write_master_report(manifest, run_dir / "reports")
         bar.update(1)
 
+    manifest["status"] = "completed"
+    write_json(manifest, run_dir / "manifest.json")
     return manifest
 
 
@@ -190,7 +427,12 @@ def load_input(config_path: Path, prepared_path: Path) -> tuple[pd.DataFrame, Tr
     cfg = TrainingConfig.from_env(TrainingConfig.from_mapping({**cfg.__dict__, "datasets": datasets}))
     if prepared_path.exists():
         return pd.read_parquet(prepared_path), cfg
-    frame = load_configured_datasets(cfg.datasets, cfg.data_dir, progress=cfg.progress, normalize_chunk_size=cfg.normalize_chunk_size)
+    frame = load_configured_datasets(
+        cfg.datasets,
+        cfg.data_dir,
+        progress=cfg.progress,
+        normalize_chunk_size=cfg.normalize_chunk_size,
+    )
     save_prepared(frame, prepared_path)
     return frame, cfg
 
