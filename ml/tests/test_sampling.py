@@ -18,9 +18,10 @@ def test_balanced_training_sample_is_deterministic_and_bounded():
             for i in range(20)
         ]
     )
-    a = balanced_training_sample(frame, max_rows=30, seed=17)
-    b = balanced_training_sample(frame, max_rows=30, seed=17)
-    assert len(a) == 30
+    a = balanced_training_sample(frame, max_rows=25, seed=17)
+    b = balanced_training_sample(frame, max_rows=25, seed=17)
+    assert len(a) == 25
     assert a["text"].tolist() == b["text"].tolist()
+    assert a["text"].nunique() == len(a)
     assert set(a["country"]) == {"USA", "India"}
     assert set(a["source"]) == {"global", "finee-india", "synthetic"}
