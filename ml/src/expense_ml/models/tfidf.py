@@ -48,6 +48,8 @@ class TfidfCategoryModel:
         )
         X = hstack([word.fit_transform(texts), char.fit_transform(texts)], format="csr")
         classes = sorted(set(labels))
+        if len(classes) < 2:
+            raise ValueError("TfidfCategoryModel.fit requires at least two distinct labels.")
         clf = LogisticRegression(
             solver="saga",
             max_iter=100,
@@ -59,11 +61,14 @@ class TfidfCategoryModel:
         return cls(word, char, clf, classes)
 
     def predict(self, texts, top_n: int = 3) -> PredictionBatch:
-        if top_n < 1 or top_n > len(self.labels):
-            raise ValueError("top_n must be between 1 and the number of model labels")
+        if top_n < 1:
+            raise ValueError("top_n must be >= 1")
         values = list(texts)
         if not values:
             return PredictionBatch([], [], [])
+        effective_top_n = min(top_n, len(self.labels))
+        if effective_top_n < 1:
+            raise ValueError("The model has no learned labels")
         X = hstack(
             [
                 self.word_vectorizer.transform(values),
@@ -72,7 +77,7 @@ class TfidfCategoryModel:
             format="csr",
         )
         probs = self.classifier.predict_proba(X)
-        order = np.argsort(-probs, axis=1)[:, :top_n]
+        order = np.argsort(-probs, axis=1)[:, :effective_top_n]
         labels = [str(self.classifier.classes_[row[0]]) for row in order]
         confidence = [float(probs[i, row[0]]) for i, row in enumerate(order)]
         top_k = [
