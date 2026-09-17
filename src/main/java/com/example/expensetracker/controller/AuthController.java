@@ -30,6 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Tag(
     name        = "Authentication",
@@ -121,7 +122,15 @@ public class AuthController {
         }
         String token = jwtService.generateToken(user.getEmail());
         log.info("User successfully authenticated; userId={}", user.getId());
-        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency(), user.hasSecurityPin()));
+        return ResponseEntity.ok(new AuthResponse(
+                token,
+                user.getId(),
+                user.getName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCurrency(),
+                user.hasSecurityPin()
+        ));
     }
 
     @Operation(summary = "Send signup verification OTP",
@@ -269,14 +278,37 @@ public class AuthController {
             @Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request) {
         log.info("Google OAuth login verification initiated");
         GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.idToken());
-        log.info("Google OAuth token verified");
+        log.info("Google OAuth token verified for email={}", identity.email());
 
         User user = userService.findByEmail(identity.email()).orElseGet(() -> {
             User newUser = new User();
             newUser.setName(identity.name());
             newUser.setEmail(identity.email());
-            newUser.setPassword(java.util.UUID.randomUUID().toString());
-            newUser.setCurrency("INR");
+            newUser.setPassword(UUID.randomUUID().toString());
+
+            // 1. Resolve currency: client preference > default "INR"
+            String reqCurrency = request.currency();
+            if (reqCurrency != null && reqCurrency.trim().matches("^[A-Za-z]{3}$")) {
+                newUser.setCurrency(reqCurrency.trim().toUpperCase(java.util.Locale.ROOT));
+            } else {
+                newUser.setCurrency("INR");
+            }
+
+            // 2. Resolve username: custom preference > generated unique handle
+            String targetUsername = null;
+            if (request.username() != null && request.username().trim().matches("^[a-zA-Z0-9._]{3,30}$")) {
+                String candidate = request.username().trim();
+                if (!userService.userExistsByUsername(candidate)) {
+                    targetUsername = candidate;
+                }
+            }
+            if (targetUsername == null) {
+                targetUsername = generateUniqueOAuthUsername(identity.email(), identity.name());
+            }
+            newUser.setUsername(targetUsername);
+
+            log.info("Auto-registering new user via Google OAuth: email={}, username={}, currency={}",
+                    newUser.getEmail(), newUser.getUsername(), newUser.getCurrency());
             return userService.registerUser(newUser);
         });
 
@@ -293,6 +325,44 @@ public class AuthController {
 
         String token = jwtService.generateToken(user.getEmail());
         log.info("Google OAuth login successful for userId={}", user.getId());
-        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency(), user.hasSecurityPin()));
+        return ResponseEntity.ok(new AuthResponse(
+                token,
+                user.getId(),
+                user.getName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCurrency(),
+                user.hasSecurityPin()
+        ));
+    }
+
+    private String generateUniqueOAuthUsername(String email, String name) {
+        String base = "";
+        if (email != null && email.contains("@")) {
+            base = email.substring(0, email.indexOf('@')).replaceAll("[^a-zA-Z0-9._]", "_");
+        } else if (name != null && !name.isBlank()) {
+            base = name.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-zA-Z0-9._]", "_");
+        }
+        if (base.length() < 3) {
+            base = (base + "user").substring(0, Math.min(base.length() + 4, 30));
+        }
+        if (base.length() > 24) {
+            base = base.substring(0, 24);
+        }
+        if (!userService.userExistsByUsername(base)) {
+            return base;
+        }
+        int suffix = 1;
+        while (suffix < 10000) {
+            String candidate = base + suffix;
+            if (candidate.length() > 30) {
+                candidate = base.substring(0, 30 - String.valueOf(suffix).length()) + suffix;
+            }
+            if (!userService.userExistsByUsername(candidate)) {
+                return candidate;
+            }
+            suffix++;
+        }
+        return "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
     }
 }

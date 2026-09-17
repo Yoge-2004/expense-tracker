@@ -20,7 +20,9 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
         localStorage.setItem("token", response.token);
         localStorage.setItem("userId", response.userId);
         localStorage.setItem("userName", response.name || "User");
-        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userEmail", response.email || email);
+        if (response.username) localStorage.setItem("userUsername", response.username);
+        if (response.currency) localStorage.setItem("userCurrency", response.currency);
         showToast("Signed in successfully!", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
     } catch (error) {
@@ -58,45 +60,48 @@ function setGoogleButtonLoading(loading, message = "Connecting to Google...") {
     });
 }
 
-function isGoogleSignInConfigured() {
-    return typeof GOOGLE_CLIENT_ID === "string" &&
-        GOOGLE_CLIENT_ID.length > 0 &&
-        !GOOGLE_CLIENT_ID.startsWith("YOUR_");
-}
-
-let isGoogleInitialized = false;
-
-function initGoogleSignIn() {
-    if (isGoogleInitialized || !isGoogleSignInConfigured() || !window.google?.accounts?.id) return;
+function parseJwtPayload(token) {
     try {
-        google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleGoogleCredentialResponse,
-            auto_select: false,
-            cancel_on_tap_outside: true
-        });
-        isGoogleInitialized = true;
-
-        // The visible button owns the interaction; Google Identity Services is used only via prompt().
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
     } catch (e) {
-        console.warn("Google Sign-In initialization:", e);
+        return null;
     }
 }
 
-async function handleGoogleCredentialResponse(credentialResponse) {
-    setGoogleButtonLoading(true, "Verifying Google account...");
+async function handleCredentialResponse(credentialResponse) {
+    if (!credentialResponse || !credentialResponse.credential) {
+        showToast("Invalid credentials received from Google.", "error");
+        setGoogleButtonLoading(false);
+        return;
+    }
+
+    setGoogleButtonLoading(true, "Signing you in...");
     try {
+        const payload = parseJwtPayload(credentialResponse.credential);
+        const preferredCurrency = localStorage.getItem("userCurrency") || "USD";
         const response = await apiRequest("/auth/oauth/google", {
             method: "POST",
-            body: JSON.stringify({ idToken: credentialResponse.credential })
+            body: JSON.stringify({
+                idToken: credentialResponse.credential,
+                currency: preferredCurrency
+            })
         });
 
-        if (!response?.token || !response?.userId) throw new Error("Google sign-in failed.");
+        if (!response?.token || !response?.userId) {
+            throw new Error("Google sign-in completed, but authentication credentials were not returned.");
+        }
 
         localStorage.setItem("token", response.token);
         localStorage.setItem("userId", response.userId);
-        localStorage.setItem("userName", response.name || "Google User");
-        localStorage.setItem("userEmail", response.email || credentialResponse.email || "");
+        localStorage.setItem("userName", response.name || (payload?.name) || "Google User");
+        localStorage.setItem("userEmail", response.email || (payload?.email) || "");
+        if (response.username) localStorage.setItem("userUsername", response.username);
+        if (response.currency) localStorage.setItem("userCurrency", response.currency);
         showToast("Signed in with Google! Redirecting...", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
     } catch (error) {
@@ -118,50 +123,39 @@ function handleGoogleOAuth() {
     }
 
     if (!window.google?.accounts?.id) {
-        setTimeout(() => {
-            setGoogleButtonLoading(false);
-            showToast("Google authentication service is still initializing — please try again in a moment.", "info");
-        }, 1200);
+        setGoogleButtonLoading(false);
+        showToast("Google Identity Services library failed to load. Please check your network or try again.", "error");
         return;
     }
 
     try {
-        if (!isGoogleInitialized) initGoogleSignIn();
-        google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed()) {
-                const reason = notification.getNotDisplayedReason?.() || "origin_or_cookies";
-                setTimeout(() => {
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: window.APP_CONFIG.GOOGLE_CLIENT_ID,
+            scope: 'openid email profile',
+            callback: (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                    showToast("Received OAuth token from Google. Note: Backend requires an ID Token for /auth/oauth/google.", "info");
                     setGoogleButtonLoading(false);
-                    if (reason === "opt_out_or_no_session") {
-                        showToast("Please select your Google Account or sign in using the Google button.", "info");
-                    } else if (reason === "suppressed_by_user") {
-                        showToast("Google prompt was dismissed recently. Please click the Google button to sign in.", "info");
-                    } else {
-                        showToast("Make sure this site's URL is added to Authorized JavaScript Origins in Google Cloud Console.", "info");
-                    }
-                }, 1000);
-            } else if (notification.isSkippedMoment()) {
-                setTimeout(() => { setGoogleButtonLoading(false); }, 1000);
+                } else {
+                    setGoogleButtonLoading(false);
+                    showToast("Google OAuth was not completed.", "warning");
+                }
+            },
+            error_callback: (err) => {
+                console.error("Google OAuth token client error:", err);
+                setGoogleButtonLoading(false);
+                showToast("Google sign-in was interrupted or failed.", "error");
             }
         });
-    } catch (e) {
+
+        client.requestAccessToken();
+    } catch (err) {
+        console.error("Failed to initialize Google Token Client:", err);
         setGoogleButtonLoading(false);
-        showToast("Unable to open Google prompt: " + e.message, "error");
+        showToast("Google Sign-In initialization failed.", "error");
     }
 }
 
-function initGoogleSignInWhenReady() {
-    if (window.google?.accounts?.id) {
-        initGoogleSignIn();
-    }
-}
-
-// GIS provides this callback when its async/deferred library has finished loading.
-window.onGoogleLibraryLoad = initGoogleSignInWhenReady;
-document.addEventListener("DOMContentLoaded", initGoogleSignInWhenReady);
-
-// WebAuthn login: the authenticator proves possession of the private key and
-// the backend verifies the signed assertion before issuing a fresh JWT.
 document.addEventListener("DOMContentLoaded", async () => {
     const bioBtn = document.getElementById("biometricLoginBtn");
     if (!bioBtn || !window.WebBiometrics) return;
@@ -179,6 +173,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 localStorage.setItem("userId", res.userId);
                 localStorage.setItem("userName", res.name || "User");
                 localStorage.setItem("userEmail", res.email || "");
+                if (res.username) localStorage.setItem("userUsername", res.username);
+                if (res.currency) localStorage.setItem("userCurrency", res.currency);
                 showToast("Biometric sign-in verified. Welcome back!", "success");
                 setTimeout(() => { window.location.href = "dashboard.html"; }, 400);
             } catch (err) {
