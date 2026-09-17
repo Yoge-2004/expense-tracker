@@ -38,11 +38,7 @@ def _candidate_group_split(
         random_state=seed,
     )
     candidates: list[tuple[float, object, object]] = []
-    for train_idx, holdout_idx in splitter.split(
-        data,
-        data["label"],
-        groups=data["_group"],
-    ):
+    for train_idx, holdout_idx in splitter.split(data, data["label"], groups=data["_group"]):
         candidate = data.iloc[holdout_idx]
         proportions = candidate["label"].value_counts(normalize=True).reindex(
             target.index,
@@ -66,9 +62,7 @@ def _validate_group_labels(data: pd.DataFrame) -> None:
             .unique()
             .head(10)
         )
-        formatted = "; ".join(
-            f"{group}: {labels.tolist()}" for group, labels in examples.items()
-        )
+        formatted = "; ".join(f"{group}: {labels.tolist()}" for group, labels in examples.items())
         raise ValueError(
             "Conflicting labels were found for identical normalized transaction text. "
             f"Resolve source-label mappings before training. Examples: {formatted}"
@@ -90,9 +84,7 @@ def split_dataset(
         or not 0 < validation_size < 1
         or test_size + validation_size >= 1
     ):
-        raise ValueError(
-            "test_size and validation_size must be positive and sum to less than 1"
-        )
+        raise ValueError("test_size and validation_size must be positive and sum to less than 1")
     if "text" not in frame or "label" not in frame:
         raise ValueError("split_dataset requires text and label columns")
 
@@ -106,11 +98,18 @@ def split_dataset(
     data["_group"] = data["text"].fillna("").astype(str).map(_hash_text)
     _validate_group_labels(data)
 
-    # Reserve an India holdout by selecting complete text groups. If the same
-    # narration occurs in India and another country, every occurrence of that
-    # normalized narration stays in the holdout boundary and cannot leak into
-    # the training/test partitions.
-    india_rows = data[data["country"].str.casefold().eq("india")]
+    # Keep the India holdout country-pure without allowing cross-country text
+    # duplicates to cross the holdout boundary. Groups containing any non-India
+    # row are therefore excluded from the India-specific holdout candidate pool.
+    group_country_sets = data.groupby("_group", sort=False)["country"].apply(
+        lambda values: {str(value).casefold() for value in values}
+    )
+    india_only_groups = set(group_country_sets[group_country_sets.map(lambda values: values == {"india"})].index)
+    india_rows = data[
+        data["country"].str.casefold().eq("india")
+        & data["_group"].isin(india_only_groups)
+    ]
+
     if len(india_rows) >= 20:
         _, india_candidate_holdout = _candidate_group_split(
             india_rows,
@@ -118,10 +117,7 @@ def split_dataset(
             seed=seed + 1,
         )
         india_holdout_groups = set(india_candidate_holdout["_group"])
-        india_holdout = data[
-            data["_group"].isin(india_holdout_groups)
-            & data["country"].str.casefold().eq("india")
-        ].copy()
+        india_holdout = data[data["_group"].isin(india_holdout_groups)].copy()
         general = data[~data["_group"].isin(india_holdout_groups)].copy()
     else:
         india_holdout = _empty_like(india_rows)
@@ -159,7 +155,5 @@ def split_dataset(
     for left_index, left in enumerate(partitions):
         for right in partitions[left_index + 1 :]:
             if set(left["text"]) & set(right["text"]):
-                raise AssertionError(
-                    "Exact normalized transaction text leaked between data splits."
-                )
+                raise AssertionError("Exact normalized transaction text leaked between data splits.")
     return result
