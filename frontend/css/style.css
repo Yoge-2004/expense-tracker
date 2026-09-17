@@ -38,7 +38,7 @@
    change removes the :has() and dvh dependencies and widens the baseline back
    past early 2022, revisit this. */
 
-@layer legacy, motion-system;
+@layer legacy, components, motion-system;
 
 /* Fonts are loaded explicitly by each HTML document to avoid nested @import latency. */
 
@@ -59,4 +59,27 @@
 @import url("interaction-performance.css") layer(legacy);
 @import url("mobile-action-fix.css") layer(legacy);
 @import url("modernization.css") layer(legacy);
+/* COMPONENTS LAYER
+   Files here were verified to have zero selector overlap with anything
+   still in `legacy` (every top-level selector is exclusive to its own
+   file - see MODERNIZATION_AUDIT_HANDOFF.md). That is what makes lifting
+   them safe: with no shared selector, there is no precedence relationship
+   with `legacy` to invert, so their normal declarations simply gain the
+   ability to win without needing !important, and nothing that already
+   worked can change. Each was moved as a direct top-level import rather
+   than nested inside its old manifest file (components.css, metrics.css,
+   etc.), because a layer name declared inside a file that is itself
+   imported into `legacy` would nest as `legacy.components` rather than
+   join this top-level layer - confirmed against the @import/@layer spec
+   before implementing, not assumed. */
+@import url("components/datepicker.css") layer(components);
+@import url("metrics/semantic.css") layer(components);
+@import url("tables/ledger.css") layer(components);
+@import url("animations/insights.css") layer(components);
+@import url("base/toggle.css") layer(components);
+@import url("dashboard/enhancements/loading.css") layer(components);
+@import url("dashboard/enhancements/budget.css") layer(components);
+@import url("dashboard/enhancements/badges.css") layer(components);
+@import url("dashboard/enhancements/form-behavior.css") layer(components);
+
 @import url("motion-system.css") layer(motion-system);

@@ -2,4 +2,3 @@
 /* Component domains are split into focused modules to keep this entry point maintainable. */
 @import url("components/actions.css");
 @import url("components/custom-select.css");
-@import url("components/datepicker.css");

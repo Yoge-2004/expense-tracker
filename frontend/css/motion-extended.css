@@ -8,12 +8,12 @@
    them in a separate layer would reverse those against the ones in style.css.
 */
 
-@import url("motion-extended/scroll.css") layer(legacy);
-@import url("motion-extended/touch.css") layer(legacy);
-@import url("motion-extended/pointer.css") layer(legacy);
+@import url("motion-extended/scroll.css") layer(components);
+@import url("motion-extended/touch.css") layer(components);
+@import url("motion-extended/pointer.css") layer(components);
 @import url("motion-extended/ambient.css") layer(legacy);
 @import url("motion-extended/feedback.css") layer(legacy);
-@import url("motion-extended/mobile-action-controls.css") layer(legacy);
+@import url("motion-extended/mobile-action-controls.css") layer(components);
 @import url("motion-extended/record-actions.css") layer(legacy);
 
 /* Theme-specific card motion was removed from the critical theme-switch path.
