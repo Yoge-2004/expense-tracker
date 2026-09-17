@@ -12,9 +12,10 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from .normalize import prepare_dataframe
+from .taxonomy import SOURCE_LABEL_MAP
 
 
-NORMALIZATION_VERSION = "2.0"
+NORMALIZATION_VERSION = "2.1"
 
 
 @dataclass(frozen=True)
@@ -106,7 +107,7 @@ def _extract_training_fields(
 
 
 def _batch_to_rows(batch: object) -> list[dict]:
-    """Normalize Hugging Face columnar batches and lightweight list-of-row test doubles."""
+    """Normalize Hugging Face columnar batches and lightweight row-mapping test doubles."""
     if isinstance(batch, Mapping):
         keys = list(batch)
         if not keys:
@@ -134,15 +135,52 @@ def _batch_to_rows(batch: object) -> list[dict]:
     )
 
 
-def _cache_is_current(metadata_path: Path, dataset_format: str | None) -> bool:
+def _cache_signature(
+    *,
+    dataset_id: str,
+    split: str,
+    source: str,
+    text_column: str,
+    label_column: str,
+    dataset_format: str | None,
+    country_column: str | None,
+    currency_column: str | None,
+    language_column: str | None,
+    default_country: str,
+    default_currency: str,
+    default_language: str,
+) -> dict:
+    mapping = SOURCE_LABEL_MAP.get(source)
+    if mapping is None:
+        raise ValueError(f"No canonical taxonomy mapping is registered for source '{source}'.")
+    payload = {
+        "normalization_version": NORMALIZATION_VERSION,
+        "dataset_id": dataset_id,
+        "split": split,
+        "source": source,
+        "text_column": text_column,
+        "label_column": label_column,
+        "dataset_format": dataset_format,
+        "country_column": country_column,
+        "currency_column": currency_column,
+        "language_column": language_column,
+        "default_country": default_country,
+        "default_currency": default_currency,
+        "default_language": default_language,
+        "taxonomy_mapping": dict(sorted(mapping.items())),
+    }
+    fingerprint = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    return {"fingerprint": fingerprint, **payload}
+
+
+def _cache_is_current(metadata_path: Path, expected_signature: dict) -> bool:
     try:
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return False
-    return (
-        metadata.get("normalization_version") == NORMALIZATION_VERSION
-        and metadata.get("dataset_format") == dataset_format
-    )
+    return metadata.get("cache_signature") == expected_signature
 
 
 def fetch_huggingface_dataset(
@@ -163,7 +201,7 @@ def fetch_huggingface_dataset(
     default_language: str = "unknown",
     normalize_chunk_size: int = 250_000,
 ) -> tuple[pd.DataFrame, FetchedDataset]:
-    """Fetch a Hugging Face dataset using bounded batches and cache normalized rows."""
+    """Fetch, validate, normalize, and cache one dataset with configuration provenance."""
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
 
@@ -171,13 +209,22 @@ def fetch_huggingface_dataset(
     target_dir.mkdir(parents=True, exist_ok=True)
     target = target_dir / f"{source}.parquet"
     metadata_path = target.with_suffix(".json")
+    signature = _cache_signature(
+        dataset_id=dataset_id,
+        split=split,
+        source=source,
+        text_column=text_column,
+        label_column=label_column,
+        dataset_format=dataset_format,
+        country_column=country_column,
+        currency_column=currency_column,
+        language_column=language_column,
+        default_country=default_country,
+        default_currency=default_currency,
+        default_language=default_language,
+    )
 
-    if (
-        target.exists()
-        and metadata_path.exists()
-        and not force
-        and _cache_is_current(metadata_path, dataset_format)
-    ):
+    if target.exists() and metadata_path.exists() and not force and _cache_is_current(metadata_path, signature):
         frame = pd.read_parquet(target)
         return frame, FetchedDataset(source, dataset_id, split, len(frame), str(target), True)
 
@@ -204,7 +251,12 @@ def fetch_huggingface_dataset(
             ) from exc
         raise
 
-    chunks: list[pd.DataFrame] = []
+    shard_dir = target_dir / f"{source}.parts"
+    if shard_dir.exists():
+        for part in shard_dir.glob("*.parquet"):
+            part.unlink()
+    shard_dir.mkdir(parents=True, exist_ok=True)
+
     total = len(dataset)
     outer = tqdm(
         range(0, total, normalize_chunk_size),
@@ -213,7 +265,8 @@ def fetch_huggingface_dataset(
         unit="chunks",
         disable=not progress,
     )
-    for start in outer:
+    shard_paths: list[Path] = []
+    for shard_number, start in enumerate(outer):
         stop = min(start + normalize_chunk_size, total)
         rows = _batch_to_rows(dataset[start:stop])
         if len(rows) != stop - start:
@@ -255,22 +308,25 @@ def fetch_huggingface_dataset(
             canonicalize=True,
             strict_taxonomy=True,
         )
-        chunks.append(batch_frame)
+        part_path = shard_dir / f"part-{shard_number:05d}.parquet"
+        batch_frame.to_parquet(part_path, index=False)
+        shard_paths.append(part_path)
         outer.set_postfix(rows=stop)
 
-    if not chunks:
+    if shard_paths:
+        frame = pd.concat((pd.read_parquet(path) for path in shard_paths), ignore_index=True)
+    else:
         frame = pd.DataFrame(
             columns=[
                 "text", "label", "source", "source_label", "country", "currency", "language", "record_id"
             ]
         )
-    else:
-        frame = pd.concat(chunks, ignore_index=True)
     frame = prepare_dataframe(frame, progress=progress, chunk_size=normalize_chunk_size)
     frame.to_parquet(target, index=False)
     metadata_path.write_text(
         json.dumps(
             {
+                "cache_signature": signature,
                 "source": source,
                 "dataset_id": dataset_id,
                 "split": split,
@@ -284,6 +340,12 @@ def fetch_huggingface_dataset(
         ),
         encoding="utf-8",
     )
+    for part_path in shard_paths:
+        part_path.unlink(missing_ok=True)
+    try:
+        shard_dir.rmdir()
+    except OSError:
+        pass
     return frame, FetchedDataset(source, dataset_id, split, len(frame), str(target), False)
 
 
