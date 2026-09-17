@@ -230,12 +230,13 @@ def fetch_huggingface_dataset(
         chunks.append(batch_frame)
         outer.set_postfix(rows=stop)
 
-    frame = prepare_dataframe(
-        pd.concat(chunks, ignore_index=True),
-        progress=progress,
-        chunk_size=normalize_chunk_size,
-        canonicalize=False,
-    )
+    if not chunks:
+        frame = pd.DataFrame(columns=[
+            "text", "label", "source", "source_label", "country", "currency", "language", "record_id"
+        ])
+    else:
+        frame = pd.concat(chunks, ignore_index=True)
+    frame = prepare_dataframe(frame, progress=progress, chunk_size=normalize_chunk_size)
     frame.to_parquet(target, index=False)
     metadata_path.write_text(
         json.dumps(
@@ -253,7 +254,7 @@ def fetch_huggingface_dataset(
         ),
         encoding="utf-8",
     )
-    return FetchedDataset(source, dataset_id, split, len(frame), str(target), False)
+    return frame, FetchedDataset(source, dataset_id, split, len(frame), str(target), False)
 
 
 def fetch_configured_datasets(
