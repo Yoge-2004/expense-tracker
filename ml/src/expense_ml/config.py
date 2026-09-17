@@ -23,22 +23,29 @@ class TrainingConfig:
     data_dir: Path = Path("data")
     artifacts_dir: Path = Path("artifacts")
     model_dir: Path = Path("artifacts/category-transformer")
-    transformer_name: str = "distilbert/distilbert-base-multilingual-cased"
+    transformer_name: str = "FacebookAI/xlm-roberta-base"
     max_length: int = 96
     test_size: float = 0.15
     validation_size: float = 0.15
     confidence_threshold: float = 0.70
+    minimum_accuracy: float = 0.90
+    minimum_macro_f1: float = 0.90
+    minimum_country_macro_f1: float = 0.85
+    minimum_india_macro_f1: float = 0.85
+    minimum_country_samples: int = 100
     batch_size: int = 16
-    eval_batch_size: int = 32
+    eval_batch_size: int = 64
     epochs: int = 4
     learning_rate: float = 2e-5
+    gradient_accumulation_steps: int = 2
     cpu_threads: int | None = None
     torch_threads: int | None = None
     dataloader_workers: int | None = None
     pin_memory: bool = True
     persistent_workers: bool = True
     mixed_precision: str = "auto"
-    gradient_accumulation_steps: int = 1
+    baseline_max_rows: int = 1_500_000
+    transformer_max_rows: int = 1_000_000
     max_merchants: int = 250_000
     duplicate_max_rows: int = 500_000
     normalize_chunk_size: int = 250_000
@@ -66,6 +73,7 @@ class TrainingConfig:
         for env_name, field_name in path_keys.items():
             if os.getenv(env_name):
                 updates[field_name] = Path(os.environ[env_name])
+
         scalar_ints = {
             "EXPENSE_ML_CPU_THREADS": "cpu_threads",
             "EXPENSE_ML_TORCH_THREADS": "torch_threads",
@@ -76,12 +84,27 @@ class TrainingConfig:
             "EXPENSE_ML_NORMALIZE_CHUNK_SIZE": "normalize_chunk_size",
             "EXPENSE_ML_MAX_MERCHANTS": "max_merchants",
             "EXPENSE_ML_DUPLICATE_MAX_ROWS": "duplicate_max_rows",
+            "EXPENSE_ML_BASELINE_MAX_ROWS": "baseline_max_rows",
+            "EXPENSE_ML_TRANSFORMER_MAX_ROWS": "transformer_max_rows",
+            "EXPENSE_ML_MINIMUM_COUNTRY_SAMPLES": "minimum_country_samples",
         }
         for env_name, field_name in scalar_ints.items():
             raw = os.getenv(env_name)
             if raw:
                 parsed = _optional_int(raw) if field_name in {"cpu_threads", "torch_threads", "dataloader_workers"} else int(raw)
                 updates[field_name] = parsed
+
+        scalar_floats = {
+            "EXPENSE_ML_MINIMUM_ACCURACY": "minimum_accuracy",
+            "EXPENSE_ML_MINIMUM_MACRO_F1": "minimum_macro_f1",
+            "EXPENSE_ML_MINIMUM_COUNTRY_MACRO_F1": "minimum_country_macro_f1",
+            "EXPENSE_ML_MINIMUM_INDIA_MACRO_F1": "minimum_india_macro_f1",
+        }
+        for env_name, field_name in scalar_floats.items():
+            raw = os.getenv(env_name)
+            if raw:
+                updates[field_name] = float(raw)
+
         if os.getenv("EXPENSE_ML_MIXED_PRECISION"):
             updates["mixed_precision"] = os.environ["EXPENSE_ML_MIXED_PRECISION"]
         if os.getenv("EXPENSE_ML_NO_PROGRESS") == "1":
@@ -100,5 +123,7 @@ def seed_everything(seed: int) -> None:
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
     except ImportError:
         pass
