@@ -99,6 +99,40 @@ def test_fetch_huggingface_dataset_extracts_finee_chatml_category(tmp_path, monk
     assert frame.loc[0, "currency"] == "INR"
 
 
+def test_fetch_huggingface_dataset_skips_finee_rows_without_category(tmp_path, monkeypatch):
+    from expense_ml.data import fetch as fetch_module
+
+    fake = [
+        {
+            "messages": [
+                {"role": "user", "content": "Extract financial entities from: Bank transfer with no category"},
+                {"role": "assistant", "content": '{"amount": 500.0}'},
+            ]
+        },
+        {
+            "messages": [
+                {"role": "user", "content": "Extract financial entities from: Zomato payment"},
+                {"role": "assistant", "content": '{"amount": 300.0, "category": "food"}'},
+            ]
+        },
+    ]
+    monkeypatch.setattr("datasets.load_dataset", lambda *args, **kwargs: fake)
+
+    frame, _ = fetch_module.fetch_huggingface_dataset(
+        dataset_id="Ranjit0034/finee-dataset",
+        text_column="messages",
+        label_column="messages",
+        source="finee-india",
+        cache_dir=tmp_path,
+        progress=False,
+        dataset_format="finee-chatml",
+    )
+
+    assert len(frame) == 1
+    assert frame.loc[0, "text"] == "zomato payment"
+    assert frame.loc[0, "label"] == "food_dining"
+
+
 def test_fetch_huggingface_dataset_rejects_unknown_finee_category(tmp_path, monkeypatch):
     from expense_ml.data import fetch as fetch_module
 
