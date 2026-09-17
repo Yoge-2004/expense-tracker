@@ -40,10 +40,14 @@ def test_master_manifest_has_pipeline_version(tmp_path, monkeypatch):
     monkeypatch.setattr("expense_ml.master_pipeline.write_master_report", lambda *args, **kwargs: None)
 
     frame = pd.DataFrame(
-        {
-            "text": [f"food transaction {i}" for i in range(60)],
-            "label": ["food_dining"] * 60,
-        }
+        [
+            {"text": f"food transaction {i}", "label": "food_dining"}
+            for i in range(40)
+        ]
+        + [
+            {"text": f"transport transaction {i}", "label": "transportation"}
+            for i in range(40)
+        ]
     )
     manifest = train_all(
         frame,
@@ -65,3 +69,4 @@ def test_master_manifest_has_pipeline_version(tmp_path, monkeypatch):
     assert manifest["pipeline_version"] == "2.0.0"
     assert manifest["status"] == "completed"
     assert manifest["selected_model"]["name"] == "tfidf"
+    assert manifest["selected_model"]["test_accuracy"] == 1.0
