@@ -12,20 +12,21 @@ def run_training_job(
     output_path: Path,
     *,
     include_transformer: bool = True,
+    dataset_manifest: list[dict] | None = None,
 ) -> dict:
     """Run the master training pipeline with explicit filesystem paths."""
     config_path = Path(config_path)
     prepared_path = Path(prepared_path)
     output_path = Path(output_path)
 
-    frame, config, dataset_manifest = load_input(config_path, prepared_path)
+    frame, config, resolved_manifest = load_input(config_path, prepared_path)
     run_dir = output_path / _run_id()
     manifest = train_all(
         frame,
         config,
         run_dir,
         include_transformer=include_transformer,
-        dataset_manifest=dataset_manifest,
+        dataset_manifest=dataset_manifest if dataset_manifest is not None else resolved_manifest,
     )
     manifest["run_directory"] = str(run_dir)
     write_json(manifest, run_dir / "manifest.json")
