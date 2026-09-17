@@ -5,8 +5,10 @@ import com.example.expensetracker.dto.MlFeedbackPageResponse;
 import com.example.expensetracker.dto.MlFeedbackRequest;
 import com.example.expensetracker.dto.MlFeedbackResponse;
 import com.example.expensetracker.dto.MlFeedbackTrainingRecord;
+import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.MlFeedback;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.MlFeedbackRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,9 +39,11 @@ public class MlFeedbackService {
     );
 
     private final MlFeedbackRepository repository;
+    private final ExpenseRepository expenseRepository;
 
-    public MlFeedbackService(MlFeedbackRepository repository) {
+    public MlFeedbackService(MlFeedbackRepository repository, ExpenseRepository expenseRepository) {
         this.repository = repository;
+        this.expenseRepository = expenseRepository;
     }
 
     public MlFeedbackResponse create(User user, MlFeedbackRequest request) {
@@ -46,6 +51,18 @@ public class MlFeedbackService {
         String corrected = canonical(request.correctedCategory());
         if (!CANONICAL_CATEGORIES.contains(predicted) || !CANONICAL_CATEGORIES.contains(corrected)) {
             throw new IllegalArgumentException("ML feedback categories must use the canonical taxonomy");
+        }
+
+        Long expenseId;
+        try {
+            expenseId = Long.valueOf(request.transactionId().trim());
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("ML feedback transactionId must reference an expense id");
+        }
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
+        if (expense.getUser() == null || !Objects.equals(expense.getUser().getId(), user.getId())) {
+            throw new IllegalArgumentException("ML feedback transaction does not belong to the current user");
         }
 
         MlFeedback feedback = new MlFeedback();
@@ -60,6 +77,11 @@ public class MlFeedbackService {
         feedback.setUser(user);
         repository.save(feedback);
         return new MlFeedbackResponse(feedback.getFeedbackId(), feedback.getTrainingStatus());
+    }
+
+    @Transactional(readOnly = true)
+    public long countEligible() {
+        return repository.countByTrainingStatus("eligible");
     }
 
     @Transactional(readOnly = true)
