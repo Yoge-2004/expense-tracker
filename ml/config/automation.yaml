@@ -7,6 +7,8 @@ automation:
   production_revision: "production"
   candidate_revision_prefix: "v"
   private_model_repository: true
+  serving_space: "Yoge-2004/expense-tracker-backend"
+  serving_space_url: "https://yoge-2004-expense-tracker-backend.hf.space"
 
 secrets:
   feedback_token_env: EXPENSE_ML_FEEDBACK_TOKEN
@@ -19,3 +21,4 @@ artifacts:
   output_dir_env: EXPENSE_ML_OUTPUT
   prepared_path_env: EXPENSE_ML_PREPARED
   config_path_env: EXPENSE_ML_CONFIG
+
