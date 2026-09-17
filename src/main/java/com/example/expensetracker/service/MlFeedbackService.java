@@ -4,6 +4,7 @@ import com.example.expensetracker.dto.MlFeedbackConsumeRequest;
 import com.example.expensetracker.dto.MlFeedbackPageResponse;
 import com.example.expensetracker.dto.MlFeedbackRequest;
 import com.example.expensetracker.dto.MlFeedbackResponse;
+import com.example.expensetracker.dto.MlFeedbackTrainingRecord;
 import com.example.expensetracker.model.MlFeedback;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.MlFeedbackRepository;
@@ -78,8 +79,8 @@ public class MlFeedbackService {
                     "eligible", afterId, PageRequest.of(0, safeLimit));
         }
 
-        List<com.example.expensetracker.dto.MlFeedbackTrainingRecord> records = feedback.stream()
-                .map(item -> new com.example.expensetracker.dto.MlFeedbackTrainingRecord(
+        List<MlFeedbackTrainingRecord> records = feedback.stream()
+                .map(item -> new MlFeedbackTrainingRecord(
                         item.getFeedbackId(),
                         item.getTransactionId(),
                         item.getText(),
@@ -101,12 +102,11 @@ public class MlFeedbackService {
         Set<String> requested = new HashSet<>(request.feedbackIds());
         int updated = 0;
         for (String feedbackId : requested) {
-            repository.findByFeedbackId(feedbackId).ifPresent(feedback -> {
-                if ("eligible".equals(feedback.getTrainingStatus())) {
-                    feedback.setTrainingStatus("consumed");
-                }
-            });
-            updated++;
+            MlFeedback feedback = repository.findByFeedbackId(feedbackId).orElse(null);
+            if (feedback != null && "eligible".equals(feedback.getTrainingStatus())) {
+                feedback.setTrainingStatus("consumed");
+                updated++;
+            }
         }
         return updated;
     }
