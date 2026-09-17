@@ -179,7 +179,7 @@ Completed survey phase per directive. Candidate list populated across all in-sco
 
 ## 6. Implementation & Verification Status
 
-Completed multi-file implementation and verification across Modules 1–5 following the Discover → Inspect → Justify → Implement → Verify cycle:
+Completed multi-file implementation and verification across Modules 1–6 following the Discover → Inspect → Justify → Implement → Verify cycle:
 
 ### Module 1: Java Backend Dependency Injection & JPA Optimization (COMPLETED)
 - **`WebMvcConfig.java`**: Replaced `@Autowired(required = false)` and `@Value` field injections with constructor injection and `final` fields.
@@ -191,8 +191,7 @@ Completed multi-file implementation and verification across Modules 1–5 follow
 ### Module 2: Java Backend Records, Exception Deduplication & Modern Streams (COMPLETED)
 - **`ErrorResponse.java`**: Modernized from boilerplate class to immutable Java `record` with getter compatibility aliases for tests and serializers.
 - **`AuthResponse.java`**: Modernized from class to immutable Java `record` with backward-compatible JavaBean-style getters.
-- **`GlobalExceptionHandler.java`**: Extracted duplicate multi-exception database unreachability inspection loop into `findDatabaseUnavailableCause(Throwable)`.
-- **Stream API Modernization**: Modernized 13 occurrences of `Stream.collect(Collectors.toList())` to modern Java 16+ `Stream.toList()` across `ExportServiceImpl.java`, `IncomeServiceImpl.java`, `SavingsGoalServiceImpl.java`, `MonthlyReportServiceImpl.java`, `ExpenseController.java`, `CategoryController.java`, and `RangeReportController.java`.
+- **`GlobalExceptionHandler.java`**: Extracted duplicate multi-exception database unreachability inspection loop into `findDatabaseUnavailableCause(Throwable)`.\n- **Stream API Modernization**: Modernized 13 occurrences of `Stream.collect(Collectors.toList())` to modern Java 16+ `Stream.toList()` across `ExportServiceImpl.java`, `IncomeServiceImpl.java`, `SavingsGoalServiceImpl.java`, `MonthlyReportServiceImpl.java`, `ExpenseController.java`, `CategoryController.java`, and `RangeReportController.java`.
 - **`application.properties`**: Enabled Java 21+ Project Loom virtual threads (`spring.threads.virtual.enabled=true`) for non-blocking high-throughput concurrency.
 - **Verification**: Validated via IntelliJ IDEA MCP `get_file_problems` and `build_project` (`isSuccess: true, problems: []`).
 
@@ -205,11 +204,9 @@ Completed multi-file implementation and verification across Modules 1–5 follow
 
 ### Module 4: Mobile TypeScript & Jest Test Runner (COMPLETED)
 - **`mobile/services/api.ts`**: Fixed TS2345 type mismatch in `waitForRetry` (`AbortSignal | null | undefined`), making TypeScript compilation 100% clean.
-- **`mobile/app/(tabs)/_layout.tsx`**: Replaced loose `any` typing on `TabIconProps.color` with `ColorValue | string`.
-- **`mobile/jest.config.js`**: Converted from invalid raw JSON to CommonJS module `module.exports = { ... };`.
+- **`mobile/app/(tabs)/_layout.tsx`**: Replaced loose `any` typing on `TabIconProps.color` with `ColorValue | string`.\n- **`mobile/jest.config.js`**: Converted from invalid raw JSON to CommonJS module `module.exports = { ... };`.
 - **`mobile/services/currency.ts`**: Corrected currency formatting to use `'en-US'` locale for non-INR currencies (fixing bug where USD `$1,000,000` was rendered as `$10,00,000`).
-- **`mobile/__tests__/setup.ts` & `auth-context.test.ts`**: Configured `@react-native-async-storage/async-storage` and `expo-secure-store` mocks, and updated dynamic imports to CommonJS `require()`.
-- **Verification**: `npm --prefix mobile run ts:check` exited with code 0. `npm --prefix mobile test` passed 3/3 test suites, 44/44 tests passed!
+- **`mobile/__tests__/setup.ts` & `auth-context.test.ts`**: Configured `@react-native-async-storage/async-storage` and `expo-secure-store` mocks, and updated dynamic imports to CommonJS `require()`.\n- **Verification**: `npm --prefix mobile run ts:check` exited with code 0. `npm --prefix mobile test` passed 3/3 test suites, 44/44 tests passed!
 
 ### Module 5: Comprehensive Sequential Backend Modernization (Java 26 / Spring Boot 4.1.1) (COMPLETED)
 - **Package 1 (`dto/` - 23/23 files)**: Modernized 100% of DTOs into canonical Java `record`s. Replaced every call site across services, controllers, mappers, and test suites with canonical record accessors (`.field()`), completely eliminating all JavaBean getter shims (`get*()`). (Commit: `b9cd935`).
@@ -222,6 +219,21 @@ Completed multi-file implementation and verification across Modules 1–5 follow
 - **Package 8 (`exception/` - 3 files)**: Inspected line-by-line. Confirmed central exception mapping to `ErrorResponse` record, handling all data integrity, constraint, type mismatch, and rate-limiting errors.
 - **Package 9 (`ExpenseTrackerSystemApplication.java`)**: Inspected line-by-line. Verified clean Spring Boot 4 bootstrap and scheduled task enablement.
 - **Verification**: Full test suite `./mvnw test` executed: **157 tests run, 0 failures, 0 errors, 19/19 Cucumber BDD scenarios passed (100% BUILD SUCCESS)**. IntelliJ IDEA `build_project` compiled with zero problems.
+
+### Module 6: Production Structured Logging & Resilient HTTP Error Handling (COMPLETED)
+- **MDC Correlation & Distributed Tracing**: Added `CorrelationIdFilter` to automatically extract or generate `traceId` (UUID) across all incoming HTTP requests, recording `userId`, `clientIp`, `method`, `uri`, and request completion duration in milliseconds. Propagated `traceId` via HTTP response header `X-Trace-Id`.
+- **Credential & PII Redaction**: Built `MaskingPatternConverter` to automatically sanitize sensitive credentials (passwords, tokens, bearer headers, refresh tokens, WebAuthn raw credentials) in log streams using regex masking. Built `LoggingUtils` with email anonymization (e.g., `e***r@test.com`).
+- **Profile-Specific Log Appenders**: Configured `logback-spring.xml` with async, rolling-file loggers (`logs/expense-tracker.log`) configured with max history, size capping, and clean pattern formatting.
+- **Deep Service & Controller Instrumentation**: Implemented detailed, contextual log statements across authentication (`AuthController`, `UserServiceImpl`, `PasswordResetServiceImpl`), financial transactions (`ExpenseController`, `ExpenseServiceImpl`, `IncomeController`, `IncomeServiceImpl`), exports (`RangeReportController`, `ExportServiceImpl`), and WebAuthn ceremonies (`WebAuthnController`, `WebAuthnService`).
+- **Comprehensive HTTP Status Code Handling**: Expanded `GlobalExceptionHandler` to cleanly map:
+  - `HttpRequestMethodNotSupportedException` -> HTTP 405 Method Not Allowed
+  - `HttpMediaTypeNotSupportedException` -> HTTP 415 Unsupported Media Type
+  - `HttpMediaTypeNotAcceptableException` -> HTTP 406 Not Acceptable
+  - `MissingServletRequestParameterException` -> HTTP 400 Bad Request
+  - `MultipartException` -> HTTP 400 Bad Request
+  - `NoResourceFoundException` -> HTTP 404 Not Found
+- **Resilient File Import Validation**: Hardened `ImportServiceImpl` with null and empty multipart file checks and Jackson `JsonProcessingException` trapping, turning malformed JSON payloads into client-safe 400 Bad Request errors rather than unhandled 500s.
+- **Verification**: Executed `./mvnw test`: **163 tests run, 0 failures, 0 errors, 19/19 Cucumber BDD scenarios passed (100% BUILD SUCCESS)**. (Commits: `ce20ce0`, `80f29ab`).
 
 ## 7. Next Actions
 
