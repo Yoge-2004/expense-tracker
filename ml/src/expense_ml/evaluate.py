@@ -155,6 +155,11 @@ def compare_validation_results(results: list[EvaluationResult]) -> dict:
     }
 
 
+def compare_models(results: list[EvaluationResult]) -> dict:
+    """Backward-compatible alias used by the master pipeline."""
+    return compare_validation_results(results)
+
+
 def save_result(result: EvaluationResult, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(asdict(result), indent=2), encoding="utf-8")
