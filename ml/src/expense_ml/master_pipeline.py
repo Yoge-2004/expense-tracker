@@ -529,3 +529,7 @@ def main() -> None:
         dataset_manifest=dataset_manifest,
     )
     print(json.dumps(manifest, indent=2))
+
+
+if __name__ == "__main__":
+    main()
