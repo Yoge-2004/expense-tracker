@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ML Master Pipeline" type="PythonConfigurationType" factoryName="Python">
+    <option name="INTERPRETER_OPTIONS" value="" />
+    <option name="MODULE_NAME" value="expense_ml.master_pipeline" />
+    <option name="PARAMETERS" value="" />
+    <option name="SDK_HOME" value="$PROJECT_DIR$/ml/.venv/bin/python" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ml" />
+    <option name="IS_MODULE_SDK" value="false" />
+    <option name="ADD_CONTENT_ROOTS" value="true" />
+    <option name="ADD_SOURCE_ROOTS" value="true" />
+    <option name="EMULATE_TERMINAL" value="false" />
+    <option name="ENV_FILES" value="" />
+    <method v="2" />
+  </configuration>
+</component>
