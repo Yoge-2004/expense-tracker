@@ -245,3 +245,19 @@ before (see `/areas/expense-tracker-pro.md` memory). Concretely:
 - Always `git fetch`/`git log HEAD..origin/<branch>` before starting new
   work in this shared branch — the other session commits independently
   and this doc may be stale relative to the actual repo state.
+
+## 9. Claude's HTML/CSS/TS survey (scoped per §8)
+
+Survey only — nothing implemented yet, pending priority direction.
+
+| Area | Finding | Confidence | Notes |
+|---|---|---|---|
+| HTML | 22 `<script>` tags in dashboard.html, zero use `defer`/`type="module"` | Real, but low-priority | Implementing properly means converting `window.X =` global exports to ES module `export`/`import` — that's a JS-architecture change, not an HTML-only one. **Needs coordination before touching**, since it crosses into the JS scope owned by user+Gemini. |
+| HTML | DOCTYPE, `lang`, charset-first ordering, semantic elements (`main`/`header`/`section`), image alt text | All already correct | No finding |
+| CSS | `-ms-overflow-style: none` (4 occurrences: `tables/controls.css`, `auth/forms.css`, `auth/layout.css`, `auth/dashboard/layout.css`) | High confidence, safe | IE-only prefix; IE has been EOL since 2022. Dead code. |
+| CSS | `-webkit-overflow-scrolling: touch` (2 occurrences) | Medium confidence | Legacy iOS Safari momentum-scroll hint, default behavior in modern iOS for years now. Likely removable, harmless either way. |
+| CSS | `-webkit-background-clip`/`-webkit-text-fill-color`, `-webkit-calendar-picker-indicator` | Not a finding | Still genuinely required for current Safari/WebKit — don't remove. |
+| CSS | `transition: all`, float-based layout | Already clean | Module 3 (transitions) and earlier session work (floats never present) already covered this. |
+| TS (mobile) | 17 files use `any` somewhere | Real, needs per-instance review | Not a blanket-fix candidate — some may be genuinely justified (untyped third-party APIs). |
+| TS (mobile) | `ErrorBoundary.tsx` is a class component | Not a finding | React error boundaries have no functional/hooks equivalent in React 19 — this is the correct, required pattern. |
+| TS (mobile) | strict mode on, zero `@ts-ignore`/`@ts-nocheck` | Already clean | No finding |
