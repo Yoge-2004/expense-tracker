@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import json
+import os
 
 import pandas as pd
 from tqdm.auto import tqdm
@@ -41,6 +42,7 @@ def fetch_huggingface_dataset(
 ) -> tuple[pd.DataFrame, FetchedDataset]:
     """Fetch one Hugging Face dataset, normalize it, and cache the normalized rows."""
     from datasets import load_dataset
+    from datasets.exceptions import DatasetNotFoundError
 
     target_dir = Path(cache_dir or "data/cache") / "normalized"
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -51,7 +53,22 @@ def fetch_huggingface_dataset(
         frame = pd.read_parquet(target)
         return frame, FetchedDataset(source, dataset_id, split, len(frame), str(target), True)
 
-    dataset = load_dataset(dataset_id, split=split, cache_dir=str(cache_dir) if cache_dir else None)
+    hf_token = os.getenv("HF_TOKEN") or None
+    try:
+        dataset = load_dataset(
+            dataset_id,
+            split=split,
+            cache_dir=str(cache_dir) if cache_dir else None,
+            token=hf_token,
+        )
+    except DatasetNotFoundError as exc:
+        if "gated dataset" in str(exc).lower() and not hf_token:
+            raise RuntimeError(
+                f"Hugging Face dataset '{dataset_id}' is gated and requires authentication. "
+                "Set HF_TOKEN in the environment (with access to the dataset) and rerun training."
+            ) from exc
+        raise
+
     rows = []
     for row in tqdm(
         dataset,
