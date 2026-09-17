@@ -48,6 +48,31 @@ def _request_json(
         raise FeedbackClientError("Feedback endpoint returned invalid JSON") from exc
 
 
+def count_training_feedback(
+    base_url: str,
+    token: str,
+    *,
+    timeout: float = 30.0,
+) -> int:
+    """Read the eligible-feedback count without downloading training rows."""
+    if not base_url.strip() or not token.strip():
+        raise ValueError("Feedback API base_url and token must be non-empty")
+    payload = _request_json(
+        f"{base_url.rstrip('/')}/api/internal/ml/feedback/count",
+        token,
+        timeout=timeout,
+    )
+    if not isinstance(payload, Mapping):
+        raise FeedbackClientError("Feedback count response must be a JSON object")
+    try:
+        count = int(payload["eligibleCount"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise FeedbackClientError("Feedback count response has an invalid eligibleCount") from exc
+    if count < 0:
+        raise FeedbackClientError("Feedback count response cannot be negative")
+    return count
+
+
 def fetch_training_feedback(
     base_url: str,
     token: str,
@@ -94,9 +119,8 @@ def mark_feedback_consumed(
     """Mark successfully published feedback as consumed by the training job."""
     if not feedback_ids:
         return
-    url = f"{base_url.rstrip('/')}/api/internal/ml/feedback/consume"
     payload = _request_json(
-        url,
+        f"{base_url.rstrip('/')}/api/internal/ml/feedback/consume",
         token,
         method="POST",
         payload={"feedback_ids": feedback_ids},
