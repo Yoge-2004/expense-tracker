@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
+import time
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 
 def publish_candidate(
@@ -89,8 +93,6 @@ def publish_candidate(
             existing = values.get(key)
             if existing is None or str(existing.value) != value:
                 api.add_space_variable(repo_id=space_repo_id, key=key, value=value)
-        # A production branch update does not change Space configuration, so
-        # explicitly restart to invalidate the model-loading process.
         api.restart_space(repo_id=space_repo_id, token=token)
         restarted = True
 
@@ -103,3 +105,37 @@ def publish_candidate(
         "space_url": space_url,
         "space_restarted": restarted,
     }
+
+
+def wait_for_space_revision(
+    space_url: str,
+    expected_revision: str,
+    *,
+    timeout_seconds: int = 600,
+    interval_seconds: int = 10,
+) -> dict:
+    """Wait for the serving Space health endpoint to report the expected model revision."""
+    if not space_url.strip():
+        raise ValueError("space_url must be non-empty")
+    if timeout_seconds < 1 or interval_seconds < 1:
+        raise ValueError("timeout_seconds and interval_seconds must be >= 1")
+
+    health_url = f"{space_url.rstrip('/')}/health"
+    deadline = time.monotonic() + timeout_seconds
+    last_error = "space did not become ready"
+    while time.monotonic() < deadline:
+        request = Request(health_url, headers={"Accept": "application/json"}, method="GET")
+        try:
+            with urlopen(request, timeout=min(30, interval_seconds + 10)) as response:
+                if response.status == 200:
+                    payload = json.loads(response.read().decode("utf-8"))
+                    model = payload.get("model", {}) if isinstance(payload, dict) else {}
+                    if payload.get("status") == "ok" and model.get("revision") == expected_revision:
+                        return payload
+                    last_error = f"unexpected health payload: {payload}"
+                else:
+                    last_error = f"health HTTP {response.status}"
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+            last_error = f"{type(exc).__name__}: {exc}"
+        time.sleep(interval_seconds)
+    raise RuntimeError(f"Space did not reach revision '{expected_revision}' within timeout: {last_error}")
