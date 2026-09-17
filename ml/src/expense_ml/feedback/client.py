@@ -14,6 +14,40 @@ class FeedbackClientError(RuntimeError):
     """Raised when the Spring Boot feedback endpoint cannot be consumed safely."""
 
 
+def _request_json(
+    url: str,
+    token: str,
+    *,
+    method: str = "GET",
+    payload: object | None = None,
+    timeout: float = 30.0,
+) -> object:
+    body = None
+    headers = {
+        "Accept": "application/json",
+        "X-ML-Training-Token": token,
+    }
+    if payload is not None:
+        body = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+
+    request = Request(url, headers=headers, method=method, data=body)
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            raw = response.read()
+    except HTTPError as exc:
+        raise FeedbackClientError(f"Feedback endpoint returned HTTP {exc.code}") from exc
+    except URLError as exc:
+        raise FeedbackClientError("Feedback endpoint could not be reached") from exc
+
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise FeedbackClientError("Feedback endpoint returned invalid JSON") from exc
+
+
 def fetch_training_feedback(
     base_url: str,
     token: str,
@@ -35,25 +69,7 @@ def fetch_training_feedback(
         params["after"] = after_cursor
     separator = "&" if "?" in base_url else "?"
     url = f"{base_url.rstrip('/')}/api/internal/ml/feedback{separator}{urlencode(params)}"
-    request = Request(
-        url,
-        headers={
-            "Accept": "application/json",
-            "Authorization": f"Bearer {token}",
-        },
-        method="GET",
-    )
-
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except HTTPError as exc:
-        raise FeedbackClientError(f"Feedback endpoint returned HTTP {exc.code}") from exc
-    except URLError as exc:
-        raise FeedbackClientError("Feedback endpoint could not be reached") from exc
-    except json.JSONDecodeError as exc:
-        raise FeedbackClientError("Feedback endpoint returned invalid JSON") from exc
-
+    payload = _request_json(url, token, timeout=timeout)
     if not isinstance(payload, Mapping):
         raise FeedbackClientError("Feedback endpoint response must be a JSON object")
     raw_records = payload.get("records", [])
@@ -66,3 +82,25 @@ def fetch_training_feedback(
     if next_cursor is not None:
         next_cursor = str(next_cursor)
     return validated, next_cursor
+
+
+def mark_feedback_consumed(
+    base_url: str,
+    token: str,
+    feedback_ids: list[str],
+    *,
+    timeout: float = 30.0,
+) -> None:
+    """Mark successfully published feedback as consumed by the training job."""
+    if not feedback_ids:
+        return
+    url = f"{base_url.rstrip('/')}/api/internal/ml/feedback/consume"
+    payload = _request_json(
+        url,
+        token,
+        method="POST",
+        payload={"feedback_ids": feedback_ids},
+        timeout=timeout,
+    )
+    if not isinstance(payload, Mapping) or payload.get("status") != "ok":
+        raise FeedbackClientError("Feedback endpoint did not acknowledge consumption")
