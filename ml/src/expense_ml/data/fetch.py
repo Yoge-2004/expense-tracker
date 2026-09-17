@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
 import json
@@ -104,10 +105,33 @@ def _extract_training_fields(
     return row[text_column], _extract_label(row, label_column)
 
 
-def _metadata_value(batch: dict, column: str | None, index: int, default: str) -> object:
-    if column and column in batch:
-        return batch[column][index]
-    return default
+def _batch_to_rows(batch: object) -> list[dict]:
+    """Normalize Hugging Face columnar batches and lightweight list-of-row test doubles."""
+    if isinstance(batch, Mapping):
+        keys = list(batch)
+        if not keys:
+            return []
+        columns = {key: batch[key] for key in keys}
+        try:
+            lengths = {len(values) for values in columns.values()}
+        except TypeError as exc:
+            raise TypeError("Dataset batch columns must be sized sequences.") from exc
+        if len(lengths) != 1:
+            raise ValueError("Dataset batch columns have inconsistent lengths.")
+        row_count = next(iter(lengths))
+        return [{key: columns[key][index] for key in keys} for index in range(row_count)]
+
+    if isinstance(batch, Sequence) and not isinstance(batch, (str, bytes, bytearray)):
+        rows: list[dict] = []
+        for index, value in enumerate(batch):
+            if not isinstance(value, Mapping):
+                raise TypeError(f"Dataset row {index} must be a mapping, got {type(value).__name__}.")
+            rows.append(dict(value))
+        return rows
+
+    raise TypeError(
+        "Dataset slice must be either a mapping of column sequences or a sequence of row mappings."
+    )
 
 
 def _cache_is_current(metadata_path: Path, dataset_format: str | None) -> bool:
@@ -191,11 +215,15 @@ def fetch_huggingface_dataset(
     )
     for start in outer:
         stop = min(start + normalize_chunk_size, total)
-        batch = dataset[start:stop]
+        rows = _batch_to_rows(dataset[start:stop])
+        if len(rows) != stop - start:
+            raise ValueError(
+                f"Dataset '{dataset_id}' returned {len(rows)} rows for requested slice "
+                f"[{start}:{stop}], expected {stop - start}."
+            )
+
         batch_rows = []
-        batch_size = stop - start
-        for index in range(batch_size):
-            row = {key: values[index] for key, values in batch.items()}
+        for offset, row in enumerate(rows):
             text, label = _extract_training_fields(
                 row,
                 dataset_id=dataset_id,
@@ -203,10 +231,10 @@ def fetch_huggingface_dataset(
                 label_column=label_column,
                 dataset_format=dataset_format,
             )
-            country = _metadata_value(batch, country_column, index, default_country)
-            currency = _metadata_value(batch, currency_column, index, default_currency)
-            language = _metadata_value(batch, language_column, index, default_language)
-            raw_id = f"{source}:{start + index}:{text}:{label}"
+            country = row.get(country_column) if country_column else default_country
+            currency = row.get(currency_column) if currency_column else default_currency
+            language = row.get(language_column) if language_column else default_language
+            raw_id = f"{source}:{start + offset}:{text}:{label}"
             record_id = hashlib.sha1(raw_id.encode("utf-8")).hexdigest()
             batch_rows.append(
                 {
@@ -231,9 +259,11 @@ def fetch_huggingface_dataset(
         outer.set_postfix(rows=stop)
 
     if not chunks:
-        frame = pd.DataFrame(columns=[
-            "text", "label", "source", "source_label", "country", "currency", "language", "record_id"
-        ])
+        frame = pd.DataFrame(
+            columns=[
+                "text", "label", "source", "source_label", "country", "currency", "language", "record_id"
+            ]
+        )
     else:
         frame = pd.concat(chunks, ignore_index=True)
     frame = prepare_dataframe(frame, progress=progress, chunk_size=normalize_chunk_size)
