@@ -23,6 +23,53 @@ def _empty_like(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.iloc[0:0].copy().reset_index(drop=True)
 
 
+def remove_conflicting_text_groups(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """Remove every text group whose canonical labels disagree.
+
+    Keeping one arbitrary label would silently corrupt supervised training. Keeping
+    both labels would preserve contradictory supervision. Dropping the complete
+    ambiguous group leaves the remaining corpus suitable for deterministic,
+    leakage-safe splitting.
+    """
+    required = {"text", "label"}
+    missing = required - set(frame.columns)
+    if missing:
+        raise ValueError(
+            f"remove_conflicting_text_groups requires columns: {sorted(required)}; "
+            f"missing {sorted(missing)}"
+        )
+
+    data = frame.copy()
+    conflicts = data.groupby("text", sort=False)["label"].nunique()
+    conflicted_texts = set(conflicts[conflicts > 1].index)
+    mask = data["text"].isin(conflicted_texts)
+
+    conflicting_rows = data.loc[mask]
+    label_pairs = (
+        conflicting_rows.groupby("text", sort=False)["label"]
+        .unique()
+        .map(lambda labels: sorted(str(label) for label in labels))
+    )
+    source_pairs: dict[str, list[str]] = {}
+    if "source" in conflicting_rows:
+        source_pairs = {
+            str(text): sorted(str(source) for source in values)
+            for text, values in conflicting_rows.groupby("text", sort=False)["source"].unique().items()
+        }
+
+    summary = {
+        "conflicting_text_groups": len(conflicted_texts),
+        "rows_removed": int(mask.sum()),
+        "label_conflict_examples": {
+            str(text): labels for text, labels in label_pairs.head(10).items()
+        },
+        "source_conflict_examples": {
+            text: values for text, values in list(source_pairs.items())[:10]
+        },
+    }
+    return data.loc[~mask].reset_index(drop=True), summary
+
+
 def _candidate_group_split(
     data: pd.DataFrame,
     holdout_fraction: float,
