@@ -227,3 +227,21 @@ Completed multi-file implementation and verification across Modules 1–5 follow
 
 1. Review and proceed to frontend web modernizations (HTML/CSS/JS) if requested.
 2. Push commits to `origin/refactor/modernize-codebase`.
+
+## 8. Division of labor (to avoid parallel-session conflicts)
+
+As of this update: the project owner + a Gemini-based agent are working
+directly on **backend Java and frontend JS**. Claude (this chat) is
+scoped to **HTML, CSS, and TypeScript** (`mobile/`, `e2e/`) only, to
+avoid the kind of overwrite conflicts parallel sessions have caused
+before (see `/areas/expense-tracker-pro.md` memory). Concretely:
+
+- **Off-limits to Claude for now**: `src/main/java/**`, `frontend/js/**`
+- **Claude's scope**: `frontend/*.html`, `frontend/css/**`, `mobile/**/*.ts(x)`,
+  `e2e/**/*.ts`
+- Module 3 above already did `transition: all` cleanup in
+  `frontend/css/modals.css` and `frontend/css/auth/dashboard/layout.css`
+  — check current state of a file before assuming it's untouched.
+- Always `git fetch`/`git log HEAD..origin/<branch>` before starting new
+  work in this shared branch — the other session commits independently
+  and this doc may be stale relative to the actual repo state.
