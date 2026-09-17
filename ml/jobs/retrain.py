@@ -5,7 +5,11 @@ import json
 import os
 import shutil
 
-from expense_ml.feedback.client import fetch_training_feedback, mark_feedback_consumed
+from expense_ml.feedback.client import (
+    count_training_feedback,
+    fetch_training_feedback,
+    mark_feedback_consumed,
+)
 from expense_ml.training.candidate import build_candidate_manifest
 from expense_ml.training.dataset import build_training_frame, training_data_fingerprint
 from expense_ml.training.job import run_training_job
@@ -60,6 +64,25 @@ def run_automated_retraining() -> dict:
     threshold = int(os.getenv("EXPENSE_ML_FEEDBACK_THRESHOLD", "500"))
     scheduled = os.getenv("EXPENSE_ML_SCHEDULED", "1") == "1"
     force = os.getenv("EXPENSE_ML_FORCE_RETRAIN", "0") == "1"
+    if not feedback_url and not force:
+        raise RuntimeError("EXPENSE_ML_FEEDBACK_URL is required for automated retraining")
+    if not feedback_token and not force:
+        raise RuntimeError("EXPENSE_ML_FEEDBACK_TOKEN is required for automated retraining")
+
+    feedback_count = 0
+    if feedback_url:
+        feedback_count = count_training_feedback(feedback_url, feedback_token)
+
+    if not should_retrain(feedback_count, threshold, scheduled, force=force):
+        summary = {
+            "status": "skipped",
+            "reason": "insufficient_new_feedback",
+            "feedback_count": feedback_count,
+            "threshold": threshold,
+        }
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "latest-summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        return summary
 
     records = []
     cursor = None
@@ -73,17 +96,6 @@ def run_automated_retraining() -> dict:
             records.extend(page)
             if not cursor:
                 break
-
-    if not should_retrain(len(records), threshold, scheduled, force=force):
-        summary = {
-            "status": "skipped",
-            "reason": "insufficient_new_feedback",
-            "feedback_count": len(records),
-            "threshold": threshold,
-        }
-        output.mkdir(parents=True, exist_ok=True)
-        (output / "latest-summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-        return summary
 
     from expense_ml.master_pipeline import load_input
 
