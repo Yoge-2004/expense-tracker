@@ -5,14 +5,15 @@ import json
 import os
 import shutil
 
-from expense_ml.feedback.client import fetch_training_feedback
-from expense_ml.training.dataset import build_training_frame, feedback_fingerprint
+from expense_ml.feedback.client import fetch_training_feedback, mark_feedback_consumed
+from expense_ml.training.candidate import build_candidate_manifest
+from expense_ml.training.dataset import build_training_frame, training_data_fingerprint
 from expense_ml.training.job import run_training_job
 from expense_ml.training.promotion import evaluate_candidate, write_promotion_decision
 
 
 def should_retrain(new_feedback_count: int, threshold: int, scheduled: bool, force: bool = False) -> bool:
-    """Decide whether a scheduled automation run has enough new information."""
+    """Decide whether an automation run has enough new information."""
     if force:
         return True
     if new_feedback_count < 0 or threshold < 1:
@@ -20,10 +21,23 @@ def should_retrain(new_feedback_count: int, threshold: int, scheduled: bool, for
     return scheduled and new_feedback_count >= threshold
 
 
-def _load_current_metrics(path: Path | None) -> dict | None:
-    if path is None or not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+def _load_current_metrics(repo_id: str, token: str, revision: str = "production") -> dict | None:
+    from huggingface_hub import HfHubHTTPError, hf_hub_download
+
+    try:
+        path = hf_hub_download(
+            repo_id=repo_id,
+            repo_type="model",
+            filename="metrics.json",
+            revision=revision,
+            token=token,
+        )
+    except HfHubHTTPError as exc:
+        response = getattr(exc, "response", None)
+        if response is not None and response.status_code == 404:
+            return None
+        raise
+    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 def _copy_selected_model(run_dir: Path, model_name: str, candidate_dir: Path) -> Path:
@@ -57,7 +71,7 @@ def run_automated_retraining() -> dict:
                 after_cursor=cursor,
             )
             records.extend(page)
-            if not cursor or not page:
+            if not cursor:
                 break
 
     if not should_retrain(len(records), threshold, scheduled, force=force):
@@ -73,7 +87,7 @@ def run_automated_retraining() -> dict:
 
     from expense_ml.master_pipeline import load_input
 
-    base_frame, config_object, _ = load_input(config, prepared)
+    base_frame, config_object, dataset_manifest = load_input(config, prepared)
     training_frame = build_training_frame(base_frame, records)
     augmented = output / "working" / "augmented-training.parquet"
     augmented.parent.mkdir(parents=True, exist_ok=True)
@@ -84,6 +98,7 @@ def run_automated_retraining() -> dict:
         augmented,
         output,
         include_transformer=os.getenv("EXPENSE_ML_NO_TRANSFORMER") != "1",
+        dataset_manifest=dataset_manifest,
     )
     run_dir = Path(manifest["run_directory"])
     selected = manifest["selected_model"]["name"]
@@ -91,16 +106,14 @@ def run_automated_retraining() -> dict:
     candidate_dir = run_dir / "candidate"
     _copy_selected_model(run_dir, selected, candidate_dir)
 
-    training_fingerprint = feedback_fingerprint(records)
-    from expense_ml.training.candidate import build_candidate_manifest
-
-    current_metrics_path = os.getenv("EXPENSE_ML_CURRENT_METRICS_PATH")
-    current = _load_current_metrics(Path(current_metrics_path)) if current_metrics_path else None
     candidate_metrics = {
         "model_name": selected,
         "test_accuracy": manifest["selected_model"]["test_accuracy"],
         "test_macro_f1": manifest["selected_model"]["test_macro_f1"],
     }
+    repo_id = os.environ["HF_MODEL_REPO"]
+    token = os.environ["HF_TOKEN"]
+    current = _load_current_metrics(repo_id, token)
     decision = evaluate_candidate(
         candidate_metrics,
         current,
@@ -113,7 +126,7 @@ def run_automated_retraining() -> dict:
     )
     build_candidate_manifest(
         run_id=run_dir.name,
-        training_data_fingerprint=training_fingerprint,
+        training_data_fingerprint=training_data_fingerprint(training_frame),
         model_name=selected,
         model_revision=revision,
         validation_metrics=manifest["selected_model"],
@@ -132,16 +145,33 @@ def run_automated_retraining() -> dict:
             "decision": decision.to_dict(),
         }
 
-    repo_id = os.environ["HF_MODEL_REPO"]
-    token = os.environ["HF_TOKEN"]
-    from publish import publish_candidate
+    from publish import publish_candidate, wait_for_space_revision
 
+    space_repo = os.getenv("HF_SPACE_REPO", "Yoge-2004/expense-tracker-backend")
+    space_url = os.getenv(
+        "HF_SPACE_URL", "https://yoge-2004-expense-tracker-backend.hf.space"
+    )
     published = publish_candidate(
         candidate_dir,
         repo_id=repo_id,
         revision=revision,
         token=token,
         private=os.getenv("HF_MODEL_PRIVATE", "1") == "1",
+        production_revision=os.getenv("HF_MODEL_PRODUCTION_REVISION", "production"),
+        space_repo_id=space_repo,
+        space_url=space_url,
+        model_type=selected,
+    )
+    wait_for_space_revision(
+        space_url,
+        published["production_revision"],
+        timeout_seconds=int(os.getenv("EXPENSE_ML_SPACE_HEALTH_TIMEOUT", "600")),
+        interval_seconds=int(os.getenv("EXPENSE_ML_SPACE_HEALTH_INTERVAL", "10")),
+    )
+    mark_feedback_consumed(
+        feedback_url,
+        feedback_token,
+        [record.feedback_id for record in records],
     )
 
     summary = {
@@ -150,6 +180,7 @@ def run_automated_retraining() -> dict:
         "candidate_revision": revision,
         "published": published,
         "decision": decision.to_dict(),
+        "feedback_consumed": len(records),
     }
     (run_dir / "candidate" / "promotion-summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"
