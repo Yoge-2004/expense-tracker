@@ -1,6 +1,7 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.MlFeedbackConsumeRequest;
+import com.example.expensetracker.dto.MlFeedbackCountResponse;
 import com.example.expensetracker.dto.MlFeedbackPageResponse;
 import com.example.expensetracker.dto.MlFeedbackRequest;
 import com.example.expensetracker.dto.MlFeedbackResponse;
@@ -48,6 +49,13 @@ public class MlFeedbackController {
             throw new AccessDeniedException("Authenticated user required.");
         }
         return ResponseEntity.ok(service.create(principal.getUser(), request));
+    }
+
+    @GetMapping("/internal/ml/feedback/count")
+    public ResponseEntity<MlFeedbackCountResponse> countTrainingFeedback(
+            @RequestHeader(value = TRAINING_TOKEN_HEADER, required = false) String providedToken) {
+        requireTrainingToken(providedToken);
+        return ResponseEntity.ok(new MlFeedbackCountResponse(service.countEligible()));
     }
 
     @GetMapping("/internal/ml/feedback")
