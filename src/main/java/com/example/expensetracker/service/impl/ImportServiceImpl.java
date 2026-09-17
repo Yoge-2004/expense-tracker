@@ -10,6 +10,7 @@ import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.service.ExpenseService;
 import com.example.expensetracker.service.ImportService;
 import com.example.expensetracker.service.IncomeService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -76,7 +77,7 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importExpensesFromCsv(MultipartFile file, User user) {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
 
@@ -163,7 +164,7 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importExpensesFromJson(MultipartFile file, User user) {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
 
@@ -194,6 +195,11 @@ public class ImportServiceImpl implements ImportService {
             result.put("imported", count);
             result.put("message", "Imported " + count + " expenses successfully");
             return result;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (JsonProcessingException e) {
+            logger.warn("Malformed JSON file during expense import for user {}: {}", user.getId(), e.getMessage());
+            throw new IllegalArgumentException("Malformed JSON file: " + e.getOriginalMessage(), e);
         } catch (Exception e) {
             logger.error("Failed to import expenses from JSON for user {}", user.getId(), e);
             throw new RuntimeException("Error importing expenses from JSON: " + e.getMessage(), e);
@@ -302,7 +308,7 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importIncomesFromCsv(MultipartFile file, User user) {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
 
@@ -387,7 +393,7 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importIncomesFromJson(MultipartFile file, User user) {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
 
@@ -410,6 +416,11 @@ public class ImportServiceImpl implements ImportService {
             result.put("imported", count);
             result.put("message", "Imported " + count + " income records successfully");
             return result;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (JsonProcessingException e) {
+            logger.warn("Malformed JSON file during income import for user {}: {}", user.getId(), e.getMessage());
+            throw new IllegalArgumentException("Malformed JSON file: " + e.getOriginalMessage(), e);
         } catch (Exception e) {
             logger.error("Failed to import incomes from JSON for user {}", user.getId(), e);
             throw new RuntimeException("Error importing incomes from JSON: " + e.getMessage(), e);
@@ -590,10 +601,7 @@ public class ImportServiceImpl implements ImportService {
      * Resolves an existing user-scoped or global category by name (case-insensitive),
      * or creates a new user-scoped category if no match is found.
      * <p>
-     * <b>Security:</b> Previously this method used {@code findByNameIgnoreCase} which
-     * returned ANY category with that name — including other users' private categories.
-     * That created an IDOR vulnerability where user A's imported expenses could be linked
-     * to user B's private category. This method now scopes lookups to (a) the importing
+     * <b>Security:</b> Scopes lookups to (a) the importing
      * user's own categories and (b) global (user_id IS NULL) categories only.
      * </p>
      *
