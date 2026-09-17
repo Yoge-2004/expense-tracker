@@ -1,6 +1,11 @@
-# Public datasets used by the category-classification phase.
+# Category-classification datasets for Phase 1.
 # Raw data is downloaded by the Hugging Face datasets library and is never
 # committed to this repository.
+#
+# FinEE (Ranjit0034/finee-dataset) is intentionally excluded here because it
+# is primarily an entity-extraction dataset. Its structured output will be
+# used by the future transaction extraction/NER phase instead of mixing it
+# into the category-classification training set.
 
 datasets:
   - source: global-transaction-categorization
@@ -8,12 +13,6 @@ datasets:
     split: train
     text_column: transaction_description
     label_column: category
-
-  - source: finee-india
-    dataset_id: Ranjit0034/finee-dataset
-    split: train
-    text_column: input
-    label_column: output.category
 
   - source: synthetic-indian-transactions
     dataset_id: Sumeetgpt/indian-transaction-categorization-synthetic
