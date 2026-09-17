@@ -6,9 +6,9 @@ import json
 
 import joblib
 import numpy as np
+from scipy.sparse import hstack
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from scipy.sparse import hstack
 
 
 @dataclass
@@ -19,7 +19,13 @@ class PredictionBatch:
 
 
 class TfidfCategoryModel:
-    def __init__(self, word_vectorizer: TfidfVectorizer, char_vectorizer: TfidfVectorizer, classifier: LogisticRegression, labels: list[str]):
+    def __init__(
+        self,
+        word_vectorizer: TfidfVectorizer,
+        char_vectorizer: TfidfVectorizer,
+        classifier: LogisticRegression,
+        labels: list[str],
+    ):
         self.word_vectorizer = word_vectorizer
         self.char_vectorizer = char_vectorizer
         self.classifier = classifier
@@ -27,27 +33,65 @@ class TfidfCategoryModel:
 
     @classmethod
     def fit(cls, texts, labels, seed: int = 42) -> "TfidfCategoryModel":
-        word = TfidfVectorizer(ngram_range=(1, 2), min_df=2, max_features=120_000, sublinear_tf=True)
-        char = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=2, max_features=80_000, sublinear_tf=True)
-        X = hstack([word.fit_transform(texts), char.fit_transform(texts)])
+        word = TfidfVectorizer(
+            ngram_range=(1, 2),
+            min_df=2,
+            max_features=120_000,
+            sublinear_tf=True,
+        )
+        char = TfidfVectorizer(
+            analyzer="char_wb",
+            ngram_range=(3, 5),
+            min_df=2,
+            max_features=80_000,
+            sublinear_tf=True,
+        )
+        X = hstack([word.fit_transform(texts), char.fit_transform(texts)], format="csr")
         classes = sorted(set(labels))
-        clf = LogisticRegression(max_iter=1000, class_weight="balanced", random_state=seed, n_jobs=-1)
+        clf = LogisticRegression(
+            solver="saga",
+            max_iter=100,
+            tol=1e-3,
+            class_weight="balanced",
+            random_state=seed,
+        )
         clf.fit(X, labels)
         return cls(word, char, clf, classes)
 
     def predict(self, texts, top_n: int = 3) -> PredictionBatch:
-        X = hstack([self.word_vectorizer.transform(texts), self.char_vectorizer.transform(texts)])
+        if top_n < 1 or top_n > len(self.labels):
+            raise ValueError("top_n must be between 1 and the number of model labels")
+        values = list(texts)
+        if not values:
+            return PredictionBatch([], [], [])
+        X = hstack(
+            [
+                self.word_vectorizer.transform(values),
+                self.char_vectorizer.transform(values),
+            ],
+            format="csr",
+        )
         probs = self.classifier.predict_proba(X)
         order = np.argsort(-probs, axis=1)[:, :top_n]
-        labels = [self.classifier.classes_[row[0]] for row in order]
+        labels = [str(self.classifier.classes_[row[0]]) for row in order]
         confidence = [float(probs[i, row[0]]) for i, row in enumerate(order)]
-        top_k = [[(str(self.classifier.classes_[j]), float(probs[i, j])) for j in row] for i, row in enumerate(order)]
+        top_k = [
+            [(str(self.classifier.classes_[j]), float(probs[i, j])) for j in row]
+            for i, row in enumerate(order)
+        ]
         return PredictionBatch(labels, confidence, top_k)
 
     def save(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
         joblib.dump(self, path / "model.joblib")
-        (path / "metadata.json").write_text(json.dumps({"model_type": "tfidf_logistic_regression", "labels": self.labels}, indent=2), encoding="utf-8")
+        metadata = {
+            "model_type": "tfidf_logistic_regression",
+            "labels": self.labels,
+            "word_features": "word 1-2 grams, max_features=120000",
+            "character_features": "char_wb 3-5 grams, max_features=80000",
+            "solver": "saga",
+        }
+        (path / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
     @classmethod
     def load(cls, path: Path) -> "TfidfCategoryModel":
