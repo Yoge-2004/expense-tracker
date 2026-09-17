@@ -84,3 +84,24 @@ def test_conflicting_text_groups_are_removed_before_splitting():
     assert set(cleaned["text"]) == {"clear food", "clear transport"}
     assert summary["conflicting_text_groups"] == 1
     assert summary["rows_removed"] == 2
+
+
+def test_split_removes_conflicting_groups_before_partitioning():
+    rows = [
+        {"text": "ambiguous narration", "label": "food_dining", "source": "global", "country": "USA"},
+        {"text": "ambiguous narration", "label": "shopping_retail", "source": "finee", "country": "India"},
+    ]
+    rows.extend(
+        {"text": f"food {i}", "label": "food_dining", "source": "global", "country": "USA"}
+        for i in range(30)
+    )
+    rows.extend(
+        {"text": f"transport {i}", "label": "transportation", "source": "global", "country": "USA"}
+        for i in range(30)
+    )
+
+    result = split_dataset(pd.DataFrame(rows), seed=19, test_size=.2, validation_size=.1)
+    partition_texts = set().union(
+        *(set(part["text"]) for part in (result.train, result.validation, result.test, result.india_holdout))
+    )
+    assert "ambiguous narration" not in partition_texts
