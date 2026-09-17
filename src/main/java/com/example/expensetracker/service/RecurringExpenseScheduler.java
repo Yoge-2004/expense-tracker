@@ -116,12 +116,17 @@ public class RecurringExpenseScheduler {
     }
 
     private LocalDate nextOccurrence(RecurringExpense recurringExpense) {
-        return switch (recurringExpense.getFrequency()) {
-            case "DAILY" -> recurringExpense.getNextDueDate().plusDays(1);
-            case "WEEKLY" -> recurringExpense.getNextDueDate().plusWeeks(1);
-            case "YEARLY" -> recurringExpense.getNextDueDate().plusYears(1);
-            case "CUSTOM" -> recurringExpense.getNextDueDate().plusDays(recurringExpense.getIntervalDays());
-            default -> recurringExpense.getNextDueDate().plusMonths(1);
+        LocalDate current = recurringExpense.getNextDueDate() != null ? recurringExpense.getNextDueDate() : LocalDate.now();
+        String freq = recurringExpense.getFrequency() != null ? recurringExpense.getFrequency().toUpperCase() : "MONTHLY";
+        int interval = recurringExpense.getIntervalDays() != null && recurringExpense.getIntervalDays() > 0
+                ? recurringExpense.getIntervalDays() : 1;
+        LocalDate next = switch (freq) {
+            case "DAILY" -> current.plusDays(1);
+            case "WEEKLY" -> current.plusWeeks(1);
+            case "YEARLY" -> current.plusYears(1);
+            case "CUSTOM" -> current.plusDays(interval);
+            default -> current.plusMonths(1);
         };
+        return next.isAfter(current) ? next : current.plusDays(1);
     }
 }

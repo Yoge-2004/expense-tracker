@@ -108,5 +108,10 @@ public record MonthlyReportDto(
 
             @Schema(description = "Percentage of budget utilized", example = "84.0")
             double usagePercentage
-    ) {}
+    ) {
+        public boolean isExceeded() {
+            return (spentAmount != null && limitAmount != null && spentAmount.compareTo(limitAmount) > 0)
+                    || usagePercentage > 100.0;
+        }
+    }
 }

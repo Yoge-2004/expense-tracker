@@ -29,6 +29,8 @@ public class UserServiceImpl implements UserService {
     private final RecurringExpenseRepository recurringRepository;
     private final IncomeRepository incomeRepository;
     private final SavingsGoalRepository savingsGoalRepository;
+    private final MonthlyReportLogRepository reportLogRepository;
+    private final WebAuthnCredentialRepository webAuthnCredentialRepository;
 
     public UserServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
@@ -37,7 +39,9 @@ public class UserServiceImpl implements UserService {
                            BudgetRepository budgetRepository,
                            RecurringExpenseRepository recurringRepository,
                            IncomeRepository incomeRepository,
-                           SavingsGoalRepository savingsGoalRepository) {
+                           SavingsGoalRepository savingsGoalRepository,
+                           MonthlyReportLogRepository reportLogRepository,
+                           WebAuthnCredentialRepository webAuthnCredentialRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.expenseRepository = expenseRepository;
@@ -46,6 +50,8 @@ public class UserServiceImpl implements UserService {
         this.recurringRepository = recurringRepository;
         this.incomeRepository = incomeRepository;
         this.savingsGoalRepository = savingsGoalRepository;
+        this.reportLogRepository = reportLogRepository;
+        this.webAuthnCredentialRepository = webAuthnCredentialRepository;
     }
 
     @Override
@@ -182,6 +188,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        reportLogRepository.deleteByUserId(userId);
+        webAuthnCredentialRepository.deleteByUserId(userId);
         expenseRepository.deleteByUserId(userId);
         recurringRepository.deleteByUserId(userId);
         incomeRepository.deleteByUserId(userId);

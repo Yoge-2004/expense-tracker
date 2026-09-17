@@ -3,6 +3,9 @@ package com.example.expensetracker.repository;
 import com.example.expensetracker.model.MonthlyReportLog;
 import com.example.expensetracker.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -29,4 +32,13 @@ public interface MonthlyReportLogRepository extends JpaRepository<MonthlyReportL
      * than ever inserting a second row for the same period.
      */
     Optional<MonthlyReportLog> findByUserAndReportYearAndReportMonth(User user, int reportYear, int reportMonth);
+
+    /**
+     * Deletes all monthly report logs for the given user ID.
+     *
+     * @param userId ID of the user whose report logs should be deleted
+     */
+    @Modifying
+    @Query("DELETE FROM MonthlyReportLog m WHERE m.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }

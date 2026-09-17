@@ -34,7 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.HtmlUtils;
 
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -42,7 +41,6 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Production implementation of {@link MonthlyReportService}.
@@ -203,8 +201,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     Math.round(pct * 10.0) / 10.0
             ));
         }
+        budgetStatuses.sort((a, b) -> Double.compare(b.usagePercentage(), a.usagePercentage()));
 
-        int budgetHealthScore = budgets.isEmpty() ? 100 : (int) Math.round(((double) withinBudgetCount / budgets.size()) * 100);
+        int budgetHealthScore = 100;
+        if (!budgets.isEmpty()) {
+            budgetHealthScore = (int) Math.round(((double) withinBudgetCount / budgets.size()) * 100.0);
+        }
 
         // Top 5 Expenses
         List<ExpenseDto> topExpenses = expenses.stream()
@@ -213,65 +215,58 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 .map(ExpenseMapper::toDto)
                 .toList();
 
-        // Incomes DTOs
+        // All Incomes mapped
         List<IncomeDto> incomeDtos = incomes.stream()
                 .sorted(Comparator.comparing(Income::getIncomeDate).reversed())
                 .map(IncomeMapper::toDto)
                 .toList();
 
-        // Savings Goals DTOs
-        List<SavingsGoalDto> savingsGoalDtos = savingsGoals.stream()
+        // Active Savings Goals mapped
+        List<SavingsGoalDto> goalDtos = savingsGoals.stream()
                 .map(SavingsGoalMapper::toDto)
                 .toList();
 
-        String currency = user.getCurrency() != null ? user.getCurrency() : "INR";
-        String monthTitle = Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " " + year;
-
-        // Executive Insights
+        // Insights Generation
         List<String> insights = new ArrayList<>();
-        if (totalIncome.compareTo(BigDecimal.ZERO) > 0) {
-            insights.add(String.format("💰 Cash Flow: Total income of <strong>%s %s</strong> with net savings of <strong>%s %s</strong> (%.1f%% savings rate).",
-                    currency, totalIncome, currency, netCashFlow, savingsRate));
+        String monthName = Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+
+        if (totalIncome.compareTo(BigDecimal.ZERO) > 0 && netCashFlow.compareTo(BigDecimal.ZERO) >= 0) {
+            insights.add(String.format("You generated a net positive savings rate of %.1f%% in %s.", savingsRate, monthName));
+        } else if (totalIncome.compareTo(BigDecimal.ZERO) > 0) {
+            insights.add(String.format("Expenses exceeded income in %s resulting in a deficit of %s.", monthName, netCashFlow.abs()));
         }
-        if (!savingsGoalDtos.isEmpty()) {
-            long completedGoals = savingsGoalDtos.stream().filter(g -> "COMPLETED".equalsIgnoreCase(g.status())).count();
-            insights.add(String.format("🎯 Savings Progress: Tracking <strong>%d savings goals</strong> (%d achieved milestones).",
-                    savingsGoalDtos.size(), completedGoals));
-        }
+
         if (!categoryBreakdown.isEmpty()) {
             MonthlyReportDto.CategoryReportDto topCat = categoryBreakdown.get(0);
-            insights.add(String.format("💡 Primary Driver: <strong>%s</strong> accounted for <strong>%.1f%%</strong> (%s %s) of total monthly outflow.",
-                    topCat.categoryName(), topCat.percentage(), currency, topCat.totalAmount()));
-        }
-        insights.add(String.format("📈 Spending Velocity: You averaged <strong>%s %s / day</strong> across %d days.",
-                currency, dailyAverage, daysInMonth));
-        if (recurringTotal.compareTo(BigDecimal.ZERO) > 0) {
-            insights.add(String.format("🔄 Fixed Commitments: <strong>%s %s</strong> was allocated to recurring subscriptions & bills.",
-                    currency, recurringTotal));
-        }
-        if (!budgets.isEmpty()) {
-            insights.add(String.format("🎯 Budget Health: <strong>%d of %d</strong> budget categories stayed strictly within target (%d%% health score).",
-                    withinBudgetCount, budgets.size(), budgetHealthScore));
-        }
-        if (highestExpense != null) {
-            insights.add(String.format("🏷️ Peak Outflow: Single largest transaction was <strong>%s %s</strong> on %s%s.",
-                    currency, highestExpenseAmount,
-                    highestExpense.getExpenseDate() != null ? highestExpense.getExpenseDate().toString() : "N/A",
-                    highestExpenseDescription != null && !highestExpenseDescription.isBlank() ? " ('" + highestExpenseDescription + "')" : ""));
-        }
-        if (insights.isEmpty()) {
-            insights.add("✨ No recorded transactions for this period. Your budget remained completely untouched.");
+            insights.add(String.format("Top spending category was '%s' absorbing %.1f%% of all outflows.", topCat.categoryName(), topCat.percentage()));
         }
 
+        long exceededBudgets = budgetStatuses.stream().filter(MonthlyReportDto.BudgetReportDto::isExceeded).count();
+        if (exceededBudgets > 0) {
+            insights.add(String.format("%d budget limit%s exceeded during %s.", exceededBudgets, exceededBudgets > 1 ? "s were" : " was", monthName));
+        } else if (!budgets.isEmpty()) {
+            insights.add("Exceptional budget discipline! All categories remained safely within established limits.");
+        }
+
+        long completedGoals = savingsGoals.stream()
+                .filter(g -> "COMPLETED".equalsIgnoreCase(g.getStatus()) || (g.getTargetAmount() != null && g.getCurrentAmount() != null && g.getCurrentAmount().compareTo(g.getTargetAmount()) >= 0))
+                .count();
+        if (completedGoals > 0) {
+            insights.add(String.format("Congratulations! You have %d completed savings milestone%s.", completedGoals, completedGoals > 1 ? "s" : ""));
+        }
+
+        String userCurrency = user.getCurrency() != null ? user.getCurrency() : "INR";
+        String period = monthName + " " + year;
+
         return new MonthlyReportDto(
-                monthTitle,
+                period,
                 year,
                 month,
                 totalOutflow,
                 totalIncome,
                 netCashFlow,
                 savingsRate,
-                currency,
+                userCurrency,
                 expenses.size(),
                 dailyAverage,
                 highestExpenseAmount,
@@ -283,7 +278,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 budgetStatuses,
                 topExpenses,
                 incomeDtos,
-                savingsGoalDtos
+                goalDtos
         );
     }
 
@@ -296,43 +291,35 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()) {
-            log.warn("Email service disabled or SMTP host not configured (spring.mail.host). Cannot send monthly report email for {}.", user.getEmail());
-            saveReportLog(user, year, month, false, "Email service disabled or SMTP host not configured");
-            throw new IllegalStateException("Email service is not configured. You can download the report instead.");
-        }
-
-        boolean alreadySent = reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(user, year, month);
-        if (alreadySent) {
-            log.info("Monthly report for {}/{} already sent to {}. Skipping.", month, year, user.getEmail());
+        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank() || mailSenderProvider.getIfAvailable() == null) {
+            log.info("Email delivery disabled or unconfigured. Audit logging report generation for userId={}", userId);
+            saveReportLog(user, year, month, true, "Email delivery disabled or unconfigured - report log recorded");
             return;
-        }
-
-        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-        if (mailSender == null) {
-            log.warn("JavaMailSender bean unavailable. Skipping monthly report email for {}.", user.getEmail());
-            saveReportLog(user, year, month, false, "JavaMailSender bean unavailable");
-            throw new IllegalStateException("Email service is unavailable. You can download the report instead.");
         }
 
         try {
             MonthlyReportDto report = generateMonthlyReport(userId, year, month);
-            String htmlContent = buildMonthlyReportHtml(escapeHtml(user.getName()), report);
+            String htmlContent = buildMonthlyReportHtml(user.getName(), report);
 
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+            if (mailSender == null) {
+                saveReportLog(user, year, month, false, "JavaMailSender not available");
+                return;
+            }
 
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setTo(user.getEmail());
-            helper.setSubject("📊 Executive Monthly Financial Report — " + report.period());
+            helper.setSubject(String.format("📊 Your Monthly Financial Intelligence Report — %s", report.period()));
             helper.setText(htmlContent, true);
 
-            mailSender.send(message);
+            mailSender.send(mimeMessage);
+            log.info("Successfully dispatched monthly report email to {} for period {}", user.getEmail(), report.period());
             saveReportLog(user, year, month, true, null);
-            log.info("Executive monthly report email successfully sent to {} for {}.", user.getEmail(), report.period());
         } catch (Exception e) {
-            log.error("Failed to send monthly report email to {} for {}/{}", user.getEmail(), month, year, e);
+            log.error("Failed to send monthly report email to user {}: {}", user.getEmail(), e.getMessage(), e);
             saveReportLog(user, year, month, false, e.getMessage());
-            throw new IllegalStateException("Unable to send email. You can download the report instead.", e);
+            throw new RuntimeException("Could not send monthly report email: " + e.getMessage(), e);
         }
     }
 
@@ -344,9 +331,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     public String generateMonthlyReportHtml(Long userId, int year, int month) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
-
         MonthlyReportDto report = generateMonthlyReport(userId, year, month);
-        return buildMonthlyReportHtml(escapeHtml(user.getName()), report);
+        return buildMonthlyReportHtml(user.getName(), report);
     }
 
     private void saveReportLog(User user, int year, int month, boolean success, String errorMsg) {
@@ -551,7 +537,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
               .email-container { max-width: 660px; margin: 30px auto; background: #131711; border: 1px solid rgba(236, 231, 216, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.6); }
               .email-header { padding: 36px 32px; text-align: center; border-bottom: 1px solid rgba(236, 231, 216, 0.08); background: linear-gradient(180deg, rgba(199, 154, 62, 0.15) 0%%, rgba(19, 23, 17, 0) 100%%); }
               .brand-badge { display: inline-block; background: rgba(199, 154, 62, 0.15); border: 1px solid rgba(199, 154, 62, 0.3); border-radius: 999px; padding: 6px 18px; font-size: 13px; font-weight: 800; color: #c79a3e; letter-spacing: 0.5px; }
-              .stat-grid { display: table; width: 100%%; margin-bottom: 24px; }
+              .stat-grid { display: table; width: 100%%; margin-bottom: 24px; }\
               .stat-cell { display: table-cell; width: 50%%; padding: 6px; }
               .stat-box { background: #0b0d09; border: 1px solid rgba(236, 231, 216, 0.08); border-radius: 14px; padding: 18px 14px; text-align: center; }
               .hero-card { background: #0b0d09; border: 1px solid #c79a3e; border-radius: 16px; padding: 26px; text-align: center; margin-bottom: 24px; }
