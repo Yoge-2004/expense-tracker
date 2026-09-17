@@ -95,6 +95,11 @@ def prepare_dataframe(
         if "record_id" in chunk:
             chunk["record_id"] = chunk["record_id"].map(normalize_optional_text)
 
+        # Rows with no usable training text/label are not taxonomy violations.
+        # Remove them before canonicalization so a missing FinEE category does
+        # not become the misleading "source:" unmapped-label error.
+        chunk = chunk[(chunk["text"] != "") & (chunk["label"] != "")]
+
         if canonicalize:
             mapped = []
             for source, label in zip(chunk["source"], chunk["label"], strict=True):
