@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MlFeedbackRepository extends JpaRepository<MlFeedback, Long> {
+    long countByTrainingStatus(String trainingStatus);
+
     List<MlFeedback> findByTrainingStatusAndIdGreaterThanOrderByIdAsc(
             String trainingStatus, Long id, Pageable pageable);
 
