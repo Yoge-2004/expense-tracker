@@ -22,7 +22,10 @@ def normalize_category(label: object) -> str:
     if label is None or pd.isna(label):
         return ""
     value = unicodedata.normalize("NFKC", str(label)).strip().lower()
-    value = re.sub(r"[_-]+", " ", value)
+    # Preserve underscore-delimited canonical category IDs such as
+    # ``food_dining``. Taxonomy source-label matching is responsible for
+    # normalizing separators when it evaluates raw source labels.
+    value = value.replace("-", " ")
     return re.sub(r"\s+", " ", value)
 
 
