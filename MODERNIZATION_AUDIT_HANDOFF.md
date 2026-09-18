@@ -463,3 +463,20 @@ Fulfill the user requirement ("Now we are going to write the testing scripts" an
 - **Cucumber BDD Suite:** 44/44 scenarios passed, 306/306 steps passed (100% success rate across all 8 feature files).
 - **Backend Test Suite:** 305 tests executed, 0 failures, 0 errors, 2 skipped (Playwright headless in non-CI environment).
 - **Full Maven Build:** 100% BUILD SUCCESS.
+
+## 10. Components layer migration progress
+
+Round 1 (da0b050): 13 files with zero selector overlap anywhere in the
+tree. Round 2 (3dda234): 4 more files that share a selector string with
+a file still in `legacy`, cleared by checking the actual declared
+properties on the shared selector are disjoint (or identical-value) in
+every case - see style.css's own comment above the round-2 imports for
+the full per-pair reasoning. Both rounds verified via real-Chromium CI
+(Playwright UI and WebAuthn checks passes on both).
+
+17 files now in `components`. Remaining `legacy` files mostly have
+denser, more genuine overlap (reports.css, modals.css, ui-regression-
+fixes.css, the animations/ tree) - future rounds should keep using the
+same method (selector-string overlap first, then property-level check
+before ruling a file unsafe) but expect smaller batches and more
+multi-file groups as the easy candidates run out.
