@@ -107,7 +107,7 @@ def train_all(
     cfg: TrainingConfig,
     run_dir: Path,
     *,
-    include_transformer: bool = True,
+    include_transformer: bool = False,
     dataset_manifest: list[dict] | None = None,
 ) -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -241,7 +241,7 @@ def train_all(
         }
         bar.update(1)
 
-        _stage(bar, "Transformer classifier — validation")
+        _stage(bar, "Optional transformer classifier — validation")
         if include_transformer:
             if splits.validation.empty:
                 raise ValueError("Transformer training requires a non-empty validation split.")
@@ -516,7 +516,7 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=Path("config/datasets.yaml"))
     parser.add_argument("--prepared", type=Path, default=Path("data/prepared/transactions.parquet"))
     parser.add_argument("--output", type=Path, default=Path("artifacts/master-runs"))
-    parser.add_argument("--no-transformer", action="store_true")
+    parser.add_argument("--with-transformer", action="store_true", help="Opt in to transformer training; disabled by default.")
     args = parser.parse_args()
 
     frame, cfg, dataset_manifest = load_input(args.config, args.prepared)
@@ -525,7 +525,7 @@ def main() -> None:
         frame,
         cfg,
         run_dir,
-        include_transformer=not args.no_transformer,
+        include_transformer=args.with_transformer,
         dataset_manifest=dataset_manifest,
     )
     print(json.dumps(manifest, indent=2))
