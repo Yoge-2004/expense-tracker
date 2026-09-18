@@ -202,6 +202,11 @@ def fetch_huggingface_dataset(
     normalize_chunk_size: int = 250_000,
 ) -> tuple[pd.DataFrame, FetchedDataset]:
     """Fetch, validate, normalize, and cache one dataset with configuration provenance."""
+    if default_country == "unknown" and source in {"finee-india", "synthetic-indian-transactions"}:
+        default_country = "India"
+    if default_currency == "unknown" and source in {"finee-india", "synthetic-indian-transactions"}:
+        default_currency = "INR"
+
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
 

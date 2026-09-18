@@ -10,11 +10,13 @@ def test_training_job_uses_explicit_paths_and_returns_completed_manifest(tmp_pat
     output = tmp_path / "runs"
     pd.DataFrame(
         [
-            {"text": "grocery one", "label": "food_dining", "source": "fixture", "country": "India"},
-            {"text": "ride one", "label": "transportation", "source": "fixture", "country": "India"},
-            {"text": "grocery two", "label": "food_dining", "source": "fixture", "country": "India"},
-            {"text": "ride two", "label": "transportation", "source": "fixture", "country": "India"},
-        ] * 10
+            {"text": f"grocery item {i}", "label": "food_dining", "source": "fixture", "country": "India"}
+            for i in range(25)
+        ]
+        + [
+            {"text": f"ride trip {i}", "label": "transportation", "source": "fixture", "country": "India"}
+            for i in range(25)
+        ]
     ).to_parquet(prepared, index=False)
 
     manifest = run_training_job(Path("config/datasets.yaml"), prepared, output, include_transformer=False)
