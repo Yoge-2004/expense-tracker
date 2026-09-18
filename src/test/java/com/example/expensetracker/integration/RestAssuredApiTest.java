@@ -31,6 +31,9 @@ class RestAssuredApiTest {
     private static Long registeredUserId;
     private static Long createdCategoryId;
     private static Long createdExpenseId;
+    private static Long createdIncomeId;
+    private static Long createdSavingsGoalId;
+    private static String userBToken;
 
     @BeforeEach
     void setUp() {
@@ -314,5 +317,295 @@ class RestAssuredApiTest {
                 .body("id", equalTo(registeredUserId.intValue()))
                 .body("email", equalTo("itest@example.com"))
                 .body("currency", equalTo("INR"));
+    }
+
+    // ─── 6. HEALTH & SYSTEM STATUS ──────────────────────────────────────────
+
+    @Test
+    @Order(15)
+    @DisplayName("GET /api/health - Public health check returns UP status")
+    void healthCheckReturnsUp() {
+        given()
+        .when()
+                .get("/api/health")
+        .then()
+                .statusCode(200)
+                .body("status", equalTo("UP"));
+    }
+
+    // ─── 7. INCOMES API CRUD & CASH FLOW ────────────────────────────────────
+
+    @Test
+    @Order(16)
+    @DisplayName("POST /api/incomes/user/{userId} - Creates income record successfully")
+    void createIncomeSuccessfully() {
+        Map<String, Object> incomeRequest = Map.of(
+                "amount", 15000.0,
+                "source", "Consulting Retainer",
+                "description", "Q3 Advisory",
+                "incomeDate", LocalDate.now().toString(),
+                "isRecurring", false
+        );
+
+        var response = given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(ContentType.JSON)
+                .body(incomeRequest)
+        .when()
+                .post("/api/incomes/user/" + registeredUserId)
+        .then()
+                .statusCode(201)
+                .body("id", notNullValue())
+                .body("amount", equalTo(15000.0f))
+                .body("source", equalTo("Consulting Retainer"))
+                .extract();
+
+        createdIncomeId = ((Number) response.path("id")).longValue();
+        Assertions.assertNotNull(createdIncomeId);
+    }
+
+    @Test
+    @Order(17)
+    @DisplayName("POST /api/incomes/user/{userId} - Screaming 400 on blank source")
+    void createIncomeWithBlankSourceFails() {
+        Map<String, Object> invalidIncome = Map.of(
+                "amount", 5000.0,
+                "source", "   ",
+                "incomeDate", LocalDate.now().toString()
+        );
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(ContentType.JSON)
+                .body(invalidIncome)
+        .when()
+                .post("/api/incomes/user/" + registeredUserId)
+        .then()
+                .statusCode(400)
+                .body("status", equalTo(400));
+    }
+
+    @Test
+    @Order(18)
+    @DisplayName("GET /api/incomes/user/{userId} - Retrieves income records for user")
+    void getIncomesSuccessfully() {
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+        .when()
+                .get("/api/incomes/user/" + registeredUserId)
+        .then()
+                .statusCode(200)
+                .body("$", not(empty()))
+                .body("find { it.id == " + createdIncomeId + " }.source",
+                        equalTo("Consulting Retainer"));
+    }
+
+    @Test
+    @Order(19)
+    @DisplayName("GET /api/incomes/summary/user/{userId} - Computes monthly cash flow summary")
+    void getCashFlowSummarySuccessfully() {
+        LocalDate today = LocalDate.now();
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .queryParam("year", today.getYear())
+                .queryParam("month", today.getMonthValue())
+        .when()
+                .get("/api/incomes/summary/user/" + registeredUserId)
+        .then()
+                .statusCode(200)
+                .body("totalIncome", notNullValue())
+                .body("netSavings", notNullValue())
+                .body("savingsRate", notNullValue());
+    }
+
+    @Test
+    @Order(20)
+    @DisplayName("DELETE /api/incomes/{id}/user/{userId} - Deletes income record")
+    void deleteIncomeSuccessfully() {
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+        .when()
+                .delete("/api/incomes/" + createdIncomeId + "/user/" + registeredUserId)
+        .then()
+                .statusCode(204);
+    }
+
+    // ─── 8. SAVINGS GOALS API CRUD & DEPOSITS ───────────────────────────────
+
+    @Test
+    @Order(21)
+    @DisplayName("POST /api/savings/goals/user/{userId} - Creates savings goal successfully")
+    void createSavingsGoalSuccessfully() {
+        Map<String, Object> goalRequest = Map.of(
+                "name", "Emergency Tech Reserve",
+                "targetAmount", 50000.0,
+                "currentAmount", 10000.0,
+                "targetDate", LocalDate.now().plusMonths(6).toString()
+        );
+
+        var response = given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(ContentType.JSON)
+                .body(goalRequest)
+        .when()
+                .post("/api/savings/goals/user/" + registeredUserId)
+        .then()
+                .statusCode(201)
+                .body("id", notNullValue())
+                .body("name", equalTo("Emergency Tech Reserve"))
+                .body("targetAmount", equalTo(50000.0f))
+                .extract();
+
+        createdSavingsGoalId = ((Number) response.path("id")).longValue();
+        Assertions.assertNotNull(createdSavingsGoalId);
+    }
+
+    @Test
+    @Order(22)
+    @DisplayName("POST /api/savings/goals/{id}/deposit/user/{userId} - Deposits into savings goal")
+    void depositToSavingsGoalSuccessfully() {
+        Map<String, Object> depositRequest = Map.of("amount", 15000.0);
+
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(ContentType.JSON)
+                .body(depositRequest)
+        .when()
+                .post("/api/savings/goals/" + createdSavingsGoalId + "/deposit/user/" + registeredUserId)
+        .then()
+                .statusCode(200)
+                .body("currentAmount", equalTo(25000.0f))
+                .body("progressPercentage", equalTo(50.0f));
+    }
+
+    @Test
+    @Order(23)
+    @DisplayName("GET /api/savings/goals/user/{userId} - Retrieves savings goals list")
+    void getSavingsGoalsSuccessfully() {
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+        .when()
+                .get("/api/savings/goals/user/" + registeredUserId)
+        .then()
+                .statusCode(200)
+                .body("$", not(empty()))
+                .body("find { it.id == " + createdSavingsGoalId + " }.name",
+                        equalTo("Emergency Tech Reserve"));
+    }
+
+    // ─── 9. REPORTS & FINANCIAL EXPORTS ─────────────────────────────────────
+
+    @Test
+    @Order(24)
+    @DisplayName("GET /api/reports/monthly/user/{userId} - Retrieves comprehensive monthly report")
+    void getMonthlyReportSuccessfully() {
+        LocalDate today = LocalDate.now();
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .queryParam("year", today.getYear())
+                .queryParam("month", today.getMonthValue())
+        .when()
+                .get("/api/reports/monthly/user/" + registeredUserId)
+        .then()
+                .statusCode(200)
+                .body("year", equalTo(today.getYear()))
+                .body("month", equalTo(today.getMonthValue()));
+    }
+
+    @Test
+    @Order(25)
+    @DisplayName("GET /api/reports/user/{userId}/export/excel - Exports financial statement Excel sheet")
+    void exportFinancialStatementExcel() {
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+        .when()
+                .get("/api/reports/user/" + registeredUserId + "/export/excel")
+        .then()
+                .statusCode(200)
+                .header("Content-Type", containsString("spreadsheetml"))
+                .header("Content-Disposition", containsString(".xlsx"));
+    }
+
+    @Test
+    @Order(26)
+    @DisplayName("GET /api/reports/user/{userId}/export/pdf - Exports financial statement PDF document")
+    void exportFinancialStatementPdf() {
+        given()
+                .header("Authorization", "Bearer " + jwtToken)
+        .when()
+                .get("/api/reports/user/" + registeredUserId + "/export/pdf")
+        .then()
+                .statusCode(200)
+                .header("Content-Type", equalTo("application/pdf"))
+                .header("Content-Disposition", containsString(".pdf"));
+    }
+
+    // ─── 10. TENANT ISOLATION & SCREAMING ACCESS DENIED ─────────────────────
+
+    @Test
+    @Order(27)
+    @DisplayName("Registers secondary user B for cross-tenant authorization testing")
+    void registerUserB() {
+        Map<String, Object> registerRequest = Map.of(
+                "name", "Tenant Isolator",
+                "username", "tenant_user_b",
+                "email", "tenant_b@example.com",
+                "password", "SecureP@ssw0rd456!",
+                "currency", "USD"
+        );
+
+        var response = given()
+                .contentType(ContentType.JSON)
+                .body(registerRequest)
+        .when()
+                .post("/api/auth/register")
+        .then()
+                .statusCode(201)
+                .extract();
+
+        Long userBId = ((Number) response.path("id")).longValue();
+        Assertions.assertNotNull(userBId);
+
+        var loginResp = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", "tenant_b@example.com", "password", "SecureP@ssw0rd456!"))
+        .when()
+                .post("/api/auth/login")
+        .then()
+                .statusCode(200)
+                .extract();
+
+        userBToken = loginResp.path("token");
+        Assertions.assertNotNull(userBToken);
+    }
+
+    @Test
+    @Order(28)
+    @DisplayName("User B accessing User A expenses screams 403 Forbidden Access Denied")
+    void userBCannotAccessUserAExpenses() {
+        given()
+                .header("Authorization", "Bearer " + userBToken)
+        .when()
+                .get("/api/expenses/user/" + registeredUserId)
+        .then()
+                .statusCode(403)
+                .body("status", equalTo(403))
+                .body("error", equalTo("Forbidden"));
+    }
+
+    @Test
+    @Order(29)
+    @DisplayName("User B mutating User A savings goal screams 403 Forbidden Access Denied")
+    void userBCannotDepositToUserAGoal() {
+        given()
+                .header("Authorization", "Bearer " + userBToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("amount", 100.0))
+        .when()
+                .post("/api/savings/goals/" + createdSavingsGoalId + "/deposit/user/" + registeredUserId)
+        .then()
+                .statusCode(403)
+                .body("status", equalTo(403))
+                .body("error", equalTo("Forbidden"));
     }
 }

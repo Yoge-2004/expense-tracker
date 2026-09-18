@@ -38,8 +38,6 @@
         <cucumber.version>7.34.7</cucumber.version>
         <rest-assured.version>6.0.1</rest-assured.version>
         <groovy.version>5.0.8</groovy.version>
-        <selenium.version>4.48.0</selenium.version>
-        <webdrivermanager.version>6.3.4</webdrivermanager.version>
         <playwright.version>1.51.0</playwright.version>
         <sonar-maven-plugin.version>5.0.0.4389</sonar-maven-plugin.version>
         <sonar.projectKey>expense-tracker</sonar.projectKey>
@@ -221,25 +219,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Testing: Web & Browser Automation -->
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>${selenium.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>htmlunit3-driver</artifactId>
-            <version>${selenium.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.github.bonigarcia</groupId>
-            <artifactId>webdrivermanager</artifactId>
-            <version>${webdrivermanager.version}</version>
-            <scope>test</scope>
-        </dependency>
+        <!-- Testing: Modern Browser Automation (Microsoft Playwright) -->
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
