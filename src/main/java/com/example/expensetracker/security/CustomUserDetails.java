@@ -4,6 +4,8 @@ import com.example.expensetracker.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import lombok.Getter;
+import org.jspecify.annotations.NonNull;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -26,6 +28,7 @@ import java.util.Collections;
  * @see CustomUserDetailsService
  * @see User
  */
+@Getter
 public class CustomUserDetails implements UserDetails {
 
     /**
@@ -34,6 +37,7 @@ public class CustomUserDetails implements UserDetails {
      * authentication, so {@code CustomUserDetails} instances are never
      * actually serialised; this field satisfies the compiler contract.
      */
+    @java.io.Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -52,18 +56,7 @@ public class CustomUserDetails implements UserDetails {
         this.user = user;
     }
 
-    /**
-     * Returns the domain {@link User} entity wrapped by this details object.
-     *
-     * <p>Used in controllers and services to obtain the full user object
-     * after authentication (e.g., via
-     * {@link com.example.expensetracker.security.JwtAuthenticationFilter}).</p>
-     *
-     * @return the underlying {@link User} entity
-     */
-    public User getUser() {
-        return user;
-    }
+
 
     /**
      * Returns the granted authorities for this user.
@@ -75,7 +68,7 @@ public class CustomUserDetails implements UserDetails {
      * @return an empty, unmodifiable collection of {@link GrantedAuthority}
      */
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.emptyList();
     }
 
@@ -98,7 +91,7 @@ public class CustomUserDetails implements UserDetails {
      * @return the user's email address
      */
     @Override
-    public String getUsername() {
+    public @NonNull String getUsername() {
         return user.getEmail();
     }
 

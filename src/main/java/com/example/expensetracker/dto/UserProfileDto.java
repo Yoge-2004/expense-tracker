@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author Yogeshwaran
  */
 @Schema(description = "Complete profile and preferences for the authenticated user")
+@SuppressWarnings("unused")
 public record UserProfileDto(
         @Schema(description = "Unique database ID of the user", example = "1")
         Long id,

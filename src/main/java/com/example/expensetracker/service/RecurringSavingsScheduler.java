@@ -29,6 +29,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Transactional
 public class RecurringSavingsScheduler {
 
     private final SavingsGoalRepository savingsGoalRepository;
@@ -56,7 +57,8 @@ public class RecurringSavingsScheduler {
                             : BigDecimal.ZERO;
 
                     if (installment.compareTo(BigDecimal.ZERO) > 0) {
-                        BigDecimal current = goal.getCurrentAmount() != null ? goal.getCurrentAmount() : BigDecimal.ZERO;
+                        BigDecimal current = goal.getCurrentAmount() != null
+                            ? goal.getCurrentAmount() : BigDecimal.ZERO;
                         BigDecimal updated = current.add(installment);
                         goal.setCurrentAmount(updated);
 
@@ -71,7 +73,8 @@ public class RecurringSavingsScheduler {
 
                     LocalDate nextDate = nextOccurrence(goal);
                     if (!nextDate.isAfter(goal.getNextDueDate())) {
-                        log.warn("Recurring savings goal {} next date {} is not after current due date {}", goal.getId(), nextDate, goal.getNextDueDate());
+                        log.warn("Recurring savings goal {} next date {} is not after current due date {}",
+                                goal.getId(), nextDate, goal.getNextDueDate());
                         goal.setNextDueDate(goal.getNextDueDate().plusMonths(1));
                     } else {
                         goal.setNextDueDate(nextDate);
@@ -82,10 +85,12 @@ public class RecurringSavingsScheduler {
             } catch (Exception itemEx) {
                 failedCount++;
                 log.error("CRITICAL: Failed to process recurring savings installment for goal id={} userId={}: {}",
-                        goal.getId(), goal.getUser() != null ? goal.getUser().getId() : "null", itemEx.getMessage(), itemEx);
+                        goal.getId(), goal.getUser() != null ? goal.getUser().getId() : "null",
+                                itemEx.getMessage(), itemEx);
             }
         }
-        log.info("Finished processing recurring savings goals. Processed {} installments, {} failures.", processedCount, failedCount);
+        log.info("Finished processing recurring savings goals. Processed {} installments, {} failures.",
+                processedCount, failedCount);
     }
 
     /**

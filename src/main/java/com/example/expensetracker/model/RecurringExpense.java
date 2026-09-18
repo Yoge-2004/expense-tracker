@@ -79,15 +79,5 @@ public class RecurringExpense {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public RecurringExpense(Long id, BigDecimal amount, String description,
-                            String frequency, LocalDate nextDueDate,
-                            Category category, User user) {
-        this.id = id;
-        this.amount = amount;
-        this.description = description;
-        this.frequency = frequency;
-        this.nextDueDate = nextDueDate;
-        this.category = category;
-        this.user = user;
-    }
+
 }

@@ -6,10 +6,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /** Request body for PUT /api/auth/reset-password. */
-@Schema(description = "Identifies the account, proves control via 6-digit Security PIN or email OTP, and supplies the new password")
+@Schema(description = "Identifies the account, proves control via 6-digit Security PIN or email OTP, "
+        + "and supplies the new password")
 public record ResetPasswordRequest(
         @NotBlank(message = "Email is required")
-        @Schema(description = "Email address of the account whose password will be reset", example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Email address of the account whose password will be reset",
+                example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
 
         @Schema(description = "6-digit one-time code sent to email OR 6-digit Security PIN", example = "123456")
@@ -20,11 +22,13 @@ public record ResetPasswordRequest(
 
         @NotBlank(message = "New password is required")
         @Size(min = 6, message = "Password must be at least 6 characters")
-        @Schema(description = "New plain-text password — BCrypt-encoded before storage", example = "newSecret456", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "New plain-text password — BCrypt-encoded before storage",
+                example = "newSecret456", requiredMode = Schema.RequiredMode.REQUIRED)
         String newPassword
 ) {
 
     @AssertTrue(message = "OTP or Security PIN is required")
+    @SuppressWarnings("unused")
     public boolean isVerificationCodePresent() {
         return (otp != null && !otp.isBlank()) || (securityPin != null && !securityPin.isBlank());
     }

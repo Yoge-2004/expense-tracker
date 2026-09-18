@@ -4,6 +4,7 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -50,9 +51,10 @@ public class CustomUserDetailsService implements UserDetailsService {
      * @throws UsernameNotFoundException if no user exists with the given email address
      */
     @Override
-    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
-            log.warn("loadUserByUsername failed: identifier is null or blank");
+    public @NonNull UserDetails loadUserByUsername(@NonNull String usernameOrEmail)
+            throws UsernameNotFoundException {
+        if (usernameOrEmail.isBlank()) {
+            log.warn("loadUserByUsername failed: identifier is blank");
             throw new UsernameNotFoundException("Username or email must not be blank.");
         }
         String query = usernameOrEmail.trim();

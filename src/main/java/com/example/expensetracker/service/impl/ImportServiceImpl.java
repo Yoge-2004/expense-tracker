@@ -127,8 +127,7 @@ public class ImportServiceImpl implements ImportService {
                         continue;
                     }
 
-                    final String resolvedCat = catStr;
-                    Category category = resolveOrCreateCategoryForUser(resolvedCat, user, categoryCache);
+                    Category category = resolveOrCreateCategoryForUser(catStr, user, categoryCache);
 
                     Expense exp = new Expense();
                     exp.setExpenseDate(LocalDate.parse(dateStr));
@@ -149,10 +148,10 @@ public class ImportServiceImpl implements ImportService {
             throw new RuntimeException("Failed to read CSV file: " + e.getMessage(), e);
         }
 
-        if (count == 0 && rowErrors.isEmpty()) {
-            throw new IllegalArgumentException("CSV file contains no expense data rows to import");
-        }
-        if (count == 0 && !rowErrors.isEmpty()) {
+        if (count == 0) {
+            if (rowErrors.isEmpty()) {
+                throw new IllegalArgumentException("CSV file contains no expense data rows to import");
+            }
             throw new IllegalArgumentException("Failed to import expenses: all " + rowErrors.size()
                     + " rows failed (" + String.join("; ", rowErrors) + ")");
         }
@@ -317,10 +316,10 @@ public class ImportServiceImpl implements ImportService {
             throw new RuntimeException("Failed to read Excel workbook: " + e.getMessage(), e);
         }
 
-        if (count == 0 && errors.isEmpty()) {
-            throw new IllegalArgumentException("Excel sheet contains no expense data rows to import");
-        }
-        if (count == 0 && !errors.isEmpty()) {
+        if (count == 0) {
+            if (errors.isEmpty()) {
+                throw new IllegalArgumentException("Excel sheet contains no expense data rows to import");
+            }
             throw new IllegalArgumentException("Failed to import expenses: all " + errors.size()
                     + " rows failed (" + String.join("; ", errors) + ")");
         }
@@ -421,10 +420,10 @@ public class ImportServiceImpl implements ImportService {
             throw new RuntimeException("Failed to read CSV file: " + e.getMessage(), e);
         }
 
-        if (count == 0 && rowErrors.isEmpty()) {
-            throw new IllegalArgumentException("CSV file contains no income data rows to import");
-        }
-        if (count == 0 && !rowErrors.isEmpty()) {
+        if (count == 0) {
+            if (rowErrors.isEmpty()) {
+                throw new IllegalArgumentException("CSV file contains no income data rows to import");
+            }
             throw new IllegalArgumentException("Failed to import incomes: all " + rowErrors.size()
                     + " rows failed (" + String.join("; ", rowErrors) + ")");
         }
@@ -585,10 +584,10 @@ public class ImportServiceImpl implements ImportService {
             throw new RuntimeException("Failed to read Excel workbook: " + e.getMessage(), e);
         }
 
-        if (count == 0 && errors.isEmpty()) {
-            throw new IllegalArgumentException("Excel sheet contains no income data rows to import");
-        }
-        if (count == 0 && !errors.isEmpty()) {
+        if (count == 0) {
+            if (errors.isEmpty()) {
+                throw new IllegalArgumentException("Excel sheet contains no income data rows to import");
+            }
             throw new IllegalArgumentException("Failed to import incomes: all " + errors.size()
                     + " rows failed (" + String.join("; ", errors) + ")");
         }
@@ -677,7 +676,7 @@ public class ImportServiceImpl implements ImportService {
     }
 
     private LocalDate parseCellDate(Cell cell, String fallbackStr) {
-        if (cell != null && DateUtil.isCellDateFormatted(cell)) {
+        if (DateUtil.isCellDateFormatted(cell)) {
             Date d = cell.getDateCellValue();
             return d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         }

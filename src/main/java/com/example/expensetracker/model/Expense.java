@@ -55,7 +55,7 @@ public class Expense extends BaseEntity {
      * (e.g., "Lunch at office canteen", "Monthly electricity bill").
      * Maximum length is 255 characters.
      */
-    @Column(length = 255)
+    @Column
     private String description;
 
     /**

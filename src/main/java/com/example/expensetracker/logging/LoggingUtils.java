@@ -25,7 +25,7 @@ public final class LoggingUtils {
         }
         String local = clean.substring(0, atIndex);
         String domain = clean.substring(atIndex);
-        if (local.length() <= 2) {
+        if (local.length() == 2) {
             return local.charAt(0) + "***" + domain;
         }
         return local.charAt(0) + "***" + local.charAt(local.length() - 1) + domain;

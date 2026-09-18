@@ -28,6 +28,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Transactional
 public class RecurringIncomeScheduler {
 
     private final IncomeRepository incomeRepository;
@@ -63,7 +64,8 @@ public class RecurringIncomeScheduler {
 
                     LocalDate nextDate = nextOccurrence(rec);
                     if (!nextDate.isAfter(rec.getNextDueDate())) {
-                        log.warn("Recurring income {} next date {} is not after current due date {}", rec.getId(), nextDate, rec.getNextDueDate());
+                        log.warn("Recurring income {} next date {} is not after current due date {}",
+                                rec.getId(), nextDate, rec.getNextDueDate());
                         rec.setNextDueDate(rec.getNextDueDate().plusMonths(1));
                     } else {
                         rec.setNextDueDate(nextDate);
@@ -74,10 +76,12 @@ public class RecurringIncomeScheduler {
             } catch (Exception itemEx) {
                 failedCount++;
                 log.error("CRITICAL: Failed to process recurring income id={} for userId={}: {}",
-                        rec.getId(), rec.getUser() != null ? rec.getUser().getId() : "null", itemEx.getMessage(), itemEx);
+                        rec.getId(), rec.getUser() != null ? rec.getUser().getId() : "null",
+                                itemEx.getMessage(), itemEx);
             }
         }
-        log.info("Finished processing recurring incomes. Processed {} occurrences, {} failures.", processedCount, failedCount);
+        log.info("Finished processing recurring incomes. Processed {} occurrences, {} failures.",
+                processedCount, failedCount);
     }
 
     /**

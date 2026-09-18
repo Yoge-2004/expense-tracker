@@ -82,7 +82,9 @@ public class AuthController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = AuthResponse.class),
                 examples = @ExampleObject(name = "auth-login-200",
-                    value = "{ \"token\": \"eyJ...\", \"userId\": 1, \"name\": \"John Doe\", \"currency\": \"INR\" }"))),
+                    value = """
+                        {"token": "eyJ...", "userId": 1, "name": "John Doe", "currency": "INR"}
+                        """))),
         @ApiResponse(responseCode = "401", description = "Invalid email or password",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class))),
@@ -95,7 +97,7 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/login")
-    @RateLimited(key = "auth-login", maxRequests = 10, windowSeconds = 60, message = "Too many login attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-login", message = "Too many login attempts. Please try again in %d seconds.")
     public ResponseEntity<AuthResponse> login(
             @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
         String identifier = request.email() != null ? request.email().trim() : "";
@@ -141,7 +143,8 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/signup/send-otp")
-    @RateLimited(key = "auth-signup-otp", maxRequests = 5, windowSeconds = 300, message = "Too many OTP requests. Please try again in %d seconds.")
+    @RateLimited(key = "auth-signup-otp", maxRequests = 5, windowSeconds = 300,
+                 message = "Too many OTP requests. Please try again in %d seconds.")
     public ResponseEntity<Map<String, String>> sendSignupOtp(
             @Valid @org.springframework.web.bind.annotation.RequestBody SignupOtpRequest request) {
         log.info("Request received to send signup OTP for email={}", LoggingUtils.maskEmail(request.email()));
@@ -174,11 +177,14 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/register")
-    @RateLimited(key = "auth-register", maxRequests = 10, windowSeconds = 60, message = "Too many registration attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-register", message = "Too many registration attempts. Please try again in %d seconds.")
     public ResponseEntity<UserDto> register(
             @Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
-        log.info("Registration request received for email={}, username={}", LoggingUtils.maskEmail(request.email()), request.username());
-        if (emailVerificationEnabled || (request.otp() != null && !request.otp().isBlank() && !"BYPASS".equalsIgnoreCase(request.otp()))) {
+        log.info("Registration request received for email={}, username={}",
+                LoggingUtils.maskEmail(request.email()), request.username());
+        boolean hasOtp = request.otp() != null && !request.otp().isBlank()
+                && !"BYPASS".equalsIgnoreCase(request.otp());
+        if (emailVerificationEnabled || hasOtp) {
             passwordResetService.verifySignupOtp(request.email(), request.otp());
         }
 
@@ -197,7 +203,8 @@ public class AuthController {
     }
 
     @Operation(summary = "Request password reset",
-        description = "Initializes password recovery without revealing whether the email exists or which recovery factors are configured.")
+        description = "Initializes password recovery without revealing whether the email "
+                    + "exists or which recovery factors are configured.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Reset request processed"),
         @ApiResponse(responseCode = "429", description = "Too many password recovery requests (rate limit exceeded)",
@@ -206,7 +213,8 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/forgot-password")
-    @RateLimited(key = "auth-forgot-password", maxRequests = 5, windowSeconds = 300, message = "Too many password recovery requests. Please try again in %d seconds.")
+    @RateLimited(key = "auth-forgot-password", maxRequests = 5, windowSeconds = 300,
+                 message = "Too many password recovery requests. Please try again in %d seconds.")
     public ResponseEntity<Map<String, Object>> forgotPassword(
             @Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
         String email = request.email().trim();
@@ -244,7 +252,8 @@ public class AuthController {
     })
     @SecurityRequirements
     @PutMapping("/reset-password")
-    @RateLimited(key = "auth-reset-password", maxRequests = 5, windowSeconds = 600, message = "Too many password reset attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-reset-password", maxRequests = 5, windowSeconds = 600,
+                 message = "Too many password reset attempts. Please try again in %d seconds.")
     public ResponseEntity<Void> resetPassword(
             @Valid @org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
         log.info("Password reset execution requested for email={}", LoggingUtils.maskEmail(request.email()));
@@ -255,7 +264,8 @@ public class AuthController {
     }
 
     @Operation(summary = "OAuth Login / Signup",
-        description = "Authenticates or registers a user via Google Sign-In. Google OAuth users bypass the OTP signup flow.")
+        description = "Authenticates or registers a user via Google Sign-In. "
+                    + "Google OAuth users bypass the OTP signup flow.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Google OAuth login successful"),
         @ApiResponse(responseCode = "401", description = "Invalid Google ID token",
@@ -267,7 +277,8 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/oauth/google")
-    @RateLimited(key = "auth-oauth", maxRequests = 15, windowSeconds = 60, message = "Too many OAuth login attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-oauth", maxRequests = 15,
+                 message = "Too many OAuth login attempts. Please try again in %d seconds.")
     public ResponseEntity<AuthResponse> oauthLogin(
             @Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request) {
         log.info("Google OAuth login verification initiated");
@@ -312,7 +323,8 @@ public class AuthController {
         // Now we explicitly reject disabled/locked accounts with 401 Unauthorized,
         // matching the standard login flow's behavior.
         if (!user.isEnabled() || user.isAccountLocked()) {
-            log.warn("Google OAuth login rejected for disabled/locked account email={}", LoggingUtils.maskEmail(identity.email()));
+            log.warn("Google OAuth login rejected for disabled/locked account email={}",
+                    LoggingUtils.maskEmail(identity.email()));
             throw new org.springframework.security.authentication.BadCredentialsException(
                     "Account is disabled or locked. Please contact support.");
         }

@@ -26,7 +26,8 @@ public class HealthController {
     private final JdbcTemplate jdbcTemplate;
 
 
-    @Operation(summary = "Get system health status", description = "Checks database connectivity, JVM memory, and system uptime.")
+    @Operation(summary = "Get system health status",
+               description = "Checks database connectivity, JVM memory, and system uptime.")
     @SecurityRequirements
     @GetMapping
     public ResponseEntity<Map<String, Object>> getHealth() {
@@ -44,13 +45,11 @@ public class HealthController {
 
         boolean dbUp = false;
         try {
+            //noinspection SqlNoDataSourceInspection
             Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-            if (result != null && result == 1) {
-                dbUp = true;
-            }
+            dbUp = result != null && result == 1;
         } catch (Exception ex) {
             log.error("Database health check probe failed: {}", ex.getMessage());
-            dbUp = false;
         }
 
         if (dbUp) {

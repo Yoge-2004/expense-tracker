@@ -50,7 +50,7 @@ public class Income extends BaseEntity {
     /**
      * Optional textual description or notes regarding this income.
      */
-    @Column(length = 255)
+    @Column
     private String description;
 
     /**
@@ -98,7 +98,7 @@ public class Income extends BaseEntity {
         this.source = source;
         this.description = description;
         this.incomeDate = incomeDate;
-        this.isRecurring = isRecurring != null ? isRecurring : false;
+        this.isRecurring = Boolean.TRUE.equals(isRecurring);
         this.user = user;
     }
 

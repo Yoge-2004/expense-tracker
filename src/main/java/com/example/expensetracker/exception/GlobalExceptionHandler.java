@@ -190,7 +190,7 @@ public class GlobalExceptionHandler {
         String message = "A record with these details already exists.";
         // Try to extract a more user-friendly hint from the underlying constraint name.
         Throwable root = ex.getMostSpecificCause();
-        if (root != null && root.getMessage() != null) {
+        if (root.getMessage() != null) {
             String lower = root.getMessage().toLowerCase(java.util.Locale.ROOT);
             if (lower.contains("category") || lower.contains("uk_category")) {
                 message = "A category with this name already exists for this user.";
@@ -434,7 +434,8 @@ public class GlobalExceptionHandler {
             HttpMediaTypeNotAcceptableException ex,
             HttpServletRequest request) {
 
-        log.warn("Acceptable media types cannot be produced for URI '{}': {}", request.getRequestURI(), ex.getMessage());
+        log.warn("Acceptable media types cannot be produced for URI '{}': {}",
+                request.getRequestURI(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_ACCEPTABLE.value(),
@@ -528,7 +529,8 @@ public class GlobalExceptionHandler {
             org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex,
             HttpServletRequest request) {
 
-        log.warn("Type mismatch at '{}': parameter '{}' with value '{}'", request.getRequestURI(), ex.getName(), ex.getValue());
+        log.warn("Type mismatch at '{}': parameter '{}' with value '{}'",
+                request.getRequestURI(), ex.getName(), ex.getValue());
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),

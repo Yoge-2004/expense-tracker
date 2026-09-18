@@ -30,7 +30,7 @@ public class ExpenseTrackerSystemApplication {
      *
      * @param args command-line arguments passed at startup (not used directly)
      */
-    public static void main(String[] args) {
+    static void main(String[] args) {
         log.info("Starting Expense Tracker Application...");
         SpringApplication.run(ExpenseTrackerSystemApplication.class, args);
         log.info("Expense Tracker Application started successfully.");

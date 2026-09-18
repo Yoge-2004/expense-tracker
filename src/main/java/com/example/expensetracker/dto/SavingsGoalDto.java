@@ -39,7 +39,8 @@ public record SavingsGoalDto(
         @Schema(description = "Recurring installment deposit amount", example = "5000.00")
         BigDecimal recurringAmount,
 
-        @Schema(description = "Installment frequency (DAILY, WEEKLY, BI_WEEKLY, MONTHLY, YEARLY, CUSTOM)", example = "MONTHLY")
+        @Schema(description = "Installment frequency (DAILY, WEEKLY, BI_WEEKLY, MONTHLY, YEARLY, CUSTOM)",
+                example = "MONTHLY")
         String frequency,
 
         @Schema(description = "Interval in days if custom cadence", example = "30")
@@ -51,9 +52,5 @@ public record SavingsGoalDto(
         @Schema(description = "Optional end date for recurring contributions", example = "2027-12-31")
         LocalDate endDate
 ) {
-    public SavingsGoalDto(Long id, String name, BigDecimal targetAmount, BigDecimal currentAmount,
-                          LocalDate targetDate, String status, double progressPercentage) {
-        this(id, name, targetAmount, currentAmount, targetDate, status, progressPercentage,
-                null, null, null, null, null, null);
-    }
+
 }

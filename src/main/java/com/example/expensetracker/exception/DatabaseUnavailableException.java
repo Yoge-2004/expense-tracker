@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * real outage would.</p>
  */
 @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+@SuppressWarnings("unused")
 public class DatabaseUnavailableException extends RuntimeException {
     public DatabaseUnavailableException(String message) {
         super(message);

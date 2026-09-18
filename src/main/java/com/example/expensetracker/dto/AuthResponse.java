@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "JWT Bearer token and complete user identity profile returned after successful authentication")
 public record AuthResponse(
-        @Schema(description = "Signed JWT Bearer token. Pass as: Authorization: Bearer <token>", example = "eyJhbGciOiJIUzI1NiJ9...")
+        @Schema(description = "Signed JWT Bearer token. Pass as: Authorization: Bearer <token>",
+                example = "eyJhbGciOiJIUzI1NiJ9...")
         String token,
 
         @Schema(description = "Unique database ID of the authenticated user", example = "1")
@@ -28,15 +29,10 @@ public record AuthResponse(
         @Schema(description = "Preferred display currency of the authenticated user (ISO 4217)", example = "INR")
         String currency,
 
-        @Schema(description = "Whether the user has configured a 6-digit Security PIN for zero-email recovery", example = "true")
+        @Schema(description = "Whether the user has configured a 6-digit Security PIN for zero-email recovery",
+                example = "true")
         Boolean hasSecurityPin
 ) {
 
-    public AuthResponse(String token, Long userId, String name, String currency) {
-        this(token, userId, name, null, null, currency, false);
-    }
 
-    public AuthResponse(String token, Long userId, String name, String currency, Boolean hasSecurityPin) {
-        this(token, userId, name, null, null, currency, hasSecurityPin);
-    }
 }

@@ -56,7 +56,8 @@ public class UserServiceImpl implements UserService {
             String normalizedUsername = user.getUsername().trim();
             if (userRepository.findByUsernameIgnoreCase(normalizedUsername).isPresent()) {
                 log.warn("Registration rejected because username is already registered");
-                throw new IllegalArgumentException("Username '" + normalizedUsername + "' is already taken. Please choose another.");
+                throw new IllegalArgumentException("Username '" + normalizedUsername
+                        + "' is already taken. Please choose another.");
             }
             user.setUsername(normalizedUsername);
         }
@@ -140,7 +141,8 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
-            log.warn("Security PIN verification blocked: userId={} is locked until {}", userId, user.getPinLockedUntil());
+            log.warn("Security PIN verification blocked: userId={} is locked until {}",
+                    userId, user.getPinLockedUntil());
             throw new IllegalStateException("Security PIN verification temporarily locked");
         }
 
@@ -157,11 +159,12 @@ public class UserServiceImpl implements UserService {
             return true;
         }
 
-        int attempts = Optional.ofNullable(user.getFailedPinAttempts()).orElse(0) + 1;
+        int attempts = user.getFailedPinAttempts() + 1;
         user.setFailedPinAttempts(attempts);
         if (attempts >= 5) {
             user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
-            log.warn("Security PIN verification locked out for 15 minutes for userId={} after {} attempts", userId, attempts);
+            log.warn("Security PIN verification locked out for 15 minutes for userId={} after {} attempts",
+                    userId, attempts);
         } else {
             log.warn("Security PIN verification failed for userId={}, failedAttempts={}", userId, attempts);
         }

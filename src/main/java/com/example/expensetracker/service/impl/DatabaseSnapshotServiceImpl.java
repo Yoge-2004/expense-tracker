@@ -99,7 +99,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
              Connection target = DriverManager.getConnection(h2Url, props)) {
             target.setAutoCommit(false);
             try (Statement s = target.createStatement()) {
-                s.execute("SET REFERENTIAL_INTEGRITY FALSE");
+                s.execute(/* language=none */ "SET REFERENTIAL_INTEGRITY FALSE");
             }
             Map<String, String> actualTables = actualTableNames(target);
             for (String sourceTable : tableNames(source)) {
@@ -113,14 +113,14 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
                             .toList();
                     if (!common.isEmpty()) {
                         try (Statement s = target.createStatement()) {
-                            s.executeUpdate("DELETE FROM " + q(targetTable));
+                            s.executeUpdate(/* language=none */ "DELETE FROM " + q(targetTable));
                         }
                         rows += insertRows(source, target, sourceTable, targetTable, common);
                     }
                 }
             }
             try (Statement s = target.createStatement()) {
-                s.execute("SET REFERENTIAL_INTEGRITY TRUE");
+                s.execute(/* language=none */ "SET REFERENTIAL_INTEGRITY TRUE");
             }
             target.commit();
         }
@@ -134,10 +134,11 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         String names = String.join(",", columns.stream().map(c -> q(c.target)).toList());
         String placeholders = String.join(",", Collections.nCopies(columns.size(), "?"));
         int rows = 0;
-        String sql = "INSERT INTO " + q(targetTable) + " (" + names + ") VALUES (" + placeholders + ")";
+        String sql = /* language=none */ "INSERT INTO " + q(targetTable)
+                + " (" + names + ") VALUES (" + placeholders + ")";
         try (PreparedStatement p = target.prepareStatement(sql);
              Statement s = source.createStatement();
-             ResultSet rs = s.executeQuery("SELECT * FROM " + q(sourceTable))) {
+             ResultSet rs = s.executeQuery(/* language=none */ "SELECT * FROM " + q(sourceTable))) {
             int batchCount = 0;
             while (rs.next()) {
                 for (int i = 0; i < columns.size(); i++) {
@@ -173,10 +174,10 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         String names = String.join(",", columns.stream().map(c -> q(c.name)).toList());
         String placeholders = String.join(",", Collections.nCopies(columns.size(), "?"));
         int rows = 0;
-        String sql = "INSERT INTO " + q(table) + " (" + names + ") VALUES (" + placeholders + ")";
+        String sql = /* language=none */ "INSERT INTO " + q(table) + " (" + names + ") VALUES (" + placeholders + ")";
         try (PreparedStatement p = target.prepareStatement(sql);
              Statement s = source.createStatement();
-             ResultSet rs = s.executeQuery("SELECT * FROM " + q(table))) {
+             ResultSet rs = s.executeQuery(/* language=none */ "SELECT * FROM " + q(table))) {
             int batchCount = 0;
             while (rs.next()) {
                 for (int i = 0; i < columns.size(); i++) {
@@ -210,7 +211,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
             defs.add("PRIMARY KEY (" + String.join(",", pks) + ")");
         }
         try (Statement s = target.createStatement()) {
-            s.execute("CREATE TABLE " + q(table) + " (" + String.join(",", defs) + ")");
+            s.execute(/* language=none */ "CREATE TABLE " + q(table) + " (" + String.join(",", defs) + ")");
         }
     }
 

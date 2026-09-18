@@ -49,13 +49,13 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     @Override
     @EventListener(ApplicationReadyEvent.class)
     public void initializeFailoverSnapshot() {
-        if (!configured()) {
+        if (isNotConfigured()) {
             log.warn("HF database failover is disabled until HF_TOKEN and DB_BACKUP_KEY are configured.");
             return;
         }
         try {
-            Path encrypted = createSecureTempFile("expense-db-", ".enc");
-            Path sqlite = createSecureTempFile("expense-db-", ".sqlite");
+            Path encrypted = createSecureTempFile(".enc");
+            Path sqlite = createSecureTempFile(".sqlite");
             try {
                 if (HuggingFaceFileClient.download(space, path, encrypted, token)) {
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
@@ -82,12 +82,12 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
 
     @Override
     public synchronized boolean backupCurrentDatabase() {
-        if (!configured()) {
+        if (isNotConfigured()) {
             return false;
         }
         try {
-            Path sqlite = createSecureTempFile("expense-db-", ".sqlite");
-            Path encrypted = createSecureTempFile("expense-db-", ".enc");
+            Path sqlite = createSecureTempFile(".sqlite");
+            Path encrypted = createSecureTempFile(".enc");
             try {
                 snapshotService.exportCurrentDatabase(sqlite);
                 DatabaseSnapshotService.encrypt(sqlite, encrypted, encryptionKey);
@@ -105,7 +105,8 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     }
 
     @SuppressWarnings({"java:S5443", "java:S899"})
-    private static Path createSecureTempFile(String prefix, String suffix) throws IOException {
+    private static Path createSecureTempFile(String suffix) throws IOException {
+        final String prefix = "expense-db-";
         Path tempDir = Path.of(System.getProperty("java.io.tmpdir"), "expense-tracker-failover");
         if (!Files.exists(tempDir)) {
             try {
@@ -134,7 +135,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         }
     }
 
-    private boolean configured() {
-        return token != null && !token.isBlank() && encryptionKey != null && !encryptionKey.isBlank();
+    private boolean isNotConfigured() {
+        return token == null || token.isBlank() || encryptionKey == null || encryptionKey.isBlank();
     }
 }

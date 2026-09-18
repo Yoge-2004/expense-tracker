@@ -18,7 +18,4 @@ public record DeleteAccountRequest(
         @Schema(description = "Optional Google OAuth ID token for Google Sign-in accounts")
         String googleIdToken
 ) {
-    public DeleteAccountRequest(String password) {
-        this(password, null, null);
-    }
 }

@@ -4,6 +4,7 @@ import com.example.expensetracker.security.RateLimitInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -36,7 +37,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(@NonNull InterceptorRegistry registry) {
         if (rateLimitInterceptor != null) {
             registry.addInterceptor(rateLimitInterceptor)
                     .addPathPatterns("/api/**");
@@ -50,7 +51,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * @param registry the resource handler registry
      */
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         CacheControl staticCache = CacheControl
                 .maxAge(staticMaxAgeSeconds, TimeUnit.SECONDS)
                 .cachePublic()

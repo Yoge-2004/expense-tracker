@@ -402,10 +402,16 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         for (MonthlyReportDto.CategoryReportDto c : report.categoryBreakdown()) {
             categoryRows.append("""
                 <tr>
-                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08); font-weight: 600; color: #ece7d8;">%s</td>
-                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08); text-align: right; font-weight: 700; color: #c79a3e;">%s %s</td>
-                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08); text-align: right;">
-                        <span style="display: inline-block; background: rgba(199, 154, 62, 0.12); color: #c79a3e; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">%.1f%%</span>
+                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
+                               font-weight: 600; color: #ece7d8;">%s</td>
+                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
+                               text-align: right; font-weight: 700; color: #c79a3e;">%s %s</td>
+                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
+                               text-align: right;">
+                        <span style="display: inline-block; background: rgba(199, 154, 62, 0.12); color: #c79a3e;
+                                     padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">
+                            %.1f%%
+                        </span>
                     </td>
                 </tr>
                 """.formatted(escapeHtml(c.categoryName()), report.currency(), c.totalAmount(), c.percentage()));
@@ -414,16 +420,23 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         // Budgets
         StringBuilder budgetCards = new StringBuilder();
         for (MonthlyReportDto.BudgetReportDto b : report.budgetStatuses()) {
-            String badgeColor = b.usagePercentage() > 100 ? "#ef4444" : (b.usagePercentage() > 80 ? "#f59e0b" : "#10b981");
-            String badgeText = b.usagePercentage() > 100 ? "Exceeded" : (b.usagePercentage() > 80 ? "Near Limit" : "On Track");
+            String badgeColor = b.usagePercentage() > 100 ? "#ef4444"
+                    : (b.usagePercentage() > 80 ? "#f59e0b" : "#10b981");
+            String badgeText = b.usagePercentage() > 100 ? "Exceeded"
+                    : (b.usagePercentage() > 80 ? "Near Limit" : "On Track");
             double barWidth = Math.min(b.usagePercentage(), 100.0);
             budgetCards.append("""
-                <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1);
+                            border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;
+                                margin-bottom: 8px;">
                         <span style="font-size: 14px; font-weight: 700; color: #ece7d8;">%s</span>
-                        <span style="font-size: 12px; font-weight: 700; color: %s; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 6px;">%s (%.1f%%)</span>
+                        <span style="font-size: 12px; font-weight: 700; color: %s;
+                                     background: rgba(255,255,255,0.05); padding: 3px 8px;
+                                     border-radius: 6px;">%s (%.1f%%)</span>
                     </div>
-                    <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+                    <div style="background: rgba(255,255,255,0.08); height: 6px;
+                                border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
                         <div style="background: %s; width: %.1f%%; height: 100%%; border-radius: 999px;"></div>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 12px; color: #a8a395;">
@@ -444,12 +457,17 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 String badgeText = completed ? "Achieved 🎉" : String.format("%.1f%%", g.progressPercentage());
                 double barWidth = Math.min(g.progressPercentage(), 100.0);
                 savingsCards.append("""
-                    <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1);
+                                border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;
+                                    margin-bottom: 8px;">
                             <span style="font-size: 14px; font-weight: 700; color: #ece7d8;">%s</span>
-                            <span style="font-size: 12px; font-weight: 700; color: %s; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 6px;">%s</span>
+                            <span style="font-size: 12px; font-weight: 700; color: %s;
+                                         background: rgba(255,255,255,0.05); padding: 3px 8px;
+                                         border-radius: 6px;">%s</span>
                         </div>
-                        <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="background: rgba(255,255,255,0.08); height: 6px;
+                                    border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
                             <div style="background: %s; width: %.1f%%; height: 100%%; border-radius: 999px;"></div>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 12px; color: #a8a395;">
@@ -467,7 +485,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         g.currentAmount(),
                         report.currency(),
                         g.targetAmount(),
-                        g.targetDate() != null ? " · Due " + g.targetDate().toString() : ""
+                        g.targetDate() != null ? " · Due " + g.targetDate() : ""
                     ));
             }
         }
@@ -478,14 +496,19 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             for (IncomeDto inc : report.incomes()) {
                 incomeRows.append("""
                     <tr>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; color: #a8a395;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 12px; color: #10b981;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); text-align: right; font-weight: 700; color: #10b981;">+ %s %s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   font-size: 13px; color: #a8a395;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   font-size: 12px; color: #10b981;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   text-align: right; font-weight: 700; color: #10b981;">+ %s %s</td>
                     </tr>
                     """.formatted(
                         inc.incomeDate() != null ? inc.incomeDate().toString() : "—",
-                        escapeHtml(inc.description() != null && !inc.description().isBlank() ? inc.description() : "Income Inflow"),
+                        escapeHtml(inc.description() != null && !inc.description().isBlank()
+                            ? inc.description() : "Income Inflow"),
                         escapeHtml(inc.source() != null ? inc.source() : "General"),
                         report.currency(),
                         inc.amount()
@@ -498,7 +521,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         if (report.insights() != null) {
             for (String insight : report.insights()) {
                 insightItems.append("""
-                    <div style="padding: 10px 14px; background: rgba(199, 154, 62, 0.06); border-left: 3px solid #c79a3e; border-radius: 0 8px 8px 0; margin-bottom: 8px; font-size: 13px; color: #ece7d8; line-height: 1.5;">
+                    <div style="padding: 10px 14px; background: rgba(199, 154, 62, 0.06);
+                                border-left: 3px solid #c79a3e; border-radius: 0 8px 8px 0; margin-bottom: 8px;
+                                font-size: 13px; color: #ece7d8; line-height: 1.5;">
                         %s
                     </div>
                     """.formatted(escapeHtml(insight)));
@@ -511,14 +536,19 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             for (ExpenseDto exp : report.topExpenses()) {
                 topExpenseRows.append("""
                     <tr>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; color: #a8a395;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); font-size: 12px; color: #c79a3e;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06); text-align: right; font-weight: 700; color: #ef4444;">- %s %s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   font-size: 13px; color: #a8a395;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   font-size: 12px; color: #c79a3e;">%s</td>
+                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                                   text-align: right; font-weight: 700; color: #ef4444;">- %s %s</td>
                     </tr>
                     """.formatted(
                         exp.expenseDate() != null ? exp.expenseDate().toString() : "—",
-                        escapeHtml(exp.description() != null && !exp.description().isBlank() ? exp.description() : "General Expense"),
+                        escapeHtml(exp.description() != null && !exp.description().isBlank()
+                            ? exp.description() : "General Expense"),
                         escapeHtml(exp.categoryName() != null ? exp.categoryName() : "General"),
                         report.currency(),
                         exp.amount()
@@ -533,18 +563,33 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-              body { margin: 0; padding: 0; background-color: #080a07; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ece7d8; }
-              .email-container { max-width: 660px; margin: 30px auto; background: #131711; border: 1px solid rgba(236, 231, 216, 0.12); border-radius: 20px; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.6); }
-              .email-header { padding: 36px 32px; text-align: center; border-bottom: 1px solid rgba(236, 231, 216, 0.08); background: linear-gradient(180deg, rgba(199, 154, 62, 0.15) 0%%, rgba(19, 23, 17, 0) 100%%); }
-              .brand-badge { display: inline-block; background: rgba(199, 154, 62, 0.15); border: 1px solid rgba(199, 154, 62, 0.3); border-radius: 999px; padding: 6px 18px; font-size: 13px; font-weight: 800; color: #c79a3e; letter-spacing: 0.5px; }
+              body { margin: 0; padding: 0; background-color: #080a07;
+                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                     color: #ece7d8; }
+              .email-container { max-width: 660px; margin: 30px auto; background: #131711;
+                                 border: 1px solid rgba(236, 231, 216, 0.12); border-radius: 20px;
+                                 overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.6); }
+              .email-header { padding: 36px 32px; text-align: center;
+                              border-bottom: 1px solid rgba(236, 231, 216, 0.08);
+                              background: linear-gradient(180deg, rgba(199, 154, 62, 0.15) 0%%,
+                                                          rgba(19, 23, 17, 0) 100%%); }
+              .brand-badge { display: inline-block; background: rgba(199, 154, 62, 0.15);
+                             border: 1px solid rgba(199, 154, 62, 0.3); border-radius: 999px;
+                             padding: 6px 18px; font-size: 13px; font-weight: 800;
+                             color: #c79a3e; letter-spacing: 0.5px; }
               .stat-grid { display: table; width: 100%%; margin-bottom: 24px; }\
               .stat-cell { display: table-cell; width: 50%%; padding: 6px; }
-              .stat-box { background: #0b0d09; border: 1px solid rgba(236, 231, 216, 0.08); border-radius: 14px; padding: 18px 14px; text-align: center; }
-              .hero-card { background: #0b0d09; border: 1px solid #c79a3e; border-radius: 16px; padding: 26px; text-align: center; margin-bottom: 24px; }
+              .stat-box { background: #0b0d09; border: 1px solid rgba(236, 231, 216, 0.08);
+                          border-radius: 14px; padding: 18px 14px; text-align: center; }
+              .hero-card { background: #0b0d09; border: 1px solid #c79a3e; border-radius: 16px;
+                           padding: 26px; text-align: center; margin-bottom: 24px; }
               .hero-val { font-size: 38px; font-weight: 900; color: #c79a3e; margin-top: 4px; letter-spacing: -0.5px; }
-              .section-title { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #c79a3e; margin: 28px 0 12px; }
+              .section-title { font-size: 15px; font-weight: 800; text-transform: uppercase;
+                               letter-spacing: 1px; color: #c79a3e; margin: 28px 0 12px; }
               .email-body { padding: 32px; }
-              .email-footer { padding: 24px 32px; border-top: 1px solid rgba(236, 231, 216, 0.08); background: #0b0d09; text-align: center; font-size: 12px; color: #6b6558; line-height: 1.6; }
+              .email-footer { padding: 24px 32px; border-top: 1px solid rgba(236, 231, 216, 0.08);
+                              background: #0b0d09; text-align: center; font-size: 12px;
+                              color: #6b6558; line-height: 1.6; }
 
               /* Custom Luxury Scrollbar */
               html, body {
@@ -590,10 +635,11 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 </div>
                 <div class="email-body">
                   <div style="font-size: 18px; font-weight: 700; margin-bottom: 18px;">Hello %s,</div>
-                  
+
                   <!-- Hero Outflow -->
                   <div class="hero-card">
-                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #a8a395;">Total Outflow (Expenses)</div>
+                    <div style="font-size: 11px; text-transform: uppercase;
+                         letter-spacing: 1.5px; color: #a8a395;">Total Outflow (Expenses)</div>
                     <div class="hero-val">%s %s</div>
                     <div style="font-size: 13px; color: #a8a395; margin-top: 6px;">Across %d transactions</div>
                   </div>
@@ -602,13 +648,15 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Total Income Inflow</div>
+                        <div style="font-size: 11px; text-transform: uppercase;
+                             color: #a8a395;">Total Income Inflow</div>
                         <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Net Savings (%s%%)</div>
+                        <div style="font-size: 11px; text-transform: uppercase;
+                             color: #a8a395;">Net Savings (%s%%)</div>
                         <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
@@ -617,13 +665,15 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Daily Expense Average</div>
+                        <div style="font-size: 11px; text-transform: uppercase;
+                             color: #a8a395;">Daily Expense Average</div>
                         <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Budget Health Score</div>
+                        <div style="font-size: 11px; text-transform: uppercase;
+                             color: #a8a395;">Budget Health Score</div>
                         <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%d%%</div>
                       </div>
                     </div>
@@ -632,7 +682,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Peak Single Expense</div>
+                        <div style="font-size: 11px; text-transform: uppercase;
+                             color: #a8a395;">Peak Single Expense</div>
                         <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
@@ -654,7 +705,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="section-title">💵 Monthly Income Sources</div>
                   <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                     <thead>
-                      <tr style="color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;">
+                      <tr style="color: #a8a395; text-align: left;
+                          border-bottom: 1px solid rgba(236,231,216,0.15);
+                          font-size: 11px; text-transform: uppercase;">
                         <th style="padding: 6px 12px;">Date</th>
                         <th style="padding: 6px 12px;">Description</th>
                         <th style="padding: 6px 12px;">Source</th>
@@ -676,7 +729,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="section-title">🏷️ Spending by Category</div>
                   <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
                     <thead>
-                      <tr style="color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 12px; text-transform: uppercase;">
+                      <tr style="color: #a8a395; text-align: left;
+                          border-bottom: 1px solid rgba(236,231,216,0.15);
+                          font-size: 12px; text-transform: uppercase;">
                         <th style="padding: 8px 14px;">Category</th>
                         <th style="padding: 8px 14px; text-align: right;">Total Spent</th>
                         <th style="padding: 8px 14px; text-align: right;">Share</th>
@@ -724,18 +779,24 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 report.recurringTotal(),
                 insightItems.toString(),
                 !incomeRows.isEmpty() ? incomeRows.toString()
-                        : "<tr><td colspan='4' style='padding: 12px; color: #a8a395;'>No income recorded this month.</td></tr>",
+                        : ("<tr><td colspan='4' style='padding: 12px; color: #a8a395;'>"
+                        + "No income recorded this month.</td></tr>"),
                 !savingsCards.isEmpty() ? savingsCards.toString()
-                        : "<div style='color: #a8a395; font-size: 13px;'>No active savings goals configured. Start a savings goal in your dashboard!</div>",
+                        : ("<div style='color: #a8a395; font-size: 13px;'>"
+                        + "No active savings goals configured. Start a savings goal in your dashboard!</div>"),
                 !categoryRows.isEmpty() ? categoryRows.toString()
-                        : "<tr><td colspan='3' style='padding: 12px; color: #a8a395;'>No spending recorded this month.</td></tr>",
+                        : ("<tr><td colspan='3' style='padding: 12px; color: #a8a395;'>"
+                        + "No spending recorded this month.</td></tr>"),
                 !budgetCards.isEmpty() ? budgetCards.toString()
-                        : "<div style='color: #a8a395; font-size: 13px;'>No category budgets configured for this period.</div>",
+                        : ("<div style='color: #a8a395; font-size: 13px;'>"
+                        + "No category budgets configured for this period.</div>"),
                 !topExpenseRows.isEmpty() ? """
                     <div class="section-title">💳 Largest Outflow Transactions</div>
                     <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                       <thead>
-                        <tr style="color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;">
+                        <tr style="color: #a8a395; text-align: left;
+                          border-bottom: 1px solid rgba(236,231,216,0.15);
+                          font-size: 11px; text-transform: uppercase;">
                           <th style="padding: 6px 12px;">Date</th>
                           <th style="padding: 6px 12px;">Description</th>
                           <th style="padding: 6px 12px;">Category</th>

@@ -13,14 +13,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.MailSendException;
 import com.example.expensetracker.exception.EmailDeliveryException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,12 +55,13 @@ class PasswordResetServiceImplTest {
     }
 
     @Test
-    @DisplayName("requestReset throws NoSuchElementException when user account not found")
-    void requestReset_userNotFound_throwsException() {
+    @DisplayName("requestReset silently returns without saving OTP when user not found (anti-enumeration)")
+    void requestReset_userNotFound_silentlyReturns() {
         when(userRepository.findByEmailIgnoreCase("unknown@example.com")).thenReturn(Optional.empty());
 
-        assertThrows(NoSuchElementException.class, () -> service.requestReset("unknown@example.com"));
+        assertDoesNotThrow(() -> service.requestReset("unknown@example.com"));
         verify(otpRepository, never()).save(any());
+        verify(mailSenderProvider, never()).getIfAvailable();
     }
 
     @Test
@@ -74,7 +73,8 @@ class PasswordResetServiceImplTest {
 
         PasswordResetOtp oldOtp = new PasswordResetOtp();
         oldOtp.setUsed(false);
-        when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc("user@example.com", "PASSWORD_RESET"))
+        when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(
+                "user@example.com", "PASSWORD_RESET"))
                 .thenReturn(Optional.of(oldOtp));
         when(passwordEncoder.encode(anyString())).thenReturn("hashedOtp");
 
@@ -120,7 +120,8 @@ class PasswordResetServiceImplTest {
         otpRecord.setAttempts(0);
         otpRecord.setUsed(false);
 
-        when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc("user@example.com", "PASSWORD_RESET"))
+        when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(
+                "user@example.com", "PASSWORD_RESET"))
                 .thenReturn(Optional.of(otpRecord));
         when(passwordEncoder.matches("654321", "hashedOtp")).thenReturn(true);
         when(passwordEncoder.encode("NewPassword123")).thenReturn("newHashedPassword");
@@ -198,7 +199,8 @@ class PasswordResetServiceImplTest {
         when(mailSenderProvider.getIfAvailable()).thenReturn(mailSender);
         jakarta.mail.internet.MimeMessage mimeMessage = mock(jakarta.mail.internet.MimeMessage.class);
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
-        doThrow(new MailSendException("SMTP failure")).when(mailSender).send(any(jakarta.mail.internet.MimeMessage.class));
+        doThrow(new MailSendException("SMTP failure")).when(mailSender)
+                .send(any(jakarta.mail.internet.MimeMessage.class));
 
         assertThrows(EmailDeliveryException.class, () -> service.requestReset("user@example.com"));
     }
@@ -221,7 +223,8 @@ class PasswordResetServiceImplTest {
         when(mailSenderProvider.getIfAvailable()).thenReturn(mailSender);
         jakarta.mail.internet.MimeMessage mimeMessage = mock(jakarta.mail.internet.MimeMessage.class);
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
-        doThrow(new MailSendException("SMTP failure")).when(mailSender).send(any(jakarta.mail.internet.MimeMessage.class));
+        doThrow(new MailSendException("SMTP failure")).when(mailSender)
+                .send(any(jakarta.mail.internet.MimeMessage.class));
 
         assertThrows(EmailDeliveryException.class, () -> service.sendSignupOtp("new@example.com", "New User"));
     }

@@ -15,10 +15,12 @@ import java.time.LocalDate;
 public record BudgetDto(
         Long id,
 
-        @Schema(description = "ID of the category for which the budget applies", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "ID of the category for which the budget applies", example = "1",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         Long categoryId,
 
-        @Schema(description = "Maximum spend allowed for this category", example = "300.00", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Maximum spend allowed for this category", example = "300.00",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         @JsonAlias({"limit", "limitAmount"})
         BigDecimal limitAmount,
 
@@ -40,11 +42,5 @@ public record BudgetDto(
         }
     }
 
-    public BudgetDto(Long categoryId, BigDecimal limitAmount) {
-        this(null, categoryId, limitAmount, "MONTHLY", null, null, null);
-    }
 
-    public BudgetDto(Long id, Long categoryId, BigDecimal limitAmount, String period, LocalDate startDate, LocalDate endDate) {
-        this(id, categoryId, limitAmount, period, null, startDate, endDate);
-    }
 }

@@ -39,7 +39,7 @@ public class RateLimiterServiceImpl implements RateLimiterService {
             return true;
         }
         SlidingWindowBucket bucket = buckets.computeIfAbsent(
-                key, k -> new SlidingWindowBucket(maxRequests, window)
+                key, _ -> new SlidingWindowBucket(maxRequests, window)
         );
         return bucket.tryAcquire();
     }
@@ -82,7 +82,8 @@ public class RateLimiterServiceImpl implements RateLimiterService {
         buckets.entrySet().removeIf(entry -> entry.getValue().isExpired());
         int after = buckets.size();
         if (before != after) {
-            log.debug("RateLimiter cleanupExpiredBuckets: purged {} empty/stale buckets (retained {})", before - after, after);
+            log.debug("RateLimiter cleanupExpiredBuckets: purged {} empty/stale buckets (retained {})",
+                    before - after, after);
         }
     }
 

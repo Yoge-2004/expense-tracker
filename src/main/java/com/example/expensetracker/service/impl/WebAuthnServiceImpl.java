@@ -39,7 +39,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -97,7 +96,6 @@ public class WebAuthnServiceImpl implements WebAuthnService {
                         return null;
                     }
                 })
-                .filter(Objects::nonNull)
                 .orElseGet(() -> {
                     byte[] handle = new byte[32];
                     secureRandom.nextBytes(handle);
@@ -153,12 +151,9 @@ public class WebAuthnServiceImpl implements WebAuthnService {
         try {
             PublicKeyCredentialCreationOptions request =
                     PublicKeyCredentialCreationOptions.fromJson(challenge.getRequestJson());
-            PublicKeyCredential<?, ?> parsed = PublicKeyCredential.parseRegistrationResponseJson(credentialJson);
-            @SuppressWarnings("unchecked")
             PublicKeyCredential<com.yubico.webauthn.data.AuthenticatorAttestationResponse,
                 com.yubico.webauthn.data.ClientRegistrationExtensionOutputs> credential =
-                (PublicKeyCredential<com.yubico.webauthn.data.AuthenticatorAttestationResponse,
-                    com.yubico.webauthn.data.ClientRegistrationExtensionOutputs>) parsed;
+                PublicKeyCredential.parseRegistrationResponseJson(credentialJson);
 
             RegistrationResult result = relyingParty.finishRegistration(
                 FinishRegistrationOptions.builder().request(request).response(credential).build()
@@ -229,12 +224,9 @@ public class WebAuthnServiceImpl implements WebAuthnService {
         WebAuthnChallenge challenge = consumeChallenge(transactionId, ASSERTION, null);
         try {
             AssertionRequest request = AssertionRequest.fromJson(challenge.getRequestJson());
-            PublicKeyCredential<?, ?> parsed = PublicKeyCredential.parseAssertionResponseJson(assertionJson);
-            @SuppressWarnings("unchecked")
             PublicKeyCredential<com.yubico.webauthn.data.AuthenticatorAssertionResponse,
                 com.yubico.webauthn.data.ClientAssertionExtensionOutputs> credential =
-                (PublicKeyCredential<com.yubico.webauthn.data.AuthenticatorAssertionResponse,
-                    com.yubico.webauthn.data.ClientAssertionExtensionOutputs>) parsed;
+                PublicKeyCredential.parseAssertionResponseJson(assertionJson);
 
             AssertionResult result = relyingParty.finishAssertion(
                 FinishAssertionOptions.builder().request(request).response(credential).build()
@@ -245,7 +237,8 @@ public class WebAuthnServiceImpl implements WebAuthnService {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Biometric verification failed.");
             }
 
-            WebAuthnCredential stored = credentials.findByCredentialId(result.getCredential().getCredentialId().getBase64Url())
+            WebAuthnCredential stored = credentials.findByCredentialId(
+                    result.getCredential().getCredentialId().getBase64Url())
                 .orElseThrow(() -> {
                     log.warn("WebAuthn assertion credential not recognized for transactionId={}", transactionId);
                     return new ResponseStatusException(HttpStatus.UNAUTHORIZED,

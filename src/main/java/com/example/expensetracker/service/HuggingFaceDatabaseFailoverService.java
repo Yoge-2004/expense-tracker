@@ -3,6 +3,7 @@ package com.example.expensetracker.service;
 /**
  * Service interface for Hugging Face automated database failover and snapshot backups.
  */
+@SuppressWarnings("unused")
 public interface HuggingFaceDatabaseFailoverService {
 
     /**

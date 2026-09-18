@@ -91,7 +91,7 @@ public class UserController {
         summary = "Generate username suggestions",
         description = "Generates exactly 3 unique, creative username suggestions based on a name or keyword."
     )
-    @RateLimited(key = "user-suggest-usernames", maxRequests = 20, windowSeconds = 60,
+    @RateLimited(key = "user-suggest-usernames", maxRequests = 20,
                  message = "Too many username suggestion requests. Please try again later.")
     @GetMapping("/suggest-usernames")
     public ResponseEntity<Map<String, Object>> suggestUsernames(
@@ -174,7 +174,7 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{userId}/security-pin")
-    @RateLimited(key = "update-pin", maxRequests = 10, windowSeconds = 300,
+    @RateLimited(key = "update-pin", windowSeconds = 300,
                  message = "Too many PIN update attempts. Please try again in %d seconds.")
     public ResponseEntity<Map<String, String>> updateSecurityPin(
             @Parameter(description = "Database ID of the user.", required = true, example = "1")
@@ -209,7 +209,7 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{userId}/verify-security-pin")
-    @RateLimited(key = "verify-pin", maxRequests = 10, windowSeconds = 300,
+    @RateLimited(key = "verify-pin", windowSeconds = 300,
                  message = "Too many verification attempts. Please try again later.")
     public ResponseEntity<Map<String, Object>> verifySecurityPin(
             @Parameter(description = "Database ID of the user.", required = true, example = "1")
@@ -316,7 +316,8 @@ public class UserController {
     })
     @PutMapping("/{userId}/currency")
     public ResponseEntity<Map<String, String>> updateCurrency(
-            @Parameter(description = "Database ID of the user whose currency to update.", required = true, example = "1")
+            @Parameter(description = "Database ID of the user whose currency to update.",
+                       required = true, example = "1")
             @PathVariable Long userId,
             @RequestBody Map<String, String> body) {
         log.info("Received request to update currency for userId={}", userId);

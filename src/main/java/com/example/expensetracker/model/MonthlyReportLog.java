@@ -50,12 +50,5 @@ public class MonthlyReportLog {
     @Column(name = "error_message")
     private String errorMessage;
 
-    public MonthlyReportLog(User user, int reportYear, int reportMonth, LocalDateTime sentAt, boolean sentSuccessfully, String errorMessage) {
-        this.user = user;
-        this.reportYear = reportYear;
-        this.reportMonth = reportMonth;
-        this.sentAt = sentAt;
-        this.sentSuccessfully = sentSuccessfully;
-        this.errorMessage = errorMessage;
-    }
+
 }

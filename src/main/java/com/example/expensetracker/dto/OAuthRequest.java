@@ -20,7 +20,4 @@ public record OAuthRequest(
         @Schema(description = "Optional preferred display currency (ISO 4217 3-letter code)", example = "USD")
         String currency
 ) {
-    public OAuthRequest(String idToken) {
-        this(idToken, null, null);
-    }
 }

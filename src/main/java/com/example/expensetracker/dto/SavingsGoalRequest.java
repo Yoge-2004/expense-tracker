@@ -15,11 +15,13 @@ import java.time.LocalDate;
  */
 @Schema(description = "Request body for creating or updating a savings goal")
 public record SavingsGoalRequest(
-        @Schema(description = "Descriptive title for the savings goal", example = "Emergency Fund", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Descriptive title for the savings goal", example = "Emergency Fund",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank(message = "Goal name is required")
         String name,
 
-        @Schema(description = "Target monetary amount to save", example = "100000.00", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Target monetary amount to save", example = "100000.00",
+                requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "Target amount is required")
         @Positive(message = "Target amount must be greater than zero")
         BigDecimal targetAmount,
@@ -39,7 +41,8 @@ public record SavingsGoalRequest(
         @Schema(description = "Recurring installment deposit amount", example = "5000.00")
         BigDecimal recurringAmount,
 
-        @Schema(description = "Installment frequency (DAILY, WEEKLY, BI_WEEKLY, MONTHLY, YEARLY, CUSTOM)", example = "MONTHLY")
+        @Schema(description = "Installment frequency (DAILY, WEEKLY, BI_WEEKLY, MONTHLY, YEARLY, CUSTOM)",
+                example = "MONTHLY")
         String frequency,
 
         @Schema(description = "Interval in days if custom cadence", example = "30")
@@ -60,8 +63,5 @@ public record SavingsGoalRequest(
         }
     }
 
-    public SavingsGoalRequest(String name, BigDecimal targetAmount, BigDecimal currentAmount,
-                              LocalDate targetDate, String status) {
-        this(name, targetAmount, currentAmount, targetDate, status, false, null, null, null, null, null);
-    }
+
 }

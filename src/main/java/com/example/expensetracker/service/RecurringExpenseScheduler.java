@@ -43,6 +43,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Transactional
 public class RecurringExpenseScheduler {
 
     private final RecurringExpenseRepository recurringExpenseRepository;
@@ -86,7 +87,8 @@ public class RecurringExpenseScheduler {
                     expenseRepository.save(expense);
                     LocalDate nextDate = nextOccurrence(rec);
                     if (!nextDate.isAfter(rec.getNextDueDate())) {
-                        log.warn("Recurring expense {} next date {} is not after current due date {}", rec.getId(), nextDate, rec.getNextDueDate());
+                        log.warn("Recurring expense {} next date {} is not after current due date {}",
+                                rec.getId(), nextDate, rec.getNextDueDate());
                         rec.setNextDueDate(rec.getNextDueDate().plusMonths(1));
                     } else {
                         rec.setNextDueDate(nextDate);
@@ -97,10 +99,12 @@ public class RecurringExpenseScheduler {
             } catch (Exception itemEx) {
                 failedCount++;
                 log.error("CRITICAL: Failed to process recurring expense subscription id={} for userId={}: {}",
-                        rec.getId(), rec.getUser() != null ? rec.getUser().getId() : "null", itemEx.getMessage(), itemEx);
+                        rec.getId(), rec.getUser() != null ? rec.getUser().getId() : "null",
+                                itemEx.getMessage(), itemEx);
             }
         }
-        log.info("Finished processing recurring expenses. Processed {} occurrences, {} failures.", processedCount, failedCount);
+        log.info("Finished processing recurring expenses. Processed {} occurrences, {} failures.",
+                processedCount, failedCount);
     }
 
     /**

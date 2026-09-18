@@ -40,13 +40,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final CustomUserDetailsService userDetailsService;
 
     /**
-     * Constructs a {@code JwtAuthenticationFilter} with the required services.
-     *
-     * @param jwtService         the service responsible for JWT operations
-     * @param userDetailsService the service for loading {@link UserDetails} by email
-     */
-
-    /**
      * Performs JWT extraction, validation, and security context population
      * for each incoming HTTP request.
      */

@@ -94,7 +94,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setEmail(user.getEmail());
         record.setPurpose("PASSWORD_RESET");
         record.setOtpHash(passwordEncoder.encode(otp));
-        record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
+        record.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
         otpRepository.save(record);
 
         sendOtpEmail(user, otp, "PASSWORD_RESET");
@@ -210,7 +210,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setEmail(email);
         record.setPurpose("SIGNUP");
         record.setOtpHash(passwordEncoder.encode(otp));
-        record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
+        record.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
         otpRepository.save(record);
 
         User tempUser = new User();
@@ -328,21 +328,28 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 : "Confirm Your Email Address";
         String instructions = "PASSWORD_RESET".equals(purpose)
                 ? "Use this single-use verification code to set a new password. It expires in <b>10 minutes</b>."
-                : "Enter this verification code on the registration page to complete your signup. It expires in <b>10 minutes</b>.";
+                : ("Enter this verification code on the registration page to complete your signup. "
+                + "It expires in <b>10 minutes</b>.");
 
         return """
             <!DOCTYPE html>
             <html>
             <head><meta charset="utf-8"></head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px 20px;">
-                <div style="max-width: 520px; margin: 0 auto; background: #1e293b; border-radius: 12px; padding: 32px; border: 1px solid #334155;">
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                         background: #0f172a; color: #f8fafc; padding: 40px 20px;">
+                <div style="max-width: 520px; margin: 0 auto; background: #1e293b; border-radius: 12px;
+                            padding: 32px; border: 1px solid #334155;">
                     <h2 style="color: #6366f1; margin-top: 0;">%s</h2>
                     <p>Hello %s,</p>
                     <p>%s</p>
                     <div style="text-align: center; margin: 32px 0;">
-                        <span style="display: inline-block; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #f8fafc; background: #0f172a; padding: 16px 28px; border-radius: 8px; border: 1px solid #4f46e5;">%s</span>
+                        <span style="display: inline-block; font-size: 32px; font-weight: 700;
+                                     letter-spacing: 8px; color: #f8fafc; background: #0f172a;
+                                     padding: 16px 28px; border-radius: 8px; border: 1px solid #4f46e5;">%s</span>
                     </div>
-                    <p style="font-size: 13px; color: #94a3b8;">If you did not initiate this request, you can safely ignore this message.</p>
+                    <p style="font-size: 13px; color: #94a3b8;">
+                        If you did not initiate this request, you can safely ignore this message.
+                    </p>
                 </div>
             </body>
             </html>

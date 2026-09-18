@@ -26,6 +26,7 @@ import java.util.List;
  * @version 1.0
  * @see Expense
  */
+@SuppressWarnings("unused")
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     /**
@@ -35,7 +36,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
      * @return a list of {@link Expense} records owned by the user;
      *         empty list if the user has no expenses
      */
-    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user ORDER BY e.expenseDate DESC, e.id DESC")
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user "
+            + "ORDER BY e.expenseDate DESC, e.id DESC")
     List<Expense> findByUser(@Param("user") User user);
 
     /**

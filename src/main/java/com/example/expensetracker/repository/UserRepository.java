@@ -25,6 +25,7 @@ import java.util.Optional;
  * @version 1.0
  * @see User
  */
+@SuppressWarnings("unused")
 public interface UserRepository extends JpaRepository<User, Long> {
 
     /**

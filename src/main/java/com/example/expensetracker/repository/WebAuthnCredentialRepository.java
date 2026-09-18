@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unused")
 public interface WebAuthnCredentialRepository extends JpaRepository<WebAuthnCredential, Long> {
     List<WebAuthnCredential> findByUserId(Long userId);
     Optional<WebAuthnCredential> findByCredentialId(String credentialId);

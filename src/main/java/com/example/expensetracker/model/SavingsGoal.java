@@ -133,10 +133,10 @@ public class SavingsGoal extends BaseEntity {
     }
 
     public Boolean getIsRecurring() {
-        return isRecurring != null ? isRecurring : false;
+        return Boolean.TRUE.equals(isRecurring);
     }
 
     public void setIsRecurring(Boolean recurring) {
-        this.isRecurring = recurring != null ? recurring : false;
+        this.isRecurring = Boolean.TRUE.equals(recurring);
     }
 }

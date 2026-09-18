@@ -73,7 +73,7 @@ public final class SavingsGoalMapper {
         goal.setCurrentAmount(request.currentAmount() != null ? request.currentAmount() : BigDecimal.ZERO);
         goal.setTargetDate(request.targetDate());
         goal.setStatus(request.status() != null ? request.status() : "IN_PROGRESS");
-        goal.setIsRecurring(request.isRecurring() != null ? request.isRecurring() : false);
+        goal.setIsRecurring(Boolean.TRUE.equals(request.isRecurring()));
         goal.setRecurringAmount(request.recurringAmount());
         goal.setFrequency(request.frequency());
         goal.setIntervalDays(request.intervalDays());

@@ -42,7 +42,7 @@ public class SecurityConfig {
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication and security headers");
 
         http
@@ -79,7 +79,8 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers
                         .contentTypeOptions(Customizer.withDefaults())
-                        .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        .xssProtection(xss -> xss.headerValue(
+                                XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                         .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                         .referrerPolicy(referrer -> referrer.policy(

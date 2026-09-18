@@ -17,7 +17,8 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openpdf.text.Document;
-import org.openpdf.text.Element;
+import org.openpdf.text.DocumentException;
+import org.openpdf.text.Font;
 import org.openpdf.text.FontFactory;
 import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
@@ -76,7 +77,7 @@ public class RangeReportController {
         log.info("Executive Excel report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(XLSX)
-                .contentLength(bytes != null ? bytes.length : 0)
+                .contentLength(bytes.length)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Dashboard.xlsx")
@@ -99,7 +100,7 @@ public class RangeReportController {
         log.info("Executive PDF report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .contentLength(bytes != null ? bytes.length : 0)
+                .contentLength(bytes.length)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Report.pdf")
@@ -366,7 +367,7 @@ public class RangeReportController {
     }
 
     private static void addIncomePdf(Document doc, List<Income> incomes, String s,
-                                     org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+                                     Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Income ledger", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
@@ -384,7 +385,7 @@ public class RangeReportController {
     }
 
     private static void addExpensePdf(Document doc, List<Expense> expenses, String s,
-                                      org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+                                      Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Expense ledger", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
@@ -402,7 +403,7 @@ public class RangeReportController {
     }
 
     private static void addSavingsPdf(Document doc, List<SavingsGoal> goals, String s,
-                                      org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+                                      Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Savings goals", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
@@ -425,7 +426,7 @@ public class RangeReportController {
     }
 
     private static void addSubscriptionPdf(Document doc, List<RecurringExpense> subscriptions, String s,
-                                           org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+                                           Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Subscriptions", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
@@ -445,7 +446,7 @@ public class RangeReportController {
     }
 
     private static void addBudgetPdf(Document doc, List<Budget> budgets, String s,
-                                      org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+                                      Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Budgets", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
@@ -573,7 +574,7 @@ public class RangeReportController {
         table.addCell(cell);
     }
 
-    private static void cell(PdfPTable table, String text, org.openpdf.text.Font font) {
+    private static void cell(PdfPTable table, String text, Font font) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setPadding(5);
         table.addCell(cell);
@@ -597,8 +598,8 @@ public class RangeReportController {
 
     private record Range(LocalDate from, LocalDate to) {
         static Range of(String from, String to) {
-            LocalDate start = null;
-            LocalDate end = null;
+            LocalDate start;
+            LocalDate end;
             try {
                 start = from == null || from.isBlank() ? null : LocalDate.parse(from);
             } catch (java.time.format.DateTimeParseException e) {

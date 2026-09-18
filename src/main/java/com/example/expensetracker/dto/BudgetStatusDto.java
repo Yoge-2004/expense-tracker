@@ -32,11 +32,5 @@ public record BudgetStatusDto(
         LocalDate startDate,
         LocalDate endDate
 ) {
-    public BudgetStatusDto(String categoryName, BigDecimal limit, BigDecimal spent, double percentage) {
-        this(null, null, categoryName, limit, spent, percentage, null, null, null, null);
-    }
 
-    public BudgetStatusDto(Long budgetId, Long categoryId, String categoryName, BigDecimal limit, BigDecimal spent, double percentage, String period, LocalDate startDate, LocalDate endDate) {
-        this(budgetId, categoryId, categoryName, limit, spent, percentage, period, null, startDate, endDate);
-    }
 }
