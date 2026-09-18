@@ -492,3 +492,31 @@ unlayered CSS, which unconditionally beats every named layer regardless
 of order. Currently harmless (zero selector overlap with anything else
 checked), but worth being aware of if it ever needs to interact with
 the legacy/components layer system - it isn't in it right now.
+
+## 11. modals.css cluster — investigated, deliberately NOT moved
+
+20 shared selectors across 7 partner files (modernization.css,
+ui-regression-fixes.css, auth/forms.css, motion-extended/feedback.css,
+animations/advanced/{core,specialty}.css, dashboard/enhancements/feedback.css).
+Unlike rounds 1-3, this is NOT a mechanically-safe move. Confirmed a real
+conflict, not just a shared selector name: modernization.css exists
+specifically to narrow other files' transition declarations (see its own
+header comment), and at least one overlap - .unified-ledger-card - has a
+genuinely DIFFERENT value between the two files (modernization.css:
+background-color/border-color/box-shadow/color at 0.2s; modals.css:
+background/border-color/box-shadow at 0.3s, no color). modernization.css
+currently wins via source order (last in the @import chain). Moving
+modals.css to `components` would flip that silently.
+
+Some of the 20 overlaps ARE safe duplicates (e.g. .modal's overflow-x/y
+with ui-regression-fixes.css - identical values, just inconsistent
+!important usage) but others are not, and distinguishing all 20
+individually (plus their cascading partners) is real work, not a quick
+round. Two ways forward if this is picked up again: (a) move the whole
+entangled cluster together, preserving current relative order, or (b) a
+full selector-by-selector audit of value equality, not just property-name
+overlap. Neither attempted here - flagging honestly rather than forcing
+a risky mechanical move through.
+
+19 files remain in `components` (rounds 1-3). Layer migration paused here,
+not abandoned.
