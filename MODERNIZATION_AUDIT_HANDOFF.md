@@ -480,3 +480,15 @@ fixes.css, the animations/ tree) - future rounds should keep using the
 same method (selector-string overlap first, then property-level check
 before ruling a file unsafe) but expect smaller batches and more
 multi-file groups as the easy candidates run out.
+
+Round 3 (commit 42131f1): dashboard/enhancements/filter-panel.css,
+tables/filters.css - 2 more disjoint-property overlaps cleared. 19 files
+now in `components` total.
+
+Note: a large parallel-session merge (ML feedback/retraining feature)
+added frontend/css/ai-intelligence.css, linked as a separate top-level
+stylesheet rather than through style.css's import chain - it's
+unlayered CSS, which unconditionally beats every named layer regardless
+of order. Currently harmless (zero selector overlap with anything else
+checked), but worth being aware of if it ever needs to interact with
+the legacy/components layer system - it isn't in it right now.
