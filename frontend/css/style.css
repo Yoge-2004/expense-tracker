@@ -82,4 +82,36 @@
 @import url("dashboard/enhancements/badges.css") layer(components);
 @import url("dashboard/enhancements/form-behavior.css") layer(components);
 
+/* Round 2. These four DO share a selector string with a file still in
+   `legacy`, unlike round 1's zero-overlap set - but in every case the
+   overlapping selector's property sets are fully disjoint (or, for
+   foundation.css/income-modal.css's shared box-sizing:border-box, set to
+   the identical value), so there is no real precedence dependency despite
+   the shared selector text:
+     tables/controls.css        <-> dashboard/enhancements/modal-polish.css
+       share .modal-header: controls.css sets layout (display/justify-
+       content/align-items/margin-bottom), modal-polish.css sets only
+       position:relative for its ::after pseudo-element. No shared property.
+     dashboard/enhancements/modal-polish.css <-> reports.css
+       share [data-theme="light"] .modal: modal-polish.css sets background/
+       border-color/box-shadow, reports.css sets only scrollbar-color.
+       No shared property - reports.css did not need to move.
+     animations/advanced/data-viz.css <-> tables/dashboard-support.css,
+                                          theme-card-transitions.css
+       all reference .metric-value, but data-viz.css sets only `animation`
+       (a counter-roll entrance effect), dashboard-support.css sets only
+       typography, theme-card-transitions.css only matches it as one arm
+       of a compound :is() selector setting `transition`. No shared
+       property - neither partner needed to move.
+     base/foundation.css <-> base/income-modal.css
+       both set box-sizing:border-box on effectively the same elements,
+       but to the identical value, so whichever layer wins is
+       unobservable. income-modal.css's version additionally covers
+       ::before/::after (which a bare `*` does not reach), so it stays
+       more complete regardless. */
+@import url("tables/controls.css") layer(components);
+@import url("dashboard/enhancements/modal-polish.css") layer(components);
+@import url("animations/advanced/data-viz.css") layer(components);
+@import url("base/foundation.css") layer(components);
+
 @import url("motion-system.css") layer(motion-system);

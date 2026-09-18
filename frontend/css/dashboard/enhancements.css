@@ -1,6 +1,5 @@
 /* EXPENSE TRACKER — DASHBOARD ENHANCEMENTS */
 /* Domain modules preserve the original cascade order while narrowing ownership. */
-@import url("enhancements/modal-polish.css");
 @import url("enhancements/topbar.css");
 @import url("enhancements/navigation.css");
 @import url("enhancements/feedback.css");
