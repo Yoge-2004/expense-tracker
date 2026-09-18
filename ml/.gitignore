@@ -1,0 +1,20 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.py[cod]
+*.egg-info/
+
+# Raw datasets and local caches
+data/raw/
+data/cache/
+
+# Training outputs; publish intentionally selected artifacts separately
+artifacts/*
+!artifacts/.gitkeep
+models/
+runs/
+*.pt
+*.bin
+*.safetensors
+*.joblib

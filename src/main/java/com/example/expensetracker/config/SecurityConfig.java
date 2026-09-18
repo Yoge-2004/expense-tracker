@@ -64,6 +64,7 @@ public class SecurityConfig {
                                 "/api/users/suggest-usernames",
                                 "/api/health/**",
                                 "/api/sync/**",
+                                "/api/internal/ml/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",

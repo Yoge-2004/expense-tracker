@@ -1,6 +1,7 @@
-name: Deploy Backend JAR to Hugging Face
+name: Deploy Backend + ML to Hugging Face
 
-# Manual/push deployment workflow. A source or workflow update rebuilds and publishes app.jar.
+# Production deployment for the combined Hugging Face Docker Space.
+# Spring Boot and Python inference run in the same container.
 on:
   workflow_dispatch:
   push:
@@ -9,6 +10,12 @@ on:
       - 'src/**'
       - 'pom.xml'
       - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker/**'
+      - 'ml/src/**'
+      - 'ml/api/**'
+      - 'ml/pyproject.toml'
+      - 'ml/.python-version'
       - 'hf-space/README.md'
       - '.github/workflows/deploy-backend-hf.yml'
 
@@ -20,7 +27,7 @@ env:
 
 jobs:
   build-and-deploy:
-    name: Build Spring Boot JAR and deploy to HF Space
+    name: Build Spring Boot JAR and deploy combined Space
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -45,11 +52,15 @@ jobs:
             echo 'No executable Spring Boot JAR was produced.'
             exit 1
           fi
+          rm -rf hf-space-payload
           mkdir -p hf-space-payload
           cp "$JAR" hf-space-payload/app.jar
           cp Dockerfile hf-space-payload/Dockerfile
+          cp .dockerignore hf-space-payload/.dockerignore
+          cp -R docker hf-space-payload/docker
+          cp -R ml hf-space-payload/ml
           cp hf-space/README.md hf-space-payload/README.md
-          ls -lh hf-space-payload
+          ls -lah hf-space-payload
 
       - name: Validate Hugging Face token
         env:
@@ -86,7 +97,7 @@ jobs:
           print('HF Space history compacted successfully.')
           PY
 
-      - name: Upload backend and synchronize Space metadata
+      - name: Upload backend and ML runtime to Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -99,14 +110,13 @@ jobs:
             --delete '*.sqlite' \
             --delete '*.sqlite3' \
             --delete '*.db' \
-            --commit-message="Deploy backend ${GITHUB_SHA::7}"
+            --commit-message="Deploy combined backend + ML ${GITHUB_SHA::7}"
 
       - name: Publish deployment summary
         run: |
-          echo "### Hugging Face backend deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Hugging Face combined deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "- Space: \\`$HF_SPACE_REPO\\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Commit: \\`${GITHUB_SHA::7}\\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Artifact: \\`app.jar\\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Dockerfile: synchronized" >> "$GITHUB_STEP_SUMMARY"
-          echo "- README: synchronized" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Stale database artifacts: removed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Spring Boot: \\`:8080\\` internal" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Python ML: \\`:8000\\` internal" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Space gateway: \\`:7860\\`" >> "$GITHUB_STEP_SUMMARY"

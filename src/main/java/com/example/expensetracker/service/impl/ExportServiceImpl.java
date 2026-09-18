@@ -1367,7 +1367,8 @@ public class ExportServiceImpl implements ExportService {
                     cell.setCellStyle(bannerStyle);
                 }
             }
-            dashSheet.getRow(0).getCell(0).setCellValue("\u26A1 POWERBI FINANCIAL INTELLIGENCE EXECUTIVE DASHBOARD");
+            dashSheet.getRow(0).getCell(0).setCellValue(
+                    "EXECUTIVE FINANCIAL INTELLIGENCE & PERFORMANCE DASHBOARD");
             dashSheet.addMergedRegion(new CellRangeAddress(0, 1, 0, 7));
 
             // Sub-Banner Row 2
@@ -1390,11 +1391,19 @@ public class ExportServiceImpl implements ExportService {
                 cell.setCellStyle(subBannerStyle);
             }
             subRow.getCell(0).setCellValue("PORTFOLIO PERFORMANCE & CASH FLOW ANALYTICS  |  USER: " + user.getName()
-                    + " (" + user.getEmail() + ")  |  CURRENCY: " + curr.code + " (" + curr.symbol + ") "
-                            + " |  GENERATED: " + LocalDate.now() + "  |  SYSTEM: LIVE TELEMETRY");
+                    + " (" + user.getEmail() + ")  |  BASE CURRENCY: " + curr.code + " (" + curr.symbol + ") "
+                    + " |  GENERATED: " + LocalDate.now() + "  |  PERIOD: FISCAL YEAR-TO-DATE");
             dashSheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 7));
 
-            dashSheet.createRow(3).setHeightInPoints(10); // Spacer
+            XSSFCellStyle canvasStyle = workbook.createCellStyle();
+            canvasStyle.setFillForegroundColor(new XSSFColor(new Color(248, 250, 252), colorMap));
+            canvasStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            Row spacer3 = dashSheet.createRow(3);
+            spacer3.setHeightInPoints(10);
+            for (int c = 0; c <= 7; c++) {
+                spacer3.createCell(c).setCellStyle(canvasStyle);
+            }
 
             // 2. Primary 4-Card KPI Metric Ribbon (Rows 4, 5, 6 across Columns A to H)
             dashSheet.createRow(4).setHeightInPoints(20);
@@ -1418,7 +1427,7 @@ public class ExportServiceImpl implements ExportService {
 
             // Card 3: NET CASH FLOW (Cols E–F / 4–5)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 4, 5, 6, 4, 5,
-                    "\u25C6 NET ACCUMULATED SURPLUS",
+                    "\u25C6 NET CAPITAL SURPLUS",
                     "A6-C6",
                     PBI_INDIGO_ACCENT, kpiCurFormat, "Net retained capital velocity");
 
@@ -1428,7 +1437,11 @@ public class ExportServiceImpl implements ExportService {
                     "IF(A6>0, E6/A6, 0)",
                     PBI_AMBER_GOLD, kpiPctFormat, "Target Benchmark: \u2265 20.0%");
 
-            dashSheet.createRow(7).setHeightInPoints(10); // Spacer
+            Row spacer7 = dashSheet.createRow(7);
+            spacer7.setHeightInPoints(10);
+            for (int c = 0; c <= 7; c++) {
+                spacer7.createCell(c).setCellStyle(canvasStyle);
+            }
 
             // 3. Secondary 4-Card Resilience & Burn Velocity KPI Ribbon (Rows 8, 9, 10 across Columns A to H)
             dashSheet.createRow(8).setHeightInPoints(20);
@@ -1437,7 +1450,7 @@ public class ExportServiceImpl implements ExportService {
 
             // Card 5: FINANCIAL HEALTH SCORE (Cols A–B / 0–1)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 8, 9, 10, 0, 1,
-                    "\u25C8 FINANCIAL RESILIENCE SCORE",
+                    "\u25C8 FINANCIAL RESILIENCE INDEX",
                     healthScore + " / 100",
                     healthColor, (short) 0, healthGrade + " \u2022 " + healthStatusText);
 
@@ -1466,12 +1479,13 @@ public class ExportServiceImpl implements ExportService {
                     String.format(Locale.US, "Needs: %.0f%% \u2022 Wants: %.0f%% \u2022 Save: %.0f%%",
                             needsPct * 100, wantsPct * 100, savingsPct * 100));
 
-            dashSheet.createRow(11).setHeightInPoints(12); // Spacer
+            Row spacer11 = dashSheet.createRow(11);
+            spacer11.setHeightInPoints(12);
+            for (int c = 0; c <= 7; c++) {
+                spacer11.createCell(c).setCellStyle(canvasStyle);
+            }
 
             // Background Canvas for Floating Vector Visuals (Rows 12 to 41, Cols A to H)
-            XSSFCellStyle canvasStyle = workbook.createCellStyle();
-            canvasStyle.setFillForegroundColor(new XSSFColor(new Color(248, 250, 252), colorMap));
-            canvasStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             for (int r = 12; r <= 41; r++) {
                 Row cr = dashSheet.createRow(r);
                 cr.setHeightInPoints(18);
@@ -1481,7 +1495,11 @@ public class ExportServiceImpl implements ExportService {
                 }
             }
 
-            dashSheet.createRow(42).setHeightInPoints(14); // Spacer
+            Row spacer42 = dashSheet.createRow(42);
+            spacer42.setHeightInPoints(14);
+            for (int c = 0; c <= 7; c++) {
+                spacer42.createCell(c).setCellStyle(canvasStyle);
+            }
 
             // ═════════════════════════════════════════════════════════════════════════
             // SECTION 1: 50/30/20 CAPITAL ALLOCATION & MACRO BENCHMARK (Rows 43 to 48)
@@ -1504,7 +1522,7 @@ public class ExportServiceImpl implements ExportService {
                 Cell cell = bmBannerRow.createCell(c);
                 cell.setCellStyle(mBannerStyle);
             }
-            bmBannerRow.getCell(0).setCellValue("  \u2726 MACRO 50/30/20 CAPITAL ALLOCATION & WEALTH BENCHMARK");
+            bmBannerRow.getCell(0).setCellValue("  1. MACRO 50/30/20 CAPITAL ALLOCATION & WEALTH BENCHMARK");
             dashSheet.addMergedRegion(new CellRangeAddress(43, 43, 0, 7));
 
             Row bmHeader = dashSheet.createRow(44);
@@ -1659,7 +1677,7 @@ public class ExportServiceImpl implements ExportService {
                 cell.setCellStyle(mBannerStyle);
             }
             catBannerRow.getCell(0).setCellValue(
-                    "  \u2726 EXECUTIVE CATEGORY COST DRIVERS & PARETO 80/20 ALLOCATION MATRIX");
+                    "  2. EXPENDITURE CATEGORY CONCENTRATION & 80/20 PARETO MATRIX");
             dashSheet.addMergedRegion(new CellRangeAddress(catBannerRowIdx, catBannerRowIdx, 0, 7));
 
             int catHeadRowIdx = catBannerRowIdx + 1;
@@ -1778,7 +1796,7 @@ public class ExportServiceImpl implements ExportService {
                 Cell cell = sec2BannerRow.createCell(c);
                 cell.setCellStyle(mBannerStyle);
             }
-            sec2BannerRow.getCell(0).setCellValue("  \u2726 PORTFOLIO CASH FLOW DYNAMICS & LIQUIDITY LEDGER");
+            sec2BannerRow.getCell(0).setCellValue("  3. PORTFOLIO CASH FLOW DYNAMICS & LIQUIDITY LEDGER");
             dashSheet.addMergedRegion(new CellRangeAddress(sec2BannerRowIdx, sec2BannerRowIdx, 0, 7));
 
             int t2HeadRowIdx = sec2BannerRowIdx + 1;
@@ -1927,7 +1945,7 @@ public class ExportServiceImpl implements ExportService {
                 Cell cell = sec3BannerRow.createCell(c);
                 cell.setCellStyle(mBannerStyle);
             }
-            sec3BannerRow.getCell(0).setCellValue("  \u2726 CHRONOLOGICAL DISBURSEMENT RUN-RATE & SPEND TIMELINE");
+            sec3BannerRow.getCell(0).setCellValue("  4. CHRONOLOGICAL CASH OUTFLOW RUN-RATE & TIMELINE");
             dashSheet.addMergedRegion(new CellRangeAddress(sec3BannerRowIdx, sec3BannerRowIdx, 0, 7));
 
             int t3HeadRowIdx = sec3BannerRowIdx + 1;
@@ -1941,7 +1959,7 @@ public class ExportServiceImpl implements ExportService {
                     "Daily Average Benchmark (" + curr.symbol + ")",
                     "Variance vs Benchmark (" + curr.symbol + ")",
                     "Velocity Intensity",
-                    "Telemetry Health Tag"
+                    "Liquidity Status Tag"
             };
             for (int c = 0; c < t3Headers.length; c++) {
                 Cell hCell = t3HeadRow.createCell(c);
@@ -2055,7 +2073,7 @@ public class ExportServiceImpl implements ExportService {
                 cell.setCellStyle(mBannerStyle);
             }
             aiBannerRow.getCell(0).setCellValue(
-                    "  \u2726 STRATEGIC EXECUTIVE AI PRESCRIPTIONS & ACTIONABLE DIRECTIVES");
+                    "  5. STRATEGIC FINANCIAL INTELLIGENCE & ACTIONABLE RECOMMENDATIONS");
             dashSheet.addMergedRegion(new CellRangeAddress(aiBannerRowIdx, aiBannerRowIdx, 0, 7));
 
             String[] aiLabels = {
