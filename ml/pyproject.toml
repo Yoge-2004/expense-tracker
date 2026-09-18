@@ -17,6 +17,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+classical = [
+  "datasets>=5,<6",
+  "huggingface-hub>=1.32,<2",
+  "matplotlib>=3.10,<4",
+  "scipy>=1.16,<2",
+  "tqdm>=4.67,<5",
+]
 train = [
   "accelerate>=1.15,<2",
   "datasets>=5,<6",
