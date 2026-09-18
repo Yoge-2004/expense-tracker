@@ -114,4 +114,24 @@
 @import url("animations/advanced/data-viz.css") layer(components);
 @import url("base/foundation.css") layer(components);
 
+/* Round 3. Same property-level check as round 2:
+     dashboard/enhancements/filter-panel.css shares .empty-state-icon
+       (font-size/margin-bottom/opacity vs animations/advanced/core.css's
+       animation/display/will-change), .link-action:hover (gap/opacity vs
+       tables/dashboard-support.css's color/text-decoration), and
+       .section-title (a gradient-text `background` vs dashboard-support's
+       font sizing/color) - three disjoint-property overlaps, none of the
+       three partner files needed to move.
+     tables/filters.css shares .filter-quick-presets (layout vs
+       animations/advanced/feedback.css's animation-only rule) and
+       .preset-btn.active (background/color/border/font-weight vs
+       animations/advanced/core.css's animation-only rule) - again fully
+       disjoint.
+   Passed over this round: animations/advanced/specialty.css, whose
+   .modal-overlay.active/.toast overlaps pull in modals.css - a large,
+   heavily-shared file that needs its own dedicated round rather than
+   riding along here. */
+@import url("dashboard/enhancements/filter-panel.css") layer(components);
+@import url("tables/filters.css") layer(components);
+
 @import url("motion-system.css") layer(motion-system);
