@@ -114,7 +114,7 @@ def train_all(
     plots_dir = run_dir / "reports" / "figures"
     models_dir = run_dir / "models"
     run_cfg = replace(cfg, artifacts_dir=models_dir, model_dir=models_dir / "category-transformer")
-    resources = configure_resources(cfg.cpu_threads, torch_threads=cfg.torch_threads)
+    resources = configure_resources(cfg.cpu_threads, configure_torch=include_transformer, torch_threads=cfg.torch_threads)
 
     manifest = {
         "status": "running",
@@ -157,7 +157,7 @@ def train_all(
         "dataset-validation",
         "split",
         "tfidf-validation",
-        "transformer-validation",
+        "optional-transformer-validation",
         "model-selection",
         "final-test",
         "merchant",
