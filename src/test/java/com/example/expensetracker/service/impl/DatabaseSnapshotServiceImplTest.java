@@ -115,4 +115,42 @@ class DatabaseSnapshotServiceImplTest {
         assertTrue(Files.exists(sqlitePath));
         assertTrue(Files.size(sqlitePath) > 0);
     }
+
+    @Test
+    @DisplayName("exportCurrentDatabase: null path throws IllegalArgumentException")
+    void exportCurrentDatabase_nullPath_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> snapshotService.exportCurrentDatabase(null));
+    }
+
+    @Test
+    @DisplayName("importIntoFallback: null or non-existent path throws IllegalArgumentException")
+    void importIntoFallback_invalidPath_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> snapshotService.importIntoFallback(null));
+        Path nonExistent = tempDir.resolve("does_not_exist.sqlite");
+        assertThrows(IllegalArgumentException.class, () -> snapshotService.importIntoFallback(nonExistent));
+    }
+
+    @Test
+    @DisplayName("encrypt: null, non-existent, or blank password arguments throw IllegalArgumentException")
+    void encrypt_invalidArgs_throwsException() {
+        Path existing = tempDir.resolve("test_file.txt");
+        Path nonExistent = tempDir.resolve("non_existent.txt");
+        Path out = tempDir.resolve("out.enc");
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(null, out, "pass"));
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(existing, null, "pass"));
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(nonExistent, out, "pass"));
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(existing, out, "   "));
+    }
+
+    @Test
+    @DisplayName("decrypt: null, non-existent, or blank password arguments throw IllegalArgumentException")
+    void decrypt_invalidArgs_throwsException() {
+        Path existing = tempDir.resolve("test_file.txt");
+        Path nonExistent = tempDir.resolve("non_existent.enc");
+        Path out = tempDir.resolve("out.txt");
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(null, out, "pass"));
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(existing, null, "pass"));
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(nonExistent, out, "pass"));
+        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(existing, out, "   "));
+    }
 }

@@ -237,4 +237,70 @@ class ExportServiceImplTest {
             assertNotNull(workbook.getSheet("Savings Goals"));
         }
     }
+
+    @Test
+    @DisplayName("exportExpensesToCsv: null user screams IllegalArgumentException")
+    void exportExpensesToCsv_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportExpensesToCsv(null));
+    }
+
+    @Test
+    @DisplayName("exportExpensesToJson: null user screams IllegalArgumentException")
+    void exportExpensesToJson_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportExpensesToJson(null));
+    }
+
+    @Test
+    @DisplayName("exportExpensesToPdf: null user screams IllegalArgumentException")
+    void exportExpensesToPdf_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportExpensesToPdf(null));
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportExpensesToPdf(null, "USD"));
+    }
+
+    @Test
+    @DisplayName("exportExpensesToExcel: null user screams IllegalArgumentException")
+    void exportExpensesToExcel_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportExpensesToExcel(null));
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportExpensesToExcel(null, "USD"));
+    }
+
+    @Test
+    @DisplayName("exportIncomesToCsv: null user screams IllegalArgumentException")
+    void exportIncomesToCsv_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportIncomesToCsv(null));
+    }
+
+    @Test
+    @DisplayName("exportIncomesToJson: null user screams IllegalArgumentException")
+    void exportIncomesToJson_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportIncomesToJson(null));
+    }
+
+    @Test
+    @DisplayName("exportIncomesToPdf: null user screams IllegalArgumentException")
+    void exportIncomesToPdf_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportIncomesToPdf(null));
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportIncomesToPdf(null, "INR"));
+    }
+
+    @Test
+    @DisplayName("exportIncomesToExcel: null user screams IllegalArgumentException")
+    void exportIncomesToExcel_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportIncomesToExcel(null));
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportIncomesToExcel(null, "INR"));
+    }
+
+    @Test
+    @DisplayName("exportFinancialStatementExcel: null user screams IllegalArgumentException")
+    void exportFinancialStatementExcel_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportFinancialStatementExcel(null));
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportFinancialStatementExcel(null, "USD"));
+    }
+
+    @Test
+    @DisplayName("exportFinancialStatementPdf: null user screams IllegalArgumentException")
+    void exportFinancialStatementPdf_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportFinancialStatementPdf(null));
+        assertThrows(IllegalArgumentException.class, () -> exportService.exportFinancialStatementPdf(null, "USD"));
+    }
 }

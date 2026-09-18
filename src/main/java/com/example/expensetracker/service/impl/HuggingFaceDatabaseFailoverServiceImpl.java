@@ -11,9 +11,15 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.sql.DataSource;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Keeps the latest database snapshot in the Hugging Face Space repository.
@@ -26,12 +32,18 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     private static final String DEFAULT_SPACE = "Yoge-2004/expense-tracker-backend";
     private static final String DEFAULT_PATH = "database/expense_tracker.sqlite.enc";
 
-    @Value("${hf.db.token:${HF_TOKEN:}}") private String token;
-    @Value("${hf.db.space:${HF_SPACE_REPO:" + DEFAULT_SPACE + "}}") private String space;
-    @Value("${hf.db.path:" + DEFAULT_PATH + "}") private String path;
-    @Value("${hf.db.encryption-key:${DB_BACKUP_KEY:}}") private String encryptionKey;
+    @Value("${hf.db.token:${HF_TOKEN:}}")
+    private String token;
 
-    private final DataSource dataSource;
+    @Value("${hf.db.space:${HF_SPACE_REPO:" + DEFAULT_SPACE + "}}")
+    private String space;
+
+    @Value("${hf.db.path:" + DEFAULT_PATH + "}")
+    private String path;
+
+    @Value("${hf.db.encryption-key:${DB_BACKUP_KEY:}}")
+    private String encryptionKey;
+
     private final DatabaseSnapshotService snapshotService;
 
     @Override
@@ -42,8 +54,8 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             return;
         }
         try {
-            Path encrypted = Files.createTempFile("expense-db-", ".enc");
-            Path sqlite = Files.createTempFile("expense-db-", ".sqlite");
+            Path encrypted = createSecureTempFile("expense-db-", ".enc");
+            Path sqlite = createSecureTempFile("expense-db-", ".sqlite");
             try {
                 if (HuggingFaceFileClient.download(space, path, encrypted, token)) {
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
@@ -64,14 +76,18 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     /** Snapshot the currently active database every 10 minutes. */
     @Override
     @Scheduled(cron = "0 */10 * * * *")
-    public void scheduledBackup() { backupCurrentDatabase(); }
+    public void scheduledBackup() {
+        backupCurrentDatabase();
+    }
 
     @Override
     public synchronized boolean backupCurrentDatabase() {
-        if (!configured()) return false;
+        if (!configured()) {
+            return false;
+        }
         try {
-            Path sqlite = Files.createTempFile("expense-db-", ".sqlite");
-            Path encrypted = Files.createTempFile("expense-db-", ".enc");
+            Path sqlite = createSecureTempFile("expense-db-", ".sqlite");
+            Path encrypted = createSecureTempFile("expense-db-", ".enc");
             try {
                 snapshotService.exportCurrentDatabase(sqlite);
                 DatabaseSnapshotService.encrypt(sqlite, encrypted, encryptionKey);
@@ -85,6 +101,36 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         } catch (Exception e) {
             log.error("HF encrypted database backup failed", e);
             return false;
+        }
+    }
+
+    @SuppressWarnings({"java:S5443", "java:S899"})
+    private static Path createSecureTempFile(String prefix, String suffix) throws IOException {
+        Path tempDir = Path.of(System.getProperty("java.io.tmpdir"), "expense-tracker-failover");
+        if (!Files.exists(tempDir)) {
+            try {
+                FileAttribute<Set<PosixFilePermission>> dirAttr = PosixFilePermissions.asFileAttribute(
+                        EnumSet.of(PosixFilePermission.OWNER_READ,
+                                PosixFilePermission.OWNER_WRITE,
+                                PosixFilePermission.OWNER_EXECUTE)
+                );
+                Files.createDirectories(tempDir, dirAttr);
+            } catch (UnsupportedOperationException ignored) {
+                Files.createDirectories(tempDir);
+            }
+        }
+        try {
+            FileAttribute<Set<PosixFilePermission>> fileAttr = PosixFilePermissions.asFileAttribute(
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
+            );
+            return Files.createTempFile(tempDir, prefix, suffix, fileAttr);
+        } catch (UnsupportedOperationException ignored) {
+            Path temp = Files.createTempFile(tempDir, prefix, suffix);
+            File file = temp.toFile();
+            if (!file.setReadable(true, true) || !file.setWritable(true, true)) {
+                log.debug("Notice: Operating system does not support full POSIX permission restriction on {}", temp);
+            }
+            return temp;
         }
     }
 

@@ -13,6 +13,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.MailSendException;
+import com.example.expensetracker.exception.EmailDeliveryException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -179,5 +182,56 @@ class PasswordResetServiceImplTest {
 
         assertTrue(sent);
         verify(otpRepository).save(any(PasswordResetOtp.class));
+    }
+
+    @Test
+    @DisplayName("requestReset: mail sender failure screams EmailDeliveryException")
+    void requestReset_mailSenderFailure_throwsEmailDeliveryException() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "mailEnabled", true);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.example.com");
+
+        User user = new User();
+        user.setEmail("user@example.com");
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+
+        JavaMailSender mailSender = mock(JavaMailSender.class);
+        when(mailSenderProvider.getIfAvailable()).thenReturn(mailSender);
+        jakarta.mail.internet.MimeMessage mimeMessage = mock(jakarta.mail.internet.MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        doThrow(new MailSendException("SMTP failure")).when(mailSender).send(any(jakarta.mail.internet.MimeMessage.class));
+
+        assertThrows(EmailDeliveryException.class, () -> service.requestReset("user@example.com"));
+    }
+
+    @Test
+    @DisplayName("sendSignupOtp: blank or null email screams IllegalArgumentException")
+    void sendSignupOtp_blankOrNullEmail_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.sendSignupOtp(null, "Test"));
+        assertThrows(IllegalArgumentException.class, () -> service.sendSignupOtp("   ", "Test"));
+    }
+
+    @Test
+    @DisplayName("sendSignupOtp: mail sender failure screams EmailDeliveryException")
+    void sendSignupOtp_mailSenderFailure_throwsEmailDeliveryException() {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "mailEnabled", true);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.example.com");
+
+        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        JavaMailSender mailSender = mock(JavaMailSender.class);
+        when(mailSenderProvider.getIfAvailable()).thenReturn(mailSender);
+        jakarta.mail.internet.MimeMessage mimeMessage = mock(jakarta.mail.internet.MimeMessage.class);
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        doThrow(new MailSendException("SMTP failure")).when(mailSender).send(any(jakarta.mail.internet.MimeMessage.class));
+
+        assertThrows(EmailDeliveryException.class, () -> service.sendSignupOtp("new@example.com", "New User"));
+    }
+
+    @Test
+    @DisplayName("resetPassword: password shorter than 6 chars screams IllegalArgumentException")
+    void resetPassword_shortPassword_throwsException() {
+        assertThrows(IllegalArgumentException.class, () ->
+                service.resetPassword("user@example.com", "123456", "12345"));
+        assertThrows(IllegalArgumentException.class, () ->
+                service.resetPassword("user@example.com", "123456", null));
     }
 }

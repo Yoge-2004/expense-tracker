@@ -47,6 +47,9 @@ public class RecurringSavingsScheduler {
         int failedCount = 0;
         for (SavingsGoal goal : dueGoals) {
             try {
+                if (goal == null || goal.getNextDueDate() == null) {
+                    continue;
+                }
                 while (goal.getNextDueDate() != null && !goal.getNextDueDate().isAfter(LocalDate.now())) {
                     BigDecimal installment = goal.getRecurringAmount() != null
                             ? goal.getRecurringAmount()
@@ -66,7 +69,13 @@ public class RecurringSavingsScheduler {
                         }
                     }
 
-                    goal.setNextDueDate(nextOccurrence(goal));
+                    LocalDate nextDate = nextOccurrence(goal);
+                    if (!nextDate.isAfter(goal.getNextDueDate())) {
+                        log.warn("Recurring savings goal {} next date {} is not after current due date {}", goal.getId(), nextDate, goal.getNextDueDate());
+                        goal.setNextDueDate(goal.getNextDueDate().plusMonths(1));
+                    } else {
+                        goal.setNextDueDate(nextDate);
+                    }
                     processedCount++;
                 }
                 savingsGoalRepository.save(goal);

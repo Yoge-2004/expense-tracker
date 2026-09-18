@@ -2,7 +2,6 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.DeleteAccountRequest;
 import com.example.expensetracker.dto.ErrorResponse;
-import com.example.expensetracker.dto.UserProfileDto;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
@@ -18,15 +17,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.security.SecureRandom;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 @Tag(
     name        = "User Management",
@@ -40,12 +40,13 @@ import java.util.HashMap;
 @RequestMapping("/api/users")
 public class UserController {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final UserService userService;
     private final UserRepository userRepository;
     private final UserSecurity userSecurity;
     private final PasswordEncoder passwordEncoder;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
-
 
     // ─── GET /api/users/check-username ────────────────────────────────────────
 
@@ -90,22 +91,22 @@ public class UserController {
         summary = "Generate username suggestions",
         description = "Generates exactly 3 unique, creative username suggestions based on a name or keyword."
     )
-    @RateLimited(key = "user-suggest-usernames", maxRequests = 20, windowSeconds = 60, message = "Too many username suggestion requests. Please try again later.")
+    @RateLimited(key = "user-suggest-usernames", maxRequests = 20, windowSeconds = 60,
+                 message = "Too many username suggestion requests. Please try again later.")
     @GetMapping("/suggest-usernames")
     public ResponseEntity<Map<String, Object>> suggestUsernames(
             @RequestParam(required = false, defaultValue = "user") String base) {
-        String clean = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        String clean = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
         if (clean.isEmpty()) clean = "user";
 
         java.util.Set<String> uniqueSuggestions = new java.util.LinkedHashSet<>();
-        java.util.Random rand = new java.util.Random();
 
         String[] prefixes = {"iam", "the", "real", "hey", "go"};
         for (String p : prefixes) {
             if (uniqueSuggestions.size() >= 3) break;
             String candidate = (p + "_" + clean).replaceAll("[^a-zA-Z0-9_]", "");
             if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (!userRepository.findByUsernameIgnoreCase(candidate).isPresent()) {
+            if (userRepository.findByUsernameIgnoreCase(candidate).isEmpty()) {
                 uniqueSuggestions.add(candidate);
             }
         }
@@ -113,10 +114,10 @@ public class UserController {
         int attempts = 0;
         while (uniqueSuggestions.size() < 3 && attempts < 100) {
             attempts++;
-            int num = 100 + rand.nextInt(900);
+            int num = 100 + RANDOM.nextInt(900);
             String candidate = clean + num;
             if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (!userRepository.findByUsernameIgnoreCase(candidate).isPresent()) {
+            if (userRepository.findByUsernameIgnoreCase(candidate).isEmpty()) {
                 uniqueSuggestions.add(candidate);
             }
         }
@@ -131,7 +132,7 @@ public class UserController {
 
     @Operation(
         summary = "Get user profile",
-        description = "Returns the user's basic profile fields — id, name, username, email, currency, and whether a Security PIN is set."
+        description = "Returns basic profile fields: id, name, username, email, currency, and hasSecurityPin."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Profile returned successfully"),
@@ -173,7 +174,8 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{userId}/security-pin")
-    @RateLimited(key = "update-pin", maxRequests = 10, windowSeconds = 300, message = "Too many PIN update attempts. Please try again in %d seconds.")
+    @RateLimited(key = "update-pin", maxRequests = 10, windowSeconds = 300,
+                 message = "Too many PIN update attempts. Please try again in %d seconds.")
     public ResponseEntity<Map<String, String>> updateSecurityPin(
             @Parameter(description = "Database ID of the user.", required = true, example = "1")
             @PathVariable Long userId,
@@ -207,7 +209,8 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{userId}/verify-security-pin")
-    @RateLimited(key = "verify-pin", maxRequests = 10, windowSeconds = 300, message = "Too many verification attempts. Please try again later.")
+    @RateLimited(key = "verify-pin", maxRequests = 10, windowSeconds = 300,
+                 message = "Too many verification attempts. Please try again later.")
     public ResponseEntity<Map<String, Object>> verifySecurityPin(
             @Parameter(description = "Database ID of the user.", required = true, example = "1")
             @PathVariable Long userId,
@@ -255,9 +258,10 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{userId}")
-    @RateLimited(key = "delete-account", maxRequests = 5, windowSeconds = 300, message = "Too many account deletion attempts. Please try again in %d seconds.")
+    @RateLimited(key = "delete-account", maxRequests = 5, windowSeconds = 300,
+                 message = "Too many account deletion attempts. Please try again in %d seconds.")
     public ResponseEntity<Void> deleteAccount(
-            @Parameter(description = "Database ID of the user account to permanently delete.", required = true, example = "1")
+            @Parameter(description = "Database ID of the user account to delete.", required = true, example = "1")
             @PathVariable Long userId,
             @RequestBody(required = false) DeleteAccountRequest request) {
         log.info("Received request to permanently delete account for userId={}", userId);
@@ -276,16 +280,16 @@ public class UserController {
                 try {
                     GoogleIdTokenVerifier.VerifiedIdentity identity =
                             googleIdTokenVerifier.verify(request.googleIdToken());
-                    verified = identity.email() != null && identity.email().equalsIgnoreCase(user.getEmail());
+                    verified = identity != null && identity.email().equalsIgnoreCase(user.getEmail());
                 } catch (Exception e) {
-                    log.warn("Google ID token verification failed during account deletion for userId={}: {}", userId, e.getMessage());
-                    verified = false;
+                    log.warn("Google ID token verification failed during account deletion for userId={}: {}",
+                            userId, e.getMessage());
                 }
             }
         }
 
         if (!verified) {
-            log.warn("Account deletion denied for userId={}: Invalid or missing credentials confirmation", userId);
+            log.warn("Account deletion denied for userId={}: Invalid credentials confirmation", userId);
             boolean hasPassword = request != null && request.password() != null && !request.password().isBlank();
             String errorMsg = hasPassword
                     ? "Incorrect password. Account deletion requires valid password confirmation."
@@ -302,7 +306,7 @@ public class UserController {
 
     @Operation(
         summary = "Update currency preference",
-        description = "Updates the preferred display currency for the given user account. Accepts any ISO 4217 3-letter code."
+        description = "Updates the preferred display currency for the given user account. Accepts any ISO 4217 code."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Currency preference updated"),
@@ -323,9 +327,9 @@ public class UserController {
             throw new IllegalArgumentException("Currency must be a valid 3-letter ISO 4217 code (e.g., USD, EUR, INR)");
         }
 
-        userService.updateCurrency(userId, currency.trim().toUpperCase(java.util.Locale.ROOT));
-        log.info("Currency successfully updated to '{}' for userId={}", currency.toUpperCase(), userId);
+        userService.updateCurrency(userId, currency.trim().toUpperCase(Locale.ROOT));
+        log.info("Currency successfully updated to '{}' for userId={}", currency.toUpperCase(Locale.ROOT), userId);
         return ResponseEntity.ok(Map.of("message", "Currency preference updated successfully",
-                "currency", currency.trim().toUpperCase(java.util.Locale.ROOT)));
+                "currency", currency.trim().toUpperCase(Locale.ROOT)));
     }
 }

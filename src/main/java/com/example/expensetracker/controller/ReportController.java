@@ -1,9 +1,8 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.MonthlyReportDto;
-import com.example.expensetracker.service.ExportService;
+import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.MonthlyReportService;
-import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,7 +24,7 @@ import java.util.Map;
 
 @Tag(
     name = "Reports",
-    description = "Monthly financial summaries and complete financial exports. All endpoints require Bearer JWT authentication."
+    description = "Monthly financial summaries and complete financial exports. All endpoints require Bearer JWT."
 )
 @Slf4j
 @RequiredArgsConstructor
@@ -35,17 +34,15 @@ import java.util.Map;
 public class ReportController {
 
     private final MonthlyReportService monthlyReportService;
-    private final ExportService exportService;
-    private final UserService userService;
-    private final com.example.expensetracker.security.UserSecurity userSecurity;
+    private final UserSecurity userSecurity;
     private final RangeReportController rangeReportController;
 
-
     @Operation(summary = "Get monthly financial report JSON",
-            description = "Aggregates total inflow, outflow, net savings, savings rate, category allocations, budget status, and top expenses.")
+            description = "Aggregates total inflow, outflow, net savings, savings rate, allocations, budgets, top items.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Monthly report generated successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = MonthlyReportDto.class))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                               schema = @Schema(implementation = MonthlyReportDto.class))),
         @ApiResponse(responseCode = "400", description = "User not found or invalid period parameters"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })

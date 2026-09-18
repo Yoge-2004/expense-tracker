@@ -261,6 +261,9 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportExpensesToCsv(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Expense> expenses = expenseRepository.findByUser(user);
         StringBuilder sb = new StringBuilder();
         sb.append("ID,Date,Category,Amount,Description,Recurring\n");
@@ -280,6 +283,9 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportExpensesToJson(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Expense> expenses = expenseRepository.findByUser(user);
         List<ExpenseDto> dtos = expenses.stream().map(ExpenseMapper::toDto).toList();
         try {
@@ -292,11 +298,17 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportExpensesToPdf(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         return exportExpensesToPdf(user, null);
     }
 
     @Override
     public byte[] exportExpensesToPdf(User user, String preferredCurrency) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Expense> expenses = expenseRepository.findByUser(user);
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
 
@@ -358,11 +370,17 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportExpensesToExcel(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         return exportExpensesToExcel(user, null);
     }
 
     @Override
     public byte[] exportExpensesToExcel(User user, String preferredCurrency) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Expense> expenses = expenseRepository.findByUser(user);
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
 
@@ -488,6 +506,9 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportIncomesToCsv(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Income> incomes = incomeRepository.findByUser(user);
         StringBuilder sb = new StringBuilder();
         sb.append("ID,Date,Source,Amount,Description,Recurring\n");
@@ -507,6 +528,9 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportIncomesToJson(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Income> incomes = incomeRepository.findByUser(user);
         List<IncomeDto> dtos = incomes.stream().map(IncomeMapper::toDto).toList();
         try {
@@ -519,11 +543,17 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportIncomesToPdf(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         return exportIncomesToPdf(user, null);
     }
 
     @Override
     public byte[] exportIncomesToPdf(User user, String preferredCurrency) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Income> incomes = incomeRepository.findByUser(user);
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
 
@@ -585,11 +615,17 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportIncomesToExcel(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         return exportIncomesToExcel(user, null);
     }
 
     @Override
     public byte[] exportIncomesToExcel(User user, String preferredCurrency) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Income> incomes = incomeRepository.findByUser(user);
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
 
@@ -707,11 +743,17 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportFinancialStatementExcel(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         return exportFinancialStatementExcel(user, null);
     }
 
     @Override
     public byte[] exportFinancialStatementExcel(User user, String preferredCurrency) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Expense> expenses = expenseRepository.findByUser(user);
         List<Income> incomes = incomeRepository.findByUser(user);
         List<SavingsGoal> savingsGoals = savingsGoalRepository.findByUser(user);
@@ -2341,11 +2383,17 @@ public class ExportServiceImpl implements ExportService {
 
     @Override
     public byte[] exportFinancialStatementPdf(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         return exportFinancialStatementPdf(user, null);
     }
 
     @Override
     public byte[] exportFinancialStatementPdf(User user, String preferredCurrency) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         List<Expense> expenses = expenseRepository.findByUser(user);
         List<Income> incomes = incomeRepository.findByUser(user);
         List<SavingsGoal> savingsGoals = savingsGoalRepository.findByUser(user);

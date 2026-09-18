@@ -72,8 +72,11 @@ public class RecurringExpenseScheduler {
         int failedCount = 0;
         for (RecurringExpense rec : dueExpenses) {
             try {
+                if (rec == null || rec.getNextDueDate() == null) {
+                    continue;
+                }
                 // Catch up every missed occurrence and preserve its actual due date.
-                while (!rec.getNextDueDate().isAfter(LocalDate.now())) {
+                while (rec.getNextDueDate() != null && !rec.getNextDueDate().isAfter(LocalDate.now())) {
                     Expense expense = new Expense();
                     expense.setAmount(rec.getAmount());
                     expense.setDescription(rec.getDescription() + " (Auto)");
@@ -81,7 +84,13 @@ public class RecurringExpenseScheduler {
                     expense.setUser(rec.getUser());
                     expense.setCategory(rec.getCategory());
                     expenseRepository.save(expense);
-                    rec.setNextDueDate(nextOccurrence(rec));
+                    LocalDate nextDate = nextOccurrence(rec);
+                    if (!nextDate.isAfter(rec.getNextDueDate())) {
+                        log.warn("Recurring expense {} next date {} is not after current due date {}", rec.getId(), nextDate, rec.getNextDueDate());
+                        rec.setNextDueDate(rec.getNextDueDate().plusMonths(1));
+                    } else {
+                        rec.setNextDueDate(nextDate);
+                    }
                     processedCount++;
                 }
                 recurringExpenseRepository.save(rec);

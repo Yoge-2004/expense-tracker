@@ -37,6 +37,16 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User registerUser(User user) {
         log.info("Attempting to register user");
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new IllegalArgumentException("User email cannot be blank");
+        }
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new IllegalArgumentException("User password cannot be blank");
+        }
+
         String normalizedEmail = user.getEmail().trim();
         if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
             log.warn("Registration rejected because email is already registered");
@@ -59,10 +69,6 @@ public class UserServiceImpl implements UserService {
         if (user.getCurrency() == null || user.getCurrency().isBlank()) {
             user.setCurrency("INR");
         } else {
-            // VALIDATION FIX: RegisterRequest.currency has @Pattern("^[A-Za-z]{3}$") but @Valid
-            // is only enforced at the controller layer. When registerUser is called from
-            // AuthController.oauthLogin (which constructs the User directly without @Valid),
-            // invalid currency codes like "USDOLLARS" or "123" would be silently persisted.
             // Re-validate at the service boundary so all entry paths are covered.
             String c = user.getCurrency().trim();
             if (!c.matches("^[A-Za-z]{3}$")) {
@@ -97,6 +103,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Optional<User> findById(Long id) {
+        if (id == null) return Optional.empty();
         log.debug("Finding user by id: {}", id);
         return userRepository.findById(id);
     }
@@ -104,6 +111,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateSecurityPin(Long userId, String newPin) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         if (newPin == null || !newPin.matches("^[0-9]{6}$")) {
             throw new IllegalArgumentException("Security PIN must be exactly 6 digits.");
         }
@@ -119,6 +129,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public boolean verifySecurityPin(Long userId, String pin) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         if (pin == null || !pin.matches("^[0-9]{6}$")) {
             throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits");
         }
@@ -159,6 +172,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateCurrency(Long userId, String currency) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         if (currency == null || !currency.matches("^[A-Za-z]{3}$")) {
             throw new IllegalArgumentException("Currency must be a 3-letter ISO 4217 code.");
         }
@@ -172,6 +188,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

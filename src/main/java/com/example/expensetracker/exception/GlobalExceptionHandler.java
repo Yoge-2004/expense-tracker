@@ -540,6 +540,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(java.time.format.DateTimeParseException.class)
+    public ResponseEntity<ErrorResponse> handleDateTimeParseException(
+            java.time.format.DateTimeParseException ex,
+            HttpServletRequest request) {
+
+        log.warn("Invalid date format at '{}': parsedString='{}', errorIndex={}",
+                request.getRequestURI(), ex.getParsedString(), ex.getErrorIndex());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Invalid date format: '" + ex.getParsedString() + "'. Expected format: yyyy-MM-dd",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(
             org.springframework.security.access.AccessDeniedException ex,

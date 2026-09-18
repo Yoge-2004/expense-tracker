@@ -3,7 +3,6 @@ package com.example.expensetracker.service.impl;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.model.WebAuthnChallenge;
 import com.example.expensetracker.model.WebAuthnCredential;
-import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.repository.WebAuthnChallengeRepository;
 import com.example.expensetracker.repository.WebAuthnCredentialRepository;
 import com.example.expensetracker.security.JwtService;
@@ -27,7 +26,6 @@ class WebAuthnServiceImplTest {
 
     @Mock private WebAuthnChallengeRepository challenges;
     @Mock private WebAuthnCredentialRepository credentials;
-    @Mock private UserRepository users;
     @Mock private JwtService jwtService;
     @Mock private WebAuthnCredentialRepositoryAdapter credentialRepositoryAdapter;
 
@@ -39,7 +37,6 @@ class WebAuthnServiceImplTest {
         service = new WebAuthnServiceImpl(
                 challenges,
                 credentials,
-                users,
                 jwtService,
                 credentialRepositoryAdapter,
                 "localhost",
@@ -110,5 +107,42 @@ class WebAuthnServiceImplTest {
         service.disableForUser(testUser);
 
         verify(credentials).deleteAll(List.of(cred));
+    }
+
+    @Test
+    @DisplayName("startRegistration: null user or userId throws IllegalArgumentException")
+    void startRegistration_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.startRegistration(null));
+        User noId = new User();
+        assertThrows(IllegalArgumentException.class, () -> service.startRegistration(noId));
+    }
+
+    @Test
+    @DisplayName("finishRegistration: null user, blank transactionId, or blank json throws IllegalArgumentException")
+    void finishRegistration_invalidArgs_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.finishRegistration(null, "tx1", "{}"));
+        User noId = new User();
+        assertThrows(IllegalArgumentException.class, () -> service.finishRegistration(noId, "tx1", "{}"));
+        assertThrows(IllegalArgumentException.class, () -> service.finishRegistration(testUser, null, "{}"));
+        assertThrows(IllegalArgumentException.class, () -> service.finishRegistration(testUser, "   ", "{}"));
+        assertThrows(IllegalArgumentException.class, () -> service.finishRegistration(testUser, "tx1", null));
+        assertThrows(IllegalArgumentException.class, () -> service.finishRegistration(testUser, "tx1", "   "));
+    }
+
+    @Test
+    @DisplayName("finishAuthentication: blank transactionId or blank assertionJson throws IllegalArgumentException")
+    void finishAuthentication_invalidArgs_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.finishAuthentication(null, "{}"));
+        assertThrows(IllegalArgumentException.class, () -> service.finishAuthentication("   ", "{}"));
+        assertThrows(IllegalArgumentException.class, () -> service.finishAuthentication("tx1", null));
+        assertThrows(IllegalArgumentException.class, () -> service.finishAuthentication("tx1", "   "));
+    }
+
+    @Test
+    @DisplayName("disableForUser: null user or null userId throws IllegalArgumentException")
+    void disableForUser_nullUser_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.disableForUser(null));
+        User noId = new User();
+        assertThrows(IllegalArgumentException.class, () -> service.disableForUser(noId));
     }
 }

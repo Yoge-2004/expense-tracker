@@ -69,7 +69,8 @@ public class RangeReportController {
         security.validateUserAccess(userId);
         User user = user(userId);
         Range range = Range.of(from, to);
-        log.info("Generating executive Excel report for userId={}, range='{}', currency='{}'", userId, range.label(), currency);
+        log.info("Generating executive Excel report for userId={}, range='{}', currency='{}'",
+                userId, range.label(), currency);
         Data data = data(user, range);
         byte[] bytes = excel(data, range, currency);
         log.info("Executive Excel report generated successfully for userId={}, size={} bytes", userId, bytes.length);
@@ -91,7 +92,8 @@ public class RangeReportController {
         security.validateUserAccess(userId);
         User user = user(userId);
         Range range = Range.of(from, to);
-        log.info("Generating executive PDF report for userId={}, range='{}', currency='{}'", userId, range.label(), currency);
+        log.info("Generating executive PDF report for userId={}, range='{}', currency='{}'",
+                userId, range.label(), currency);
         Data data = data(user, range);
         byte[] bytes = pdf(data, range, currency, user.getName());
         log.info("Executive PDF report generated successfully for userId={}, size={} bytes", userId, bytes.length);
@@ -241,7 +243,8 @@ public class RangeReportController {
                 put(subscriptionSheet, row, 1, nz(x.getAmount()), money);
                 put(subscriptionSheet, row, 2, safe(x.getFrequency()), body);
                 put(subscriptionSheet, row, 3, safeDate(x.getNextDueDate()), body);
-                put(subscriptionSheet, row, 4, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), body);
+                put(subscriptionSheet, row, 4,
+                        x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), body);
                 row++;
             }
             widths(subscriptionSheet, new int[]{32, 18, 16, 16, 24});
@@ -269,11 +272,13 @@ public class RangeReportController {
             Map<String, BigDecimal> im = d.incomes.stream()
                     .filter(x -> x.getIncomeDate() != null)
                     .collect(Collectors.groupingBy(x -> x.getIncomeDate().withDayOfMonth(1).toString(),
-                            Collectors.mapping(x -> nz(x.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
+                            Collectors.mapping(x -> nz(x.getAmount()),
+                                    Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
             Map<String, BigDecimal> em = d.expenses.stream()
                     .filter(x -> x.getExpenseDate() != null)
                     .collect(Collectors.groupingBy(x -> x.getExpenseDate().withDayOfMonth(1).toString(),
-                            Collectors.mapping(x -> nz(x.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
+                            Collectors.mapping(x -> nz(x.getAmount()),
+                                    Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
             row = 1;
             Set<String> months = new TreeSet<>();
             months.addAll(im.keySet());
@@ -320,7 +325,8 @@ public class RangeReportController {
             k.setWidthPercentage(100);
             kpi(k, "TOTAL SPEND", s + " " + spend, new Color(239, 68, 68));
             kpi(k, "TOTAL INCOME", s + " " + income, new Color(16, 185, 129));
-            kpi(k, "NET CASH FLOW", s + " " + net, net.signum() >= 0 ? new Color(16, 185, 129) : new Color(239, 68, 68));
+            kpi(k, "NET CASH FLOW", s + " " + net,
+                    net.signum() >= 0 ? new Color(16, 185, 129) : new Color(239, 68, 68));
             kpi(k, "TRANSACTIONS", String.valueOf(d.expenses.size() + d.incomes.size()), new Color(79, 70, 229));
             doc.add(k);
 
@@ -359,11 +365,15 @@ public class RangeReportController {
         }
     }
 
-    private static void addIncomePdf(Document doc, List<Income> incomes, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addIncomePdf(Document doc, List<Income> incomes, String s,
+                                     org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
         doc.add(new Paragraph("Income ledger", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
-        head(t, "Date"); head(t, "Source"); head(t, "Description"); head(t, "Amount");
+        head(t, "Date");
+        head(t, "Source");
+        head(t, "Description");
+        head(t, "Amount");
         for (Income x : incomes) {
             cell(t, safeDate(x.getIncomeDate()), muted);
             cell(t, safe(x.getSource()), muted);
@@ -373,11 +383,15 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addExpensePdf(Document doc, List<Expense> expenses, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addExpensePdf(Document doc, List<Expense> expenses, String s,
+                                      org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
         doc.add(new Paragraph("Expense ledger", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
-        head(t, "Date"); head(t, "Category"); head(t, "Description"); head(t, "Amount");
+        head(t, "Date");
+        head(t, "Category");
+        head(t, "Description");
+        head(t, "Amount");
         for (Expense x : expenses) {
             cell(t, safeDate(x.getExpenseDate()), muted);
             cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted);
@@ -387,11 +401,16 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addSavingsPdf(Document doc, List<SavingsGoal> goals, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addSavingsPdf(Document doc, List<SavingsGoal> goals, String s,
+                                      org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
         doc.add(new Paragraph("Savings goals", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
-        head(t, "Goal"); head(t, "Target"); head(t, "Saved"); head(t, "Progress"); head(t, "Status");
+        head(t, "Goal");
+        head(t, "Target");
+        head(t, "Saved");
+        head(t, "Progress");
+        head(t, "Status");
         for (SavingsGoal x : goals) {
             BigDecimal target = nz(x.getTargetAmount());
             BigDecimal saved = nz(x.getCurrentAmount());
@@ -405,11 +424,16 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addSubscriptionPdf(Document doc, List<RecurringExpense> subscriptions, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addSubscriptionPdf(Document doc, List<RecurringExpense> subscriptions, String s,
+                                           org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
         doc.add(new Paragraph("Subscriptions", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
-        head(t, "Subscription"); head(t, "Amount"); head(t, "Frequency"); head(t, "Next Due"); head(t, "Category");
+        head(t, "Subscription");
+        head(t, "Amount");
+        head(t, "Frequency");
+        head(t, "Next Due");
+        head(t, "Category");
         for (RecurringExpense x : subscriptions) {
             cell(t, safe(x.getDescription()), muted);
             cell(t, s + " " + nz(x.getAmount()), muted);
@@ -420,11 +444,15 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addBudgetPdf(Document doc, List<Budget> budgets, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addBudgetPdf(Document doc, List<Budget> budgets, String s,
+                                      org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
         doc.add(new Paragraph("Budgets", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
-        head(t, "Category"); head(t, "Limit"); head(t, "Period"); head(t, "Date Window");
+        head(t, "Category");
+        head(t, "Limit");
+        head(t, "Period");
+        head(t, "Date Window");
         for (Budget x : budgets) {
             cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted);
             cell(t, s + " " + nz(x.getLimitAmount()), muted);
@@ -438,7 +466,8 @@ public class RangeReportController {
         String top = d.expenses.stream()
                 .collect(Collectors.groupingBy(
                         x -> x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(),
-                        Collectors.mapping(x -> nz(x.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
+                        Collectors.mapping(x -> nz(x.getAmount()),
+                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
                 .entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
@@ -531,7 +560,8 @@ public class RangeReportController {
         cell.setPadding(8);
         cell.setBorderColor(new Color(226, 232, 240));
         cell.addElement(new Paragraph(label, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, accent)));
-        cell.addElement(new Paragraph(value, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new Color(15, 23, 42))));
+        cell.addElement(new Paragraph(value,
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new Color(15, 23, 42))));
         table.addCell(cell);
     }
 
@@ -567,8 +597,20 @@ public class RangeReportController {
 
     private record Range(LocalDate from, LocalDate to) {
         static Range of(String from, String to) {
-            LocalDate start = from == null || from.isBlank() ? null : LocalDate.parse(from);
-            LocalDate end = to == null || to.isBlank() ? null : LocalDate.parse(to);
+            LocalDate start = null;
+            LocalDate end = null;
+            try {
+                start = from == null || from.isBlank() ? null : LocalDate.parse(from);
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException(
+                        "Invalid 'from' date format: '" + from + "'. Expected format: yyyy-MM-dd", e);
+            }
+            try {
+                end = to == null || to.isBlank() ? null : LocalDate.parse(to);
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException(
+                        "Invalid 'to' date format: '" + to + "'. Expected format: yyyy-MM-dd", e);
+            }
             if (start != null && end != null && end.isBefore(start)) {
                 throw new IllegalArgumentException("End date must be on or after start date.");
             }

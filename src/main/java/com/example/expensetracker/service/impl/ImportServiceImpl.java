@@ -68,6 +68,9 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importExpensesFromCsv(MultipartFile file, User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
@@ -87,8 +90,7 @@ public class ImportServiceImpl implements ImportService {
             Map<String, Integer> col = parseHeader(headerLine);
             if (!col.containsKey("date") || !col.containsKey("category") || !col.containsKey("amount")) {
                 throw new IllegalArgumentException(
-                        "CSV must contain at least 'date', 'category', and 'amount' headers. "
-                        + "Found: " + col.keySet()
+                        "CSV must contain at least 'date', 'category', and 'amount' headers. Found: " + col.keySet()
                 );
             }
 
@@ -101,20 +103,24 @@ public class ImportServiceImpl implements ImportService {
             int rowNum = 1;
             while ((line = reader.readLine()) != null) {
                 rowNum++;
-                if (line.trim().isEmpty()) continue;
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
 
                 try {
-                    String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                    List<String> parts = parseCsvLine(line);
                     int maxNeeded = Math.max(dateIdx, Math.max(catIdx, amtIdx));
-                    if (parts.length <= maxNeeded) {
-                        rowErrors.add("Row " + rowNum + ": expected at least " + (maxNeeded + 1) + " columns, found " + parts.length + ".");
+                    if (parts.size() <= maxNeeded) {
+                        rowErrors.add("Row " + rowNum + ": expected at least " + (maxNeeded + 1)
+                                + " columns, found " + parts.size() + ".");
                         continue;
                     }
 
-                    String dateStr = parts[dateIdx].replace("\"", "").trim();
-                    String catStr  = parts[catIdx].replace("\"", "").trim();
-                    String amtStr  = parts[amtIdx].replace("\"", "").trim().replaceAll("[^0-9.\\-]", "");
-                    String desc    = (descIdx != null && descIdx < parts.length) ? parts[descIdx].replace("\"", "").trim() : "";
+                    String dateStr = parts.get(dateIdx).replace("\"", "").trim();
+                    String catStr  = parts.get(catIdx).replace("\"", "").trim();
+                    String amtStr  = parts.get(amtIdx).replace("\"", "").trim().replaceAll("[^0-9.\\-]", "");
+                    String desc    = (descIdx != null && descIdx < parts.size())
+                            ? parts.get(descIdx).replace("\"", "").trim() : "";
 
                     if (dateStr.isEmpty() || catStr.isEmpty() || amtStr.isEmpty()) {
                         rowErrors.add("Row " + rowNum + ": date, category, or amount is empty.");
@@ -147,7 +153,8 @@ public class ImportServiceImpl implements ImportService {
             throw new IllegalArgumentException("CSV file contains no expense data rows to import");
         }
         if (count == 0 && !rowErrors.isEmpty()) {
-            throw new IllegalArgumentException("Failed to import expenses: all " + rowErrors.size() + " rows failed (" + String.join("; ", rowErrors) + ")");
+            throw new IllegalArgumentException("Failed to import expenses: all " + rowErrors.size()
+                    + " rows failed (" + String.join("; ", rowErrors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -162,18 +169,24 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importExpensesFromJson(MultipartFile file, User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
 
         try {
-            List<ExpenseDto> dtos = objectMapper.readValue(file.getInputStream(), new TypeReference<List<ExpenseDto>>() {});
+            List<ExpenseDto> dtos = objectMapper.readValue(file.getInputStream(), new TypeReference<>() {});
             if (dtos == null || dtos.isEmpty()) {
                 throw new IllegalArgumentException("JSON file contains no expenses to import");
             }
             Map<String, Category> categoryCache = new HashMap<>();
             int count = 0;
             for (ExpenseDto dto : dtos) {
+                if (dto == null) {
+                    throw new IllegalArgumentException("Expense record in JSON cannot be null");
+                }
                 Category category = null;
                 if (dto.categoryName() != null && !dto.categoryName().isBlank()) {
                     category = resolveOrCreateCategoryForUser(dto.categoryName().trim(), user, categoryCache);
@@ -184,9 +197,14 @@ public class ImportServiceImpl implements ImportService {
                     throw new IllegalArgumentException("Amount must be greater than zero");
                 }
                 expense.setAmount(amount);
-                expense.setDescription(dto.description());
                 expense.setExpenseDate(dto.expenseDate() != null ? dto.expenseDate() : LocalDate.now());
+                String desc = dto.description();
+                if (desc == null || desc.isBlank()) {
+                    desc = dto.categoryName() != null ? dto.categoryName() : "Expense";
+                }
+                expense.setDescription(desc);
                 expense.setCategory(category);
+                expense.setUser(user);
 
                 expenseService.createExpense(expense, user);
                 count++;
@@ -210,6 +228,9 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importExpensesFromExcel(MultipartFile file, User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
@@ -246,13 +267,16 @@ public class ImportServiceImpl implements ImportService {
 
             if (dateCol == null || catCol == null || amtCol == null) {
                 throw new IllegalArgumentException(
-                        "Excel sheet must contain at least: Date, Category, and Amount headers. Found: " + colMap.keySet()
+                        "Excel sheet must contain at least: Date, Category, and Amount headers. Found: "
+                                + colMap.keySet()
                 );
             }
 
             for (int r = 1; r <= sheet.getLastRowNum(); r++) {
                 Row row = sheet.getRow(r);
-                if (row == null || isRowEmpty(row)) continue;
+                if (row == null || isRowEmpty(row)) {
+                    continue;
+                }
 
                 try {
                     Cell dateCell = row.getCell(dateCol);
@@ -297,7 +321,8 @@ public class ImportServiceImpl implements ImportService {
             throw new IllegalArgumentException("Excel sheet contains no expense data rows to import");
         }
         if (count == 0 && !errors.isEmpty()) {
-            throw new IllegalArgumentException("Failed to import expenses: all " + errors.size() + " rows failed (" + String.join("; ", errors) + ")");
+            throw new IllegalArgumentException("Failed to import expenses: all " + errors.size()
+                    + " rows failed (" + String.join("; ", errors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -316,6 +341,9 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importIncomesFromCsv(MultipartFile file, User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
@@ -348,20 +376,24 @@ public class ImportServiceImpl implements ImportService {
             int rowNum = 1;
             while ((line = reader.readLine()) != null) {
                 rowNum++;
-                if (line.trim().isEmpty()) continue;
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
 
                 try {
-                    String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+                    List<String> parts = parseCsvLine(line);
                     int maxNeeded = Math.max(dateIdx, Math.max(srcIdx, amtIdx));
-                    if (parts.length <= maxNeeded) {
-                        rowErrors.add("Row " + rowNum + ": expected at least " + (maxNeeded + 1) + " columns, found " + parts.length + ".");
+                    if (parts.size() <= maxNeeded) {
+                        rowErrors.add("Row " + rowNum + ": expected at least " + (maxNeeded + 1)
+                                + " columns, found " + parts.size() + ".");
                         continue;
                     }
 
-                    String dateStr = parts[dateIdx].replace("\"", "").trim();
-                    String sourceStr = parts[srcIdx].replace("\"", "").trim();
-                    String amtStr = parts[amtIdx].replace("\"", "").trim().replaceAll("[^0-9.\\-]", "");
-                    String desc = (descIdx != null && descIdx < parts.length) ? parts[descIdx].replace("\"", "").trim() : "";
+                    String dateStr = parts.get(dateIdx).replace("\"", "").trim();
+                    String sourceStr = parts.get(srcIdx).replace("\"", "").trim();
+                    String amtStr = parts.get(amtIdx).replace("\"", "").trim().replaceAll("[^0-9.\\-]", "");
+                    String desc = (descIdx != null && descIdx < parts.size())
+                            ? parts.get(descIdx).replace("\"", "").trim() : "";
 
                     if (dateStr.isEmpty() || sourceStr.isEmpty() || amtStr.isEmpty()) {
                         rowErrors.add("Row " + rowNum + ": date, source, or amount is empty.");
@@ -393,7 +425,8 @@ public class ImportServiceImpl implements ImportService {
             throw new IllegalArgumentException("CSV file contains no income data rows to import");
         }
         if (count == 0 && !rowErrors.isEmpty()) {
-            throw new IllegalArgumentException("Failed to import incomes: all " + rowErrors.size() + " rows failed (" + String.join("; ", rowErrors) + ")");
+            throw new IllegalArgumentException("Failed to import incomes: all " + rowErrors.size()
+                    + " rows failed (" + String.join("; ", rowErrors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -408,23 +441,35 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importIncomesFromJson(MultipartFile file, User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
 
         try {
-            List<IncomeDto> dtos = objectMapper.readValue(file.getInputStream(), new TypeReference<List<IncomeDto>>() {});
+            List<IncomeDto> dtos = objectMapper.readValue(file.getInputStream(), new TypeReference<>() {});
             if (dtos == null || dtos.isEmpty()) {
                 throw new IllegalArgumentException("JSON file contains no incomes to import");
             }
             int count = 0;
             for (IncomeDto dto : dtos) {
+                if (dto == null) {
+                    throw new IllegalArgumentException("Income record in JSON cannot be null");
+                }
+                if (dto.amount() == null || dto.amount().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException("Income amount must be greater than zero");
+                }
+                if (dto.source() == null || dto.source().isBlank()) {
+                    throw new IllegalArgumentException("Income source cannot be blank");
+                }
                 IncomeRequest req = new IncomeRequest(
-                        dto.amount() != null ? dto.amount() : BigDecimal.ZERO,
-                        dto.source() != null ? dto.source() : "General",
+                        dto.amount(),
+                        dto.source(),
                         dto.description(),
                         dto.incomeDate() != null ? dto.incomeDate() : LocalDate.now(),
-                        dto.isRecurring() != null ? dto.isRecurring() : false
+                        Boolean.TRUE.equals(dto.isRecurring())
                 );
                 incomeService.createIncome(req, user);
                 count++;
@@ -448,6 +493,9 @@ public class ImportServiceImpl implements ImportService {
     @Override
     @Transactional
     public Map<String, Object> importIncomesFromExcel(MultipartFile file, User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User context cannot be null");
+        }
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
@@ -484,13 +532,16 @@ public class ImportServiceImpl implements ImportService {
 
             if (dateCol == null || srcCol == null || amtCol == null) {
                 throw new IllegalArgumentException(
-                        "Excel sheet must contain at least: Date, Source, and Amount headers. Found: " + colMap.keySet()
+                        "Excel sheet must contain at least: Date, Source, and Amount headers. Found: "
+                                + colMap.keySet()
                 );
             }
 
             for (int r = 1; r <= sheet.getLastRowNum(); r++) {
                 Row row = sheet.getRow(r);
-                if (row == null || isRowEmpty(row)) continue;
+                if (row == null || isRowEmpty(row)) {
+                    continue;
+                }
 
                 try {
                     Cell dateCell = row.getCell(dateCol);
@@ -538,7 +589,8 @@ public class ImportServiceImpl implements ImportService {
             throw new IllegalArgumentException("Excel sheet contains no income data rows to import");
         }
         if (count == 0 && !errors.isEmpty()) {
-            throw new IllegalArgumentException("Failed to import incomes: all " + errors.size() + " rows failed (" + String.join("; ", errors) + ")");
+            throw new IllegalArgumentException("Failed to import incomes: all " + errors.size()
+                    + " rows failed (" + String.join("; ", errors) + ")");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -554,11 +606,38 @@ public class ImportServiceImpl implements ImportService {
     // PARSING HELPERS
     // ─────────────────────────────────────────────────────────────────────────
 
+    private static List<String> parseCsvLine(String line) {
+        List<String> tokens = new ArrayList<>();
+        if (line == null) {
+            return tokens;
+        }
+        StringBuilder sb = new StringBuilder();
+        boolean inQuotes = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                    sb.append('"');
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (c == ',' && !inQuotes) {
+                tokens.add(sb.toString().trim());
+                sb.setLength(0);
+            } else {
+                sb.append(c);
+            }
+        }
+        tokens.add(sb.toString().trim());
+        return tokens;
+    }
+
     private Map<String, Integer> parseHeader(String headerLine) {
         Map<String, Integer> col = new HashMap<>();
-        String[] headers = headerLine.split(",(?=(?:[^\"\"]*\"[^\"\"]*\")*[^\"\"]*$)", -1);
-        for (int i = 0; i < headers.length; i++) {
-            String name = headers[i].trim().replaceAll("^\"|\"$", "").toLowerCase(Locale.ROOT);
+        List<String> headers = parseCsvLine(headerLine);
+        for (int i = 0; i < headers.size(); i++) {
+            String name = headers.get(i).replace("\"", "").trim().toLowerCase(Locale.ROOT);
             col.put(name, i);
         }
         return col;
@@ -566,13 +645,17 @@ public class ImportServiceImpl implements ImportService {
 
     private Integer findColumn(Map<String, Integer> colMap, String... candidates) {
         for (String c : candidates) {
-            if (colMap.containsKey(c)) return colMap.get(c);
+            if (colMap.containsKey(c)) {
+                return colMap.get(c);
+            }
         }
         return null;
     }
 
     private String getCellValueAsString(Cell cell) {
-        if (cell == null) return "";
+        if (cell == null) {
+            return "";
+        }
         return switch (cell.getCellType()) {
             case STRING -> cell.getStringCellValue();
             case NUMERIC -> {
@@ -609,13 +692,18 @@ public class ImportServiceImpl implements ImportService {
         for (DateTimeFormatter fmt : formatters) {
             try {
                 return LocalDate.parse(s, fmt);
-            } catch (DateTimeParseException ignored) {}
+            } catch (DateTimeParseException ignored) {
+                // Try next pattern
+            }
         }
-        throw new IllegalArgumentException("Unrecognised date format: '" + s + "'. Expected YYYY-MM-DD, DD/MM/YYYY, etc.");
+        throw new IllegalArgumentException("Unrecognised date format: '" + s
+                + "'. Expected YYYY-MM-DD, DD/MM/YYYY, etc.");
     }
 
     private BigDecimal parseCellAmount(Cell cell) {
-        if (cell == null) return null;
+        if (cell == null) {
+            return null;
+        }
         return switch (cell.getCellType()) {
             case NUMERIC -> BigDecimal.valueOf(cell.getNumericCellValue());
             case STRING -> {
@@ -628,7 +716,9 @@ public class ImportServiceImpl implements ImportService {
 
     private boolean isRowEmpty(Row row) {
         for (Cell c : row) {
-            if (!getCellValueAsString(c).isBlank()) return false;
+            if (!getCellValueAsString(c).isBlank()) {
+                return false;
+            }
         }
         return true;
     }
@@ -637,18 +727,11 @@ public class ImportServiceImpl implements ImportService {
      * Resolves a category by name for the given user, or falls back to a global category,
      * or creates a new user-scoped category if none exists.
      *
-     * <p>An optional in-memory cache map can be passed to avoid repeated DB queries during
-     * large batch imports. Pass {@code null} if no caching is desired.</p>
-     *
      * @param name the raw category name from the import file
      * @param user the owning user
      * @param categoryCache optional cache map (name lowercase -&gt; Category entity)
      * @return the resolved or newly created {@link Category}
      */
-    private Category resolveOrCreateCategoryForUser(String name, User user) {
-        return resolveOrCreateCategoryForUser(name, user, null);
-    }
-
     private Category resolveOrCreateCategoryForUser(String name, User user, Map<String, Category> categoryCache) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Category name cannot be blank");
@@ -665,14 +748,18 @@ public class ImportServiceImpl implements ImportService {
         Optional<Category> userCat = categoryRepository.findByUserAndNameIgnoreCase(user, trimmed);
         if (userCat.isPresent()) {
             Category cat = userCat.get();
-            if (categoryCache != null) categoryCache.put(cacheKey, cat);
+            if (categoryCache != null) {
+                categoryCache.put(cacheKey, cat);
+            }
             return cat;
         }
         // 2. Fall back to a global category (user_id IS NULL)
         Optional<Category> globalCat = categoryRepository.findByUserIsNullAndNameIgnoreCase(trimmed);
         if (globalCat.isPresent()) {
             Category cat = globalCat.get();
-            if (categoryCache != null) categoryCache.put(cacheKey, cat);
+            if (categoryCache != null) {
+                categoryCache.put(cacheKey, cat);
+            }
             return cat;
         }
         // 3. Otherwise create a new user-scoped category
@@ -680,7 +767,9 @@ public class ImportServiceImpl implements ImportService {
         newCat.setName(trimmed);
         newCat.setUser(user);
         Category saved = categoryRepository.save(newCat);
-        if (categoryCache != null) categoryCache.put(cacheKey, saved);
+        if (categoryCache != null) {
+            categoryCache.put(cacheKey, saved);
+        }
         return saved;
     }
 }

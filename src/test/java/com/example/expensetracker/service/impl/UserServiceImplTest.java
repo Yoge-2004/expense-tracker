@@ -258,4 +258,37 @@ class UserServiceImplTest {
         verify(categoryRepository).deleteByUserId(40L);
         verify(userRepository).delete(user);
     }
+
+    @Test
+    @DisplayName("registerUser: null user, email, or password screams IllegalArgumentException")
+    void registerUser_nullOrBlankFields_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.registerUser(null));
+
+        User nullEmail = new User();
+        nullEmail.setPassword("ValidPass123");
+        assertThrows(IllegalArgumentException.class, () -> service.registerUser(nullEmail));
+
+        User blankEmail = new User();
+        blankEmail.setEmail("   ");
+        blankEmail.setPassword("ValidPass123");
+        assertThrows(IllegalArgumentException.class, () -> service.registerUser(blankEmail));
+
+        User nullPass = new User();
+        nullPass.setEmail("valid@example.com");
+        assertThrows(IllegalArgumentException.class, () -> service.registerUser(nullPass));
+
+        User blankPass = new User();
+        blankPass.setEmail("valid@example.com");
+        blankPass.setPassword("   ");
+        assertThrows(IllegalArgumentException.class, () -> service.registerUser(blankPass));
+    }
+
+    @Test
+    @DisplayName("operations with null userId scream IllegalArgumentException")
+    void nullUserId_throwsException() {
+        assertThrows(IllegalArgumentException.class, () -> service.updateSecurityPin(null, "123456"));
+        assertThrows(IllegalArgumentException.class, () -> service.verifySecurityPin(null, "123456"));
+        assertThrows(IllegalArgumentException.class, () -> service.updateCurrency(null, "USD"));
+        assertThrows(IllegalArgumentException.class, () -> service.deleteUser(null));
+    }
 }

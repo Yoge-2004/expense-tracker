@@ -10,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
+import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,6 +20,18 @@ class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
     private final HttpServletRequest request = request("/api/test");
+
+    @Test
+    void dateTimeParseExceptionMapsToBadRequestWithDescriptiveMessage() {
+        var ex = new DateTimeParseException("Text 'bad-date' could not be parsed", "bad-date", 0);
+        var response = handler.handleDateTimeParseException(ex, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(400, response.getBody().status());
+        assertEquals("Invalid date format: 'bad-date'. Expected format: yyyy-MM-dd", response.getBody().message());
+        assertEquals("/api/test", response.getBody().path());
+    }
 
     @Test
     void illegalArgumentMapsToBadRequestWithMessageAndPath() {

@@ -44,6 +44,26 @@ class RangeReportControllerTest {
     @InjectMocks RangeReportController controller;
 
     @Test
+    void invalidFromDateFormat_screamsIllegalArgumentException() {
+        when(users.findById(11L)).thenReturn(Optional.of(user(11L, "Range User")));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> controller.excel(11L, "invalid-date", "2026-09-30", "INR"));
+        assertTrue(ex.getMessage().contains("Invalid 'from' date format"));
+        verifyNoInteractions(expenses, incomes);
+    }
+
+    @Test
+    void invalidToDateFormat_screamsIllegalArgumentException() {
+        when(users.findById(12L)).thenReturn(Optional.of(user(12L, "Range User")));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> controller.pdf(12L, "2026-09-01", "not-a-date", "INR"));
+        assertTrue(ex.getMessage().contains("Invalid 'to' date format"));
+        verifyNoInteractions(expenses, incomes);
+    }
+
+    @Test
     void excelIncludesOnlyTransactionsInsideRequestedRangeAndUsesDownloadHeaders() {
         User user = user(7L, "Test User");
         Category food = category("Food");

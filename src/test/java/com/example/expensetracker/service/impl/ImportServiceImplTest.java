@@ -180,4 +180,56 @@ class ImportServiceImplTest {
         assertEquals(1, result.get("imported"));
         verify(incomeService, times(1)).createIncome(any(), eq(testUser));
     }
+
+    @Test
+    @DisplayName("importServices: null user context throws IllegalArgumentException across all methods")
+    void importMethods_nullUser_throwsException() {
+        MockMultipartFile file = new MockMultipartFile("file", "data.csv", "text/csv", "date,category,amount\n".getBytes());
+        assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromCsv(file, null));
+        assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromJson(file, null));
+        assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromExcel(file, null));
+        assertThrows(IllegalArgumentException.class, () -> importService.importIncomesFromCsv(file, null));
+        assertThrows(IllegalArgumentException.class, () -> importService.importIncomesFromJson(file, null));
+        assertThrows(IllegalArgumentException.class, () -> importService.importIncomesFromExcel(file, null));
+    }
+
+    @Test
+    @DisplayName("importExpensesFromJson: non-positive or null amount items scream IllegalArgumentException")
+    void importExpensesFromJson_invalidAmounts() throws Exception {
+        List<ExpenseDto> dtosZero = List.of(
+                new ExpenseDto(null, BigDecimal.ZERO, "Free food", LocalDate.now(), null, "Food")
+        );
+        byte[] bytesZero = new ObjectMapper().findAndRegisterModules().writeValueAsBytes(dtosZero);
+        MockMultipartFile fileZero = new MockMultipartFile("file", "expenses.json", "application/json", bytesZero);
+
+        assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromJson(fileZero, testUser));
+
+        List<ExpenseDto> dtosNeg = List.of(
+                new ExpenseDto(null, new BigDecimal("-10.00"), "Negative", LocalDate.now(), null, "Food")
+        );
+        byte[] bytesNeg = new ObjectMapper().findAndRegisterModules().writeValueAsBytes(dtosNeg);
+        MockMultipartFile fileNeg = new MockMultipartFile("file", "expenses.json", "application/json", bytesNeg);
+
+        assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromJson(fileNeg, testUser));
+    }
+
+    @Test
+    @DisplayName("importIncomesFromJson: non-positive amount or blank source items scream IllegalArgumentException")
+    void importIncomesFromJson_invalidData() throws Exception {
+        List<IncomeDto> dtosZero = List.of(
+                new IncomeDto(null, BigDecimal.ZERO, "Zero Salary", "", LocalDate.now(), false, null)
+        );
+        byte[] bytesZero = new ObjectMapper().findAndRegisterModules().writeValueAsBytes(dtosZero);
+        MockMultipartFile fileZero = new MockMultipartFile("file", "incomes.json", "application/json", bytesZero);
+
+        assertThrows(IllegalArgumentException.class, () -> importService.importIncomesFromJson(fileZero, testUser));
+
+        List<IncomeDto> dtosBlankSource = List.of(
+                new IncomeDto(null, new BigDecimal("100.00"), "   ", "", LocalDate.now(), false, null)
+        );
+        byte[] bytesBlankSource = new ObjectMapper().findAndRegisterModules().writeValueAsBytes(dtosBlankSource);
+        MockMultipartFile fileBlankSource = new MockMultipartFile("file", "incomes.json", "application/json", bytesBlankSource);
+
+        assertThrows(IllegalArgumentException.class, () -> importService.importIncomesFromJson(fileBlankSource, testUser));
+    }
 }

@@ -46,6 +46,9 @@ public class RecurringIncomeScheduler {
         int failedCount = 0;
         for (Income rec : dueIncomes) {
             try {
+                if (rec == null || rec.getNextDueDate() == null) {
+                    continue;
+                }
                 while (rec.getNextDueDate() != null && !rec.getNextDueDate().isAfter(LocalDate.now())) {
                     Income concrete = new Income();
                     concrete.setAmount(rec.getAmount());
@@ -58,7 +61,13 @@ public class RecurringIncomeScheduler {
                     concrete.setIsRecurring(false);
                     incomeRepository.save(concrete);
 
-                    rec.setNextDueDate(nextOccurrence(rec));
+                    LocalDate nextDate = nextOccurrence(rec);
+                    if (!nextDate.isAfter(rec.getNextDueDate())) {
+                        log.warn("Recurring income {} next date {} is not after current due date {}", rec.getId(), nextDate, rec.getNextDueDate());
+                        rec.setNextDueDate(rec.getNextDueDate().plusMonths(1));
+                    } else {
+                        rec.setNextDueDate(nextDate);
+                    }
                     processedCount++;
                 }
                 incomeRepository.save(rec);

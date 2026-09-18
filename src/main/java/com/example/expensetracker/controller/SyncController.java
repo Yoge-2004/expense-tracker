@@ -157,8 +157,9 @@ public class SyncController {
 
         log.info("Authorized Pull JSON backup from Hugging Face Spaces requested");
         Map<String, Object> downloadResult = syncService.downloadJsonBackupFromHuggingFace();
-        if ("success".equals(downloadResult.get("status"))) {
-            log.info("Pull successful; triggering file-to-db sync to import new records");
+        String status = (String) downloadResult.get("status");
+        if ("success".equals(status) || "managed".equals(status)) {
+            log.info("Pull successful (status={}); triggering file-to-db sync to import new records", status);
             syncService.syncFileToDb();
             return ResponseEntity.ok(downloadResult);
         } else {

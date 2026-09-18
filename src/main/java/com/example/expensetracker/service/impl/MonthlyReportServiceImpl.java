@@ -205,28 +205,37 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         String monthName = Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH);
 
         if (totalIncome.compareTo(BigDecimal.ZERO) > 0 && netCashFlow.compareTo(BigDecimal.ZERO) >= 0) {
-            insights.add(String.format("You generated a net positive savings rate of %.1f%% in %s.", savingsRate, monthName));
+            insights.add(String.format("You generated a net positive savings rate of %.1f%% in %s.",
+                    savingsRate, monthName));
         } else if (totalIncome.compareTo(BigDecimal.ZERO) > 0) {
-            insights.add(String.format("Expenses exceeded income in %s resulting in a deficit of %s.", monthName, netCashFlow.abs()));
+            insights.add(String.format("Expenses exceeded income in %s resulting in a deficit of %s.",
+                    monthName, netCashFlow.abs()));
         }
 
         if (!categoryBreakdown.isEmpty()) {
-            MonthlyReportDto.CategoryReportDto topCat = categoryBreakdown.get(0);
-            insights.add(String.format("Top spending category was '%s' absorbing %.1f%% of all outflows.", topCat.categoryName(), topCat.percentage()));
+            MonthlyReportDto.CategoryReportDto topCat = categoryBreakdown.getFirst();
+            insights.add(String.format("Top spending category was '%s' absorbing %.1f%% of all outflows.",
+                    topCat.categoryName(), topCat.percentage()));
         }
 
-        long exceededBudgets = budgetStatuses.stream().filter(MonthlyReportDto.BudgetReportDto::isExceeded).count();
+        long exceededBudgets = budgetStatuses.stream()
+                .filter(MonthlyReportDto.BudgetReportDto::isExceeded)
+                .count();
         if (exceededBudgets > 0) {
-            insights.add(String.format("%d budget limit%s exceeded during %s.", exceededBudgets, exceededBudgets > 1 ? "s were" : " was", monthName));
+            insights.add(String.format("%d budget limit%s exceeded during %s.",
+                    exceededBudgets, exceededBudgets > 1 ? "s were" : " was", monthName));
         } else if (!budgets.isEmpty()) {
             insights.add("Exceptional budget discipline! All categories remained safely within established limits.");
         }
 
         long completedGoals = savingsGoals.stream()
-                .filter(g -> "COMPLETED".equalsIgnoreCase(g.getStatus()) || (g.getTargetAmount() != null && g.getCurrentAmount() != null && g.getCurrentAmount().compareTo(g.getTargetAmount()) >= 0))
+                .filter(g -> "COMPLETED".equalsIgnoreCase(g.getStatus())
+                        || (g.getTargetAmount() != null && g.getCurrentAmount() != null
+                            && g.getCurrentAmount().compareTo(g.getTargetAmount()) >= 0))
                 .count();
         if (completedGoals > 0) {
-            insights.add(String.format("Congratulations! You have %d completed savings milestone%s.", completedGoals, completedGoals > 1 ? "s" : ""));
+            insights.add(String.format("Congratulations! You have %d completed savings milestone%s.",
+                    completedGoals, completedGoals > 1 ? "s" : ""));
         }
 
         String userCurrency = user.getCurrency() != null ? user.getCurrency() : "INR";
@@ -275,7 +284,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank() || mailSenderProvider.getIfAvailable() == null) {
+        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()
+                || mailSenderProvider.getIfAvailable() == null) {
             log.warn("Email delivery disabled or unconfigured for userId={}", userId);
             saveReportLog(user, year, month, false, "Email delivery disabled or unconfigured");
             throw new EmailDeliveryException("Email delivery is disabled or unconfigured on this server.");
@@ -298,7 +308,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             helper.setText(htmlContent, true);
 
             mailSender.send(mimeMessage);
-            log.info("Successfully dispatched monthly report email to {} for period {}", user.getEmail(), report.period());
+            log.info("Successfully dispatched monthly report email to {} for period {}",
+                    user.getEmail(), report.period());
             saveReportLog(user, year, month, true, null);
         } catch (EmailDeliveryException e) {
             throw e;
@@ -325,7 +336,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     }
 
     private void saveReportLog(User user, int year, int month, boolean success, String errorMsg) {
-        Optional<MonthlyReportLog> existing = reportLogRepository.findByUserAndReportYearAndReportMonth(user, year, month);
+        Optional<MonthlyReportLog> existing =
+                reportLogRepository.findByUserAndReportYearAndReportMonth(user, year, month);
         MonthlyReportLog logEntry = existing.orElseGet(MonthlyReportLog::new);
         logEntry.setUser(user);
         logEntry.setReportYear(year);
@@ -340,16 +352,12 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
      * {@inheritDoc}
      */
     @EventListener(ApplicationReadyEvent.class)
-    // FIXED: previously ran every hour ("0 0 * * * ?") which fired 720 times per month,
-    // each time scanning the DB for unsent reports. The alreadySent check made it
-    // idempotent but it was still wasteful. Now runs at 6 AM on days 1-3 of each month
-    // — catches the previous month's report soon after the month rolls over, with a
-    // 3-day window to handle timezone differences and downtime.
     @Scheduled(cron = "0 0 6 1-3 * ?")
     @Transactional
     @Override
     public void sendAutomatedMonthlyReports() {
-        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank() || mailSenderProvider.getIfAvailable() == null) {
+        if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()
+                || mailSenderProvider.getIfAvailable() == null) {
             log.debug("Email service is disabled or unconfigured. Automated monthly reports skipped.");
             return;
         }
@@ -363,7 +371,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             List<User> users = userRepository.findAll();
             for (User u : users) {
                 try {
-                    boolean alreadySent = reportLogRepository.existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
+                    boolean alreadySent = reportLogRepository
+                            .existsByUserAndReportYearAndReportMonthAndSentSuccessfullyTrue(u, year, month);
                     if (!alreadySent) {
                         sendMonthlyReportEmail(u.getId(), year, month);
                         sentCount++;
@@ -375,7 +384,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         } catch (Exception e) {
             log.warn("Could not query users for automated monthly reports: {}", e.getMessage());
         }
-        log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.", sentCount, month, year);
+        log.info("Automated monthly report check complete. Dispatched {} pending reports for {}/{}.",
+                sentCount, month, year);
     }
 
     private String escapeHtml(String text) {
@@ -421,7 +431,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         <span>Limit: <strong>%s %s</strong></span>
                     </div>
                 </div>
-                """.formatted(escapeHtml(b.categoryName()), badgeColor, badgeText, b.usagePercentage(), badgeColor, barWidth, report.currency(), b.spentAmount(), report.currency(), b.limitAmount()));
+                """.formatted(escapeHtml(b.categoryName()), badgeColor, badgeText, b.usagePercentage(),
+                        badgeColor, barWidth, report.currency(), b.spentAmount(), report.currency(), b.limitAmount()));
         }
 
         // Savings Goals
@@ -712,19 +723,23 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 report.currency(),
                 report.recurringTotal(),
                 insightItems.toString(),
-                incomeRows.length() > 0 ? incomeRows.toString() : "<tr><td colspan='4' style='padding: 12px; color: #a8a395;'>No income recorded this month.</td></tr>",
-                savingsCards.length() > 0 ? savingsCards.toString() : "<div style='color: #a8a395; font-size: 13px;'>No active savings goals configured. Start a savings goal in your dashboard!</div>",
-                categoryRows.length() > 0 ? categoryRows.toString() : "<tr><td colspan='3' style='padding: 12px; color: #a8a395;'>No spending recorded this month.</td></tr>",
-                budgetCards.length() > 0 ? budgetCards.toString() : "<div style='color: #a8a395; font-size: 13px;'>No category budgets configured for this period.</div>",
-                topExpenseRows.length() > 0 ? """
-                    <div class=\"section-title\">💳 Largest Outflow Transactions</div>
-                    <table style=\"width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;\">
+                !incomeRows.isEmpty() ? incomeRows.toString()
+                        : "<tr><td colspan='4' style='padding: 12px; color: #a8a395;'>No income recorded this month.</td></tr>",
+                !savingsCards.isEmpty() ? savingsCards.toString()
+                        : "<div style='color: #a8a395; font-size: 13px;'>No active savings goals configured. Start a savings goal in your dashboard!</div>",
+                !categoryRows.isEmpty() ? categoryRows.toString()
+                        : "<tr><td colspan='3' style='padding: 12px; color: #a8a395;'>No spending recorded this month.</td></tr>",
+                !budgetCards.isEmpty() ? budgetCards.toString()
+                        : "<div style='color: #a8a395; font-size: 13px;'>No category budgets configured for this period.</div>",
+                !topExpenseRows.isEmpty() ? """
+                    <div class="section-title">💳 Largest Outflow Transactions</div>
+                    <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                       <thead>
-                        <tr style=\"color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;\">
-                          <th style=\"padding: 6px 12px;\">Date</th>
-                          <th style=\"padding: 6px 12px;\">Description</th>
-                          <th style=\"padding: 6px 12px;\">Category</th>
-                          <th style=\"padding: 6px 12px; text-align: right;\">Amount</th>
+                        <tr style="color: #a8a395; text-align: left; border-bottom: 1px solid rgba(236,231,216,0.15); font-size: 11px; text-transform: uppercase;">
+                          <th style="padding: 6px 12px;">Date</th>
+                          <th style="padding: 6px 12px;">Description</th>
+                          <th style="padding: 6px 12px;">Category</th>
+                          <th style="padding: 6px 12px; text-align: right;">Amount</th>
                         </tr>
                       </thead>
                       <tbody>
