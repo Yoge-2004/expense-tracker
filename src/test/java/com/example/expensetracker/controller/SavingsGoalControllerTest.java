@@ -1,6 +1,5 @@
 package com.example.expensetracker.controller;
 
-import com.example.expensetracker.dto.CashFlowSummaryDto;
 import com.example.expensetracker.dto.SavingsGoalDto;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.CustomUserDetailsService;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.*;
@@ -69,7 +67,12 @@ class SavingsGoalControllerTest {
         mockMvc.perform(post("/api/savings/goals/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Emergency Fund","targetAmount":100000,"currentAmount":15000,"targetDate":"2026-12-31"}
+                                {
+                                  "name": "Emergency Fund",
+                                  "targetAmount": 100000,
+                                  "currentAmount": 15000,
+                                  "targetDate": "2026-12-31"
+                                }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(10))
@@ -124,14 +127,20 @@ class SavingsGoalControllerTest {
 
     @Test
     void updateGoalValidatesOwnerAndReturnsUpdatedGoal() throws Exception {
-        SavingsGoalDto updated = goal(10L, "Emergency Fund Plus", "120000", "50000", "2027-01-31", "IN_PROGRESS", 41.6667);
+        SavingsGoalDto updated = goal(
+                10L, "Emergency Fund Plus", "120000", "50000", "2027-01-31", "IN_PROGRESS", 41.6667);
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(savingsGoalService.updateGoal(eq(10L), any(), same(user))).thenReturn(updated);
 
         mockMvc.perform(put("/api/savings/goals/10/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Emergency Fund Plus","targetAmount":120000,"currentAmount":50000,"targetDate":"2027-01-31"}
+                                {
+                                  "name": "Emergency Fund Plus",
+                                  "targetAmount": 120000,
+                                  "currentAmount": 50000,
+                                  "targetDate": "2027-01-31"
+                                }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Emergency Fund Plus"))

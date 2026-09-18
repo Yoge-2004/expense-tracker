@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -63,7 +62,8 @@ class SyncControllerTest {
                 }))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value("error"))
-                .andExpect(jsonPath("$.message").value("Unauthorized: valid X-Sync-Token required for sync operations."));
+                .andExpect(jsonPath("$.message")
+                        .value("Unauthorized: valid X-Sync-Token required for sync operations."));
 
         verify(syncService, never()).syncFileToDb();
     }
@@ -123,7 +123,8 @@ class SyncControllerTest {
 
         mockMvc.perform(post("/api/sync/push-to-hf"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
+                .andExpect(jsonPath("$.message")
+                        .value("Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
 
         verifyNoInteractions(syncService);
     }
@@ -144,7 +145,8 @@ class SyncControllerTest {
 
     @Test
     void hfPullTriggersFileToDbOnlyAfterSuccessfulDownload() throws Exception {
-        when(syncService.downloadJsonBackupFromHuggingFace()).thenReturn(Map.of("status", "success", "downloaded", true));
+        when(syncService.downloadJsonBackupFromHuggingFace())
+                .thenReturn(Map.of("status", "success", "downloaded", true));
 
         mockMvc.perform(post("/api/sync/pull-from-hf").header("X-Sync-Token", "sync-secret"))
                 .andExpect(status().isOk())
@@ -157,7 +159,8 @@ class SyncControllerTest {
 
     @Test
     void hfPullDoesNotImportWhenDownloadFails() throws Exception {
-        when(syncService.downloadJsonBackupFromHuggingFace()).thenReturn(Map.of("status", "error", "message", "backup unavailable"));
+        when(syncService.downloadJsonBackupFromHuggingFace())
+                .thenReturn(Map.of("status", "error", "message", "backup unavailable"));
 
         mockMvc.perform(post("/api/sync/pull-from-hf").header("X-Sync-Token", "sync-secret"))
                 .andExpect(status().isInternalServerError())

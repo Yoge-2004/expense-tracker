@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -68,7 +67,8 @@ class UserControllerTest {
         mockMvc.perform(get("/api/users/check-username").queryParam("username", "ab-"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(false))
-                .andExpect(jsonPath("$.message").value("Username must be 3-30 alphanumeric characters, dots, or underscores"));
+                .andExpect(jsonPath("$.message")
+                        .value("Username must be 3-30 alphanumeric characters, dots, or underscores"));
 
         verifyNoInteractions(userRepository);
     }
@@ -326,7 +326,8 @@ class UserControllerTest {
                         .contentType("application/json")
                         .content("{\"currency\":\"US\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Currency must be a valid 3-letter ISO 4217 code (e.g., USD, EUR, INR)"));
+                .andExpect(jsonPath("$.message")
+                        .value("Currency must be a valid 3-letter ISO 4217 code (e.g., USD, EUR, INR)"));
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userService, never()).updateCurrency(anyLong(), anyString());

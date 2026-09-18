@@ -56,6 +56,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@SuppressWarnings("java:S6809")
 public class MonthlyReportServiceImpl implements MonthlyReportService {
 
     private final UserRepository userRepository;

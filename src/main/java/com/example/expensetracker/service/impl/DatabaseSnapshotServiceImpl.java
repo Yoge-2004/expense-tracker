@@ -51,13 +51,13 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
     }
 
     @Override
-    public int exportCurrentDatabase(Path sqliteFile) throws Exception {
+    public int exportCurrentDatabase(Path sqliteFile) throws IOException, SQLException {
         if (sqliteFile == null) {
             throw new IllegalArgumentException("SQLite file path cannot be null");
         }
         log.info("Starting export of current database to SQLite snapshot: {}", sqliteFile);
         Files.deleteIfExists(sqliteFile);
-        Class.forName("org.sqlite.JDBC");
+        loadSqliteDriver();
         int rows = 0;
         try (Connection source = dataSource.getConnection();
              Connection target = DriverManager.getConnection("jdbc:sqlite:" + sqliteFile.toAbsolutePath())) {
@@ -76,7 +76,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
     /** Imports the repository snapshot into the dedicated local H2 failover store, never into Neon. */
     @Override
     @SuppressWarnings("java:S2077") // Dynamic DDL/DML safely uses validated identifiers from DatabaseMetaData
-    public int importIntoFallback(Path sqliteFile) throws Exception {
+    public int importIntoFallback(Path sqliteFile) throws IOException, SQLException {
         if (sqliteFile == null) {
             throw new IllegalArgumentException("SQLite file path cannot be null");
         }
@@ -84,7 +84,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
             throw new IllegalArgumentException("SQLite file does not exist: " + sqliteFile);
         }
         log.info("Importing SQLite snapshot into fallback database: {}", sqliteFile);
-        Class.forName("org.sqlite.JDBC");
+        loadSqliteDriver();
         int rows = 0;
         Path path = Path.of(fallbackDbPath).toAbsolutePath();
         Path parent = path.getParent();
@@ -306,6 +306,14 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
             throw new IllegalArgumentException("Invalid SQL identifier: " + identifier);
         }
         return "\"" + identifier + "\"";
+    }
+
+    private static void loadSqliteDriver() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("SQLite JDBC driver not available", e);
+        }
     }
 
     private record Column(String name, int jdbcType, boolean pk) {}

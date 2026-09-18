@@ -42,6 +42,7 @@ public class SecurityConfig {
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     @Bean
+    @SuppressWarnings("java:S4502")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication and security headers");
 

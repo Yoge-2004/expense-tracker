@@ -68,6 +68,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 Files.deleteIfExists(encrypted);
                 Files.deleteIfExists(sqlite);
             }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.error("HF database failover initialization interrupted", ie);
         } catch (Exception e) {
             log.error("Failed to initialize HF database failover", e);
         }
@@ -98,6 +101,10 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 Files.deleteIfExists(sqlite);
                 Files.deleteIfExists(encrypted);
             }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.error("HF database backup interrupted", ie);
+            return false;
         } catch (Exception e) {
             log.error("HF encrypted database backup failed", e);
             return false;

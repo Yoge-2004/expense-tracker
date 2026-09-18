@@ -30,6 +30,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Transactional
+@SuppressWarnings("java:S6809")
 public class RecurringSavingsScheduler {
 
     private final SavingsGoalRepository savingsGoalRepository;

@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -73,7 +72,14 @@ class IncomeControllerTest {
         mockMvc.perform(post("/api/incomes/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":75000,"source":"Tech Corp","description":"Salary","incomeDate":"2026-09-01","isRecurring":true,"frequency":"MONTHLY"}
+                                {
+                                  "amount": 75000,
+                                  "source": "Tech Corp",
+                                  "description": "Salary",
+                                  "incomeDate": "2026-09-01",
+                                  "isRecurring": true,
+                                  "frequency": "MONTHLY"
+                                }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(41))
@@ -140,7 +146,13 @@ class IncomeControllerTest {
         mockMvc.perform(put("/api/incomes/41/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":78000,"source":"Tech Corp","description":"Raise","incomeDate":"2026-09-01","isRecurring":true}
+                                {
+                                  "amount": 78000,
+                                  "source": "Tech Corp",
+                                  "description": "Raise",
+                                  "incomeDate": "2026-09-01",
+                                  "isRecurring": true
+                                }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(41))

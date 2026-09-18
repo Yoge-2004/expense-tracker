@@ -17,7 +17,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * Step definitions for the authentication feature.
@@ -71,7 +70,8 @@ public class AuthSteps {
     }
 
     @When("I register with name {string} username {string} email {string} password {string} and currency {string}")
-    public void register(String name, String username, String email, String password, String currency) throws Exception {
+    public void register(String name, String username, String email,
+            String password, String currency) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("name", name);
         body.put("username", username);
@@ -134,9 +134,8 @@ public class AuthSteps {
 
     @When("I request expenses for user {int} without authentication")
     public void requestWithoutAuth(int userId) throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/expenses/user/" + userId))
+        ctx.lastResponse = mockMvc.perform(get("/api/expenses/user/" + userId))
                 .andReturn();
-        ctx.lastResponse = result;
     }
 
     @Then("the response status should be {int}")
