@@ -439,16 +439,21 @@ elements.addForm.addEventListener("submit", async (e) => {
 
     submitBtn.disabled = true;
     try {
+        let savedExpense = null;
         if (id) {
-            await apiRequest(`/expenses/${id}/user/${userId}`, { method: "PUT", body: JSON.stringify(expenseData) });
+            savedExpense = await apiRequest(`/expenses/${id}/user/${userId}`, { method: "PUT", body: JSON.stringify(expenseData) });
             showToast("Expense updated.", "success");
         } else if (isRecurring) {
-            await apiRequest(`/expenses/recurring/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
+            savedExpense = await apiRequest(`/expenses/recurring/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
             showToast("Recurring expense created.", "success");
         } else {
-            await apiRequest(`/expenses/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
+            savedExpense = await apiRequest(`/expenses/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
             celebrateSuccess(e.clientX, e.clientY);
             showToast("Expense added.", "success");
+        }
+
+        if (window.DashboardML && typeof window.DashboardML.onExpenseSaved === "function") {
+            window.DashboardML.onExpenseSaved(savedExpense || { id: id, ...expenseData }, expenseData);
         }
 
         // Was elements.modal.classList.remove("active") directly, which
@@ -470,6 +475,9 @@ elements.addForm.addEventListener("submit", async (e) => {
 });
 
 window.editExpense = (id) => {
+    if (window.DashboardML && typeof window.DashboardML.resetActiveSession === "function") {
+        window.DashboardML.resetActiveSession();
+    }
     const expense = allExpenses.find(e => e.id === id);
     if (!expense) return;
 
@@ -511,6 +519,9 @@ function syncRecurringIntervalVisibility() {
 }
 
 function openNewExpenseModal() {
+    if (window.DashboardML && typeof window.DashboardML.resetActiveSession === "function") {
+        window.DashboardML.resetActiveSession();
+    }
     if (elements.addForm) elements.addForm.reset();
     const idEl = document.getElementById("expenseId");
     if (idEl) idEl.value = "";
