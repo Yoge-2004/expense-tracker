@@ -56,6 +56,8 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class ImportServiceImpl implements ImportService {
 
+    private static final String COL_SOURCE = "source";
+
     private final ExpenseService expenseService;
     private final IncomeService incomeService;
     private final CategoryRepository categoryRepository;
@@ -359,7 +361,7 @@ public class ImportServiceImpl implements ImportService {
             }
 
             Map<String, Integer> col = parseHeader(headerLine);
-            if (!col.containsKey("date") || !col.containsKey("source") || !col.containsKey("amount")) {
+            if (!col.containsKey("date") || !col.containsKey(COL_SOURCE) || !col.containsKey("amount")) {
                 throw new IllegalArgumentException(
                         "CSV must contain at least 'date', 'source', and 'amount' headers. "
                         + "Found: " + col.keySet()
@@ -367,7 +369,7 @@ public class ImportServiceImpl implements ImportService {
             }
 
             int dateIdx = col.get("date");
-            int srcIdx  = col.get("source");
+            int srcIdx  = col.get(COL_SOURCE);
             int amtIdx  = col.get("amount");
             Integer descIdx = col.get("description");
 
@@ -524,7 +526,7 @@ public class ImportServiceImpl implements ImportService {
             }
 
             Integer dateCol = findColumn(colMap, "date", "incomedate", "transactiondate");
-            Integer srcCol = findColumn(colMap, "source", "incomesource", "channel", "payer");
+            Integer srcCol = findColumn(colMap, COL_SOURCE, "incomesource", "channel", "payer");
             Integer amtCol = findColumn(colMap, "amount", "income", "earnings", "sum");
             Integer descCol = findColumn(colMap, "description", "desc", "note", "notes");
             Integer recCol = findColumn(colMap, "recurring", "isrecurring");

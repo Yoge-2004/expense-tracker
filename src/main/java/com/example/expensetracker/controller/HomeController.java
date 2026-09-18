@@ -26,7 +26,8 @@ public class HomeController {
 
     @Operation(
         summary = "Redirect to API documentation",
-        description = "Redirects any request to the bare API root to /swagger-ui.html, so visitors land on interactive API documentation instead of an empty response."
+        description = "Redirects any request to the bare API root to /swagger-ui.html, "
+                + "so visitors land on interactive API documentation instead of an empty response."
     )
     @ApiResponse(responseCode = "302", description = "Redirects to /swagger-ui.html")
     @GetMapping("/")

@@ -33,7 +33,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/sync")
-@Tag(name = "Sync", description = "Endpoints for synchronising data between the database, local file snapshots, and Hugging Face Spaces.")
+@Tag(name = "Sync", description = "Endpoints for synchronising data between the database, "
+        + "local file snapshots, and Hugging Face Spaces.")
 public class SyncController {
 
     private final FileDbSyncService syncService;
@@ -71,7 +72,8 @@ public class SyncController {
 
         log.warn("Unauthorized sync attempt from IP={}", clientIp);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("status", "error", "message", "Unauthorized: valid X-Sync-Token required for sync operations."));
+                .body(Map.of("status", "error",
+                        "message", "Unauthorized: valid X-Sync-Token required for sync operations."));
     }
 
     private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {
@@ -79,14 +81,16 @@ public class SyncController {
         if (!rateLimiterService.tryAcquire("sync-hf:" + clientIp, 5, Duration.ofMinutes(1))) {
             log.warn("Rate limit exceeded for Hugging Face sync from IP={}", clientIp);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(Map.of("status", "error", "message", "Too many Hugging Face sync requests. Please try again later."));
+                    .body(Map.of("status", "error",
+                            "message", "Too many Hugging Face sync requests. Please try again later."));
         }
 
         if (hasValidSyncToken(syncToken)) return null;
 
         log.warn("Unauthorized HF sync attempt");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("status", "error", "message", "Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
+                .body(Map.of("status", "error",
+                        "message", "Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
     }
 
     @Operation(summary = "Trigger File to DB Sync")
@@ -126,7 +130,8 @@ public class SyncController {
     }
 
     @Operation(summary = "Push JSON backup to Hugging Face Spaces",
-               description = "Exports the current database to expenses_sync.json and uploads it to the HF Space git repository.")
+               description = "Exports current database to expenses_sync.json "
+                       + "and uploads it to the HF Space repo.")
     @SecurityRequirements
     @PostMapping("/push-to-hf")
     public ResponseEntity<Map<String, Object>> pushToHuggingFace(
@@ -146,7 +151,8 @@ public class SyncController {
     }
 
     @Operation(summary = "Pull JSON backup from Hugging Face Spaces",
-               description = "Downloads expenses_sync.json from HF Space and imports any missing records into the database.")
+               description = "Downloads expenses_sync.json from HF Space "
+                       + "and imports any missing records into database.")
     @SecurityRequirements
     @PostMapping("/pull-from-hf")
     public ResponseEntity<Map<String, Object>> pullFromHuggingFace(

@@ -79,7 +79,8 @@ class JwtAuthenticationFilterTest {
     @DisplayName("doFilterInternal gracefully handles MalformedJwtException and continues filter chain unauthenticated")
     void doFilterInternal_malformedJwt_continuesUnauthenticated() throws ServletException, IOException {
         request.addHeader("Authorization", "Bearer invalid-garbage-token");
-        when(jwtService.extractUsername("invalid-garbage-token")).thenThrow(new MalformedJwtException("Malformed token"));
+        when(jwtService.extractUsername("invalid-garbage-token"))
+                .thenThrow(new MalformedJwtException("Malformed token"));
 
         filter.doFilterInternal(request, response, filterChain);
 

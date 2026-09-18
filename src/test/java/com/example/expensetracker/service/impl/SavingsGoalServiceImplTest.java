@@ -76,19 +76,23 @@ class SavingsGoalServiceImplTest {
     }
 
     @Test
-    @DisplayName("createGoal throws IllegalArgumentException for null user or null request or blank name or non-positive target")
+    @DisplayName("createGoal throws IllegalArgumentException for invalid input")
     void createGoal_validatesArguments() {
-        SavingsGoalRequest validReq = new SavingsGoalRequest("Goal", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
+        SavingsGoalRequest validReq = new SavingsGoalRequest(
+                "Goal", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createGoal(validReq, null));
         assertThrows(IllegalArgumentException.class, () -> service.createGoal(null, user));
 
-        SavingsGoalRequest blankName = new SavingsGoalRequest("  ", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
+        SavingsGoalRequest blankName = new SavingsGoalRequest(
+                "  ", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createGoal(blankName, user));
 
-        SavingsGoalRequest zeroTarget = new SavingsGoalRequest("Goal", BigDecimal.ZERO, null, null, null, null, null, null, null, null, null);
+        SavingsGoalRequest zeroTarget = new SavingsGoalRequest(
+                "Goal", BigDecimal.ZERO, null, null, null, null, null, null, null, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createGoal(zeroTarget, user));
 
-        SavingsGoalRequest negTarget = new SavingsGoalRequest("Goal", BigDecimal.valueOf(-50), null, null, null, null, null, null, null, null, null);
+        SavingsGoalRequest negTarget = new SavingsGoalRequest(
+                "Goal", BigDecimal.valueOf(-50), null, null, null, null, null, null, null, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createGoal(negTarget, user));
     }
 
@@ -121,7 +125,8 @@ class SavingsGoalServiceImplTest {
     @DisplayName("updateGoal throws when goal does not exist or user mismatch")
     void updateGoal_validatesExistenceAndOwnership() {
         when(savingsGoalRepository.findById(999L)).thenReturn(Optional.empty());
-        SavingsGoalRequest req = new SavingsGoalRequest("Test", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
+        SavingsGoalRequest req = new SavingsGoalRequest(
+                "Test", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
 
         assertThrows(IllegalArgumentException.class, () -> service.updateGoal(999L, req, user));
 
@@ -137,12 +142,14 @@ class SavingsGoalServiceImplTest {
     @Test
     @DisplayName("updateGoal throws on null parameters or non-positive target amount")
     void updateGoal_validatesParameters() {
-        SavingsGoalRequest req = new SavingsGoalRequest("Test", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
+        SavingsGoalRequest req = new SavingsGoalRequest(
+                "Test", BigDecimal.valueOf(100), null, null, null, null, null, null, null, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.updateGoal(null, req, user));
         assertThrows(IllegalArgumentException.class, () -> service.updateGoal(1L, req, null));
         assertThrows(IllegalArgumentException.class, () -> service.updateGoal(1L, null, user));
 
-        SavingsGoalRequest negReq = new SavingsGoalRequest("Test", BigDecimal.valueOf(-10), null, null, null, null, null, null, null, null, null);
+        SavingsGoalRequest negReq = new SavingsGoalRequest(
+                "Test", BigDecimal.valueOf(-10), null, null, null, null, null, null, null, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.updateGoal(1L, negReq, user));
     }
 

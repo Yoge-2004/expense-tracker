@@ -95,7 +95,8 @@ class RateLimitInterceptorTest {
         assertTrue(result);
         assertEquals("5", response.getHeader("X-RateLimit-Limit"));
         assertEquals("4", response.getHeader("X-RateLimit-Remaining"));
-        verify(rateLimiterService).tryAcquire(eq("rate_limit:sample-action:192.168.1.100"), eq(5), eq(Duration.ofSeconds(30)));
+        verify(rateLimiterService).tryAcquire(
+                eq("rate_limit:sample-action:192.168.1.100"), eq(5), eq(Duration.ofSeconds(30)));
     }
 
     @Test
@@ -116,7 +117,8 @@ class RateLimitInterceptorTest {
         boolean result = interceptor.preHandle(request, response, rateLimitedHandler);
 
         assertTrue(result);
-        verify(rateLimiterService).tryAcquire(eq("rate_limit:sample-action:192.168.1.100:user:88"), eq(5), eq(Duration.ofSeconds(30)));
+        verify(rateLimiterService).tryAcquire(
+                eq("rate_limit:sample-action:192.168.1.100:user:88"), eq(5), eq(Duration.ofSeconds(30)));
     }
 
     @Test

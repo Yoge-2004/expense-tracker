@@ -65,7 +65,8 @@ public class SavingsGoalController {
     @Operation(summary = "Create savings goal", description = "Creates a new savings goal target for the user.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Savings goal created successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SavingsGoalDto.class))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = SavingsGoalDto.class))),
         @ApiResponse(responseCode = "400", description = "Validation failed or user not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -93,7 +94,8 @@ public class SavingsGoalController {
     @Operation(summary = "Get user savings goals", description = "Retrieves all savings goals for the user.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "List of savings goals",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = SavingsGoalDto.class)))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    array = @ArraySchema(schema = @Schema(implementation = SavingsGoalDto.class)))),
         @ApiResponse(responseCode = "400", description = "User not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -121,7 +123,8 @@ public class SavingsGoalController {
     @Operation(summary = "Update savings goal", description = "Updates details of a savings goal.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Savings goal updated successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SavingsGoalDto.class))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = SavingsGoalDto.class))),
         @ApiResponse(responseCode = "400", description = "Goal not found or does not belong to user"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -152,11 +155,15 @@ public class SavingsGoalController {
      * @param amount deposit amount query param (optional if request body provided)
      * @return updated savings goal with updated balance and progress percentage
      */
-    @Operation(summary = "Deposit to savings goal", description = "Adds a contribution towards the savings goal. Automatically sets status to COMPLETED if target reached.")
+    @Operation(summary = "Deposit to savings goal",
+            description = "Adds a contribution towards the savings goal. "
+                    + "Automatically sets status to COMPLETED if target reached.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Deposit recorded successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SavingsGoalDto.class))),
-        @ApiResponse(responseCode = "400", description = "Goal not found, deposit non-positive, or does not belong to user"),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = SavingsGoalDto.class))),
+        @ApiResponse(responseCode = "400",
+                description = "Goal not found, deposit non-positive, or does not belong to user"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PostMapping("/{goalId}/deposit/user/{userId}")
@@ -221,7 +228,8 @@ public class SavingsGoalController {
      * @param userId user identifier
      * @return list of recurring savings goals
      */
-    @Operation(summary = "Get recurring savings goals", description = "Retrieves all recurring savings goals and chits for the user.")
+    @Operation(summary = "Get recurring savings goals",
+            description = "Retrieves all recurring savings goals and chits for the user.")
     @GetMapping("/recurring/user/{userId}")
     public ResponseEntity<List<SavingsGoalDto>> getRecurringGoals(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")

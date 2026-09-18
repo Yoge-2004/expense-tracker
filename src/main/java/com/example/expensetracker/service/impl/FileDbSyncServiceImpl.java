@@ -34,7 +34,9 @@ public class FileDbSyncServiceImpl implements FileDbSyncService {
         log.info("syncFileToDb invoked; plaintext file sync is intentionally disabled");
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "skipped");
-        result.put("message", "Plaintext file-to-database sync is disabled; encrypted Hugging Face failover hydration is used instead.");
+        result.put("message",
+                "Plaintext file-to-database sync is disabled; "
+                        + "encrypted Hugging Face failover hydration is used instead.");
         return result;
     }
 
@@ -51,7 +53,9 @@ public class FileDbSyncServiceImpl implements FileDbSyncService {
         log.info("downloadJsonBackupFromHuggingFace invoked; hydration managed by failover service at startup");
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "managed");
-        result.put("message", "Encrypted Hugging Face snapshot hydration is managed by the failover service during application startup.");
+        result.put("message",
+                "Encrypted Hugging Face snapshot hydration is managed "
+                        + "by the failover service during application startup.");
         return result;
     }
 
@@ -59,7 +63,8 @@ public class FileDbSyncServiceImpl implements FileDbSyncService {
         Map<String, Object> result = new LinkedHashMap<>();
         boolean success = failoverService.backupCurrentDatabase();
         result.put("status", success ? "success" : "error");
-        result.put("message", success ? operation + " completed successfully." : operation + " failed or is not configured.");
+        result.put("message", success ? operation + " completed successfully."
+                : operation + " failed or is not configured.");
         return result;
     }
 }

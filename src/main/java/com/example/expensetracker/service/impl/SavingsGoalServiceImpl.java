@@ -48,7 +48,8 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
             throw new IllegalArgumentException("Goal name cannot be blank");
         }
         if (request.targetAmount() == null || request.targetAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("Rejected non-positive savings goal target={} for userId={}", request.targetAmount(), user.getId());
+            log.warn("Rejected non-positive savings goal target={} for userId={}",
+                    request.targetAmount(), user.getId());
             throw new IllegalArgumentException("Target amount must be greater than zero");
         }
 
@@ -205,7 +206,8 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 && updated.getCurrentAmount().compareTo(updated.getTargetAmount()) >= 0
                 && !"COMPLETED".equals(updated.getStatus())) {
             updated.setStatus("COMPLETED");
-            log.info("Savings goal id={} reached target amount ({}) and marked COMPLETED", goalId, updated.getTargetAmount());
+            log.info("Savings goal id={} reached target amount ({}) and marked COMPLETED",
+                    goalId, updated.getTargetAmount());
             updated = savingsGoalRepository.save(updated);
         }
 

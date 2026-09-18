@@ -126,7 +126,8 @@ class ReportControllerTest {
                         .param("month", "9"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
-                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"financial-report-2026-9.html\""))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"financial-report-2026-9.html\""))
                 .andExpect(content().string(htmlContent));
 
         verify(userSecurity).validateUserAccess(1L);
@@ -150,7 +151,8 @@ class ReportControllerTest {
     void testExportExcel() throws Exception {
         byte[] dummyBytes = "DummyExcelData".getBytes();
         ResponseEntity<byte[]> mockResponse = ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"")
                 .body(dummyBytes);
 
         when(rangeReportController.excel(eq(1L), isNull(), isNull(), eq("INR")))
@@ -158,7 +160,8 @@ class ReportControllerTest {
 
         mockMvc.perform(get("/api/reports/user/1/export/excel"))
                 .andExpect(status().isOk())
-                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-summary.xlsx\""))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"financial-summary.xlsx\""))
                 .andExpect(content().bytes(dummyBytes));
 
         verify(rangeReportController).excel(1L, null, null, "INR");
@@ -178,7 +181,8 @@ class ReportControllerTest {
         mockMvc.perform(get("/api/reports/user/1/export/pdf")
                         .param("currency", "USD"))
                 .andExpect(status().isOk())
-                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-statement.pdf\""))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"financial-statement.pdf\""))
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF))
                 .andExpect(content().bytes(dummyPdfBytes));
 

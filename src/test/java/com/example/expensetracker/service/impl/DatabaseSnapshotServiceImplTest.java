@@ -138,7 +138,8 @@ class DatabaseSnapshotServiceImplTest {
         Path out = tempDir.resolve("out.enc");
         assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(null, out, "pass"));
         assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(existing, null, "pass"));
-        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(nonExistent, out, "pass"));
+        assertThrows(IllegalArgumentException.class,
+                () -> DatabaseSnapshotServiceImpl.encrypt(nonExistent, out, "pass"));
         assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.encrypt(existing, out, "   "));
     }
 
@@ -150,7 +151,8 @@ class DatabaseSnapshotServiceImplTest {
         Path out = tempDir.resolve("out.txt");
         assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(null, out, "pass"));
         assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(existing, null, "pass"));
-        assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(nonExistent, out, "pass"));
+        assertThrows(IllegalArgumentException.class,
+                () -> DatabaseSnapshotServiceImpl.decrypt(nonExistent, out, "pass"));
         assertThrows(IllegalArgumentException.class, () -> DatabaseSnapshotServiceImpl.decrypt(existing, out, "   "));
     }
 }

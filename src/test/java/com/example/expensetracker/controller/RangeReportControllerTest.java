@@ -80,8 +80,10 @@ class RangeReportControllerTest {
         var response = controller.excel(7L, "2026-09-01", "2026-09-30", "INR");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", response.getHeaders().getContentType().toString());
-        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                response.getHeaders().getContentType().toString());
+        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"",
+                response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 1000);
         verify(security).validateUserAccess(7L);
@@ -104,7 +106,8 @@ class RangeReportControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("application/pdf", response.getHeaders().getContentType().toString());
-        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Report.pdf\"", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Report.pdf\"",
+                response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 1000);
         assertEquals('%', (char) response.getBody()[0]);

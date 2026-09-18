@@ -55,7 +55,8 @@ class ExportServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        exportService = new ExportServiceImpl(expenseRepository, incomeRepository, savingsGoalRepository, budgetRepository);
+        exportService = new ExportServiceImpl(
+                expenseRepository, incomeRepository, savingsGoalRepository, budgetRepository);
         objectMapper = new ObjectMapper();
 
         testUser = new User();

@@ -50,14 +50,17 @@ import java.util.stream.Collectors;
  * <p>
  * Key PowerBI Excel Highlights:
  * <ul>
- *   <li><b>Dynamic Multi-Currency Engine:</b> Resolves 50+ world currencies (e.g. INR ₹, USD $, EUR €, GBP £, JPY ¥, AED)
+ *   <li><b>Dynamic Multi-Currency Engine:</b> Resolves 50+ world currencies (e.g. INR ₹, USD $, EUR €, GBP £, JPY ¥,
+ // AED)
  *       into native Excel number formats, PDF labels, and live metric cards.</li>
  *   <li><b>Executive Financial Intelligence Dashboard:</b> Sleek 8-column canvas with dark slate executive
  *       hero banner, dual 4-card KPI metric ribbons (Solvency, Health Score, Daily Burn Velocity, Runway Days).</li>
  *   <li><b>Macro 50/30/20 Budgeting Benchmark:</b> Automatic classification of Needs, Wants, and Capital Savings
  *       with real-time variance tracking and compliance tags.</li>
- *   <li><b>Pareto 80/20 Cost Drivers & Risk Matrix:</b> Class A/B/C cost driver tiering, budget variance, and utilization alerts.</li>
- *   <li><b>Automated Strategic AI Prescriptions:</b> Dynamic, data-driven executive takeaways and cost optimization directives.</li>
+ *   <li><b>Pareto 80/20 Cost Drivers & Risk Matrix:</b> Class A/B/C cost driver tiering, budget variance, and
+ // utilization alerts.</li>
+ *   <li><b>Automated Strategic AI Prescriptions:</b> Dynamic, data-driven executive takeaways and cost optimization
+ // directives.</li>
  *   <li><b>Multiple Embedded Vector Visuals (XDDF Charts):</b> Cash flow performance comparison column chart,
  *       category spending distribution donut chart, and chronological spend trendline chart.</li>
  * </ul>
@@ -111,9 +114,11 @@ public class ExportServiceImpl implements ExportService {
         }
 
         public String getExcelFormat() {
-            // Symbol placement: most currencies (USD$, EUR\u20AC, GBP\u00A3, INR\u20B9) put the symbol BEFORE the number.
+            // Symbol placement: most currencies (USD$, EUR\u20AC, GBP\u00A3, INR\u20B9) put the symbol BEFORE the
+            // number.
             // However several Eastern European / Balkan currencies conventionally place the symbol AFTER:
-            //   CZK 100,00 K\u010D | HUF 100 Ft | RON 100,00 lei | BGN 100,00 \u043B\u0432 | RSD 100,00 \u0434\u0438\u043D
+            //   CZK 100,00 K\u010D | HUF 100 Ft | RON 100,00 lei | BGN 100,00 \u043B\u0432 | RSD 100,00
+            // \u0434\u0438\u043D
             //   MKD 100,00 \u0434\u0435\u043D | HRK 100,00 kn | BAM 100,00 KM | ALL 100 L
             // We honour that convention so the generated Excel doesn't look wrong to native users.
             if (!decimals) {
@@ -270,12 +275,18 @@ public class ExportServiceImpl implements ExportService {
         for (Expense exp : expenses) {
             sb.append(exp.getId()).append(",")
                     .append(exp.getExpenseDate() != null ? exp.getExpenseDate() : "").append(",")
-                    .append("\"").append(escapeCsv(exp.getCategory() != null ? exp.getCategory().getName() : "")).append("\",")
+                    
+                            .append("\"")
+                            .append(escapeCsv(exp.getCategory() != null ? exp.getCategory().getName() : ""))
+                            .append("\",")
                     // FIXED: use toPlainString() instead of toString() — BigDecimal.toString() can
                     // emit scientific notation (e.g. "1E+10") for large values, which Excel's CSV
                     // importer doesn't always parse correctly.
                     .append(exp.getAmount() != null ? exp.getAmount().toPlainString() : "0").append(",")
-                    .append("\"").append(escapeCsv(exp.getDescription() != null ? exp.getDescription() : "")).append("\",")
+                    
+                            .append("\"")
+                            .append(escapeCsv(exp.getDescription() != null ? exp.getDescription() : ""))
+                            .append("\",")
                     .append(exp.isRecurring()).append("\n");
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -324,7 +335,8 @@ public class ExportServiceImpl implements ExportService {
 
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
-                    "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: " + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
+                    "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
+                            + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -346,8 +358,11 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
 
             for (Expense exp : expenses) {
-                table.addCell(new Phrase(exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "", dataFont));
-                table.addCell(new Phrase(exp.getCategory() != null ? exp.getCategory().getName() : "Uncategorized", dataFont));
+                table.addCell(
+                        new Phrase(exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "", dataFont));
+                table.addCell(
+                        new Phrase(exp.getCategory() != null ?
+                                exp.getCategory().getName() : "Uncategorized", dataFont));
                 table.addCell(new Phrase(exp.getDescription() != null ? exp.getDescription() : "", dataFont));
                 BigDecimal amt = exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO;
                 table.addCell(new Phrase(curr.symbol + " " + formatAmount(amt, curr.decimals), dataFont));
@@ -355,8 +370,11 @@ public class ExportServiceImpl implements ExportService {
             }
             document.add(table);
 
-            org.openpdf.text.Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(37, 99, 235));
-            Paragraph totalPara = new Paragraph("\nTotal Expenses: " + curr.symbol + " " + formatAmount(total, curr.decimals), totalFont);
+            org.openpdf.text.Font totalFont = FontFactory.getFont(
+                    FontFactory.HELVETICA_BOLD, 14, new Color(37, 99, 235));
+            Paragraph totalPara =
+                    new Paragraph("\nTotal Expenses: " + curr.symbol + " "
+                            + formatAmount(total, curr.decimals), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
 
@@ -396,12 +414,16 @@ public class ExportServiceImpl implements ExportService {
 
             String curFmt = curr.getExcelFormat();
             XSSFCellStyle headerStyle = createModernHeaderStyle(workbook, colorMap, new Color(30, 64, 175));
-            XSSFCellStyle normalRowStyle = createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.LEFT);
+            XSSFCellStyle normalRowStyle =
+                    createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.LEFT);
             XSSFCellStyle zebraRowStyle = createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.LEFT);
             XSSFCellStyle ctrRowStyle = createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.CENTER);
-            XSSFCellStyle ctrZebraStyle = createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.CENTER);
-            XSSFCellStyle currencyStyle = createDataRowStyle(workbook, colorMap, false, curFmt, HorizontalAlignment.RIGHT);
-            XSSFCellStyle zebraCurrencyStyle = createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
+            XSSFCellStyle ctrZebraStyle =
+                    createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.CENTER);
+            XSSFCellStyle currencyStyle =
+                    createDataRowStyle(workbook, colorMap, false, curFmt, HorizontalAlignment.RIGHT);
+            XSSFCellStyle zebraCurrencyStyle =
+                    createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
 
             Row headerRow = sheet.createRow(0);
             String[] headers = {"ID", "Date", "Category", "Amount (" + curr.symbol + ")", "Description", "Recurring"};
@@ -465,19 +487,23 @@ public class ExportServiceImpl implements ExportService {
             // Conditional Formatting
             if (rowIdx > 1) {
                 SheetConditionalFormatting scf = sheet.getSheetConditionalFormatting();
-                // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use 1,000)
+                // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use
+                // 1,000)
                 String highAmtThreshold = currencyAwareHighExpenseThreshold(curr);
-                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.GT, highAmtThreshold);
+                ConditionalFormattingRule rule =
+                        scf.createConditionalFormattingRule(ComparisonOperator.GT, highAmtThreshold);
                 PatternFormatting pf = rule.createPatternFormatting();
                 pf.setFillBackgroundColor(IndexedColors.CORAL.getIndex());
                 pf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
                 scf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(1, rowIdx - 1, 3, 3) }, rule);
 
-                ConditionalFormattingRule recurRule = scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
+                ConditionalFormattingRule recurRule =
+                        scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
                 PatternFormatting recurPf = recurRule.createPatternFormatting();
                 recurPf.setFillBackgroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
                 recurPf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-                scf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(1, rowIdx - 1, 5, 5) }, recurRule);
+                scf.addConditionalFormatting(
+                        new CellRangeAddress[]{ new CellRangeAddress(1, rowIdx - 1, 5, 5) }, recurRule);
             }
 
             for (int i = 0; i < headers.length; i++) {
@@ -520,7 +546,10 @@ public class ExportServiceImpl implements ExportService {
                     // emit scientific notation (e.g. "1E+10") for large values, which Excel's CSV
                     // importer doesn't always parse correctly.
                     .append(inc.getAmount() != null ? inc.getAmount().toPlainString() : "0").append(",")
-                    .append("\"").append(escapeCsv(inc.getDescription() != null ? inc.getDescription() : "")).append("\",")
+                    
+                            .append("\"")
+                            .append(escapeCsv(inc.getDescription() != null ? inc.getDescription() : ""))
+                            .append("\",")
                     .append(Boolean.TRUE.equals(inc.getIsRecurring())).append("\n");
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -569,7 +598,8 @@ public class ExportServiceImpl implements ExportService {
 
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
-                    "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: " + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
+                    "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
+                            + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -600,8 +630,11 @@ public class ExportServiceImpl implements ExportService {
             }
             document.add(table);
 
-            org.openpdf.text.Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new Color(4, 120, 87));
-            Paragraph totalPara = new Paragraph("\nTotal Incomes: " + curr.symbol + " " + formatAmount(total, curr.decimals), totalFont);
+            org.openpdf.text.Font totalFont = FontFactory.getFont(
+                    FontFactory.HELVETICA_BOLD, 14, new Color(4, 120, 87));
+            Paragraph totalPara =
+                    new Paragraph("\nTotal Incomes: " + curr.symbol + " "
+                            + formatAmount(total, curr.decimals), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
 
@@ -641,12 +674,16 @@ public class ExportServiceImpl implements ExportService {
 
             String curFmt = curr.getExcelFormat();
             XSSFCellStyle headerStyle = createModernHeaderStyle(workbook, colorMap, new Color(4, 120, 87));
-            XSSFCellStyle normalRowStyle = createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.LEFT);
+            XSSFCellStyle normalRowStyle =
+                    createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.LEFT);
             XSSFCellStyle zebraRowStyle = createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.LEFT);
             XSSFCellStyle ctrRowStyle = createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.CENTER);
-            XSSFCellStyle ctrZebraStyle = createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.CENTER);
-            XSSFCellStyle currencyStyle = createDataRowStyle(workbook, colorMap, false, curFmt, HorizontalAlignment.RIGHT);
-            XSSFCellStyle zebraCurrencyStyle = createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
+            XSSFCellStyle ctrZebraStyle =
+                    createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.CENTER);
+            XSSFCellStyle currencyStyle =
+                    createDataRowStyle(workbook, colorMap, false, curFmt, HorizontalAlignment.RIGHT);
+            XSSFCellStyle zebraCurrencyStyle =
+                    createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
 
             Row headerRow = sheet.createRow(0);
             String[] headers = {"ID", "Date", "Source", "Amount (" + curr.symbol + ")", "Description", "Recurring"};
@@ -710,7 +747,8 @@ public class ExportServiceImpl implements ExportService {
             // Conditional formatting: highlight recurring incomes
             if (rowIdx > 1) {
                 SheetConditionalFormatting scf = sheet.getSheetConditionalFormatting();
-                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
+                ConditionalFormattingRule rule =
+                        scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
                 PatternFormatting pf = rule.createPatternFormatting();
                 pf.setFillBackgroundColor(IndexedColors.LIGHT_GREEN.getIndex());
                 pf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
@@ -763,8 +801,12 @@ public class ExportServiceImpl implements ExportService {
         String curFmt = curr.getExcelFormat();
 
         // 1. High-Level Aggregations & Advanced Metrics Calculations
-        BigDecimal totalIncBd = incomes.stream().map(Income::getAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalExpBd = expenses.stream().map(Expense::getAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalIncBd =
+                incomes.stream().map(Income::getAmount)
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalExpBd =
+                expenses.stream().map(Expense::getAmount)
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
         double totalInc = totalIncBd.doubleValue();
         double totalExp = totalExpBd.doubleValue();
         double netSurplus = totalInc - totalExp;
@@ -781,7 +823,8 @@ public class ExportServiceImpl implements ExportService {
         // Group category expenditures
         Map<String, Double> categoryTotals = expenses.stream()
                 .collect(Collectors.groupingBy(
-                        e -> (e.getCategory() != null && e.getCategory().getName() != null && !e.getCategory().getName().isBlank())
+                        e -> (e.getCategory() != null && e.getCategory().getName() != null
+                                && !e.getCategory().getName().isBlank())
                                 ? e.getCategory().getName() : "Uncategorized",
                         LinkedHashMap::new,
                         Collectors.summingDouble(e -> e.getAmount() != null ? e.getAmount().doubleValue() : 0.0)
@@ -825,7 +868,8 @@ public class ExportServiceImpl implements ExportService {
         }
         double dailyBurn = totalExp / activeDays;
         double monthlyBurnRunRate = dailyBurn * 30.4;
-        double runwayDays = dailyBurn > 0 ? (netSurplus > 0 ? (netSurplus / dailyBurn) : 0.0) : Double.POSITIVE_INFINITY;
+        double runwayDays =
+                dailyBurn > 0 ? (netSurplus > 0 ? (netSurplus / dailyBurn) : 0.0) : Double.POSITIVE_INFINITY;
         double runwayMonths = Double.isInfinite(runwayDays) ? Double.POSITIVE_INFINITY : runwayDays / 30.4;
 
         // 50/30/20 Rule Classification (Needs vs Wants vs Savings)
@@ -945,40 +989,64 @@ public class ExportServiceImpl implements ExportService {
         double topCatShare = totalExp > 0 ? (topCatSpend / totalExp) * 100.0 : 0.0;
         double potentialSaving = topCatSpend * 0.10;
 
-        String p1 = String.format(Locale.US, "Cost Optimization Priority: '%s' is your largest cost driver, consuming %.1f%% of expenditures (%s %,.2f). Trimming 10%% will redirect %s %,.2f/month back into capital surplus.",
+        String p1 = String.format(Locale.US,
+                "Cost Optimization Priority: '%s' is your largest cost driver, "
+                        + "consuming %.1f%% of expenditures (%s %,.2f). "
+                        + "Trimming 10%% will redirect %s %,.2f/month back into capital surplus.",
                 topCatName, topCatShare, curr.symbol, topCatSpend, curr.symbol, potentialSaving);
 
         String p2;
         if (Double.isInfinite(runwayDays)) {
-            p2 = String.format(Locale.US, "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, your net surplus of %s %,.2f provides effectively unlimited reserves (\u221E days) since net burn is zero or negative.",
+            p2 = String.format(Locale.US,
+                    "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, "
+                            + "your net surplus of %s %,.2f provides effectively unlimited reserves "
+                            + "(\u221E days) since net burn is zero or negative.",
                     curr.symbol, dailyBurn, curr.symbol, Math.max(0.0, netSurplus));
         } else {
-            p2 = String.format(Locale.US, "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, your net surplus of %s %,.2f provides %.0f days (%.1f months) of reserves buffer.",
+            p2 = String.format(Locale.US,
+                    "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, "
+                            + "your net surplus of %s %,.2f provides %.0f days (%.1f months) of reserves buffer.",
                     curr.symbol, dailyBurn, curr.symbol, Math.max(0.0, netSurplus), runwayDays, runwayMonths);
         }
 
         String p3;
         if (wantsPct > 0.35) {
-            p3 = String.format(Locale.US, "50/30/20 Macro Allocation Alert: Discretionary lifestyle 'Wants' consume %.1f%% of capital (exceeding the 30%% guideline by %.1f%%). Curbing non-essential outflow accelerates compounding.",
+            p3 = String.format(Locale.US,
+                    "50/30/20 Macro Allocation Alert: Discretionary lifestyle 'Wants' consume %.1f%% "
+                            + "of capital (exceeding the 30%% guideline by %.1f%%). "
+                            + "Curbing non-essential outflow accelerates compounding.",
                     wantsPct * 100.0, (wantsPct - 0.30) * 100.0);
         } else if (savingsPct >= 0.20) {
-            p3 = String.format(Locale.US, "50/30/20 Macro Allocation Optimal: Capital savings rate is %.1f%% (exceeding the 20%% target by +%.1f%%). Outstanding capital accumulation discipline.",
+            p3 = String.format(Locale.US,
+                    "50/30/20 Macro Allocation Optimal: Capital savings rate is %.1f%% "
+                            + "(exceeding the 20%% target by +%.1f%%). Outstanding capital accumulation discipline.",
                     savingsPct * 100.0, (savingsPct - 0.20) * 100.0);
         } else {
-            p3 = String.format(Locale.US, "50/30/20 Macro Allocation Deficit: Capital savings rate is currently %.1f%% (below the recommended 20%% target). Aim to trim discretionary spend to close the %.1f%% gap.",
+            p3 = String.format(Locale.US,
+                    "50/30/20 Macro Allocation Deficit: Capital savings rate is currently %.1f%% "
+                            + "(below recommended 20%% target). "
+                            + "Aim to trim discretionary spend to close %.1f%% gap.",
                     savingsPct * 100.0, (0.20 - savingsPct) * 100.0);
         }
 
-        double totalGoalTarget = savingsGoals.stream().map(SavingsGoal::getTargetAmount).filter(Objects::nonNull).mapToDouble(BigDecimal::doubleValue).sum();
-        double totalGoalSaved = savingsGoals.stream().map(SavingsGoal::getCurrentAmount).filter(Objects::nonNull).mapToDouble(BigDecimal::doubleValue).sum();
+        double totalGoalTarget =
+                savingsGoals.stream().map(SavingsGoal::getTargetAmount)
+                .filter(Objects::nonNull).mapToDouble(BigDecimal::doubleValue).sum();
+        double totalGoalSaved =
+                savingsGoals.stream().map(SavingsGoal::getCurrentAmount)
+                .filter(Objects::nonNull).mapToDouble(BigDecimal::doubleValue).sum();
         double goalProgress = totalGoalTarget > 0 ? (totalGoalSaved / totalGoalTarget) * 100.0 : 0.0;
 
         String p4;
         if (totalGoalTarget > 0) {
-            p4 = String.format(Locale.US, "Savings Goals Trajectory: Accumulated %s %,.2f toward total goal targets of %s %,.2f (%.1f%% achieved). Current retention pace supports continuous goal funding.",
+            p4 = String.format(Locale.US,
+                    "Savings Goals Trajectory: Accumulated %s %,.2f toward total goal targets "
+                            + "of %s %,.2f (%.1f%% achieved). Current retention pace supports continuous goal funding.",
                     curr.symbol, totalGoalSaved, curr.symbol, totalGoalTarget, goalProgress);
         } else {
-            p4 = "Savings Strategy Recommendation: No active savings goals detected. Establish defined capital targets (Emergency Reserve, Asset Investment) to maximize wealth growth.";
+            p4 = "Savings Strategy Recommendation: No active savings goals detected. "
+                    + "Establish defined capital targets (Emergency Reserve, Asset Investment) "
+                    + "to maximize wealth growth.";
         }
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -1004,14 +1072,20 @@ public class ExportServiceImpl implements ExportService {
             goalSheet.setForceFormulaRecalculation(true);
 
             // Reusable typography & alignment styles
-            XSSFCellStyle curDataStyle = createDataRowStyle(workbook, colorMap, false, curFmt, HorizontalAlignment.RIGHT);
-            XSSFCellStyle curZebraStyle = createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
-            XSSFCellStyle pctDataStyle = createDataRowStyle(workbook, colorMap, false, "0.0%", HorizontalAlignment.RIGHT);
-            XSSFCellStyle pctZebraStyle = createDataRowStyle(workbook, colorMap, true, "0.0%", HorizontalAlignment.RIGHT);
+            XSSFCellStyle curDataStyle =
+                    createDataRowStyle(workbook, colorMap, false, curFmt, HorizontalAlignment.RIGHT);
+            XSSFCellStyle curZebraStyle =
+                    createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
+            XSSFCellStyle pctDataStyle =
+                    createDataRowStyle(workbook, colorMap, false, "0.0%", HorizontalAlignment.RIGHT);
+            XSSFCellStyle pctZebraStyle =
+                    createDataRowStyle(workbook, colorMap, true, "0.0%", HorizontalAlignment.RIGHT);
             XSSFCellStyle txtDataStyle = createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.LEFT);
             XSSFCellStyle txtZebraStyle = createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.LEFT);
-            XSSFCellStyle ctrDataStyle = createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.CENTER);
-            XSSFCellStyle ctrZebraStyle = createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.CENTER);
+            XSSFCellStyle ctrDataStyle =
+                    createDataRowStyle(workbook, colorMap, false, null, HorizontalAlignment.CENTER);
+            XSSFCellStyle ctrZebraStyle =
+                    createDataRowStyle(workbook, colorMap, true, null, HorizontalAlignment.CENTER);
 
             // ═════════════════════════════════════════════════════════════════════════
             // POPULATE SHEET 2: INCOMES DATA LEDGER
@@ -1079,11 +1153,13 @@ public class ExportServiceImpl implements ExportService {
 
             if (incRowIdx > 1) {
                 SheetConditionalFormatting scf = incSheet.getSheetConditionalFormatting();
-                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
+                ConditionalFormattingRule rule =
+                        scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
                 PatternFormatting pf = rule.createPatternFormatting();
                 pf.setFillBackgroundColor(IndexedColors.LIGHT_GREEN.getIndex());
                 pf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-                scf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(1, incRowIdx - 1, 5, 5) }, rule);
+                scf.addConditionalFormatting(
+                        new CellRangeAddress[]{ new CellRangeAddress(1, incRowIdx - 1, 5, 5) }, rule);
             }
             for (int i = 0; i < incCols.length; i++) {
                 incSheet.autoSizeColumn(i);
@@ -1156,19 +1232,24 @@ public class ExportServiceImpl implements ExportService {
 
             if (expRowIdx > 1) {
                 SheetConditionalFormatting scf = expSheet.getSheetConditionalFormatting();
-                // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use 1,000)
+                // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use
+                // 1,000)
                 String highAmtThreshold = currencyAwareHighExpenseThreshold(curr);
-                ConditionalFormattingRule rule = scf.createConditionalFormattingRule(ComparisonOperator.GT, highAmtThreshold);
+                ConditionalFormattingRule rule =
+                        scf.createConditionalFormattingRule(ComparisonOperator.GT, highAmtThreshold);
                 PatternFormatting pf = rule.createPatternFormatting();
                 pf.setFillBackgroundColor(IndexedColors.CORAL.getIndex());
                 pf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-                scf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(1, expRowIdx - 1, 3, 3) }, rule);
+                scf.addConditionalFormatting(
+                        new CellRangeAddress[]{ new CellRangeAddress(1, expRowIdx - 1, 3, 3) }, rule);
 
-                ConditionalFormattingRule recurRule = scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
+                ConditionalFormattingRule recurRule =
+                        scf.createConditionalFormattingRule(ComparisonOperator.EQUAL, "\"YES\"");
                 PatternFormatting recurPf = recurRule.createPatternFormatting();
                 recurPf.setFillBackgroundColor(IndexedColors.LIGHT_TURQUOISE.getIndex());
                 recurPf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-                scf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(1, expRowIdx - 1, 5, 5) }, recurRule);
+                scf.addConditionalFormatting(
+                        new CellRangeAddress[]{ new CellRangeAddress(1, expRowIdx - 1, 5, 5) }, recurRule);
             }
             for (int i = 0; i < expCols.length; i++) {
                 expSheet.autoSizeColumn(i);
@@ -1184,7 +1265,9 @@ public class ExportServiceImpl implements ExportService {
             XSSFCellStyle goalHeader = createModernHeaderStyle(workbook, colorMap, new Color(109, 40, 217));
             Row goalHeaderRow = goalSheet.createRow(0);
             goalHeaderRow.setHeightInPoints(26);
-            String[] goalCols = {"ID", "Goal Name", "Target Amount (" + curr.symbol + ")", "Current Amount (" + curr.symbol + ")", "Progress %", "Target Date", "Status"};
+            String[] goalCols =
+                    {"ID", "Goal Name", "Target Amount (" + curr.symbol + ")",
+                        "Current Amount (" + curr.symbol + ")", "Progress %", "Target Date", "Status"};
             for (int i = 0; i < goalCols.length; i++) {
                 Cell cell = goalHeaderRow.createCell(i);
                 cell.setCellValue(goalCols[i]);
@@ -1221,7 +1304,8 @@ public class ExportServiceImpl implements ExportService {
                 c5.setCellValue(g.getTargetDate() != null ? g.getTargetDate().toString() : "No deadline");
                 c5.setCellStyle(isZebra ? ctrZebraStyle : ctrDataStyle);
 
-                double currentRatio = (g.getTargetAmount() != null && g.getTargetAmount().compareTo(BigDecimal.ZERO) > 0 && g.getCurrentAmount() != null)
+                double currentRatio = (g.getTargetAmount() != null
+                        && g.getTargetAmount().compareTo(BigDecimal.ZERO) > 0 && g.getCurrentAmount() != null)
                         ? g.getCurrentAmount().doubleValue() / g.getTargetAmount().doubleValue() : 0.0;
                 Cell c6 = row.createCell(6);
                 c6.setCellValue(currentRatio >= 1.0 ? "ACHIEVED \uD83C\uDF89" : "IN PROGRESS");
@@ -1234,7 +1318,8 @@ public class ExportServiceImpl implements ExportService {
                 PatternFormatting pf = rule.createPatternFormatting();
                 pf.setFillBackgroundColor(IndexedColors.LIGHT_GREEN.getIndex());
                 pf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-                scf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(1, goalRowIdx - 1, 4, 4) }, rule);
+                scf.addConditionalFormatting(
+                        new CellRangeAddress[]{ new CellRangeAddress(1, goalRowIdx - 1, 4, 4) }, rule);
             }
             for (int i = 0; i < goalCols.length; i++) {
                 goalSheet.autoSizeColumn(i);
@@ -1305,7 +1390,8 @@ public class ExportServiceImpl implements ExportService {
                 cell.setCellStyle(subBannerStyle);
             }
             subRow.getCell(0).setCellValue("PORTFOLIO PERFORMANCE & CASH FLOW ANALYTICS  |  USER: " + user.getName()
-                    + " (" + user.getEmail() + ")  |  CURRENCY: " + curr.code + " (" + curr.symbol + ")  |  GENERATED: " + LocalDate.now() + "  |  SYSTEM: LIVE TELEMETRY");
+                    + " (" + user.getEmail() + ")  |  CURRENCY: " + curr.code + " (" + curr.symbol + ") "
+                            + " |  GENERATED: " + LocalDate.now() + "  |  SYSTEM: LIVE TELEMETRY");
             dashSheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 7));
 
             dashSheet.createRow(3).setHeightInPoints(10); // Spacer
@@ -1359,20 +1445,26 @@ public class ExportServiceImpl implements ExportService {
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 8, 9, 10, 2, 3,
                     "\u26A1 DAILY CASH BURN VELOCITY",
                     String.format(Locale.US, "%.2f", dailyBurn),
-                    PBI_ROSE_RED, kpiCurFormat, String.format(Locale.US, "Monthly Run-Rate: %s %,.0f", curr.symbol, monthlyBurnRunRate));
+                    PBI_ROSE_RED, kpiCurFormat,
+                    String.format(Locale.US, "Monthly Run-Rate: %s %,.0f", curr.symbol, monthlyBurnRunRate));
 
             // Card 7: LIQUIDITY RUNWAY (Cols E–F / 4–5)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 8, 9, 10, 4, 5,
                     "\u29BE LIQUIDITY SURVIVAL RUNWAY",
-                    Double.isInfinite(runwayDays) ? "\u221E Continuous" : String.format(Locale.US, "%.0f Days", runwayDays),
-                    PBI_INDIGO_ACCENT, (short) 0, Double.isInfinite(runwayDays) ? "Surplus growing without net burn" : String.format(Locale.US, "%.1f Months of operational capital", runwayMonths));
+                    Double.isInfinite(runwayDays) ? "\u221E Continuous"
+                            : String.format(Locale.US, "%.0f Days", runwayDays),
+                    PBI_INDIGO_ACCENT, (short) 0, Double.isInfinite(runwayDays) ?
+                            "Surplus growing without net burn" :
+                            String.format(Locale.US, "%.1f Months of operational capital", runwayMonths));
 
             // Card 8: 50/30/20 ALLOCATION STATUS (Cols G–H / 6–7)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 8, 9, 10, 6, 7,
                     "\u2731 50/30/20 ALLOCATION STATUS",
-                    savingsPct >= 0.20 ? "\u2705 COMPOUNDING" : (wantsPct > 0.35 ? "\u26A0\uFE0F HIGH WANTS" : "\u26A1 DISCIPLINED"),
+                    savingsPct >= 0.20 ? "\u2705 COMPOUNDING" :
+                            (wantsPct > 0.35 ? "\u26A0\uFE0F HIGH WANTS" : "\u26A1 DISCIPLINED"),
                     savingsPct >= 0.20 ? PBI_EMERALD_GREEN : PBI_AMBER_GOLD, (short) 0,
-                    String.format(Locale.US, "Needs: %.0f%% \u2022 Wants: %.0f%% \u2022 Save: %.0f%%", needsPct * 100, wantsPct * 100, savingsPct * 100));
+                    String.format(Locale.US, "Needs: %.0f%% \u2022 Wants: %.0f%% \u2022 Save: %.0f%%",
+                            needsPct * 100, wantsPct * 100, savingsPct * 100));
 
             dashSheet.createRow(11).setHeightInPoints(12); // Spacer
 
@@ -1478,21 +1570,35 @@ public class ExportServiceImpl implements ExportService {
 
                 Cell c5 = r.createCell(5);
                 if (i == 0) {
-                    c5.setCellFormula("IF(C" + (rIdx + 1) + "<=0.50, \"\u2705 OPTIMAL\", IF(C" + (rIdx + 1) + "<=0.60, \"\u26A0\uFE0F ELEVATED\", \"\uD83D\uDEA8 HIGH BURDEN\"))");
+                    c5.setCellFormula(
+                            "IF(C" + (rIdx + 1) + "<=0.50, \"\u2705 OPTIMAL\", "
+                                    + "IF(C" + (rIdx + 1) + "<=0.60, "
+                                    + "\"\u26A0\uFE0F ELEVATED\", \"\uD83D\uDEA8 HIGH BURDEN\"))");
                 } else if (i == 1) {
-                    c5.setCellFormula("IF(C" + (rIdx + 1) + "<=0.30, \"\u2705 OPTIMAL\", IF(C" + (rIdx + 1) + "<=0.40, \"\u26A0\uFE0F ELEVATED\", \"\uD83D\uDEA8 OVER BUDGET\"))");
+                    c5.setCellFormula(
+                            "IF(C" + (rIdx + 1) + "<=0.30, \"\u2705 OPTIMAL\", "
+                                    + "IF(C" + (rIdx + 1) + "<=0.40, "
+                                    + "\"\u26A0\uFE0F ELEVATED\", \"\uD83D\uDEA8 OVER BUDGET\"))");
                 } else {
-                    c5.setCellFormula("IF(C" + (rIdx + 1) + ">=0.20, \"\uD83D\uDE80 ACCELERATING\", IF(C" + (rIdx + 1) + ">=0.10, \"\u2705 MODERATE\", \"\uD83D\uDEA8 DEFICIT\"))");
+                    c5.setCellFormula(
+                            "IF(C" + (rIdx + 1) + ">=0.20, \"\uD83D\uDE80 ACCELERATING\", "
+                                    + "IF(C" + (rIdx + 1) + ">=0.10, \"\u2705 MODERATE\", \"\uD83D\uDEA8 DEFICIT\"))");
                 }
                 c5.setCellStyle(isZebra ? ctrZebraStyle : ctrDataStyle);
 
                 Cell c6 = r.createCell(6);
                 if (i == 0) {
-                    c6.setCellFormula("IF(C" + (rIdx + 1) + "<=0.50, \"Living costs fully within guidelines\", \"Essential expenses consume over 50% of revenue\")");
+                    c6.setCellFormula(
+                            "IF(C" + (rIdx + 1) + "<=0.50, \"Living costs fully within guidelines\", "
+                                    + "\"Essential expenses consume over 50% of revenue\")");
                 } else if (i == 1) {
-                    c6.setCellFormula("IF(C" + (rIdx + 1) + "<=0.30, \"Controlled lifestyle expenditure\", \"Discretionary spending exceeds 30% threshold\")");
+                    c6.setCellFormula(
+                            "IF(C" + (rIdx + 1) + "<=0.30, \"Controlled lifestyle expenditure\", "
+                                    + "\"Discretionary spending exceeds 30% threshold\")");
                 } else {
-                    c6.setCellFormula("IF(C" + (rIdx + 1) + ">=0.20, \"Capital accumulation expanding rapidly\", \"Retention pace below 20% benchmark\")");
+                    c6.setCellFormula(
+                            "IF(C" + (rIdx + 1) + ">=0.20, \"Capital accumulation expanding rapidly\", "
+                                    + "\"Retention pace below 20% benchmark\")");
                 }
                 c6.setCellStyle(isZebra ? txtZebraStyle : txtDataStyle);
 
@@ -1552,7 +1658,8 @@ public class ExportServiceImpl implements ExportService {
                 Cell cell = catBannerRow.createCell(c);
                 cell.setCellStyle(mBannerStyle);
             }
-            catBannerRow.getCell(0).setCellValue("  \u2726 EXECUTIVE CATEGORY COST DRIVERS & PARETO 80/20 ALLOCATION MATRIX");
+            catBannerRow.getCell(0).setCellValue(
+                    "  \u2726 EXECUTIVE CATEGORY COST DRIVERS & PARETO 80/20 ALLOCATION MATRIX");
             dashSheet.addMergedRegion(new CellRangeAddress(catBannerRowIdx, catBannerRowIdx, 0, 7));
 
             int catHeadRowIdx = catBannerRowIdx + 1;
@@ -1613,7 +1720,10 @@ public class ExportServiceImpl implements ExportService {
                 c6.setCellStyle(isZebra ? curZebraStyle : curDataStyle);
 
                 Cell c7 = r.createCell(7);
-                c7.setCellFormula("IF(E" + (rIdx + 1) + ">0, IF(F" + (rIdx + 1) + ">1.0, \"\u26A0\uFE0F EXCEEDED\", IF(F" + (rIdx + 1) + ">0.8, \"\u26A1 ALERT (>80%)\", \"\u2705 OPTIMAL\")), IF(C" + (rIdx + 1) + ">0.3, \"\u26A0\uFE0F HIGH BURDEN\", \"\u2705 ON TRACK\"))");
+                c7.setCellFormula(
+                        "IF(E" + (rIdx + 1) + ">0, IF(F" + (rIdx + 1) + ">1.0, \"\u26A0\uFE0F EXCEEDED\", "
+                                + "IF(F" + (rIdx + 1) + ">0.8, \"\u26A1 ALERT (>80%)\", \"\u2705 OPTIMAL\")), "
+                                + "IF(C" + (rIdx + 1) + ">0.3, \"\u26A0\uFE0F HIGH BURDEN\", \"\u2705 ON TRACK\"))");
                 c7.setCellStyle(isZebra ? ctrZebraStyle : ctrDataStyle);
 
                 catIdx++;
@@ -1645,7 +1755,8 @@ public class ExportServiceImpl implements ExportService {
             ctl4.setCellStyle(totCur);
 
             Cell ctl5 = catTotRow.createCell(5);
-            ctl5.setCellFormula("IF(E" + (catTotRowIdx + 1) + ">0, B" + (catTotRowIdx + 1) + "/E" + (catTotRowIdx + 1) + ", 0)");
+            ctl5.setCellFormula(
+                    "IF(E" + (catTotRowIdx + 1) + ">0, B" + (catTotRowIdx + 1) + "/E" + (catTotRowIdx + 1) + ", 0)");
             ctl5.setCellStyle(totPct);
 
             Cell ctl6 = catTotRow.createCell(6);
@@ -1873,11 +1984,16 @@ public class ExportServiceImpl implements ExportService {
                 ck5.setCellStyle(isZebra ? curZebraStyle : curDataStyle);
 
                 Cell ck6 = r.createCell(6);
-                ck6.setCellFormula("IF(B" + (rIdx + 1) + ">E" + (rIdx + 1) + "*1.5, \"\u26A1 HIGH SURGE\", IF(B" + (rIdx + 1) + ">E" + (rIdx + 1) + ", \"\u25B2 ELEVATED\", \"\u25BC CONTROLLED\"))");
+                ck6.setCellFormula(
+                        "IF(B" + (rIdx + 1) + ">E" + (rIdx + 1) + "*1.5, \"\u26A1 HIGH SURGE\", "
+                                + "IF(B" + (rIdx + 1) + ">E" + (rIdx + 1) + ", "
+                                + "\"\u25B2 ELEVATED\", \"\u25BC CONTROLLED\"))");
                 ck6.setCellStyle(isZebra ? ctrZebraStyle : ctrDataStyle);
 
                 Cell ck7 = r.createCell(7);
-                ck7.setCellFormula("IF(B" + (rIdx + 1) + ">E" + (rIdx + 1) + "*1.5, \"\u26A0\uFE0F REVIEW TRANSACTIONS\", \"\u2705 NOMINAL RUN-RATE\")");
+                ck7.setCellFormula(
+                        "IF(B" + (rIdx + 1) + ">E" + (rIdx + 1) + "*1.5, "
+                                + "\"\u26A0\uFE0F REVIEW TRANSACTIONS\", \"\u2705 NOMINAL RUN-RATE\")");
                 ck7.setCellStyle(isZebra ? ctrZebraStyle : ctrDataStyle);
 
                 timeIdx++;
@@ -1938,7 +2054,8 @@ public class ExportServiceImpl implements ExportService {
                 Cell cell = aiBannerRow.createCell(c);
                 cell.setCellStyle(mBannerStyle);
             }
-            aiBannerRow.getCell(0).setCellValue("  \u2726 STRATEGIC EXECUTIVE AI PRESCRIPTIONS & ACTIONABLE DIRECTIVES");
+            aiBannerRow.getCell(0).setCellValue(
+                    "  \u2726 STRATEGIC EXECUTIVE AI PRESCRIPTIONS & ACTIONABLE DIRECTIVES");
             dashSheet.addMergedRegion(new CellRangeAddress(aiBannerRowIdx, aiBannerRowIdx, 0, 7));
 
             String[] aiLabels = {
@@ -2000,12 +2117,17 @@ public class ExportServiceImpl implements ExportService {
                 XDDFBarChartData barChart = (XDDFBarChartData) chart1.createData(ChartTypes.BAR, bAxis1, lAxis1);
                 barChart.setBarDirection(BarDirection.COL);
 
-                // FIXED: previously the cash-flow table writes 4 rows (Revenue, Expenditures, Net Surplus, Savings Goals)
+                // FIXED: previously the cash-flow table writes 4 rows (Revenue, Expenditures, Net Surplus, Savings
+                // Goals)
                 // but the chart only plotted the first 3 (cfStartRow..cfStartRow+2). The "Active Savings Goals Reserve
                 // Allocation" row was silently dropped from the visualization. Now we extend the range by one row
                 // so all 4 cash-flow bars appear in the chart.
-                XDDFDataSource<String> cfCategories = XDDFDataSourcesFactory.fromStringCellRange(dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 3, 0, 0));
-                XDDFNumericalDataSource<Double> cfValues = XDDFDataSourcesFactory.fromNumericCellRange(dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 3, 1, 1));
+                XDDFDataSource<String> cfCategories =
+                        XDDFDataSourcesFactory.fromStringCellRange(
+                                dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 3, 0, 0));
+                XDDFNumericalDataSource<Double> cfValues =
+                        XDDFDataSourcesFactory.fromNumericCellRange(
+                                dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 3, 1, 1));
 
                 XDDFChartData.Series cfSeries = barChart.addSeries(cfCategories, cfValues);
                 cfSeries.setTitle("Portfolio Dynamics (" + curr.symbol + ")", null);
@@ -2021,12 +2143,17 @@ public class ExportServiceImpl implements ExportService {
                 legend2.setPosition(LegendPosition.RIGHT);
                 legend2.setOverlay(false);
 
-                XDDFDoughnutChartData donutChart = (XDDFDoughnutChartData) chart2.createData(ChartTypes.DOUGHNUT, null, null);
+                XDDFDoughnutChartData donutChart = (XDDFDoughnutChartData)
+                        chart2.createData(ChartTypes.DOUGHNUT, null, null);
                 donutChart.setHoleSize(55);
                 donutChart.setVaryColors(true);
 
-                XDDFDataSource<String> catCategories = XDDFDataSourcesFactory.fromStringCellRange(dashSheet, new CellRangeAddress(catStartRow, catEndRow, 0, 0));
-                XDDFNumericalDataSource<Double> catValues = XDDFDataSourcesFactory.fromNumericCellRange(dashSheet, new CellRangeAddress(catStartRow, catEndRow, 1, 1));
+                XDDFDataSource<String> catCategories =
+                        XDDFDataSourcesFactory.fromStringCellRange(
+                                dashSheet, new CellRangeAddress(catStartRow, catEndRow, 0, 0));
+                XDDFNumericalDataSource<Double> catValues =
+                        XDDFDataSourcesFactory.fromNumericCellRange(
+                                dashSheet, new CellRangeAddress(catStartRow, catEndRow, 1, 1));
 
                 XDDFChartData.Series donutSeries = donutChart.addSeries(catCategories, catValues);
                 donutSeries.setTitle("Expenditure Breakdown", null);
@@ -2049,8 +2176,12 @@ public class ExportServiceImpl implements ExportService {
                 XDDFLineChartData lineChart = (XDDFLineChartData) chart3.createData(ChartTypes.LINE, bAxis3, lAxis3);
                 lineChart.setVaryColors(false);
 
-                XDDFDataSource<String> timeCategories = XDDFDataSourcesFactory.fromStringCellRange(dashSheet, new CellRangeAddress(timeStartRow, timeEndRow, 0, 0));
-                XDDFNumericalDataSource<Double> timeValues = XDDFDataSourcesFactory.fromNumericCellRange(dashSheet, new CellRangeAddress(timeStartRow, timeEndRow, 1, 1));
+                XDDFDataSource<String> timeCategories =
+                        XDDFDataSourcesFactory.fromStringCellRange(
+                                dashSheet, new CellRangeAddress(timeStartRow, timeEndRow, 0, 0));
+                XDDFNumericalDataSource<Double> timeValues =
+                        XDDFDataSourcesFactory.fromNumericCellRange(
+                                dashSheet, new CellRangeAddress(timeStartRow, timeEndRow, 1, 1));
 
                 XDDFChartData.Series lineSeries = lineChart.addSeries(timeCategories, timeValues);
                 lineSeries.setTitle("Daily Outflow (" + curr.symbol + ")", null);
@@ -2064,27 +2195,34 @@ public class ExportServiceImpl implements ExportService {
             SheetConditionalFormatting dashScf = dashSheet.getSheetConditionalFormatting();
 
             // Highlight Category Over-Budget (> 100% utilization)
-            ConditionalFormattingRule overBudgetRule = dashScf.createConditionalFormattingRule(ComparisonOperator.GT, "1.0");
+            ConditionalFormattingRule overBudgetRule =
+                    dashScf.createConditionalFormattingRule(ComparisonOperator.GT, "1.0");
             PatternFormatting overBudgetPf = overBudgetRule.createPatternFormatting();
             overBudgetPf.setFillBackgroundColor(IndexedColors.CORAL.getIndex());
             overBudgetPf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-            dashScf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(catStartRow, catEndRow, 5, 5) }, overBudgetRule);
+            dashScf.addConditionalFormatting(
+                    new CellRangeAddress[]{ new CellRangeAddress(catStartRow, catEndRow, 5, 5) }, overBudgetRule);
 
             // Highlight High Concentration (> 30% of outflow)
-            ConditionalFormattingRule burdenRule = dashScf.createConditionalFormattingRule(ComparisonOperator.GT, "0.30");
+            ConditionalFormattingRule burdenRule =
+                    dashScf.createConditionalFormattingRule(ComparisonOperator.GT, "0.30");
             PatternFormatting burdenPf = burdenRule.createPatternFormatting();
             burdenPf.setFillBackgroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
             burdenPf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-            dashScf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(catStartRow, catEndRow, 2, 2) }, burdenRule);
+            dashScf.addConditionalFormatting(
+                    new CellRangeAddress[]{ new CellRangeAddress(catStartRow, catEndRow, 2, 2) }, burdenRule);
 
             // Highlight Daily Spending Surges
-            // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use 1,000)
+            // Currency-aware threshold (JPY/KRW/VND use 100,000; INR/soft currencies use 10,000; USD/EUR/etc. use
+            // 1,000)
             String dailySurgeThreshold = currencyAwareHighExpenseThreshold(curr);
-            ConditionalFormattingRule dailySurgeRule = dashScf.createConditionalFormattingRule(ComparisonOperator.GT, dailySurgeThreshold);
+            ConditionalFormattingRule dailySurgeRule =
+                    dashScf.createConditionalFormattingRule(ComparisonOperator.GT, dailySurgeThreshold);
             PatternFormatting dailySurgePf = dailySurgeRule.createPatternFormatting();
             dailySurgePf.setFillBackgroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
             dailySurgePf.setFillPattern(PatternFormatting.SOLID_FOREGROUND);
-            dashScf.addConditionalFormatting(new CellRangeAddress[]{ new CellRangeAddress(timeStartRow, timeEndRow, 1, 1) }, dailySurgeRule);
+            dashScf.addConditionalFormatting(
+                    new CellRangeAddress[]{ new CellRangeAddress(timeStartRow, timeEndRow, 1, 1) }, dailySurgeRule);
 
             // Select Dashboard as primary active tab
             workbook.setSelectedTab(0);
@@ -2114,7 +2252,8 @@ public class ExportServiceImpl implements ExportService {
      */
     private void createPowerBiKpiCard(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap, XSSFSheet sheet,
                                       int labelRowIdx, int valRowIdx, int subRowIdx, int startCol, int endCol,
-                                      String label, String formulaOrVal, Color accentColor, short dataFormat, String subtext) {
+                                      String label, String formulaOrVal, Color accentColor,
+                                      short dataFormat, String subtext) {
         XSSFColor accentXssf = new XSSFColor(accentColor, colorMap);
         XSSFColor cardBgXssf = new XSSFColor(PBI_CARD_BG, colorMap);
         XSSFColor borderXssf = new XSSFColor(PBI_BORDER_SLATE, colorMap);
@@ -2246,11 +2385,14 @@ public class ExportServiceImpl implements ExportService {
         return style;
     }
 
-    private XSSFCellStyle createDataRowStyle(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap, boolean isZebra, String format) {
-        return createDataRowStyle(workbook, colorMap, isZebra, format, format != null ? HorizontalAlignment.RIGHT : HorizontalAlignment.LEFT);
+    private XSSFCellStyle createDataRowStyle(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap,
+                boolean isZebra, String format) {
+        return createDataRowStyle(workbook, colorMap, isZebra, format,
+                format != null ? HorizontalAlignment.RIGHT : HorizontalAlignment.LEFT);
     }
 
-    private XSSFCellStyle createDataRowStyle(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap, boolean isZebra, String format, HorizontalAlignment align) {
+    private XSSFCellStyle createDataRowStyle(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap,
+                boolean isZebra, String format, HorizontalAlignment align) {
         XSSFCellStyle style = workbook.createCellStyle();
         XSSFFont font = workbook.createFont();
         font.setFontName("Segoe UI");
@@ -2331,7 +2473,8 @@ public class ExportServiceImpl implements ExportService {
         return style;
     }
 
-    private XSSFCellStyle createPrescriptionLabelStyle(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap, Color accent) {
+    private XSSFCellStyle createPrescriptionLabelStyle(
+            XSSFWorkbook workbook, DefaultIndexedColorMap colorMap, Color accent) {
         XSSFCellStyle style = workbook.createCellStyle();
         XSSFFont font = workbook.createFont();
         font.setFontName("Segoe UI");
@@ -2419,7 +2562,8 @@ public class ExportServiceImpl implements ExportService {
 
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
             Paragraph userPara = new Paragraph(
-                    "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: " + curr.code + " (" + curr.symbol + ") | Generated: " + LocalDate.now() + "\n\n",
+                    "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
+                            + curr.code + " (" + curr.symbol + ") | Generated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -2444,7 +2588,9 @@ public class ExportServiceImpl implements ExportService {
             document.add(new Paragraph("\n"));
 
             // Recent Expenses Section
-            Paragraph expSection = new Paragraph("Recent Expenditures", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY));
+            Paragraph expSection =
+                    new Paragraph("Recent Expenditures",
+                            FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY));
             document.add(expSection);
             document.add(new Paragraph(" "));
 
@@ -2463,8 +2609,10 @@ public class ExportServiceImpl implements ExportService {
             int expCount = 0;
             for (Expense exp : expenses) {
                 if (expCount++ >= 10) break; // Top 10 for statement
-                expTable.addCell(new Phrase(exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "", dataFont));
-                expTable.addCell(new Phrase(exp.getCategory() != null ? exp.getCategory().getName() : "General", dataFont));
+                expTable.addCell(
+                        new Phrase(exp.getExpenseDate() != null ? exp.getExpenseDate().toString() : "", dataFont));
+                expTable.addCell(
+                        new Phrase(exp.getCategory() != null ? exp.getCategory().getName() : "General", dataFont));
                 expTable.addCell(new Phrase(exp.getDescription() != null ? exp.getDescription() : "", dataFont));
                 BigDecimal amt = exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO;
                 expTable.addCell(new Phrase(curr.symbol + " " + formatAmount(amt, curr.decimals), dataFont));
@@ -2481,7 +2629,9 @@ public class ExportServiceImpl implements ExportService {
 
             // Savings Goals Progress Section
             if (!savingsGoals.isEmpty()) {
-                Paragraph goalSection = new Paragraph("Savings Goals Tracking", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY));
+                Paragraph goalSection =
+                        new Paragraph("Savings Goals Tracking",
+                                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY));
                 document.add(goalSection);
                 document.add(new Paragraph(" "));
 
@@ -2499,8 +2649,12 @@ public class ExportServiceImpl implements ExportService {
                     // FIXED: goal.getName() can be null — Phrase constructor is null-hostile in
                     // newer openpdf versions and would NPE. Guard with a fallback label.
                     goalTable.addCell(new Phrase(goal.getName() != null ? goal.getName() : "Unnamed Goal", dataFont));
-                    goalTable.addCell(new Phrase(curr.symbol + " " + formatAmount(goal.getTargetAmount(), curr.decimals), dataFont));
-                    goalTable.addCell(new Phrase(curr.symbol + " " + formatAmount(goal.getCurrentAmount(), curr.decimals), dataFont));
+                    goalTable.addCell(
+                            new Phrase(curr.symbol + " "
+                                    + formatAmount(goal.getTargetAmount(), curr.decimals), dataFont));
+                    goalTable.addCell(
+                            new Phrase(curr.symbol + " "
+                                    + formatAmount(goal.getCurrentAmount(), curr.decimals), dataFont));
                     double progress = 0.0;
                     if (goal.getTargetAmount() != null && goal.getTargetAmount().compareTo(BigDecimal.ZERO) > 0) {
                         progress = (goal.getCurrentAmount() != null ? goal.getCurrentAmount().doubleValue() : 0.0)

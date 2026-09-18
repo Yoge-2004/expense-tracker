@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
 public class MaskingPatternConverter extends CompositeConverter<ILoggingEvent> {
 
     private static final Pattern SENSITIVE_PATTERN = Pattern.compile(
-            "\"?(password|passwd|pwd|token|jwt|secret|pin|securityPin|otp|apiKey|authorization|credential)\"?\\s*[:=]\\s*\"?([^\",\\s&]+)\"?",
+            "\"?(password|passwd|pwd|token|jwt|secret|pin|securityPin|otp|apiKey|authorization|credential)\""
+                    + "?\\s*[:=]\\s*\"?([^\",\\s&]+)\"?",
             Pattern.CASE_INSENSITIVE
     );
 

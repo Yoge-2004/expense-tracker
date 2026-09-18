@@ -184,7 +184,8 @@ class ImportServiceImplTest {
     @Test
     @DisplayName("importServices: null user context throws IllegalArgumentException across all methods")
     void importMethods_nullUser_throwsException() {
-        MockMultipartFile file = new MockMultipartFile("file", "data.csv", "text/csv", "date,category,amount\n".getBytes());
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "data.csv", "text/csv", "date,category,amount\n".getBytes());
         assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromCsv(file, null));
         assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromJson(file, null));
         assertThrows(IllegalArgumentException.class, () -> importService.importExpensesFromExcel(file, null));
@@ -228,8 +229,10 @@ class ImportServiceImplTest {
                 new IncomeDto(null, new BigDecimal("100.00"), "   ", "", LocalDate.now(), false, null)
         );
         byte[] bytesBlankSource = new ObjectMapper().findAndRegisterModules().writeValueAsBytes(dtosBlankSource);
-        MockMultipartFile fileBlankSource = new MockMultipartFile("file", "incomes.json", "application/json", bytesBlankSource);
+        MockMultipartFile fileBlankSource = new MockMultipartFile(
+                "file", "incomes.json", "application/json", bytesBlankSource);
 
-        assertThrows(IllegalArgumentException.class, () -> importService.importIncomesFromJson(fileBlankSource, testUser));
+        assertThrows(IllegalArgumentException.class,
+                () -> importService.importIncomesFromJson(fileBlankSource, testUser));
     }
 }

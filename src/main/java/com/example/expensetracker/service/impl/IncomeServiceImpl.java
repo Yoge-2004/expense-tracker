@@ -34,6 +34,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class IncomeServiceImpl implements IncomeService {
 
+    private static final String FREQUENCY_MONTHLY = "MONTHLY";
+
     private final IncomeRepository incomeRepository;
     private final ExpenseRepository expenseRepository;
 
@@ -71,7 +73,7 @@ public class IncomeServiceImpl implements IncomeService {
         Income income = IncomeMapper.toEntity(request, user);
         if (Boolean.TRUE.equals(income.getIsRecurring())) {
             if (income.getFrequency() == null || income.getFrequency().isBlank()) {
-                income.setFrequency("MONTHLY");
+                income.setFrequency(FREQUENCY_MONTHLY);
             }
             if (income.getIntervalDays() == null || income.getIntervalDays() < 1) {
                 income.setIntervalDays(1);
@@ -154,7 +156,7 @@ public class IncomeServiceImpl implements IncomeService {
             if (request.isRecurring()) {
                 existing.setFrequency(request.frequency() != null
                         ? request.frequency()
-                        : (existing.getFrequency() != null ? existing.getFrequency() : "MONTHLY"));
+                        : (existing.getFrequency() != null ? existing.getFrequency() : FREQUENCY_MONTHLY));
                 existing.setIntervalDays(request.intervalDays() != null
                         ? request.intervalDays()
                         : (existing.getIntervalDays() != null ? existing.getIntervalDays() : 1));
@@ -262,7 +264,7 @@ public class IncomeServiceImpl implements IncomeService {
     }
 
     private LocalDate calculateNextOccurrence(LocalDate date, String freq, Integer intervalDays) {
-        if (freq == null) freq = "MONTHLY";
+        if (freq == null) freq = FREQUENCY_MONTHLY;
         return switch (freq.toUpperCase()) {
             case "DAILY" -> date.plusDays(1);
             case "WEEKLY" -> date.plusWeeks(1);

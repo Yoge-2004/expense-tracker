@@ -115,7 +115,8 @@ class MonthlyReportServiceImplTest {
     @DisplayName("generateMonthlyReport: calculates accurate aggregates, net flow, and savings rate")
     void generateMonthlyReport_success() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(expenseRepository.findByUserAndExpenseDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
+        when(expenseRepository.findByUserAndExpenseDateBetween(
+                eq(testUser), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(List.of(testExpense));
         when(incomeRepository.findByUserAndIncomeDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(List.of(testIncome));
@@ -172,7 +173,8 @@ class MonthlyReportServiceImplTest {
     @DisplayName("generateMonthlyReportHtml: renders responsive standalone HTML report")
     void generateMonthlyReportHtml_success() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(expenseRepository.findByUserAndExpenseDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
+        when(expenseRepository.findByUserAndExpenseDateBetween(
+                eq(testUser), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(List.of(testExpense));
         when(incomeRepository.findByUserAndIncomeDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(List.of(testIncome));
@@ -195,7 +197,7 @@ class MonthlyReportServiceImplTest {
     }
 
     @Test
-    @DisplayName("sendMonthlyReportEmail: throws EmailDeliveryException and records failure log when mail delivery is disabled")
+    @DisplayName("sendMonthlyReportEmail: throws EmailDeliveryException on disabled mail")
     void sendMonthlyReportEmail_disabledMailThrowsAndLogs() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(reportLogRepository.findByUserAndReportYearAndReportMonth(testUser, 2026, 8))

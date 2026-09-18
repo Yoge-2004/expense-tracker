@@ -41,7 +41,8 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                         AccessDeniedException accessDeniedException) throws IOException {
-        log.warn("Access denied for request at URI '{}': {}", request.getRequestURI(), accessDeniedException.getMessage());
+        log.warn("Access denied for request at URI '{}': {}",
+                request.getRequestURI(), accessDeniedException.getMessage());
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 

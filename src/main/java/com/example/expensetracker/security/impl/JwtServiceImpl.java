@@ -48,7 +48,8 @@ public class JwtServiceImpl implements JwtService {
     @PostConstruct
     public void init() {
         if (secretKey == null || secretKey.trim().isEmpty()) {
-            throw new IllegalStateException("JWT secret key is not configured. Set the JWT_SECRET environment variable.");
+            throw new IllegalStateException(
+                    "JWT secret key is not configured. Set the JWT_SECRET environment variable.");
         }
 
         byte[] keyBytes;
@@ -60,7 +61,8 @@ public class JwtServiceImpl implements JwtService {
 
         if (keyBytes.length < 32) {
             throw new IllegalStateException(
-                    "JWT secret key must be at least 256 bits (32 bytes) for HS256 algorithm. Current length: " + keyBytes.length + " bytes."
+                    "JWT secret key must be at least 256 bits (32 bytes) for HS256 algorithm. "
+                            + "Current length: " + keyBytes.length + " bytes."
             );
         }
 

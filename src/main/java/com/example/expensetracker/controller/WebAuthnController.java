@@ -69,7 +69,8 @@ public class WebAuthnController {
     }
 
     @PostMapping("/login/finish")
-    public ResponseEntity<Map<String, Object>> loginFinish(@RequestBody(required = false) WebAuthnFinishRequest request) {
+    public ResponseEntity<Map<String, Object>> loginFinish(
+            @RequestBody(required = false) WebAuthnFinishRequest request) {
         String txId = request != null ? request.transactionId() : null;
         String cred = request != null ? request.credential() : null;
         log.info("Completing WebAuthn biometric login for transactionId={}", txId);

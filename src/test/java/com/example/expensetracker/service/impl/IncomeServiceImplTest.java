@@ -50,7 +50,8 @@ class IncomeServiceImplTest {
     @Test
     @DisplayName("createIncome throws IllegalArgumentException when user is null")
     void createIncome_nullUser_throwsException() {
-        IncomeRequest req = new IncomeRequest(BigDecimal.valueOf(100), "Salary", null, LocalDate.now(), false, null, null);
+        IncomeRequest req = new IncomeRequest(
+                BigDecimal.valueOf(100), "Salary", null, LocalDate.now(), false, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createIncome(req, null));
     }
 
@@ -66,10 +67,12 @@ class IncomeServiceImplTest {
         IncomeRequest nullReq = new IncomeRequest(null, "Salary", "Bonus", LocalDate.now(), false, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createIncome(nullReq, user));
 
-        IncomeRequest zeroReq = new IncomeRequest(BigDecimal.ZERO, "Salary", "Bonus", LocalDate.now(), false, null, null);
+        IncomeRequest zeroReq = new IncomeRequest(
+                BigDecimal.ZERO, "Salary", "Bonus", LocalDate.now(), false, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createIncome(zeroReq, user));
 
-        IncomeRequest negReq = new IncomeRequest(BigDecimal.valueOf(-50), "Salary", "Bonus", LocalDate.now(), false, null, null);
+        IncomeRequest negReq = new IncomeRequest(
+                BigDecimal.valueOf(-50), "Salary", "Bonus", LocalDate.now(), false, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createIncome(negReq, user));
 
         verify(incomeRepository, never()).save(any());
@@ -78,10 +81,12 @@ class IncomeServiceImplTest {
     @Test
     @DisplayName("createIncome rejects blank or null source")
     void createIncome_blankSource_throwsException() {
-        IncomeRequest nullSource = new IncomeRequest(BigDecimal.valueOf(100), null, "Bonus", LocalDate.now(), false, null, null);
+        IncomeRequest nullSource = new IncomeRequest(
+                BigDecimal.valueOf(100), null, "Bonus", LocalDate.now(), false, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createIncome(nullSource, user));
 
-        IncomeRequest blankSource = new IncomeRequest(BigDecimal.valueOf(100), "   ", "Bonus", LocalDate.now(), false, null, null);
+        IncomeRequest blankSource = new IncomeRequest(
+                BigDecimal.valueOf(100), "   ", "Bonus", LocalDate.now(), false, null, null);
         assertThrows(IllegalArgumentException.class, () -> service.createIncome(blankSource, user));
 
         verify(incomeRepository, never()).save(any());
@@ -91,7 +96,8 @@ class IncomeServiceImplTest {
     @DisplayName("createIncome creates one-off income with nullified recurring fields")
     void createIncome_oneOff_success() {
         LocalDate date = LocalDate.of(2026, 9, 15);
-        IncomeRequest req = new IncomeRequest(BigDecimal.valueOf(2500), "Freelance", "Project payment", date, false, "MONTHLY", 1);
+        IncomeRequest req = new IncomeRequest(
+                BigDecimal.valueOf(2500), "Freelance", "Project payment", date, false, "MONTHLY", 1);
 
         when(incomeRepository.save(any(Income.class))).thenAnswer(inv -> {
             Income saved = inv.getArgument(0);
@@ -114,7 +120,8 @@ class IncomeServiceImplTest {
     @DisplayName("createIncome creates recurring income with calculated nextDueDate")
     void createIncome_recurring_success() {
         LocalDate date = LocalDate.of(2026, 9, 1);
-        IncomeRequest req = new IncomeRequest(BigDecimal.valueOf(5000), "Salary", "Monthly Paycheck", date, true, "MONTHLY", 1);
+        IncomeRequest req = new IncomeRequest(
+                BigDecimal.valueOf(5000), "Salary", "Monthly Paycheck", date, true, "MONTHLY", 1);
 
         when(incomeRepository.save(any(Income.class))).thenAnswer(inv -> {
             Income saved = inv.getArgument(0);
@@ -213,7 +220,9 @@ class IncomeServiceImplTest {
         when(incomeRepository.findById(401L)).thenReturn(Optional.of(income));
         when(incomeRepository.save(any(Income.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        IncomeRequest req = new IncomeRequest(BigDecimal.valueOf(750), "New Source", "Updated notes", LocalDate.of(2026, 9, 10), false, null, null);
+        IncomeRequest req = new IncomeRequest(
+                BigDecimal.valueOf(750), "New Source", "Updated notes",
+                LocalDate.of(2026, 9, 10), false, null, null);
         IncomeDto updated = service.updateIncome(401L, req, user);
 
         assertEquals(BigDecimal.valueOf(750), updated.amount());

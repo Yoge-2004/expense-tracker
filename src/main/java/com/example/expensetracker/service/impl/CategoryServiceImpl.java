@@ -84,7 +84,8 @@ public class CategoryServiceImpl implements CategoryService {
         String trimmedName = name.trim();
         log.info("Creating category '{}' for userId={}", trimmedName, user.getId());
         if (categoryRepository.existsByNameAndUser(trimmedName, user)) {
-            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}", trimmedName, user.getId());
+            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}",
+                    trimmedName, user.getId());
             throw new IllegalArgumentException(
                     "Category '" + trimmedName + "' already exists for this user"
             );
@@ -179,7 +180,8 @@ public class CategoryServiceImpl implements CategoryService {
         }
         if (expenseRepository.existsByCategory_Id(categoryId)
                 || recurringExpenseRepository.existsByCategory_Id(categoryId)) {
-            log.warn("Category id={} cannot be deleted because it is still referenced by expenses or recurring expenses", categoryId);
+            log.warn("Category id={} cannot be deleted because it is still referenced "
+                    + "by expenses or recurring expenses", categoryId);
             throw new IllegalStateException(
                     "Category '" + category.getName() + "' is still used by one or more expenses and can't be deleted");
         }

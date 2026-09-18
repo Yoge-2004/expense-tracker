@@ -94,7 +94,8 @@ public class BudgetSteps {
                         .content(objectMapper.writeValueAsString(body)))
                 .andReturn();
 
-        assertEquals(201, res.getResponse().getStatus(), "Failed to record expense: " + res.getResponse().getContentAsString());
+        assertEquals(201, res.getResponse().getStatus(),
+                "Failed to record expense: " + res.getResponse().getContentAsString());
     }
 
     @Then("the budget for category {string} should have spent at least {double}")
@@ -127,7 +128,8 @@ public class BudgetSteps {
 
     @When("I delete the budget for category {string}")
     public void deleteBudgetByCategory(String categoryName) throws Exception {
-        MvcResult res = mockMvc.perform(delete("/api/expenses/budget/user/" + ctx.userId + "/category/" + ctx.categoryId)
+        MvcResult res = mockMvc.perform(
+                delete("/api/expenses/budget/user/" + ctx.userId + "/category/" + ctx.categoryId)
                         .header("Authorization", "Bearer " + ctx.authToken))
                 .andReturn();
         ctx.lastResponse = res;

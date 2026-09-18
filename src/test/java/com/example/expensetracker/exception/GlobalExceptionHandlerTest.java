@@ -80,7 +80,8 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void authenticationFailurePreservesNonSensitiveMessage() {
-        var response = handler.handleAuthenticationException(new BadCredentialsException("Account is disabled"), request);
+        var response = handler.handleAuthenticationException(
+                new BadCredentialsException("Account is disabled"), request);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -89,14 +90,16 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void databaseFailureReturnsServiceUnavailableWithoutLeakingDatabaseDetails() {
-        var databaseFailure = new DataAccessResourceFailureException("jdbc:postgresql://secret-host:5432/expenses password=secret");
+        var databaseFailure = new DataAccessResourceFailureException(
+                "jdbc:postgresql://secret-host:5432/expenses password=secret");
 
         var response = handler.handleDatabaseUnavailable(databaseFailure, request);
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(503, response.getBody().status());
-        assertEquals("Unable to connect to the server. Please try again in a few moments.", response.getBody().message());
+        assertEquals("Unable to connect to the server. Please try again in a few moments.",
+                response.getBody().message());
         assertFalse(response.getBody().message().contains("secret-host"));
         assertFalse(response.getBody().message().contains("password"));
     }
@@ -159,7 +162,8 @@ class GlobalExceptionHandlerTest {
     @Test
     void malformedJsonReturnsSafeBadRequestMessage() {
         var response = handler.handleMessageNotReadable(
-                new org.springframework.http.converter.HttpMessageNotReadableException("malformed json", null), request);
+                new org.springframework.http.converter.HttpMessageNotReadableException(
+                        "malformed json", null), request);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -190,7 +194,8 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(503, response.getBody().status());
-        assertEquals("Unable to connect to the server. Please try again in a few moments.", response.getBody().message());
+        assertEquals("Unable to connect to the server. Please try again in a few moments.",
+                response.getBody().message());
     }
 
     @Test
