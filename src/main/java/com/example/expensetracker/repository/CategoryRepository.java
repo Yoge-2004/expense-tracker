@@ -88,7 +88,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
      *
      * @param userId the ID of the owning user
      */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Category c WHERE c.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
 }

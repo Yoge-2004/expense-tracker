@@ -27,15 +27,14 @@ jest.mock('../services/api', () => ({
 
 describe('AuthContext Interface', () => {
 
-  test('AuthProvider exports a valid React component', async () => {
-    const { AuthProvider } = await import('../context/AuthContext');
+  test('AuthProvider exports a valid React component', () => {
+    const { AuthProvider } = require('../context/AuthContext');
     expect(AuthProvider).toBeDefined();
     expect(typeof AuthProvider).toBe('function');
   });
 
-  test('useAuth throws when used outside AuthProvider', async () => {
-    // Dynamic import to avoid early evaluation
-    const { useAuth } = await import('../context/AuthContext');
+  test('useAuth throws when used outside AuthProvider', () => {
+    const { useAuth } = require('../context/AuthContext');
 
     // Suppress console.error for this test (React will log the error)
     const originalError = console.error;

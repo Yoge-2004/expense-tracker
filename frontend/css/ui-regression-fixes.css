@@ -8,15 +8,6 @@ html[data-theme="light"] #themeToggle .sun-icon { display:none !important; visib
 html[data-theme="light"] .theme-toggle-btn .moon-icon,
 html[data-theme="light"] #themeToggle .moon-icon { display:block !important; visibility:visible !important; }
 
-/* Theme switches should not replay expensive page animations. */
-html.theme-transitioning *,
-html.theme-transitioning *::before,
-html.theme-transitioning *::after {
-    transition:none !important;
-    animation:none !important;
-    animation-play-state:paused !important;
-}
-
 .google-oauth-wrapper { position:relative !important; overflow:visible !important; isolation:isolate; }
 #googleOAuthBtn.btn-oauth {
     position:relative !important; z-index:1 !important; box-sizing:border-box !important; min-height:48px !important;
@@ -215,7 +206,6 @@ html.theme-transitioning *::after {
     .profile-menu { width:calc(100vw - 20px) !important; max-width:calc(100vw - 20px) !important; right:-2px !important; }
 }
 
-
 /* Mobile ledger controls scroll instead of clipping. */
 @media (max-width:760px) {
     #ledgerStreamTabs, .ledger-stream-tabs {
@@ -226,7 +216,6 @@ html.theme-transitioning *::after {
         min-width:0 !important;
         width:100% !important;
         scrollbar-width:none !important;
-        -webkit-overflow-scrolling:touch !important;
     }
     #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
     #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {

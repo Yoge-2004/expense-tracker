@@ -1,7 +1,7 @@
 package com.example.expensetracker.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -27,15 +27,13 @@ import java.sql.Statement;
  * <p>Runs via {@link ApplicationStartedEvent} at {@code @Order(1)}, before
  * most other startup logic, so later beans can assume these columns exist.</p>
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class DatabaseMigrationConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(DatabaseMigrationConfig.class);
     private final DataSource dataSource;
 
-    public DatabaseMigrationConfig(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     @EventListener(ApplicationStartedEvent.class)
     @Order(1)
@@ -46,6 +44,7 @@ public class DatabaseMigrationConfig {
 
             // Ensure missing columns exist in PostgreSQL users table
             try {
+                //noinspection SqlNoDataSourceInspection
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'INR'");
                 log.info("Verified 'currency' column in users table.");
             } catch (Exception e) {
@@ -53,30 +52,35 @@ public class DatabaseMigrationConfig {
             }
 
             try {
+                //noinspection SqlNoDataSourceInspection
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_locked BOOLEAN DEFAULT FALSE");
             } catch (Exception e) {
                 log.warn("Migration warning on users.account_locked: {}", e.getMessage());
             }
 
             try {
+                //noinspection SqlNoDataSourceInspection
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE");
             } catch (Exception e) {
                 log.warn("Migration warning on users.enabled: {}", e.getMessage());
             }
 
             try {
+                //noinspection SqlNoDataSourceInspection
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS security_pin_hash VARCHAR(255)");
             } catch (Exception e) {
                 log.warn("Migration warning on users.security_pin_hash: {}", e.getMessage());
             }
 
             try {
+                //noinspection SqlNoDataSourceInspection
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_pin_attempts INT DEFAULT 0");
             } catch (Exception e) {
                 log.warn("Migration warning on users.failed_pin_attempts: {}", e.getMessage());
             }
 
             try {
+                //noinspection SqlNoDataSourceInspection
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP");
             } catch (Exception e) {
                 log.warn("Migration warning on users.pin_locked_until: {}", e.getMessage());

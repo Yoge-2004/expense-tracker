@@ -2,6 +2,7 @@ package com.example.expensetracker.config;
 
 import java.util.Arrays;
 import java.util.List;
+
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -46,8 +47,10 @@ public class CorsConfig {
 
         config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency"));
-        config.setExposedHeaders(List.of("Authorization", "Content-Type", "Content-Disposition"));
+        config.setAllowedHeaders(List.of(
+                "Authorization", "Cache-Control", "Content-Type", "Accept",
+                "X-Requested-With", "Origin", "X-Currency"));
+        config.setExposedHeaders(List.of("Authorization", "Content-Type", "Content-Disposition", "Content-Length"));
         config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 
@@ -66,8 +69,9 @@ public class CorsConfig {
                 registry.addMapping("/**")
                         .allowedOrigins(origins.toArray(new String[0]))
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                        .allowedHeaders("Authorization", "Cache-Control", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-Currency")
-                        .exposedHeaders("Authorization", "Content-Type", "Content-Disposition")
+                        .allowedHeaders("Authorization", "Cache-Control", "Content-Type",
+                                "Accept", "X-Requested-With", "Origin", "X-Currency")
+                        .exposedHeaders("Authorization", "Content-Type", "Content-Disposition", "Content-Length")
                         .allowCredentials(false)
                         .maxAge(3600);
             }

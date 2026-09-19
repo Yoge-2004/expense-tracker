@@ -23,6 +23,7 @@ import java.util.Optional;
  * @version 1.0
  * @see com.example.expensetracker.service.impl.UserServiceImpl
  */
+@SuppressWarnings("unused")
 public interface UserService {
 
     /**

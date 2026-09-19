@@ -44,6 +44,26 @@ class RangeReportControllerTest {
     @InjectMocks RangeReportController controller;
 
     @Test
+    void invalidFromDateFormat_screamsIllegalArgumentException() {
+        when(users.findById(11L)).thenReturn(Optional.of(user(11L, "Range User")));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> controller.excel(11L, "invalid-date", "2026-09-30", "INR"));
+        assertTrue(ex.getMessage().contains("Invalid 'from' date format"));
+        verifyNoInteractions(expenses, incomes);
+    }
+
+    @Test
+    void invalidToDateFormat_screamsIllegalArgumentException() {
+        when(users.findById(12L)).thenReturn(Optional.of(user(12L, "Range User")));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> controller.pdf(12L, "2026-09-01", "not-a-date", "INR"));
+        assertTrue(ex.getMessage().contains("Invalid 'to' date format"));
+        verifyNoInteractions(expenses, incomes);
+    }
+
+    @Test
     void excelIncludesOnlyTransactionsInsideRequestedRangeAndUsesDownloadHeaders() {
         User user = user(7L, "Test User");
         Category food = category("Food");
@@ -60,8 +80,10 @@ class RangeReportControllerTest {
         var response = controller.excel(7L, "2026-09-01", "2026-09-30", "INR");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", response.getHeaders().getContentType().toString());
-        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                response.getHeaders().getContentType().toString());
+        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Dashboard.xlsx\"",
+                response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 1000);
         verify(security).validateUserAccess(7L);
@@ -84,7 +106,8 @@ class RangeReportControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("application/pdf", response.getHeaders().getContentType().toString());
-        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Report.pdf\"", response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
+        assertEquals("attachment; filename=\"ExpenseTracker_Executive_Report.pdf\"",
+                response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 1000);
         assertEquals('%', (char) response.getBody()[0]);

@@ -80,7 +80,11 @@ class PlaywrightE2ETest {
     }
 
     private void injectFakeAuth() {
-        page.evaluate("() => { localStorage.setItem('token', 'fake-test-token'); localStorage.setItem('userId', '1'); localStorage.setItem('userName', 'Test User'); localStorage.setItem('userEmail', 'test@test.com'); }");
+        page.evaluate("() => { " +
+                "localStorage.setItem('token', 'fake-test-token'); " +
+                "localStorage.setItem('userId', '1'); " +
+                "localStorage.setItem('userName', 'Test User'); " +
+                "localStorage.setItem('userEmail', 'test@test.com'); }");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -99,9 +103,9 @@ class PlaywrightE2ETest {
             page.navigate(baseUrl() + "/index.html");
             page.waitForSelector("#loginForm", new Page.WaitForSelectorOptions()
                     .setState(WaitForSelectorState.VISIBLE).setTimeout(10000));
-            assertTrue(page.querySelector("#email") != null, "Email field should exist");
-            assertTrue(page.querySelector("#password") != null, "Password field should exist");
-            assertTrue(page.querySelector("#loginBtn") != null, "Login button should exist");
+            assertNotNull(page.querySelector("#email"), "Email field should exist");
+            assertNotNull(page.querySelector("#password"), "Password field should exist");
+            assertNotNull(page.querySelector("#loginBtn"), "Login button should exist");
         }
 
         @Test
@@ -110,7 +114,7 @@ class PlaywrightE2ETest {
         void googleOAuthButtonExists() {
             page.navigate(baseUrl() + "/index.html");
             page.waitForSelector("#loginForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#googleOAuthBtn") != null, "Google OAuth button should exist");
+            assertNotNull(page.querySelector("#googleOAuthBtn"), "Google OAuth button should exist");
         }
 
         @Test
@@ -119,7 +123,7 @@ class PlaywrightE2ETest {
         void biometricLoginButtonExists() {
             page.navigate(baseUrl() + "/index.html");
             page.waitForSelector("#loginForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#biometricLoginBtn") != null, "Biometric login button should exist");
+            assertNotNull(page.querySelector("#biometricLoginBtn"), "Biometric login button should exist");
         }
 
         @Test
@@ -128,7 +132,7 @@ class PlaywrightE2ETest {
         void themeToggleButtonExists() {
             page.navigate(baseUrl() + "/index.html");
             page.waitForSelector("#loginForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#themeToggle") != null, "Theme toggle button should exist");
+            assertNotNull(page.querySelector("#themeToggle"), "Theme toggle button should exist");
         }
 
         @Test
@@ -137,9 +141,9 @@ class PlaywrightE2ETest {
         void heroSectionExists() {
             page.navigate(baseUrl() + "/index.html");
             page.waitForSelector("#loginForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#heroSavedAmount") != null, "Hero saved amount should exist");
-            assertTrue(page.querySelector("#heroCurrencyWord") != null, "Hero currency word should exist");
-            assertTrue(page.querySelector("#heroSubline") != null, "Hero subline should exist");
+            assertNotNull(page.querySelector("#heroSavedAmount"), "Hero saved amount should exist");
+            assertNotNull(page.querySelector("#heroCurrencyWord"), "Hero currency word should exist");
+            assertNotNull(page.querySelector("#heroSubline"), "Hero subline should exist");
         }
 
         @Test
@@ -175,10 +179,10 @@ class PlaywrightE2ETest {
         void registrationFormRenders() {
             page.navigate(baseUrl() + "/register.html");
             page.waitForSelector("#registerForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#reg-name") != null, "Name field should exist");
-            assertTrue(page.querySelector("#reg-username") != null, "Username field should exist");
-            assertTrue(page.querySelector("#reg-email") != null, "Email field should exist");
-            assertTrue(page.querySelector("#reg-password") != null, "Password field should exist");
+            assertNotNull(page.querySelector("#reg-name"), "Name field should exist");
+            assertNotNull(page.querySelector("#reg-username"), "Username field should exist");
+            assertNotNull(page.querySelector("#reg-email"), "Email field should exist");
+            assertNotNull(page.querySelector("#reg-password"), "Password field should exist");
         }
 
         @Test
@@ -186,7 +190,7 @@ class PlaywrightE2ETest {
         void currencySelectorExists() {
             page.navigate(baseUrl() + "/register.html");
             page.waitForSelector("#registerForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#reg-currency") != null, "Currency selector should exist");
+            assertNotNull(page.querySelector("#reg-currency"), "Currency selector should exist");
         }
 
         @Test
@@ -194,7 +198,7 @@ class PlaywrightE2ETest {
         void securityPinFieldExists() {
             page.navigate(baseUrl() + "/register.html");
             page.waitForSelector("#registerForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#reg-security-pin") != null, "Security PIN field should exist");
+            assertNotNull(page.querySelector("#reg-security-pin"), "Security PIN field should exist");
         }
 
         @Test
@@ -202,9 +206,9 @@ class PlaywrightE2ETest {
         void otpFieldsExist() {
             page.navigate(baseUrl() + "/register.html");
             page.waitForSelector("#registerForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#otpGroup") != null, "OTP group should exist");
-            assertTrue(page.querySelector("#sendOtpBtn") != null, "Send OTP button should exist");
-            assertTrue(page.querySelector("#resendOtpBtn") != null, "Resend OTP button should exist");
+            assertNotNull(page.querySelector("#otpGroup"), "OTP group should exist");
+            assertNotNull(page.querySelector("#sendOtpBtn"), "Send OTP button should exist");
+            assertNotNull(page.querySelector("#resendOtpBtn"), "Resend OTP button should exist");
         }
 
         @Test
@@ -212,9 +216,9 @@ class PlaywrightE2ETest {
         void stepProgressExists() {
             page.navigate(baseUrl() + "/register.html");
             page.waitForSelector("#registerForm", new Page.WaitForSelectorOptions().setTimeout(10000));
-            assertTrue(page.querySelector("#stepBar") != null, "Step bar should exist");
+            assertNotNull(page.querySelector("#stepBar"), "Step bar should exist");
             for (int i = 1; i <= 6; i++) {
-                assertTrue(page.querySelector("#dot" + i) != null, "Dot " + i + " should exist");
+                assertNotNull(page.querySelector("#dot" + i), "Dot " + i + " should exist");
             }
         }
     }
@@ -245,101 +249,102 @@ class PlaywrightE2ETest {
         @Test
         @DisplayName("renders specific chart canvases by ID")
         void specificChartsExist() {
-            assertTrue(page.querySelector("#trendChart") != null, "Trend chart should exist");
-            assertTrue(page.querySelector("#recurringSplitChart") != null, "Recurring split chart should exist");
-            assertTrue(page.querySelector("#dayOfWeekChart") != null, "Day of week chart should exist");
-            assertTrue(page.querySelector("#budgetVsActualChart") != null, "Budget vs actual chart should exist");
+            assertNotNull(page.querySelector("#trendChart"), "Trend chart should exist");
+            assertNotNull(page.querySelector("#recurringSplitChart"), "Recurring split chart should exist");
+            assertNotNull(page.querySelector("#dayOfWeekChart"), "Day of week chart should exist");
+            assertNotNull(page.querySelector("#budgetVsActualChart"), "Budget vs actual chart should exist");
         }
 
         @Test
         @DisplayName("renders metric cards")
         void metricCardsRender() {
-            assertTrue(page.querySelector("#totalAmount") != null, "Total amount should exist");
-            assertTrue(page.querySelector("#totalIncomeAmount") != null, "Total income should exist");
-            assertTrue(page.querySelector("#dailyBurnRate") != null, "Daily burn rate should exist");
-            assertTrue(page.querySelector("#savingsRateValue") != null, "Savings rate should exist");
-            assertTrue(page.querySelector("#burnRateBadge") != null, "Burn rate badge should exist");
-            assertTrue(page.querySelector("#topCategoryName") != null, "Top category name should exist");
-            assertTrue(page.querySelector("#topCategoryAmount") != null, "Top category amount should exist");
-            assertTrue(page.querySelector("#savingsGoalBadge") != null, "Savings goal badge should exist");
+            assertNotNull(page.querySelector("#totalAmount"), "Total amount should exist");
+            assertNotNull(page.querySelector("#totalIncomeAmount"), "Total income should exist");
+            assertNotNull(page.querySelector("#dailyBurnRate"), "Daily burn rate should exist");
+            assertNotNull(page.querySelector("#savingsRateValue"), "Savings rate should exist");
+            assertNotNull(page.querySelector("#burnRateBadge"), "Burn rate badge should exist");
+            assertNotNull(page.querySelector("#topCategoryName"), "Top category name should exist");
+            assertNotNull(page.querySelector("#topCategoryAmount"), "Top category amount should exist");
+            assertNotNull(page.querySelector("#savingsGoalBadge"), "Savings goal badge should exist");
         }
 
         @Test
         @DisplayName("renders expense form fields")
         void expenseFormFieldsExist() {
-            assertTrue(page.querySelector("#addExpenseForm") != null, "Add expense form should exist");
-            assertTrue(page.querySelector("#amount") != null, "Amount field should exist");
-            assertTrue(page.querySelector("#date") != null, "Date field should exist");
-            assertTrue(page.querySelector("#categorySelect") != null, "Category select should exist");
-            assertTrue(page.querySelector("#addCategoryBtn") != null, "Add category button should exist");
+            assertNotNull(page.querySelector("#addExpenseForm"), "Add expense form should exist");
+            assertNotNull(page.querySelector("#amount"), "Amount field should exist");
+            assertNotNull(page.querySelector("#date"), "Date field should exist");
+            assertNotNull(page.querySelector("#categorySelect"), "Category select should exist");
+            assertNotNull(page.querySelector("#addCategoryBtn"), "Add category button should exist");
         }
 
         @Test
         @DisplayName("renders table tabs")
         void tableTabsExist() {
-            assertTrue(page.querySelector("#tabBtnAll") != null, "All tab should exist");
-            assertTrue(page.querySelector("#tabBtnExpenses") != null, "Expenses tab should exist");
-            assertTrue(page.querySelector("#tabBtnIncomes") != null, "Incomes tab should exist");
+            assertNotNull(page.querySelector("#tabBtnAll"), "All tab should exist");
+            assertNotNull(page.querySelector("#tabBtnExpenses"), "Expenses tab should exist");
+            assertNotNull(page.querySelector("#tabBtnIncomes"), "Incomes tab should exist");
         }
 
         @Test
         @DisplayName("renders filter elements")
         void filterElementsExist() {
-            assertTrue(page.querySelector("#filterSearch") != null, "Filter search should exist");
-            assertTrue(page.querySelector("#toggleFiltersBtn") != null, "Toggle filters button should exist");
-            assertTrue(page.querySelector("#resetFiltersBtn") != null, "Reset filters button should exist");
-            assertTrue(page.querySelector("#categoryPillsBar") != null, "Category pills bar should exist");
+            assertNotNull(page.querySelector("#filterSearch"), "Filter search should exist");
+            assertNotNull(page.querySelector("#toggleFiltersBtn"), "Toggle filters button should exist");
+            assertNotNull(page.querySelector("#resetFiltersBtn"), "Reset filters button should exist");
+            assertNotNull(page.querySelector("#categoryPillsBar"), "Category pills bar should exist");
         }
 
         @Test
         @DisplayName("renders budget section")
         void budgetSectionExists() {
-            assertTrue(page.querySelector("#addBudgetBtn") != null, "Add budget button should exist");
-            assertTrue(page.querySelector("#budgetList") != null, "Budget list should exist");
-            assertTrue(page.querySelector("#budgetModal") != null, "Budget modal should exist");
-            assertTrue(page.querySelector("#budgetCategorySelect") != null, "Budget category select should exist");
-            assertTrue(page.querySelector("#budgetLimit") != null, "Budget limit field should exist");
+            assertNotNull(page.querySelector("#addBudgetBtn"), "Add budget button should exist");
+            assertNotNull(page.querySelector("#budgetList"), "Budget list should exist");
+            assertNotNull(page.querySelector("#budgetModal"), "Budget modal should exist");
+            assertNotNull(page.querySelector("#budgetCategorySelect"), "Budget category select should exist");
+            assertNotNull(page.querySelector("#budgetLimit"), "Budget limit field should exist");
         }
 
         @Test
         @DisplayName("renders savings goals section")
         void savingsGoalsSectionExists() {
-            assertTrue(page.querySelector("#addGoalBtn") != null, "Add goal button should exist");
-            assertTrue(page.querySelector("#savingsGoalsList") != null, "Savings goals list should exist");
-            assertTrue(page.querySelector("#savingsGoalModal") != null, "Savings goal modal should exist");
+            assertNotNull(page.querySelector("#addGoalBtn"), "Add goal button should exist");
+            assertNotNull(page.querySelector("#savingsGoalsList"), "Savings goals list should exist");
+            assertNotNull(page.querySelector("#savingsGoalModal"), "Savings goal modal should exist");
         }
 
         @Test
         @DisplayName("renders subscriptions section")
         void subscriptionsSectionExists() {
-            assertTrue(page.querySelector("#subsModal") != null, "Subscriptions modal should exist");
-            assertTrue(page.querySelector("#subsModalList") != null, "Subscriptions modal list should exist");
-            assertTrue(page.querySelector("#subsCountBadge") != null, "Subs count badge should exist");
+            assertNotNull(page.querySelector("#subsModal"), "Subscriptions modal should exist");
+            assertNotNull(page.querySelector("#subsModalList"), "Subscriptions modal list should exist");
+            assertNotNull(page.querySelector("#subsCountBadge"), "Subs count badge should exist");
         }
 
         @Test
         @DisplayName("renders report section")
         void reportSectionExists() {
-            assertTrue(page.querySelector("#viewMonthlyReportBtn") != null, "View monthly report button should exist");
-            assertTrue(page.querySelector("#changeReportPeriodBtn") != null, "Change report period button should exist");
-            assertTrue(page.querySelector("#monthlyReportModal") != null, "Monthly report modal should exist");
+            assertNotNull(page.querySelector("#viewMonthlyReportBtn"), "View monthly report button should exist");
+            assertNotNull(page.querySelector("#changeReportPeriodBtn"),
+                    "Change report period button should exist");
+            assertNotNull(page.querySelector("#monthlyReportModal"), "Monthly report modal should exist");
         }
 
         @Test
         @DisplayName("renders profile menu and settings")
         void profileMenuExists() {
-            assertTrue(page.querySelector("#profileTrigger") != null, "Profile trigger should exist");
-            assertTrue(page.querySelector("#profileMenu") != null, "Profile menu should exist");
-            assertTrue(page.querySelector("#deleteAccountBtn") != null, "Delete account button should exist");
-            assertTrue(page.querySelector("#securityPinBtn") != null, "Security PIN button should exist");
-            assertTrue(page.querySelector("#biometricAuthBtn") != null, "Biometric auth button should exist");
+            assertNotNull(page.querySelector("#profileTrigger"), "Profile trigger should exist");
+            assertNotNull(page.querySelector("#profileMenu"), "Profile menu should exist");
+            assertNotNull(page.querySelector("#deleteAccountBtn"), "Delete account button should exist");
+            assertNotNull(page.querySelector("#securityPinBtn"), "Security PIN button should exist");
+            assertNotNull(page.querySelector("#biometricAuthBtn"), "Biometric auth button should exist");
         }
 
         @Test
         @DisplayName("renders currency selector")
         void currencySelectorExists() {
-            assertTrue(page.querySelector("#dashCurrencyTrigger") != null, "Currency trigger should exist");
-            assertTrue(page.querySelector("#dashCurrencyLabel") != null, "Currency label should exist");
+            assertNotNull(page.querySelector("#dashCurrencyTrigger"), "Currency trigger should exist");
+            assertNotNull(page.querySelector("#dashCurrencyLabel"), "Currency label should exist");
         }
 
         @Test
@@ -351,6 +356,7 @@ class PlaywrightE2ETest {
             page.waitForTimeout(300);
             page.querySelector("#tabBtnAll").click();
             page.waitForTimeout(300);
+            assertNotNull(page.querySelector("#tabBtnAll"), "Tab button should exist after switching");
         }
 
         @Test

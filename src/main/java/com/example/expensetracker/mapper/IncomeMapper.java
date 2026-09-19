@@ -6,7 +6,7 @@ import com.example.expensetracker.model.Income;
 import com.example.expensetracker.model.User;
 
 /**
- * Utility mapper for converting between {@link Income} JPA entities and corresponding DTOs.
+ * Mapping utility converting between {@link Income} domain models and DTOs.
  *
  * @author Yogeshwaran
  */
@@ -25,19 +25,18 @@ public final class IncomeMapper {
             return null;
         }
 
-        IncomeDto dto = new IncomeDto(
+        return new IncomeDto(
                 income.getId(),
                 income.getAmount(),
                 income.getSource(),
                 income.getDescription(),
                 income.getIncomeDate(),
                 income.getIsRecurring(),
-                income.getCreatedAt()
+                income.getCreatedAt(),
+                income.getFrequency(),
+                income.getIntervalDays(),
+                income.getNextDueDate()
         );
-        dto.setFrequency(income.getFrequency());
-        dto.setIntervalDays(income.getIntervalDays());
-        dto.setNextDueDate(income.getNextDueDate());
-        return dto;
     }
 
     /**
@@ -53,13 +52,13 @@ public final class IncomeMapper {
         }
 
         Income income = new Income();
-        income.setAmount(request.getAmount());
-        income.setSource(request.getSource());
-        income.setDescription(request.getDescription());
-        income.setIncomeDate(request.getIncomeDate());
-        income.setIsRecurring(request.getIsRecurring());
-        income.setFrequency(request.getFrequency());
-        income.setIntervalDays(request.getIntervalDays());
+        income.setAmount(request.amount());
+        income.setSource(request.source());
+        income.setDescription(request.description());
+        income.setIncomeDate(request.incomeDate());
+        income.setIsRecurring(request.isRecurring());
+        income.setFrequency(request.frequency());
+        income.setIntervalDays(request.intervalDays());
         income.setUser(user);
         return income;
     }

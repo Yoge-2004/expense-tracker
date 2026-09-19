@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -73,7 +72,14 @@ class IncomeControllerTest {
         mockMvc.perform(post("/api/incomes/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":75000,"source":"Tech Corp","description":"Salary","incomeDate":"2026-09-01","isRecurring":true,"frequency":"MONTHLY"}
+                                {
+                                  "amount": 75000,
+                                  "source": "Tech Corp",
+                                  "description": "Salary",
+                                  "incomeDate": "2026-09-01",
+                                  "isRecurring": true,
+                                  "frequency": "MONTHLY"
+                                }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(41))
@@ -140,7 +146,13 @@ class IncomeControllerTest {
         mockMvc.perform(put("/api/incomes/41/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":78000,"source":"Tech Corp","description":"Raise","incomeDate":"2026-09-01","isRecurring":true}
+                                {
+                                  "amount": 78000,
+                                  "source": "Tech Corp",
+                                  "description": "Raise",
+                                  "incomeDate": "2026-09-01",
+                                  "isRecurring": true
+                                }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(41))
@@ -286,13 +298,17 @@ class IncomeControllerTest {
 
     private static IncomeDto income(Long id, String amount, String source, String description,
                                     String date, boolean recurring) {
-        IncomeDto dto = new IncomeDto();
-        dto.setId(id);
-        dto.setAmount(new BigDecimal(amount));
-        dto.setSource(source);
-        dto.setDescription(description);
-        dto.setIncomeDate(LocalDate.parse(date));
-        dto.setIsRecurring(recurring);
-        return dto;
+        return new IncomeDto(
+                id,
+                new BigDecimal(amount),
+                source,
+                description,
+                LocalDate.parse(date),
+                recurring,
+                null,
+                null,
+                null,
+                null
+        );
     }
 }

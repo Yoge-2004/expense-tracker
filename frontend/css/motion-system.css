@@ -1,0 +1,305 @@
+/* ==========================================================================
+   MOTION SYSTEM
+   Modern motion primitives: spring easings, native entry/exit animation,
+   and scroll-driven reveal.
+
+   Deliberately additive and last in the cascade, so it needs no
+   `!important` to take effect. Every block that relies on a newer platform
+   feature is wrapped in `@supports`, so a browser without it keeps the
+   existing JS-driven behaviour rather than losing the animation.
+
+   Easing tokens below are sampled from a damped harmonic oscillator
+   (mass-spring-damper), not hand-tuned guesses — the comment on each one
+   records the stiffness/damping/zeta it was generated from and the actual
+   overshoot peak, so they can be regenerated or re-tuned predictably.
+   ========================================================================== */
+
+:root {
+    /* stiffness 170, damping 26, zeta 0.997 — settles with no overshoot.
+       For anything where overshoot would read as a glitch: height, width,
+       progress bars, values that carry meaning. */
+    --ease-spring-soft: linear(0.0, 0.0203, 0.0707, 0.1386, 0.2154, 0.295, 0.3734, 0.4481, 0.5175, 0.5809, 0.638, 0.6887, 0.7335, 0.7727, 0.8068, 0.8362, 0.8615, 0.8832, 0.9018, 0.9175, 0.9309, 0.9422, 0.9517, 0.9597, 0.9664, 0.9721, 0.9768, 0.9808, 0.9841, 0.9868, 0.9891, 0.991, 1);
+
+    /* stiffness 210, damping 20, zeta 0.690 — peaks at 1.050.
+       The default UI spring. Enough life to feel physical, not enough to
+       look unstable. */
+    --ease-spring: linear(0.0, 0.0423, 0.1452, 0.2794, 0.4234, 0.5623, 0.687, 0.7927, 0.8777, 0.9425, 0.9891, 1.0202, 1.0389, 1.0479, 1.05, 1.0474, 1.042, 1.0352, 1.028, 1.0211, 1.0149, 1.0098, 1.0057, 1.0025, 1.0003, 0.9988, 0.998, 0.9976, 0.9975, 0.9977, 0.9979, 0.9983, 1);
+
+    /* stiffness 260, damping 14, zeta 0.434 — peaks at 1.220.
+       Pronounced bounce. Reserve for small, playful, non-critical accents
+       (a toast arriving, a toggle). Overshoot this large on a large surface
+       reads as a rendering bug. */
+    --ease-spring-bouncy: linear(0.0, 0.1055, 0.3499, 0.6365, 0.8942, 1.0823, 1.1883, 1.22, 1.1974, 1.1439, 1.0808, 1.024, 0.9823, 0.9588, 0.9516, 0.9564, 0.9682, 0.982, 0.9946, 1.0038, 1.009, 1.0107, 1.0096, 1.007, 1.004, 1.0012, 0.9992, 0.998, 0.9977, 0.9979, 0.9984, 0.9991, 1);
+
+    /* stiffness 400, damping 34, zeta 0.850 — peaks at 1.006.
+       Fast and crisp. For immediate feedback on direct interaction, where
+       any perceived latency is worse than any amount of flourish. */
+    --ease-spring-snap: linear(0.0, 0.0279, 0.0967, 0.1884, 0.2903, 0.3934, 0.4919, 0.5824, 0.6629, 0.7328, 0.792, 0.8414, 0.8817, 0.914, 0.9395, 0.9592, 0.9741, 0.9851, 0.9931, 0.9986, 1.0022, 1.0045, 1.0057, 1.0062, 1.0062, 1.0059, 1.0054, 1.0048, 1.0041, 1.0035, 1.0029, 1.0024, 1);
+
+    /* Durations. Springs already encode their own settle character, so
+       these stay short — the curve does the expressive work, not the clock. */
+    --motion-fast: 180ms;
+    --motion-base: 280ms;
+    --motion-slow: 420ms;
+    --motion-deliberate: 620ms;
+}
+
+/* ==========================================================================
+   1. NATIVE ENTRY / EXIT — @starting-style
+   Previously impossible: an element going from `display:none` to visible
+   had no "before" state to animate from, which is why entry motion in this
+   codebase was faked with JS timers and inline style writes.
+   `@starting-style` supplies that before-state natively.
+   ========================================================================== */
+
+@supports (transition-behavior: allow-discrete) {
+
+    /* --- Modal overlay: backdrop fade + card spring-in ------------------- */
+    .modal-overlay {
+        transition:
+            opacity var(--motion-base) var(--ease-spring-soft),
+            visibility var(--motion-base) var(--ease-spring-soft),
+            overlay var(--motion-base) allow-discrete,
+            display var(--motion-base) allow-discrete;
+    }
+
+    .modal-overlay.active {
+        opacity: 1;
+    }
+
+    @starting-style {
+        .modal-overlay.active {
+            opacity: 0;
+        }
+    }
+
+    .modal-overlay.active .modal {
+        transition:
+            transform var(--motion-slow) var(--ease-spring),
+            opacity var(--motion-base) var(--ease-spring-soft);
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    @starting-style {
+        .modal-overlay.active .modal {
+            transform: translateY(14px) scale(0.97);
+            opacity: 0;
+        }
+    }
+
+    /* --- Toast: spring in from the edge --------------------------------- */
+    .toast {
+        transition:
+            transform var(--motion-slow) var(--ease-spring-bouncy),
+            opacity var(--motion-fast) linear,
+            overlay var(--motion-slow) allow-discrete,
+            display var(--motion-slow) allow-discrete;
+    }
+
+    @starting-style {
+        .toast {
+            transform: translateY(-12px) scale(0.94);
+            opacity: 0;
+        }
+    }
+
+    /* --- Dropdowns / popovers / suggestion panels ------------------------ */
+    .custom-select-options,
+    .custom-calendar-popover,
+    .suggestion-chip {
+        transition:
+            transform var(--motion-base) var(--ease-spring-snap),
+            opacity var(--motion-fast) ease,
+            overlay var(--motion-base) allow-discrete,
+            display var(--motion-base) allow-discrete;
+        transform-origin: top center;
+    }
+
+    @starting-style {
+        .custom-select-options,
+        .custom-calendar-popover {
+            transform: translateY(-6px) scaleY(0.96);
+            opacity: 0;
+        }
+    }
+}
+
+/* ==========================================================================
+   2. SCROLL-DRIVEN REVEAL
+   The JS IntersectionObserver path in js/motion.js stays as the fallback and
+   is NOT removed — this block simply takes precedence where the platform
+   supports running the animation off the main thread.
+   ========================================================================== */
+
+@supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+
+        [data-reveal] {
+            animation: motion-reveal-up linear both;
+            animation-timeline: view();
+            /* Start as the element enters, finish well before centre, so
+               content is fully legible by the time it is comfortably in
+               frame rather than still resolving. */
+            animation-range: entry 10% cover 34%;
+        }
+
+        [data-reveal="fade-left"]  { animation-name: motion-reveal-left; }
+        [data-reveal="fade-right"] { animation-name: motion-reveal-right; }
+        [data-reveal="zoom"]       { animation-name: motion-reveal-zoom; }
+        [data-reveal="blur"]       { animation-name: motion-reveal-blur; }
+
+        /* The JS path adds .is-revealed and the legacy CSS then transitions
+           opacity. With a scroll timeline driving the same property, that
+           would double-apply — so neutralise the JS-era end state here. */
+        [data-reveal].is-revealed {
+            opacity: revert-layer;
+        }
+    }
+}
+
+@keyframes motion-reveal-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes motion-reveal-left {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes motion-reveal-right {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes motion-reveal-zoom {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes motion-reveal-blur {
+    from { opacity: 0; filter: blur(7px); }
+    to   { opacity: 1; filter: blur(0); }
+}
+
+/* ==========================================================================
+   3. INTERACTION FEEDBACK
+   Springs on direct manipulation. Scoped to fine pointers for hover-lift so
+   touch devices don't get a hover state stuck after a tap.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+
+    @media (hover: hover) and (pointer: fine) {
+        .metric-card,
+        .insight-card-item,
+        .savings-goal-card {
+            transition:
+                transform var(--motion-base) var(--ease-spring),
+                box-shadow var(--motion-base) var(--ease-spring-soft),
+                border-color var(--motion-fast) ease;
+        }
+
+        .metric-card:hover,
+        .insight-card-item:hover,
+        .savings-goal-card:hover {
+            transform: translateY(-3px);
+        }
+    }
+
+    /* Press feedback belongs on every input modality, not just touch. */
+    .btn-primary:active,
+    .btn-secondary:active,
+    .btn-icon:active,
+    .stream-pill-btn:active {
+        transform: scale(0.97);
+        transition: transform 90ms var(--ease-spring-snap);
+    }
+
+    /* Ledger rows stagger in. Staggering is done with :nth-child rather than
+       a JS-set custom property so the list stays a pure render with no
+       per-row style writes. Only the first 10 are staggered — beyond that
+       the delay is capped, so a 400-row ledger doesn't leave the last row
+       waiting ten seconds to appear. */
+    .expense-item {
+        animation: motion-row-in var(--motion-base) var(--ease-spring-soft) both;
+        animation-delay: 220ms; /* cap for rows past the 10th */
+    }
+
+    .expense-item:nth-child(1)  { animation-delay: 0ms; }
+    .expense-item:nth-child(2)  { animation-delay: 22ms; }
+    .expense-item:nth-child(3)  { animation-delay: 44ms; }
+    .expense-item:nth-child(4)  { animation-delay: 66ms; }
+    .expense-item:nth-child(5)  { animation-delay: 88ms; }
+    .expense-item:nth-child(6)  { animation-delay: 110ms; }
+    .expense-item:nth-child(7)  { animation-delay: 132ms; }
+    .expense-item:nth-child(8)  { animation-delay: 154ms; }
+    .expense-item:nth-child(9)  { animation-delay: 176ms; }
+    .expense-item:nth-child(10) { animation-delay: 198ms; }
+
+    /* The theme-switch guard suppresses transitions for the two frames
+       around a theme flip (see interaction-performance.css). Row entry
+       animation must be suppressed there too, or every visible row
+       re-plays its entry animation on every theme toggle. */
+    html.theme-switching .expense-item {
+        animation: none;
+    }
+}
+
+@keyframes motion-row-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   4. CONTAINER-AWARE MOTION
+   Motion intensity should follow the space a component actually occupies,
+   not the viewport. A metric card in a narrow column should move less than
+   the same card across a full-width dashboard.
+   ========================================================================== */
+
+@supports (container-type: inline-size) {
+    .grid-4-metrics,
+    .insights-cards-grid {
+        container-type: inline-size;
+        container-name: card-grid;
+    }
+
+    @container card-grid (max-width: 420px) {
+        @media (prefers-reduced-motion: no-preference) {
+            .metric-card:hover,
+            .insight-card-item:hover {
+                /* Less travel in tight quarters — a 3px lift that reads as
+                   depth at full width reads as jitter in a narrow column. */
+                transform: translateY(-1px);
+            }
+        }
+    }
+}
+
+/* ==========================================================================
+   5. REDUCED MOTION
+   Honour the OS setting across everything introduced above. Motion is
+   removed; state changes remain instant and fully legible.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .modal-overlay.active .modal,
+    .toast,
+    .custom-select-options,
+    .custom-calendar-popover,
+    .suggestion-chip,
+    .metric-card,
+    .insight-card-item,
+    .savings-goal-card,
+    .expense-item,
+    [data-reveal] {
+        animation: none;
+        transition-duration: 1ms;
+        transform: none;
+        filter: none;
+        opacity: 1;
+    }
+}

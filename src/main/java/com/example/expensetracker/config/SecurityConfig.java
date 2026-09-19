@@ -3,31 +3,35 @@ package com.example.expensetracker.config;
 import com.example.expensetracker.security.JwtAuthenticationFilter;
 import com.example.expensetracker.security.RestAccessDeniedHandler;
 import com.example.expensetracker.security.RestAuthenticationEntryPoint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
-
     private static final String CSP_POLICY =
             "default-src 'self'; " +
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com; " +
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; " +
             "font-src 'self' data: https://fonts.gstatic.com; " +
-            "img-src 'self' data: https://images.unsplash.com https://*.googleusercontent.com https://cozy-narwhal-3099ad.netlify.app; " +
-            "connect-src 'self' https://accounts.google.com https://ipapi.co https://yoge-2004-expense-tracker-backend.hf.space; " +
+            "img-src 'self' data: https://images.unsplash.com https://*.googleusercontent.com " +
+            "https://cozy-narwhal-3099ad.netlify.app; " +
+            "connect-src 'self' https://accounts.google.com https://ipapi.co " +
+            "https://yoge-2004-expense-tracker-backend.hf.space; " +
             "frame-src 'self' https://accounts.google.com; " +
             "frame-ancestors 'self'; " +
             "object-src 'none'; " +
@@ -37,21 +41,14 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          RestAuthenticationEntryPoint restAuthenticationEntryPoint,
-                          RestAccessDeniedHandler restAccessDeniedHandler) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
-        this.restAccessDeniedHandler = restAccessDeniedHandler;
-    }
-
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    @SuppressWarnings("java:S4502")
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication and security headers");
 
         http
                 .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -67,6 +64,7 @@ public class SecurityConfig {
                                 "/api/users/suggest-usernames",
                                 "/api/health/**",
                                 "/api/sync/**",
+                                "/api/internal/ml/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
@@ -80,14 +78,17 @@ public class SecurityConfig {
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .accessDeniedHandler(restAccessDeniedHandler)
                 )
-                .formLogin(form -> form.disable())
+                .formLogin(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers
                         .contentTypeOptions(Customizer.withDefaults())
-                        .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                        .frameOptions(frame -> frame.sameOrigin())
+                        .xssProtection(xss -> xss.headerValue(
+                                XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                         .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
-                        .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                        .permissionsPolicyHeader(permissions -> permissions.policy("geolocation=(), camera=(), microphone=(), payment=()"))
+                        .referrerPolicy(referrer -> referrer.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicyHeader(permissions -> permissions.policy(
+                                "geolocation=(), camera=(), microphone=(), payment=()"))
                         .contentSecurityPolicy(csp -> csp.policyDirectives(CSP_POLICY))
                 );
 

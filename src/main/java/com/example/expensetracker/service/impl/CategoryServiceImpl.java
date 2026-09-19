@@ -3,9 +3,11 @@ package com.example.expensetracker.service.impl;
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
+import com.example.expensetracker.repository.ExpenseRepository;
+import com.example.expensetracker.repository.RecurringExpenseRepository;
 import com.example.expensetracker.service.CategoryService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -35,40 +37,24 @@ import java.util.List;
  * @see CategoryService
  * @see CategoryRepository
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
-
-    private static final Logger log = LoggerFactory.getLogger(CategoryServiceImpl.class);
 
     /** Repository used for category persistence and querying. */
     private final CategoryRepository categoryRepository;
-    private final com.example.expensetracker.repository.ExpenseRepository expenseRepository;
-    private final com.example.expensetracker.repository.RecurringExpenseRepository recurringExpenseRepository;
-
-    /**
-     * Constructs a {@code CategoryServiceImpl} with the required repositories.
-     *
-     * @param categoryRepository the JPA repository for {@link Category} entities
-     * @param expenseRepository  used to check whether a category is referenced
-     *                           by any one-off expense before deletion
-     * @param recurringExpenseRepository used to check whether a category is
-     *                           referenced by any recurring expense/subscription
-     *                           before deletion
-     */
-    public CategoryServiceImpl(CategoryRepository categoryRepository,
-                                com.example.expensetracker.repository.ExpenseRepository expenseRepository,
-                                com.example.expensetracker.repository.RecurringExpenseRepository recurringExpenseRepository) {
-        this.categoryRepository = categoryRepository;
-        this.expenseRepository = expenseRepository;
-        this.recurringExpenseRepository = recurringExpenseRepository;
-    }
+    private final ExpenseRepository expenseRepository;
+    private final RecurringExpenseRepository recurringExpenseRepository;
 
     /**
      * {@inheritDoc}
      *
      * <p>Before creating the category, checks whether a category with the same name
      * already exists for the specified user using
-     * {@link CategoryRepository#existsByNameAndUser(String, User)}.\n     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
+     * {@link CategoryRepository#existsByNameAndUser(String, User)}.
+     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
      * to enforce per-user uniqueness of category names.</p>
      *
      * <p>After a successful save, both the per-user cache and the global categories
@@ -86,16 +72,27 @@ public class CategoryServiceImpl implements CategoryService {
         @CacheEvict(value = "globalCategories", allEntries = true)
     })
     public Category createCategory(String name, User user) {
-        log.info("Creating category '{}' for userId={}", name, user.getId());
-        if (categoryRepository.existsByNameAndUser(name, user)) {
-            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}", name, user.getId());
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected category creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (name == null || name.isBlank()) {
+            log.warn("Rejected category creation with blank name for userId={}", user.getId());
+            throw new IllegalArgumentException("Category name cannot be blank");
+        }
+
+        String trimmedName = name.trim();
+        log.info("Creating category '{}' for userId={}", trimmedName, user.getId());
+        if (categoryRepository.existsByNameAndUser(trimmedName, user)) {
+            log.warn("Duplicate category creation attempt: '{}' already exists for userId={}",
+                    trimmedName, user.getId());
             throw new IllegalArgumentException(
-                    "Category '" + name + "' already exists for this user"
+                    "Category '" + trimmedName + "' already exists for this user"
             );
         }
 
         Category category = new Category();
-        category.setName(name);
+        category.setName(trimmedName);
         category.setUser(user);
 
         // CONCURRENCY NOTE: there is still a small TOCTOU window between existsByNameAndUser
@@ -103,7 +100,7 @@ public class CategoryServiceImpl implements CategoryService {
         // the source of truth — if two concurrent inserts slip through, the second one will
         // throw DataIntegrityViolationException. GlobalExceptionHandler maps that to 409.
         Category saved = categoryRepository.save(category);
-        log.info("Saved category '{}' with id={} for userId={}", name, saved.getId(), user.getId());
+        log.info("Saved category '{}' with id={} for userId={}", trimmedName, saved.getId(), user.getId());
         return saved;
     }
 
@@ -119,6 +116,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Cacheable(value = "userCategories", key = "#user.id")
     public List<Category> getUserCategories(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading categories for userId={}", user.getId());
         List<Category> categories = categoryRepository.findByUser(user);
         log.debug("Loaded {} categories for userId={}", categories.size(), user.getId());
@@ -154,11 +154,18 @@ public class CategoryServiceImpl implements CategoryService {
      * referenced by either a one-off expense or a recurring subscription.</p>
      */
     @Override
+    @Transactional
     @Caching(evict = {
         @CacheEvict(value = "userCategories", key = "#user.id"),
         @CacheEvict(value = "globalCategories", allEntries = true)
     })
     public void deleteCategory(Long categoryId, User user) {
+        if (categoryId == null) {
+            throw new IllegalArgumentException("Category ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Deleting category id={} for userId={}", categoryId, user.getId());
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
@@ -173,7 +180,8 @@ public class CategoryServiceImpl implements CategoryService {
         }
         if (expenseRepository.existsByCategory_Id(categoryId)
                 || recurringExpenseRepository.existsByCategory_Id(categoryId)) {
-            log.warn("Category id={} cannot be deleted because it is still referenced by expenses or recurring expenses", categoryId);
+            log.warn("Category id={} cannot be deleted because it is still referenced "
+                    + "by expenses or recurring expenses", categoryId);
             throw new IllegalStateException(
                     "Category '" + category.getName() + "' is still used by one or more expenses and can't be deleted");
         }

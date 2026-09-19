@@ -1,18 +1,137 @@
-/* Expense Tracker stylesheet manifest. Import order defines the cascade. */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-@import url("variables.css");
-@import url("base.css");
-@import url("components.css");
-@import url("auth.css");
-@import url("dashboard.css");
-@import url("metrics.css");
-@import url("tables.css");
-@import url("charts.css");
-@import url("modals.css");
-@import url("reports.css");
-@import url("animations.css");
-@import url("responsive.css");
-@import url("auth-input-overflow-fix.css");
-@import url("ui-regression-fixes.css");
-@import url("interaction-performance.css");
-@import url("mobile-action-fix.css");
+/* Expense Tracker stylesheet manifest.
+
+   CASCADE LAYERS
+   --------------
+   Layer order is declared once, below, and is what decides precedence — not
+   the order of the @import lines and not selector specificity.
+
+   `legacy` holds the entire pre-existing stylesheet, including the separate
+   motion-extended.css chain that each HTML page links after this file. All of
+   it sits in ONE layer deliberately: within a single layer the cascade behaves
+   exactly as unlayered CSS, so this migration changes nothing about how the
+   existing ~2,300 !important declarations resolve against each other.
+
+   That matters, because !important REVERSES across layers — an !important in
+   an earlier layer beats one in a later layer. Splitting the existing files
+   across several layers in one pass would silently invert every one of those
+   declarations. Files should be lifted out of `legacy` into real layers one
+   subtree at a time, each verified on its own.
+
+   Anything in a layer after `legacy` wins on normal declarations without
+   needing !important. That is the point of the exercise.
+
+   BROWSER BASELINE
+   ----------------
+   @layer has no progressive-enhancement path: a browser that doesn't support
+   it drops the whole stylesheet rather than degrading. That was checked
+   against the project's real baseline rather than assumed, per
+   HANDOFF_MODERNIZATION.md §12, and it costs nothing here:
+
+     @layer          Chrome 99  / Safari 15.4  (Mar 2022)
+     :has()          Chrome 105 / Safari 15.4  — load-bearing in
+                     ui-regression-fixes.css (input-icon padding)
+     bare 100dvh     Chrome 108 / Safari 15.4  — load-bearing in
+                     auth/core.css:9, no fallback on that line
+
+   The app already requires a newer engine than @layer does, so every browser
+   that can render this correctly today already supports layers. If a future
+   change removes the :has() and dvh dependencies and widens the baseline back
+   past early 2022, revisit this. */
+
+@layer legacy, components, motion-system;
+
+/* Fonts are loaded explicitly by each HTML document to avoid nested @import latency. */
+
+@import url("variables.css") layer(legacy);
+@import url("base.css") layer(legacy);
+@import url("components.css") layer(legacy);
+@import url("auth.css") layer(legacy);
+@import url("dashboard.css") layer(legacy);
+@import url("metrics.css") layer(legacy);
+@import url("tables.css") layer(legacy);
+@import url("charts.css") layer(legacy);
+@import url("modals.css") layer(legacy);
+@import url("reports.css") layer(legacy);
+@import url("animations.css") layer(legacy);
+@import url("responsive.css") layer(legacy);
+@import url("auth-input-overflow-fix.css") layer(legacy);
+@import url("ui-regression-fixes.css") layer(legacy);
+@import url("interaction-performance.css") layer(legacy);
+@import url("mobile-action-fix.css") layer(legacy);
+@import url("modernization.css") layer(legacy);
+/* COMPONENTS LAYER
+   Files here were verified to have zero selector overlap with anything
+   still in `legacy` (every top-level selector is exclusive to its own
+   file - see MODERNIZATION_AUDIT_HANDOFF.md). That is what makes lifting
+   them safe: with no shared selector, there is no precedence relationship
+   with `legacy` to invert, so their normal declarations simply gain the
+   ability to win without needing !important, and nothing that already
+   worked can change. Each was moved as a direct top-level import rather
+   than nested inside its old manifest file (components.css, metrics.css,
+   etc.), because a layer name declared inside a file that is itself
+   imported into `legacy` would nest as `legacy.components` rather than
+   join this top-level layer - confirmed against the @import/@layer spec
+   before implementing, not assumed. */
+@import url("components/datepicker.css") layer(components);
+@import url("metrics/semantic.css") layer(components);
+@import url("tables/ledger.css") layer(components);
+@import url("animations/insights.css") layer(components);
+@import url("base/toggle.css") layer(components);
+@import url("dashboard/enhancements/loading.css") layer(components);
+@import url("dashboard/enhancements/budget.css") layer(components);
+@import url("dashboard/enhancements/badges.css") layer(components);
+@import url("dashboard/enhancements/form-behavior.css") layer(components);
+
+/* Round 2. These four DO share a selector string with a file still in
+   `legacy`, unlike round 1's zero-overlap set - but in every case the
+   overlapping selector's property sets are fully disjoint (or, for
+   foundation.css/income-modal.css's shared box-sizing:border-box, set to
+   the identical value), so there is no real precedence dependency despite
+   the shared selector text:
+     tables/controls.css        <-> dashboard/enhancements/modal-polish.css
+       share .modal-header: controls.css sets layout (display/justify-
+       content/align-items/margin-bottom), modal-polish.css sets only
+       position:relative for its ::after pseudo-element. No shared property.
+     dashboard/enhancements/modal-polish.css <-> reports.css
+       share [data-theme="light"] .modal: modal-polish.css sets background/
+       border-color/box-shadow, reports.css sets only scrollbar-color.
+       No shared property - reports.css did not need to move.
+     animations/advanced/data-viz.css <-> tables/dashboard-support.css,
+                                          theme-card-transitions.css
+       all reference .metric-value, but data-viz.css sets only `animation`
+       (a counter-roll entrance effect), dashboard-support.css sets only
+       typography, theme-card-transitions.css only matches it as one arm
+       of a compound :is() selector setting `transition`. No shared
+       property - neither partner needed to move.
+     base/foundation.css <-> base/income-modal.css
+       both set box-sizing:border-box on effectively the same elements,
+       but to the identical value, so whichever layer wins is
+       unobservable. income-modal.css's version additionally covers
+       ::before/::after (which a bare `*` does not reach), so it stays
+       more complete regardless. */
+@import url("tables/controls.css") layer(components);
+@import url("dashboard/enhancements/modal-polish.css") layer(components);
+@import url("animations/advanced/data-viz.css") layer(components);
+@import url("base/foundation.css") layer(components);
+
+/* Round 3. Same property-level check as round 2:
+     dashboard/enhancements/filter-panel.css shares .empty-state-icon
+       (font-size/margin-bottom/opacity vs animations/advanced/core.css's
+       animation/display/will-change), .link-action:hover (gap/opacity vs
+       tables/dashboard-support.css's color/text-decoration), and
+       .section-title (a gradient-text `background` vs dashboard-support's
+       font sizing/color) - three disjoint-property overlaps, none of the
+       three partner files needed to move.
+     tables/filters.css shares .filter-quick-presets (layout vs
+       animations/advanced/feedback.css's animation-only rule) and
+       .preset-btn.active (background/color/border/font-weight vs
+       animations/advanced/core.css's animation-only rule) - again fully
+       disjoint.
+   Passed over this round: animations/advanced/specialty.css, whose
+   .modal-overlay.active/.toast overlaps pull in modals.css - a large,
+   heavily-shared file that needs its own dedicated round rather than
+   riding along here. */
+@import url("dashboard/enhancements/filter-panel.css") layer(components);
+@import url("tables/filters.css") layer(components);
+
+@import url("motion-system.css") layer(motion-system);

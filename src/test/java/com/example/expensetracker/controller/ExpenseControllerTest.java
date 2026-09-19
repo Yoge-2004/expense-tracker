@@ -169,7 +169,8 @@ class ExpenseControllerTest {
         mockMvc.perform(put("/api/expenses/42/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":225.00,"description":"Lunch + dessert","expenseDate":"2026-09-01","categoryId":1}
+                                {"amount":225.00,"description":"Lunch + dessert",
+                                 "expenseDate":"2026-09-01","categoryId":1}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(42))
@@ -228,7 +229,8 @@ class ExpenseControllerTest {
         mockMvc.perform(post("/api/expenses/budget/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"categoryId":1,"limitAmount":3000,"period":"CUSTOM","intervalDays":14,"startDate":"2026-09-01","endDate":"2026-09-15"}
+                                {"categoryId":1,"limitAmount":3000,"period":"CUSTOM",
+                                 "intervalDays":14,"startDate":"2026-09-01","endDate":"2026-09-15"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Budget set successfully"));
@@ -370,7 +372,8 @@ class ExpenseControllerTest {
         mockMvc.perform(post("/api/expenses/recurring/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":649,"description":"Netflix","expenseDate":"2026-09-01","categoryId":1,"frequency":"monthly"}
+                                {"amount":649,"description":"Netflix",
+                                 "expenseDate":"2026-09-01","categoryId":1,"frequency":"monthly"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Recurring Expense Setup Successfully"));
@@ -398,7 +401,8 @@ class ExpenseControllerTest {
         mockMvc.perform(post("/api/expenses/recurring/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":100,"description":"Custom","expenseDate":"2026-09-01","categoryId":1,"frequency":"CUSTOM","intervalDays":0}
+                                {"amount":100,"description":"Custom",
+                                 "expenseDate":"2026-09-01","categoryId":1,"frequency":"CUSTOM","intervalDays":0}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Custom frequency requires a positive interval in days"));
@@ -409,8 +413,10 @@ class ExpenseControllerTest {
 
     @Test
     void getUserSubscriptionsMapsCategoryAndNullCategorySafely() throws Exception {
-        RecurringExpense first = recurring(3L, new BigDecimal("649"), "Netflix", LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
-        RecurringExpense second = recurring(4L, new BigDecimal("119"), "Spotify", LocalDate.of(2026, 10, 5), "MONTHLY", null, user);
+        RecurringExpense first = recurring(3L, new BigDecimal("649"), "Netflix",
+                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
+        RecurringExpense second = recurring(4L, new BigDecimal("119"), "Spotify",
+                LocalDate.of(2026, 10, 5), "MONTHLY", null, user);
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(recurringExpenseRepository.findByUser(user)).thenReturn(List.of(first, second));
 
@@ -424,7 +430,8 @@ class ExpenseControllerTest {
 
     @Test
     void updateSubscriptionOnlyChangesFieldsThatArePresentAndValidatesOwner() throws Exception {
-        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix", LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
+        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix",
+                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
         when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));
 
         mockMvc.perform(put("/api/expenses/recurring/9/user/7")
@@ -444,8 +451,27 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void updateSubscriptionChangesCategoryAndValidatesOwnership() throws Exception {
+        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix",
+                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
+        Category utilities = Category.builder().id(2L).name("Utilities").user(user).build();
+        when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));
+        when(categoryRepository.findById(2L)).thenReturn(Optional.of(utilities));
+
+        mockMvc.perform(put("/api/expenses/recurring/9/user/7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"categoryId\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Subscription updated successfully"));
+
+        verify(recurringExpenseRepository).save(argThat(updated ->
+                updated.getCategory() != null && Long.valueOf(2L).equals(updated.getCategory().getId())));
+    }
+
+    @Test
     void updateSubscriptionRejectsInvalidCustomInterval() throws Exception {
-        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix", LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
+        RecurringExpense rec = recurring(9L, new BigDecimal("649"), "Netflix",
+                LocalDate.of(2026, 10, 1), "MONTHLY", food, user);
         when(recurringExpenseRepository.findById(9L)).thenReturn(Optional.of(rec));
 
         mockMvc.perform(put("/api/expenses/recurring/9")
@@ -465,7 +491,8 @@ class ExpenseControllerTest {
         // missing IDs (returned 200 OK with no error) and (b) threw EmptyResultDataAccessException
         // -> 500 if the ID didn't exist. Now we findById + validateUserAccess + delete(entity),
         // which gives correct 400 BAD_REQUEST for missing IDs and 403 for ownership mismatch.
-        RecurringExpense rec = recurring(12L, new BigDecimal("119"), "Spotify", LocalDate.of(2026, 10, 5), "MONTHLY", food, user);
+        RecurringExpense rec = recurring(12L, new BigDecimal("119"), "Spotify",
+                LocalDate.of(2026, 10, 5), "MONTHLY", food, user);
         when(recurringExpenseRepository.findById(12L)).thenReturn(Optional.of(rec));
 
         mockMvc.perform(delete("/api/expenses/recurring/12/user/7"))
@@ -557,7 +584,8 @@ class ExpenseControllerTest {
     @Test
     void importExcelReturnsUserNotFoundBeforeCallingImportService() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-                "file", "expenses.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", new byte[]{1, 2});
+                "file", "expenses.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", new byte[]{1, 2});
         when(userService.findById(7L)).thenReturn(Optional.empty());
 
         mockMvc.perform(multipart("/api/expenses/user/7/import/excel").file(file))

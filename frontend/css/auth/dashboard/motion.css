@@ -262,7 +262,7 @@
     }
 
     .hero-timeline-num {
-        font-family: 'JetBrains Mono', monospace, sans-serif !important;
+        font-family: var(--font-mono, 'IBM Plex Mono', monospace) !important;
         font-size: 9.5px !important;
         font-weight: 700 !important;
         color: #4C7A78 !important;

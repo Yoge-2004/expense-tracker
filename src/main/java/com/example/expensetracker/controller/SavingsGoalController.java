@@ -16,13 +16,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -42,42 +43,30 @@ import java.util.List;
         All endpoints require Bearer JWT authentication.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/savings/goals")
 public class SavingsGoalController {
 
-    private static final Logger log = LoggerFactory.getLogger(SavingsGoalController.class);
-
     private final SavingsGoalService savingsGoalService;
     private final UserService userService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    /**
-     * Constructs {@link SavingsGoalController} with required services.
-     *
-     * @param savingsGoalService the savings goal service
-     * @param userService the user service
-     * @param userSecurity the user security component
-     */
-    public SavingsGoalController(SavingsGoalService savingsGoalService, UserService userService,
-                                 com.example.expensetracker.security.UserSecurity userSecurity) {
-        this.savingsGoalService = savingsGoalService;
-        this.userService = userService;
-        this.userSecurity = userSecurity;
-    }
 
     /**
-     * Creates a new savings goal for the user.
+     * Creates a new savings goal for the authenticated user.
      *
      * @param userId user identifier
      * @param request savings goal creation payload
-     * @return response entity with created savings goal and HTTP 201
+     * @return created savings goal with 201 Created status
      */
-    @Operation(summary = "Create savings goal", description = "Creates a new savings goal for the user.")
+    @Operation(summary = "Create savings goal", description = "Creates a new savings goal target for the user.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Savings goal created successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SavingsGoalDto.class))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = SavingsGoalDto.class))),
         @ApiResponse(responseCode = "400", description = "Validation failed or user not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -88,11 +77,11 @@ public class SavingsGoalController {
             @Valid @RequestBody SavingsGoalRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to create savings goal for userId={}: name={}, targetAmount={}, targetDate={}",
-                userId, request.getName(), request.getTargetAmount(), request.getTargetDate());
+                userId, request.name(), request.targetAmount(), request.targetDate());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         SavingsGoalDto created = savingsGoalService.createGoal(request, user);
-        log.info("Savings goal created with id={} for userId={}", created.getId(), userId);
+        log.info("Savings goal created with id={} for userId={}", created.id(), userId);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
@@ -105,7 +94,8 @@ public class SavingsGoalController {
     @Operation(summary = "Get user savings goals", description = "Retrieves all savings goals for the user.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "List of savings goals",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = SavingsGoalDto.class)))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    array = @ArraySchema(schema = @Schema(implementation = SavingsGoalDto.class)))),
         @ApiResponse(responseCode = "400", description = "User not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -133,7 +123,8 @@ public class SavingsGoalController {
     @Operation(summary = "Update savings goal", description = "Updates details of a savings goal.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Savings goal updated successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SavingsGoalDto.class))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = SavingsGoalDto.class))),
         @ApiResponse(responseCode = "400", description = "Goal not found or does not belong to user"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -146,7 +137,7 @@ public class SavingsGoalController {
             @Valid @RequestBody SavingsGoalRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to update savings goal id={} for userId={}: name={}, targetAmount={}",
-                goalId, userId, request.getName(), request.getTargetAmount());
+                goalId, userId, request.name(), request.targetAmount());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         SavingsGoalDto updated = savingsGoalService.updateGoal(goalId, request, user);
@@ -156,17 +147,23 @@ public class SavingsGoalController {
 
     /**
      * Records a deposit contribution towards a savings goal.
+     * Accepts either a JSON request body ({"amount": ...}) or a query parameter (?amount=...).
      *
      * @param goalId goal identifier
      * @param userId user identifier
-     * @param request deposit amount payload
+     * @param request deposit amount payload (optional if amount query param provided)
+     * @param amount deposit amount query param (optional if request body provided)
      * @return updated savings goal with updated balance and progress percentage
      */
-    @Operation(summary = "Deposit to savings goal", description = "Adds a contribution towards the savings goal. Automatically sets status to COMPLETED if target reached.")
+    @Operation(summary = "Deposit to savings goal",
+            description = "Adds a contribution towards the savings goal. "
+                    + "Automatically sets status to COMPLETED if target reached.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Deposit recorded successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SavingsGoalDto.class))),
-        @ApiResponse(responseCode = "400", description = "Goal not found, deposit non-positive, or does not belong to user"),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = SavingsGoalDto.class))),
+        @ApiResponse(responseCode = "400",
+                description = "Goal not found, deposit non-positive, or does not belong to user"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @PostMapping("/{goalId}/deposit/user/{userId}")
@@ -175,15 +172,25 @@ public class SavingsGoalController {
             @PathVariable Long goalId,
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")
             @PathVariable Long userId,
-            @Valid @RequestBody SavingsDepositRequest request) {
+            @Valid @RequestBody(required = false) SavingsDepositRequest request,
+            @RequestParam(required = false) BigDecimal amount) {
         userSecurity.validateUserAccess(userId);
+        BigDecimal effectiveAmount = null;
+        if (request != null && request.amount() != null) {
+            effectiveAmount = request.amount();
+        } else if (amount != null) {
+            effectiveAmount = amount;
+        }
+        if (effectiveAmount == null || effectiveAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be positive");
+        }
         log.info("Received deposit contribution to savings goal id={} for userId={}: depositAmount={}",
-                goalId, userId, request.getAmount());
+                goalId, userId, effectiveAmount);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        SavingsGoalDto updated = savingsGoalService.depositToGoal(goalId, request.getAmount(), user);
+        SavingsGoalDto updated = savingsGoalService.depositToGoal(goalId, effectiveAmount, user);
         log.info("Deposit applied to savings goal id={} for userId={}, newSavedAmount={}, status={}",
-                goalId, userId, updated.getCurrentAmount(), updated.getStatus());
+                goalId, userId, updated.currentAmount(), updated.status());
         return ResponseEntity.ok(updated);
     }
 
@@ -221,7 +228,8 @@ public class SavingsGoalController {
      * @param userId user identifier
      * @return list of recurring savings goals
      */
-    @Operation(summary = "Get recurring savings goals", description = "Retrieves all recurring savings goals and chits for the user.")
+    @Operation(summary = "Get recurring savings goals",
+            description = "Retrieves all recurring savings goals and chits for the user.")
     @GetMapping("/recurring/user/{userId}")
     public ResponseEntity<List<SavingsGoalDto>> getRecurringGoals(
             @Parameter(description = "ID of the authenticated user", required = true, example = "1")

@@ -1,6 +1,7 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.*;
+import com.example.expensetracker.logging.LoggingUtils;
 import com.example.expensetracker.mapper.UserMapper;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.CustomUserDetails;
@@ -18,8 +19,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +31,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Tag(
     name        = "Authentication",
@@ -44,32 +46,21 @@ import java.util.Map;
         2. Call `POST /api/auth/register` with all fields + the OTP — account is created.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
-
     private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
     private final UserService userService;
-    private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final JwtService jwtService;
     private final PasswordResetService passwordResetService;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @Value("${app.auth.email-verification-enabled:false}")
     private boolean emailVerificationEnabled;
 
-    public AuthController(AuthenticationManager authenticationManager,
-                          JwtService jwtService,
-                          UserService userService,
-                          GoogleIdTokenVerifier googleIdTokenVerifier,
-                          PasswordResetService passwordResetService) {
-        this.authenticationManager = authenticationManager;
-        this.jwtService = jwtService;
-        this.userService = userService;
-        this.googleIdTokenVerifier = googleIdTokenVerifier;
-        this.passwordResetService = passwordResetService;
-    }
 
     @Operation(summary = "Get auth configuration",
         description = "Returns public configuration flags like whether email OTP verification is required.")
@@ -80,14 +71,20 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("emailVerificationEnabled", emailVerificationEnabled));
     }
 
-    @Operation(summary = "Login",
-        description = "Authenticates a registered user and issues a signed JWT Bearer token including preferred currency.")
+    @Operation(summary = "Login with credentials",
+        description = """
+            Authenticates a user by email/username and password.
+            Returns a JWT Bearer token valid for 24 hours upon success.
+            Rate limited to **10 requests per minute** per IP address.
+            """)
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Login successful — JWT token returned",
+        @ApiResponse(responseCode = "200", description = "Authentication successful",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = AuthResponse.class),
                 examples = @ExampleObject(name = "auth-login-200",
-                    value = "{ \"token\": \"eyJ...\", \"userId\": 1, \"name\": \"John Doe\", \"currency\": \"INR\" }"))),
+                    value = """
+                        {"token": "eyJ...", "userId": 1, "name": "John Doe", "currency": "INR"}
+                        """))),
         @ApiResponse(responseCode = "401", description = "Invalid email or password",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class))),
@@ -100,13 +97,13 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/login")
-    @RateLimited(key = "auth-login", maxRequests = 10, windowSeconds = 60, message = "Too many login attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-login", message = "Too many login attempts. Please try again in %d seconds.")
     public ResponseEntity<AuthResponse> login(
             @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
-        String identifier = request.getEmail() != null ? request.getEmail().trim() : "";
-        log.info("Login attempt received");
+        String identifier = request.email() != null ? request.email().trim() : "";
+        log.info("Login attempt received for user identifier={}", LoggingUtils.maskEmail(identifier));
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(identifier, request.getPassword()));
+                new UsernamePasswordAuthenticationToken(identifier, request.password()));
 
         User user = null;
         if (auth.getPrincipal() instanceof CustomUserDetails cud) {
@@ -121,7 +118,15 @@ public class AuthController {
         }
         String token = jwtService.generateToken(user.getEmail());
         log.info("User successfully authenticated; userId={}", user.getId());
-        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency(), user.hasSecurityPin()));
+        return ResponseEntity.ok(new AuthResponse(
+                token,
+                user.getId(),
+                user.getName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCurrency(),
+                user.hasSecurityPin()
+        ));
     }
 
     @Operation(summary = "Send signup verification OTP",
@@ -138,11 +143,12 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/signup/send-otp")
-    @RateLimited(key = "auth-signup-otp", maxRequests = 5, windowSeconds = 300, message = "Too many OTP requests. Please try again in %d seconds.")
+    @RateLimited(key = "auth-signup-otp", maxRequests = 5, windowSeconds = 300,
+                 message = "Too many OTP requests. Please try again in %d seconds.")
     public ResponseEntity<Map<String, String>> sendSignupOtp(
             @Valid @org.springframework.web.bind.annotation.RequestBody SignupOtpRequest request) {
-        log.info("Request received to send signup OTP");
-        passwordResetService.sendSignupOtp(request.getEmail(), request.getName());
+        log.info("Request received to send signup OTP for email={}", LoggingUtils.maskEmail(request.email()));
+        passwordResetService.sendSignupOtp(request.email(), request.name());
         return ResponseEntity.ok(Map.of(
             "message", "If this email is eligible, a verification code has been dispatched.",
             "emailVerificationEnabled", String.valueOf(emailVerificationEnabled)
@@ -171,22 +177,25 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/register")
-    @RateLimited(key = "auth-register", maxRequests = 10, windowSeconds = 60, message = "Too many registration attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-register", message = "Too many registration attempts. Please try again in %d seconds.")
     public ResponseEntity<UserDto> register(
             @Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
-        log.info("Registration request received");
-        if (emailVerificationEnabled || (request.getOtp() != null && !request.getOtp().isBlank() && !"BYPASS".equalsIgnoreCase(request.getOtp()))) {
-            passwordResetService.verifySignupOtp(request.getEmail(), request.getOtp());
+        log.info("Registration request received for email={}, username={}",
+                LoggingUtils.maskEmail(request.email()), request.username());
+        boolean hasOtp = request.otp() != null && !request.otp().isBlank()
+                && !"BYPASS".equalsIgnoreCase(request.otp());
+        if (emailVerificationEnabled || hasOtp) {
+            passwordResetService.verifySignupOtp(request.email(), request.otp());
         }
 
         User user = new User();
-        user.setName(request.getName());
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-        user.setCurrency(request.getCurrency());
-        if (request.getSecurityPin() != null && !request.getSecurityPin().isBlank()) {
-            user.setSecurityPinHash(request.getSecurityPin().trim());
+        user.setName(request.name());
+        user.setUsername(request.username());
+        user.setEmail(request.email());
+        user.setPassword(request.password());
+        user.setCurrency(request.currency());
+        if (request.securityPin() != null && !request.securityPin().isBlank()) {
+            user.setSecurityPinHash(request.securityPin().trim());
         }
         User registeredUser = userService.registerUser(user);
         log.info("User registered successfully with id={}", registeredUser.getId());
@@ -194,7 +203,8 @@ public class AuthController {
     }
 
     @Operation(summary = "Request password reset",
-        description = "Initializes password recovery without revealing whether the email exists or which recovery factors are configured.")
+        description = "Initializes password recovery without revealing whether the email "
+                    + "exists or which recovery factors are configured.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Reset request processed"),
         @ApiResponse(responseCode = "429", description = "Too many password recovery requests (rate limit exceeded)",
@@ -203,11 +213,12 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/forgot-password")
-    @RateLimited(key = "auth-forgot-password", maxRequests = 5, windowSeconds = 300, message = "Too many password recovery requests. Please try again in %d seconds.")
+    @RateLimited(key = "auth-forgot-password", maxRequests = 5, windowSeconds = 300,
+                 message = "Too many password recovery requests. Please try again in %d seconds.")
     public ResponseEntity<Map<String, Object>> forgotPassword(
             @Valid @org.springframework.web.bind.annotation.RequestBody ForgotPasswordRequest request) {
-        String email = request.getEmail().trim();
-        log.info("Password reset request received");
+        String email = request.email().trim();
+        log.info("Password reset request received for email={}", LoggingUtils.maskEmail(email));
         // FIXED: previously caught Exception (everything), which masked DB outages as a 200 OK
         // "instructions have been prepared" response — misleading the user into thinking the
         // reset email was sent when it wasn't. Now we only swallow expected exceptions
@@ -241,18 +252,20 @@ public class AuthController {
     })
     @SecurityRequirements
     @PutMapping("/reset-password")
-    @RateLimited(key = "auth-reset-password", maxRequests = 5, windowSeconds = 600, message = "Too many password reset attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-reset-password", maxRequests = 5, windowSeconds = 600,
+                 message = "Too many password reset attempts. Please try again in %d seconds.")
     public ResponseEntity<Void> resetPassword(
             @Valid @org.springframework.web.bind.annotation.RequestBody ResetPasswordRequest request) {
-        log.info("Password reset execution requested");
+        log.info("Password reset execution requested for email={}", LoggingUtils.maskEmail(request.email()));
         String code = request.resolveVerificationCode();
-        passwordResetService.resetPassword(request.getEmail(), code, request.getNewPassword());
-        log.info("Password successfully updated");
+        passwordResetService.resetPassword(request.email(), code, request.newPassword());
+        log.info("Password successfully updated for email={}", LoggingUtils.maskEmail(request.email()));
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "OAuth Login / Signup",
-        description = "Authenticates or registers a user via Google Sign-In. Google OAuth users bypass the OTP signup flow.")
+        description = "Authenticates or registers a user via Google Sign-In. "
+                    + "Google OAuth users bypass the OTP signup flow.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Google OAuth login successful"),
         @ApiResponse(responseCode = "401", description = "Invalid Google ID token",
@@ -264,19 +277,43 @@ public class AuthController {
     })
     @SecurityRequirements
     @PostMapping("/oauth/google")
-    @RateLimited(key = "auth-oauth", maxRequests = 15, windowSeconds = 60, message = "Too many OAuth login attempts. Please try again in %d seconds.")
+    @RateLimited(key = "auth-oauth", maxRequests = 15,
+                 message = "Too many OAuth login attempts. Please try again in %d seconds.")
     public ResponseEntity<AuthResponse> oauthLogin(
             @Valid @org.springframework.web.bind.annotation.RequestBody OAuthRequest request) {
         log.info("Google OAuth login verification initiated");
-        GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.getIdToken());
-        log.info("Google OAuth token verified");
+        GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.idToken());
+        log.info("Google OAuth token verified for email={}", LoggingUtils.maskEmail(identity.email()));
 
         User user = userService.findByEmail(identity.email()).orElseGet(() -> {
             User newUser = new User();
             newUser.setName(identity.name());
             newUser.setEmail(identity.email());
-            newUser.setPassword(java.util.UUID.randomUUID().toString());
-            newUser.setCurrency("INR");
+            newUser.setPassword(UUID.randomUUID().toString());
+
+            // 1. Resolve currency: client preference > default "INR"
+            String reqCurrency = request.currency();
+            if (reqCurrency != null && reqCurrency.trim().matches("^[A-Za-z]{3}$")) {
+                newUser.setCurrency(reqCurrency.trim().toUpperCase(java.util.Locale.ROOT));
+            } else {
+                newUser.setCurrency("INR");
+            }
+
+            // 2. Resolve username: custom preference > generated unique handle
+            String targetUsername = null;
+            if (request.username() != null && request.username().trim().matches("^[a-zA-Z0-9._]{3,30}$")) {
+                String candidate = request.username().trim();
+                if (!userService.userExistsByUsername(candidate)) {
+                    targetUsername = candidate;
+                }
+            }
+            if (targetUsername == null) {
+                targetUsername = generateUniqueOAuthUsername(identity.email(), identity.name());
+            }
+            newUser.setUsername(targetUsername);
+
+            log.info("Auto-registering new user via Google OAuth: email={}, username={}, currency={}",
+                    LoggingUtils.maskEmail(newUser.getEmail()), newUser.getUsername(), newUser.getCurrency());
             return userService.registerUser(newUser);
         });
 
@@ -286,13 +323,52 @@ public class AuthController {
         // Now we explicitly reject disabled/locked accounts with 401 Unauthorized,
         // matching the standard login flow's behavior.
         if (!user.isEnabled() || user.isAccountLocked()) {
-            log.warn("Google OAuth login rejected for disabled/locked account email={}", identity.email());
+            log.warn("Google OAuth login rejected for disabled/locked account email={}",
+                    LoggingUtils.maskEmail(identity.email()));
             throw new org.springframework.security.authentication.BadCredentialsException(
                     "Account is disabled or locked. Please contact support.");
         }
 
         String token = jwtService.generateToken(user.getEmail());
         log.info("Google OAuth login successful for userId={}", user.getId());
-        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getCurrency(), user.hasSecurityPin()));
+        return ResponseEntity.ok(new AuthResponse(
+                token,
+                user.getId(),
+                user.getName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCurrency(),
+                user.hasSecurityPin()
+        ));
+    }
+
+    private String generateUniqueOAuthUsername(String email, String name) {
+        String base = "";
+        if (email != null && email.contains("@")) {
+            base = email.substring(0, email.indexOf('@')).replaceAll("[^a-zA-Z0-9._]", "_");
+        } else if (name != null && !name.isBlank()) {
+            base = name.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-zA-Z0-9._]", "_");
+        }
+        if (base.length() < 3) {
+            base = (base + "user").substring(0, Math.min(base.length() + 4, 30));
+        }
+        if (base.length() > 24) {
+            base = base.substring(0, 24);
+        }
+        if (!userService.userExistsByUsername(base)) {
+            return base;
+        }
+        int suffix = 1;
+        while (suffix < 10000) {
+            String candidate = base + suffix;
+            if (candidate.length() > 30) {
+                candidate = base.substring(0, 30 - String.valueOf(suffix).length()) + suffix;
+            }
+            if (!userService.userExistsByUsername(candidate)) {
+                return candidate;
+            }
+            suffix++;
+        }
+        return "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
     }
 }

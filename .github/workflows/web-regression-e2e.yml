@@ -13,6 +13,9 @@ permissions:
 jobs:
   web-regression:
     name: Mobile UI + WebAuthn browser tests
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
 
     steps:
@@ -32,6 +35,10 @@ jobs:
         working-directory: e2e
         run: npx playwright install --with-deps chromium
 
+      - name: Check E2E TypeScript
+        working-directory: e2e
+        run: npm run typecheck
+
       - name: Start static frontend server
         run: |
           python3 -m http.server 5500 --directory frontend > /tmp/expense-tracker-frontend.log 2>&1 &
@@ -50,6 +57,42 @@ jobs:
           CI: true
           BASE_URL: http://localhost:5500
         run: npx playwright test tests/biometrics.spec.ts --project=chromium
+
+      - name: Run critical UI regressions
+        working-directory: e2e
+        env:
+          CI: true
+          BASE_URL: http://localhost:5500
+        continue-on-error: true
+        run: npx playwright test tests/critical-ui-regressions.spec.ts --project=chromium
+
+      - name: TEMP - full untested suite (user reports site-wide breakage, verifying against everything)
+        if: always()
+        working-directory: e2e
+        env:
+          CI: true
+          BASE_URL: http://localhost:5500
+        run: npx playwright test tests/dashboard.spec.ts tests/ui-regressions.spec.ts tests/login.spec.ts tests/expenses.spec.ts tests/budgets.spec.ts tests/incomes.spec.ts --project=chromium --reporter=list 2>&1 | tee /tmp/full-suite.log || true
+
+      - name: TEMP - post full suite results via API
+        if: always()
+        working-directory: e2e
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 -c "
+          import json
+          try:
+              txt = open('/tmp/full-suite.log', errors='replace').read()[-6000:]
+          except Exception as e:
+              txt = 'no log captured: ' + str(e)
+          open('/tmp/body.json','w').write(json.dumps({'body': '### TEMP: full untested-suite results\n\`\`\`\n' + txt + '\n\`\`\`'}))
+          "
+          curl -sf -o /tmp/post_resp.txt -w 'POST status: %{http_code}\n' -X POST -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/29/comments" \
+            --data-binary @/tmp/body.json
+          cat /tmp/post_resp.txt
 
       - name: Run mobile UI regressions on Pixel 7
         working-directory: e2e

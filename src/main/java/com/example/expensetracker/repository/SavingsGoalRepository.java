@@ -17,6 +17,7 @@ import java.util.Optional;
  *
  * @author Yogeshwaran
  */
+@SuppressWarnings("unused")
 public interface SavingsGoalRepository extends JpaRepository<SavingsGoal, Long> {
 
     /**
@@ -57,7 +58,7 @@ public interface SavingsGoalRepository extends JpaRepository<SavingsGoal, Long> 
      *
      * @param userId the ID of the owning user
      */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM SavingsGoal s WHERE s.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
 
@@ -76,7 +77,8 @@ public interface SavingsGoalRepository extends JpaRepository<SavingsGoal, Long> 
      * @param amount the amount to add (must be &gt; 0)
      * @return 1 if the row was updated, 0 otherwise (wrong goal ID or not owned by this user)
      */
-    @Modifying
-    @Query("UPDATE SavingsGoal s SET s.currentAmount = COALESCE(s.currentAmount, 0) + :amount WHERE s.id = :goalId AND s.user = :user")
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE SavingsGoal s SET s.currentAmount = COALESCE(s.currentAmount, 0) + :amount "
+            + "WHERE s.id = :goalId AND s.user = :user")
     int addToCurrentAmount(@Param("goalId") Long goalId, @Param("user") User user, @Param("amount") BigDecimal amount);
 }

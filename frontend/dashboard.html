@@ -6,9 +6,10 @@
     <title>Financial Workspace | Expense Tracker Pro</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap&v=20260914-font1">
     <link rel="stylesheet" href="css/style.css?v=20260911">
     <link rel="stylesheet" href="css/motion-extended.css?v=20260911">
+    <link rel="stylesheet" href="css/ai-intelligence.css?v=20260918">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
     <script>
@@ -91,10 +92,10 @@
                         <div style="padding: 10px 14px; border-bottom: 1px solid var(--border);">
                             <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">PREFERRED CURRENCY</label>
                             <p style="font-size: 10.5px; color: var(--text-muted); margin: -2px 0 8px; line-height: 1.4;">Changes the symbol shown — amounts aren't converted between currencies.</p>
-                            <input type="hidden" id="currencySelector" value="USD">
+                            <input type="hidden" id="currencySelector" value="INR">
                             <div class="custom-select-wrapper" id="dashCurrencyWrapper">
                                 <div class="custom-select-trigger" id="dashCurrencyTrigger" style="padding: 8px 12px; font-size: 12px; height: 36px;">
-                                    <span id="dashCurrencyLabel">🇺🇸 USD ($)</span>
+                                    <span id="dashCurrencyLabel">🇮🇳 INR (₹)</span>
                                     <svg class="custom-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
                                 <div class="custom-select-options"></div>
@@ -561,15 +562,50 @@
                     <div style="width:32px; height:32px; border-radius:8px; background:rgba(var(--primary-rgb), 0.15); display:flex; align-items:center; justify-content:center; color:var(--primary); border:1px solid rgba(var(--primary-rgb), 0.3); box-shadow:0 0 12px rgba(var(--primary-rgb), 0.25);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </div>
-                    <h3 id="expenseModalTitle" style="margin:0;">Record Expense</h3>
+                    <h3 id="expenseModalTitle" style="margin:0; display:flex; align-items:center;">Record Expense <span class="ai-active-pill" title="AI auto-categorization active">⚡ AI Ready</span></h3>
                 </div>
                 <button class="modal-close" id="closeExpenseModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="addExpenseForm">
                 <input type="hidden" id="expenseId">
                 <div class="form-group">
-                    <label>Description</label>
-                    <input type="text" id="desc" required placeholder="e.g. AWS Cloud Services">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label for="desc" style="margin-bottom:0;">Description</label>
+                        <span id="aiAssistBadge" class="ai-active-pill" style="font-size:9px; padding:2px 6px;">✨ Smart Assist</span>
+                    </div>
+                    <div class="input-with-ai-wrap">
+                        <input type="text" id="desc" required placeholder="e.g. Uber ride home, AWS Cloud, Whole Foods" autocomplete="off">
+                        <span id="descAiLoading" class="desc-ai-spinner" style="display: none;" title="Analyzing with AI..."></span>
+                    </div>
+
+                    <!-- AI Suggestion Box -->
+                    <div id="aiSuggestionBox" class="ai-suggestion-box" style="display: none;">
+                        <div class="ai-suggestion-header">
+                            <div class="ai-suggestion-title">
+                                <span class="ai-badge-icon">⚡</span>
+                                <span>AI Suggestion:</span>
+                                <strong id="aiPredictedCategoryName" class="ai-pred-highlight">—</strong>
+                                <span id="aiConfidenceBadge" class="ai-conf-badge">—% match</span>
+                            </div>
+                            <button type="button" id="aiApplyBtn" class="ai-apply-btn" title="Select this category">Apply</button>
+                        </div>
+                        <div id="aiAlternativePills" class="ai-alternative-pills" style="display: none;">
+                            <span class="ai-alt-label">Alternatives:</span>
+                            <div id="aiPillsList" class="ai-pills-list"></div>
+                        </div>
+                        <div id="aiAutoAppliedNotice" class="ai-auto-notice" style="display: none;">
+                            <span>✨ Category auto-selected by AI. Change anytime below.</span>
+                        </div>
+                    </div>
+
+                    <!-- Duplicate Detection Box -->
+                    <div id="duplicateWarningBox" class="duplicate-warning-box" style="display: none;">
+                        <span class="dup-icon">⚠️</span>
+                        <div class="dup-content">
+                            <span class="dup-title">Similar transaction detected</span>
+                            <span id="dupDetailText" class="dup-text"></span>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label id="expenseAmountLabel">Amount</label>
@@ -608,7 +644,7 @@
                     <div class="form-group">
                         <label>Billing Frequency</label>
                         <select id="recurringFrequency">
-                            <option value="MONTHLY">Monthly</option>
+                            <option value="MONTHLY" selected>Monthly</option>
                             <option value="WEEKLY">Weekly</option>
                             <option value="DAILY">Daily</option>
                             <option value="YEARLY">Yearly</option>
@@ -646,7 +682,7 @@
                 <div class="form-group">
                     <label>Period</label>
                     <select id="budgetPeriod">
-                        <option value="MONTHLY">Monthly</option>
+                        <option value="MONTHLY" selected>Monthly</option>
                         <option value="WEEKLY">Weekly</option>
                         <option value="YEARLY">Yearly</option>
                         <option value="CUSTOM">Custom Interval (Days)</option>
@@ -777,7 +813,7 @@
                 <div class="form-group">
                     <label>Billing Cadence</label>
                     <select id="editSubFrequency">
-                        <option value="MONTHLY">Monthly</option>
+                        <option value="MONTHLY" selected>Monthly</option>
                         <option value="WEEKLY">Weekly</option>
                         <option value="DAILY">Daily</option>
                         <option value="YEARLY">Yearly</option>
@@ -843,7 +879,7 @@
                     <div class="form-group">
                         <label>Payment Frequency</label>
                         <select id="incomeRecurringFrequency">
-                            <option value="MONTHLY">Monthly (e.g. Monthly Salary)</option>
+                            <option value="MONTHLY" selected>Monthly (e.g. Monthly Salary)</option>
                             <option value="WEEKLY">Weekly (e.g. Weekly Wages)</option>
                             <option value="DAILY">Daily (e.g. Daily Wages)</option>
                             <option value="YEARLY">Yearly (e.g. Annual Bonus / Dividend)</option>
@@ -1091,11 +1127,14 @@
     <script src="js/modules/dashboard-effects.js"></script>
     <script src="js/modules/dashboard-cache.js"></script>
     <script src="js/modules/dashboard-search.js"></script>
+    <script src="js/modules/insight-engine.js"></script>
     <script src="js/modules/dashboard-insights.js"></script>
+    <script src="js/modules/dashboard-insight-cards.js"></script>
     <script src="js/modules/dashboard-metrics.js"></script>
     <script src="js/modules/dashboard-data.js"></script>
     <script src="js/modules/dashboard-budget.js"></script>
     <script src="js/modules/dashboard-filters.js"></script>
+    <script src="js/modules/dashboard-ml.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/motion.js"></script>
 </body>

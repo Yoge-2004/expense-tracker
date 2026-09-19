@@ -127,7 +127,6 @@
                 elements.filterSearch.addEventListener("input", debounce(() => {
                     applyFilters();
                     if (typeof applyIncomeFilters === "function") applyIncomeFilters();
-                    renderFinancialInsights(getExpenses());
                 }, 250));
             }
 

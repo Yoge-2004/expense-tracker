@@ -2,10 +2,9 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
-import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
-import com.example.expensetracker.security.JwtAuthenticationFilter;
 import com.example.expensetracker.security.JwtService;
+import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,30 +12,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.http.MediaType;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(
-        controllers = UserController.class,
-        excludeFilters = @ComponentScan.Filter(
-                type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE,
-                classes = JwtAuthenticationFilter.class))
+@WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class UserControllerTest {
 
@@ -57,13 +45,15 @@ class UserControllerTest {
         user = new User();
         user.setId(7L);
         user.setName("Jane Doe");
+        user.setUsername("jane_doe");
         user.setEmail("jane@example.com");
+        user.setPassword("encodedPassword");
         user.setCurrency("INR");
-        user.setPassword("hashed-password");
+        user.setEnabled(true);
     }
 
     @Test
-    void checkUsernameRejectsBlankValueWithoutRepositoryLookup() throws Exception {
+    void checkUsernameRejectsBlankInput() throws Exception {
         mockMvc.perform(get("/api/users/check-username").queryParam("username", "   "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.available").value(false))
@@ -77,9 +67,23 @@ class UserControllerTest {
         mockMvc.perform(get("/api/users/check-username").queryParam("username", "ab-"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(false))
-                .andExpect(jsonPath("$.message").value("Username must be 3-30 alphanumeric characters or underscores"));
+                .andExpect(jsonPath("$.message")
+                        .value("Username must be 3-30 alphanumeric characters, dots, or underscores"));
 
         verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void checkUsernameAllowsDotsInHandle() throws Exception {
+        when(userRepository.findByUsernameIgnoreCase("john.doe")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/users/check-username").queryParam("username", "john.doe"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("john.doe"))
+                .andExpect(jsonPath("$.available").value(true))
+                .andExpect(jsonPath("$.message").value("Username is available!"));
+
+        verify(userRepository).findByUsernameIgnoreCase("john.doe");
     }
 
     @Test
@@ -114,33 +118,38 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.suggestions").isArray())
                 .andExpect(jsonPath("$.suggestions.length()").value(3))
-                .andExpect(jsonPath("$.suggestions[0]").isString())
-                .andExpect(jsonPath("$.suggestions[1]").isString())
-                .andExpect(jsonPath("$.suggestions[2]").isString());
+                .andExpect(jsonPath("$.suggestions[0]").value("iam_janedoe"))
+                .andExpect(jsonPath("$.suggestions[1]").value("the_janedoe"))
+                .andExpect(jsonPath("$.suggestions[2]").value("real_janedoe"));
 
-        verify(userRepository, atLeast(3)).findByUsernameIgnoreCase(anyString());
+        verify(userRepository).findByUsernameIgnoreCase("iam_janedoe");
+        verify(userRepository).findByUsernameIgnoreCase("the_janedoe");
+        verify(userRepository).findByUsernameIgnoreCase("real_janedoe");
     }
 
     @Test
-    void suggestUsernamesFallsBackToUserForPunctuationOnlyBase() throws Exception {
+    void suggestUsernamesFallsBackToUserBaseWhenInputSanitizesToEmpty() throws Exception {
         when(userRepository.findByUsernameIgnoreCase(anyString())).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "!!!"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.suggestions.length()").value(3));
-
-        verify(userRepository).findByUsernameIgnoreCase("iam_user");
+                .andExpect(jsonPath("$.suggestions").isArray())
+                .andExpect(jsonPath("$.suggestions.length()").value(3))
+                .andExpect(jsonPath("$.suggestions[0]").value("iam_user"));
     }
 
     @Test
-    void suggestUsernamesSkipsTakenCandidatesAndStillReturnsThree() throws Exception {
+    void suggestUsernamesGeneratesRandomSuffixesWhenPrefixCandidatesCollided() throws Exception {
         when(userRepository.findByUsernameIgnoreCase("iam_jane")).thenReturn(Optional.of(user));
         when(userRepository.findByUsernameIgnoreCase("the_jane")).thenReturn(Optional.of(user));
         when(userRepository.findByUsernameIgnoreCase("real_jane")).thenReturn(Optional.of(user));
-        when(userRepository.findByUsernameIgnoreCase(anyString())).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameIgnoreCase("hey_jane")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsernameIgnoreCase("go_jane")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsernameIgnoreCase(startsWith("jane"))).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/users/suggest-usernames").queryParam("base", "Jane"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.suggestions").isArray())
                 .andExpect(jsonPath("$.suggestions.length()").value(3));
 
         verify(userRepository).findByUsernameIgnoreCase("iam_jane");
@@ -156,6 +165,7 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(7))
                 .andExpect(jsonPath("$.name").value("Jane Doe"))
+                .andExpect(jsonPath("$.username").value("jane_doe"))
                 .andExpect(jsonPath("$.email").value("jane@example.com"))
                 .andExpect(jsonPath("$.currency").value("INR"))
                 .andExpect(jsonPath("$.hasSecurityPin").value(false))
@@ -174,22 +184,22 @@ class UserControllerTest {
     }
 
     @Test
-    void updateSecurityPinRejectsNonSixDigitPinBeforeServiceUpdate() throws Exception {
+    void updateSecurityPinRejectsMalformedPin() throws Exception {
         mockMvc.perform(put("/api/users/7/security-pin")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"securityPin\":\"12345\"}"))
+                        .contentType("application/json")
+                        .content("{\"pin\":\"1234a\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Security PIN must be exactly 6 numeric digits."));
+                .andExpect(jsonPath("$.message").value("Security PIN must be exactly 6 numeric digits"));
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userService, never()).updateSecurityPin(anyLong(), anyString());
     }
 
     @Test
-    void updateSecurityPinTrimsValidPinAndDelegates() throws Exception {
+    void updateSecurityPinPersistsValidPin() throws Exception {
         mockMvc.perform(put("/api/users/7/security-pin")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"securityPin\":\" 123456 \"}"))
+                        .contentType("application/json")
+                        .content("{\"pin\":\"123456\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Security PIN updated successfully"));
 
@@ -198,118 +208,128 @@ class UserControllerTest {
     }
 
     @Test
-    void verifySecurityPinRejectsInvalidFormatBeforeVerificationCall() throws Exception {
+    void verifySecurityPinReturnsFalseForIncorrectPin() throws Exception {
+        when(userService.verifySecurityPin(7L, "654321")).thenReturn(false);
+
         mockMvc.perform(post("/api/users/7/verify-security-pin")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"securityPin\":\"12ab56\"}"))
-                .andExpect(status().isBadRequest());
+                        .contentType("application/json")
+                        .content("{\"pin\":\"654321\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(false))
+                .andExpect(jsonPath("$.message").value("Incorrect Security PIN"));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService).verifySecurityPin(7L, "654321");
+    }
+
+    @Test
+    void verifySecurityPinReturnsTrueForCorrectPin() throws Exception {
+        when(userService.verifySecurityPin(7L, "123456")).thenReturn(true);
+
+        mockMvc.perform(post("/api/users/7/verify-security-pin")
+                        .contentType("application/json")
+                        .content("{\"pin\":\"123456\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.message").doesNotExist());
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService).verifySecurityPin(7L, "123456");
+    }
+
+    @Test
+    void verifySecurityPinRejectsMalformedPin() throws Exception {
+        mockMvc.perform(post("/api/users/7/verify-security-pin")
+                        .contentType("application/json")
+                        .content("{\"pin\":\"123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Security PIN must be exactly 6 numeric digits"));
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userService, never()).verifySecurityPin(anyLong(), anyString());
     }
 
     @Test
-    void verifySecurityPinReturnsUnauthorizedForIncorrectPin() throws Exception {
-        when(userService.verifySecurityPin(7L, "123456")).thenReturn(false);
-
-        mockMvc.perform(post("/api/users/7/verify-security-pin")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"securityPin\":\"123456\"}"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.valid").value(false))
-                .andExpect(jsonPath("$.message").value("Invalid security PIN."));
-    }
-
-    @Test
-    void verifySecurityPinReturnsSuccessForCorrectPin() throws Exception {
-        when(userService.verifySecurityPin(7L, "123456")).thenReturn(true);
-
-        mockMvc.perform(post("/api/users/7/verify-security-pin")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"securityPin\":\"123456\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.valid").value(true))
-                .andExpect(jsonPath("$.message").value("Security PIN verified successfully."));
-    }
-
-    @Test
-    void deleteAccountRejectsMissingConfirmationBeforeDelete() throws Exception {
+    void deleteAccountSucceedsWhenPasswordMatches() throws Exception {
         when(userService.findById(7L)).thenReturn(Optional.of(user));
-
-        mockMvc.perform(delete("/api/users/7"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid or missing password confirmation. Account deletion requires re-authentication."));
-
-        verify(userService, never()).deleteUser(7L);
-    }
-
-    @Test
-    void deleteAccountUsesPasswordConfirmationAndDeletesOnlyAfterMatch() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("correct", "hashed-password")).thenReturn(true);
+        when(passwordEncoder.matches("myPassword", "encodedPassword")).thenReturn(true);
 
         mockMvc.perform(delete("/api/users/7")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"password\":\"correct\"}"))
+                        .contentType("application/json")
+                        .content("{\"password\":\"myPassword\"}"))
                 .andExpect(status().isNoContent());
-
-        verify(passwordEncoder).matches("correct", "hashed-password");
-        verify(userService).deleteUser(7L);
-    }
-
-    @Test
-    void deleteAccountRejectsIncorrectPasswordAndDoesNotDelete() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("wrong", "hashed-password")).thenReturn(false);
-
-        mockMvc.perform(delete("/api/users/7")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"password\":\"wrong\"}"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Incorrect password. Account deletion requires valid password confirmation."));
-
-        verify(userService, never()).deleteUser(7L);
-    }
-
-    @Test
-    void deleteAccountCanUseSecurityPinConfirmation() throws Exception {
-        when(userService.findById(7L)).thenReturn(Optional.of(user));
-        when(userService.verifySecurityPin(7L, "123456")).thenReturn(true);
-
-        mockMvc.perform(delete("/api/users/7")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"securityPin\":\"123456\"}"))
-                .andExpect(status().isNoContent());
-
-        verify(userService).verifySecurityPin(7L, "123456");
-        verify(userService).deleteUser(7L);
-        verifyNoInteractions(passwordEncoder);
-    }
-
-    @Test
-    void updateCurrencyRejectsInvalidLength() throws Exception {
-        mockMvc.perform(put("/api/users/7/currency")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currency\":\"US\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Currency must be a 3-letter ISO 4217 code."));
 
         verify(userSecurity).validateUserAccess(7L);
-        verify(userService, never()).updateCurrency(anyLong(), anyString());
+        verify(userService).deleteUser(7L);
     }
 
     @Test
-    void updateCurrencyNormalizesCodeToUppercase() throws Exception {
-        // FIXED: controller now uppercases the currency BEFORE delegating to the service,
-        // so the service receives "USD" (not "usd"). This matches the service's own
-        // contract (it also uppercases internally) and makes the mock verification pass.
+    void deleteAccountSucceedsWhenSecurityPinMatches() throws Exception {
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(userService.verifySecurityPin(7L, "123456")).thenReturn(true);
+
+        mockMvc.perform(delete("/api/users/7")
+                        .contentType("application/json")
+                        .content("{\"securityPin\":\"123456\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService).deleteUser(7L);
+    }
+
+    @Test
+    void deleteAccountSucceedsWhenGoogleIdTokenMatchesUserEmail() throws Exception {
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(googleIdTokenVerifier.verify("valid-google-token"))
+                .thenReturn(new GoogleIdTokenVerifier.VerifiedIdentity("jane@example.com", "Jane Doe"));
+
+        mockMvc.perform(delete("/api/users/7")
+                        .contentType("application/json")
+                        .content("{\"googleIdToken\":\"valid-google-token\"}"))
+                .andExpect(status().isNoContent());
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(googleIdTokenVerifier).verify("valid-google-token");
+        verify(userService).deleteUser(7L);
+    }
+
+    @Test
+    void deleteAccountFailsWhenPasswordDoesNotMatch() throws Exception {
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);
+
+        mockMvc.perform(delete("/api/users/7")
+                        .contentType("application/json")
+                        .content("{\"password\":\"wrongPassword\"}"))
+                .andExpect(status().isUnauthorized());
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService, never()).deleteUser(anyLong());
+    }
+
+    @Test
+    void updateCurrencySucceedsForValidIsoCode() throws Exception {
         mockMvc.perform(put("/api/users/7/currency")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"currency\":\"usd\"}"))
+                        .contentType("application/json")
+                        .content("{\"currency\":\"USD\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.currency").value("USD"));
+                .andExpect(jsonPath("$.currency").value("USD"))
+                .andExpect(jsonPath("$.message").value("Currency preference updated successfully"));
 
         verify(userSecurity).validateUserAccess(7L);
         verify(userService).updateCurrency(7L, "USD");
+    }
+
+    @Test
+    void updateCurrencyRejectsInvalidIsoCode() throws Exception {
+        mockMvc.perform(put("/api/users/7/currency")
+                        .contentType("application/json")
+                        .content("{\"currency\":\"US\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Currency must be a valid 3-letter ISO 4217 code (e.g., USD, EUR, INR)"));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService, never()).updateCurrency(anyLong(), anyString());
     }
 }

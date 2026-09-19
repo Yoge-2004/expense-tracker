@@ -47,6 +47,16 @@
     --danger: #A23E32;
     --danger-gradient: linear-gradient(135deg, #A23E32 0%, #832D23 100%);
 
+    /* Text/icon-safe variants: the base accent/danger/metric-subs tokens read
+       well as backgrounds, borders, and large metric numbers, but fall below
+       WCAG AA (4.5:1) when used as small text (badges, status labels, links)
+       on --card-bg. Lightness-only adjustments, hue/saturation preserved,
+       each tuned to just clear 4.5:1 against --card-bg (#171A14). */
+    --accent-text: #CB6256;
+    --danger-text: #CB6256;
+    --success-text: #5D8F5C;
+    --metric-subs-text: #C6656C;
+
     --glass: none;
     --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
     --shadow-glow: 0 10px 30px -5px rgba(199, 154, 62, 0.18);
@@ -65,7 +75,7 @@
     --metric-savings: #F59E0B;
     --metric-savings-rgb: 245, 158, 11;
     --metric-savings-glow: rgba(245, 158, 11, 0.18);
-    --metric-subs: #8B5CF6;
-    --metric-subs-rgb: 139, 92, 246;
-    --metric-subs-glow: rgba(139, 92, 246, 0.18);
+    --metric-subs: #C0565E;
+    --metric-subs-rgb: 192, 86, 94;
+    --metric-subs-glow: rgba(192, 86, 94, 0.18);
 }

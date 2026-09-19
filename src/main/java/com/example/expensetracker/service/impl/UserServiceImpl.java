@@ -3,8 +3,8 @@ package com.example.expensetracker.service.impl;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.*;
 import com.example.expensetracker.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +16,11 @@ import java.util.Optional;
  * Concrete implementation of {@link UserService} providing business logic
  * for user registration, lookup, password management, and account deletion.
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
-
-    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -29,29 +30,23 @@ public class UserServiceImpl implements UserService {
     private final RecurringExpenseRepository recurringRepository;
     private final IncomeRepository incomeRepository;
     private final SavingsGoalRepository savingsGoalRepository;
-
-    public UserServiceImpl(UserRepository userRepository,
-                           PasswordEncoder passwordEncoder,
-                           ExpenseRepository expenseRepository,
-                           CategoryRepository categoryRepository,
-                           BudgetRepository budgetRepository,
-                           RecurringExpenseRepository recurringRepository,
-                           IncomeRepository incomeRepository,
-                           SavingsGoalRepository savingsGoalRepository) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.expenseRepository = expenseRepository;
-        this.categoryRepository = categoryRepository;
-        this.budgetRepository = budgetRepository;
-        this.recurringRepository = recurringRepository;
-        this.incomeRepository = incomeRepository;
-        this.savingsGoalRepository = savingsGoalRepository;
-    }
+    private final MonthlyReportLogRepository reportLogRepository;
+    private final WebAuthnCredentialRepository webAuthnCredentialRepository;
 
     @Override
     @Transactional
     public User registerUser(User user) {
         log.info("Attempting to register user");
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new IllegalArgumentException("User email cannot be blank");
+        }
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new IllegalArgumentException("User password cannot be blank");
+        }
+
         String normalizedEmail = user.getEmail().trim();
         if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
             log.warn("Registration rejected because email is already registered");
@@ -61,7 +56,8 @@ public class UserServiceImpl implements UserService {
             String normalizedUsername = user.getUsername().trim();
             if (userRepository.findByUsernameIgnoreCase(normalizedUsername).isPresent()) {
                 log.warn("Registration rejected because username is already registered");
-                throw new IllegalArgumentException("Username '" + normalizedUsername + "' is already taken. Please choose another.");
+                throw new IllegalArgumentException("Username '" + normalizedUsername
+                        + "' is already taken. Please choose another.");
             }
             user.setUsername(normalizedUsername);
         }
@@ -74,10 +70,6 @@ public class UserServiceImpl implements UserService {
         if (user.getCurrency() == null || user.getCurrency().isBlank()) {
             user.setCurrency("INR");
         } else {
-            // VALIDATION FIX: RegisterRequest.currency has @Pattern("^[A-Za-z]{3}$") but @Valid
-            // is only enforced at the controller layer. When registerUser is called from
-            // AuthController.oauthLogin (which constructs the User directly without @Valid),
-            // invalid currency codes like "USDOLLARS" or "123" would be silently persisted.
             // Re-validate at the service boundary so all entry paths are covered.
             String c = user.getCurrency().trim();
             if (!c.matches("^[A-Za-z]{3}$")) {
@@ -112,6 +104,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Optional<User> findById(Long id) {
+        if (id == null) return Optional.empty();
         log.debug("Finding user by id: {}", id);
         return userRepository.findById(id);
     }
@@ -119,6 +112,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateSecurityPin(Long userId, String newPin) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         if (newPin == null || !newPin.matches("^[0-9]{6}$")) {
             throw new IllegalArgumentException("Security PIN must be exactly 6 digits.");
         }
@@ -128,11 +124,15 @@ public class UserServiceImpl implements UserService {
         user.setFailedPinAttempts(0);
         user.setPinLockedUntil(null);
         userRepository.save(user);
+        log.info("Security PIN updated successfully for userId={}", userId);
     }
 
     @Override
     @Transactional
     public boolean verifySecurityPin(Long userId, String pin) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         if (pin == null || !pin.matches("^[0-9]{6}$")) {
             throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits");
         }
@@ -141,10 +141,13 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
+            log.warn("Security PIN verification blocked: userId={} is locked until {}",
+                    userId, user.getPinLockedUntil());
             throw new IllegalStateException("Security PIN verification temporarily locked");
         }
 
         if (user.getSecurityPinHash() == null || user.getSecurityPinHash().isBlank()) {
+            log.warn("Security PIN verification rejected: no PIN set for userId={}", userId);
             throw new IllegalStateException("No security PIN has been set");
         }
 
@@ -152,13 +155,18 @@ public class UserServiceImpl implements UserService {
             user.setFailedPinAttempts(0);
             user.setPinLockedUntil(null);
             userRepository.save(user);
+            log.info("Security PIN verified successfully for userId={}", userId);
             return true;
         }
 
-        int attempts = Optional.ofNullable(user.getFailedPinAttempts()).orElse(0) + 1;
+        int attempts = user.getFailedPinAttempts() + 1;
         user.setFailedPinAttempts(attempts);
         if (attempts >= 5) {
             user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
+            log.warn("Security PIN verification locked out for 15 minutes for userId={} after {} attempts",
+                    userId, attempts);
+        } else {
+            log.warn("Security PIN verification failed for userId={}, failedAttempts={}", userId, attempts);
         }
         userRepository.save(user);
         return false;
@@ -167,6 +175,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateCurrency(Long userId, String currency) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         if (currency == null || !currency.matches("^[A-Za-z]{3}$")) {
             throw new IllegalArgumentException("Currency must be a 3-letter ISO 4217 code.");
         }
@@ -174,14 +185,21 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setCurrency(currency.toUpperCase(java.util.Locale.ROOT));
         userRepository.save(user);
+        log.info("Currency updated successfully for userId={} to {}", userId, user.getCurrency());
     }
 
     @Override
     @Transactional
     public void deleteUser(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        log.warn("Initiating full cascading account deletion for userId={}", userId);
+        reportLogRepository.deleteByUserId(userId);
+        webAuthnCredentialRepository.deleteByUserId(userId);
         expenseRepository.deleteByUserId(userId);
         recurringRepository.deleteByUserId(userId);
         incomeRepository.deleteByUserId(userId);
@@ -189,6 +207,7 @@ public class UserServiceImpl implements UserService {
         savingsGoalRepository.deleteByUserId(userId);
         categoryRepository.deleteByUserId(userId);
         userRepository.delete(user);
+        log.info("Account deletion completed for userId={}", userId);
     }
 
     @Override

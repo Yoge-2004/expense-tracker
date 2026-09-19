@@ -12,6 +12,7 @@ import com.example.expensetracker.dto.MonthlyReportDto;
  *
  * @author Yogeshwaran
  */
+@SuppressWarnings("unused")
 public interface MonthlyReportService {
 
     /**

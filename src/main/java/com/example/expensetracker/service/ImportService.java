@@ -19,13 +19,15 @@ public interface ImportService {
     /**
      * Imports expense records from an uploaded CSV file for the given user.
      * <p>
-     * Headers are matched dynamically in case-insensitive fashion. Required columns: {@code date}, {@code category}, {@code amount}.
+     * Headers are matched dynamically in case-insensitive fashion.
+     * Required columns: {@code date}, {@code category}, {@code amount}.
      * Optional column: {@code description}.
      * </p>
      *
      * @param file the uploaded CSV file
      * @param user the target authenticated user
-     * @return a structured map containing {@code imported} count, {@code failedRows} count, {@code errors} list, and summary {@code message}
+     * @return a structured map containing {@code imported} count, {@code failedRows} count,
+     *         {@code errors} list, and summary {@code message}
      */
     Map<String, Object> importExpensesFromCsv(MultipartFile file, User user);
 
@@ -48,20 +50,23 @@ public interface ImportService {
      *
      * @param file the uploaded Excel file
      * @param user the target authenticated user
-     * @return a structured map containing {@code imported} count, {@code failedRows} count, {@code errors} list, and summary {@code message}
+     * @return a structured map containing {@code imported} count, {@code failedRows} count,
+     *         {@code errors} list, and summary {@code message}
      */
     Map<String, Object> importExpensesFromExcel(MultipartFile file, User user);
 
     /**
      * Imports income records from an uploaded CSV file for the given user.
      * <p>
-     * Headers are matched dynamically in case-insensitive fashion. Required columns: {@code date}, {@code source}, {@code amount}.
+     * Headers are matched dynamically in case-insensitive fashion.
+     * Required columns: {@code date}, {@code source}, {@code amount}.
      * Optional column: {@code description}.
      * </p>
      *
      * @param file the uploaded CSV file
      * @param user the target authenticated user
-     * @return a structured map containing {@code imported} count, {@code failedRows} count, {@code errors} list, and summary {@code message}
+     * @return a structured map containing {@code imported} count, {@code failedRows} count,
+     *         {@code errors} list, and summary {@code message}
      */
     Map<String, Object> importIncomesFromCsv(MultipartFile file, User user);
 
@@ -78,13 +83,15 @@ public interface ImportService {
      * Imports income records from an uploaded Microsoft Excel (.xlsx / .xls) workbook for the given user.
      * <p>
      * Headers are matched dynamically from the first sheet or "Incomes" sheet in case-insensitive fashion.
-     * Required columns: {@code date}, {@code source}, {@code amount}. Optional columns: {@code description}, {@code recurring}.
+     * Required columns: {@code date}, {@code source}, {@code amount}.
+     * Optional columns: {@code description}, {@code recurring}.
      * Supports both typed date/numeric cells and text formatted representations with row-level error resiliency.
      * </p>
      *
      * @param file the uploaded Excel file
      * @param user the target authenticated user
-     * @return a structured map containing {@code imported} count, {@code failedRows} count, {@code errors} list, and summary {@code message}
+     * @return a structured map containing {@code imported} count, {@code failedRows} count,
+     *         {@code errors} list, and summary {@code message}
      */
     Map<String, Object> importIncomesFromExcel(MultipartFile file, User user);
 }

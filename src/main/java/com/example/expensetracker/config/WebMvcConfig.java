@@ -3,8 +3,12 @@ package com.example.expensetracker.config;
 import com.example.expensetracker.security.RateLimitInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.CacheControl;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -25,14 +29,24 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    @Value("${app.cache.static-max-age:86400}")
-    private long staticMaxAgeSeconds;
+    private final long staticMaxAgeSeconds;
+    private final RateLimitInterceptor rateLimitInterceptor;
 
-    @Autowired(required = false)
-    private RateLimitInterceptor rateLimitInterceptor;
+    public WebMvcConfig(
+            @Value("${app.cache.static-max-age:86400}") long staticMaxAgeSeconds,
+            @Autowired(required = false) RateLimitInterceptor rateLimitInterceptor) {
+        this.staticMaxAgeSeconds = staticMaxAgeSeconds;
+        this.rateLimitInterceptor = rateLimitInterceptor;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RestClient.Builder restClientBuilder() {
+        return RestClient.builder();
+    }
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(@NonNull InterceptorRegistry registry) {
         if (rateLimitInterceptor != null) {
             registry.addInterceptor(rateLimitInterceptor)
                     .addPathPatterns("/api/**");
@@ -46,7 +60,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * @param registry the resource handler registry
      */
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         CacheControl staticCache = CacheControl
                 .maxAge(staticMaxAgeSeconds, TimeUnit.SECONDS)
                 .cachePublic()

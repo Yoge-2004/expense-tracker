@@ -96,6 +96,9 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
               key={p.id}
               activeOpacity={0.8}
               onPress={() => handleSelectPreset(p.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Date filter: ${p.label}`}
+              accessibilityState={{ selected: isActive }}
               style={[
                 styles.presetChip,
                 {
@@ -129,6 +132,8 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setCalendarTarget('start')}
+              accessibilityRole="button"
+              accessibilityLabel={`Start date${startDate ? `, ${startDate}` : ''}. Open date picker`}
               style={[styles.dateInputWrap, { borderColor: c.border, backgroundColor: c.card }]}
             >
               <Ionicons name="calendar" size={15} color={c.primary} />
@@ -147,6 +152,10 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
                     e.stopPropagation();
                     onStartDateChange('');
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear start date"
+                  hitSlop={8}
+                  style={styles.clearDateButton}
                 >
                   <Ionicons name="close-circle" size={15} color={c.textMuted} />
                 </TouchableOpacity>
@@ -160,6 +169,8 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setCalendarTarget('end')}
+              accessibilityRole="button"
+              accessibilityLabel={`End date${endDate ? `, ${endDate}` : ''}. Open date picker`}
               style={[styles.dateInputWrap, { borderColor: c.border, backgroundColor: c.card }]}
             >
               <Ionicons name="calendar" size={15} color={c.primary} />
@@ -178,6 +189,10 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
                     e.stopPropagation();
                     onEndDateChange('');
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear end date"
+                  hitSlop={8}
+                  style={styles.clearDateButton}
                 >
                   <Ionicons name="close-circle" size={15} color={c.textMuted} />
                 </TouchableOpacity>
@@ -197,6 +212,9 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => handleSelectCat('all')}
+          accessibilityRole="button"
+          accessibilityLabel={`All categories, ${safeCategories.length} available`}
+          accessibilityState={{ selected: selectedCategory === 'all' }}
           style={[
             styles.catPill,
             {
@@ -226,6 +244,9 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
               key={cat.id}
               activeOpacity={0.8}
               onPress={() => handleSelectCat(cat.name)}
+              accessibilityRole="button"
+              accessibilityLabel={`Category: ${cat.name}`}
+              accessibilityState={{ selected: isActive }}
               style={[
                 styles.catPill,
                 {
@@ -280,6 +301,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   presetChip: {
+    minHeight: 44,
+    justifyContent: 'center',
     paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 9,
@@ -307,12 +330,18 @@ const styles = StyleSheet.create({
   dateInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 38,
+    minHeight: 44,
     borderRadius: 9,
     borderWidth: 1,
     paddingHorizontal: 8,
     gap: 6,
     justifyContent: 'space-between',
+  },
+  clearDateButton: {
+    minWidth: 32,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dateDisplayText: {
     flex: 1,
@@ -325,6 +354,7 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   catPill: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
