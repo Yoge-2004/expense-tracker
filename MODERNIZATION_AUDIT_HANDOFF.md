@@ -512,11 +512,33 @@ Some of the 20 overlaps ARE safe duplicates (e.g. .modal's overflow-x/y
 with ui-regression-fixes.css - identical values, just inconsistent
 !important usage) but others are not, and distinguishing all 20
 individually (plus their cascading partners) is real work, not a quick
-round. Two ways forward if this is picked up again: (a) move the whole
-entangled cluster together, preserving current relative order, or (b) a
-full selector-by-selector audit of value equality, not just property-name
-overlap. Neither attempted here - flagging honestly rather than forcing
-a risky mechanical move through.
+round.
 
-19 files remain in `components` (rounds 1-3). Layer migration paused here,
-not abandoned.
+**Follow-up: tested path (a) with real data, ruled it out.** Computed the
+actual transitive closure of "files that would need to move together" and
+it does not stay small. modernization.css alone reaches 10 further
+external files (reports.css, dashboard/core.css, auth/core.css,
+variables/surfaces.css, etc.), ui-regression-fixes.css reaches 7 more,
+animations/advanced/core.css reaches 12 more - and those don't overlap
+cleanly with each other either. This isn't a cluster with a few extra
+members; it's most of what remains in `legacy`. That's not a coincidence:
+modernization.css, ui-regression-fixes.css, and animations/advanced/core.css
+are BY DESIGN sitewide patch/override files - their documented purpose is
+touching many other files - so treating them as "just another file to
+lift" was the wrong frame from the start.
+
+**Revised, realistic endpoint for this migration**: `legacy` does not need
+to shrink to zero for the `@layer` work to have been worthwhile. The
+achievable goal is a `components` layer holding everything provably
+independent (19 files today), so NEW work can be added there (or a
+further layer) without ever needing !important, while the old patch-file
+core stays in `legacy` - stable, unchanged, its internal cascade fully
+preserved exactly as it always worked. That's real, durable progress: no
+!important war between something new and something old is possible
+anymore, even though the old core's internal !important count is
+unchanged. Forcing the old core into layers too would mean either the
+all-at-once move `legacy` was created to avoid, or a value-level audit of
+60+ files - a project of its own, not a continuation of this one.
+
+19 files remain in `components` (rounds 1-3). Layer migration concluded at
+this point as the realistic stopping line, not paused pending more effort.
