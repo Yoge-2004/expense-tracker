@@ -126,62 +126,25 @@
 }
 
 /* ==========================================================================
-   2. SCROLL-DRIVEN REVEAL
-   The JS IntersectionObserver path in js/motion.js stays as the fallback and
-   is NOT removed — this block simply takes precedence where the platform
-   supports running the animation off the main thread.
+   2. SCROLL-DRIVEN REVEAL - REMOVED
+   Hooked the [data-reveal] attribute that pre-existing js/motion.js already
+   applies to .metric-card, .expense-item, .grid-4-metrics > * (among
+   others) for its own IntersectionObserver-based reveal, adding a second,
+   CSS-only animation-timeline:view() animation on the same elements.
+   Removed after finding this is a strong candidate for the CI-confirmed
+   #totalIncomeAmount visibility regression (found alongside the two
+   removals below): animation-timeline:view() animations calculate their
+   initial progress from the element's current scroll position, and a
+   known class of engine behavior leaves that calculation at the
+   animation's `from` state - here, opacity:0 - until an actual scroll
+   event fires, even for an element already in the viewport on page load.
+   A test that checks visibility immediately after load, before any
+   scroll happens, would hit exactly that. The pre-existing JS
+   IntersectionObserver path in js/motion.js is untouched and remains the
+   only reveal mechanism. Do not re-add without testing directly against
+   elements that are already in view on initial page load, not just
+   elements scrolled into view.
    ========================================================================== */
-
-@supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-
-        [data-reveal] {
-            animation: motion-reveal-up linear both;
-            animation-timeline: view();
-            /* Start as the element enters, finish well before centre, so
-               content is fully legible by the time it is comfortably in
-               frame rather than still resolving. */
-            animation-range: entry 10% cover 34%;
-        }
-
-        [data-reveal="fade-left"]  { animation-name: motion-reveal-left; }
-        [data-reveal="fade-right"] { animation-name: motion-reveal-right; }
-        [data-reveal="zoom"]       { animation-name: motion-reveal-zoom; }
-        [data-reveal="blur"]       { animation-name: motion-reveal-blur; }
-
-        /* The JS path adds .is-revealed and the legacy CSS then transitions
-           opacity. With a scroll timeline driving the same property, that
-           would double-apply — so neutralise the JS-era end state here. */
-        [data-reveal].is-revealed {
-            opacity: revert-layer;
-        }
-    }
-}
-
-@keyframes motion-reveal-up {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes motion-reveal-left {
-    from { opacity: 0; transform: translateX(-24px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes motion-reveal-right {
-    from { opacity: 0; transform: translateX(24px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes motion-reveal-zoom {
-    from { opacity: 0; transform: scale(0.94); }
-    to   { opacity: 1; transform: scale(1); }
-}
-
-@keyframes motion-reveal-blur {
-    from { opacity: 0; filter: blur(7px); }
-    to   { opacity: 1; filter: blur(0); }
-}
 
 /* ==========================================================================
    3. INTERACTION FEEDBACK
@@ -217,66 +180,33 @@
         transition: transform 90ms var(--ease-spring-snap);
     }
 
-    /* Ledger rows stagger in. Staggering is done with :nth-child rather than
-       a JS-set custom property so the list stays a pure render with no
-       per-row style writes. Only the first 10 are staggered — beyond that
-       the delay is capped, so a 400-row ledger doesn't leave the last row
-       waiting ten seconds to appear. */
-    .expense-item {
-        animation: motion-row-in var(--motion-base) var(--ease-spring-soft) both;
-        animation-delay: 220ms; /* cap for rows past the 10th */
-    }
-
-    .expense-item:nth-child(1)  { animation-delay: 0ms; }
-    .expense-item:nth-child(2)  { animation-delay: 22ms; }
-    .expense-item:nth-child(3)  { animation-delay: 44ms; }
-    .expense-item:nth-child(4)  { animation-delay: 66ms; }
-    .expense-item:nth-child(5)  { animation-delay: 88ms; }
-    .expense-item:nth-child(6)  { animation-delay: 110ms; }
-    .expense-item:nth-child(7)  { animation-delay: 132ms; }
-    .expense-item:nth-child(8)  { animation-delay: 154ms; }
-    .expense-item:nth-child(9)  { animation-delay: 176ms; }
-    .expense-item:nth-child(10) { animation-delay: 198ms; }
-
-    /* The theme-switch guard suppresses transitions for the two frames
-       around a theme flip (see interaction-performance.css). Row entry
-       animation must be suppressed there too, or every visible row
-       re-plays its entry animation on every theme toggle. */
-    html.theme-switching .expense-item {
-        animation: none;
-    }
-}
-
-@keyframes motion-row-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+    /* Ledger row stagger REMOVED after a CI-confirmed regression (see the
+       CONTAINER-AWARE MOTION removal note below for the #totalIncomeAmount
+       failure this was found alongside). expenseList.innerHTML is fully
+       replaced on every filter/sort/add (js/dashboard.js), which restarted
+       this opacity:0-starting animation on every re-render of elements
+       these tests check constantly. Same risk pattern, removed
+       defensively without waiting to confirm it independently - the cost
+       of a wrong guess here is far lower than another live regression. */
 }
 
 /* ==========================================================================
-   4. CONTAINER-AWARE MOTION
-   Motion intensity should follow the space a component actually occupies,
-   not the viewport. A metric card in a narrow column should move less than
-   the same card across a full-width dashboard.
+   4. CONTAINER-AWARE MOTION - REMOVED
+   Previously set container-type:inline-size on .grid-4-metrics and
+   .insights-cards-grid to make hover-travel respond to available width
+   rather than viewport width. Removed after a real, CI-confirmed
+   regression: #totalIncomeAmount (inside .grid-4-metrics, which also
+   carries animate-cascade's opacity-based entrance animation) was
+   reported hidden by Playwright's toBeVisible() check, timing out at
+   10s against an animation that otherwise completes in <1.1s.
+   container-type establishing containment on an element with a
+   concurrently-running opacity/transform animation is a plausible
+   mechanism for that - not confirmed against a specific browser
+   engine bug report, but removing an experimental, non-essential
+   enhancement is far cheaper than leaving a live visibility regression
+   in place while investigating further. Do not re-add without testing
+   directly against a populated dashboard on initial page load.
    ========================================================================== */
-
-@supports (container-type: inline-size) {
-    .grid-4-metrics,
-    .insights-cards-grid {
-        container-type: inline-size;
-        container-name: card-grid;
-    }
-
-    @container card-grid (max-width: 420px) {
-        @media (prefers-reduced-motion: no-preference) {
-            .metric-card:hover,
-            .insight-card-item:hover {
-                /* Less travel in tight quarters — a 3px lift that reads as
-                   depth at full width reads as jitter in a narrow column. */
-                transform: translateY(-1px);
-            }
-        }
-    }
-}
 
 /* ==========================================================================
    5. REDUCED MOTION
