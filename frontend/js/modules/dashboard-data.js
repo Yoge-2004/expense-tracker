@@ -137,6 +137,13 @@
                 } else {
                     showToast("Couldn't load your data. Check your connection and try again.", "error");
                     renderDashboardData([], []);
+                    // renderDashboardData/renderIncomes/renderSavingsGoals below all
+                    // clear their own skeleton state on failure; updateCashFlowMetrics
+                    // did not, so the metric cards (#totalIncomeAmount and siblings)
+                    // were left showing their loading skeleton indefinitely on any
+                    // total load failure - a slow/cold-starting backend, not just a
+                    // hard network error, hits this same path.
+                    updateCashFlowMetrics([], [], []);
                 }
                 renderIncomes(Array.isArray(state.allIncomes) ? state.allIncomes : []);
                 renderSavingsGoals(Array.isArray(state.allSavingsGoals) ? state.allSavingsGoals : []);
