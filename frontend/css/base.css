@@ -1,3 +1,5 @@
 /* EXPENSE TRACKER — BASE.CSS */
 /* Foundation rules are split by responsibility while preserving cascade order. */
+@import url("base/foundation.css");
+@import url("base/toggle.css");
 @import url("base/income-modal.css");

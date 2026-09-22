@@ -4,4 +4,5 @@
    ========================================================================== */
 
 @import url("metrics/core.css");
+@import url("metrics/semantic.css");
 @import url("metrics/responsive.css");
