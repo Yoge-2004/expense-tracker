@@ -43,6 +43,8 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 | **Dashboard** | See spending, income, savings, budgets, trends, and category distribution in one place. |
 | **Reports** | Generate downloadable financial reports in PDF and Excel formats. |
 | **Authentication** | JWT-based authentication plus Google sign-in and WebAuthn/passkey support in the backend. |
+| **Profile & Settings** | Editable display names across web/app, 6-digit security PIN, and multi-currency preferences. |
+| **Machine Learning** | Automatic transaction categorization with interactive tester and retraining feedback loop. |
 | **Persistence** | H2 for development/testing, SQLite fallback, and PostgreSQL/Neon support for hosted deployments. |
 | **Data resilience** | Optional Hugging Face Hub synchronization for SQLite/JSON snapshots. |
 
@@ -274,6 +276,18 @@ Recurring records make regular monthly commitments easier to represent. The back
 
 ![Recurring expenses](docs/images/website/recurring.png)
 
+## Profile & Identity Management
+
+- Update full display name seamlessly across Web and Mobile with instant synchronization to the backend.
+- Set and verify 6-digit Security PIN for zero-email instant recovery and biometric unlock.
+- Multi-currency selection with instant symbol updates across all ledgers and metrics.
+
+## AI / Machine Learning Categorization
+
+- Dual-Gram TF-IDF + SAGA classification engine predicting canonical spending categories in real-time.
+- Interactive categorizer widget on the dashboard with live dual-gram prediction, confidence badges, sample chips, and 1-click modal pre-fill.
+- Continuous learning pipeline collecting user corrections and evaluating retraining candidates for Hugging Face Hub synchronization.
+
 ## Reporting
 
 The reporting layer supports generated financial documents, including PDF and Excel exports.
@@ -294,8 +308,9 @@ The reporting layer supports generated financial documents, including PDF and Ex
 | Reporting | OpenPDF 3.0.5, Apache POI 5.5.1 |
 | API documentation | SpringDoc OpenAPI 3.1.0 / Swagger UI |
 | Web | HTML, CSS, JavaScript, Chart.js where used by the frontend |
-| Mobile | React Native 0.86.3, Expo 57, Expo Router |
-| Mobile auth | `@react-native-google-signin/google-signin` |
+| Mobile | React Native 0.86.3, Expo 57.0.25, Expo Router 57.0.23 |
+| Mobile auth | `@react-native-google-signin/google-signin` 16.1.5 |
+| Machine Learning | Python 3.14, Scikit-learn, TF-IDF Dual-Gram, FastAPI |
 | Testing | JUnit, Mockito, MockMvc, Cucumber, REST-Assured, Selenium, HtmlUnit |
 | Build | Maven |
 | Container | Docker / Eclipse Temurin JRE 26 |

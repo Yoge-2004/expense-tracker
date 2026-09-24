@@ -174,6 +174,22 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void updateName(Long userId, String name) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (name == null || name.trim().length() < 2 || name.trim().length() > 50) {
+            throw new IllegalArgumentException("Display name must be between 2 and 50 characters.");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setName(name.trim());
+        userRepository.save(user);
+        log.info("Display name updated successfully for userId={} to '{}'", userId, user.getName());
+    }
+
+    @Override
+    @Transactional
     public void updateCurrency(Long userId, String currency) {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null");

@@ -1,6 +1,8 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.DeleteAccountRequest;
+import com.example.expensetracker.dto.UpdateProfileRequest;
+import jakarta.validation.Valid;
 import com.example.expensetracker.dto.ErrorResponse;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
@@ -155,6 +157,40 @@ public class UserController {
         map.put("email", user.getEmail());
         map.put("currency", user.getCurrency());
         map.put("hasSecurityPin", user.hasSecurityPin());
+        return ResponseEntity.ok(map);
+    }
+
+    // ─── PUT /api/users/{userId} ───────────────────────────────────────────────
+
+    @Operation(
+        summary = "Update user profile",
+        description = "Updates editable profile fields such as display name."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or user not found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PutMapping("/{userId}")
+    public ResponseEntity<Map<String, Object>> updateProfile(
+            @Parameter(description = "Database ID of the user.", required = true, example = "1")
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        log.info("Received request to update profile for userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+
+        userService.updateName(userId, request.name());
+        User updated = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", updated.getId());
+        map.put("name", updated.getName());
+        map.put("username", updated.getUsername());
+        map.put("email", updated.getEmail());
+        map.put("currency", updated.getCurrency());
+        map.put("hasSecurityPin", updated.hasSecurityPin());
         return ResponseEntity.ok(map);
     }
 

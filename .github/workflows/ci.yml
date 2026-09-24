@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          npx --yes expo-doctor@1.20.3 2>&1 | tee expo-doctor.log
+          npx --yes expo-doctor 2>&1 | tee expo-doctor.log
           npx expo install --check
       - name: Check mobile TypeScript
         working-directory: mobile

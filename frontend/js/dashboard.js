@@ -1863,6 +1863,73 @@ elements.cancelDeleteAccountBtn.addEventListener("click", () => {
     elements.deleteConfirmInput.value = "";
 });
 
+// --- EDIT PROFILE NAME ---
+const editProfileBtn = document.getElementById("editProfileBtn");
+const editProfileModal = document.getElementById("editProfileModal");
+const closeEditProfileModalBtn = document.getElementById("closeEditProfileModalBtn");
+const cancelEditProfileBtn = document.getElementById("cancelEditProfileBtn");
+const editProfileForm = document.getElementById("editProfileForm");
+const editProfileNameInput = document.getElementById("editProfileNameInput");
+
+if (editProfileBtn && editProfileModal) {
+    editProfileBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        toggleProfileMenu(false);
+        const currentName = localStorage.getItem("userName") || "";
+        if (editProfileNameInput) {
+            editProfileNameInput.value = currentName;
+        }
+        openModal(editProfileModal);
+        setTimeout(() => editProfileNameInput?.focus(), 50);
+    });
+
+    const closeEditModal = () => closeModal(editProfileModal);
+    closeEditProfileModalBtn?.addEventListener("click", closeEditModal);
+    cancelEditProfileBtn?.addEventListener("click", closeEditModal);
+    editProfileModal.addEventListener("click", (e) => {
+        if (e.target === editProfileModal) closeEditModal();
+    });
+
+    editProfileForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const newName = editProfileNameInput?.value?.trim();
+        if (!newName || newName.length < 2 || newName.length > 50) {
+            showToast("Display name must be between 2 and 50 characters.", "warning");
+            return;
+        }
+        const saveBtn = document.getElementById("saveEditProfileBtn");
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Saving...";
+        }
+        try {
+            const res = await apiRequest(`/users/${userId}`, {
+                method: "PUT",
+                body: JSON.stringify({ name: newName })
+            });
+            const updatedName = (res && res.name) ? res.name : newName;
+            localStorage.setItem("userName", updatedName);
+            const userWelcomeText = document.getElementById("userWelcomeText");
+            if (userWelcomeText) {
+                userWelcomeText.textContent = `Welcome back, ${updatedName}`;
+            }
+            const avatarEl = document.querySelector(".avatar");
+            if (avatarEl) {
+                avatarEl.textContent = updatedName.charAt(0).toUpperCase();
+            }
+            showToast("Profile name updated successfully!", "success");
+            closeEditModal();
+        } catch (err) {
+            showToast(err.message || "Failed to update profile name.", "error");
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save Changes";
+            }
+        }
+    });
+}
+
 // Close modal on overlay click
 elements.deleteAccountModal.addEventListener("click", (e) => {
     if (e.target === elements.deleteAccountModal) {

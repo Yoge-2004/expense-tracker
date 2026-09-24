@@ -92,6 +92,14 @@ public interface UserService {
     boolean verifySecurityPin(Long userId, String pin);
 
     /**
+     * Updates the display name for the given user account.
+     *
+     * @param userId the primary key of the user to update
+     * @param name   the updated display name
+     */
+    void updateName(Long userId, String name);
+
+    /**
      * Updates the currency preference for the given user account.
      *
      * @param userId   the primary key of the user to update

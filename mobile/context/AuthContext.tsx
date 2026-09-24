@@ -321,6 +321,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUserName = async (newName: string): Promise<void> => {
     const cleanName = newName.trim();
     if (!cleanName) return;
+
+    if (userId) {
+      await apiRequest(`/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: cleanName }),
+      });
+    }
+
     try {
       await SecureStore.setItemAsync('user_name', cleanName);
       setUserName(cleanName);
