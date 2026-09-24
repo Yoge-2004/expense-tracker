@@ -89,7 +89,7 @@ POST /api/v1/analyze
 
 The existing Spring Boot backend calls the Python service over `http://127.0.0.1:8000` inside the combined Space container. Public application traffic continues to enter through Spring Boot.
 
-See `README_INFERENCE.md` for the request/response contract and deployment configuration.
+The Python inference service adheres strictly to the `/api/v1/classify` and `/api/v1/analyze` contracts.
 
 ## Automated training environment
 

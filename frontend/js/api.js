@@ -93,7 +93,24 @@ function setLoading(isLoading, customText = "Connecting to the server…") {
     }
 }
 
+let _lastToastMsg = "";
+let _lastToastTime = 0;
+
 function showToast(message, type = "info") {
+    const now = Date.now();
+    const strMsg = message == null ? "" : String(message);
+    const isNetworkErr = strMsg.toLowerCase().includes("connect to the server") ||
+                         strMsg.toLowerCase().includes("couldn't reach the server") ||
+                         strMsg.toLowerCase().includes("failed to load") ||
+                         strMsg.toLowerCase().includes("network error") ||
+                         strMsg.toLowerCase().includes("failed to fetch");
+    // Suppress rapid duplicate toasts or multiple network/offline toasts within 2.5s
+    if ((strMsg === _lastToastMsg || (isNetworkErr && _lastToastMsg && (now - _lastToastTime < 2500))) && now - _lastToastTime < 2500) {
+        return;
+    }
+    _lastToastMsg = strMsg;
+    _lastToastTime = now;
+
     ensureFeedbackUi();
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
