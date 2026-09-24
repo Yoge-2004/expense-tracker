@@ -127,4 +127,24 @@ class JwtAuthenticationFilterTest {
         assertNull(SecurityContextHolder.getContext().getAuthentication());
         verify(filterChain).doFilter(request, response);
     }
+
+    @Test
+    @DisplayName("doFilterInternal continues unauthenticated when the JWT subject no longer exists")
+    void doFilterInternal_deletedUser_continuesUnauthenticated() throws ServletException, IOException {
+        String token = "token-for-deleted-user";
+        String email = "gone@example.com";
+        request.addHeader("Authorization", "Bearer " + token);
+
+        when(jwtService.extractUsername(token)).thenReturn(email);
+        when(userDetailsService.loadUserByUsername(email))
+                .thenThrow(new org.springframework.security.core.userdetails.UsernameNotFoundException(
+                        "User not found with email or username: " + email));
+
+        // Must NOT throw: a deleted account turns into anonymous access (401/403
+        // downstream), never a 500 from the filter chain.
+        assertDoesNotThrow(() -> filter.doFilterInternal(request, response, filterChain));
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(filterChain).doFilter(request, response);
+    }
 }

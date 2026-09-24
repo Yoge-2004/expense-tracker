@@ -21,10 +21,17 @@ import java.util.Map;
  * REST controller providing endpoints to manually trigger two-way synchronisation
  * between the H2 database and the local JSON file snapshot (expenses_sync.json).
  *
- * <p>Access control: Local sync endpoints (file-to-db, db-to-file) are accessible
- * from loopback (localhost) without authentication (for cron/scripts), or from
- * any client that presents a valid X-Sync-Token header. Hugging Face endpoints
- * strictly require a valid X-Sync-Token header regardless of caller origin.</p>
+ * <p>Access control: Hugging Face endpoints and all remote callers strictly
+ * require a valid X-Sync-Token header. For local cron/scripts an unauthenticated
+ * loopback bypass exists but is <b>disabled by default</b> and, when explicitly
+ * enabled via {@code app.sync.loopback-bypass-enabled}, only applies to direct
+ * loopback connections with no proxy headers present.</p>
+ *
+ * <p>SECURITY: earlier revisions trusted {@code request.getRemoteAddr()} ==
+ * loopback unconditionally. Behind a reverse proxy (e.g. the production nginx
+ * fronting this service) every request arrives from 127.0.0.1, which silently
+ * disabled authentication for the entire sync surface. The bypass is therefore
+ * now opt-in AND refused whenever forwarding headers indicate a proxy hop.</p>
  *
  * @author Yogeshwaran
  * @version 1.0
@@ -40,12 +47,24 @@ public class SyncController {
     private final FileDbSyncService syncService;
     private final RateLimiterService rateLimiterService;
 
-    @Value("${SYNC_SECRET_KEY:}")
+    @Value("${app.sync.secret-key:}")
     private String syncSecretKey;
 
+    /** Opt-in loopback bypass for local cron/scripts. Never enable behind a proxy. */
+    @Value("${app.sync.loopback-bypass-enabled:false}")
+    private boolean loopbackBypassEnabled;
 
-    private boolean isLoopbackRequest(HttpServletRequest request) {
-        if (request == null) return false;
+
+    private boolean isUnproxiedLoopbackRequest(HttpServletRequest request) {
+        if (request == null || !loopbackBypassEnabled) return false;
+        // Forwarding headers mean a proxy hop (nginx, load balancer, tunnel):
+        // the socket address is the proxy's, not the caller's, so the loopback
+        // shortcut must not apply.
+        if (request.getHeader("X-Forwarded-For") != null
+                || request.getHeader("X-Real-IP") != null
+                || request.getHeader("Forwarded") != null) {
+            return false;
+        }
         String addr = request.getRemoteAddr();
         return "127.0.0.1".equals(addr) || "0:0:0:0:0:0:0:1".equals(addr) || "::1".equals(addr);
     }
@@ -67,7 +86,7 @@ public class SyncController {
                     .body(Map.of("status", "error", "message", "Too many sync requests. Please try again later."));
         }
 
-        if (isLoopbackRequest(request)) return null;
+        if (isUnproxiedLoopbackRequest(request)) return null;
         if (hasValidSyncToken(syncToken)) return null;
 
         log.warn("Unauthorized sync attempt from IP={}", clientIp);

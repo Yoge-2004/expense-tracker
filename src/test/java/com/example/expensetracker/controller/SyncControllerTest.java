@@ -181,4 +181,53 @@ class SyncControllerTest {
 
         verifyNoInteractions(syncService);
     }
+
+    // ── Loopback bypass hardening ─────────────────────────────────────────────
+
+    @Test
+    void loopbackWithoutTokenIsRejectedByDefault() throws Exception {
+        // Default deployments (including every reverse-proxied one, where all
+        // traffic arrives from 127.0.0.1) must require the sync token.
+        mockMvc.perform(post("/api/sync/file-to-db").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("error"));
+
+        verify(syncService, never()).syncFileToDb();
+    }
+
+    @Test
+    void loopbackBypassCanBeEnabledExplicitlyForLocalCron() throws Exception {
+        ReflectionTestUtils.setField(controller, "loopbackBypassEnabled", true);
+        when(syncService.syncFileToDb()).thenReturn(Map.of("status", "success"));
+
+        mockMvc.perform(post("/api/sync/file-to-db").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+
+        verify(syncService).syncFileToDb();
+    }
+
+    @Test
+    void loopbackBypassDoesNotApplyToProxiedRequests() throws Exception {
+        // Behind nginx every request is socket-level loopback WITH forwarding
+        // headers — exactly the shape that previously bypassed authentication.
+        ReflectionTestUtils.setField(controller, "loopbackBypassEnabled", true);
+
+        mockMvc.perform(post("/api/sync/file-to-db")
+                        .header("X-Forwarded-For", "203.0.113.9")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        }))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("error"));
+
+        verify(syncService, never()).syncFileToDb();
+    }
 }

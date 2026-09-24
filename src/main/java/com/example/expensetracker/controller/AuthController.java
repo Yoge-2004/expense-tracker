@@ -182,8 +182,10 @@ public class AuthController {
             @Valid @org.springframework.web.bind.annotation.RequestBody RegisterRequest request) {
         log.info("Registration request received for email={}, username={}",
                 LoggingUtils.maskEmail(request.email()), request.username());
-        boolean hasOtp = request.otp() != null && !request.otp().isBlank()
-                && !"BYPASS".equalsIgnoreCase(request.otp());
+        // SECURITY: the legacy "BYPASS" OTP backdoor constant is no longer special-cased.
+        // A submitted code is always verified like any other value (and rejected as
+        // invalid unless it matches a real, unconsumed OTP record).
+        boolean hasOtp = request.otp() != null && !request.otp().isBlank();
         if (emailVerificationEnabled || hasOtp) {
             passwordResetService.verifySignupOtp(request.email(), request.otp());
         }

@@ -57,14 +57,35 @@ public class DataInitializer {
     private final RecurringExpenseRepository recurringExpenseRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @SuppressWarnings("java:S6437")
-    @Value("${app.demo.password:Demo1234!}")
+    /**
+     * Demo data seeding is opt-in. Production deployments must never receive a
+     * predictable seeded account: earlier revisions shipped a hard-coded default
+     * password here (flagged and suppressed via {@code java:S6437}), which is a
+     * standing default-credential vulnerability on any deployed instance.
+     *
+     * <p>Enable with {@code APP_DEMO_SEED_ENABLED=true} and provide the demo
+     * account password via {@code APP_DEMO_PASSWORD}; both are required.</p>
+     */
+    @Value("${app.demo.seed-enabled:false}")
+    private boolean seedEnabled;
+
+    @Value("${app.demo.password:}")
     private String demoPassword;
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(10)
     @Transactional
     public void seedDemoData() {
+        if (!seedEnabled) {
+            log.info("Demo data seeding is disabled. Set APP_DEMO_SEED_ENABLED=true and "
+                    + "APP_DEMO_PASSWORD to seed a demo account.");
+            return;
+        }
+        if (demoPassword == null || demoPassword.isBlank()) {
+            log.warn("Demo data seeding skipped: APP_DEMO_PASSWORD is not configured. "
+                    + "Refusing to seed a demo account without an explicit password.");
+            return;
+        }
         String demoEmail = "demo@expensetracker.com";
         Optional<User> existing = userRepository.findByEmail(demoEmail);
 

@@ -43,6 +43,16 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
     private final DataSource dataSource;
     private final String fallbackDbPath;
 
+    /**
+     * Credentials for the local H2 failover store, resolved from Spring config
+     * (env {@code FALLBACK_DB_PASSWORD}). Kept as an overridable field rather
+     * than a constructor parameter so existing constructions of this service
+     * stay source-compatible; defaults to empty, matching H2's default trust
+     * model for a local file database.
+     */
+    @org.springframework.beans.factory.annotation.Value("${app.fallback-db.password:}")
+    private String fallbackDbPassword = "";
+
     public DatabaseSnapshotServiceImpl(
             DataSource dataSource,
             @Value("${app.fallback-db-path:${DATA_DIR:/data}/expensetracker_fallback}") String fallbackDbPath) {
@@ -94,7 +104,9 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         String h2Url = "jdbc:h2:file:" + path + ";MODE=PostgreSQL;AUTO_SERVER=TRUE";
         Properties props = new Properties();
         props.setProperty("user", "sa");
-        props.setProperty("password", System.getProperty("app.fallback-db.password", ""));
+        // Null-safe: outside the Spring context (plain unit tests) the field is
+        // only guaranteed by its initializer.
+        props.setProperty("password", fallbackDbPassword != null ? fallbackDbPassword : "");
         try (Connection source = DriverManager.getConnection("jdbc:sqlite:" + sqliteFile.toAbsolutePath());
              Connection target = DriverManager.getConnection(h2Url, props)) {
             target.setAutoCommit(false);

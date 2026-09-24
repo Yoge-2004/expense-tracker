@@ -16,7 +16,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
-import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
 @Slf4j
 @Configuration
@@ -81,8 +80,9 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers
                         .contentTypeOptions(Customizer.withDefaults())
-                        .xssProtection(xss -> xss.headerValue(
-                                XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        // NOTE: X-XSS-Protection is intentionally not sent. The header is
+                        // obsolete (ignored by modern browsers) and known to *introduce*
+                        // reflected-XSS issues in legacy engines when set to "1; mode=block".
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                         .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                         .referrerPolicy(referrer -> referrer.policy(

@@ -26,7 +26,6 @@ import java.util.List;
  * @version 1.0
  * @see Expense
  */
-@SuppressWarnings("unused")
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     /**
@@ -65,14 +64,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
      * @return {@code true} if at least one expense references this category
      */
     boolean existsByCategory_Id(Long categoryId);
-
-    /**
-     * Retrieves all expenses with category and user eagerly fetched.
-     *
-     * @return list of expenses with eagerly fetched relationships
-     */
-    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category LEFT JOIN FETCH e.user")
-    List<Expense> findAllWithCategoryAndUser();
 
     /**
      * Deletes all expenses owned by the specified user.
