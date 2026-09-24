@@ -69,10 +69,6 @@
             const renderedFromCache = !!cached;
 
             if (cached) {
-                setState({
-                    allExpenses: cached.expenses || [],
-                    allCategories: cached.categories || []
-                });
                 renderDashboardData(cached.expenses, cached.categories);
             } else {
                 showSkeletonLoading();
@@ -135,7 +131,7 @@
                 if (renderedFromCache) {
                     showToast("Couldn't reach the server — showing your last saved data.", "error");
                 } else {
-                    showToast("Couldn't load your data. Check your connection and try again.", "error");
+                    showToast("Couldn't connect to the server. Check your connection or server status.", "error");
                     renderDashboardData([], []);
                     // renderDashboardData/renderIncomes/renderSavingsGoals below all
                     // clear their own skeleton state on failure; updateCashFlowMetrics
@@ -144,6 +140,20 @@
                     // total load failure - a slow/cold-starting backend, not just a
                     // hard network error, hits this same path.
                     updateCashFlowMetrics([], [], []);
+                    const expenseListEl = document.getElementById("expenseList");
+                    if (expenseListEl) {
+                        expenseListEl.innerHTML = `
+                            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
+                                <div class="empty-state-icon" style="font-size:32px; margin-bottom:8px;">⚠️</div>
+                                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
+                                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
+                                    Could not reach the server to load your transactions.
+                                </div>
+                                <button type="button" class="btn-primary btn-sm" onclick="location.reload()" style="padding:8px 18px; font-size:13px; border-radius:8px;">
+                                    Retry Connection
+                                </button>
+                            </div>`;
+                    }
                 }
                 renderIncomes(Array.isArray(state.allIncomes) ? state.allIncomes : []);
                 renderSavingsGoals(Array.isArray(state.allSavingsGoals) ? state.allSavingsGoals : []);

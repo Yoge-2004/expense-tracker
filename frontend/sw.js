@@ -14,7 +14,9 @@ const ASSETS_TO_CACHE = [
     "/js/api.js",
     "/js/modules/dashboard-ml.js",
     "/js/modules/dashboard-notifications.js",
-    "/favicon.ico"
+    "/favicon.ico",
+    "/assets/icon-192.png",
+    "/assets/badge-72.png"
 ];
 
 // Install event - Pre-cache core shell
@@ -47,8 +49,8 @@ self.addEventListener("push", (event) => {
     let data = {
         title: "💸 Immediate Debit Alert",
         body: "A new debit transaction has occurred.",
-        icon: "/favicon.ico",
-        badge: "/favicon.ico",
+        icon: "/assets/icon-192.png",
+        badge: "/assets/badge-72.png",
         url: "/dashboard.html",
         data: {}
     };
@@ -64,8 +66,8 @@ self.addEventListener("push", (event) => {
 
     const options = {
         body: data.body,
-        icon: data.icon || "/favicon.ico",
-        badge: data.badge || "/favicon.ico",
+        icon: data.icon || "/assets/icon-192.png",
+        badge: data.badge || "/assets/badge-72.png",
         vibrate: [100, 50, 100],
         data: {
             url: data.url || "/dashboard.html",

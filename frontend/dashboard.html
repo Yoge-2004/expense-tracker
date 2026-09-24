@@ -309,9 +309,13 @@
                 </button>
             </div>
             <div id="budgetList" class="budget-grid-matrix">
-                <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
                     <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No budget limits configured</p>
-                    <span style="font-size:12.5px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
+                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Establish category spending ceilings to monitor outflows effectively.</span>
+                    <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addBudgetBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>Configure Budget</span>
+                    </button>
                 </div>
             </div>
         </section>
@@ -332,9 +336,13 @@
                 </button>
             </div>
             <div id="savingsGoalsList" class="savings-grid-matrix" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
-                <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02);">
+                <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
                     <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No savings goals configured yet</p>
-                    <span style="font-size:12.5px;">Click <strong>+ New Goal</strong> to set targets for emergency reserves, investments, or travel.</span>
+                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Set targets for emergency reserves, investments, or travel milestones.</span>
+                    <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addGoalBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>Create Savings Goal</span>
+                    </button>
                 </div>
             </div>
         </section>
@@ -533,7 +541,9 @@
                         <span id="colExpenseCount" style="font-size:11.5px; font-weight:700; color:var(--primary);"></span>
                     </div>
                     <div class="scroll-area" id="expenseList">
-                        <p style="text-align:center; color:var(--text-muted); margin-top:20px;">Loading expenses...</p>
+                        <div class="skeleton skeleton-row"></div>
+                        <div class="skeleton skeleton-row"></div>
+                        <div class="skeleton skeleton-row"></div>
                     </div>
                 </div>
 

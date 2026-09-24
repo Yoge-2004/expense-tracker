@@ -29,8 +29,19 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
         showToast(error.message, "error");
         const emailEl = document.getElementById("email");
         const passEl = document.getElementById("password");
-        if (emailEl) emailEl.classList.add("is-invalid");
-        if (passEl) passEl.classList.add("is-invalid");
+
+        const isAuthCredentialError = (error?.status === 401 || error?.status === 400)
+            && !error?.isNetworkError
+            && !/unable to connect|offline|disconnect|network|server/i.test(error?.message || "");
+
+        if (isAuthCredentialError) {
+            if (emailEl) emailEl.classList.add("is-invalid");
+            if (passEl) passEl.classList.add("is-invalid");
+        } else {
+            if (emailEl) emailEl.classList.remove("is-invalid");
+            if (passEl) passEl.classList.remove("is-invalid");
+        }
+    } finally {
         if (submitBtn) submitBtn.disabled = false;
     }
 });

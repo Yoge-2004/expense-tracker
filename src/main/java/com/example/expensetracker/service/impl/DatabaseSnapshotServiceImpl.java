@@ -187,9 +187,15 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         String placeholders = String.join(",", Collections.nCopies(columns.size(), "?"));
         int rows = 0;
         String sql = /* language=none */ "INSERT INTO " + q(table) + " (" + names + ") VALUES (" + placeholders + ")";
+        List<String> pks = columns.stream()
+                .filter(c -> c.pk)
+                .map(c -> q(c.name))
+                .toList();
+        String orderClause = pks.isEmpty() ? "" : (" ORDER BY " + String.join(", ", pks));
+        String selectSql = /* language=none */ "SELECT * FROM " + q(table) + orderClause;
         try (PreparedStatement p = target.prepareStatement(sql);
              Statement s = source.createStatement();
-             ResultSet rs = s.executeQuery(/* language=none */ "SELECT * FROM " + q(table))) {
+             ResultSet rs = s.executeQuery(selectSql)) {
             int batchCount = 0;
             while (rs.next()) {
                 for (int i = 0; i < columns.size(); i++) {
@@ -254,6 +260,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
                 }
             }
         }
+        tables.sort(String.CASE_INSENSITIVE_ORDER);
         return tables;
     }
 

@@ -13,11 +13,14 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -45,6 +48,8 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     private String encryptionKey;
 
     private final DatabaseSnapshotService snapshotService;
+    private volatile boolean writePermissionWarned = false;
+    private volatile String lastPushedChecksum = null;
 
     @Override
     @EventListener(ApplicationReadyEvent.class)
@@ -53,6 +58,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             log.warn("HF database failover is disabled until HF_TOKEN and DB_BACKUP_KEY are configured.");
             return;
         }
+        log.info("HF failover token scope check: {}", HuggingFaceFileClient.inspectToken(token));
         try {
             Path encrypted = createSecureTempFile(".enc");
             Path sqlite = createSecureTempFile(".sqlite");
@@ -60,7 +66,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 if (HuggingFaceFileClient.download(space, path, encrypted, token)) {
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
                     int rows = snapshotService.importIntoFallback(sqlite);
-                    log.info("HF encrypted DB snapshot loaded into local failover store: {} rows.", rows);
+                    lastPushedChecksum = computeSha256(sqlite);
+                    log.info("HF encrypted DB snapshot loaded into local failover store: {} rows (SHA-256: {}).",
+                            rows, lastPushedChecksum);
                 } else {
                     log.info("No HF database snapshot exists yet; emergency datastore will start empty.");
                 }
@@ -93,9 +101,18 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             Path encrypted = createSecureTempFile(".enc");
             try {
                 snapshotService.exportCurrentDatabase(sqlite);
+                String currentChecksum = computeSha256(sqlite);
+                if (currentChecksum.equals(lastPushedChecksum)) {
+                    log.info("Database snapshot unchanged (SHA-256: {}); skipping redundant Hugging Face backup.",
+                            currentChecksum);
+                    return true;
+                }
                 DatabaseSnapshotService.encrypt(sqlite, encrypted, encryptionKey);
                 HuggingFaceFileClient.upload(space, path, encrypted, token);
-                log.info("Encrypted production database snapshot pushed to HF Space repository.");
+                lastPushedChecksum = currentChecksum;
+                writePermissionWarned = false;
+                log.info("Encrypted production database snapshot pushed to HF Space repository (SHA-256: {}).",
+                        currentChecksum);
                 return true;
             } finally {
                 Files.deleteIfExists(sqlite);
@@ -105,10 +122,41 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             Thread.currentThread().interrupt();
             log.error("HF database backup interrupted", ie);
             return false;
+        } catch (IllegalStateException ise) {
+            if (ise.getMessage() != null && ise.getMessage().contains("HTTP 403")) {
+                if (!writePermissionWarned) {
+                    writePermissionWarned = true;
+                    String tokenStatus = HuggingFaceFileClient.inspectToken(token);
+                    log.warn("HF database failover backup skipped (HTTP 403): HF_TOKEN lacks repository write "
+                            + "permissions to {}. Token diagnosis: [{}]. "
+                            + "Generate an Access Token with 'Write' role at https://huggingface.co/settings/tokens.",
+                            space, tokenStatus);
+                }
+                return false;
+            }
+            log.error("HF encrypted database backup failed", ise);
+            return false;
         } catch (Exception e) {
             log.error("HF encrypted database backup failed", e);
             return false;
         }
+    }
+
+    private static String computeSha256(Path file) throws IOException, NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (InputStream in = Files.newInputStream(file)) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+        }
+        byte[] hash = digest.digest();
+        StringBuilder sb = new StringBuilder(hash.length * 2);
+        for (byte b : hash) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 
     @SuppressWarnings({"java:S5443", "java:S899"})
@@ -123,26 +171,33 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                                 PosixFilePermission.OWNER_EXECUTE)
                 );
                 Files.createDirectories(tempDir, dirAttr);
-            } catch (UnsupportedOperationException ignored) {
+            } catch (UnsupportedOperationException e) {
                 Files.createDirectories(tempDir);
+                File dirFile = tempDir.toFile();
+                dirFile.setReadable(true, true);
+                dirFile.setWritable(true, true);
+                dirFile.setExecutable(true, true);
             }
         }
+
         try {
             FileAttribute<Set<PosixFilePermission>> fileAttr = PosixFilePermissions.asFileAttribute(
                     EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)
             );
             return Files.createTempFile(tempDir, prefix, suffix, fileAttr);
-        } catch (UnsupportedOperationException ignored) {
-            Path temp = Files.createTempFile(tempDir, prefix, suffix);
-            File file = temp.toFile();
-            if (!file.setReadable(true, true) || !file.setWritable(true, true)) {
-                log.debug("Notice: Operating system does not support full POSIX permission restriction on {}", temp);
-            }
-            return temp;
+        } catch (UnsupportedOperationException e) {
+            Path file = Files.createTempFile(tempDir, prefix, suffix);
+            File f = file.toFile();
+            f.setReadable(true, true);
+            f.setWritable(true, true);
+            f.setExecutable(false, false);
+            return file;
         }
     }
 
     private boolean isNotConfigured() {
-        return token == null || token.isBlank() || encryptionKey == null || encryptionKey.isBlank();
+        return token == null || token.isBlank()
+                || encryptionKey == null || encryptionKey.isBlank()
+                || space == null || space.isBlank();
     }
 }

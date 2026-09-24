@@ -169,8 +169,8 @@
                 if (swRegistration && "showNotification" in swRegistration) {
                     await swRegistration.showNotification(title, {
                         body,
-                        icon: "/favicon.ico",
-                        badge: "/favicon.ico",
+                        icon: "/assets/icon-192.png",
+                        badge: "/assets/badge-72.png",
                         vibrate: [150, 50, 150],
                         data: {
                             url: "/dashboard.html",
@@ -183,7 +183,8 @@
                 } else {
                     const notif = new Notification(title, {
                         body,
-                        icon: "/favicon.ico"
+                        icon: "/assets/icon-192.png",
+                        badge: "/assets/badge-72.png"
                     });
                     notif.onclick = () => {
                         window.focus();

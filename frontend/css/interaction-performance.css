@@ -8,9 +8,12 @@
    being set on <html> but nothing in CSS consumed it, so the guard was a
    no-op. Deliberately excludes .grid-4-metrics > .metric-card, which owns
    its own fixed-count (4) intentional cross-fade in theme-card-transitions.css. */
-html.theme-switching .expense-item,
-html.theme-switching .budget-item {
-    transition-duration: 0s !important;
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+    animation: none !important;
 }
 
 /* Theme transitions are owned by the active data-theme/CSS system. */

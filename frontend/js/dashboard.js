@@ -2301,9 +2301,13 @@ function renderSavingsGoals(goals) {
     if (!container) return;
     if (!allSavingsGoals || allSavingsGoals.length === 0) {
         container.innerHTML = `
-            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02);">
+            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
                 <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No savings goals configured yet</p>
-                <span style="font-size:12.5px;">Click <strong>+ New Goal</strong> to set targets for emergency reserves, investments, or travel.</span>
+                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Set targets for emergency reserves, investments, or travel milestones.</span>
+                <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addGoalBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Create Savings Goal</span>
+                </button>
             </div>`;
         return;
     }

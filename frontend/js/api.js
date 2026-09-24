@@ -212,15 +212,29 @@ if (typeof document !== "undefined") {
     setInterval(checkHealth, HEALTH_CHECK_INTERVAL_MS);
 }
 
-async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
+async function apiRequest(endpoint, options = {}) {
+    const method = (options.method || "GET").toUpperCase();
+    const showRequestLoading = options.showLoading === true || method !== "GET";
+
+    if (showRequestLoading) {
+        activeRequests += 1;
+        setLoading(true, "Connecting to server...");
+    }
+
+    try {
+        return await executeApiRequest(endpoint, options, 2);
+    } finally {
+        if (showRequestLoading) {
+            activeRequests = Math.max(0, activeRequests - 1);
+            if (activeRequests === 0) setLoading(false);
+        }
+    }
+}
+
+async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     const method = (options.method || "GET").toUpperCase();
     const skipCache = options.skipCache === true || options.cache === "no-store";
 
-    // FIXED: previously any non-GET request (or a GET with skipCache) wiped the ENTIRE apiCache.
-    // That meant writing one expense invalidated the categories, savings goals, and incomes caches
-    // too — defeating the 15s TTL and forcing refetches of unrelated data. Now we only invalidate
-    // cache entries whose key shares the same top-level resource stem as the mutating endpoint.
-    // A skipCache GET no longer clears anything either (it just bypasses the cache read for itself).
     if (method !== "GET") {
         invalidateCacheForEndpoint(endpoint);
     }
@@ -237,15 +251,7 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         ...options.headers
     };
 
-    // Background GETs must not flash the global loading veil. The dashboard
-    // performs several parallel reads, and showing the global loader for every
-    // one made the page appear to randomly refresh/flicker during normal use.
-    // Mutations still show the loader, and callers can opt a GET in with showLoading: true.
     const showRequestLoading = options.showLoading === true || method !== "GET";
-    if (showRequestLoading) {
-        activeRequests += 1;
-        setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
-    }
     let response;
     let fetchSignal = options.signal;
     let timeoutTimer = null;
@@ -267,27 +273,35 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         if (timeoutTimer) clearTimeout(timeoutTimer);
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
-            await new Promise(r => setTimeout(r, 2500));
-            return apiRequest(endpoint, options, retriesLeft - 1);
+            if (showRequestLoading) {
+                setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            return executeApiRequest(endpoint, options, retriesLeft - 1);
         }
-        updateServerStatus(false, "Connecting...");
-        throw new Error("Unable to connect to the server. Please check your connection and try again.");
+        updateServerStatus(false, "Offline / Server Disconnected");
+        const netErr = new Error("Unable to connect to the server. Please check your connection and try again.");
+        netErr.isNetworkError = true;
+        netErr.status = 0;
+        throw netErr;
     } finally {
         if (timeoutTimer) clearTimeout(timeoutTimer);
-        if (showRequestLoading) {
-            activeRequests -= 1;
-            if (activeRequests === 0) setLoading(false);
-        }
     }
 
     if (response.status === 503) {
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
-            await new Promise(r => setTimeout(r, 2500));
-            return apiRequest(endpoint, options, retriesLeft - 1);
+            if (showRequestLoading) {
+                setLoading(true, "Server is initializing, waiting a moment...");
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            return executeApiRequest(endpoint, options, retriesLeft - 1);
         }
-        updateServerStatus(false, "Connecting...");
-        throw new Error("The server is currently connecting. Please try again in a few moments.");
+        updateServerStatus(false, "Offline / Server Disconnected");
+        const servErr = new Error("The server is temporarily unavailable. Please try again in a few moments.");
+        servErr.isNetworkError = true;
+        servErr.status = 503;
+        throw servErr;
     }
 
     updateServerStatus(true, "Connected");
@@ -344,7 +358,10 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
             };
             msg = statusMessages[response.status] || `Request failed (${response.status}).`;
         }
-        throw new Error(msg);
+        const err = new Error(msg);
+        err.status = response.status;
+        err.isNetworkError = (response.status >= 502 && response.status <= 504);
+        throw err;
     }
 
     let data = null;
@@ -402,6 +419,16 @@ function updateAllThemeIcons(theme) {
 }
 
 function toggleGlobalTheme() {
+    if (typeof beginThemeSwitch === "function") {
+        beginThemeSwitch();
+    } else {
+        document.documentElement.classList.add("theme-switching");
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document.documentElement.classList.remove("theme-switching");
+            });
+        });
+    }
     const currentTheme = (document.documentElement.getAttribute("data-theme") || "dark") === "light" ? "light" : "dark";
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", nextTheme);

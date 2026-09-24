@@ -26,6 +26,10 @@
         });
     }
 
+    if (typeof window !== "undefined") {
+        window.beginThemeSwitch = beginThemeSwitch;
+    }
+
     if (typeof document !== "undefined") {
         // Capture phase runs before the existing theme button listener in api.js.
         document.addEventListener("click", (event) => {

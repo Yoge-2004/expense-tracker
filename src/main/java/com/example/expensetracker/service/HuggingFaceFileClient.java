@@ -55,8 +55,49 @@ public final class HuggingFaceFileClient {
                 .build();
         HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            String responseBody = response.body();
+            if (response.statusCode() == 403) {
+                throw new IllegalStateException("Hugging Face upload rejected (HTTP 403): The configured HF_TOKEN "
+                        + "lacks direct write permission to commit to " + repo
+                        + ". Configure a User Access Token with 'Write' role in Space Secrets.");
+            }
             throw new IllegalStateException("Hugging Face upload failed (HTTP "
-                    + response.statusCode() + "): " + response.body());
+                    + response.statusCode() + "): " + responseBody);
+        }
+    }
+
+    /**
+     * Inspects token validity and permissions with the Hugging Face whoami API.
+     */
+    public static String inspectToken(String token) {
+        if (token == null || token.isBlank()) {
+            return "HF_TOKEN is missing or blank.";
+        }
+        try {
+            HttpRequest request = HttpRequest.newBuilder(URI.create("https://huggingface.co/api/whoami-v2"))
+                    .timeout(CONNECT_TIMEOUT)
+                    .header("Authorization", "Bearer " + token)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 401) {
+                return "HF_TOKEN is INVALID or EXPIRED (HTTP 401).";
+            }
+            if (response.statusCode() == 200) {
+                String body = response.body();
+                boolean isWrite = body.contains("\"role\":\"write\"") || body.contains("repo.content.write");
+                boolean isRead = body.contains("\"role\":\"read\"");
+                if (isWrite) {
+                    return "HF_TOKEN is VALID with WRITE scope.";
+                } else if (isRead) {
+                    return "HF_TOKEN has READ-ONLY scope. Direct write/backup requires a token with 'Write' role.";
+                } else {
+                    return "HF_TOKEN is valid (response: " + body + ")";
+                }
+            }
+            return "Hugging Face whoami returned HTTP " + response.statusCode();
+        } catch (Exception e) {
+            return "Failed to verify HF_TOKEN with Hugging Face API: " + e.getMessage();
         }
     }
 

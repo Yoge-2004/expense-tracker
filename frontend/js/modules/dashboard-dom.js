@@ -86,7 +86,28 @@
     // Budget list skeleton
     if (elements.budgetList) {
         elements.budgetList.innerHTML = Array.from({ length: 3 }, () =>
-            `<div class="skeleton skeleton-row" style="height:80px; margin-bottom:12px;"></div>`
+            `<div class="skeleton skeleton-card"></div>`
+        ).join('');
+    }
+    // Income table skeleton
+    const incomeTbody = document.querySelector("#incomeList tbody") || document.getElementById("incomeList");
+    if (incomeTbody) {
+        incomeTbody.innerHTML = Array.from({ length: 4 }, () =>
+            `<tr><td colspan="5" style="padding:10px 16px;"><div class="skeleton skeleton-row-sm" style="margin:0;"></div></td></tr>`
+        ).join('');
+    }
+    // Savings goals skeleton
+    const savingsList = document.getElementById("savingsGoalsList") || document.getElementById("savingsGoalList");
+    if (savingsList) {
+        savingsList.innerHTML = Array.from({ length: 2 }, () =>
+            `<div class="skeleton skeleton-card"></div>`
+        ).join('');
+    }
+    // Financial insights skeleton
+    const insightsGrid = document.getElementById("insightsCardsGrid");
+    if (insightsGrid && !insightsGrid.children.length) {
+        insightsGrid.innerHTML = Array.from({ length: 3 }, () =>
+            `<div class="skeleton skeleton-card" style="min-height:110px;"></div>`
         ).join('');
     }
 }
