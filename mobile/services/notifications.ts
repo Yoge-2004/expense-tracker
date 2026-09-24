@@ -172,3 +172,75 @@ export async function getDailyRemindersEnabled(): Promise<boolean> {
     return true;
   }
 }
+
+import { parseFinancialMessage, ParsedTransaction } from "./debitParser";
+
+const DEBIT_CHANNEL_ID = "debit-alerts";
+
+/**
+ * Triggers an immediate local push notification for a detected debit / financial transaction.
+ * Notifies the user then and there when a debit message or transaction is received.
+ */
+export async function notifyInstantDebit(transaction: ParsedTransaction): Promise<boolean> {
+  if (isExpoGo || !Notifications) {
+    return false;
+  }
+
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return false;
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync(DEBIT_CHANNEL_ID, {
+        name: "Instant Debit & Transaction Alerts",
+        description: "Real-time alerts when debit/payment transactions occur.",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 200, 100, 200],
+        lightColor: "#E05D5D",
+        enableVibrate: true,
+        showBadge: true,
+      }).catch(() => {});
+    }
+
+    const title = transaction.direction === "DEBIT"
+      ? `💸 Debit Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`
+      : `💰 Transaction Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`;
+
+    const merchantStr = transaction.merchant ? ` at ${transaction.merchant}` : "";
+    const accStr = transaction.accountTail ? ` (Card/A/c xx${transaction.accountTail})` : "";
+    const body = `Spent ${transaction.currency} ${transaction.amount?.toFixed(2)}${merchantStr}${accStr}. Tap to categorize or review now.`;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+        data: {
+          screen: "/(tabs)/add-expense",
+          amount: transaction.amount,
+          merchant: transaction.merchant,
+          direction: transaction.direction
+        },
+        ...(Platform.OS === "android" ? { channelId: DEBIT_CHANNEL_ID } : {}),
+      },
+      trigger: null, // null trigger schedules it immediately!
+    });
+
+    return true;
+  } catch (error) {
+    console.warn("[Notifications] Failed to trigger instant debit notification:", error);
+    return false;
+  }
+}
+
+/**
+ * Ingests raw SMS or push notification text and immediately dispatches a notification if it is a debit.
+ */
+export async function processIncomingMessageForDebitNotification(rawText: string): Promise<ParsedTransaction | null> {
+  const parsed = parseFinancialMessage(rawText);
+  if (parsed.isFinancial && parsed.direction === "DEBIT") {
+    await notifyInstantDebit(parsed);
+    return parsed;
+  }
+  return null;
+}
