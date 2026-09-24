@@ -310,12 +310,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = async (): Promise<void> => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    // Immediately update local React state synchronously
     setTheme(nextTheme);
-    try {
-      await SecureStore.setItemAsync('app_theme', nextTheme);
-    } catch (e) {
+    // Persist asynchronously in background without delaying UI reaction
+    SecureStore.setItemAsync('app_theme', nextTheme).catch((e) => {
       console.warn('[AuthContext] Failed to persist theme preference:', e);
-    }
+    });
   };
 
   const updateUserName = async (newName: string): Promise<void> => {

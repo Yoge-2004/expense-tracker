@@ -128,7 +128,7 @@ function RootLayoutNav() {
           headerShown: false,
           contentStyle: { backgroundColor: Colors[theme].bg },
           animation: 'fade_from_bottom',
-          animationDuration: 250,
+          animationDuration: 180,
         }}
       >
         <Stack.Screen name="login" options={{ animation: 'fade' }} />
