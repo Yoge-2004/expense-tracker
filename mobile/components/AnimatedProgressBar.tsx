@@ -42,9 +42,9 @@ export const AnimatedProgressBar: React.FC<AnimatedProgressBarProps> = ({
 
   const getDynamicColor = () => {
     if (fillColor) return fillColor;
-    if (clampedProgress >= 100) return '#A23E32';
-    if (clampedProgress >= 80) return '#C9932E';
-    return '#5B8C5A';
+    if (clampedProgress >= 100) return '#EF4444'; // radiant crimson
+    if (clampedProgress >= 80) return '#F59E0B';  // luminous amber
+    return '#10B981';                         // emerald glow
   };
 
   const widthInterpolated = animatedWidth.interpolate({
