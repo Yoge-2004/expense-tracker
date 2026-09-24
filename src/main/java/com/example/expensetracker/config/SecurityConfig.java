@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/*.html",
+                                "/sw.js",
                                 "/frontend/**",
                                 "/css/**",
                                 "/js/**",

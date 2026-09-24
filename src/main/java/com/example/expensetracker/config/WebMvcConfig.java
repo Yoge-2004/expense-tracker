@@ -100,6 +100,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:frontend/favicon.ico", "classpath:/frontend/favicon.ico")
                 .setCacheControl(staticCache);
 
+        // Service Worker script handlers for root and frontend subpaths
+        registry.addResourceHandler("/sw.js")
+                .addResourceLocations("file:frontend/sw.js", "classpath:/frontend/sw.js")
+                .setCacheControl(CacheControl.noCache().mustRevalidate());
+
+        registry.addResourceHandler("/frontend/sw.js")
+                .addResourceLocations("file:frontend/sw.js", "classpath:/frontend/sw.js")
+                .setCacheControl(CacheControl.noCache().mustRevalidate());
+
         // Shorter cache for HTML pages themselves — allow revalidation
         CacheControl htmlCache = CacheControl
                 .maxAge(300, TimeUnit.SECONDS)

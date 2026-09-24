@@ -15,8 +15,8 @@
     const AMOUNT_REGEX = /(?:(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£))/i;
     const FALLBACK_AMOUNT_REGEX = /\b(?:amount|amt|for|of)\s*(?:is|:)?\s*(?:Rs\.?|INR|₹|\$)?\s*([\d,]+(?:\.\d{1,2})?)\b/i;
     const MERCHANT_PATTERNS = [
-        /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9\s&\x27.-]{2,30}?)(?:\s+(?:on|using|via|ref|bal|avbl|avl|dated|through|card|ac|ending|\.|\,)|$)/i,
-        /(?:paid to|transferred to)\s+([A-Za-z0-9\s&\x27.-]{2,30}?)(?:\s+(?:on|via|ref|bal|\.|\,)|$)/i,
+        /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9\s&\'.-]{2,30}?)(?:\s+(?:on|using|via|ref|bal|avbl|avl|dated|through|card|ac|ending|\.|\,)|$)/i,
+        /(?:paid to|transferred to)\s+([A-Za-z0-9\s&\'.-]{2,30}?)(?:\s+(?:on|via|ref|bal|\.|\,)|$)/i,
         /(?:vpa\s+)([a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+)/i
     ];
     const ACCOUNT_PATTERNS = [
@@ -99,19 +99,45 @@
 
     async function registerServiceWorker() {
         if (!("serviceWorker" in navigator)) return null;
+        if (window.location.protocol === "file:") return null;
+        if (swRegistration) return swRegistration;
+
+        // Try existing registration first
         try {
-            const reg = await navigator.serviceWorker.register("/sw.js");
-            swRegistration = reg;
-            navigator.serviceWorker.addEventListener("message", (event) => {
-                if (event.data && event.data.type === "DEBIT_NOTIFICATION_CLICKED") {
-                    handleNotificationAction(event.data.data);
+            const existing = await navigator.serviceWorker.getRegistration();
+            if (existing && existing.active) {
+                swRegistration = existing;
+                return existing;
+            }
+        } catch (_) {}
+
+        // Resolve candidates based on whether we are loaded in a /frontend/ subpath or at root
+        const isFrontendSubdir = window.location.pathname.includes("/frontend/");
+        const candidatePaths = isFrontendSubdir
+            ? ["sw.js", "/frontend/sw.js", "/sw.js"]
+            : ["/sw.js", "sw.js"];
+
+        for (const candidate of candidatePaths) {
+            try {
+                // Verify script availability before register() to prevent browser console 404
+                const headCheck = await fetch(candidate, { method: "HEAD", cache: "no-store" }).catch(() => null);
+                if (headCheck && headCheck.status === 404) {
+                    continue;
                 }
-            });
-            return reg;
-        } catch (e) {
-            console.warn("[DashboardNotifications] ServiceWorker registration failed:", e);
-            return null;
+
+                const reg = await navigator.serviceWorker.register(candidate);
+                swRegistration = reg;
+                navigator.serviceWorker.addEventListener("message", (event) => {
+                    if (event.data && event.data.type === "DEBIT_NOTIFICATION_CLICKED") {
+                        handleNotificationAction(event.data.data);
+                    }
+                });
+                return reg;
+            } catch (e) {
+                // Proceed to next candidate path
+            }
         }
+        return null;
     }
 
     async function requestNotificationPermission() {
