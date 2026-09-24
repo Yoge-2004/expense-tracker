@@ -77,6 +77,10 @@
         if (subsTotal) subsTotal.textContent = `${formatCurrency(monthlyTotal)} / mo`;
     } catch (err) {
         console.error("Subs fetch error", err);
+        const subsBadge = document.getElementById("subsCountBadge");
+        if (subsBadge) subsBadge.textContent = "0 Active";
+        const subsTotal = document.getElementById("subsMonthlyTotal");
+        if (subsTotal) subsTotal.textContent = `${formatCurrency(0)} / mo`;
     }
 }
 

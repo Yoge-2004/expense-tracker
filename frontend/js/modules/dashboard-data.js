@@ -169,6 +169,10 @@
                     showToast("Couldn't connect to the server. Check your connection or server status.", "error");
                     renderDashboardData([], []);
                     updateCashFlowMetrics([], [], []);
+                    const subsBadge = document.getElementById("subsCountBadge");
+                    if (subsBadge) subsBadge.textContent = "0 Active";
+                    const subsTotal = document.getElementById("subsMonthlyTotal");
+                    if (subsTotal) subsTotal.textContent = `${(window.DashboardUtils?.formatCurrency || formatCurrency)(0)} / mo`;
                     const expenseListEl = document.getElementById("expenseList");
                     if (expenseListEl) {
                         expenseListEl.innerHTML = `

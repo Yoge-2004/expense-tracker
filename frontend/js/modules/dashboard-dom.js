@@ -89,17 +89,17 @@
             `<div class="skeleton skeleton-card"></div>`
         ).join('');
     }
-    // Income table skeleton
-    const incomeTbody = document.querySelector("#incomeList tbody") || document.getElementById("incomeList");
-    if (incomeTbody) {
-        incomeTbody.innerHTML = Array.from({ length: 4 }, () =>
-            `<tr><td colspan="5" style="padding:10px 16px;"><div class="skeleton skeleton-row-sm" style="margin:0;"></div></td></tr>`
+    // Income list skeleton (identical to expense list skeleton)
+    const incomeListEl = document.getElementById("incomeList");
+    if (incomeListEl) {
+        incomeListEl.innerHTML = Array.from({ length: 5 }, () =>
+            `<div class="skeleton skeleton-row"></div>`
         ).join('');
     }
-    // Savings goals skeleton
+    // Savings goals skeleton (3 cards)
     const savingsList = document.getElementById("savingsGoalsList") || document.getElementById("savingsGoalList");
     if (savingsList) {
-        savingsList.innerHTML = Array.from({ length: 2 }, () =>
+        savingsList.innerHTML = Array.from({ length: 3 }, () =>
             `<div class="skeleton skeleton-card"></div>`
         ).join('');
     }

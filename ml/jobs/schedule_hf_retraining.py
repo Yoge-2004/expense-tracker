@@ -30,12 +30,13 @@ def create_or_replace_schedule() -> object:
         SCRIPT_URL,
         schedule=schedule,
         name=name,
-        flavor=os.getenv("EXPENSE_ML_JOB_FLAVOR", "a10g-large"),
-        timeout=os.getenv("EXPENSE_ML_JOB_TIMEOUT", "8h"),
+        flavor=os.getenv("EXPENSE_ML_JOB_FLAVOR", "cpu-basic"),
+        timeout=os.getenv("EXPENSE_ML_JOB_TIMEOUT", "30m"),
         concurrency=False,
         env={
             "EXPENSE_ML_REPO_REF": "main",
             "EXPENSE_ML_SCHEDULED": "1",
+            "EXPENSE_ML_NO_TRANSFORMER": "1",
             "HF_MODEL_REPO": os.getenv(
                 "HF_MODEL_REPO", "Yoge-2004/expense-intelligence-model"
             ),

@@ -4,10 +4,10 @@
 #
 # [tool.hf-jobs]
 # name = "expense-tracker-ml-retrain"
-# flavor = "a10g-large"
-# timeout = "8h"
+# flavor = "cpu-basic"
+# timeout = "30m"
 # secrets = ["HF_TOKEN", "EXPENSE_ML_FEEDBACK_TOKEN"]
-# env = { EXPENSE_ML_SCHEDULED = "1", HF_MODEL_REPO = "Yoge-2004/expense-intelligence-model", HF_SPACE_REPO = "Yoge-2004/expense-tracker-backend", HF_SPACE_URL = "https://yoge-2004-expense-tracker-backend.hf.space", EXPENSE_ML_FEEDBACK_URL = "https://yoge-2004-expense-tracker-backend.hf.space" }
+# env = { EXPENSE_ML_SCHEDULED = "1", EXPENSE_ML_NO_TRANSFORMER = "1", HF_MODEL_REPO = "Yoge-2004/expense-intelligence-model", HF_SPACE_REPO = "Yoge-2004/expense-tracker-backend", HF_SPACE_URL = "https://yoge-2004-expense-tracker-backend.hf.space", EXPENSE_ML_FEEDBACK_URL = "https://yoge-2004-expense-tracker-backend.hf.space" }
 # ///
 
 """Stable Hugging Face Job wrapper that always trains the current repository revision."""
@@ -44,6 +44,7 @@ def main() -> None:
             raise RuntimeError("Downloaded repository does not contain ml/pyproject.toml")
 
         env = os.environ.copy()
+        env["EXPENSE_ML_NO_TRANSFORMER"] = "1"
         env["EXPENSE_ML_CONFIG"] = str(ml / "config" / "datasets.yaml")
         env["EXPENSE_ML_PREPARED"] = str(Path("/data") / "expense-ml-data" / "transactions.parquet")
         env["EXPENSE_ML_OUTPUT"] = str(Path("/data") / "expense-ml-runs")

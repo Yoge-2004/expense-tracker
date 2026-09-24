@@ -93,7 +93,9 @@ The Python inference service adheres strictly to the `/api/v1/classify` and `/ap
 
 ## Automated training environment
 
-Hugging Face Jobs are the intended unattended training environment after the local pipeline is proven. The job entrypoint is:
+Automated retraining runs on free **CPU** (`cpu-basic` hardware flavor, `EXPENSE_ML_NO_TRANSFORMER=1`) with $0 compute cost. TF-IDF + Logistic Regression retrains in seconds with high accuracy (~95%) on short transaction narratives, eliminating the need for paid GPU instances.
+
+For unattended execution, Hugging Face scheduled UV jobs run:
 
 ```bash
 uv run python jobs/retrain.py

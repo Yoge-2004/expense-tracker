@@ -121,5 +121,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "classpath:/frontend/"
                 )
                 .setCacheControl(htmlCache);
+
+        registry.addResourceHandler("/error/**")
+                .addResourceLocations(
+                        "classpath:/static/error/",
+                        "file:frontend/"
+                )
+                .setCacheControl(htmlCache);
+
+        registry.addResourceHandler("/manifest.json", "/robots.txt", "/sitemap.xml")
+                .addResourceLocations(
+                        "file:frontend/",
+                        "classpath:/frontend/",
+                        "classpath:/static/"
+                )
+                .setCacheControl(htmlCache);
     }
 }

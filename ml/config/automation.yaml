@@ -9,6 +9,8 @@ automation:
   private_model_repository: true
   serving_space: "Yoge-2004/expense-tracker-backend"
   serving_space_url: "https://yoge-2004-expense-tracker-backend.hf.space"
+  hardware_flavor: "cpu-basic"
+  no_transformer: true
 
 secrets:
   feedback_token_env: EXPENSE_ML_FEEDBACK_TOKEN
