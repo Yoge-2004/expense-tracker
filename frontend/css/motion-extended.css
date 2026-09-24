@@ -11,6 +11,5 @@
 @import url("motion-extended/mobile-action-controls.css");
 @import url("motion-extended/record-actions.css");
 
-/* Theme motion must come last so it can compose with and override the
-   generic pointer/tilt transform transition without JavaScript. */
-@import url("theme-card-transitions.css");
+/* Theme-specific card motion was removed from the critical theme-switch path.
+   Pointer/interaction motion remains owned by the existing motion modules. */

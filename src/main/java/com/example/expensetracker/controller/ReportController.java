@@ -1,9 +1,8 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.MonthlyReportDto;
-import com.example.expensetracker.service.ExportService;
+import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.MonthlyReportService;
-import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -12,12 +11,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -25,38 +30,26 @@ import java.util.Map;
 
 @Tag(
     name = "Reports",
-    description = "Monthly financial summaries and complete financial exports. All endpoints require Bearer JWT authentication."
+    description = "Monthly financial summaries and complete financial exports. All endpoints require Bearer JWT."
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/reports")
 public class ReportController {
 
-    private static final Logger log = LoggerFactory.getLogger(ReportController.class);
-
     private final MonthlyReportService monthlyReportService;
-    private final ExportService exportService;
-    private final UserService userService;
-    private final com.example.expensetracker.security.UserSecurity userSecurity;
+    private final UserSecurity userSecurity;
     private final RangeReportController rangeReportController;
 
-    public ReportController(MonthlyReportService monthlyReportService,
-                            ExportService exportService,
-                            UserService userService,
-                            com.example.expensetracker.security.UserSecurity userSecurity,
-                            RangeReportController rangeReportController) {
-        this.monthlyReportService = monthlyReportService;
-        this.exportService = exportService;
-        this.userService = userService;
-        this.userSecurity = userSecurity;
-        this.rangeReportController = rangeReportController;
-    }
-
     @Operation(summary = "Get monthly financial report JSON",
-            description = "Aggregates total inflow, outflow, net savings, savings rate, category allocations, budget status, and top expenses.")
+            description = "Aggregates total inflow, outflow, net savings, savings rate, " +
+                    "allocations, budgets, top items.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Monthly report generated successfully",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = MonthlyReportDto.class))),
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                               schema = @Schema(implementation = MonthlyReportDto.class))),
         @ApiResponse(responseCode = "400", description = "User not found or invalid period parameters"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -86,7 +79,8 @@ public class ReportController {
         int m = month != null ? month : now.getMonthValue();
         String html = monthlyReportService.generateMonthlyReportHtml(userId, y, m);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"financial-report-" + y + "-" + m + ".html\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"financial-report-" + y + "-" + m + ".html\"")
                 .body(html);
     }
 
@@ -111,13 +105,18 @@ public class ReportController {
             @PathVariable Long userId,
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
-        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank())
+                ? currencyParam : currencyHeader;
         ResponseEntity<byte[]> response = rangeReportController.excel(userId, null, null,
                 preferredCurrency == null || preferredCurrency.isBlank() ? "INR" : preferredCurrency);
+        byte[] body = response.getBody();
+        byte[] payload = (body != null) ? body : new byte[0];
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-summary.xlsx\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(response.getBody());
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(payload.length)
+                .body(payload);
     }
 
     @Operation(summary = "Export complete financial statement to PDF",
@@ -127,12 +126,16 @@ public class ReportController {
             @PathVariable Long userId,
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
-        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
+        String preferredCurrency = (currencyParam != null && !currencyParam.isBlank())
+                ? currencyParam : currencyHeader;
         ResponseEntity<byte[]> response = rangeReportController.pdf(userId, null, null,
                 preferredCurrency == null || preferredCurrency.isBlank() ? "INR" : preferredCurrency);
+        byte[] body = response.getBody();
+        byte[] payload = (body != null) ? body : new byte[0];
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"financial-statement.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
-                .body(response.getBody());
+                .contentLength(payload.length)
+                .body(payload);
     }
 }

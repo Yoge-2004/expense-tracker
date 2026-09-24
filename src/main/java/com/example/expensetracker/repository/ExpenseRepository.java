@@ -35,7 +35,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
      * @return a list of {@link Expense} records owned by the user;
      *         empty list if the user has no expenses
      */
-    @Query("SELECT e FROM Expense e WHERE e.user = :user ORDER BY e.expenseDate DESC, e.id DESC")
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user "
+            + "ORDER BY e.expenseDate DESC, e.id DESC")
     List<Expense> findByUser(@Param("user") User user);
 
     /**
@@ -63,14 +64,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
      * @return {@code true} if at least one expense references this category
      */
     boolean existsByCategory_Id(Long categoryId);
-
-    /**
-     * Retrieves all expenses with category and user eagerly fetched.
-     *
-     * @return list of expenses with eagerly fetched relationships
-     */
-    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category LEFT JOIN FETCH e.user")
-    List<Expense> findAllWithCategoryAndUser();
 
     /**
      * Deletes all expenses owned by the specified user.

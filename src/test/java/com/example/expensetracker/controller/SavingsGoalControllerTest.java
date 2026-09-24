@@ -1,6 +1,5 @@
 package com.example.expensetracker.controller;
 
-import com.example.expensetracker.dto.CashFlowSummaryDto;
 import com.example.expensetracker.dto.SavingsGoalDto;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.CustomUserDetailsService;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.*;
@@ -69,7 +67,12 @@ class SavingsGoalControllerTest {
         mockMvc.perform(post("/api/savings/goals/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Emergency Fund","targetAmount":100000,"currentAmount":15000,"targetDate":"2026-12-31"}
+                                {
+                                  "name": "Emergency Fund",
+                                  "targetAmount": 100000,
+                                  "currentAmount": 15000,
+                                  "targetDate": "2026-12-31"
+                                }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(10))
@@ -124,14 +127,20 @@ class SavingsGoalControllerTest {
 
     @Test
     void updateGoalValidatesOwnerAndReturnsUpdatedGoal() throws Exception {
-        SavingsGoalDto updated = goal(10L, "Emergency Fund Plus", "120000", "50000", "2027-01-31", "IN_PROGRESS", 41.6667);
+        SavingsGoalDto updated = goal(
+                10L, "Emergency Fund Plus", "120000", "50000", "2027-01-31", "IN_PROGRESS", 41.6667);
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(savingsGoalService.updateGoal(eq(10L), any(), same(user))).thenReturn(updated);
 
         mockMvc.perform(put("/api/savings/goals/10/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Emergency Fund Plus","targetAmount":120000,"currentAmount":50000,"targetDate":"2027-01-31"}
+                                {
+                                  "name": "Emergency Fund Plus",
+                                  "targetAmount": 120000,
+                                  "currentAmount": 50000,
+                                  "targetDate": "2027-01-31"
+                                }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Emergency Fund Plus"))
@@ -160,6 +169,22 @@ class SavingsGoalControllerTest {
     }
 
     @Test
+    void depositWithQueryParamReturnsUpdatedGoalAndPassesAmount() throws Exception {
+        SavingsGoalDto updated = goal(10L, "Emergency Fund", "100000", "75000", "2026-12-31", "IN_PROGRESS", 75);
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(savingsGoalService.depositToGoal(eq(10L), eq(new BigDecimal("20000")), same(user))).thenReturn(updated);
+
+        mockMvc.perform(post("/api/savings/goals/10/deposit/user/7?amount=20000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentAmount").value(75000))
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.progressPercentage").value(75.0));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(savingsGoalService).depositToGoal(10L, new BigDecimal("20000"), user);
+    }
+
+    @Test
     void depositRejectsNonPositiveAmountBeforeService() throws Exception {
         mockMvc.perform(post("/api/savings/goals/10/deposit/user/7")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -183,11 +208,11 @@ class SavingsGoalControllerTest {
 
     @Test
     void getRecurringGoalsValidatesUserAndReturnsRecurringSubset() throws Exception {
-        SavingsGoalDto recurring = goal(12L, "Monthly SIP", "120000", "30000", "2027-06-30", "IN_PROGRESS", 25);
-        recurring.setIsRecurring(true);
-        recurring.setRecurringAmount(new BigDecimal("10000"));
-        recurring.setFrequency("MONTHLY");
-        recurring.setNextDueDate(LocalDate.of(2026, 10, 1));
+        SavingsGoalDto recurring = new SavingsGoalDto(
+                12L, "Monthly SIP", new BigDecimal("120000"), new BigDecimal("30000"),
+                LocalDate.of(2027, 6, 30), "IN_PROGRESS", 25,
+                true, new BigDecimal("10000"), "MONTHLY", null, LocalDate.of(2026, 10, 1), null
+        );
         when(userService.findById(7L)).thenReturn(Optional.of(user));
         when(savingsGoalService.getRecurringGoals(user)).thenReturn(List.of(recurring));
 
@@ -214,14 +239,20 @@ class SavingsGoalControllerTest {
 
     private static SavingsGoalDto goal(Long id, String name, String target, String current,
                                        String targetDate, String status, double progress) {
-        SavingsGoalDto dto = new SavingsGoalDto();
-        dto.setId(id);
-        dto.setName(name);
-        dto.setTargetAmount(new BigDecimal(target));
-        dto.setCurrentAmount(new BigDecimal(current));
-        dto.setTargetDate(LocalDate.parse(targetDate));
-        dto.setStatus(status);
-        dto.setProgressPercentage(progress);
-        return dto;
+        return new SavingsGoalDto(
+                id,
+                name,
+                new BigDecimal(target),
+                new BigDecimal(current),
+                LocalDate.parse(targetDate),
+                status,
+                progress,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 }

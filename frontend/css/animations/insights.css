@@ -121,7 +121,12 @@
 .insight-card-item-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    min-width: 0;
+    width: 100%;
 }
 
 .insight-icon-box {
@@ -141,6 +146,8 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-muted);
+    min-width: 0;
+    overflow-wrap: break-word;
 }
 
 .insight-card-content {
@@ -152,4 +159,56 @@
 .insight-card-content strong {
     color: var(--primary);
     font-weight: 700;
+}
+
+/* ==========================================================================
+   ENGINE-DRIVEN INSIGHT CARDS
+   Cards produced by js/modules/insight-engine.js via dashboard-insight-cards.js.
+   ========================================================================== */
+
+/* The engine reports a confidence level per insight; anything below "high"
+   is labelled in the UI rather than presented with the same authority as a
+   well-evidenced finding. This is a money app — an early estimate should
+   look like one. */
+.insight-confidence-tag {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-muted) 22%, transparent);
+    white-space: nowrap;
+}
+
+.insight-confidence-tag[data-confidence="low"] {
+    color: var(--metric-savings, #F59E0B);
+    background: color-mix(in srgb, var(--metric-savings, #F59E0B) 12%, transparent);
+    border-color: color-mix(in srgb, var(--metric-savings, #F59E0B) 26%, transparent);
+}
+
+/* Left accent keeps the kind readable at a glance without relying on the
+   icon alone (colour is never the only carrier of meaning). */
+.insight-card-engine {
+    border-left: 3px solid transparent;
+}
+
+.insight-card-engine[data-insight-kind="caution"] {
+    border-left-color: var(--metric-savings, #F59E0B);
+}
+
+.insight-card-engine[data-insight-kind="positive"] {
+    border-left-color: var(--metric-cashflow, #10B981);
+}
+
+.insight-card-engine[data-insight-kind="projection"] {
+    border-left-color: var(--metric-income, #3B82F6);
+}
+
+.insight-card-engine[data-insight-kind="neutral"] {
+    border-left-color: var(--border);
 }

@@ -25,6 +25,7 @@ import java.util.Optional;
  * @version 1.0
  * @see Budget
  */
+@SuppressWarnings("unused")
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
     /**

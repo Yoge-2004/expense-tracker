@@ -22,8 +22,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -57,7 +55,8 @@ class WebAuthnControllerTest {
 
     @Test
     void registrationOptionsRequiresAuthenticatedUserAndFindsByEmail() throws Exception {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("jane@example.com", null, java.util.List.of());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                "jane@example.com", null, java.util.List.of());
         when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
         when(webAuthnService.startRegistration(user)).thenReturn(Map.of("transactionId", "tx-1", "challenge", "abc"));
 
@@ -96,7 +95,8 @@ class WebAuthnControllerTest {
 
     @Test
     void registrationOptionsRejectsUnknownAuthenticatedUser() throws Exception {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("missing@example.com", null, java.util.List.of());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                "missing@example.com", null, java.util.List.of());
         when(users.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
         when(users.findByUsernameIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
 
@@ -109,7 +109,8 @@ class WebAuthnControllerTest {
 
     @Test
     void registrationFinishPassesTransactionAndCredentialToService() throws Exception {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("jane@example.com", null, java.util.List.of());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                "jane@example.com", null, java.util.List.of());
         when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
 
         mockMvc.perform(post("/api/webauthn/register/finish")
@@ -124,7 +125,8 @@ class WebAuthnControllerTest {
 
     @Test
     void registrationFinishAllowsNullFieldsToReachServiceForValidation() throws Exception {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("jane@example.com", null, java.util.List.of());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                "jane@example.com", null, java.util.List.of());
         when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
 
         mockMvc.perform(post("/api/webauthn/register/finish")
@@ -138,7 +140,8 @@ class WebAuthnControllerTest {
 
     @Test
     void loginOptionsDoesNotRequireExistingUserLookupAndReturnsChallengeData() throws Exception {
-        when(webAuthnService.startAuthentication()).thenReturn(Map.of("transactionId", "tx-9", "challenge", "challenge"));
+        when(webAuthnService.startAuthentication())
+                .thenReturn(Map.of("transactionId", "tx-9", "challenge", "challenge"));
 
         mockMvc.perform(post("/api/webauthn/login/options"))
                 .andExpect(status().isOk())
@@ -166,7 +169,8 @@ class WebAuthnControllerTest {
 
     @Test
     void disableCredentialsRequiresAuthenticatedUserAndDeletesForResolvedAccount() throws Exception {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("jane@example.com", null, java.util.List.of());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                "jane@example.com", null, java.util.List.of());
         when(users.findByEmailIgnoreCase("jane@example.com")).thenReturn(Optional.of(user));
 
         mockMvc.perform(delete("/api/webauthn/credentials").principal(authentication))
@@ -177,7 +181,8 @@ class WebAuthnControllerTest {
 
     @Test
     void disableCredentialsRejectsUnknownUser() throws Exception {
-        Authentication authentication = new UsernamePasswordAuthenticationToken("missing@example.com", null, java.util.List.of());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                "missing@example.com", null, java.util.List.of());
         when(users.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
         when(users.findByUsernameIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
 

@@ -37,5 +37,8 @@ scratch/
 expenses_sync.json
 *.sqlite
 *.sqlite3
+logs/
+*.log
 # The encrypted production snapshot is intentionally NOT ignored:
 # database/expense_tracker.sqlite.enc
+.scannerwork/

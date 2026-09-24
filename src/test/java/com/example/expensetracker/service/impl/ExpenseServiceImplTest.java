@@ -6,11 +6,13 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,6 +57,54 @@ class ExpenseServiceImplTest {
         assertSame(owner, expense.getUser());
         assertSame(global, expense.getCategory());
         verify(expenseRepository).save(expense);
+    }
+
+    @Test
+    @DisplayName("createExpense throws IllegalArgumentException when user is null")
+    void createExpense_nullUser_throwsIllegalArgumentException() {
+        Expense exp = expense(50, LocalDate.now());
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                service.createExpense(exp, null)
+        );
+        assertEquals("User must be specified", ex.getMessage());
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    @DisplayName("createExpense throws IllegalArgumentException when expense is null")
+    void createExpense_nullExpense_throwsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                service.createExpense(null, owner)
+        );
+        assertEquals("Expense cannot be null", ex.getMessage());
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    @DisplayName("createExpense throws IllegalArgumentException when amount is null or zero or negative")
+    void createExpense_nonPositiveAmount_throwsIllegalArgumentException() {
+        Expense expNull = expense(50, LocalDate.now());
+        expNull.setAmount(null);
+        assertThrows(IllegalArgumentException.class, () -> service.createExpense(expNull, owner));
+
+        Expense expZero = expense(0, LocalDate.now());
+        assertThrows(IllegalArgumentException.class, () -> service.createExpense(expZero, owner));
+
+        Expense expNeg = expense(-10, LocalDate.now());
+        assertThrows(IllegalArgumentException.class, () -> service.createExpense(expNeg, owner));
+
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    @DisplayName("createExpense throws IllegalArgumentException when expenseDate is null")
+    void createExpense_nullDate_throwsIllegalArgumentException() {
+        Expense exp = expense(50, null);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                service.createExpense(exp, owner)
+        );
+        assertEquals("Expense date cannot be null", ex.getMessage());
+        verifyNoInteractions(expenseRepository);
     }
 
     @Test
@@ -126,6 +176,13 @@ class ExpenseServiceImplTest {
     }
 
     @Test
+    @DisplayName("getUserExpenses throws IllegalArgumentException when user is null")
+    void getUserExpenses_nullUser_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.getUserExpenses(null));
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
     void deleteExpenseDeletesOwnedExpense() {
         Expense existing = expense(300, LocalDate.of(2026, 9, 5));
         existing.setId(70L);
@@ -135,6 +192,18 @@ class ExpenseServiceImplTest {
         assertDoesNotThrow(() -> service.deleteExpense(70L, owner));
 
         verify(expenseRepository).delete(existing);
+    }
+
+    @Test
+    @DisplayName("deleteExpense throws IllegalArgumentException when expenseId is null")
+    void deleteExpense_nullId_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.deleteExpense(null, owner));
+    }
+
+    @Test
+    @DisplayName("deleteExpense throws IllegalArgumentException when user is null")
+    void deleteExpense_nullUser_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.deleteExpense(1L, null));
     }
 
     @Test
@@ -189,9 +258,33 @@ class ExpenseServiceImplTest {
     }
 
     @Test
+    @DisplayName("updateExpense throws IllegalArgumentException when expenseId is null")
+    void updateExpense_nullId_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.updateExpense(null, new Expense(), owner));
+    }
+
+    @Test
+    @DisplayName("updateExpense throws IllegalArgumentException when user is null")
+    void updateExpense_nullUser_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.updateExpense(1L, new Expense(), null));
+    }
+
+    @Test
+    @DisplayName("updateExpense throws IllegalArgumentException when updates is null")
+    void updateExpense_nullUpdates_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> service.updateExpense(1L, null, owner));
+    }
+
+    @Test
+    @DisplayName("updateExpense throws IllegalArgumentException when updated amount is non-positive")
+    void updateExpense_nonPositiveAmount_throwsIllegalArgumentException() {
+        Expense updates = new Expense();
+        updates.setAmount(BigDecimal.valueOf(-5));
+        assertThrows(IllegalArgumentException.class, () -> service.updateExpense(1L, updates, owner));
+    }
+
+    @Test
     void updateExpenseRejectsMissingExpense() {
-        // FIXED: previously threw RuntimeException (-> 500 INTERNAL_SERVER_ERROR via GlobalExceptionHandler).
-        // Now throws IllegalArgumentException (-> 400 BAD_REQUEST) for proper REST semantics.
         when(expenseRepository.findById(81L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -208,10 +301,8 @@ class ExpenseServiceImplTest {
         existing.setUser(otherUser);
         when(expenseRepository.findById(82L)).thenReturn(Optional.of(existing));
 
-        // FIXED: previously threw RuntimeException (-> 500). Now throws AccessDeniedException
-        // (-> 403 FORBIDDEN) for proper REST semantics on ownership violations.
-        org.springframework.security.access.AccessDeniedException ex = assertThrows(
-                org.springframework.security.access.AccessDeniedException.class,
+        AccessDeniedException ex = assertThrows(
+                AccessDeniedException.class,
                 () -> service.updateExpense(82L, new Expense(), owner));
 
         assertEquals("Expense does not belong to this user", ex.getMessage());

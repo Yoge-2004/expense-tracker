@@ -54,7 +54,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: border-color 0.2s, color 0.2s, transform 0.2s;
 }
 
 .cal-nav-btn:hover {
@@ -157,7 +157,7 @@
     cursor: pointer;
     font-family: inherit;
     outline: none;
-    transition: all 0.2s var(--ease);
+    transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -236,7 +236,7 @@
     background: transparent;
     color: var(--text-main);
     cursor: pointer;
-    transition: all 0.18s var(--ease);
+    transition: background-color 0.18s var(--ease), color 0.18s var(--ease), transform 0.18s var(--ease);
     outline: none;
 }
 
@@ -302,7 +302,7 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s, color 0.2s;
     font-family: inherit;
 }
 
@@ -325,7 +325,7 @@
     color: var(--on-primary, #10120e);
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: filter 0.2s, transform 0.2s;
     font-family: inherit;
 }
 

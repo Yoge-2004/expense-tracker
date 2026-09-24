@@ -1,6 +1,8 @@
 package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.DeleteAccountRequest;
+import com.example.expensetracker.dto.UpdateProfileRequest;
+import jakarta.validation.Valid;
 import com.example.expensetracker.dto.ErrorResponse;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
@@ -15,17 +17,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.security.SecureRandom;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 @Tag(
     name        = "User Management",
@@ -33,11 +36,13 @@ import java.util.HashMap;
         User account lookup, profile management, and cascading account deletion.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UserService userService;
     private final UserRepository userRepository;
@@ -45,19 +50,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
-    public UserController(UserService userService,
-                          UserRepository userRepository,
-                          UserSecurity userSecurity,
-                          PasswordEncoder passwordEncoder,
-                          GoogleIdTokenVerifier googleIdTokenVerifier) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-        this.userSecurity = userSecurity;
-        this.passwordEncoder = passwordEncoder;
-        this.googleIdTokenVerifier = googleIdTokenVerifier;
-    }
-
-    // ─── GET /api/users/check-username ─────────────────────────────────────────
+    // ─── GET /api/users/check-username ────────────────────────────────────────
 
     @Operation(
         summary = "Check username availability",
@@ -78,11 +71,11 @@ public class UserController {
         }
 
         String trimmed = username.trim();
-        boolean validFormat = trimmed.matches("^[a-zA-Z0-9_]{3,30}$");
+        boolean validFormat = trimmed.matches("^[a-zA-Z0-9._]{3,30}$");
         if (!validFormat) {
             Map<String, Object> invalid = new HashMap<>();
             invalid.put("available", false);
-            invalid.put("message", "Username must be 3-30 alphanumeric characters or underscores");
+            invalid.put("message", "Username must be 3-30 alphanumeric characters, dots, or underscores");
             return ResponseEntity.ok(invalid);
         }
 
@@ -100,22 +93,22 @@ public class UserController {
         summary = "Generate username suggestions",
         description = "Generates exactly 3 unique, creative username suggestions based on a name or keyword."
     )
-    @RateLimited(key = "user-suggest-usernames", maxRequests = 20, windowSeconds = 60, message = "Too many username suggestion requests. Please try again later.")
+    @RateLimited(key = "user-suggest-usernames", maxRequests = 20,
+                 message = "Too many username suggestion requests. Please try again later.")
     @GetMapping("/suggest-usernames")
     public ResponseEntity<Map<String, Object>> suggestUsernames(
             @RequestParam(required = false, defaultValue = "user") String base) {
-        String clean = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        String clean = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
         if (clean.isEmpty()) clean = "user";
 
         java.util.Set<String> uniqueSuggestions = new java.util.LinkedHashSet<>();
-        java.util.Random rand = new java.util.Random();
 
         String[] prefixes = {"iam", "the", "real", "hey", "go"};
         for (String p : prefixes) {
             if (uniqueSuggestions.size() >= 3) break;
             String candidate = (p + "_" + clean).replaceAll("[^a-zA-Z0-9_]", "");
             if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (!userRepository.findByUsernameIgnoreCase(candidate).isPresent()) {
+            if (userRepository.findByUsernameIgnoreCase(candidate).isEmpty()) {
                 uniqueSuggestions.add(candidate);
             }
         }
@@ -123,10 +116,10 @@ public class UserController {
         int attempts = 0;
         while (uniqueSuggestions.size() < 3 && attempts < 100) {
             attempts++;
-            int num = 100 + rand.nextInt(900);
+            int num = 100 + RANDOM.nextInt(900);
             String candidate = clean + num;
             if (candidate.length() > 30) candidate = candidate.substring(0, 30);
-            if (!userRepository.findByUsernameIgnoreCase(candidate).isPresent()) {
+            if (userRepository.findByUsernameIgnoreCase(candidate).isEmpty()) {
                 uniqueSuggestions.add(candidate);
             }
         }
@@ -137,11 +130,11 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // ─── GET /api/users/{userId} ───────────────────────────────────────────────
+    // ─── GET /api/users/{userId} ──────────────────────────────────────────────
 
     @Operation(
         summary = "Get user profile",
-        description = "Returns the user's basic profile fields — id, name, email, currency, and whether a Security PIN is set."
+        description = "Returns basic profile fields: id, name, username, email, currency, and hasSecurityPin."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Profile returned successfully"),
@@ -160,9 +153,44 @@ public class UserController {
         Map<String, Object> map = new HashMap<>();
         map.put("id", user.getId());
         map.put("name", user.getName());
+        map.put("username", user.getUsername());
         map.put("email", user.getEmail());
         map.put("currency", user.getCurrency());
         map.put("hasSecurityPin", user.hasSecurityPin());
+        return ResponseEntity.ok(map);
+    }
+
+    // ─── PUT /api/users/{userId} ───────────────────────────────────────────────
+
+    @Operation(
+        summary = "Update user profile",
+        description = "Updates editable profile fields such as display name."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or user not found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PutMapping("/{userId}")
+    public ResponseEntity<Map<String, Object>> updateProfile(
+            @Parameter(description = "Database ID of the user.", required = true, example = "1")
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        log.info("Received request to update profile for userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+
+        userService.updateName(userId, request.name());
+        User updated = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", updated.getId());
+        map.put("name", updated.getName());
+        map.put("username", updated.getUsername());
+        map.put("email", updated.getEmail());
+        map.put("currency", updated.getCurrency());
+        map.put("hasSecurityPin", updated.hasSecurityPin());
         return ResponseEntity.ok(map);
     }
 
@@ -182,17 +210,22 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{userId}/security-pin")
-    @RateLimited(key = "update-pin", maxRequests = 10, windowSeconds = 300, message = "Too many PIN update attempts. Please try again in %d seconds.")
+    @RateLimited(key = "update-pin", windowSeconds = 300,
+                 message = "Too many PIN update attempts. Please try again in %d seconds.")
     public ResponseEntity<Map<String, String>> updateSecurityPin(
+            @Parameter(description = "Database ID of the user.", required = true, example = "1")
             @PathVariable Long userId,
             @RequestBody Map<String, String> body) {
-        String pin = body.get("securityPin");
-        log.info("Request to update Security PIN for userId={}", userId);
+        log.info("Received request to update Security PIN for userId={}", userId);
         userSecurity.validateUserAccess(userId);
-        if (pin == null || !pin.trim().matches("^[0-9]{6}$")) {
-            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits.");
+
+        String pin = body != null ? body.get("pin") : null;
+        if (pin == null || !pin.trim().matches("^\\d{6}$")) {
+            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits");
         }
+
         userService.updateSecurityPin(userId, pin.trim());
+        log.info("Security PIN successfully updated for userId={}", userId);
         return ResponseEntity.ok(Map.of("message", "Security PIN updated successfully"));
     }
 
@@ -200,53 +233,53 @@ public class UserController {
 
     @Operation(
         summary = "Verify 6-digit Security PIN",
-        description = "Verifies the provided 6-digit Security PIN against the user's stored hash. Rate-limited to prevent brute forcing."
+        description = "Verifies the provided 6-digit PIN. Tracks failed attempts to prevent brute force."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "PIN verification succeeded"),
+        @ApiResponse(responseCode = "200", description = "PIN verification evaluated"),
         @ApiResponse(responseCode = "400", description = "Invalid PIN format or user not found",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "401", description = "Incorrect Security PIN",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403", description = "Access is denied (IDOR protection)",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "429", description = "Too many requests (rate limit exceeded)",
+        @ApiResponse(responseCode = "429", description = "Too many failed attempts (rate limit exceeded)",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{userId}/verify-security-pin")
-    @RateLimited(key = "verify-pin", maxRequests = 5, windowSeconds = 300, message = "Too many PIN verification attempts. Please try again in %d seconds.")
+    @RateLimited(key = "verify-pin", windowSeconds = 300,
+                 message = "Too many verification attempts. Please try again later.")
     public ResponseEntity<Map<String, Object>> verifySecurityPin(
+            @Parameter(description = "Database ID of the user.", required = true, example = "1")
             @PathVariable Long userId,
             @RequestBody Map<String, String> body) {
-        log.info("Request to verify Security PIN for userId={}", userId);
+        log.info("Received request to verify Security PIN for userId={}", userId);
         userSecurity.validateUserAccess(userId);
-        String pin = body.get("securityPin");
-        if (pin == null || !pin.trim().matches("^[0-9]{6}$")) {
-            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits.");
+
+        String pin = body != null ? body.get("pin") : null;
+        if (pin == null || !pin.trim().matches("^\\d{6}$")) {
+            throw new IllegalArgumentException("Security PIN must be exactly 6 numeric digits");
         }
+
         boolean valid = userService.verifySecurityPin(userId, pin.trim());
+        Map<String, Object> response = new HashMap<>();
+        response.put("valid", valid);
         if (!valid) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("valid", false, "message", "Invalid security PIN."));
+            response.put("message", "Incorrect Security PIN");
         }
-        return ResponseEntity.ok(Map.of("valid", true, "message", "Security PIN verified successfully."));
+        return ResponseEntity.ok(response);
     }
 
-    // ─── DELETE /api/users/{userId} ────────────────────────────────────────────
+    // ─── DELETE /api/users/{userId} ───────────────────────────────────────────
 
     @Operation(
-        summary = "Delete account",
+        summary = "Permanently delete user account",
         description = """
-            Permanently deletes a user account and all data associated with it.
-            Requires re-authentication with current password, Security PIN, or Google ID token.
+            Permanently deletes a user account and cascades deletion to all associated expenses,
+            budgets, recurring rules, and custom categories.
+            Requires re-authentication with current password, 6-digit PIN, or Google ID token.
             """
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Account and all associated data permanently deleted"),
+        @ApiResponse(responseCode = "204", description = "Account permanently deleted"),
         @ApiResponse(responseCode = "400", description = "No user found with the given ID",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class))),
@@ -261,9 +294,10 @@ public class UserController {
                 schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/{userId}")
-    @RateLimited(key = "delete-account", maxRequests = 5, windowSeconds = 300, message = "Too many account deletion attempts. Please try again in %d seconds.")
+    @RateLimited(key = "delete-account", maxRequests = 5, windowSeconds = 300,
+                 message = "Too many account deletion attempts. Please try again in %d seconds.")
     public ResponseEntity<Void> deleteAccount(
-            @Parameter(description = "Database ID of the user account to permanently delete.", required = true, example = "1")
+            @Parameter(description = "Database ID of the user account to delete.", required = true, example = "1")
             @PathVariable Long userId,
             @RequestBody(required = false) DeleteAccountRequest request) {
         log.info("Received request to permanently delete account for userId={}", userId);
@@ -274,25 +308,25 @@ public class UserController {
 
         boolean verified = false;
         if (request != null) {
-            if (request.getPassword() != null && !request.getPassword().isBlank()) {
-                verified = passwordEncoder.matches(request.getPassword(), user.getPassword());
-            } else if (request.getSecurityPin() != null && !request.getSecurityPin().isBlank()) {
-                verified = userService.verifySecurityPin(userId, request.getSecurityPin().trim());
-            } else if (request.getGoogleIdToken() != null && !request.getGoogleIdToken().isBlank()) {
+            if (request.password() != null && !request.password().isBlank()) {
+                verified = passwordEncoder.matches(request.password(), user.getPassword());
+            } else if (request.securityPin() != null && !request.securityPin().isBlank()) {
+                verified = userService.verifySecurityPin(userId, request.securityPin().trim());
+            } else if (request.googleIdToken() != null && !request.googleIdToken().isBlank()) {
                 try {
                     GoogleIdTokenVerifier.VerifiedIdentity identity =
-                            googleIdTokenVerifier.verify(request.getGoogleIdToken());
-                    verified = identity.email() != null && identity.email().equalsIgnoreCase(user.getEmail());
+                            googleIdTokenVerifier.verify(request.googleIdToken());
+                    verified = identity != null && identity.email().equalsIgnoreCase(user.getEmail());
                 } catch (Exception e) {
-                    log.warn("Google ID token verification failed during account deletion for userId={}: {}", userId, e.getMessage());
-                    verified = false;
+                    log.warn("Google ID token verification failed during account deletion for userId={}: {}",
+                            userId, e.getMessage());
                 }
             }
         }
 
         if (!verified) {
-            log.warn("Account deletion denied for userId={}: Invalid or missing credentials confirmation", userId);
-            boolean hasPassword = request != null && request.getPassword() != null && !request.getPassword().isBlank();
+            log.warn("Account deletion denied for userId={}: Invalid credentials confirmation", userId);
+            boolean hasPassword = request != null && request.password() != null && !request.password().isBlank();
             String errorMsg = hasPassword
                     ? "Incorrect password. Account deletion requires valid password confirmation."
                     : "Invalid or missing password confirmation. Account deletion requires re-authentication.";
@@ -304,11 +338,11 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // ─── PUT /api/users/{userId}/currency ──────────────────────────────────────
+    // ─── PUT /api/users/{userId}/currency ─────────────────────────────────────
 
     @Operation(
         summary = "Update currency preference",
-        description = "Updates the preferred display currency for the given user account. Accepts any ISO 4217 3-letter code."
+        description = "Updates the preferred display currency for the given user account. Accepts any ISO 4217 code."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Currency preference updated"),
@@ -318,26 +352,21 @@ public class UserController {
     })
     @PutMapping("/{userId}/currency")
     public ResponseEntity<Map<String, String>> updateCurrency(
+            @Parameter(description = "Database ID of the user whose currency to update.",
+                       required = true, example = "1")
             @PathVariable Long userId,
             @RequestBody Map<String, String> body) {
-        String currency = body.get("currency");
-        log.info("Received request to update currency for userId={} to {}", userId, currency);
+        log.info("Received request to update currency for userId={}", userId);
         userSecurity.validateUserAccess(userId);
-        // Validate + normalize at the controller layer so:
-        //   (a) invalid input is rejected with 400 BEFORE the service is called
-        //       (test: updateCurrencyRejectsInvalidLength verifies service is never invoked)
-        //   (b) the service receives the uppercased value
-        //       (test: updateCurrencyNormalizesCodeToUppercase verifies mock with "USD")
-        // The service layer also validates (defence in depth for non-controller callers like
-        // OAuth login), but the controller is the primary gatekeeper here.
+
+        String currency = body != null ? body.get("currency") : null;
         if (currency == null || !currency.trim().matches("^[A-Za-z]{3}$")) {
-            log.warn("Invalid currency format '{}' for userId={}", currency, userId);
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Currency must be a 3-letter ISO 4217 code."));
+            throw new IllegalArgumentException("Currency must be a valid 3-letter ISO 4217 code (e.g., USD, EUR, INR)");
         }
-        String normalized = currency.trim().toUpperCase(java.util.Locale.ROOT);
-        userService.updateCurrency(userId, normalized);
-        log.info("Currency preference updated for userId={} to {}", userId, normalized);
-        return ResponseEntity.ok(Map.of("currency", normalized));
+
+        userService.updateCurrency(userId, currency.trim().toUpperCase(Locale.ROOT));
+        log.info("Currency successfully updated to '{}' for userId={}", currency.toUpperCase(Locale.ROOT), userId);
+        return ResponseEntity.ok(Map.of("message", "Currency preference updated successfully",
+                "currency", currency.trim().toUpperCase(Locale.ROOT)));
     }
 }

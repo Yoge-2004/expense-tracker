@@ -9,6 +9,7 @@ import com.yubico.webauthn.RegisteredCredential;
 import com.yubico.webauthn.data.ByteArray;
 import com.yubico.webauthn.data.PublicKeyCredentialDescriptor;
 import com.yubico.webauthn.data.exception.Base64UrlException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -17,14 +18,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class WebAuthnCredentialRepositoryAdapter implements CredentialRepository {
     private final WebAuthnCredentialRepository credentials;
     private final UserRepository users;
-
-    public WebAuthnCredentialRepositoryAdapter(WebAuthnCredentialRepository credentials, UserRepository users) {
-        this.credentials = credentials;
-        this.users = users;
-    }
 
     @Override
     public Set<PublicKeyCredentialDescriptor> getCredentialIdsForUsername(String username) {

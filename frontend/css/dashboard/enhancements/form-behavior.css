@@ -2,7 +2,7 @@
 #addExpenseForm .form-group select,
 #addBudgetForm .form-group input,
 #addBudgetForm .form-group select {
-    transition: all 0.25s var(--ease);
+    transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
 }
 #addExpenseForm .form-group input:focus,
 #addExpenseForm .form-group select:focus,

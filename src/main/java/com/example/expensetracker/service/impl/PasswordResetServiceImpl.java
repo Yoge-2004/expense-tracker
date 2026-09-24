@@ -1,5 +1,7 @@
 package com.example.expensetracker.service.impl;
 
+import com.example.expensetracker.exception.EmailDeliveryException;
+import com.example.expensetracker.logging.LoggingUtils;
 import com.example.expensetracker.model.PasswordResetOtp;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.PasswordResetOtpRepository;
@@ -7,23 +9,24 @@ import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.OtpDeliveryListener;
 import com.example.expensetracker.service.PasswordResetService;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /**
  * Implements {@link PasswordResetService} — see that interface for the
@@ -40,10 +43,11 @@ import java.time.temporal.ChronoUnit;
  *   external SMTP/email delivery. Includes brute-force lockout protection (5 attempts).</li>
  * </ul>
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PasswordResetServiceImpl implements PasswordResetService {
-
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetServiceImpl.class);
 
     private static final int OTP_TTL_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 5;
@@ -61,18 +65,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Value("${app.mail.enabled:false}")
     private boolean mailEnabled;
 
-    public PasswordResetServiceImpl(UserRepository userRepository,
-                                     PasswordResetOtpRepository otpRepository,
-                                     PasswordEncoder passwordEncoder,
-                                     ObjectProvider<JavaMailSender> mailSenderProvider,
-                                     ObjectProvider<OtpDeliveryListener> otpDeliveryListenerProvider) {
-        this.userRepository = userRepository;
-        this.otpRepository = otpRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.mailSenderProvider = mailSenderProvider;
-        this.otpDeliveryListenerProvider = otpDeliveryListenerProvider;
-    }
-
     @Override
     @Transactional
     public void requestReset(String email) {
@@ -81,9 +73,14 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         User user = userRepository.findByEmailIgnoreCase(email.trim())
-                .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
+                .orElse(null);
 
-        log.info("Generating password reset OTP");
+        if (user == null) {
+            log.info("Password reset requested for non-existent email: {}", LoggingUtils.maskEmail(email));
+            return;
+        }
+
+        log.info("Generating password reset OTP for email={}", LoggingUtils.maskEmail(email));
 
         otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
                 .ifPresent(existing -> {
@@ -97,7 +94,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setEmail(user.getEmail());
         record.setPurpose("PASSWORD_RESET");
         record.setOtpHash(passwordEncoder.encode(otp));
-        record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
+        record.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
         otpRepository.save(record);
 
         sendOtpEmail(user, otp, "PASSWORD_RESET");
@@ -106,22 +103,34 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Override
     @Transactional
     public void resetPassword(String email, String otp, String newPassword) {
-        if (email == null || email.isBlank() || otp == null || otp.isBlank()) {
-            throw new BadCredentialsException("Invalid or expired code or PIN.");
+        if (email == null || otp == null || newPassword == null
+                || email.isBlank() || otp.isBlank() || newPassword.isBlank()) {
+            throw new IllegalArgumentException("Email, verification code, and new password are required.");
+        }
+
+        if (newPassword.length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters long.");
         }
 
         if ("BYPASS".equalsIgnoreCase(otp.trim())) {
-            log.warn("Security violation: Rejected deprecated BYPASS token attempt");
+            log.warn("Security violation: Rejected deprecated BYPASS token attempt for email={}",
+                    LoggingUtils.maskEmail(email));
             throw new BadCredentialsException("Invalid verification code or Security PIN.");
         }
 
         User user = userRepository.findByEmailIgnoreCase(email.trim())
-                .orElseThrow(() -> new NoSuchElementException("No account found with email address: " + email.trim()));
+                .orElseThrow(() -> new NoSuchElementException(
+                        "No account found with email address: " + email.trim()));
 
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
-            long minutesRemaining = java.time.Duration.between(LocalDateTime.now(), user.getPinLockedUntil()).toMinutes() + 1;
-            log.warn("Recovery attempt blocked for locked account; minutesRemaining={}", minutesRemaining);
-            throw new BadCredentialsException("Account recovery temporarily locked due to too many failed attempts. Please try again in " + minutesRemaining + " minute(s).");
+            long minutesRemaining = ChronoUnit.MINUTES.between(
+                    LocalDateTime.now().atZone(ZoneId.systemDefault()),
+                    user.getPinLockedUntil().atZone(ZoneId.systemDefault())) + 1;
+            log.warn("Recovery attempt blocked for locked account email={}; minutesRemaining={}",
+                    LoggingUtils.maskEmail(email), minutesRemaining);
+            throw new BadCredentialsException(
+                    "Account recovery temporarily locked due to too many failed attempts. Please try again in "
+                    + minutesRemaining + " minute(s).");
         }
 
         String inputCode = otp.trim();
@@ -131,11 +140,14 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             verified = true;
             user.setFailedPinAttempts(0);
             user.setPinLockedUntil(null);
-            log.info("Password reset authorized via 6-digit Security PIN");
+            log.info("Password reset authorized via 6-digit Security PIN for email={}",
+                    LoggingUtils.maskEmail(email));
         }
 
         if (!verified) {
-            Optional<PasswordResetOtp> recordOpt = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET");
+            Optional<PasswordResetOtp> recordOpt =
+                    otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(
+                            user.getEmail(), "PASSWORD_RESET");
             if (recordOpt.isPresent()) {
                 PasswordResetOtp record = recordOpt.get();
                 if (!record.getExpiresAt().isBefore(LocalDateTime.now()) && record.getAttempts() < MAX_ATTEMPTS) {
@@ -145,7 +157,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                         otpRepository.save(record);
                         user.setFailedPinAttempts(0);
                         user.setPinLockedUntil(null);
-                        log.info("Password reset authorized via Email OTP");
+                        log.info("Password reset authorized via Email OTP for email={}",
+                                LoggingUtils.maskEmail(email));
                     } else {
                         record.setAttempts(record.getAttempts() + 1);
                         otpRepository.save(record);
@@ -159,7 +172,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             user.setFailedPinAttempts(failed);
             if (failed >= 5) {
                 user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
-                log.warn("Account recovery locked for 15 minutes due to 5 consecutive failed attempts");
+                log.warn("Account recovery locked for 15 minutes due to 5 consecutive failed attempts for email={}",
+                        LoggingUtils.maskEmail(email));
             }
             userRepository.save(user);
             throw new BadCredentialsException("Invalid verification code or Security PIN.");
@@ -167,19 +181,22 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        log.info("Password reset successfully applied");
+        log.info("Password reset successfully applied for email={}", LoggingUtils.maskEmail(email));
     }
 
     @Override
     @Transactional
     public boolean sendSignupOtp(String email, String name) {
-        if (email == null || email.isBlank()) return false;
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email address is required.");
+        }
 
         if (userRepository.existsByEmail(email)) {
+            log.info("Signup OTP skipped: email already registered: {}", LoggingUtils.maskEmail(email));
             return false;
         }
 
-        log.info("Generating signup OTP");
+        log.info("Generating signup OTP for email={}", LoggingUtils.maskEmail(email));
 
         otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
                 .ifPresent(existing -> {
@@ -193,7 +210,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setEmail(email);
         record.setPurpose("SIGNUP");
         record.setOtpHash(passwordEncoder.encode(otp));
-        record.setExpiresAt(LocalDateTime.now().plus(OTP_TTL_MINUTES, ChronoUnit.MINUTES));
+        record.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
         otpRepository.save(record);
 
         User tempUser = new User();
@@ -207,33 +224,44 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public void verifySignupOtp(String email, String otp) {
         if (email == null || otp == null || otp.isBlank()) {
+            log.warn("Signup OTP verification rejected: missing parameters");
             throw new BadCredentialsException("Invalid or expired code.");
         }
 
-        PasswordResetOtp record = otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
-                .orElseThrow(() -> new BadCredentialsException("Invalid or expired verification code."));
+        PasswordResetOtp record = otpRepository
+                .findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
+                .orElseThrow(() -> {
+                    log.warn("Signup OTP verification failed: no active OTP found for email={}",
+                            LoggingUtils.maskEmail(email));
+                    return new BadCredentialsException("Invalid or expired verification code.");
+                });
 
         if (record.getExpiresAt().isBefore(LocalDateTime.now())) {
             record.setUsed(true);
             otpRepository.save(record);
+            log.warn("Signup OTP verification failed: expired for email={}", LoggingUtils.maskEmail(email));
             throw new BadCredentialsException("Verification code has expired. Please request a new one.");
         }
 
         if (record.getAttempts() >= MAX_ATTEMPTS) {
             record.setUsed(true);
             otpRepository.save(record);
+            log.warn("Signup OTP verification failed: max attempts exceeded for email={}",
+                    LoggingUtils.maskEmail(email));
             throw new BadCredentialsException("Too many incorrect attempts. Please request a new verification code.");
         }
 
         if (!passwordEncoder.matches(otp, record.getOtpHash())) {
             record.setAttempts(record.getAttempts() + 1);
             otpRepository.save(record);
+            log.warn("Signup OTP verification failed: incorrect OTP for email={}, attempt={}",
+                    LoggingUtils.maskEmail(email), record.getAttempts());
             throw new BadCredentialsException("Invalid verification code.");
         }
 
         record.setUsed(true);
         otpRepository.save(record);
-        log.info("Signup OTP verified successfully");
+        log.info("Signup OTP verified successfully for email={}", LoggingUtils.maskEmail(email));
     }
 
     private String generateOtp() {
@@ -248,14 +276,15 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         if (!mailEnabled || configuredMailHost == null || configuredMailHost.isBlank()) {
-            log.info("[Email Delivery Disabled] Generated {} OTP (delivery disabled)", purpose);
+            log.info("[Email Delivery Disabled] Generated {} OTP for email={} (delivery simulated/disabled)",
+                    purpose, LoggingUtils.maskEmail(user.getEmail()));
             return;
         }
 
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
             log.error("spring.mail.host is set but no JavaMailSender bean is available; code was not sent.");
-            return;
+            throw new EmailDeliveryException("Email service is currently unavailable.");
         }
 
         try {
@@ -278,11 +307,18 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             }
 
             mailSender.send(mimeMessage);
-            log.info("Successfully dispatched {} OTP email", purpose);
+            log.info("Successfully dispatched {} OTP email to {}", purpose,
+                    LoggingUtils.maskEmail(user.getEmail()));
         } catch (MailException e) {
-            log.error("Failed to deliver {} OTP email: {}", purpose, e.getMessage());
+            log.error("Failed to deliver {} OTP email to {}: {}", purpose,
+                    LoggingUtils.maskEmail(user.getEmail()), e.getMessage());
+            throw new EmailDeliveryException("Failed to deliver " + purpose + " verification email: "
+                    + e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Unexpected error constructing {} email: {}", purpose, e.getMessage(), e);
+            log.error("Unexpected error constructing {} email for {}: {}", purpose,
+                    LoggingUtils.maskEmail(user.getEmail()), e.getMessage(), e);
+            throw new EmailDeliveryException("Failed to send " + purpose + " verification email: "
+                    + e.getMessage(), e);
         }
     }
 
@@ -292,23 +328,29 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 : "Confirm Your Email Address";
         String instructions = "PASSWORD_RESET".equals(purpose)
                 ? "Use this single-use verification code to set a new password. It expires in <b>10 minutes</b>."
-                : "Enter this verification code on the registration page to complete your signup. It expires in <b>10 minutes</b>.";
+                : ("Enter this verification code on the registration page to complete your signup. "
+                + "It expires in <b>10 minutes</b>.");
 
         return """
             <!DOCTYPE html>
             <html>
             <head><meta charset="utf-8"></head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0e1117; color: #e6edf3; padding: 40px 20px;">
-              <div style="max-width: 480px; margin: 0 auto; background: #161b22; border-radius: 12px; padding: 32px; border: 1px solid #30363d;">
-                <h2 style="color: #58a6ff; margin-top: 0;">Expense Tracker</h2>
-                <h3 style="color: #f0f6fc;">%s</h3>
-                <p style="color: #8b949e;">Hello %s,</p>
-                <p style="color: #8b949e;">%s</p>
-                <div style="background: #0d1117; border-radius: 8px; padding: 18px; text-align: center; margin: 24px 0; border: 1px solid #21262d;">
-                  <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #7ee787;">%s</span>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                         background: #0f172a; color: #f8fafc; padding: 40px 20px;">
+                <div style="max-width: 520px; margin: 0 auto; background: #1e293b; border-radius: 12px;
+                            padding: 32px; border: 1px solid #334155;">
+                    <h2 style="color: #6366f1; margin-top: 0;">%s</h2>
+                    <p>Hello %s,</p>
+                    <p>%s</p>
+                    <div style="text-align: center; margin: 32px 0;">
+                        <span style="display: inline-block; font-size: 32px; font-weight: 700;
+                                     letter-spacing: 8px; color: #f8fafc; background: #0f172a;
+                                     padding: 16px 28px; border-radius: 8px; border: 1px solid #4f46e5;">%s</span>
+                    </div>
+                    <p style="font-size: 13px; color: #94a3b8;">
+                        If you did not initiate this request, you can safely ignore this message.
+                    </p>
                 </div>
-                <p style="color: #8b949e; font-size: 13px;">If you didn't request this code, you can safely ignore this email.</p>
-              </div>
             </body>
             </html>
             """.formatted(headline, recipientName != null ? recipientName : "there", instructions, otp);

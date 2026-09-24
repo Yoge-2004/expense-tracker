@@ -1,6 +1,7 @@
 package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,17 +15,17 @@ import java.time.LocalDate;
  * runs daily and automatically creates concrete {@link Expense} records whenever
  * the {@code nextDueDate} is reached or passed.</p>
  *
- * <p>Supported frequency values (stored as {@code String}):</p>
- * <ul>
- *   <li>{@code "MONTHLY"} — expense recurs once per calendar month.</li>
- * </ul>
- *
  * @author Yogeshwaran
  * @version 1.0
  * @see com.example.expensetracker.service.RecurringExpenseScheduler
  * @see com.example.expensetracker.repository.RecurringExpenseRepository
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class RecurringExpense {
 
     /**
@@ -50,7 +51,6 @@ public class RecurringExpense {
 
     /**
      * The recurrence interval for this expense (e.g., {@code "MONTHLY"}).
-     * Currently only {@code "MONTHLY"} is supported.
      */
     private String frequency;
 
@@ -67,7 +67,7 @@ public class RecurringExpense {
      * The expense category associated with each auto-generated occurrence.
      * Stored as a foreign key ({@code category_id}) in the database.
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
@@ -75,171 +75,9 @@ public class RecurringExpense {
      * The user who owns and is billed for this recurring expense.
      * Stored as a foreign key ({@code user_id}) in the database.
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    /**
-     * Constructs an empty {@code RecurringExpense}.
-     * Required by JPA and for Jackson deserialisation.
-     */
-    public RecurringExpense() {}
 
-    /**
-     * Constructs a {@code RecurringExpense} with all fields populated.
-     *
-     * @param id          the unique identifier for this record
-     * @param amount      the monetary amount charged on each recurrence
-     * @param description a short description of the subscription
-     * @param frequency   the recurrence interval (e.g., {@code "MONTHLY"})
-     * @param nextDueDate the date the next charge is due
-     * @param category    the expense category for auto-generated occurrences
-     * @param user        the user who owns this recurring expense
-     */
-    public RecurringExpense(Long id, BigDecimal amount, String description,
-                            String frequency, LocalDate nextDueDate,
-                            Category category, User user) {
-        this.id = id;
-        this.amount = amount;
-        this.description = description;
-        this.frequency = frequency;
-        this.nextDueDate = nextDueDate;
-        this.category = category;
-        this.user = user;
-    }
-
-    /**
-     * Returns the unique database identifier of this recurring expense.
-     *
-     * @return the recurring expense ID
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Sets the unique database identifier of this recurring expense.
-     *
-     * @param id the recurring expense ID to set
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * Returns the monetary amount charged per recurrence.
-     *
-     * @return the subscription amount
-     */
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    /**
-     * Sets the monetary amount charged per recurrence.
-     *
-     * @param amount the subscription amount to set
-     */
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    /**
-     * Returns the short description of this recurring expense.
-     *
-     * @return the subscription description
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Sets the short description of this recurring expense.
-     *
-     * @param description the subscription description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    /**
-     * Returns the recurrence frequency (e.g., {@code "MONTHLY"}).
-     *
-     * @return the recurrence interval string
-     */
-    public String getFrequency() {
-        return frequency;
-    }
-
-    /**
-     * Sets the recurrence frequency for this expense.
-     *
-     * @param frequency the recurrence interval to set (e.g., {@code "MONTHLY"})
-     */
-    public void setFrequency(String frequency) {
-        this.frequency = frequency;
-    }
-
-    public Integer getIntervalDays() {
-        return intervalDays;
-    }
-
-    public void setIntervalDays(Integer intervalDays) {
-        this.intervalDays = intervalDays;
-    }
-
-    /**
-     * Returns the date on which the next charge is due to be auto-generated.
-     *
-     * @return the next due date
-     */
-    public LocalDate getNextDueDate() {
-        return nextDueDate;
-    }
-
-    /**
-     * Sets the date on which the next charge is due.
-     * Advanced forward by one period after each scheduled run.
-     *
-     * @param nextDueDate the next due date to set
-     */
-    public void setNextDueDate(LocalDate nextDueDate) {
-        this.nextDueDate = nextDueDate;
-    }
-
-    /**
-     * Returns the expense category associated with auto-generated expense records.
-     *
-     * @return the associated {@link Category}, or {@code null} if uncategorised
-     */
-    public Category getCategory() {
-        return category;
-    }
-
-    /**
-     * Sets the expense category to associate with auto-generated expense records.
-     *
-     * @param category the {@link Category} to set; may be {@code null}
-     */
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    /**
-     * Returns the user who owns this recurring expense subscription.
-     *
-     * @return the owning {@link User}
-     */
-    public User getUser() {
-        return user;
-    }
-
-    /**
-     * Sets the user who owns this recurring expense subscription.
-     *
-     * @param user the user to assign as the owner
-     */
-    public void setUser(User user) {
-        this.user = user;
-    }
 }

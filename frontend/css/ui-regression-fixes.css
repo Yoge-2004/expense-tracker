@@ -8,15 +8,6 @@ html[data-theme="light"] #themeToggle .sun-icon { display:none !important; visib
 html[data-theme="light"] .theme-toggle-btn .moon-icon,
 html[data-theme="light"] #themeToggle .moon-icon { display:block !important; visibility:visible !important; }
 
-/* Theme switches should not replay expensive page animations. */
-html.theme-transitioning *,
-html.theme-transitioning *::before,
-html.theme-transitioning *::after {
-    transition:none !important;
-    animation:none !important;
-    animation-play-state:paused !important;
-}
-
 .google-oauth-wrapper { position:relative !important; overflow:visible !important; isolation:isolate; }
 #googleOAuthBtn.btn-oauth {
     position:relative !important; z-index:1 !important; box-sizing:border-box !important; min-height:48px !important;
@@ -215,7 +206,6 @@ html.theme-transitioning *::after {
     .profile-menu { width:calc(100vw - 20px) !important; max-width:calc(100vw - 20px) !important; right:-2px !important; }
 }
 
-
 /* Mobile ledger controls scroll instead of clipping. */
 @media (max-width:760px) {
     #ledgerStreamTabs, .ledger-stream-tabs {
@@ -226,7 +216,6 @@ html.theme-transitioning *::after {
         min-width:0 !important;
         width:100% !important;
         scrollbar-width:none !important;
-        -webkit-overflow-scrolling:touch !important;
     }
     #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display:none !important; }
     #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
@@ -251,5 +240,61 @@ html.theme-transitioning *::after {
         width:14px !important;
         height:14px !important;
         display:block !important;
+    }
+}
+
+/* Budget Governance & Savings Goal additions buttons layout fix for dashboard containers on large displays */
+.budget-section .card-header,
+.savings-section .card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.budget-section .card-header #addBudgetBtn,
+.savings-section .card-header #addGoalBtn,
+.card-header .btn-small {
+    width: auto !important;
+    max-width: max-content !important;
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    align-self: center !important;
+    margin-left: auto !important;
+}
+
+@media (min-width: 1400px) {
+    .budget-section .card-header,
+    .savings-section .card-header {
+        margin-bottom: 20px !important;
+    }
+    .budget-section .card-header #addBudgetBtn,
+    .savings-section .card-header #addGoalBtn {
+        height: 38px !important;
+        padding: 8px 18px !important;
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+        border-radius: 11px !important;
+        gap: 8px !important;
+    }
+    .budget-section .card-header #addBudgetBtn svg,
+    .savings-section .card-header #addGoalBtn svg {
+        width: 16px !important;
+        height: 16px !important;
+        flex-shrink: 0 !important;
+    }
+}
+
+@media (min-width: 1920px) {
+    .budget-section .card-header #addBudgetBtn,
+    .savings-section .card-header #addGoalBtn {
+        height: 40px !important;
+        padding: 8px 20px !important;
+        font-size: 14px !important;
     }
 }

@@ -3,8 +3,8 @@ package com.example.expensetracker.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,19 +17,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Tag(name = "Health", description = "Application and Database Health Check Endpoints")
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/health")
 public class HealthController {
 
-    private static final Logger log = LoggerFactory.getLogger(HealthController.class);
-
     private final JdbcTemplate jdbcTemplate;
 
-    public HealthController(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
-    @Operation(summary = "Get system health status", description = "Checks database connectivity, JVM memory, and system uptime.")
+    @Operation(summary = "Get system health status",
+               description = "Checks database connectivity, JVM memory, and system uptime.")
     @SecurityRequirements
     @GetMapping
     public ResponseEntity<Map<String, Object>> getHealth() {
@@ -47,13 +45,11 @@ public class HealthController {
 
         boolean dbUp = false;
         try {
+            //noinspection SqlNoDataSourceInspection
             Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-            if (result != null && result == 1) {
-                dbUp = true;
-            }
+            dbUp = result != null && result == 1;
         } catch (Exception ex) {
             log.error("Database health check probe failed: {}", ex.getMessage());
-            dbUp = false;
         }
 
         if (dbUp) {

@@ -1,0 +1,7 @@
+text,label,source
+swiggy dinner,food,fixture
+restaurant lunch,food,fixture
+uber ride,transport,fixture
+taxi trip,transport,fixture
+movie ticket,entertainment,fixture
+cinema booking,entertainment,fixture

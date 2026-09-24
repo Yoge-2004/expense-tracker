@@ -40,7 +40,7 @@ import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
 import { ManageCategoriesModal } from '../../components/ManageCategoriesModal';
 import { MonthlyReportModal } from '../../components/MonthlyReportModal';
-import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled } from '../../services/notifications';
+import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification } from '../../services/notifications';
 
 export default function ProfileScreen() {
   const { userId, userName, theme, toggleTheme, currency, updateCurrency, logout, updateUserName, isBiometricsAvailable, isBiometricEnabled, toggleBiometrics } = useAuth();
@@ -64,6 +64,30 @@ export default function ProfileScreen() {
   React.useEffect(() => {
     getDailyRemindersEnabled().then((enabled) => setRemindersEnabled(enabled));
   }, []);
+
+
+  const [instantDebitEnabled, setInstantDebitEnabled] = useState(true);
+
+  const handleSimulateDebit = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const sampleSms = "Alert: Your A/c ending 4589 debited by INR 350.00 on 24-Sep-26 at Starbucks Coffee ref txn882910.";
+    const result = await processIncomingMessageForDebitNotification(sampleSms);
+    if (result) {
+      showAlert(
+        "Instant Debit Triggered 💸",
+        `Parsed & dispatched notification immediately: ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}.`,
+        undefined,
+        "success"
+      );
+    } else {
+      showAlert(
+        "Simulation Result",
+        "Sample debit was processed (device notification permission may be needed in native build).",
+        undefined,
+        "info"
+      );
+    }
+  };
 
   const handleToggleReminders = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -263,12 +287,28 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleReminders} style={styles.menuRow}>
+            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleReminders} style={[styles.menuRow, { borderBottomColor: c.border }]}>
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="notifications-outline" size={18} color={c.primary} /></View>
                 <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Daily Reminders (2x Daily)</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{remindersEnabled ? 'Enabled: 1:30 PM & 8:30 PM check-ins' : 'Disabled'}</Text></View>
               </View>
               <Ionicons name={remindersEnabled ? 'checkbox' : 'square-outline'} size={22} color={remindersEnabled ? c.primary : c.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); setInstantDebitEnabled(!instantDebitEnabled); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}><Ionicons name="flash-outline" size={18} color={c.accent} /></View>
+                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Real-time Debit Alerts</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{instantDebitEnabled ? 'Active: Instant push then & there on debit' : 'Disabled'}</Text></View>
+              </View>
+              <Ionicons name={instantDebitEnabled ? 'checkbox' : 'square-outline'} size={22} color={instantDebitEnabled ? c.accent : c.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} onPress={handleSimulateDebit} style={styles.menuRow}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="paper-plane-outline" size={18} color={c.primary} /></View>
+                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Test Instant Debit Alert</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>Simulate receiving a bank debit notification</Text></View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
           </View>
         </StaggeredView>

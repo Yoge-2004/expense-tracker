@@ -1,39 +1,6 @@
-/* Shared UI regressions: theme controls, app dialogs, and lightweight interaction fixes. */
+/* Shared UI regressions: app dialogs and lightweight interaction fixes. */
 (function () {
     "use strict";
-
-    function syncThemeIcons() {
-        const theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-        if (typeof window.updateAllThemeIcons === "function") {
-            window.updateAllThemeIcons(theme);
-            return;
-        }
-        document.querySelectorAll(".theme-toggle-btn, #themeToggle").forEach(button => {
-            const sun = button.querySelector(".sun-icon");
-            const moon = button.querySelector(".moon-icon");
-            if (!sun || !moon) return;
-            const light = theme === "light";
-            sun.style.display = light ? "none" : "block";
-            moon.style.display = light ? "block" : "none";
-            button.setAttribute("aria-label", light ? "Switch to dark theme" : "Switch to light theme");
-            button.setAttribute("title", light ? "Switch to dark theme" : "Switch to light theme");
-        });
-    }
-
-    function installThemeGuard() {
-        const root = document.documentElement;
-        const update = () => {
-            syncThemeIcons();
-        };
-        document.addEventListener("themechange", update);
-        if (typeof MutationObserver !== "undefined") {
-            new MutationObserver(records => {
-                if (records.some(record => record.type === "attributes" && record.attributeName === "data-theme")) {
-                    syncThemeIcons();
-                }
-            }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-        }
-    }
 
     function addDialogStyles() {
         if (document.getElementById("appDialogStyles")) return;
@@ -47,12 +14,14 @@
 .app-dialog-title{margin:0 0 8px;font-size:18px;font-weight:700}
 .app-dialog-message{margin:0;color:var(--text-muted,#a8a395);font-size:14px;line-height:1.55;white-space:pre-wrap}
 .app-dialog-input{width:100%;margin-top:16px;padding:12px 14px;box-sizing:border-box;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);color:var(--text-main);outline:none}
-.app-dialog-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.12)}
+.app-dialog-input:focus-visible{border-color:var(--primary);box-shadow:0 0 0 3px rgba(var(--primary-rgb),.12)}
+.app-dialog-input:focus:not(:focus-visible){border-color:var(--border);box-shadow:none}
 .app-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
 .app-dialog-btn{min-width:92px;padding:10px 14px;border-radius:11px;border:1px solid var(--border);background:var(--input-bg);color:var(--text-main);font-weight:650;cursor:pointer}
 .app-dialog-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 .app-dialog-btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .app-dialog-btn:hover{filter:brightness(1.06)}
+.app-dialog-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 @media(max-width:520px){.app-dialog{padding:20px}.app-dialog-actions{display:grid;grid-template-columns:1fr 1fr}.app-dialog-btn{width:100%}}
         `;
         document.head.appendChild(style);
@@ -97,6 +66,7 @@
         dialog.appendChild(actions);
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
+        overlay.setAttribute("aria-labelledby", title.id = `app-dialog-title-${Date.now()}`);
         return { overlay, dialog, input, cancel, accept };
     }
 
@@ -157,10 +127,121 @@
         });
     }
 
+    // Strengthen non-native controls that are intentionally kept for visual
+    // compatibility with the current custom selector implementation.
+    function initAccessibleCustomControls() {
+        const triggers = [
+            document.getElementById("currencySelectTrigger"),
+            document.getElementById("dashCurrencyTrigger")
+        ].filter(Boolean);
+
+        triggers.forEach(trigger => {
+            const wrapper = trigger.closest(".custom-select-wrapper");
+            const options = wrapper?.querySelector(".custom-select-options");
+            if (!wrapper) return;
+
+            trigger.setAttribute("role", "combobox");
+            trigger.setAttribute("tabindex", "0");
+            trigger.setAttribute("aria-haspopup", "listbox");
+            trigger.setAttribute("aria-expanded", wrapper.classList.contains("open") ? "true" : "false");
+
+            if (options) {
+                const list = options.querySelector(".custom-options-list") || options;
+                if (!list.id) list.id = `${trigger.id}-listbox`;
+                trigger.setAttribute("aria-controls", list.id);
+                options.querySelectorAll(".custom-option").forEach((option, index) => {
+                    option.setAttribute("role", "option");
+                    option.setAttribute("tabindex", "-1");
+                    option.setAttribute("aria-selected", option.classList.contains("selected") ? "true" : "false");
+                    if (!option.id) option.id = `${trigger.id}-option-${index}`;
+                });
+            }
+
+            trigger.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    trigger.click();
+                    return;
+                }
+                if (event.key === "Escape") {
+                    wrapper.classList.remove("open");
+                    trigger.setAttribute("aria-expanded", "false");
+                    return;
+                }
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault();
+                    if (!wrapper.classList.contains("open")) trigger.click();
+                    const optionNodes = Array.from(wrapper.querySelectorAll(".custom-option"))
+                        .filter(option => getComputedStyle(option).display !== "none" && !option.classList.contains("disabled"));
+                    const current = optionNodes.indexOf(document.activeElement);
+                    const step = event.key === "ArrowDown" ? 1 : -1;
+                    const target = optionNodes[current < 0 ? (event.key === "ArrowDown" ? 0 : optionNodes.length - 1) : Math.max(0, Math.min(optionNodes.length - 1, current + step))];
+                    target?.focus();
+                }
+            });
+
+            wrapper.addEventListener("click", () => {
+                trigger.setAttribute("aria-expanded", wrapper.classList.contains("open") ? "true" : "false");
+            });
+
+            const observer = new MutationObserver(() => {
+                trigger.setAttribute("aria-expanded", wrapper.classList.contains("open") ? "true" : "false");
+                wrapper.querySelectorAll(".custom-option").forEach(option => {
+                    option.setAttribute("aria-selected", option.classList.contains("selected") ? "true" : "false");
+                });
+            });
+            observer.observe(wrapper, { attributes: true, subtree: true, attributeFilter: ["class"] });
+
+            options?.addEventListener("keydown", event => {
+                const option = event.target.closest(".custom-option");
+                if (!option || option.classList.contains("disabled")) return;
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    option.click();
+                    trigger.focus();
+                } else if (event.key === "Escape") {
+                    wrapper.classList.remove("open");
+                    trigger.setAttribute("aria-expanded", "false");
+                    trigger.focus();
+                }
+            });
+        });
+    }
+
+    function initAccessibleGeneratedContent() {
+        document.querySelectorAll(".suggestion-chip").forEach(chip => {
+            if (chip.matches("button, a, input")) return;
+            chip.setAttribute("role", "button");
+            chip.setAttribute("tabindex", "0");
+            chip.setAttribute("aria-label", `Use suggested username ${chip.textContent.trim().replace(/^@/, "")}`);
+            chip.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    chip.click();
+                }
+            });
+        });
+
+        const filterSearch = document.getElementById("filterSearch");
+        if (filterSearch && !filterSearch.getAttribute("aria-label")) {
+            filterSearch.setAttribute("aria-label", "Search expenses and incomes");
+        }
+
+        document.querySelectorAll(".modal-overlay > .modal").forEach((modal, index) => {
+            modal.setAttribute("role", "dialog");
+            modal.setAttribute("aria-modal", "true");
+            const heading = modal.querySelector("h1, h2, h3, h4, [role='heading']");
+            if (heading) {
+                if (!heading.id) heading.id = `modal-heading-${index}`;
+                modal.setAttribute("aria-labelledby", heading.id);
+            }
+        });
+    }
+
     function init() {
-        syncThemeIcons();
-        installThemeGuard();
         removeRedundantIncomeInlineHandlers();
+        initAccessibleCustomControls();
+        initAccessibleGeneratedContent();
     }
 
     if (document.readyState === "loading") {

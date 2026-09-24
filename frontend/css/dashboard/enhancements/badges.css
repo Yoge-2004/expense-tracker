@@ -10,17 +10,17 @@
 }
 .badge-success {
     background: rgba(var(--success-rgb), 0.12);
-    color: var(--success);
+    color: var(--success-text);
     border: 1px solid rgba(var(--success-rgb), 0.25);
 }
 .badge-accent {
     background: rgba(var(--accent-rgb), 0.12);
-    color: var(--accent);
+    color: var(--accent-text);
     border: 1px solid rgba(var(--accent-rgb), 0.25);
 }
 .badge-danger {
     background: rgba(var(--accent-rgb), 0.12);
-    color: var(--danger);
+    color: var(--danger-text);
     border: 1px solid rgba(var(--accent-rgb), 0.25);
 }
 .badge-neutral {

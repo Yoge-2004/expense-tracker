@@ -1,24 +1,6 @@
-/* Theme transition and light-mode token overrides. */
-body,
-.dashboard-layout {
-    transition:
-        background-color 0.14s ease-out,
-        color 0.12s ease-out;
-}
-
-.top-bar,
-.card,
-.stat-card,
-.unified-ledger-card,
-.metric-card,
-.modal {
-    transition:
-        background-color 0.16s ease-out,
-        border-color 0.16s ease-out,
-        color 0.14s ease-out;
-}
-
+/* Theme tokens. Theme switching is intentionally instantaneous on the dashboard;\n   the performance guard suppresses any component-level transitions during the toggle. */
 [data-theme="light"] {
+    color-scheme: light;
     --bg-dark: #EEF1F6;
     --card-bg: #FFFFFF;
     --card-bg-hover: #FFFFFF;
@@ -42,6 +24,13 @@ body,
     --accent: #E74C3C;
     --accent-gradient: linear-gradient(135deg, #FF6B6B 0%, #E74C3C 100%);
     --accent-glow: rgba(231, 76, 60, 0.25);
+
+    /* Text/icon-safe variants for light theme (see tokens.css for rationale).
+       Darkened rather than lightened since the surface is now light. */
+    --accent-text: #DF2E1B;
+    --danger-text: #EB1515;
+    --success-text: #0C855D;
+    --metric-subs-text: #B54858;
 
     --highlight: #0EA5E9;
     --highlight-gradient: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
@@ -69,7 +58,11 @@ body,
     --metric-savings: #B45309;
     --metric-savings-rgb: 180, 83, 9;
     --metric-savings-glow: rgba(180, 83, 9, 0.15);
-    --metric-subs: #7C3AED;
-    --metric-subs-rgb: 124, 58, 237;
-    --metric-subs-glow: rgba(124, 58, 237, 0.15);
+    --metric-subs: #B54858;
+    --metric-subs-rgb: 181, 72, 88;
+    --metric-subs-glow: rgba(181, 72, 88, 0.15);
+}
+
+:root {
+    color-scheme: dark;
 }

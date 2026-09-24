@@ -14,7 +14,7 @@ const avatarEl = document.querySelector(".avatar");
 if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
 
 // Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
-const { getLocalDateString, parseLocalDate, escapeHtml, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
+const { getLocalDateString, parseLocalDate, escapeHtml, jsAttrEscape, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
 const elements = window.DashboardDom.elements;
 const { animateNumber, animatePercent, celebrateSuccess, updateStats } = window.DashboardEffects;
 
@@ -107,6 +107,7 @@ const dashboardBudgetController = window.DashboardBudget.createController({
     getCategoryColor,
     getCategoryEmoji,
     escapeHtml,
+    jsAttrEscape,
     formatCurrency,
     renderBudgetVsActualChart,
     renderFinancialInsights,
@@ -438,16 +439,21 @@ elements.addForm.addEventListener("submit", async (e) => {
 
     submitBtn.disabled = true;
     try {
+        let savedExpense = null;
         if (id) {
-            await apiRequest(`/expenses/${id}/user/${userId}`, { method: "PUT", body: JSON.stringify(expenseData) });
+            savedExpense = await apiRequest(`/expenses/${id}/user/${userId}`, { method: "PUT", body: JSON.stringify(expenseData) });
             showToast("Expense updated.", "success");
         } else if (isRecurring) {
-            await apiRequest(`/expenses/recurring/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
+            savedExpense = await apiRequest(`/expenses/recurring/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
             showToast("Recurring expense created.", "success");
         } else {
-            await apiRequest(`/expenses/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
+            savedExpense = await apiRequest(`/expenses/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
             celebrateSuccess(e.clientX, e.clientY);
             showToast("Expense added.", "success");
+        }
+
+        if (window.DashboardML && typeof window.DashboardML.onExpenseSaved === "function") {
+            window.DashboardML.onExpenseSaved(savedExpense || { id: id, ...expenseData }, expenseData);
         }
 
         // Was elements.modal.classList.remove("active") directly, which
@@ -469,6 +475,9 @@ elements.addForm.addEventListener("submit", async (e) => {
 });
 
 window.editExpense = (id) => {
+    if (window.DashboardML && typeof window.DashboardML.resetActiveSession === "function") {
+        window.DashboardML.resetActiveSession();
+    }
     const expense = allExpenses.find(e => e.id === id);
     if (!expense) return;
 
@@ -510,6 +519,9 @@ function syncRecurringIntervalVisibility() {
 }
 
 function openNewExpenseModal() {
+    if (window.DashboardML && typeof window.DashboardML.resetActiveSession === "function") {
+        window.DashboardML.resetActiveSession();
+    }
     if (elements.addForm) elements.addForm.reset();
     const idEl = document.getElementById("expenseId");
     if (idEl) idEl.value = "";
@@ -683,7 +695,7 @@ const currencySelector = document.getElementById("currencySelector");
 
 function syncCurrencyDropdown(currCode) {
     if (typeof WORLD_CURRENCIES === "undefined") return;
-    const activeCurr = currCode || (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "USD");
+    const activeCurr = currCode || (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "INR");
     const item = WORLD_CURRENCIES.find(c => c.code === activeCurr) || WORLD_CURRENCIES[0];
     if (currencySelector) currencySelector.value = item.code;
     if (dashCurrLabel && item) dashCurrLabel.textContent = `${item.flag} ${item.code} (${item.symbol})`;
@@ -702,7 +714,7 @@ function syncCurrencyDropdown(currCode) {
 
 if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined") {
     const optionsContainer = dashCurrWrapper.querySelector(".custom-select-options");
-    const activeCurr = typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "USD";
+    const activeCurr = typeof getSelectedCurrency === "function" ? getSelectedCurrency() : "INR";
     if (currencySelector) currencySelector.value = activeCurr;
 
     optionsContainer.innerHTML = `
@@ -752,8 +764,14 @@ if (dashCurrTrigger && dashCurrWrapper && typeof WORLD_CURRENCIES !== "undefined
 
             localStorage.setItem("userCurrency", newCurr);
             if (typeof setCurrencySymbol === "function") setCurrencySymbol(newCurr);
-            apiRequest(`/users/${userId}/currency`, { method: "PUT", body: JSON.stringify({ currency: newCurr }) }).catch(err => console.warn("Failed to persist currency preference:", err));
-            showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
+            apiRequest(`/users/${userId}/currency`, { method: "PUT", body: JSON.stringify({ currency: newCurr }) })
+                .then(() => {
+                    showToast(`Currency updated to ${newCurr} (${getCurrencySymbol()})`, "success");
+                })
+                .catch(err => {
+                    console.error("Failed to persist currency preference:", err);
+                    showToast(`Failed to sync currency preference to server: ${err.message || "Network error"}`, "error");
+                });
             refreshAllCurrencyDisplays();
         });
     });
@@ -1186,11 +1204,58 @@ function exportIncomesClientSideExcel() {
     triggerFileDownload(blob, "incomes.xlsx");
 }
 
-// Fetching as a blob keeps the token out of URL history and server logs.
+// Helper to track file upload progress with XMLHttpRequest
+function uploadFileWithProgress(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
+        if (currentToken) {
+            xhr.setRequestHeader("Authorization", `Bearer ${currentToken}`);
+        }
+        if (xhr.upload && typeof onProgress === "function") {
+            xhr.upload.onprogress = (evt) => {
+                if (evt.lengthComputable && evt.total > 0) {
+                    const percent = Math.round((evt.loaded / evt.total) * 100);
+                    onProgress(percent, evt.loaded, evt.total);
+                }
+            };
+        }
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const json = JSON.parse(xhr.responseText);
+                    resolve(json);
+                } catch (_) {
+                    resolve({ message: xhr.responseText || "Import completed successfully" });
+                }
+            } else {
+                let errMsg = `Upload failed with status ${xhr.status}`;
+                try {
+                    const errObj = JSON.parse(xhr.responseText);
+                    errMsg = errObj.message || errObj.error || errMsg;
+                } catch (_) {
+                    if (xhr.responseText) errMsg = xhr.responseText;
+                }
+                reject(new Error(errMsg));
+            }
+        };
+        xhr.onerror = () => reject(new Error("Network failure during file upload. Please check connection."));
+        xhr.send(formData);
+    });
+}
+
+// Fetching with streaming chunks keeps the token safe and displays download progress.
 async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fallbackFn = null) {
-    showToast(loadingMessage, "info");
+    if (typeof setProgress === "function") {
+        setProgress(0, loadingMessage);
+    } else if (typeof setLoading === "function") {
+        setLoading(true, loadingMessage);
+    } else {
+        showToast(loadingMessage, "info");
+    }
     try {
-        const currentToken = localStorage.getItem("token") || authToken || token;
+        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
         const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
         const sep = url.includes("?") ? "&" : "?";
         const finalUrl = `${url}${sep}currency=${encodeURIComponent(activeCurr)}`;
@@ -1214,7 +1279,34 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
         const match = disposition.match(/filename="?([^"]+)"?/);
         const filename = match ? match[1] : fallbackFilename;
 
-        const blob = await res.blob();
+        let blob;
+        const contentLength = res.headers.get("Content-Length");
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        if (res.body && typeof res.body.getReader === "function") {
+            const reader = res.body.getReader();
+            const chunks = [];
+            let received = 0;
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                received += value.length;
+                if (total > 0) {
+                    const pct = Math.round((received / total) * 100);
+                    if (typeof setProgress === "function") {
+                        setProgress(pct, `Downloading ${filename} (${pct}%)...`);
+                    }
+                } else {
+                    const kb = Math.round(received / 1024);
+                    if (typeof setProgress === "function") {
+                        setProgress(null, `Downloading ${filename} (${kb} KB received)...`);
+                    }
+                }
+            }
+            blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
+        } else {
+            blob = await res.blob();
+        }
         triggerFileDownload(blob, filename);
         showToast(`${filename} downloaded successfully.`, "success");
     } catch (err) {
@@ -1229,6 +1321,9 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
             }
         }
         showToast(err.message || "Export failed", "error");
+    } finally {
+        if (typeof setProgress === "function") setProgress(null);
+        if (typeof setLoading === "function") setLoading(false);
     }
 }
 
@@ -1274,21 +1369,23 @@ importFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        setLoading(true, "Importing file...");
-        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("token") || token}`
-            },
-            body: formData
-        });
-
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || "Import failed");
+        if (typeof setProgress === "function") {
+            setProgress(0, `Preparing to upload ${fname}...`);
+        } else {
+            setLoading(true, "Preparing upload...");
         }
-
-        const data = await res.json();
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
+            const loadedKb = Math.round(loaded / 1024);
+            const totalKb = Math.round(total / 1024);
+            if (typeof setProgress === "function") {
+                setProgress(pct, `Uploading ${fname} (${pct}% - ${loadedKb}/${totalKb} KB)...`);
+            } else {
+                setLoading(true, `Uploading ${fname} (${pct}%)...`);
+            }
+        });
+        if (typeof setProgress === "function") {
+            setProgress(100, "Processing imported data on server...");
+        }
         if (data.failedRows > 0) {
             showToast(`${data.imported} imported, ${data.failedRows} row(s) skipped — see console for details.`, data.imported > 0 ? "info" : "error");
             console.warn("Import row errors:", data.errors);
@@ -1305,6 +1402,7 @@ importFileInput?.addEventListener("change", async (e) => {
     } catch (err) {
         showToast(err.message, "error");
     } finally {
+        if (typeof setProgress === "function") setProgress(null);
         setLoading(false);
         importFileInput.value = "";
     }
@@ -1481,7 +1579,7 @@ function renderSubsModalContent() {
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="openEditSubscription(${sub.id}, '${escapeHtml(sub.description).replace(/'/g, "\\'")}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
+                    <button onclick="openEditSubscription(${sub.id}, '${jsAttrEscape(sub.description)}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1}, ${sub.categoryId || 'null'})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                     </button>
                     <button onclick="cancelSubscription(${sub.id}, event)" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
@@ -1529,7 +1627,7 @@ function renderSubsModalContent() {
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
-                    <button onclick="closeModal(elements.subsModal); document.getElementById('depositGoalId').value = '${goal.id}'; const dt = document.getElementById('savingsDepositTitle'); if(dt) dt.textContent='Contribute to ${escapeHtml(goal.name)}'; openModal(document.getElementById('savingsDepositModal'));" class="btn-primary btn-small" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:5px 12px; cursor:pointer;" title="Contribute Installment">
+                    <button onclick="closeModal(elements.subsModal); document.getElementById('depositGoalId').value = '${goal.id}'; const dt = document.getElementById('savingsDepositTitle'); if(dt) dt.textContent='Contribute to ${jsAttrEscape(goal.name)}'; openModal(document.getElementById('savingsDepositModal'));" class="btn-primary btn-small" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:5px 12px; cursor:pointer;" title="Contribute Installment">
                         + Deposit
                     </button>
                 </div>
@@ -1635,10 +1733,11 @@ window.deleteIncomeFromSubsModal = async (incId) => {
 const editSubModal = document.getElementById("editSubModal");
 const editSubForm = document.getElementById("editSubForm");
 
-window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTHLY', intervalDays = 1) => {
+window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTHLY', intervalDays = 1, categoryId = null) => {
     const editSubCatSelect = document.getElementById("editSubCategory");
     if (editSubCatSelect && allCategories && allCategories.length > 0) {
-        editSubCatSelect.innerHTML = allCategories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+        editSubCatSelect.innerHTML = allCategories.map(c => `<option value="${c.id}"${categoryId && String(c.id) === String(categoryId) ? ' selected' : ''}>${escapeHtml(c.name)}</option>`).join("");
+        if (categoryId) editSubCatSelect.value = categoryId;
         if (window.syncCustomSelect) window.syncCustomSelect(editSubCatSelect);
     }
     document.getElementById("editSubId").value = id;
@@ -1684,7 +1783,9 @@ editSubForm?.addEventListener("submit", async (e) => {
         return showToast("Custom interval must be at least 1 day", "error");
     }
 
+    const categoryId = document.getElementById("editSubCategory")?.value;
     const body = { description: desc, amount, nextDueDate, frequency };
+    if (categoryId) body.categoryId = parseInt(categoryId);
     if (frequency === "CUSTOM") body.intervalDays = intervalDaysRaw;
 
     submitBtn.disabled = true;
@@ -1761,6 +1862,73 @@ elements.cancelDeleteAccountBtn.addEventListener("click", () => {
     if (elements.deletePasswordInput) elements.deletePasswordInput.value = "";
     elements.deleteConfirmInput.value = "";
 });
+
+// --- EDIT PROFILE NAME ---
+const editProfileBtn = document.getElementById("editProfileBtn");
+const editProfileModal = document.getElementById("editProfileModal");
+const closeEditProfileModalBtn = document.getElementById("closeEditProfileModalBtn");
+const cancelEditProfileBtn = document.getElementById("cancelEditProfileBtn");
+const editProfileForm = document.getElementById("editProfileForm");
+const editProfileNameInput = document.getElementById("editProfileNameInput");
+
+if (editProfileBtn && editProfileModal) {
+    editProfileBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        toggleProfileMenu(false);
+        const currentName = localStorage.getItem("userName") || "";
+        if (editProfileNameInput) {
+            editProfileNameInput.value = currentName;
+        }
+        openModal(editProfileModal);
+        setTimeout(() => editProfileNameInput?.focus(), 50);
+    });
+
+    const closeEditModal = () => closeModal(editProfileModal);
+    closeEditProfileModalBtn?.addEventListener("click", closeEditModal);
+    cancelEditProfileBtn?.addEventListener("click", closeEditModal);
+    editProfileModal.addEventListener("click", (e) => {
+        if (e.target === editProfileModal) closeEditModal();
+    });
+
+    editProfileForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const newName = editProfileNameInput?.value?.trim();
+        if (!newName || newName.length < 2 || newName.length > 50) {
+            showToast("Display name must be between 2 and 50 characters.", "warning");
+            return;
+        }
+        const saveBtn = document.getElementById("saveEditProfileBtn");
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Saving...";
+        }
+        try {
+            const res = await apiRequest(`/users/${userId}`, {
+                method: "PUT",
+                body: JSON.stringify({ name: newName })
+            });
+            const updatedName = (res && res.name) ? res.name : newName;
+            localStorage.setItem("userName", updatedName);
+            const userWelcomeText = document.getElementById("userWelcomeText");
+            if (userWelcomeText) {
+                userWelcomeText.textContent = `Welcome back, ${updatedName}`;
+            }
+            const avatarEl = document.querySelector(".avatar");
+            if (avatarEl) {
+                avatarEl.textContent = updatedName.charAt(0).toUpperCase();
+            }
+            showToast("Profile name updated successfully!", "success");
+            closeEditModal();
+        } catch (err) {
+            showToast(err.message || "Failed to update profile name.", "error");
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save Changes";
+            }
+        }
+    });
+}
 
 // Close modal on overlay click
 elements.deleteAccountModal.addEventListener("click", (e) => {
@@ -2200,9 +2368,13 @@ function renderSavingsGoals(goals) {
     if (!container) return;
     if (!allSavingsGoals || allSavingsGoals.length === 0) {
         container.innerHTML = `
-            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02);">
+            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
                 <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No savings goals configured yet</p>
-                <span style="font-size:12.5px;">Click <strong>+ New Goal</strong> to set targets for emergency reserves, investments, or travel.</span>
+                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Set targets for emergency reserves, investments, or travel milestones.</span>
+                <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addGoalBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Create Savings Goal</span>
+                </button>
             </div>`;
         return;
     }
@@ -2715,21 +2887,23 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        setLoading(true, "Importing income streams...");
-        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("token") || token}`
-            },
-            body: formData
-        });
-
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || "Incomes import failed");
+        if (typeof setProgress === "function") {
+            setProgress(0, `Preparing to upload ${fname}...`);
+        } else {
+            setLoading(true, "Preparing income upload...");
         }
-
-        const data = await res.json();
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
+            const loadedKb = Math.round(loaded / 1024);
+            const totalKb = Math.round(total / 1024);
+            if (typeof setProgress === "function") {
+                setProgress(pct, `Uploading ${fname} (${pct}% - ${loadedKb}/${totalKb} KB)...`);
+            } else {
+                setLoading(true, `Uploading ${fname} (${pct}%)...`);
+            }
+        });
+        if (typeof setProgress === "function") {
+            setProgress(100, "Processing imported income records...");
+        }
         showToast(data.message || "Incomes imported successfully!", "success");
         if (typeof window.clearApiCache === "function") window.clearApiCache();
         try { localStorage.removeItem(getCacheKey()); } catch (_) {}
@@ -2737,6 +2911,7 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
     } catch (err) {
         showToast(err.message, "error");
     } finally {
+        if (typeof setProgress === "function") setProgress(null);
         setLoading(false);
         importIncomeFileInput.value = "";
     }
@@ -2844,7 +3019,7 @@ function renderPeriodPickerUI() {
     if (!reportYearChips || !reportMonthGrid) return;
 
     // Render Year Chips
-    reportYearChips.innerHTML = "";
+    reportYearChips.replaceChildren();
     periodAvailableYears.forEach(y => {
         const isSelected = y === selectedReportYear;
         const chip = document.createElement("button");
@@ -2865,7 +3040,7 @@ function renderPeriodPickerUI() {
     });
 
     // Render Month Grid
-    reportMonthGrid.innerHTML = "";
+    reportMonthGrid.replaceChildren();
     ALL_REPORT_MONTHS.forEach(m => {
         const isValid = isPeriodMonthValid(m.num, selectedReportYear);
         const isSelected = m.num === selectedReportMonth;

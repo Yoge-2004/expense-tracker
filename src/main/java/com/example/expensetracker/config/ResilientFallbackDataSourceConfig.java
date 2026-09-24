@@ -2,8 +2,7 @@ package com.example.expensetracker.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,10 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * it is only safe for recovery when it has been populated by an explicit backup/
  * restore process. Production authority remains Neon PostgreSQL.
  */
+@Slf4j
 @Configuration
 public class ResilientFallbackDataSourceConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(ResilientFallbackDataSourceConfig.class);
 
     @Value("${spring.datasource.url:jdbc:h2:mem:expensetrackerdb}")
     private String primaryUrl;

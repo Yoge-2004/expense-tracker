@@ -1,6 +1,7 @@
 package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,6 +28,11 @@ import java.time.LocalDate;
     @Index(name = "idx_expense_user_date", columnList = "user_id, expense_date"),
     @Index(name = "idx_expense_user_cat", columnList = "user_id, category_id")
 })
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Expense extends BaseEntity {
 
     /**
@@ -49,7 +55,7 @@ public class Expense extends BaseEntity {
      * (e.g., "Lunch at office canteen", "Monthly electricity bill").
      * Maximum length is 255 characters.
      */
-    @Column(length = 255)
+    @Column
     private String description;
 
     /**
@@ -70,139 +76,17 @@ public class Expense extends BaseEntity {
     /**
      * The category used to classify this expense (e.g., Food, Transport).
      * May be {@code null} if the expense is not categorised.
-     * Fetched lazily to avoid unnecessary joins.
-     */
+     * Fetched lazily to avoid unnecessary joins.\n     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Builder.Default
     @Column(name = "is_recurring")
     private Boolean isRecurring = false;
 
-    /**
-     * Constructs an empty {@code Expense}.
-     * Required by JPA and for Jackson deserialisation.
-     */
-    public Expense() {}
-
-    /**
-     * Returns the unique database identifier of this expense.
-     *
-     * @return the expense ID
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Sets the unique database identifier of this expense.
-     *
-     * @param id the expense ID to set
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * Returns the monetary amount of this expense.
-     *
-     * @return the expense amount
-     */
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    /**
-     * Sets the monetary amount of this expense.
-     *
-     * @param amount the expense amount to set; must be a positive non-null value
-     */
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    /**
-     * Returns the optional description or note for this expense.
-     *
-     * @return the expense description, or {@code null} if not provided
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Sets the optional description or note for this expense.
-     *
-     * @param description the expense description to set; maximum 255 characters
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    /**
-     * Returns the date on which this expense was incurred.
-     *
-     * @return the expense date
-     */
-    public LocalDate getExpenseDate() {
-        return expenseDate;
-    }
-
-    /**
-     * Sets the date on which this expense was incurred.
-     *
-     * @param expenseDate the expense date to set; must not be {@code null}
-     */
-    public void setExpenseDate(LocalDate expenseDate) {
-        this.expenseDate = expenseDate;
-    }
-
-    /**
-     * Returns the user who owns this expense record.
-     *
-     * @return the owning {@link User}
-     */
-    public User getUser() {
-        return user;
-    }
-
-    /**
-     * Sets the user who owns this expense record.
-     *
-     * @param user the user to assign as the owner; must not be {@code null}
-     */
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    /**
-     * Returns the category used to classify this expense.
-     *
-     * @return the associated {@link Category}, or {@code null} if uncategorised
-     */
-    public Category getCategory() {
-        return category;
-    }
-
-    /**
-     * Sets the category used to classify this expense.
-     *
-     * @param category the {@link Category} to associate; may be {@code null}
-     */
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public LocalDate getDate() {
-        return expenseDate;
-    }
-
-    public void setDate(LocalDate date) {
-        this.expenseDate = date;
-    }
-
     public boolean isRecurring() {
-        return isRecurring != null && isRecurring;
+        return Boolean.TRUE.equals(isRecurring);
     }
 
     public void setRecurring(boolean recurring) {

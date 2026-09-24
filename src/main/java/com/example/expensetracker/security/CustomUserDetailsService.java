@@ -2,10 +2,14 @@ package com.example.expensetracker.security;
 
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Custom Spring Security {@link UserDetailsService} implementation for the
@@ -25,20 +29,14 @@ import org.springframework.stereotype.Service;
  * @see CustomUserDetails
  * @see UserRepository
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CustomUserDetailsService implements UserDetailsService {
 
     /** Repository used to look up users by their email address. */
     private final UserRepository userRepository;
-
-    /**
-     * Constructs a {@code CustomUserDetailsService} with the required user repository.
-     *
-     * @param userRepository the repository for fetching user records from the database
-     */
-    public CustomUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     /**
      * Loads a user by their email address for Spring Security authentication.
@@ -48,20 +46,25 @@ public class CustomUserDetailsService implements UserDetailsService {
      * user's email address. The returned {@link UserDetails} is then used
      * to verify the provided password and check account status flags.</p>
      *
-     * @param email the email address of the user to authenticate (used as the username)
+     * @param usernameOrEmail the email address or username of the user to authenticate
      * @return a {@link CustomUserDetails} instance wrapping the matched {@link User}
      * @throws UsernameNotFoundException if no user exists with the given email address
      */
     @Override
-    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        if (usernameOrEmail == null || usernameOrEmail.isBlank()) {
+    public @NonNull UserDetails loadUserByUsername(@NonNull String usernameOrEmail)
+            throws UsernameNotFoundException {
+        if (usernameOrEmail.isBlank()) {
+            log.warn("loadUserByUsername failed: identifier is blank");
             throw new UsernameNotFoundException("Username or email must not be blank.");
         }
         String query = usernameOrEmail.trim();
+        log.debug("Authenticating user by identifier");
         User user = userRepository.findByEmailIgnoreCase(query)
                 .or(() -> userRepository.findByUsernameIgnoreCase(query))
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with email or username: " + query));
+                .orElseThrow(() -> {
+                    log.warn("Authentication failed: user not found for identifier");
+                    return new UsernameNotFoundException("User not found with email or username: " + query);
+                });
         return new CustomUserDetails(user);
     }
 }

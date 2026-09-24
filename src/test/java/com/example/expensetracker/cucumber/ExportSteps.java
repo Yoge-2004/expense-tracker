@@ -5,7 +5,6 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -18,13 +17,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
  * <p>These steps exercise the CSV, Excel, and PDF export endpoints and verify the
  * response content type, content disposition header, and basic payload structure.</p>
  */
+@SuppressWarnings("unused")
 public class ExportSteps {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private TestContext ctx;
 
     @Given("I have expenses and incomes recorded")
-    public void haveExpensesAndIncomes() throws Exception {
+    public void haveExpensesAndIncomes() {
         // The background step "I am logged in" already created a user. We rely on
         // DataInitializer or the test's own data. For a robust test, we just ensure
         // the user exists — the export endpoints handle empty data gracefully.
@@ -113,7 +113,8 @@ public class ExportSteps {
         assertNotNull(ctx.lastResponse, "No response captured");
         String contentType = ctx.lastResponse.getResponse().getContentType();
         assertNotNull(contentType, "Content-Type header is null");
-        assertTrue(contentType.contains("spreadsheetml") || contentType.contains("excel") || contentType.contains("xlsx"),
+        assertTrue(contentType.contains("spreadsheetml") || contentType.contains("excel")
+                || contentType.contains("xlsx"),
                 "Expected Excel content type but was: " + contentType);
     }
 
@@ -127,7 +128,7 @@ public class ExportSteps {
     }
 
     @Then("the CSV should contain a header row with {string}")
-    public void verifyCsvHeader(String expectedHeader) throws Exception {
+    public void verifyCsvHeader(String expectedHeader) {
         assertNotNull(ctx.lastResponseBody, "No response body captured");
         String csv = new String(ctx.lastResponseBody, java.nio.charset.StandardCharsets.UTF_8);
         String firstLine = csv.split("\n", 2)[0].trim();

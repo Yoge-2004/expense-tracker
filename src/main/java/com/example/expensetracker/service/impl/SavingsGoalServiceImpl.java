@@ -7,14 +7,13 @@ import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.service.SavingsGoalService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link SavingsGoalService} managing lifecycle, milestone deposits,
@@ -22,21 +21,13 @@ import java.util.stream.Collectors;
  *
  * @author Yogeshwaran
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SavingsGoalServiceImpl implements SavingsGoalService {
 
-    private static final Logger log = LoggerFactory.getLogger(SavingsGoalServiceImpl.class);
-
     private final SavingsGoalRepository savingsGoalRepository;
-
-    /**
-     * Constructs {@link SavingsGoalServiceImpl} with required repository.
-     *
-     * @param savingsGoalRepository the savings goal repository
-     */
-    public SavingsGoalServiceImpl(SavingsGoalRepository savingsGoalRepository) {
-        this.savingsGoalRepository = savingsGoalRepository;
-    }
 
     /**
      * {@inheritDoc}
@@ -44,8 +35,26 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto createGoal(SavingsGoalRequest request, User user) {
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected savings goal creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (request == null) {
+            log.warn("Rejected null savings goal request for userId={}", user.getId());
+            throw new IllegalArgumentException("Savings goal request cannot be null");
+        }
+        if (request.name() == null || request.name().isBlank()) {
+            log.warn("Rejected savings goal creation with blank name for userId={}", user.getId());
+            throw new IllegalArgumentException("Goal name cannot be blank");
+        }
+        if (request.targetAmount() == null || request.targetAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected non-positive savings goal target={} for userId={}",
+                    request.targetAmount(), user.getId());
+            throw new IllegalArgumentException("Target amount must be greater than zero");
+        }
+
         log.info("Creating savings goal for userId={}: name={}, targetAmount={}",
-                user.getId(), request.getName(), request.getTargetAmount());
+                user.getId(), request.name(), request.targetAmount());
         SavingsGoal goal = SavingsGoalMapper.toEntity(request, user);
         SavingsGoal saved = savingsGoalRepository.save(goal);
         log.info("Savings goal created with id={} for userId={}", saved.getId(), user.getId());
@@ -56,13 +65,15 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true)
     public List<SavingsGoalDto> getUserGoals(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading savings goals for userId={}", user.getId());
         List<SavingsGoalDto> goals = savingsGoalRepository.findByUser(user)
                 .stream()
                 .map(SavingsGoalMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
         log.debug("Loaded {} savings goals for userId={}", goals.size(), user.getId());
         return goals;
     }
@@ -73,6 +84,19 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto updateGoal(Long goalId, SavingsGoalRequest request, User user) {
+        if (goalId == null) {
+            throw new IllegalArgumentException("Goal ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Savings goal request cannot be null");
+        }
+        if (request.targetAmount() != null && request.targetAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Target amount must be greater than zero");
+        }
+
         log.info("Updating savings goal id={} for userId={}", goalId, user.getId());
         SavingsGoal existing = savingsGoalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
@@ -82,11 +106,11 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
             throw new IllegalArgumentException("Savings goal does not belong to this user");
         }
 
-        if (request.getName() != null) {
-            existing.setName(request.getName());
+        if (request.name() != null) {
+            existing.setName(request.name());
         }
-        if (request.getTargetAmount() != null) {
-            existing.setTargetAmount(request.getTargetAmount());
+        if (request.targetAmount() != null) {
+            existing.setTargetAmount(request.targetAmount());
         }
         // FIXED: previously request.getCurrentAmount() could be set directly via updateGoal,
         // bypassing depositToGoal's validation and atomic increment. This allowed a user to
@@ -94,29 +118,29 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
         // deposit flow, and also skipped the COMPLETED status auto-transition. We now ignore
         // currentAmount on update — use POST /savings/goals/{id}/deposit to add funds.
         // If you genuinely need to adjust currentAmount (e.g. correction), add an admin endpoint.
-        if (request.getTargetDate() != null) {
-            existing.setTargetDate(request.getTargetDate());
+        if (request.targetDate() != null) {
+            existing.setTargetDate(request.targetDate());
         }
-        if (request.getStatus() != null) {
-            existing.setStatus(request.getStatus());
+        if (request.status() != null) {
+            existing.setStatus(request.status());
         }
-        if (request.getIsRecurring() != null) {
-            existing.setIsRecurring(request.getIsRecurring());
+        if (request.isRecurring() != null) {
+            existing.setIsRecurring(request.isRecurring());
         }
-        if (request.getRecurringAmount() != null) {
-            existing.setRecurringAmount(request.getRecurringAmount());
+        if (request.recurringAmount() != null) {
+            existing.setRecurringAmount(request.recurringAmount());
         }
-        if (request.getFrequency() != null) {
-            existing.setFrequency(request.getFrequency());
+        if (request.frequency() != null) {
+            existing.setFrequency(request.frequency());
         }
-        if (request.getIntervalDays() != null) {
-            existing.setIntervalDays(request.getIntervalDays());
+        if (request.intervalDays() != null) {
+            existing.setIntervalDays(request.intervalDays());
         }
-        if (request.getNextDueDate() != null) {
-            existing.setNextDueDate(request.getNextDueDate());
+        if (request.nextDueDate() != null) {
+            existing.setNextDueDate(request.nextDueDate());
         }
-        if (request.getEndDate() != null) {
-            existing.setEndDate(request.getEndDate());
+        if (request.endDate() != null) {
+            existing.setEndDate(request.endDate());
         }
 
         // Auto-transition status to COMPLETED if the (unchanged) currentAmount now meets
@@ -141,6 +165,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public SavingsGoalDto depositToGoal(Long goalId, BigDecimal amount, User user) {
+        if (goalId == null) {
+            throw new IllegalArgumentException("Goal ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Processing deposit of {} to savings goal id={} for userId={}", amount, goalId, user.getId());
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             log.warn("Rejected non-positive deposit amount={} for goalId={}", amount, goalId);
@@ -176,7 +206,8 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
                 && updated.getCurrentAmount().compareTo(updated.getTargetAmount()) >= 0
                 && !"COMPLETED".equals(updated.getStatus())) {
             updated.setStatus("COMPLETED");
-            log.info("Savings goal id={} reached target amount ({}) and marked COMPLETED", goalId, updated.getTargetAmount());
+            log.info("Savings goal id={} reached target amount ({}) and marked COMPLETED",
+                    goalId, updated.getTargetAmount());
             updated = savingsGoalRepository.save(updated);
         }
 
@@ -191,6 +222,12 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
     @Override
     @Transactional
     public void deleteGoal(Long goalId, User user) {
+        if (goalId == null) {
+            throw new IllegalArgumentException("Goal ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Deleting savings goal id={} for userId={}", goalId, user.getId());
         SavingsGoal goal = savingsGoalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Savings goal not found"));
@@ -208,13 +245,15 @@ public class SavingsGoalServiceImpl implements SavingsGoalService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true)
     public List<SavingsGoalDto> getRecurringGoals(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading recurring savings goals for userId={}", user.getId());
         List<SavingsGoalDto> list = savingsGoalRepository.findByUserAndIsRecurringTrue(user)
                 .stream()
                 .map(SavingsGoalMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
         log.debug("Loaded {} recurring savings goals for userId={}", list.size(), user.getId());
         return list;
     }

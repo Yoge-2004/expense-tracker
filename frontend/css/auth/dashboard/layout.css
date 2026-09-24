@@ -54,7 +54,7 @@
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s var(--ease);
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 .suggestion-chip:hover {
@@ -74,7 +74,6 @@
         overflow-y: visible !important;
         overflow: visible !important;
         scrollbar-width: none !important;
-        -ms-overflow-style: none !important;
     }
 
     .auth-hero {
