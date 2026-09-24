@@ -110,7 +110,8 @@ public interface ExportService {
     byte[] exportIncomesToExcel(User user);
 
     /**
-     * Exports all income entries of the specified user to a styled Microsoft Excel (.xlsx) workbook with preferred currency.
+     * Exports all income entries of the specified user to a styled Microsoft Excel (.xlsx) workbook
+     * with preferred currency.
      *
      * @param user the authenticated user whose incomes are exported
      * @param preferredCurrency optional ISO currency code or symbol

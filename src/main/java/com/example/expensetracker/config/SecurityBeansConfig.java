@@ -52,11 +52,10 @@ public class SecurityBeansConfig {
      *
      * @param config the {@link AuthenticationConfiguration} provided by Spring Security
      * @return the configured {@link AuthenticationManager}
-     * @throws Exception if the {@link AuthenticationManager} cannot be retrieved
      */
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+            AuthenticationConfiguration config) {
         return config.getAuthenticationManager();
     }
 }

@@ -5,25 +5,14 @@ import jakarta.validation.constraints.NotBlank;
 
 /** Request body for POST /api/auth/login. */
 @Schema(description = "Credentials required to authenticate a user")
-public class LoginRequest {
+public record LoginRequest(
+        @Schema(description = "Registered email address or username of the user",
+                example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotBlank(message = "Email or username is required")
+        String email,
 
-    @Schema(description = "Registered email address or username of the user", example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "Email or username is required")
-    private String email;
-
-    @Schema(description = "Account password (compared against BCrypt hash)", example = "secret123", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(message = "Password is required")
-    private String password;
-
-    public LoginRequest() {}
-
-    public LoginRequest(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
-
-    public String getEmail()               { return email; }
-    public void   setEmail(String email)   { this.email = email; }
-    public String getPassword()            { return password; }
-    public void   setPassword(String p)    { this.password = p; }
-}
+        @Schema(description = "Account password (compared against BCrypt hash)",
+                example = "secret123", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotBlank(message = "Password is required")
+        String password
+) {}

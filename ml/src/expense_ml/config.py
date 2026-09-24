@@ -1,0 +1,166 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+import os
+import random
+
+import numpy as np
+
+
+def _optional_int(value: str | None) -> int | None:
+    if value is None or value.strip().lower() == "auto":
+        return None
+    parsed = int(value)
+    if parsed < 1:
+        raise ValueError("numeric resource settings must be >= 1")
+    return parsed
+
+
+@dataclass(frozen=True)
+class TrainingConfig:
+    seed: int = 42
+    data_dir: Path = Path("data")
+    artifacts_dir: Path = Path("artifacts")
+    model_dir: Path = Path("artifacts/category-transformer")
+    transformer_name: str = "FacebookAI/xlm-roberta-base"
+    max_length: int = 96
+    test_size: float = 0.15
+    validation_size: float = 0.15
+    confidence_threshold: float = 0.70
+    minimum_accuracy: float = 0.90
+    minimum_macro_f1: float = 0.90
+    minimum_country_macro_f1: float = 0.85
+    minimum_india_macro_f1: float = 0.85
+    minimum_confidence_coverage: float = 0.75
+    minimum_high_confidence_accuracy: float = 0.98
+    minimum_country_samples: int = 100
+    batch_size: int = 16
+    eval_batch_size: int = 64
+    epochs: int = 4
+    learning_rate: float = 2e-5
+    gradient_accumulation_steps: int = 2
+    cpu_threads: int | None = None
+    torch_threads: int | None = None
+    dataloader_workers: int | None = None
+    pin_memory: bool = True
+    persistent_workers: bool = True
+    mixed_precision: str = "auto"
+    baseline_max_rows: int = 1_500_000
+    transformer_max_rows: int = 1_000_000
+    max_merchants: int = 250_000
+    duplicate_max_rows: int = 500_000
+    normalize_chunk_size: int = 250_000
+    progress: bool = True
+    kaggle_input_dir: Path = Path("/kaggle/input")
+    datasets: list[dict] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if not 0 < self.test_size < 1 or not 0 < self.validation_size < 1 or self.test_size + self.validation_size >= 1:
+            raise ValueError("test_size and validation_size must be positive and sum to less than 1")
+        for name in (
+            "confidence_threshold",
+            "minimum_accuracy",
+            "minimum_macro_f1",
+            "minimum_country_macro_f1",
+            "minimum_india_macro_f1",
+            "minimum_confidence_coverage",
+            "minimum_high_confidence_accuracy",
+        ):
+            value = float(getattr(self, name))
+            if not 0 <= value <= 1:
+                raise ValueError(f"{name} must be between 0 and 1")
+        if self.max_length < 8:
+            raise ValueError("max_length must be >= 8")
+        for name in (
+            "batch_size",
+            "eval_batch_size",
+            "epochs",
+            "gradient_accumulation_steps",
+            "baseline_max_rows",
+            "transformer_max_rows",
+            "max_merchants",
+            "duplicate_max_rows",
+            "normalize_chunk_size",
+            "minimum_country_samples",
+        ):
+            if int(getattr(self, name)) < 1:
+                raise ValueError(f"{name} must be >= 1")
+
+    @classmethod
+    def from_mapping(cls, values: dict) -> "TrainingConfig":
+        values = dict(values)
+        for key in ("data_dir", "artifacts_dir", "model_dir", "kaggle_input_dir"):
+            if key in values:
+                values[key] = Path(values[key])
+        return cls(**values)
+
+    @classmethod
+    def from_env(cls, base: "TrainingConfig" | None = None) -> "TrainingConfig":
+        current = base or cls()
+        updates = {}
+        path_keys = {
+            "EXPENSE_ML_DATA_DIR": "data_dir",
+            "EXPENSE_ML_MODEL_DIR": "model_dir",
+            "EXPENSE_ML_KAGGLE_INPUT": "kaggle_input_dir",
+        }
+        for env_name, field_name in path_keys.items():
+            if os.getenv(env_name):
+                updates[field_name] = Path(os.environ[env_name])
+
+        scalar_ints = {
+            "EXPENSE_ML_CPU_THREADS": "cpu_threads",
+            "EXPENSE_ML_TORCH_THREADS": "torch_threads",
+            "EXPENSE_ML_DATALOADER_WORKERS": "dataloader_workers",
+            "EXPENSE_ML_BATCH_SIZE": "batch_size",
+            "EXPENSE_ML_EVAL_BATCH_SIZE": "eval_batch_size",
+            "EXPENSE_ML_GRADIENT_ACCUMULATION": "gradient_accumulation_steps",
+            "EXPENSE_ML_NORMALIZE_CHUNK_SIZE": "normalize_chunk_size",
+            "EXPENSE_ML_MAX_MERCHANTS": "max_merchants",
+            "EXPENSE_ML_DUPLICATE_MAX_ROWS": "duplicate_max_rows",
+            "EXPENSE_ML_BASELINE_MAX_ROWS": "baseline_max_rows",
+            "EXPENSE_ML_TRANSFORMER_MAX_ROWS": "transformer_max_rows",
+            "EXPENSE_ML_MINIMUM_COUNTRY_SAMPLES": "minimum_country_samples",
+        }
+        for env_name, field_name in scalar_ints.items():
+            raw = os.getenv(env_name)
+            if raw:
+                parsed = _optional_int(raw) if field_name in {"cpu_threads", "torch_threads", "dataloader_workers"} else int(raw)
+                updates[field_name] = parsed
+
+        scalar_floats = {
+            "EXPENSE_ML_CONFIDENCE_THRESHOLD": "confidence_threshold",
+            "EXPENSE_ML_MINIMUM_ACCURACY": "minimum_accuracy",
+            "EXPENSE_ML_MINIMUM_MACRO_F1": "minimum_macro_f1",
+            "EXPENSE_ML_MINIMUM_COUNTRY_MACRO_F1": "minimum_country_macro_f1",
+            "EXPENSE_ML_MINIMUM_INDIA_MACRO_F1": "minimum_india_macro_f1",
+            "EXPENSE_ML_MINIMUM_CONFIDENCE_COVERAGE": "minimum_confidence_coverage",
+            "EXPENSE_ML_MINIMUM_HIGH_CONFIDENCE_ACCURACY": "minimum_high_confidence_accuracy",
+        }
+        for env_name, field_name in scalar_floats.items():
+            raw = os.getenv(env_name)
+            if raw:
+                updates[field_name] = float(raw)
+
+        if os.getenv("EXPENSE_ML_MIXED_PRECISION"):
+            updates["mixed_precision"] = os.environ["EXPENSE_ML_MIXED_PRECISION"]
+        if os.getenv("EXPENSE_ML_NO_PROGRESS") == "1":
+            updates["progress"] = False
+        if os.getenv("EXPENSE_ML_NO_PIN_MEMORY") == "1":
+            updates["pin_memory"] = False
+        return cls(**{**current.__dict__, **updates})
+
+
+def seed_everything(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    try:
+        import torch
+
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+    except ImportError:
+        pass

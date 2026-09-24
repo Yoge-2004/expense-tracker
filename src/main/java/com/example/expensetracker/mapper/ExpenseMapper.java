@@ -56,15 +56,16 @@ public final class ExpenseMapper {
             categoryName = category.getName();
         }
 
-        ExpenseDto dto = new ExpenseDto(
+        return new ExpenseDto(
                 expense.getId(),
                 expense.getAmount(),
                 expense.getDescription(),
                 expense.getExpenseDate(),
                 categoryId,
-                categoryName
+                categoryName,
+                null,
+                null,
+                expense.getCreatedAt()
         );
-        dto.setCreatedAt(expense.getCreatedAt());
-        return dto;
     }
 }

@@ -1,13 +1,15 @@
 package com.example.expensetracker.security;
 
+import com.example.expensetracker.logging.CorrelationIdFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import io.jsonwebtoken.JwtException;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,28 +28,16 @@ import java.io.IOException;
  * @see JwtService
  * @see CustomUserDetailsService
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     /** Service used to parse, validate, and extract claims from JWT tokens. */
     private final JwtService jwtService;
 
     /** Service used to load user details from the database by email. */
     private final CustomUserDetailsService userDetailsService;
-
-    /**
-     * Constructs a {@code JwtAuthenticationFilter} with the required services.
-     *
-     * @param jwtService         the service responsible for JWT operations
-     * @param userDetailsService the service for loading {@link UserDetails} by email
-     */
-    public JwtAuthenticationFilter(JwtService jwtService,
-                                   CustomUserDetailsService userDetailsService) {
-        this.jwtService = jwtService;
-        this.userDetailsService = userDetailsService;
-    }
 
     /**
      * Performs JWT extraction, validation, and security context population
@@ -83,24 +73,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (userEmail != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
 
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                log.debug("Successfully authenticated user '{}' for path: {}", userEmail, request.getRequestURI());
-            } else {
-                log.warn("JWT token invalid for user '{}' on path: {}", userEmail, request.getRequestURI());
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    MDC.put(CorrelationIdFilter.USER_MDC_KEY, userEmail);
+                    log.debug("Successfully authenticated user '{}' for path: {}", userEmail, request.getRequestURI());
+                } else {
+                    log.warn("JWT token invalid for user '{}' on path: {}", userEmail, request.getRequestURI());
+                }
+            } catch (org.springframework.security.core.userdetails.UsernameNotFoundException exception) {
+                // Token subject no longer resolves to a user (account deleted after
+                // issuance). Continue unauthenticated instead of failing the request
+                // with a 500 from the filter chain.
+                log.warn("JWT subject no longer exists; continuing unauthenticated for path '{}': {}",
+                        request.getRequestURI(), exception.getMessage());
             }
         }
 

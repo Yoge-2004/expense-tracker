@@ -29,6 +29,21 @@
             .replace(/'/g, "&#039;");
     }
 
+    // For a value embedded inside a single-quoted JS string literal that is
+    // itself inside an inline onclick="..." HTML attribute. Order matters:
+    // the JS-string escape must run BEFORE the HTML escape. Doing it in the
+    // other order (as duplicated in three places before this fix) makes the
+    // quote-escape a no-op, since escapeHtml() has already turned every "'"
+    // into "&#039;" by the time it runs — so a name/description containing
+    // an apostrophe broke the click handler with a JS syntax error once the
+    // browser HTML-decoded the attribute back into source.
+    function jsAttrEscape(value) {
+        const jsSafe = String(value ?? "")
+            .replace(/\\/g, "\\\\")
+            .replace(/'/g, "\\'");
+        return escapeHtml(jsSafe);
+    }
+
     function formatCurrency(amount) {
         if (typeof window.formatGlobalCurrency === "function") {
             return window.formatGlobalCurrency(amount);
@@ -90,6 +105,7 @@
         getLocalDateString,
         parseLocalDate,
         escapeHtml,
+        jsAttrEscape,
         formatCurrency,
         formatDate,
         getCategoryColor,

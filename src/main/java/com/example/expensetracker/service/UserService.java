@@ -23,6 +23,7 @@ import java.util.Optional;
  * @version 1.0
  * @see com.example.expensetracker.service.impl.UserServiceImpl
  */
+@SuppressWarnings("unused")
 public interface UserService {
 
     /**
@@ -89,6 +90,14 @@ public interface UserService {
      * @return {@code true} if valid, {@code false} if invalid
      */
     boolean verifySecurityPin(Long userId, String pin);
+
+    /**
+     * Updates the display name for the given user account.
+     *
+     * @param userId the primary key of the user to update
+     * @param name   the updated display name
+     */
+    void updateName(Long userId, String name);
 
     /**
      * Updates the currency preference for the given user account.

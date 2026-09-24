@@ -65,7 +65,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
         description: 'Twice-daily reminders to keep your expense ledger up to date.',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#D4AF37',       // gold — matches app brand color
+        lightColor: '#D4AF37',
         enableVibrate: true,
         showBadge: true,
       }).catch(() => {});
@@ -82,9 +82,10 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  * Schedules two daily recurring reminders (1:30 PM and 8:30 PM).
  */
 export async function scheduleDailyExpenseReminders(): Promise<boolean> {
+  // Expo Go cannot schedule these notifications in the current runtime. Do not
+  // report success or persist an enabled state when nothing was scheduled.
   if (isExpoGo || !Notifications) {
-    await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, 'true');
-    return true;
+    return false;
   }
   try {
     const hasPermission = await requestNotificationPermissions();
@@ -131,6 +132,13 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
     await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, 'true');
     return true;
   } catch (error) {
+    // Scheduling is transactional: if either reminder fails, remove any reminder
+    // that may already have been created so storage never reports a false state.
+    if (Notifications) {
+      await Notifications.cancelScheduledNotificationAsync(MIDDAY_NOTIFICATION_ID).catch(() => {});
+      await Notifications.cancelScheduledNotificationAsync(EVENING_NOTIFICATION_ID).catch(() => {});
+    }
+    await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, 'false').catch(() => {});
     console.warn('[Notifications] Failed to schedule daily reminders:', error);
     return false;
   }
@@ -163,4 +171,76 @@ export async function getDailyRemindersEnabled(): Promise<boolean> {
   } catch {
     return true;
   }
+}
+
+import { parseFinancialMessage, ParsedTransaction } from "./debitParser";
+
+const DEBIT_CHANNEL_ID = "debit-alerts";
+
+/**
+ * Triggers an immediate local push notification for a detected debit / financial transaction.
+ * Notifies the user then and there when a debit message or transaction is received.
+ */
+export async function notifyInstantDebit(transaction: ParsedTransaction): Promise<boolean> {
+  if (isExpoGo || !Notifications) {
+    return false;
+  }
+
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return false;
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync(DEBIT_CHANNEL_ID, {
+        name: "Instant Debit & Transaction Alerts",
+        description: "Real-time alerts when debit/payment transactions occur.",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 200, 100, 200],
+        lightColor: "#E05D5D",
+        enableVibrate: true,
+        showBadge: true,
+      }).catch(() => {});
+    }
+
+    const title = transaction.direction === "DEBIT"
+      ? `💸 Debit Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`
+      : `💰 Transaction Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`;
+
+    const merchantStr = transaction.merchant ? ` at ${transaction.merchant}` : "";
+    const accStr = transaction.accountTail ? ` (Card/A/c xx${transaction.accountTail})` : "";
+    const body = `Spent ${transaction.currency} ${transaction.amount?.toFixed(2)}${merchantStr}${accStr}. Tap to categorize or review now.`;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+        data: {
+          screen: "/(tabs)/add-expense",
+          amount: transaction.amount,
+          merchant: transaction.merchant,
+          direction: transaction.direction
+        },
+        ...(Platform.OS === "android" ? { channelId: DEBIT_CHANNEL_ID } : {}),
+      },
+      trigger: null, // null trigger schedules it immediately!
+    });
+
+    return true;
+  } catch (error) {
+    console.warn("[Notifications] Failed to trigger instant debit notification:", error);
+    return false;
+  }
+}
+
+/**
+ * Ingests raw SMS or push notification text and immediately dispatches a notification if it is a debit.
+ */
+export async function processIncomingMessageForDebitNotification(rawText: string): Promise<ParsedTransaction | null> {
+  const parsed = parseFinancialMessage(rawText);
+  if (parsed.isFinancial && parsed.direction === "DEBIT") {
+    await notifyInstantDebit(parsed);
+    return parsed;
+  }
+  return null;
 }

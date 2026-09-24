@@ -1,6 +1,7 @@
 package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,6 +21,11 @@ import java.time.LocalDate;
 @Table(name = "incomes", indexes = {
     @Index(name = "idx_income_user_date", columnList = "user_id, income_date")
 })
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Income extends BaseEntity {
 
     /**
@@ -44,7 +50,7 @@ public class Income extends BaseEntity {
     /**
      * Optional textual description or notes regarding this income.
      */
-    @Column(length = 255)
+    @Column
     private String description;
 
     /**
@@ -56,6 +62,7 @@ public class Income extends BaseEntity {
     /**
      * Flag indicating whether this income is expected to recur on a recurring schedule.
      */
+    @Builder.Default
     @Column(name = "is_recurring")
     private Boolean isRecurring = false;
 
@@ -84,22 +91,6 @@ public class Income extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    /**
-     * Default no-args constructor for JPA.
-     */
-    public Income() {}
-
-    /**
-     * Full parameterized constructor.
-     *
-     * @param id unique identifier
-     * @param amount monetary value received
-     * @param source channel or origin of income
-     * @param description optional note or comment
-     * @param incomeDate date of transaction
-     * @param isRecurring whether recurring
-     * @param user the owning user
-     */
     public Income(Long id, BigDecimal amount, String source, String description,
                   LocalDate incomeDate, Boolean isRecurring, User user) {
         this.id = id;
@@ -107,167 +98,11 @@ public class Income extends BaseEntity {
         this.source = source;
         this.description = description;
         this.incomeDate = incomeDate;
-        this.isRecurring = isRecurring != null ? isRecurring : false;
+        this.isRecurring = Boolean.TRUE.equals(isRecurring);
         this.user = user;
     }
 
-    /**
-     * Retrieves the primary key.
-     * @return income id
-     */
-    public Long getId() {
-        return id;
-    }
-
-    /**
-     * Sets the primary key.
-     * @param id income id
-     */
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    /**
-     * Retrieves the monetary amount.
-     * @return monetary amount
-     */
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    /**
-     * Sets the monetary amount.
-     * @param amount monetary amount
-     */
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    /**
-     * Retrieves the source or channel.
-     * @return income source
-     */
-    public String getSource() {
-        return source;
-    }
-
-    /**
-     * Sets the source or channel.
-     * @param source income source
-     */
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    /**
-     * Retrieves the optional note or description.
-     * @return description
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Sets the optional note or description.
-     * @param description description
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    /**
-     * Retrieves the transaction date.
-     * @return income date
-     */
-    public LocalDate getIncomeDate() {
-        return incomeDate;
-    }
-
-    /**
-     * Sets the transaction date.
-     * @param incomeDate income date
-     */
-    public void setIncomeDate(LocalDate incomeDate) {
-        this.incomeDate = incomeDate;
-    }
-
-    /**
-     * Checks if this income is recurring.
-     * @return true if recurring, false otherwise
-     */
     public Boolean getIsRecurring() {
         return isRecurring != null && isRecurring;
-    }
-
-    /**
-     * Sets the recurring flag.
-     * @param isRecurring whether recurring
-     */
-    public void setIsRecurring(Boolean isRecurring) {
-        this.isRecurring = isRecurring;
-    }
-
-    /**
-     * Retrieves the user who owns this record.
-     * @return owning user
-     */
-    public User getUser() {
-        return user;
-    }
-
-    /**
-     * Associates this income with a user.
-     * @param user owning user
-     */
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    /**
-     * Retrieves recurrence frequency.
-     * @return frequency
-     */
-    public String getFrequency() {
-        return frequency;
-    }
-
-    /**
-     * Sets recurrence frequency.
-     * @param frequency frequency
-     */
-    public void setFrequency(String frequency) {
-        this.frequency = frequency;
-    }
-
-    /**
-     * Retrieves interval in days.
-     * @return interval in days
-     */
-    public Integer getIntervalDays() {
-        return intervalDays;
-    }
-
-    /**
-     * Sets interval in days.
-     * @param intervalDays interval in days
-     */
-    public void setIntervalDays(Integer intervalDays) {
-        this.intervalDays = intervalDays;
-    }
-
-    /**
-     * Retrieves next due date.
-     * @return next due date
-     */
-    public LocalDate getNextDueDate() {
-        return nextDueDate;
-    }
-
-    /**
-     * Sets next due date.
-     * @param nextDueDate next due date
-     */
-    public void setNextDueDate(LocalDate nextDueDate) {
-        this.nextDueDate = nextDueDate;
     }
 }

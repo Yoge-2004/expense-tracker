@@ -49,6 +49,9 @@ public class CucumberSpringConfig {
         public String email;
         public Long expenseId;
         public Long categoryId;
+        public Long incomeId;
+        public Long goalId;
+        public Long budgetId;
         public MvcResult lastResponse;
         public byte[] lastResponseBody;
 
@@ -58,6 +61,9 @@ public class CucumberSpringConfig {
             email = null;
             expenseId = null;
             categoryId = null;
+            incomeId = null;
+            goalId = null;
+            budgetId = null;
             lastResponse = null;
             lastResponseBody = null;
         }

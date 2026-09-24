@@ -1,15 +1,16 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
-  Animated,
-  TouchableWithoutFeedback,
-  Text,
   ActivityIndicator,
+  Animated,
+  Pressable,
   StyleSheet,
-  ViewStyle,
+  Text,
   TextStyle,
-  StyleProp,
   View,
+  ViewStyle,
+  StyleProp,
 } from 'react-native';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface AnimatedButtonProps {
   title: string;
@@ -33,9 +34,18 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   icon,
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
+  const isDisabled = disabled || loading;
+
+  useEffect(() => {
+    return () => {
+      // Stop any in-flight native animation before the component is removed.
+      scaleAnim.stopAnimation();
+    };
+  }, [scaleAnim]);
 
   const handlePressIn = () => {
-    if (disabled || loading) return;
+    if (isDisabled || reducedMotion) return;
     Animated.spring(scaleAnim, {
       toValue: 0.95,
       useNativeDriver: true,
@@ -45,7 +55,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   };
 
   const handlePressOut = () => {
-    if (disabled || loading) return;
+    if (isDisabled || reducedMotion) return;
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
@@ -62,10 +72,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
           text: { color: '#DAD4C1' },
         };
       case 'danger':
-        return {
-          container: { backgroundColor: '#A23E32' },
-          text: { color: '#FFFFFF' },
-        };
+        return { container: { backgroundColor: '#A23E32' }, text: { color: '#FFFFFF' } };
       case 'outline':
         return {
           container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#C79A3E' },
@@ -73,21 +80,21 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         };
       case 'primary':
       default:
-        return {
-          container: { backgroundColor: '#C79A3E' },
-          text: { color: '#FFFFFF' },
-        };
+        return { container: { backgroundColor: '#C79A3E' }, text: { color: '#FFFFFF' } };
     }
   };
 
   const vStyles = getVariantStyles();
 
   return (
-    <TouchableWithoutFeedback
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      onPress={onPress}
-      disabled={disabled || loading}
+      disabled={isDisabled}
     >
       <Animated.View
         style={[
@@ -95,7 +102,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
           vStyles.container,
           disabled && styles.disabled,
           style,
-          { transform: [{ scale: scaleAnim }] },
+          { transform: [{ scale: reducedMotion ? 1 : scaleAnim }] },
         ]}
       >
         {loading ? (
@@ -107,13 +114,13 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
           </View>
         )}
       </Animated.View>
-    </TouchableWithoutFeedback>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    height: 50,
+    minHeight: 50,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -124,20 +131,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  contentContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconContainer: {
-    marginRight: 8,
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
+  contentContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  iconContainer: { marginRight: 8 },
+  text: { fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  disabled: { opacity: 0.5 },
 });

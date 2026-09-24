@@ -1,0 +1,238 @@
+/* ==========================================================================
+   EXPENSE TRACKER — LUXURY AESTHETICS & MOTION ENHANCEMENTS
+   High-end glassmorphism, dynamic glowing progress tracks, ambient radial
+   under-glows, tabular numeral alignments, and refined pill badges.
+   ========================================================================== */
+
+/* 1. LAYERED FROSTED GLASS & AMBIENT RADIANT BACKDROP */
+.hero-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 12% 15%, rgba(var(--primary-rgb), 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 88% 18%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 60%) !important;
+}
+
+[data-theme="light"] .hero-bg {
+    background:
+        radial-gradient(circle at 10% 12%, rgba(212, 175, 55, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 90% 15%, rgba(16, 185, 129, 0.10) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 55%) !important;
+}
+
+/* 2. CARD ELEVATION & FROSTED GLASS EFFECT */
+.card,
+.metric-card,
+.unified-ledger-card,
+.insight-card-item,
+.savings-goal-card,
+.budget-item {
+    background: rgba(23, 26, 20, 0.78) !important;
+    backdrop-filter: blur(20px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+    border: 1px solid rgba(236, 231, 216, 0.10) !important;
+    box-shadow:
+        0 10px 30px -10px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset !important;
+    position: relative;
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .metric-card,
+[data-theme="light"] .unified-ledger-card,
+[data-theme="light"] .insight-card-item,
+[data-theme="light"] .savings-goal-card,
+[data-theme="light"] .budget-item {
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    border: 1px solid rgba(212, 175, 55, 0.22) !important;
+    box-shadow:
+        0 14px 34px -10px rgba(180, 140, 60, 0.14),
+        0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+}
+
+/* Subtle top edge specular highlight */
+.card::before,
+.metric-card::before,
+.savings-goal-card::before,
+.budget-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    pointer-events: none;
+}
+
+[data-theme="light"] .card::before,
+[data-theme="light"] .metric-card::before,
+[data-theme="light"] .savings-goal-card::before,
+[data-theme="light"] .budget-item::before {
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
+}
+
+/* 3. METRIC VALUES TYPOGRAPHY & TABULAR NUMERALS */
+.metric-value,
+.stat-value,
+.budget-status-value,
+.expense-amount,
+.income-amount-text {
+    font-variant-numeric: tabular-nums !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* 4. REFINED METRIC CARD ACCENT UNDERGLOWS */
+.metric-card.metric-card-inflow:hover {
+    box-shadow:
+        0 14px 32px -6px var(--metric-inflow-glow),
+        0 0 0 1px var(--metric-inflow),
+        0 0 24px -4px var(--metric-inflow-glow) inset !important;
+}
+
+.metric-card.metric-card-outflow:hover {
+    box-shadow:
+        0 14px 32px -6px var(--metric-outflow-glow),
+        0 0 0 1px var(--metric-outflow),
+        0 0 24px -4px var(--metric-outflow-glow) inset !important;
+}
+
+.metric-card.metric-card-netflow:hover {
+    box-shadow:
+        0 14px 32px -6px var(--metric-netflow-glow),
+        0 0 0 1px var(--metric-netflow),
+        0 0 24px -4px var(--metric-netflow-glow) inset !important;
+}
+
+.metric-card.metric-card-savings:hover {
+    box-shadow:
+        0 14px 32px -6px var(--metric-savings-glow),
+        0 0 0 1px var(--metric-savings),
+        0 0 24px -4px var(--metric-savings-glow) inset !important;
+}
+
+.metric-card.metric-card-subs:hover {
+    box-shadow:
+        0 14px 32px -6px var(--metric-subs-glow),
+        0 0 0 1px var(--metric-subs),
+        0 0 24px -4px var(--metric-subs-glow) inset !important;
+}
+
+/* 5. DYNAMIC SHIMMERING PROGRESS BARS */
+.budget-bar-track,
+.progress-track {
+    background: rgba(0, 0, 0, 0.28) !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) inset !important;
+    position: relative !important;
+}
+
+[data-theme="light"] .budget-bar-track,
+[data-theme="light"] .progress-track {
+    background: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) inset !important;
+}
+
+.budget-bar-fill,
+.goal-progress-fill {
+    position: relative !important;
+    border-radius: 999px !important;
+    box-shadow: 0 0 12px currentColor !important;
+}
+
+.budget-bar-fill::after,
+.goal-progress-fill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: barShimmer 2.4s infinite linear;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+@keyframes barShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* 6. STATUS PILL BADGES & CHIPS REFINEMENT */
+.status-badge,
+.pill-chip {
+    border-radius: 999px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s ease !important;
+}
+
+.status-badge.badge-success {
+    background: rgba(16, 185, 129, 0.14) !important;
+    color: #10B981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+.status-badge.badge-warning {
+    background: rgba(245, 158, 11, 0.14) !important;
+    color: #F59E0B !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+.status-badge.badge-outflow,
+.status-badge.badge-danger {
+    background: rgba(239, 68, 68, 0.14) !important;
+    color: #EF4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
+.status-badge.badge-netflow {
+    background: rgba(59, 130, 246, 0.14) !important;
+    color: #3B82F6 !important;
+    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+
+.status-badge.badge-subs {
+    background: rgba(192, 86, 94, 0.14) !important;
+    color: #E06C75 !important;
+    border: 1px solid rgba(192, 86, 94, 0.35) !important;
+}
+
+/* 7. EMPTY STATE LUXURY ELEVATION */
+.empty-state-compact {
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px dashed rgba(var(--primary-rgb), 0.28) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+    transition: border-color 0.25s ease, background-color 0.25s ease !important;
+}
+
+.empty-state-compact:hover {
+    background: rgba(var(--primary-rgb), 0.03) !important;
+    border-color: rgba(var(--primary-rgb), 0.45) !important;
+}
+
+[data-theme="light"] .empty-state-compact {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border-color: rgba(212, 175, 55, 0.3) !important;
+}
+
+/* 8. TOP COMMAND BAR BLUR & RADIANT BORDER */
+.top-bar {
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}

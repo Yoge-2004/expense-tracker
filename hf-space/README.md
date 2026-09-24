@@ -1,27 +1,114 @@
 ---
 title: Expense Tracker API
-description: Production Spring Boot API for the Expense Tracker web and mobile applications.
+description: Production Spring Boot + Python ML API for the Expense Tracker web and mobile applications.
 emoji: 💰
 colorFrom: yellow
 colorTo: red
 sdk: docker
 app_port: 7860
-short_description: Secure Expense Tracker API with Neon failover.
+short_description: Secure Expense Tracker API with automated ML inference.
 ---
 
-# 💰 Expense Tracker — Backend API
+# 💰 Expense Tracker — Backend + ML API
 
 **The production API behind Yoge-2004's Expense Tracker web and Android applications.**
 
-This Space runs the Spring Boot backend for authentication, expenses, income, budgets, subscriptions, savings goals, reports, exports, Google Sign-In, and WebAuthn/passkey authentication.
+This Space runs the Spring Boot backend and the Python ML inference service in one Docker container. Spring Boot remains responsible for authentication, expenses, income, budgets, subscriptions, savings goals, reports, exports, Google Sign-In, and WebAuthn/passkey authentication. Python provides model-backed inference only.
 
 > **Primary database:** Neon PostgreSQL  
 > **Failover database snapshot:** encrypted SQLite stored in this Hugging Face Space repository  
-> **Runtime:** Spring Boot + Java 26  
+> **Application runtime:** Spring Boot + Java 26  
+> **ML runtime:** Python 3.14 + FastAPI  
 > **Container:** Docker on Hugging Face Spaces  
-> **Port:** `7860`
+> **Public gateway:** `7860`  
+> **Spring Boot:** `8080` (internal)  
+> **Python ML:** `8000` (internal)
 
-## 🚀 Production database architecture
+## 🚀 Runtime architecture
+
+```text
+Web browser / Android app
+          │
+          ▼
+   Hugging Face Space :7860
+             │
+           Nginx
+        ┌────┴────┐
+        ▼         ▼
+ Spring Boot   Python ML
+   :8080         :8000
+        │          │
+        └── localhost ──► ML inference
+```
+
+The public application API is served by Spring Boot. Python ML routes are kept internal to the container; Spring Boot calls `http://127.0.0.1:8000` for inference.
+
+## 🤖 ML inference
+
+Python exposes:
+
+```text
+GET  /health
+POST /api/v1/classify
+POST /api/v1/analyze
+```
+
+The active model is identified explicitly through Space variables:
+
+```text
+MODEL_ID
+MODEL_REVISION
+MODEL_TYPE
+```
+
+The serving process fails clearly when a configured model cannot be loaded; it does not silently choose an unknown artifact.
+
+## 🔄 Continuous-learning architecture
+
+Production user corrections are stored by Spring Boot in the application database. A separate automated Hugging Face training Job periodically checks the training-eligible feedback count.
+
+```text
+User correction
+      ↓
+Spring Boot ML feedback table
+      ↓
+training eligibility validation
+      ↓
+Hugging Face scheduled training Job
+      ↓
+curated base corpus + verified feedback
+      ↓
+leakage-safe training/evaluation
+      ↓
+candidate quality gates
+      ├── fail → keep current production model
+      └── pass
+           ↓
+       versioned model branch
+           ↓
+       production branch
+           ↓
+       restart serving Space
+           ↓
+       health-check active revision
+           ↓
+       mark feedback consumed
+```
+
+Training never runs inside this production container.
+
+## 📦 Model versioning
+
+Models are stored in a dedicated Hugging Face model repository and are published to both:
+
+```text
+v<run-id>       immutable candidate history
+production     current serving revision
+```
+
+The Space serves the `production` revision. Previous version branches remain available for rollback.
+
+## 🧯 Database failover
 
 ```text
 Web browser / Android app
@@ -42,75 +129,40 @@ Web browser / Android app
       database/expense_tracker.sqlite.enc
 ```
 
-### How it works
+Neon remains the authoritative database while reachable. The encrypted SQLite snapshot is a recovery point only.
 
-1. **Neon is the source of truth while it is reachable.**
-2. The backend periodically exports the active database into a portable SQLite snapshot.
-3. The snapshot is encrypted with **AES-256-GCM** before being uploaded to this Space repository.
-4. The Space repository therefore contains an encrypted database blob, not a readable SQLite database.
-5. **One secret key is enough**: `DB_BACKUP_KEY`. It is kept only in the Space's secret environment and is never committed to GitHub or the HF repository.
-6. If Neon fails, the backend downloads the latest encrypted snapshot from this HF Space repository, decrypts it in memory/runtime storage, and hydrates the local emergency database.
-7. Reads and writes then continue against the emergency database.
-8. New changes made during failover are included in the next encrypted snapshot, so the HF repository remains the latest recovery point.
+## 🔒 Security
 
-This uses the **Hugging Face Space repository itself**, not a Storage Bucket.
-
-## 🔒 Database security
-
-The Space repository may be public. That is safe for the snapshot because the SQLite database is **encrypted before upload**.
-
-Protection uses:
-
-- AES-256-GCM authenticated encryption
-- PBKDF2-HMAC-SHA256 key derivation
-- Random salt and nonce for every snapshot
-- A single secret `DB_BACKUP_KEY` for encryption/decryption
-- No plaintext database file in the repository
-
-The main GitHub source repository also blocks plaintext `*.db`, `*.sqlite`, and `*.sqlite3` database files from being committed.
-
-**Never place `DB_BACKUP_KEY`, `HF_TOKEN`, `JWT_SECRET`, database passwords, or OAuth secrets in source control.**
-
-## 🔑 Required runtime secrets
+Required runtime secrets/variables are configured through the Space settings and GitHub Actions secrets. Never commit:
 
 ```text
-SPRING_DATASOURCE_URL
-SPRING_DATASOURCE_USERNAME
-SPRING_DATASOURCE_PASSWORD
-GOOGLE_OAUTH_CLIENT_ID
-JWT_SECRET
-CORS_ALLOWED_ORIGINS
 HF_TOKEN
+JWT_SECRET
 DB_BACKUP_KEY
+ML_FEEDBACK_TOKEN
+SPRING_DATASOURCE_PASSWORD
 ```
 
-`HF_TOKEN` needs permission to update the `Yoge-2004/expense-tracker-backend` Space repository. `DB_BACKUP_KEY` must be the same secret wherever snapshots are encrypted and decrypted.
-
-## 🧯 Failover behavior
-
-The failover database is a **recovery database**, not a second live Neon server. It is refreshed from the latest encrypted snapshot. Therefore, the maximum possible data loss is the time since the last successful snapshot.
-
-When Neon is healthy again, production should return to Neon as the authoritative database and a fresh snapshot should be produced.
+The ML training endpoint uses a dedicated `X-ML-Training-Token` header. Normal user feedback submission remains protected by the application's JWT authentication.
 
 ## 📦 Deployment
 
-The backend is built from the main GitHub repository and deployed automatically to this Space by GitHub Actions. The deployment synchronizes the application JAR, Dockerfile, and this Space metadata/README.
+GitHub Actions builds the Spring Boot JAR and packages:
 
-The database snapshot is managed separately by the running backend and is never baked into the Docker image.
+```text
+app.jar
+Dockerfile
+docker/
+ml/
+README.md
+```
 
-## 🛡️ Data safety principle
-
-> **Neon is authoritative while healthy. Hugging Face stores the encrypted recovery snapshot. The application can continue reads/writes from the latest snapshot when Neon is unavailable. No plaintext user database belongs in a public repository.**
+The Docker image starts Spring Boot, FastAPI, and Nginx under Supervisor. The model is fetched from the configured Hugging Face model repository at the explicit revision supplied by the Space variables.
 
 ## 👤 Project
 
-Built and maintained by **Yoge-2004** as the backend for the Expense Tracker project.
+Built and maintained by **Yoge-2004** as the backend and ML serving layer for the Expense Tracker project.
 
 - Main project: `Yoge-2004/expense-tracker`
-- Backend Space: `Yoge-2004/expense-tracker-backend`
-
----
-
-### ⚠️ Production note
-
-Do not upload `*.db`, `*.sqlite`, `*.sqlite3`, plaintext JSON exports containing user records, or any other readable database snapshot to this public Space repository.
+- Backend + ML Space: `Yoge-2004/expense-tracker-backend`
+- Model repository: `Yoge-2004/expense-intelligence-model`

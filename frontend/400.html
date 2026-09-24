@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ExpenseTracker PRO — 400 Bad Request</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10120E">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+    <link rel="stylesheet" href="/css/style.css">
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("theme") || "dark";
+                document.documentElement.setAttribute("data-theme", t);
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m) m.setAttribute("content", t === "light" ? "#F8F9FA" : "#10120E");
+            } catch (e) {}
+        })();
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            background-color: var(--bg-main, #10120E);
+            color: var(--text-main, #EDEDEC);
+            font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .brand-top-bar {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .brand-logo-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #C79A3E 0%, #A23E32 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(199, 154, 62, 0.35);
+        }
+        .brand-heading-text {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-main, #EDEDEC);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .brand-pro-tag {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: #C79A3E;
+            color: #10120E;
+            letter-spacing: 0.06em;
+        }
+        .error-card {
+            position: relative;
+            z-index: 1;
+            max-width: 520px;
+            width: 100%;
+            background: var(--card-bg, rgba(255, 255, 255, 0.03));
+            border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .error-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid #F59E0B40;
+            color: #F59E0B;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #F59E0B;
+            display: inline-block;
+            box-shadow: 0 0 8px #F59E0B;
+        }
+        .error-code-num {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 64px;
+            font-weight: 600;
+            line-height: 1;
+            margin: 0 0 8px;
+            color: var(--text-main, #EDEDEC);
+            letter-spacing: -0.03em;
+        }
+        .error-headline {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-main, #EDEDEC);
+            margin: 0 0 12px;
+        }
+        .error-desc {
+            color: var(--text-muted, #9E9E9C);
+            font-size: 14.5px;
+            line-height: 1.6;
+            margin: 0 0 32px;
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .error-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+        @media (min-width: 480px) {
+            .error-btn-group {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+        .btn-act-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 22px;
+            border-radius: 12px;
+            background: var(--primary, #C79A3E);
+            color: #10120E;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(199, 154, 62, 0.25);
+        }
+        .btn-act-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(199, 154, 62, 0.35);
+        }
+        .btn-act-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+            color: var(--text-main, #EDEDEC);
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-act-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <a href="/index.html" class="brand-top-bar" title="ExpenseTracker PRO Home">
+        <div class="brand-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10120E" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <span class="brand-heading-text">ExpenseTracker <span class="brand-pro-tag">PRO</span></span>
+    </a>
+
+    <div class="error-card">
+        <div class="error-badge">
+            <span class="status-dot"></span>
+            <span>HTTP 400 &bull; Invalid Request Syntax</span>
+        </div>
+        <div class="error-code-num">400</div>
+        <h1 class="error-headline">Bad Request</h1>
+        <p class="error-desc">The server could not process the request because the syntax, headers, or query parameters were malformed.</p>
+        <div class="error-btn-group">
+            <a href="/dashboard.html" class="btn-act-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="/index.html" class="btn-act-secondary">
+                <span>Sign In / Home</span>
+            </a>
+            <button type="button" onclick="location.reload()" class="btn-act-secondary" title="Reload this page">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Retry</span>
+            </button>
+        </div>
+    </div>
+</body>
+</html>

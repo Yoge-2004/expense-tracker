@@ -20,15 +20,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Tag(
     name        = "Categories",
@@ -49,23 +48,17 @@ import java.util.stream.Collectors;
         All endpoints require a valid **JWT Bearer token**.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
 
-    private static final Logger log = LoggerFactory.getLogger(CategoryController.class);
-
     private final CategoryService categoryService;
     private final UserService userService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    public CategoryController(CategoryService categoryService, UserService userService,
-                              com.example.expensetracker.security.UserSecurity userSecurity) {
-        this.categoryService = categoryService;
-        this.userService = userService;
-        this.userSecurity = userSecurity;
-    }
 
     // ─── POST /api/categories/user/{userId} ─────────────────────────────
 
@@ -108,37 +101,43 @@ public class CategoryController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "category-create-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"Category 'Petrol' already exists for this user\", \"path\": \"/api/categories/user/1\" }"
+                    value = "{\"status\":400,\"error\":\"Bad Request\","
+                            + "\"message\":\"Category 'Petrol' already exists for this user\","
+                            + "\"path\":\"/api/categories/user/1\"}"
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "category-create-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/categories/user/1\" }"
+                    value = "{\"status\":401,\"error\":\"Unauthorized\","
+                            + "\"message\":\"JWT token is missing or invalid\","
+                            + "\"path\":\"/api/categories/user/1\"}"
                 ))
         ),
         @ApiResponse(responseCode = "400", description = "User not found",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "category-create-user-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"User not found\", \"path\": \"/api/categories/user/99\" }"
+                    value = "{\"status\":400,\"error\":\"Bad Request\","
+                            + "\"message\":\"User not found\",\"path\":\"/api/categories/user/99\"}"
                 ))
         )
     })
     @PostMapping("/user/{userId}")
     public ResponseEntity<CategoryDto> createCategory(
             @Parameter(
-                description = "ID of the user who will own this category. Obtained from `POST /api/auth/register` or `POST /api/auth/login`.",
+                description = "ID of the user who will own this category. "
+                        + "Obtained from `POST /api/auth/register` or `POST /api/auth/login`.",
                 required = true, example = "1"
             )
             @PathVariable Long userId,
             @Valid @org.springframework.web.bind.annotation.RequestBody CategoryRequest request) {
         userSecurity.validateUserAccess(userId);
-        log.info("Received request to create category for userId={}: name='{}'", userId, request.getName());
+        log.info("Received request to create category for userId={}: name='{}'", userId, request.name());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Category category = categoryService.createCategory(request.getName(), user);
+        Category category = categoryService.createCategory(request.name(), user);
         log.info("Category created successfully with id={} for userId={}", category.getId(), userId);
         return new ResponseEntity<>(CategoryMapper.toDto(category), HttpStatus.CREATED);
     }
@@ -168,7 +167,8 @@ public class CategoryController {
             """
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "List of personal categories (empty array if none created yet)",
+        @ApiResponse(responseCode = "200",
+                description = "List of personal categories (empty array if none created yet)",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)),
                 examples = @ExampleObject(name = "category-user-list-200", summary = "Two personal categories",
@@ -179,27 +179,31 @@ public class CategoryController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "category-user-list-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"User not found\", \"path\": \"/api/categories/user/99\" }"
+                    value = "{\"status\":400,\"error\":\"Bad Request\","
+                            + "\"message\":\"User not found\",\"path\":\"/api/categories/user/99\"}"
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "category-user-list-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/categories/user/1\" }"
+                    value = "{\"status\":401,\"error\":\"Unauthorized\","
+                            + "\"message\":\"JWT token is missing or invalid\","
+                            + "\"path\":\"/api/categories/user/1\"}"
                 ))
         )
     })
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<CategoryDto>> getUserCategories(
-            @Parameter(description = "ID of the user whose personal categories to retrieve.", required = true, example = "1")
+            @Parameter(description = "ID of the user whose personal categories to retrieve.",
+                    required = true, example = "1")
             @PathVariable Long userId) {
         userSecurity.validateUserAccess(userId);
         log.debug("Fetching user categories for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<CategoryDto> categories = categoryService.getUserCategories(user)
-                .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
+                .stream().map(CategoryMapper::toDto).toList();
         log.info("Retrieved {} user categories for userId={}", categories.size(), userId);
         return ResponseEntity.ok(categories);
     }
@@ -236,14 +240,18 @@ public class CategoryController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 array = @ArraySchema(schema = @Schema(implementation = CategoryDto.class)),
                 examples = @ExampleObject(name = "category-global-list-200", summary = "All 5 seeded global categories",
-                    value = "[ { \"id\": 1, \"name\": \"Food\" }, { \"id\": 2, \"name\": \"Transport\" }, { \"id\": 3, \"name\": \"Utilities\" }, { \"id\": 4, \"name\": \"Entertainment\" }, { \"id\": 5, \"name\": \"Health\" } ]"
+                    value = "[{\"id\":1,\"name\":\"Food\"},{\"id\":2,\"name\":\"Transport\"},"
+                            + "{\"id\":3,\"name\":\"Utilities\"},{\"id\":4,\"name\":\"Entertainment\"},"
+                            + "{\"id\":5,\"name\":\"Health\"}]"
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "category-global-list-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/categories/global\" }"
+                    value = "{\"status\":401,\"error\":\"Unauthorized\","
+                            + "\"message\":\"JWT token is missing or invalid\","
+                            + "\"path\":\"/api/categories/global\"}"
                 ))
         )
     })
@@ -251,7 +259,7 @@ public class CategoryController {
     public ResponseEntity<List<CategoryDto>> getGlobalCategories() {
         log.debug("Fetching global categories");
         List<CategoryDto> categories = categoryService.getGlobalCategories()
-                .stream().map(CategoryMapper::toDto).collect(Collectors.toList());
+                .stream().map(CategoryMapper::toDto).toList();
         log.info("Retrieved {} global categories", categories.size());
         return ResponseEntity.ok(categories);
     }
@@ -270,7 +278,8 @@ public class CategoryController {
     )
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Category deleted successfully"),
-        @ApiResponse(responseCode = "400", description = "Category not found, not owned by this user, or is a global category"),
+        @ApiResponse(responseCode = "400",
+                description = "Category not found, not owned by this user, or is a global category"),
         @ApiResponse(responseCode = "409", description = "Category is still in use by one or more expenses")
     })
     @DeleteMapping("/{categoryId}/user/{userId}")

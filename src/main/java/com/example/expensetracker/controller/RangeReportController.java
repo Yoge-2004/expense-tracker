@@ -17,7 +17,8 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openpdf.text.Document;
-import org.openpdf.text.Element;
+import org.openpdf.text.DocumentException;
+import org.openpdf.text.Font;
 import org.openpdf.text.FontFactory;
 import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
@@ -25,6 +26,8 @@ import org.openpdf.text.Phrase;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +44,8 @@ import java.util.stream.Collectors;
  * Every export includes expenses, incomes, savings goals, subscriptions,
  * budgets, and the derived cash-flow summary for the selected period.
  */
+@Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/reports")
 public class RangeReportController {
@@ -56,21 +61,6 @@ public class RangeReportController {
     private final UserService users;
     private final UserSecurity security;
 
-    public RangeReportController(ExpenseRepository expenses,
-                                  IncomeRepository incomes,
-                                  SavingsGoalRepository savingsGoals,
-                                  RecurringExpenseRepository recurringExpenses,
-                                  BudgetRepository budgets,
-                                  UserService users,
-                                  UserSecurity security) {
-        this.expenses = expenses;
-        this.incomes = incomes;
-        this.savingsGoals = savingsGoals;
-        this.recurringExpenses = recurringExpenses;
-        this.budgets = budgets;
-        this.users = users;
-        this.security = security;
-    }
 
     @GetMapping("/user/{userId}/export/range/excel")
     public ResponseEntity<byte[]> excel(@PathVariable Long userId,
@@ -80,14 +70,19 @@ public class RangeReportController {
         security.validateUserAccess(userId);
         User user = user(userId);
         Range range = Range.of(from, to);
+        log.info("Generating executive Excel report for userId={}, range='{}', currency='{}'",
+                userId, range.label(), currency);
         Data data = data(user, range);
+        byte[] bytes = excel(data, range, currency);
+        log.info("Executive Excel report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(XLSX)
+                .contentLength(bytes.length)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Dashboard.xlsx")
                                 .build().toString())
-                .body(excel(data, range, currency));
+                .body(bytes);
     }
 
     @GetMapping("/user/{userId}/export/range/pdf")
@@ -98,14 +93,19 @@ public class RangeReportController {
         security.validateUserAccess(userId);
         User user = user(userId);
         Range range = Range.of(from, to);
+        log.info("Generating executive PDF report for userId={}, range='{}', currency='{}'",
+                userId, range.label(), currency);
         Data data = data(user, range);
+        byte[] bytes = pdf(data, range, currency, user.getName());
+        log.info("Executive PDF report generated successfully for userId={}, size={} bytes", userId, bytes.length);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(bytes.length)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment()
                                 .filename("ExpenseTracker_Executive_Report.pdf")
                                 .build().toString())
-                .body(pdf(data, range, currency, user.getName()));
+                .body(bytes);
     }
 
     private User user(Long id) {
@@ -118,13 +118,13 @@ public class RangeReportController {
                 .filter(x -> range.contains(x.getExpenseDate()))
                 .sorted(Comparator.comparing(Expense::getExpenseDate,
                         Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
+                .toList();
 
         List<Income> i = incomes.findByUser(user).stream()
                 .filter(x -> range.contains(x.getIncomeDate()))
                 .sorted(Comparator.comparing(Income::getIncomeDate,
                         Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
+                .toList();
 
         // Savings goals and subscriptions are configurations, so they are exported
         // when active for the user rather than discarded by the date filter.
@@ -244,7 +244,8 @@ public class RangeReportController {
                 put(subscriptionSheet, row, 1, nz(x.getAmount()), money);
                 put(subscriptionSheet, row, 2, safe(x.getFrequency()), body);
                 put(subscriptionSheet, row, 3, safeDate(x.getNextDueDate()), body);
-                put(subscriptionSheet, row, 4, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), body);
+                put(subscriptionSheet, row, 4,
+                        x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), body);
                 row++;
             }
             widths(subscriptionSheet, new int[]{32, 18, 16, 16, 24});
@@ -272,11 +273,13 @@ public class RangeReportController {
             Map<String, BigDecimal> im = d.incomes.stream()
                     .filter(x -> x.getIncomeDate() != null)
                     .collect(Collectors.groupingBy(x -> x.getIncomeDate().withDayOfMonth(1).toString(),
-                            Collectors.mapping(x -> nz(x.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
+                            Collectors.mapping(x -> nz(x.getAmount()),
+                                    Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
             Map<String, BigDecimal> em = d.expenses.stream()
                     .filter(x -> x.getExpenseDate() != null)
                     .collect(Collectors.groupingBy(x -> x.getExpenseDate().withDayOfMonth(1).toString(),
-                            Collectors.mapping(x -> nz(x.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
+                            Collectors.mapping(x -> nz(x.getAmount()),
+                                    Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
             row = 1;
             Set<String> months = new TreeSet<>();
             months.addAll(im.keySet());
@@ -295,6 +298,7 @@ public class RangeReportController {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception ex) {
+            log.error("Failed to generate executive Excel report: {}", ex.getMessage(), ex);
             throw new IllegalStateException("Unable to create executive Excel report", ex);
         }
     }
@@ -322,7 +326,8 @@ public class RangeReportController {
             k.setWidthPercentage(100);
             kpi(k, "TOTAL SPEND", s + " " + spend, new Color(239, 68, 68));
             kpi(k, "TOTAL INCOME", s + " " + income, new Color(16, 185, 129));
-            kpi(k, "NET CASH FLOW", s + " " + net, net.signum() >= 0 ? new Color(16, 185, 129) : new Color(239, 68, 68));
+            kpi(k, "NET CASH FLOW", s + " " + net,
+                    net.signum() >= 0 ? new Color(16, 185, 129) : new Color(239, 68, 68));
             kpi(k, "TRANSACTIONS", String.valueOf(d.expenses.size() + d.incomes.size()), new Color(79, 70, 229));
             doc.add(k);
 
@@ -356,15 +361,20 @@ public class RangeReportController {
             doc.close();
             return out.toByteArray();
         } catch (Exception ex) {
+            log.error("Failed to generate executive PDF report: {}", ex.getMessage(), ex);
             throw new IllegalStateException("Unable to create executive PDF report", ex);
         }
     }
 
-    private static void addIncomePdf(Document doc, List<Income> incomes, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addIncomePdf(Document doc, List<Income> incomes, String s,
+                                     Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Income ledger", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
-        head(t, "Date"); head(t, "Source"); head(t, "Description"); head(t, "Amount");
+        head(t, "Date");
+        head(t, "Source");
+        head(t, "Description");
+        head(t, "Amount");
         for (Income x : incomes) {
             cell(t, safeDate(x.getIncomeDate()), muted);
             cell(t, safe(x.getSource()), muted);
@@ -374,11 +384,15 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addExpensePdf(Document doc, List<Expense> expenses, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addExpensePdf(Document doc, List<Expense> expenses, String s,
+                                      Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Expense ledger", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
-        head(t, "Date"); head(t, "Category"); head(t, "Description"); head(t, "Amount");
+        head(t, "Date");
+        head(t, "Category");
+        head(t, "Description");
+        head(t, "Amount");
         for (Expense x : expenses) {
             cell(t, safeDate(x.getExpenseDate()), muted);
             cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted);
@@ -388,11 +402,16 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addSavingsPdf(Document doc, List<SavingsGoal> goals, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addSavingsPdf(Document doc, List<SavingsGoal> goals, String s,
+                                      Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Savings goals", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
-        head(t, "Goal"); head(t, "Target"); head(t, "Saved"); head(t, "Progress"); head(t, "Status");
+        head(t, "Goal");
+        head(t, "Target");
+        head(t, "Saved");
+        head(t, "Progress");
+        head(t, "Status");
         for (SavingsGoal x : goals) {
             BigDecimal target = nz(x.getTargetAmount());
             BigDecimal saved = nz(x.getCurrentAmount());
@@ -406,11 +425,16 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addSubscriptionPdf(Document doc, List<RecurringExpense> subscriptions, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addSubscriptionPdf(Document doc, List<RecurringExpense> subscriptions, String s,
+                                           Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Subscriptions", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
-        head(t, "Subscription"); head(t, "Amount"); head(t, "Frequency"); head(t, "Next Due"); head(t, "Category");
+        head(t, "Subscription");
+        head(t, "Amount");
+        head(t, "Frequency");
+        head(t, "Next Due");
+        head(t, "Category");
         for (RecurringExpense x : subscriptions) {
             cell(t, safe(x.getDescription()), muted);
             cell(t, s + " " + nz(x.getAmount()), muted);
@@ -421,11 +445,15 @@ public class RangeReportController {
         doc.add(t);
     }
 
-    private static void addBudgetPdf(Document doc, List<Budget> budgets, String s, org.openpdf.text.Font muted, org.openpdf.text.Font bold) throws Exception {
+    private static void addBudgetPdf(Document doc, List<Budget> budgets, String s,
+                                      Font muted, Font bold) throws DocumentException {
         doc.add(new Paragraph("Budgets", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
-        head(t, "Category"); head(t, "Limit"); head(t, "Period"); head(t, "Date Window");
+        head(t, "Category");
+        head(t, "Limit");
+        head(t, "Period");
+        head(t, "Date Window");
         for (Budget x : budgets) {
             cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted);
             cell(t, s + " " + nz(x.getLimitAmount()), muted);
@@ -439,7 +467,8 @@ public class RangeReportController {
         String top = d.expenses.stream()
                 .collect(Collectors.groupingBy(
                         x -> x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(),
-                        Collectors.mapping(x -> nz(x.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
+                        Collectors.mapping(x -> nz(x.getAmount()),
+                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
                 .entrySet().stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
@@ -480,15 +509,19 @@ public class RangeReportController {
 
     private static String symbol(String c) {
         if (c == null || c.isBlank()) return "₹";
-        return switch (c.toUpperCase(Locale.ROOT)) {
-            case "USD" -> "$";
-            case "EUR" -> "€";
-            case "GBP" -> "£";
-            case "JPY" -> "¥";
-            case "AED" -> "AED";
-            case "INR" -> "₹";
-            default -> c.toUpperCase(Locale.ROOT);
-        };
+        try {
+            return Currency.getInstance(c.trim().toUpperCase(Locale.ROOT)).getSymbol(Locale.ROOT);
+        } catch (Exception ignored) {
+            return switch (c.toUpperCase(Locale.ROOT)) {
+                case "USD" -> "$";
+                case "EUR" -> "€";
+                case "GBP" -> "£";
+                case "JPY" -> "¥";
+                case "AED" -> "AED";
+                case "INR" -> "₹";
+                default -> c.toUpperCase(Locale.ROOT);
+            };
+        }
     }
 
     private static XSSFCellStyle style(XSSFWorkbook workbook, String bg, String fg, boolean bold, int size) {
@@ -528,7 +561,8 @@ public class RangeReportController {
         cell.setPadding(8);
         cell.setBorderColor(new Color(226, 232, 240));
         cell.addElement(new Paragraph(label, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, accent)));
-        cell.addElement(new Paragraph(value, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new Color(15, 23, 42))));
+        cell.addElement(new Paragraph(value,
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new Color(15, 23, 42))));
         table.addCell(cell);
     }
 
@@ -540,7 +574,7 @@ public class RangeReportController {
         table.addCell(cell);
     }
 
-    private static void cell(PdfPTable table, String text, org.openpdf.text.Font font) {
+    private static void cell(PdfPTable table, String text, Font font) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setPadding(5);
         table.addCell(cell);
@@ -564,8 +598,20 @@ public class RangeReportController {
 
     private record Range(LocalDate from, LocalDate to) {
         static Range of(String from, String to) {
-            LocalDate start = from == null || from.isBlank() ? null : LocalDate.parse(from);
-            LocalDate end = to == null || to.isBlank() ? null : LocalDate.parse(to);
+            LocalDate start;
+            LocalDate end;
+            try {
+                start = from == null || from.isBlank() ? null : LocalDate.parse(from);
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException(
+                        "Invalid 'from' date format: '" + from + "'. Expected format: yyyy-MM-dd", e);
+            }
+            try {
+                end = to == null || to.isBlank() ? null : LocalDate.parse(to);
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException(
+                        "Invalid 'to' date format: '" + to + "'. Expected format: yyyy-MM-dd", e);
+            }
             if (start != null && end != null && end.isBefore(start)) {
                 throw new IllegalArgumentException("End date must be on or after start date.");
             }

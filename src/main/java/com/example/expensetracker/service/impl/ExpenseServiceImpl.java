@@ -6,13 +6,15 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.service.ExpenseService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -30,28 +32,17 @@ import java.util.List;
  * @see ExpenseRepository
  * @see CategoryRepository
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ExpenseServiceImpl implements ExpenseService {
-
-    private static final Logger log = LoggerFactory.getLogger(ExpenseServiceImpl.class);
 
     /** Repository for expense persistence and querying. */
     private final ExpenseRepository expenseRepository;
 
     /** Repository for category lookups during ownership validation. */
     private final CategoryRepository categoryRepository;
-
-    /**
-     * Constructs an {@code ExpenseServiceImpl} with the required repositories.
-     *
-     * @param expenseRepository  the JPA repository for {@link Expense} entities
-     * @param categoryRepository the JPA repository for {@link Category} entities
-     */
-    public ExpenseServiceImpl(ExpenseRepository expenseRepository,
-                              CategoryRepository categoryRepository) {
-        this.expenseRepository = expenseRepository;
-        this.categoryRepository = categoryRepository;
-    }
 
     /**
      * {@inheritDoc}
@@ -71,8 +62,26 @@ public class ExpenseServiceImpl implements ExpenseService {
      *                                  a different user
      */
     @Override
+    @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense createExpense(Expense expense, User user) {
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected expense creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (expense == null) {
+            log.warn("Rejected null expense creation for userId={}", user.getId());
+            throw new IllegalArgumentException("Expense cannot be null");
+        }
+        if (expense.getAmount() == null || expense.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected non-positive expense amount={} for userId={}", expense.getAmount(), user.getId());
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
+        }
+        if (expense.getExpenseDate() == null) {
+            log.warn("Rejected expense creation with null date for userId={}", user.getId());
+            throw new IllegalArgumentException("Expense date cannot be null");
+        }
+
         log.info("Creating expense for userId={}: amount={}, date={}, categoryId={}",
                 user.getId(), expense.getAmount(), expense.getExpenseDate(),
                 expense.getCategory() != null ? expense.getCategory().getId() : null);
@@ -105,8 +114,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      * {@inheritDoc}
      *
      * <p>Result is cached in {@code userExpenses} keyed by {@code user.id}.
-     * This avoids repeated SQL round-trips to Neon on every dashboard reload.
-     * Cache is evicted on any write (create, update, delete) for this user.</p>
+     * This avoids repeated SQL round-trips to Neon on every dashboard reload.</p>
      *
      * @param user the owner of the expenses to retrieve
      * @return a list of all {@link Expense} records owned by the user
@@ -114,6 +122,9 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Cacheable(value = "userExpenses", key = "#user.id")
     public List<Expense> getUserExpenses(User user) {
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.debug("Loading expenses from DB/Cache for userId={}", user.getId());
         List<Expense> expenses = expenseRepository.findByUser(user);
         log.debug("Loaded {} expense records for userId={}", expenses.size(), user.getId());
@@ -135,8 +146,15 @@ public class ExpenseServiceImpl implements ExpenseService {
      *                                  belong to the given user
      */
     @Override
+    @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public void deleteExpense(Long expenseId, User user) {
+        if (expenseId == null) {
+            throw new IllegalArgumentException("Expense ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
         log.info("Deleting expense id={} for userId={}", expenseId, user.getId());
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() ->
@@ -169,8 +187,21 @@ public class ExpenseServiceImpl implements ExpenseService {
      * @throws AccessDeniedException    if the expense does not belong to the user
      */
     @Override
+    @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense updateExpense(Long expenseId, Expense expenseUpdates, User user) {
+        if (expenseId == null) {
+            throw new IllegalArgumentException("Expense ID cannot be null");
+        }
+        if (user == null || user.getId() == null) {
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (expenseUpdates == null) {
+            throw new IllegalArgumentException("Expense updates cannot be null");
+        }
+        if (expenseUpdates.getAmount() != null && expenseUpdates.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
+        }
         log.info("Updating expense id={} for userId={}", expenseId, user.getId());
         Expense existing = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("Expense not found"));

@@ -20,8 +20,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Tag(
     name        = "Expenses",
@@ -58,12 +57,12 @@ import java.util.stream.Collectors;
         All endpoints require a valid **JWT Bearer token**.
         """
 )
+@Slf4j
+@RequiredArgsConstructor
 @SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpenseController {
-
-    private static final Logger log = LoggerFactory.getLogger(ExpenseController.class);
 
     private final ExpenseService expenseService;
     private final UserService userService;
@@ -75,24 +74,6 @@ public class ExpenseController {
     private final ImportService importService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
 
-    public ExpenseController(ExpenseService expenseService, UserService userService,
-                             CategoryRepository categoryRepository,
-                             BudgetRepository budgetRepository,
-                             RecurringExpenseRepository recurringRepository,
-                             ExpenseRepository expenseRepository,
-                             ExportService exportService,
-                             ImportService importService,
-                             com.example.expensetracker.security.UserSecurity userSecurity) {
-        this.expenseService = expenseService;
-        this.userService = userService;
-        this.categoryRepository = categoryRepository;
-        this.budgetRepository = budgetRepository;
-        this.recurringRepository = recurringRepository;
-        this.expenseRepository = expenseRepository;
-        this.exportService = exportService;
-        this.importService = importService;
-        this.userSecurity = userSecurity;
-    }
 
     // ═════════════════════════════════════════════════════════════════════
     //  EXPENSE CRUD
@@ -126,48 +107,64 @@ public class ExpenseController {
         schema = @Schema(implementation = ExpenseRequest.class),
         examples = @ExampleObject(
             name = "expense-create-request", summary = "Lunch expense under Food category",
-            value = "{ \"amount\": 199.99, \"description\": \"Lunch at Saravana Bhavan\", \"expenseDate\": \"2025-06-15\", \"categoryId\": 1 }"
+            value = """
+                { "amount": 199.99, "description": "Lunch at Saravana Bhavan",
+                  "expenseDate": "2025-06-15", "categoryId": 1 }
+                """
         )
     ))
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Expense saved — returns the complete record with generated ID",
+        @ApiResponse(responseCode = "201",
+            description = "Expense saved — returns the complete record with generated ID",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ExpenseDto.class),
-                examples = @ExampleObject(name = "expense-create-201", summary = "Saved expense with ID and category name",
-                    value = "{ \"id\": 42, \"amount\": 199.99, \"description\": \"Lunch at Saravana Bhavan\", \"expenseDate\": \"2025-06-15\", \"categoryId\": 1, \"categoryName\": \"Food\" }"
+                examples = @ExampleObject(name = "expense-create-201",
+                    summary = "Saved expense with ID and category name",
+                    value = """
+                        { "id": 42, "amount": 199.99, "description": "Lunch at Saravana Bhavan",
+                          "expenseDate": "2025-06-15", "categoryId": 1, "categoryName": "Food" }
+                        """
                 ))
         ),
-        @ApiResponse(responseCode = "400", description = "Validation failed — amount ≤ 0, missing date, missing categoryId, or unknown category",
+        @ApiResponse(responseCode = "400",
+            description = "Validation failed — amount ≤ 0, missing date, missing categoryId, or unknown category",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-create-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"amount: must be greater than 0\", \"path\": \"/api/expenses/user/1\" }"
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "amount: must be greater than 0", "path": "/api/expenses/user/1" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-create-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/user/1\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/user/1" }
+                        """
                 ))
         )
     })
     @PostMapping("/user/{userId}")
     public ResponseEntity<ExpenseDto> createExpense(
-            @Parameter(description = "ID of the authenticated user creating the expense.", required = true, example = "1")
+            @Parameter(description = "ID of the authenticated user creating the expense.",
+                    required = true, example = "1")
             @PathVariable Long userId,
             @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseRequest request) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to create expense for userId={}: amount={}, date={}, categoryId={}",
-                userId, request.getAmount(), request.getExpenseDate(), request.getCategoryId());
+                userId, request.amount(), request.expenseDate(), request.categoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Expense expense = new Expense();
-        expense.setAmount(request.getAmount());
-        expense.setDescription(request.getDescription());
-        expense.setExpenseDate(request.getExpenseDate());
+        expense.setAmount(request.amount());
+        expense.setDescription(request.description());
+        expense.setExpenseDate(request.expenseDate());
         Category category = new Category();
-        category.setId(request.getCategoryId());
+        category.setId(request.categoryId());
         expense.setCategory(category);
         Expense saved = expenseService.createExpense(expense, user);
         log.info("Expense created successfully with id={} for userId={}", saved.getId(), userId);
@@ -195,35 +192,48 @@ public class ExpenseController {
         @ApiResponse(responseCode = "200", description = "All expense records for the user (empty array if none exist)",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 array = @ArraySchema(schema = @Schema(implementation = ExpenseDto.class)),
-                examples = @ExampleObject(name = "expense-list-200", summary = "Two expenses across different categories",
-                    value = "[ { \"id\": 42, \"amount\": 199.99, \"description\": \"Lunch at Saravana Bhavan\", \"expenseDate\": \"2025-06-15\", \"categoryId\": 1, \"categoryName\": \"Food\" }, { \"id\": 43, \"amount\": 55.00, \"description\": \"Metro card recharge\", \"expenseDate\": \"2025-06-10\", \"categoryId\": 2, \"categoryName\": \"Transport\" } ]"
+                examples = @ExampleObject(name = "expense-list-200",
+                    summary = "Two expenses across different categories",
+                    value = """
+                        [ { "id": 42, "amount": 199.99, "description": "Lunch at Saravana Bhavan",
+                            "expenseDate": "2025-06-15", "categoryId": 1, "categoryName": "Food" },
+                          { "id": 43, "amount": 55.00, "description": "Metro card recharge",
+                            "expenseDate": "2025-06-10", "categoryId": 2, "categoryName": "Transport" } ]
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "400", description = "No user found with the given ID",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-list-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"User not found\", \"path\": \"/api/expenses/user/99\" }"
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "User not found", "path": "/api/expenses/user/99" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-list-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/user/1\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/user/1" }
+                        """
                 ))
         )
     })
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<ExpenseDto>> getExpenses(
-            @Parameter(description = "ID of the user whose expense records to retrieve.", required = true, example = "1")
+            @Parameter(description = "ID of the user whose expense records to retrieve.",
+                    required = true, example = "1")
             @PathVariable Long userId) {
         userSecurity.validateUserAccess(userId);
         log.debug("Fetching expense records for userId={}", userId);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         List<ExpenseDto> expenses = expenseService.getUserExpenses(user)
-                .stream().map(ExpenseMapper::toDto).collect(Collectors.toList());
+                .stream().map(ExpenseMapper::toDto).toList();
         log.info("Retrieved {} expense records for userId={}", expenses.size(), userId);
         return ResponseEntity.ok(expenses);
     }
@@ -252,7 +262,10 @@ public class ExpenseController {
         schema = @Schema(implementation = ExpenseDto.class),
         examples = @ExampleObject(
             name = "expense-update-request", summary = "Adjust amount and description",
-            value = "{ \"amount\": 225.00, \"description\": \"Lunch + dessert\", \"expenseDate\": \"2025-06-15\", \"categoryId\": 1 }"
+            value = """
+                { "amount": 225.00, "description": "Lunch + dessert",
+                  "expenseDate": "2025-06-15", "categoryId": 1 }
+                """
         )
     ))
     @ApiResponses({
@@ -260,28 +273,40 @@ public class ExpenseController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ExpenseDto.class),
                 examples = @ExampleObject(name = "expense-update-200", summary = "Updated expense record",
-                    value = "{ \"id\": 42, \"amount\": 225.00, \"description\": \"Lunch + dessert\", \"expenseDate\": \"2025-06-15\", \"categoryId\": 1, \"categoryName\": \"Food\" }"
+                    value = """
+                        { "id": 42, "amount": 225.00, "description": "Lunch + dessert",
+                          "expenseDate": "2025-06-15", "categoryId": 1, "categoryName": "Food" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "400", description = "Expense does not belong to this user",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-update-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"Expense does not belong to this user\", \"path\": \"/api/expenses/42/user/2\" }"
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "Expense does not belong to this user", "path": "/api/expenses/42/user/2" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "500", description = "Expense not found (expense ID does not exist)",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-update-500",
-                    value = "{ \"status\": 500, \"error\": \"Internal Server Error\", \"message\": \"Unexpected error occurred\", \"path\": \"/api/expenses/999/user/1\" }"
+                    value = """
+                        { "status": 500, "error": "Internal Server Error",
+                          "message": "Unexpected error occurred", "path": "/api/expenses/999/user/1" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-update-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/42/user/1\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/42/user/1" }
+                        """
                 ))
         )
     })
@@ -294,21 +319,21 @@ public class ExpenseController {
             @Valid @org.springframework.web.bind.annotation.RequestBody ExpenseDto expenseDto) {
         userSecurity.validateUserAccess(userId);
         log.info("Received request to update expense id={} for userId={}: amount={}, categoryId={}",
-                expenseId, userId, expenseDto.getAmount(), expenseDto.getCategoryId());
+                expenseId, userId, expenseDto.amount(), expenseDto.categoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Expense expenseUpdates = new Expense();
-        expenseUpdates.setDescription(expenseDto.getDescription());
-        expenseUpdates.setAmount(expenseDto.getAmount());
-        expenseUpdates.setExpenseDate(expenseDto.getExpenseDate());
-        if (expenseDto.getCategoryId() != null) {
-            Category category = categoryRepository.findById(expenseDto.getCategoryId())
+        expenseUpdates.setDescription(expenseDto.description());
+        expenseUpdates.setAmount(expenseDto.amount());
+        expenseUpdates.setExpenseDate(expenseDto.expenseDate());
+        if (expenseDto.categoryId() != null) {
+            Category category = categoryRepository.findById(expenseDto.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             // Ownership check: prevent IDOR — user must not be able to assign another user's
             // private category to their own expense. Global categories (user == null) are shared.
             if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
                 log.warn("IDOR attempt: user {} tried to assign foreign category {} to expense {}",
-                        userId, expenseDto.getCategoryId(), expenseId);
+                        userId, expenseDto.categoryId(), expenseId);
                 throw new AccessDeniedException("Category does not belong to this user");
             }
             expenseUpdates.setCategory(category);
@@ -343,14 +368,20 @@ public class ExpenseController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-delete-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"Expense does not belong to this user\", \"path\": \"/api/expenses/42/user/2\" }"
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "Expense does not belong to this user", "path": "/api/expenses/42/user/2" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "expense-delete-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/42/user/1\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/42/user/1" }
+                        """
                 ))
         )
     })
@@ -419,7 +450,10 @@ public class ExpenseController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "budget-set-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/budget/user/1\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/budget/user/1" }
+                        """
                 ))
         )
     })
@@ -430,33 +464,33 @@ public class ExpenseController {
             @org.springframework.web.bind.annotation.RequestBody BudgetDto dto) {
         userSecurity.validateUserAccess(userId);
         log.info("Setting budget for userId={}, categoryId={}: limitAmount={}, period={}",
-                userId, dto.getCategoryId(), dto.getLimitAmount(), dto.getPeriod());
-        if (dto.getLimitAmount() == null || dto.getLimitAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                userId, dto.categoryId(), dto.limitAmount(), dto.period());
+        if (dto.limitAmount() == null || dto.limitAmount().compareTo(BigDecimal.ZERO) <= 0) {
             log.warn("Rejected budget for userId={}: limitAmount must be greater than zero", userId);
             return ResponseEntity.badRequest()
                     .body(Collections.singletonMap("error", "Budget limit must be a positive number"));
         }
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Category category = categoryRepository.findById(dto.getCategoryId())
+        Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
         // Ownership check: prevent IDOR — user must not be able to set a budget against
         // another user's private category. Global categories (user == null) are shared.
         if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
-            log.warn("IDOR attempt: user {} tried to set budget against foreign category {}", userId, dto.getCategoryId());
+            log.warn("IDOR attempt: user {} tried to set budget against foreign category {}", userId, dto.categoryId());
             throw new AccessDeniedException("Category does not belong to this user");
         }
-        Budget budget = budgetRepository.findByUserAndCategoryId(user, dto.getCategoryId())
+        Budget budget = budgetRepository.findByUserAndCategoryId(user, dto.categoryId())
                 .orElse(new Budget());
         budget.setUser(user);
         budget.setCategory(category);
-        budget.setLimitAmount(dto.getLimitAmount());
-        budget.setPeriod(dto.getPeriod() != null ? dto.getPeriod() : "MONTHLY");
-        budget.setIntervalDays("CUSTOM".equalsIgnoreCase(budget.getPeriod()) ? dto.getIntervalDays() : null);
-        budget.setStartDate(dto.getStartDate());
-        budget.setEndDate(dto.getEndDate());
+        budget.setLimitAmount(dto.limitAmount());
+        budget.setPeriod(dto.period() != null ? dto.period() : "MONTHLY");
+        budget.setIntervalDays("CUSTOM".equalsIgnoreCase(budget.getPeriod()) ? dto.intervalDays() : null);
+        budget.setStartDate(dto.startDate());
+        budget.setEndDate(dto.endDate());
         budgetRepository.save(budget);
-        log.info("Budget saved successfully for userId={}, categoryId={}", userId, dto.getCategoryId());
+        log.info("Budget saved successfully for userId={}, categoryId={}", userId, dto.categoryId());
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget set successfully"));
     }
 
@@ -489,10 +523,11 @@ public class ExpenseController {
 
     @Operation(
         summary = "Delete budget by user and category",
-        description = "Deletes the budget limit set for a specific category, scoped to a specific user — unlike deleteBudgetById above, this correctly verifies the user exists first and only ever deletes that user's own budget for the given category."
+        description = "Deletes budget limit for category scoped to specific user."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Budget deleted (or silently no-op if no matching budget existed for this user/category pair)"),
+        @ApiResponse(responseCode = "200",
+            description = "Budget deleted (or silently no-op if no matching budget existed)"),
         @ApiResponse(responseCode = "400", description = "No user found with the given userId")
     })
     @DeleteMapping("/budget/user/{userId}/category/{categoryId}")
@@ -500,7 +535,8 @@ public class ExpenseController {
     public ResponseEntity<?> deleteBudgetByCategory(
             @Parameter(description = "ID of the user who owns the budget.", required = true, example = "1")
             @PathVariable Long userId,
-            @Parameter(description = "ID of the category whose budget limit should be removed.", required = true, example = "3")
+            @Parameter(description = "ID of category whose budget limit should be removed.",
+                    required = true, example = "3")
             @PathVariable Long categoryId) {
         userSecurity.validateUserAccess(userId);
         log.info("Deleting budget for userId={}, categoryId={}", userId, categoryId);
@@ -580,7 +616,7 @@ public class ExpenseController {
                     start,
                     end
             );
-        }).collect(Collectors.toList());
+        }).toList();
         log.info("Generated budget status for {} budgets for userId={}", statusList.size(), userId);
         return ResponseEntity.ok(statusList);
     }
@@ -617,7 +653,10 @@ public class ExpenseController {
         schema = @Schema(implementation = ExpenseDto.class),
         examples = @ExampleObject(
             name = "recurring-add-request", summary = "Netflix Premium monthly subscription",
-            value = "{ \"amount\": 649.00, \"description\": \"Netflix Premium\", \"expenseDate\": \"2025-06-01\", \"categoryId\": 4 }"
+            value = """
+                { "amount": 649.00, "description": "Netflix Premium",
+                  "expenseDate": "2025-06-01", "categoryId": 4 }
+                """
         )
     ))
     @ApiResponses({
@@ -631,48 +670,56 @@ public class ExpenseController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "recurring-add-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"Category not found\", \"path\": \"/api/expenses/recurring/user/1\" }"
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "Category not found", "path": "/api/expenses/recurring/user/1" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "recurring-add-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/recurring/user/1\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/recurring/user/1" }
+                        """
                 ))
         )
     })
     @PostMapping("/recurring/user/{userId}")
     public ResponseEntity<?> addRecurring(
-            @Parameter(description = "ID of the user registering the recurring expense.", required = true, example = "1")
+            @Parameter(description = "ID of user registering recurring expense.",
+                    required = true, example = "1")
             @PathVariable Long userId,
             @org.springframework.web.bind.annotation.RequestBody ExpenseDto dto) {
         userSecurity.validateUserAccess(userId);
-        log.info("Received request to setup recurring expense for userId={}: amount={}, frequency={}, intervalDays={}, categoryId={}",
-                userId, dto.getAmount(), dto.getFrequency(), dto.getIntervalDays(), dto.getCategoryId());
+        log.info("Received request to setup recurring expense for userId={}: "
+                        + "amount={}, frequency={}, intervalDays={}, categoryId={}",
+                userId, dto.amount(), dto.frequency(), dto.intervalDays(), dto.categoryId());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Category category = categoryRepository.findById(dto.getCategoryId())
+        Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
         RecurringExpense rec = new RecurringExpense();
-        rec.setAmount(dto.getAmount());
-        rec.setDescription(dto.getDescription());
-        String frequency = normalizeFrequency(dto.getFrequency());
-        Integer intervalDays = "CUSTOM".equals(frequency) ? dto.getIntervalDays() : null;
+        rec.setAmount(dto.amount());
+        rec.setDescription(dto.description());
+        String frequency = normalizeFrequency(dto.frequency());
+        Integer intervalDays = "CUSTOM".equals(frequency) ? dto.intervalDays() : null;
         if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
             log.warn("Invalid intervalDays={} for custom recurring expense userId={}", intervalDays, userId);
             throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
         }
         rec.setFrequency(frequency);
         rec.setIntervalDays(intervalDays);
-        rec.setNextDueDate(nextOccurrence(dto.getExpenseDate(), frequency, intervalDays));
+        rec.setNextDueDate(nextOccurrence(dto.expenseDate(), frequency, intervalDays));
         rec.setCategory(category);
         rec.setUser(user);
         recurringRepository.save(rec);
         Expense firstExp = new Expense();
-        firstExp.setAmount(dto.getAmount());
-        firstExp.setDescription(dto.getDescription());
-        firstExp.setExpenseDate(dto.getExpenseDate());
+        firstExp.setAmount(dto.amount());
+        firstExp.setDescription(dto.description());
+        firstExp.setExpenseDate(dto.expenseDate());
         firstExp.setCategory(category);
         // Mark the seed expense as recurring so MonthlyReportServiceImpl's recurringTotal
         // calculation (which filters by Expense::isRecurring) actually includes it.
@@ -707,21 +754,32 @@ public class ExpenseController {
         @ApiResponse(responseCode = "200", description = "List of active subscriptions (empty array if none)",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(name = "recurring-list-200", summary = "Two active subscriptions",
-                    value = "[ { \"id\": 3, \"description\": \"Netflix Premium\", \"amount\": 649.00, \"nextDueDate\": \"2025-07-01\", \"frequency\": \"MONTHLY\", \"categoryName\": \"Entertainment\" }, { \"id\": 4, \"description\": \"Spotify\", \"amount\": 119.00, \"nextDueDate\": \"2025-07-05\", \"frequency\": \"MONTHLY\", \"categoryName\": \"Entertainment\" } ]"
+                    value = """
+                        [ { "id": 3, "description": "Netflix Premium", "amount": 649.00,
+                            "nextDueDate": "2025-07-01", "frequency": "MONTHLY", "categoryName": "Entertainment" },
+                          { "id": 4, "description": "Spotify", "amount": 119.00,
+                            "nextDueDate": "2025-07-05", "frequency": "MONTHLY", "categoryName": "Entertainment" } ]
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "400", description = "No user found with the given ID",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "recurring-list-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"User not found\", \"path\": \"/api/expenses/recurring/user/99\" }"
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "User not found", "path": "/api/expenses/recurring/user/99" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "recurring-list-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/recurring/user/1\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/recurring/user/1" }
+                        """
                 ))
         )
     })
@@ -745,7 +803,7 @@ public class ExpenseController {
             map.put("categoryId", sub.getCategory() != null ? sub.getCategory().getId() : null);
             map.put("categoryName", sub.getCategory() != null ? sub.getCategory().getName() : "Uncategorized");
             return map;
-        }).collect(Collectors.toList());
+        }).toList();
         log.info("Retrieved {} recurring subscriptions for userId={}", response.size(), userId);
         return ResponseEntity.ok(response);
     }
@@ -789,24 +847,32 @@ public class ExpenseController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "recurring-update-400",
-                    value = "{ \"status\": 400, \"error\": \"Bad Request\", \"message\": \"Subscription not found\", \"path\": \"/api/expenses/recurring/99\" }"
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "Subscription not found", "path": "/api/expenses/recurring/99" }
+                        """
                 ))
         ),
         @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "recurring-update-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/recurring/3\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/recurring/3" }
+                        """
                 ))
         )
     })
     @PutMapping({"/recurring/{recId}", "/recurring/{recId}/user/{userId}"})
     public ResponseEntity<?> updateSubscription(
-            @Parameter(description = "ID of the recurring expense subscription to update.", required = true, example = "3")
+            @Parameter(description = "ID of recurring expense subscription to update.",
+                    required = true, example = "3")
             @PathVariable Long recId,
             @PathVariable(value = "userId", required = false) Long userId,
             @org.springframework.web.bind.annotation.RequestBody Map<String, Object> updates) {
-        log.info("Received request to update subscription id={}, userId={}: fields={}", recId, userId, updates.keySet());
+        log.info("Received request to update subscription id={}, userId={}: fields={}",
+                recId, userId, updates.keySet());
         RecurringExpense rec = recurringRepository.findById(recId)
                 .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
         userSecurity.validateUserAccess(rec.getUser().getId());
@@ -825,6 +891,20 @@ public class ExpenseController {
             }
             if (updates.containsKey("nextDueDate") && updates.get("nextDueDate") != null) {
                 rec.setNextDueDate(LocalDate.parse(String.valueOf(updates.get("nextDueDate"))));
+            }
+            if (updates.containsKey("categoryId") || updates.containsKey("category")) {
+                Object catVal = updates.containsKey("categoryId") ? updates.get("categoryId") : updates.get("category");
+                if (catVal == null || "".equals(catVal)) {
+                    rec.setCategory(null);
+                } else {
+                    Long catId = Long.valueOf(String.valueOf(catVal));
+                    Category category = categoryRepository.findById(catId)
+                            .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                    if (category.getUser() != null && !category.getUser().getId().equals(rec.getUser().getId())) {
+                        throw new IllegalArgumentException("Category does not belong to this user");
+                    }
+                    rec.setCategory(category);
+                }
             }
             if (updates.containsKey("frequency")) {
                 String frequency = normalizeFrequency((String) updates.get("frequency"));
@@ -886,13 +966,17 @@ public class ExpenseController {
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = @ExampleObject(name = "recurring-delete-401",
-                    value = "{ \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"JWT token is missing or invalid\", \"path\": \"/api/expenses/recurring/3\" }"
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/recurring/3" }
+                        """
                 ))
         )
     })
     @DeleteMapping({"/recurring/{recId}", "/recurring/{recId}/user/{userId}"})
     public ResponseEntity<?> deleteSubscription(
-            @Parameter(description = "ID of the recurring expense subscription to cancel.", required = true, example = "3")
+            @Parameter(description = "ID of recurring expense subscription to cancel.",
+                    required = true, example = "3")
             @PathVariable Long recId,
             @PathVariable(value = "userId", required = false) Long userId) {
         log.info("Received request to cancel recurring subscription id={}, userId={}", recId, userId);
@@ -939,11 +1023,13 @@ public class ExpenseController {
         byte[] bytes = exportService.exportExpensesToCsv(user);
         log.info("Expenses CSV export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.csv\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"expenses.csv\"")
                 // FIXED: specify charset=UTF-8 so non-ASCII characters in descriptions (currency
                 // symbols, accented names, emoji) are not corrupted. Without charset, text/csv
                 // defaults to ISO-8859-1 per RFC 4180.
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -955,10 +1041,13 @@ public class ExpenseController {
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         byte[] bytes = exportService.exportExpensesToJson(user);
-        log.info("Expenses JSON export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
+        log.info("Expenses JSON export generated for userId={}, byteCount={}",
+                userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.json\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"expenses.json\"")
                 .contentType(MediaType.APPLICATION_JSON)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -969,15 +1058,18 @@ public class ExpenseController {
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         userSecurity.validateUserAccess(userId);
-        log.info("Exporting expenses to PDF for userId={}, currencyParam={}, currencyHeader={}", userId, currencyParam, currencyHeader);
+        log.info("Exporting expenses to PDF for userId={}, currencyParam={}, currencyHeader={}",
+                userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportExpensesToPdf(user, preferredCurrency);
         log.info("Expenses PDF export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.pdf\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"expenses.pdf\"")
                 .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -988,15 +1080,20 @@ public class ExpenseController {
             @RequestParam(value = "currency", required = false) String currencyParam,
             @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         userSecurity.validateUserAccess(userId);
-        log.info("Exporting expenses to Excel for userId={}, currencyParam={}, currencyHeader={}", userId, currencyParam, currencyHeader);
+        log.info("Exporting expenses to Excel for userId={}, currencyParam={}, currencyHeader={}",
+                userId, currencyParam, currencyHeader);
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank()) ? currencyParam : currencyHeader;
         byte[] bytes = exportService.exportExpensesToExcel(user, preferredCurrency);
-        log.info("Expenses Excel export generated for userId={}, byteCount={}", userId, bytes != null ? bytes.length : 0);
+        log.info("Expenses Excel export generated for userId={}, byteCount={}",
+                userId, bytes != null ? bytes.length : 0);
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expenses.xlsx\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"expenses.xlsx\"")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(bytes != null ? bytes.length : 0)
                 .body(bytes);
     }
 
@@ -1015,9 +1112,12 @@ public class ExpenseController {
             """
     )
     @PostMapping(value = "/user/{userId}/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> importCsv(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+    public ResponseEntity<?> importCsv(
+            @PathVariable Long userId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         userSecurity.validateUserAccess(userId);
-        log.info("Importing expenses from CSV for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
+        log.info("Importing expenses from CSV for userId={}, filename={}, size={}",
+                userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Map<String, Object> result = importService.importExpensesFromCsv(file, user);
@@ -1027,9 +1127,12 @@ public class ExpenseController {
 
     @Operation(summary = "Import expenses from JSON file")
     @PostMapping(value = "/user/{userId}/import/json", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> importJson(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+    public ResponseEntity<?> importJson(
+            @PathVariable Long userId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         userSecurity.validateUserAccess(userId);
-        log.info("Importing expenses from JSON for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
+        log.info("Importing expenses from JSON for userId={}, filename={}, size={}",
+                userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Map<String, Object> result = importService.importExpensesFromJson(file, user);
@@ -1044,11 +1147,17 @@ public class ExpenseController {
      * @param file uploaded Excel spreadsheet
      * @return summary map containing imported count, failed row count, and per-row error messages
      */
-    @Operation(summary = "Import expenses from Excel file (.xlsx / .xls)", description = "Uploads a Microsoft Excel workbook containing expense entries. Supports dynamic header detection and per-row error tracking.")
-    @PostMapping(value = {"/user/{userId}/import/excel", "/user/{userId}/import/xlsx"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> importExcel(@PathVariable Long userId, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+    @Operation(summary = "Import expenses from Excel file (.xlsx / .xls)",
+            description = "Uploads a Microsoft Excel workbook containing expense entries. "
+                    + "Supports dynamic header detection and per-row error tracking.")
+    @PostMapping(value = {"/user/{userId}/import/excel", "/user/{userId}/import/xlsx"},
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importExcel(
+            @PathVariable Long userId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         userSecurity.validateUserAccess(userId);
-        log.info("Importing expenses from Excel for userId={}, filename={}, size={}", userId, file.getOriginalFilename(), file.getSize());
+        log.info("Importing expenses from Excel for userId={}, filename={}, size={}",
+                userId, file.getOriginalFilename(), file.getSize());
         User user = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Map<String, Object> result = importService.importExpensesFromExcel(file, user);

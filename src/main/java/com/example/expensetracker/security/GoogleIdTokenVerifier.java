@@ -31,7 +31,7 @@ public class GoogleIdTokenVerifier {
 
     /**
      * This application's Google OAuth 2.0 Client ID, obtained from
-     * https://console.cloud.google.com/apis/credentials.
+     * {@code https://console.cloud.google.com/apis/credentials}.
      *
      * <p>If left blank, Google Sign-In is disabled server-side (fails closed)
      * rather than silently accepting tokens meant for a different app.</p>

@@ -9,8 +9,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /**
- * Utility mapper for converting between {@link SavingsGoal} entities and corresponding DTOs,
- * including dynamic computation of savings percentage progress.
+ * Mapping utility converting between {@link SavingsGoal} entities and their corresponding DTOs.
  *
  * @author Yogeshwaran
  */
@@ -20,7 +19,7 @@ public final class SavingsGoalMapper {
 
     /**
      * Maps a {@link SavingsGoal} entity to its response {@link SavingsGoalDto},
-     * calculating progress percentage based on current and target amounts.
+     * calculating the dynamic progress percentage.
      *
      * @param goal the savings goal entity
      * @return populated {@link SavingsGoalDto}, or null if input was null
@@ -39,22 +38,21 @@ public final class SavingsGoalMapper {
             progress = Math.round(progress * 10.0) / 10.0;
         }
 
-        SavingsGoalDto dto = new SavingsGoalDto(
+        return new SavingsGoalDto(
                 goal.getId(),
                 goal.getName(),
                 goal.getTargetAmount(),
                 goal.getCurrentAmount(),
                 goal.getTargetDate(),
                 goal.getStatus(),
-                progress
+                progress,
+                goal.getIsRecurring(),
+                goal.getRecurringAmount(),
+                goal.getFrequency(),
+                goal.getIntervalDays(),
+                goal.getNextDueDate(),
+                goal.getEndDate()
         );
-        dto.setIsRecurring(goal.getIsRecurring());
-        dto.setRecurringAmount(goal.getRecurringAmount());
-        dto.setFrequency(goal.getFrequency());
-        dto.setIntervalDays(goal.getIntervalDays());
-        dto.setNextDueDate(goal.getNextDueDate());
-        dto.setEndDate(goal.getEndDate());
-        return dto;
     }
 
     /**
@@ -70,17 +68,17 @@ public final class SavingsGoalMapper {
         }
 
         SavingsGoal goal = new SavingsGoal();
-        goal.setName(request.getName());
-        goal.setTargetAmount(request.getTargetAmount());
-        goal.setCurrentAmount(request.getCurrentAmount() != null ? request.getCurrentAmount() : BigDecimal.ZERO);
-        goal.setTargetDate(request.getTargetDate());
-        goal.setStatus(request.getStatus() != null ? request.getStatus() : "IN_PROGRESS");
-        goal.setIsRecurring(request.getIsRecurring() != null ? request.getIsRecurring() : false);
-        goal.setRecurringAmount(request.getRecurringAmount());
-        goal.setFrequency(request.getFrequency());
-        goal.setIntervalDays(request.getIntervalDays());
-        goal.setNextDueDate(request.getNextDueDate());
-        goal.setEndDate(request.getEndDate());
+        goal.setName(request.name());
+        goal.setTargetAmount(request.targetAmount());
+        goal.setCurrentAmount(request.currentAmount() != null ? request.currentAmount() : BigDecimal.ZERO);
+        goal.setTargetDate(request.targetDate());
+        goal.setStatus(request.status() != null ? request.status() : "IN_PROGRESS");
+        goal.setIsRecurring(Boolean.TRUE.equals(request.isRecurring()));
+        goal.setRecurringAmount(request.recurringAmount());
+        goal.setFrequency(request.frequency());
+        goal.setIntervalDays(request.intervalDays());
+        goal.setNextDueDate(request.nextDueDate());
+        goal.setEndDate(request.endDate());
         goal.setUser(user);
         return goal;
     }

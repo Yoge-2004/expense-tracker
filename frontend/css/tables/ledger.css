@@ -117,7 +117,7 @@
     color: var(--primary) !important;
 }
 .savings-goal-card .delete-goal-btn {
-    color: var(--danger) !important;
+    color: var(--danger-text) !important;
 }
 .savings-goal-card .edit-goal-btn:hover,
 .savings-goal-card .delete-goal-btn:hover {

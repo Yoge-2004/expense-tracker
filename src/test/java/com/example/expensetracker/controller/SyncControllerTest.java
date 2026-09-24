@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -46,7 +45,7 @@ class SyncControllerTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(controller, "syncSecretKey", "sync-secret");
-        when(rateLimiterService.tryAcquire(anyString(), eq(15), any(Duration.class))).thenReturn(true);
+        when(rateLimiterService.tryAcquire(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         SecurityContextHolder.clearContext();
     }
 
@@ -63,7 +62,8 @@ class SyncControllerTest {
                 }))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value("error"))
-                .andExpect(jsonPath("$.message").value("Unauthorized: valid X-Sync-Token required for sync operations."));
+                .andExpect(jsonPath("$.message")
+                        .value("Unauthorized: valid X-Sync-Token required for sync operations."));
 
         verify(syncService, never()).syncFileToDb();
     }
@@ -123,7 +123,8 @@ class SyncControllerTest {
 
         mockMvc.perform(post("/api/sync/push-to-hf"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
+                .andExpect(jsonPath("$.message")
+                        .value("Unauthorized: valid X-Sync-Token required for Hugging Face backup operations."));
 
         verifyNoInteractions(syncService);
     }
@@ -144,7 +145,8 @@ class SyncControllerTest {
 
     @Test
     void hfPullTriggersFileToDbOnlyAfterSuccessfulDownload() throws Exception {
-        when(syncService.downloadJsonBackupFromHuggingFace()).thenReturn(Map.of("status", "success", "downloaded", true));
+        when(syncService.downloadJsonBackupFromHuggingFace())
+                .thenReturn(Map.of("status", "success", "downloaded", true));
 
         mockMvc.perform(post("/api/sync/pull-from-hf").header("X-Sync-Token", "sync-secret"))
                 .andExpect(status().isOk())
@@ -157,10 +159,11 @@ class SyncControllerTest {
 
     @Test
     void hfPullDoesNotImportWhenDownloadFails() throws Exception {
-        when(syncService.downloadJsonBackupFromHuggingFace()).thenReturn(Map.of("status", "error", "message", "backup unavailable"));
+        when(syncService.downloadJsonBackupFromHuggingFace())
+                .thenReturn(Map.of("status", "error", "message", "backup unavailable"));
 
         mockMvc.perform(post("/api/sync/pull-from-hf").header("X-Sync-Token", "sync-secret"))
-                .andExpect(status().isOk())
+                .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value("error"))
                 .andExpect(jsonPath("$.message").value("backup unavailable"));
 
@@ -170,12 +173,61 @@ class SyncControllerTest {
 
     @Test
     void rateLimitBlocksSyncBeforeServiceInvocation() throws Exception {
-        when(rateLimiterService.tryAcquire(anyString(), eq(15), any(Duration.class))).thenReturn(false);
+        when(rateLimiterService.tryAcquire(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
 
         mockMvc.perform(post("/api/sync/file-to-db").header("X-Sync-Token", "sync-secret"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.status").value("error"));
 
         verifyNoInteractions(syncService);
+    }
+
+    // ── Loopback bypass hardening ─────────────────────────────────────────────
+
+    @Test
+    void loopbackWithoutTokenIsRejectedByDefault() throws Exception {
+        // Default deployments (including every reverse-proxied one, where all
+        // traffic arrives from 127.0.0.1) must require the sync token.
+        mockMvc.perform(post("/api/sync/file-to-db").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("error"));
+
+        verify(syncService, never()).syncFileToDb();
+    }
+
+    @Test
+    void loopbackBypassCanBeEnabledExplicitlyForLocalCron() throws Exception {
+        ReflectionTestUtils.setField(controller, "loopbackBypassEnabled", true);
+        when(syncService.syncFileToDb()).thenReturn(Map.of("status", "success"));
+
+        mockMvc.perform(post("/api/sync/file-to-db").with(request -> {
+                    request.setRemoteAddr("127.0.0.1");
+                    return request;
+                }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
+
+        verify(syncService).syncFileToDb();
+    }
+
+    @Test
+    void loopbackBypassDoesNotApplyToProxiedRequests() throws Exception {
+        // Behind nginx every request is socket-level loopback WITH forwarding
+        // headers — exactly the shape that previously bypassed authentication.
+        ReflectionTestUtils.setField(controller, "loopbackBypassEnabled", true);
+
+        mockMvc.perform(post("/api/sync/file-to-db")
+                        .header("X-Forwarded-For", "203.0.113.9")
+                        .with(request -> {
+                            request.setRemoteAddr("127.0.0.1");
+                            return request;
+                        }))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("error"));
+
+        verify(syncService, never()).syncFileToDb();
     }
 }

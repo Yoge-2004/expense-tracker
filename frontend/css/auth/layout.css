@@ -9,7 +9,6 @@
     overflow-x: visible !important;
     overflow-y: visible !important;
     scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
     background: transparent !important;
     position: relative;
     z-index: 1;

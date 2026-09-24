@@ -18,7 +18,13 @@ function ensureFeedbackUi() {
     document.getElementById("appToastRegion")?.remove();
     document.body.insertAdjacentHTML("beforeend", `
         <div id="appLoading" class="app-loading" aria-live="polite" aria-busy="true">
-            <span class="spinner" aria-hidden="true"></span><span id="loadingText">Connecting to the server…</span>
+            <span class="spinner" aria-hidden="true"></span>
+            <div class="loading-body" style="display:flex; flex-direction:column; gap:4px; min-width:180px;">
+                <span id="loadingText">Connecting to the server…</span>
+                <div id="loadingProgressTrack" class="loading-progress-track" style="display:none; width:100%; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; overflow:hidden;">
+                    <div id="loadingProgressBar" class="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
+                </div>
+            </div>
         </div>
         <div id="serverStatusBadge" class="server-status-badge online" title="Server Status">
             <span class="status-dot"></span><span id="statusText">Connected</span>
@@ -40,21 +46,71 @@ function updateServerStatus(online, message = "Connected") {
     }
 }
 
+function setProgress(percent, customText) {
+    ensureFeedbackUi();
+    const loader = document.getElementById("appLoading");
+    const loadingText = document.getElementById("loadingText");
+    const track = document.getElementById("loadingProgressTrack");
+    const bar = document.getElementById("loadingProgressBar");
+
+    clearTimeout(loadingTimer);
+    if (!loader) return;
+
+    if (customText && loadingText) {
+        loadingText.textContent = customText;
+    }
+
+    if (percent != null && percent >= 0) {
+        if (track) track.style.display = "block";
+        const clamped = Math.min(100, Math.max(0, Math.round(percent)));
+        if (bar) bar.style.width = `${clamped}%`;
+        loader.classList.add("visible");
+    } else {
+        if (track) track.style.display = "none";
+        if (bar) bar.style.width = "0%";
+    }
+}
+if (typeof window !== "undefined") {
+    window.setProgress = setProgress;
+}
+
 function setLoading(isLoading, customText = "Connecting to the server…") {
     ensureFeedbackUi();
     const loader = document.getElementById("appLoading");
     const loadingText = document.getElementById("loadingText");
+    const track = document.getElementById("loadingProgressTrack");
+    const bar = document.getElementById("loadingProgressBar");
+
     if (loadingText) loadingText.textContent = customText;
     clearTimeout(loadingTimer);
     if (!loader) return;
     if (isLoading) {
         loadingTimer = setTimeout(() => loader.classList.add("visible"), 200);
     } else {
+        if (track) track.style.display = "none";
+        if (bar) bar.style.width = "0%";
         loader.classList.remove("visible");
     }
 }
 
+let _lastToastMsg = "";
+let _lastToastTime = 0;
+
 function showToast(message, type = "info") {
+    const now = Date.now();
+    const strMsg = message == null ? "" : String(message);
+    const isNetworkErr = strMsg.toLowerCase().includes("connect to the server") ||
+                         strMsg.toLowerCase().includes("couldn't reach the server") ||
+                         strMsg.toLowerCase().includes("failed to load") ||
+                         strMsg.toLowerCase().includes("network error") ||
+                         strMsg.toLowerCase().includes("failed to fetch");
+    // Suppress rapid duplicate toasts or multiple network/offline toasts within 2.5s
+    if ((strMsg === _lastToastMsg || (isNetworkErr && _lastToastMsg && (now - _lastToastTime < 2500))) && now - _lastToastTime < 2500) {
+        return;
+    }
+    _lastToastMsg = strMsg;
+    _lastToastTime = now;
+
     ensureFeedbackUi();
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
@@ -173,15 +229,29 @@ if (typeof document !== "undefined") {
     setInterval(checkHealth, HEALTH_CHECK_INTERVAL_MS);
 }
 
-async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
+async function apiRequest(endpoint, options = {}) {
+    const method = (options.method || "GET").toUpperCase();
+    const showRequestLoading = options.showLoading === true || method !== "GET";
+
+    if (showRequestLoading) {
+        activeRequests += 1;
+        setLoading(true, "Connecting to server...");
+    }
+
+    try {
+        return await executeApiRequest(endpoint, options, 2);
+    } finally {
+        if (showRequestLoading) {
+            activeRequests = Math.max(0, activeRequests - 1);
+            if (activeRequests === 0) setLoading(false);
+        }
+    }
+}
+
+async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     const method = (options.method || "GET").toUpperCase();
     const skipCache = options.skipCache === true || options.cache === "no-store";
 
-    // FIXED: previously any non-GET request (or a GET with skipCache) wiped the ENTIRE apiCache.
-    // That meant writing one expense invalidated the categories, savings goals, and incomes caches
-    // too — defeating the 15s TTL and forcing refetches of unrelated data. Now we only invalidate
-    // cache entries whose key shares the same top-level resource stem as the mutating endpoint.
-    // A skipCache GET no longer clears anything either (it just bypasses the cache read for itself).
     if (method !== "GET") {
         invalidateCacheForEndpoint(endpoint);
     }
@@ -198,41 +268,57 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
         ...options.headers
     };
 
-    // Background GETs must not flash the global loading veil. The dashboard
-    // performs several parallel reads, and showing the global loader for every
-    // one made the page appear to randomly refresh/flicker during normal use.
-    // Mutations still show the loader, and callers can opt a GET in with showLoading: true.
     const showRequestLoading = options.showLoading === true || method !== "GET";
-    if (showRequestLoading) {
-        activeRequests += 1;
-        setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
-    }
     let response;
+    let fetchSignal = options.signal;
+    let timeoutTimer = null;
+    if (!fetchSignal) {
+        if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+            fetchSignal = AbortSignal.timeout(options.timeout || 25000);
+        } else {
+            const controller = new AbortController();
+            timeoutTimer = setTimeout(() => controller.abort(), options.timeout || 25000);
+            fetchSignal = controller.signal;
+        }
+    } else if (typeof AbortSignal !== "undefined" && typeof AbortSignal.any === "function" && typeof AbortSignal.timeout === "function") {
+        fetchSignal = AbortSignal.any([fetchSignal, AbortSignal.timeout(options.timeout || 25000)]);
+    }
+
     try {
-        response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+        response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers, signal: fetchSignal });
     } catch (error) {
+        if (timeoutTimer) clearTimeout(timeoutTimer);
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
-            await new Promise(r => setTimeout(r, 2500));
-            return apiRequest(endpoint, options, retriesLeft - 1);
+            if (showRequestLoading) {
+                setLoading(true, retriesLeft < 2 ? "Waking up server (cold start)..." : "Connecting to server...");
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            return executeApiRequest(endpoint, options, retriesLeft - 1);
         }
-        updateServerStatus(false, "Connecting...");
-        throw new Error("Unable to connect to the server. Please check your connection and try again.");
+        updateServerStatus(false, "Offline / Server Disconnected");
+        const netErr = new Error("Unable to connect to the server. Please check your connection and try again.");
+        netErr.isNetworkError = true;
+        netErr.status = 0;
+        throw netErr;
     } finally {
-        if (showRequestLoading) {
-            activeRequests -= 1;
-            if (activeRequests === 0) setLoading(false);
-        }
+        if (timeoutTimer) clearTimeout(timeoutTimer);
     }
 
     if (response.status === 503) {
         if (retriesLeft > 0) {
             updateServerStatus(false, "Connecting to server...");
-            await new Promise(r => setTimeout(r, 2500));
-            return apiRequest(endpoint, options, retriesLeft - 1);
+            if (showRequestLoading) {
+                setLoading(true, "Server is initializing, waiting a moment...");
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            return executeApiRequest(endpoint, options, retriesLeft - 1);
         }
-        updateServerStatus(false, "Connecting...");
-        throw new Error("The server is currently connecting. Please try again in a few moments.");
+        updateServerStatus(false, "Offline / Server Disconnected");
+        const servErr = new Error("The server is temporarily unavailable. Please try again in a few moments.");
+        servErr.isNetworkError = true;
+        servErr.status = 503;
+        throw servErr;
     }
 
     updateServerStatus(true, "Connected");
@@ -289,7 +375,10 @@ async function apiRequest(endpoint, options = {}, retriesLeft = 2) {
             };
             msg = statusMessages[response.status] || `Request failed (${response.status}).`;
         }
-        throw new Error(msg);
+        const err = new Error(msg);
+        err.status = response.status;
+        err.isNetworkError = (response.status >= 502 && response.status <= 504);
+        throw err;
     }
 
     let data = null;
@@ -347,6 +436,16 @@ function updateAllThemeIcons(theme) {
 }
 
 function toggleGlobalTheme() {
+    if (typeof beginThemeSwitch === "function") {
+        beginThemeSwitch();
+    } else {
+        document.documentElement.classList.add("theme-switching");
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document.documentElement.classList.remove("theme-switching");
+            });
+        });
+    }
     const currentTheme = (document.documentElement.getAttribute("data-theme") || "dark") === "light" ? "light" : "dark";
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", nextTheme);
@@ -507,10 +606,10 @@ function getCurrenciesSortedByLikelihood() {
     return [detectedItem, ...WORLD_CURRENCIES.filter(c => c.code !== detected)];
 }
 
-function getSelectedCurrency() { return localStorage.getItem("userCurrency") || "USD"; }
+function getSelectedCurrency() { return localStorage.getItem("userCurrency") || "INR"; }
 function getCurrencyInfo(code) {
     const c = code || getSelectedCurrency();
-    return WORLD_CURRENCIES.find(item => item.code === c) || WORLD_CURRENCIES[0];
+    return WORLD_CURRENCIES.find(item => item.code === c) || WORLD_CURRENCIES.find(item => item.code === "INR") || WORLD_CURRENCIES[0];
 }
 function getCurrencySymbol() { return getCurrencyInfo().symbol; }
 function formatGlobalCurrency(amt) {
@@ -557,4 +656,3 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => ripple.remove(), 600);
     });
 });
-

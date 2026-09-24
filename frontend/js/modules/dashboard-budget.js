@@ -10,6 +10,7 @@
             getCategoryColor,
             getCategoryEmoji,
             escapeHtml,
+            jsAttrEscape,
             formatCurrency,
             renderBudgetVsActualChart,
             renderFinancialInsights,
@@ -31,9 +32,13 @@
                 if (!normalizedBudgets.length) {
                     if (elements.budgetList) {
                         elements.budgetList.innerHTML = `
-                            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
                                 <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No budget limits configured</p>
-                                <span style="font-size:12.5px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
+                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Establish category spending ceilings to monitor outflows effectively.</span>
+                                <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addBudgetBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <span>Configure Budget</span>
+                                </button>
                             </div>`;
                     }
                     if (usageBadge) {
@@ -62,7 +67,7 @@
                         const periodLabel = b.period ? b.period.toUpperCase() : 'MONTHLY';
                         const startStr = b.startDate || '';
                         const endStr = b.endDate || '';
-                        const safeName = escapeHtml(b.categoryName || 'Budget').replace(/'/g, "\\'");
+                        const safeName = jsAttrEscape(b.categoryName || 'Budget');
 
                         return `
                         <div class="budget-item">
@@ -106,13 +111,17 @@
                 console.error("Budget Error", error);
                 if (elements.budgetList) {
                     elements.budgetList.innerHTML = `
-                        <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                            <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No budget limits configured</p>
-                            <span style="font-size:12.5px;">Click <strong>+ New Budget</strong> above to establish category spending ceilings.</span>
-                        </div>`;
+                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
+                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
+                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
+                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                                    <span>Retry Connection</span>
+                                </button>
+                            </div>`;
                 }
                 if (usageBadge) {
-                    usageBadge.textContent = "No Budget Set";
+                    usageBadge.textContent = "Offline";
                     usageBadge.className = "status-badge badge-neutral";
                 }
             }
