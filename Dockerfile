@@ -19,12 +19,20 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/uv/bin:$PATH \
     PYTHONUNBUFFERED=1
 
-COPY --from=ghcr.io/astral-sh/uv:${UV_VERSION} /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.15 /uv /uvx /usr/local/bin/
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends nginx supervisor ca-certificates curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --create-home --uid 1000 --shell /usr/sbin/nologin app \
+    && if id -u 1000 >/dev/null 2>&1; then \
+        OLD_USER=$(getent passwd 1000 | cut -d: -f1); \
+        OLD_GROUP=$(getent group 1000 | cut -d: -f1); \
+        [ "$OLD_USER" != "app" ] && usermod -l app "$OLD_USER"; \
+        [ -n "$OLD_GROUP" ] && [ "$OLD_GROUP" != "app" ] && groupmod -n app "$OLD_GROUP"; \
+        usermod -d /home/app -m app 2>/dev/null || true; \
+    else \
+        useradd --create-home --uid 1000 --shell /usr/sbin/nologin app; \
+    fi \
     && uv python install 3.14
 
 WORKDIR /app
