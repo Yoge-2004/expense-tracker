@@ -282,11 +282,23 @@ Recurring records make regular monthly commitments easier to represent. The back
 - Set and verify 6-digit Security PIN for zero-email instant recovery and biometric unlock.
 - Multi-currency selection with instant symbol updates across all ledgers and metrics.
 
-## AI / Machine Learning Categorization
+## AI / Machine Learning Continuous Intelligence
 
-- Dual-Gram TF-IDF + SAGA classification engine predicting canonical spending categories in real-time.
-- Interactive categorizer widget on the dashboard with live dual-gram prediction, confidence badges, sample chips, and 1-click modal pre-fill.
-- Continuous learning pipeline collecting user corrections and evaluating retraining candidates for Hugging Face Hub synchronization.
+Expense Tracker integrates an automated, continuous intelligence machine learning pipeline running alongside the core Spring Boot backend:
+
+- **Dual-Engine Model Architecture**:
+  - **TF-IDF + Logistic Regression (SAGA)** for ultra-fast, zero-overhead baseline categorization.
+  - **Fine-tuned Transformer Sequence Classifier** (`distilbert-base-uncased` / `MiniLM`) for deep contextual text comprehension on ambiguous transaction descriptions.
+- **Real-Time Interactive Prediction**:
+  - Embedded client prediction widget with confidence metrics, interactive categorization chips, and 1-click expense creation modal prefill.
+  - High-throughput asynchronous FastAPI microservice running internally on `127.0.0.1:8000` proxied via Nginx.
+- **Continuous Learning & Feedback Loop**:
+  - Automatic collection of user category corrections in a secure audit table.
+  - Leakage-safe candidate training runs triggered via Hugging Face scheduled training jobs.
+  - Strict quality evaluation gates requiring candidate models to outperform the current production baseline before deployment.
+- **Hugging Face Model Registry & Auto-Rollback**:
+  - Models versioned immutably as `v<run-id>` with an alias pointing to `production`.
+  - Zero-downtime serving space restarts with instantaneous health probes and immediate fallback if a model fails validation.
 
 ## Reporting
 

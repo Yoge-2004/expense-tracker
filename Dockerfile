@@ -1,18 +1,9 @@
-# ==============================================================================
-# Expense Tracker - Combined Hugging Face Space runtime
-# ==============================================================================
-# One container, three processes:
-#   Nginx      :7860  - public Space gateway
-#   Spring     :8080  - existing Java backend
-#   FastAPI    :8000  - internal Python ML inference
-#
-# Training is deliberately NOT part of this production image.
-# Models are loaded from an explicit Hugging Face Hub revision.
-# ==============================================================================
+ARG UV_VERSION=0.12.15
 
 FROM eclipse-temurin:26-jre
 
 ARG UV_VERSION=0.12.15
+
 ENV DEBIAN_FRONTEND=noninteractive \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
     UV_PYTHON_BIN_DIR=/opt/uv/bin \
@@ -33,6 +24,8 @@ RUN apt-get update \
     else \
         useradd --create-home --uid 1000 --shell /usr/sbin/nologin app; \
     fi \
+    && mkdir -p /data \
+    && chown -R app:app /data \
     && uv python install 3.14
 
 WORKDIR /app
@@ -46,7 +39,7 @@ COPY docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh \
     && cd /app/ml \
     && if [ -f uv.lock ]; then uv sync --locked --no-dev --extra serve; else uv sync --no-dev --extra serve; fi \
-    && chown -R app:app /app /opt/uv
+    && chown -R app:app /app /opt/uv /data
 
 EXPOSE 7860 8080 8000
 
