@@ -25,10 +25,27 @@ const DEBIT_REGEX = /\b(debited|spent|paid|withdrawn|charged|purchase|txn of|sen
 const CREDIT_REGEX = /\b(credited|received|refunded|deposited|reversal|cashback|cr)\b/i;
 
 // Regex patterns for currency and amounts (e.g. INR 500, Rs. 1,200.50, ₹450, $15.99)
-const AMOUNT_REGEX = /(?:(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£))/i;
+// Global flag: a message can contain more than one currency-tagged number
+// (the transaction amount AND the account balance), so every occurrence
+// needs to be considered rather than just the first.
+const AMOUNT_REGEX = /(?:(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£))/gi;
 
 // Secondary fallback amount matcher if currency symbol is separate
 const FALLBACK_AMOUNT_REGEX = /\b(?:amount|amt|for|of)\s*(?:is|:)?\s*(?:Rs\.?|INR|₹|\$)?\s*([\d,]+(?:\.\d{1,2})?)\b/i;
+
+// Last-resort anchor: a bare number (no currency token attached) near the
+// debit/credit keyword — for messages that state the amount before any
+// currency word appears at all (e.g. "500 debited from your account...").
+const BARE_NUMBER_REGEX = /\b\d[\d,]*(?:\.\d{1,2})?\b/g;
+
+// A number preceded by these words is an account balance, not the
+// transaction amount, and should be skipped.
+const BALANCE_CONTEXT_REGEX = /\b(avl|avbl|available|bal|balance)\b/i;
+
+// A bare number preceded by these words is an account/card/reference digit
+// or a date component, not an amount.
+const NUMBER_EXCLUSION_CONTEXT_REGEX =
+  /\b(ending|a\/c|acct|account|card|no\.|ref|utr|rrn|txn|id|reference|on|dated|xx)\s*$/i;
 
 // Regex for merchant/vendor identification
 const MERCHANT_PATTERNS = [
@@ -84,16 +101,63 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
   }
 
   // 2. Extract Amount and Currency
-  let amtMatch = cleanText.match(AMOUNT_REGEX);
-  if (amtMatch) {
-    const rawAmt = amtMatch[1] || amtMatch[2];
+  // A message often contains more than one currency-tagged number (the
+  // transaction amount AND the running account balance). Prefer whichever
+  // currency-tagged number is closest to the debit/credit keyword and isn't
+  // immediately preceded by a balance-context word ("Avl Bal", "Balance").
+  const keywordIndex =
+    result.direction === "DEBIT" ? cleanText.search(DEBIT_REGEX)
+    : result.direction === "CREDIT" ? cleanText.search(CREDIT_REGEX)
+    : -1;
+
+  const isBalanceContext = (idx: number) =>
+    BALANCE_CONTEXT_REGEX.test(cleanText.slice(Math.max(0, idx - 20), idx));
+
+  const taggedMatches = [...cleanText.matchAll(AMOUNT_REGEX)];
+  let chosen: RegExpMatchArray | null = null;
+
+  if (keywordIndex >= 0) {
+    const nonBalanceMatches = taggedMatches.filter((m) => !isBalanceContext(m.index ?? 0));
+    if (nonBalanceMatches.length > 0) {
+      nonBalanceMatches.sort(
+        (a, b) => Math.abs((a.index ?? 0) - keywordIndex) - Math.abs((b.index ?? 0) - keywordIndex)
+      );
+      chosen = nonBalanceMatches[0];
+    }
+  } else if (taggedMatches.length > 0) {
+    chosen = taggedMatches[0];
+  }
+
+  if (chosen) {
+    const rawAmt = chosen[1] || chosen[2];
     if (rawAmt) {
       const parsedVal = parseFloat(rawAmt.replace(/,/g, ""));
       if (!isNaN(parsedVal) && parsedVal > 0) {
         result.amount = parsedVal;
       }
     }
-  } else {
+  } else if (keywordIndex >= 0) {
+    // No currency-tagged number survived — the amount may be stated before
+    // any currency word appears (e.g. "500 debited..."). Fall back to the
+    // bare number nearest the debit/credit keyword, skipping account/card/
+    // reference/date digits and balance figures.
+    const bareCandidates = [...cleanText.matchAll(BARE_NUMBER_REGEX)].filter((m) => {
+      const idx = m.index ?? 0;
+      const before = cleanText.slice(Math.max(0, idx - 15), idx);
+      return !NUMBER_EXCLUSION_CONTEXT_REGEX.test(before) && !isBalanceContext(idx);
+    });
+    if (bareCandidates.length > 0) {
+      bareCandidates.sort(
+        (a, b) => Math.abs((a.index ?? 0) - keywordIndex) - Math.abs((b.index ?? 0) - keywordIndex)
+      );
+      const parsedVal = parseFloat(bareCandidates[0][0].replace(/,/g, ""));
+      if (!isNaN(parsedVal) && parsedVal > 0) {
+        result.amount = parsedVal;
+      }
+    }
+  }
+
+  if (result.amount === null) {
     const fallbackMatch = cleanText.match(FALLBACK_AMOUNT_REGEX);
     if (fallbackMatch && fallbackMatch[1]) {
       const parsedVal = parseFloat(fallbackMatch[1].replace(/,/g, ""));

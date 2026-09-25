@@ -122,17 +122,61 @@ class RateLimitInterceptorTest {
     }
 
     @Test
-    @DisplayName("preHandle throws RateLimitExceededException when acquire is rejected")
-    void preHandle_rateLimitExceeded_throwsException() {
+    @DisplayName("preHandle ignores X-Forwarded-For by default, even from a proxy-shaped remoteAddr " +
+                 "(trusted-proxy disabled is the safe default)")
+    void preHandle_trustedProxyDisabled_ignoresForwardedHeader() {
+        request.setRemoteAddr("127.0.0.1");
+        request.addHeader("X-Forwarded-For", "203.0.113.7");
+
         when(rateLimiterService.isEnabled()).thenReturn(true);
-        when(rateLimiterService.tryAcquire(anyString(), eq(5), any(Duration.class))).thenReturn(false);
-        when(rateLimiterService.getSecondsUntilReset(anyString(), any(Duration.class))).thenReturn(25L);
+        when(rateLimiterService.tryAcquire(anyString(), eq(5), any(Duration.class))).thenReturn(true);
+        when(rateLimiterService.getRemainingAttempts(anyString(), eq(5), any(Duration.class))).thenReturn(4);
 
-        RateLimitExceededException ex = assertThrows(RateLimitExceededException.class, () ->
-                interceptor.preHandle(request, response, rateLimitedHandler)
-        );
+        interceptor.preHandle(request, response, rateLimitedHandler);
 
-        assertEquals(25L, ex.getRetryAfterSeconds());
-        assertTrue(ex.getMessage().contains("25"));
+        verify(rateLimiterService).tryAcquire(
+                eq("rate_limit:sample-action:127.0.0.1"), eq(5), eq(Duration.ofSeconds(30)));
+    }
+
+    @Test
+    @DisplayName("preHandle uses X-Forwarded-For's leftmost entry when trusted-proxy is enabled and " +
+                 "remoteAddr is inside the configured CIDR range")
+    void preHandle_trustedProxyEnabledFromTrustedAddress_usesForwardedFor() {
+        org.springframework.test.util.ReflectionTestUtils.setField(interceptor, "trustedProxyEnabled", true);
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                interceptor, "trustedProxyCidrs", "127.0.0.1/32,::1/128");
+
+        request.setRemoteAddr("127.0.0.1");
+        request.addHeader("X-Forwarded-For", "203.0.113.7, 127.0.0.1");
+
+        when(rateLimiterService.isEnabled()).thenReturn(true);
+        when(rateLimiterService.tryAcquire(anyString(), eq(5), any(Duration.class))).thenReturn(true);
+        when(rateLimiterService.getRemainingAttempts(anyString(), eq(5), any(Duration.class))).thenReturn(4);
+
+        interceptor.preHandle(request, response, rateLimitedHandler);
+
+        verify(rateLimiterService).tryAcquire(
+                eq("rate_limit:sample-action:203.0.113.7"), eq(5), eq(Duration.ofSeconds(30)));
+    }
+
+    @Test
+    @DisplayName("preHandle still ignores X-Forwarded-For when trusted-proxy is enabled but remoteAddr " +
+                 "is outside the configured CIDR range (spoofing from an untrusted source stays blocked)")
+    void preHandle_trustedProxyEnabledFromUntrustedAddress_ignoresForwardedFor() {
+        org.springframework.test.util.ReflectionTestUtils.setField(interceptor, "trustedProxyEnabled", true);
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                interceptor, "trustedProxyCidrs", "127.0.0.1/32,::1/128");
+
+        request.setRemoteAddr("198.51.100.23");
+        request.addHeader("X-Forwarded-For", "203.0.113.7");
+
+        when(rateLimiterService.isEnabled()).thenReturn(true);
+        when(rateLimiterService.tryAcquire(anyString(), eq(5), any(Duration.class))).thenReturn(true);
+        when(rateLimiterService.getRemainingAttempts(anyString(), eq(5), any(Duration.class))).thenReturn(4);
+
+        interceptor.preHandle(request, response, rateLimitedHandler);
+
+        verify(rateLimiterService).tryAcquire(
+                eq("rate_limit:sample-action:198.51.100.23"), eq(5), eq(Duration.ofSeconds(30)));
     }
 }

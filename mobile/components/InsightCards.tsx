@@ -165,9 +165,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
   // 3. Weekend vs Weekday Surge
   // ─────────────────────────────────────────────────────────────────────────────
   let weekendSpent = 0;
-  let weekendDaysCount = 0;
   let weekdaySpent = 0;
-  let weekdayDaysCount = 0;
 
   currentMonthExpenses.forEach((e) => {
     if (!e.expenseDate) return;
@@ -175,12 +173,25 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
     const amt = Math.max(0, Number(e.amount || 0));
     if (day === 0 || day === 6) {
       weekendSpent += amt;
-      weekendDaysCount++;
     } else {
       weekdaySpent += amt;
-      weekdayDaysCount++;
     }
   });
+
+  // Days *elapsed* this month, split by weekday/weekend — not a count of
+  // transactions. The previous version incremented these once per matching
+  // expense, so a day with several small purchases inflated the day count
+  // and "Daily Average" silently became an average transaction size
+  // instead, which could show either side of the multiplier as higher or
+  // lower than the user's actual per-day spending depending on how many
+  // transactions landed on each kind of day.
+  let weekendDaysCount = 0;
+  let weekdayDaysCount = 0;
+  for (let d = 1; d <= currentDay; d++) {
+    const dow = new Date(now.getFullYear(), now.getMonth(), d).getDay();
+    if (dow === 0 || dow === 6) weekendDaysCount++;
+    else weekdayDaysCount++;
+  }
 
   const avgWeekendTx = weekendDaysCount > 0 ? weekendSpent / weekendDaysCount : 0;
   const avgWeekdayTx = weekdayDaysCount > 0 ? weekdaySpent / weekdayDaysCount : 0;
@@ -294,11 +305,18 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
     (acc, curr) => acc + Math.max(0, Number(curr.amount || 0)),
     0
   );
-  const totalAllInflow = safeIncomes.reduce(
-    (acc, curr) => acc + Math.max(0, Number(curr.amount || 0)),
-    0
-  );
-  const activeInflow = totalMonthlyInflow > 0 ? totalMonthlyInflow : totalAllInflow;
+  // Scoped to the current month only — every metric derived from
+  // `activeInflow` below is displayed as a *monthly* figure ("Active
+  // Monthly Inflow", monthly savings rate, monthly commitment ratio). This
+  // previously fell back to lifetime total income (`totalAllInflow`)
+  // whenever nothing had been logged for the current month yet, which
+  // silently mixed all-time totals into monthly metrics (e.g. a user who
+  // logged income sporadically over past months but not yet this month
+  // would see an inflated "monthly" savings rate built from years of
+  // income against one month of spend). The existing `activeInflow <= 0`
+  // empty states already handle "no income logged this month" gracefully,
+  // so there's no need for a fallback here.
+  const activeInflow = totalMonthlyInflow;
   const netCashFlow = activeInflow - currentMonthSpent;
   const savingsRate = activeInflow > 0 ? Math.round((netCashFlow / activeInflow) * 100) : 0;
 
