@@ -11,35 +11,6 @@ permissions:
   contents: read
 
 jobs:
-  dashboard-chart-refactor:
-    name: One-time dashboard chart refactor
-    if: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, 'chore(ci) run dashboard chart extraction on main') }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-      - name: Extract chart controllers
-        run: python3 scripts/extract-dashboard-charts.py
-      - name: Validate extracted JavaScript
-        run: |
-          set -euo pipefail
-          find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
-      - name: Commit extraction
-        run: |
-          if git diff --quiet -- frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html; then
-            echo "No dashboard chart refactor changes required."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/js/dashboard.js frontend/js/modules/dashboard-charts.js frontend/dashboard.html
-          git commit -m "refactor(ui): extract dashboard chart controllers"
-          git push origin HEAD:main
-
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
@@ -52,7 +23,7 @@ jobs:
           cache: maven
       - name: Run Maven tests
         shell: bash
-        run: |
+        run: |\
           set -o pipefail
           mvn -B test 2>&1 | tee backend-test.log
       - name: Upload backend test log and reports
@@ -80,7 +51,7 @@ jobs:
       # All web JavaScript, including extracted modules, must parse cleanly.
       - name: Check JavaScript syntax
         shell: bash
-        run: |
+        run: |\
           set -euo pipefail
           find frontend/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Install mobile dependencies
@@ -89,7 +60,7 @@ jobs:
       - name: Check Expo dependency alignment
         working-directory: mobile
         shell: bash
-        run: |
+        run: |\
           set -o pipefail
           npx --yes expo-doctor 2>&1 | tee expo-doctor.log
           npx expo install --check
@@ -112,7 +83,7 @@ jobs:
           cache-dependency-path: e2e/package.json
       - name: Install Playwright dependencies
         working-directory: e2e
-        run: |
+        run: |\
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Check E2E TypeScript
@@ -120,14 +91,14 @@ jobs:
         run: npm run typecheck
       - name: Serve frontend
         shell: bash
-        run: |
+        run: |\
           python3 -m http.server 5500 --directory frontend > /tmp/expense-tracker-frontend.log 2>&1 &
           echo $! > /tmp/expense-tracker-frontend.pid
       - name: Run focused mobile UI and WebAuthn E2E checks
         working-directory: e2e
         env:
           BASE_URL: http://localhost:5500
-        run: |
+        run: |\
           npx playwright test tests/mobile-ui-regressions.spec.ts tests/biometrics.spec.ts --project=chromium
       - name: Upload Playwright artifacts
         if: failure()
@@ -150,7 +121,7 @@ jobs:
           fetch-depth: 1
       - name: Reject tracked local artifacts and production test hooks
         shell: bash
-        run: |
+        run: |\
           set -euo pipefail
-          ! git ls-files | grep -E '(^|/)(\\.env|.*\\.keystore|.*\\.db|.*\\.mv\\.db)$'
-          ! grep -R --line-number --exclude-dir=.git --exclude='package-lock.json' 'mock_jwt_token_123\\|test_mock_auth=true' frontend mobile src
+          ! git ls-files | grep -E '(^|/)(\.env|.*\.keystore|.*\.db|.*\.mv\.db)$'
+          ! grep -R --line-number --exclude-dir=.git --exclude='package-lock.json' 'mock_jwt_token_123\|test_mock_auth=true' frontend mobile src
