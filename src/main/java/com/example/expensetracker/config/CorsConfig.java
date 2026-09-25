@@ -1,8 +1,5 @@
 package com.example.expensetracker.config;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,31 +10,47 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
- * Cross-Origin Resource Sharing configuration.
+ * Cross-Origin Resource Sharing (CORS) configuration.
  *
- * <p>Production origins must be explicitly configured with {@code CORS_ALLOWED_ORIGINS}.
+ * <p>Origin reflection is deliberately omitted to prevent unauthorized sites
+ * from mounting authenticated credential theft or CSRF against local deployments.
  * Wildcard origin patterns are intentionally not used.</p>
  */
 @Configuration
 public class CorsConfig {
 
     private static final List<String> DEFAULT_ALLOWED_ORIGINS = List.of(
-            "https://cozy-narwhal-3099ad.netlify.app"
+            "https://cozy-narwhal-3099ad.netlify.app",
+            "http://localhost:8080",
+            "http://localhost:8081",
+            "http://localhost:19006",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:8080",
+            "http://127.0.0.1:8081",
+            "http://10.0.2.2:8080"
     );
 
     @Value("${app.cors.allowed-origins:https://cozy-narwhal-3099ad.netlify.app}")
     private String[] allowedOrigins;
 
     private List<String> getCleanOrigins() {
-        if (allowedOrigins == null) {
-            return DEFAULT_ALLOWED_ORIGINS;
+        Set<String> origins = new LinkedHashSet<>(DEFAULT_ALLOWED_ORIGINS);
+        if (allowedOrigins != null) {
+            Arrays.stream(allowedOrigins)
+                    .flatMap(s -> Arrays.stream(s.split(",")))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty() && !"null".equalsIgnoreCase(s))
+                    .forEach(origins::add);
         }
-        List<String> cleaned = Arrays.stream(allowedOrigins)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty() && !"null".equalsIgnoreCase(s))
-                .toList();
-        return cleaned.isEmpty() ? DEFAULT_ALLOWED_ORIGINS : cleaned;
+        return new ArrayList<>(origins);
     }
 
     @Bean
