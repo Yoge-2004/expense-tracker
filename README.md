@@ -300,6 +300,8 @@ Expense Tracker integrates an automated, continuous intelligence machine learnin
   - Models versioned immutably as `v<run-id>` with an alias pointing to `production`.
   - Zero-downtime serving space restarts with instantaneous health probes and immediate fallback if a model fails validation.
 
+![AI Smart Categorizer and Insights Dashboard](docs/images/website/dashboard.png)
+
 ## Reporting
 
 The reporting layer supports generated financial documents, including PDF and Excel exports.
@@ -336,27 +338,48 @@ The reporting layer supports generated financial documents, including PDF and Ex
 ```text
 expense-tracker/
 ├── frontend/                    # Browser application
-│   ├── css/                     # UI styles
-│   ├── js/                      # Browser logic and API interaction
+│   ├── css/                     # UI stylesheets (themes, responsive grid)
+│   ├── js/                      # Browser logic & modules (ML categorizer, dashboard)
 │   └── index.html               # Main web entry point
 │
 ├── mobile/                      # Expo React Native application
 │   ├── app/                     # Expo Router screens/routes
-│   ├── components/              # Reusable mobile UI
-│   ├── constants/               # API/auth/config constants
-│   ├── context/                 # Authentication/theme state
-│   ├── services/                # Backend/API integrations
+│   ├── components/              # Reusable mobile UI (InsightCards, charts, modals)
+│   ├── constants/               # API, auth, and theme constants
+│   ├── context/                 # Authentication & global theme state
+│   ├── services/                # Backend API integrations & SMS debit parser
 │   ├── __tests__/               # Jest unit tests (currency, API, auth)
 │   └── e2e/                     # Detox E2E tests (login, dashboard)
+│
+├── ml/                          # Machine Learning subsystem
+│   ├── api/                     # FastAPI inference service (internal port 8000)
+│   ├── config/                  # Training hyperparameters & model configs
+│   ├── jobs/                    # Hugging Face continuous learning training jobs
+│   ├── models/                  # Versioned candidate & production model artifacts
+│   ├── src/expense_ml/          # Preprocessing, TF-IDF, Transformer & evaluation pipelines
+│   ├── tests/                   # Pytest suite for ML classification & API endpoints
+│   ├── pyproject.toml           # Python dependencies managed with uv
+│   └── kaggle_train.py          # Master training pipeline runner
+│
+├── docker/                      # Production container configuration
+│   ├── entrypoint.sh            # Container initialization & /data filesystem guarantee
+│   ├── nginx.conf               # Gateway reverse-proxy (7860 → 8080 & 8000)
+│   └── supervisord.conf         # Multi-process orchestrator (nginx, spring-boot, python-ml)
+│
+├── hf-space/                    # Hugging Face Space deployment bundle
+│   └── README.md                # Hugging Face Space metadata frontmatter & production docs
+│
+├── database/                    # Offline persistence & disaster recovery snapshots
+│   └── expense_tracker.sqlite.enc # Client-side encrypted SQLite snapshot for instant failover
 │
 ├── e2e/                         # Playwright TypeScript E2E tests
 │   ├── tests/                   # login.spec.ts, dashboard.spec.ts, expenses.spec.ts
 │   ├── playwright.config.ts     # Playwright configuration
 │   └── package.json             # E2E test dependencies
 │
-├── src/main/java/               # Spring Boot production code
+├── src/main/java/               # Spring Boot production backend (Java 26)
 │   └── com/example/expensetracker/
-│       ├── config/              # Security, CORS, Swagger, initialization
+│       ├── config/              # Security, CORS, Swagger, Resilient Routing DataSource
 │       ├── controller/           # REST endpoints
 │       ├── dto/                  # Request/response models
 │       ├── exception/            # Global exception handling
@@ -364,7 +387,7 @@ expense-tracker/
 │       ├── model/                # JPA entities
 │       ├── repository/           # Spring Data repositories
 │       ├── scheduler/            # Scheduled financial workflows
-│       └── service/              # Business logic and sync
+│       └── service/              # Business logic, ML continuous learning feedback, failover
 │
 ├── src/test/                    # Backend tests and BDD scenarios
 │   ├── java/.../controller/     # JUnit + MockMvc controller tests
@@ -377,7 +400,7 @@ expense-tracker/
 │   ├── run-all-tests.bat        # Cross-platform test runner (Windows CMD)
 │   └── run-all-tests.ps1        # Cross-platform test runner (Windows PowerShell)
 ├── docs/images/                 # Documentation visual assets & screenshots
-├── Dockerfile                   # Hugging Face production container
+├── Dockerfile                   # Multi-stage production container for HF Spaces
 ├── netlify.toml                 # Web deployment configuration
 ├── pom.xml                      # Maven project configuration
 └── run-tests.sh                 # Test convenience wrapper (→ scripts/run-all-tests.sh)
