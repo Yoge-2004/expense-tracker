@@ -486,6 +486,9 @@ Production secrets belong in the hosting environment, not in source control.
 | `HF_TOKEN` | Hugging Face token used by optional snapshot synchronization. |
 | `HF_SPACE_REPO` | Target Hugging Face repository, normally `Yoge-2004/expense-tracker-backend`. |
 | `HF_SYNC_ENABLED` | Enables Hugging Face persistence synchronization. |
+| `APP_TRUSTED_PROXY_ENABLED` | When true behind reverse proxies (Nginx), trusts forwarded client IP addresses. |
+| `APP_TRUSTED_PROXY_CIDRS` | Comma-separated CIDR allowlist for trusted upstream proxies (default: `127.0.0.1/32,::1/128`). |
+| `MODEL_ID` | Explicit Hugging Face model repository or local path for Python ML inference. |
 
 ### Example development configuration
 
