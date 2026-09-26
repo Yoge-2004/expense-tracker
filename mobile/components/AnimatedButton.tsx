@@ -21,6 +21,7 @@ interface AnimatedButtonProps {
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
 }
 
 export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
@@ -32,6 +33,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   style,
   textStyle,
   icon,
+  iconPosition = 'left',
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const reducedMotion = useReducedMotion();
@@ -109,8 +111,9 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
           <ActivityIndicator color={vStyles.text.color || '#FFF'} size="small" />
         ) : (
           <View style={styles.contentContainer}>
-            {icon && <View style={styles.iconContainer}>{icon}</View>}
+            {icon && iconPosition === 'left' && <View style={styles.iconContainer}>{icon}</View>}
             <Text style={[styles.text, vStyles.text, textStyle]}>{title}</Text>
+            {icon && iconPosition === 'right' && <View style={styles.iconContainerRight}>{icon}</View>}
           </View>
         )}
       </Animated.View>
@@ -133,6 +136,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   iconContainer: { marginRight: 8 },
+  iconContainerRight: { marginLeft: 8 },
   text: { fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
   disabled: { opacity: 0.5 },
 });
