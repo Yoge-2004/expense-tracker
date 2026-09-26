@@ -740,7 +740,12 @@ export default function DashboardScreen() {
               <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
             </View>
             <View style={styles.userGreetingCol}>
-              <Text style={[styles.greetingTitle, { color: c.text }]} numberOfLines={1} ellipsizeMode="tail">
+              <Text
+                style={[styles.greetingTitle, { color: c.text }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
+              >
                 Welcome back, {userName || 'User'} 👋
               </Text>
               <Text style={[styles.todayDate, { color: c.textMuted }]} numberOfLines={1}>
