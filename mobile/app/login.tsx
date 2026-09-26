@@ -31,6 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { AmbientAura } from '../components/AmbientAura';
 import { StaggeredView } from '../components/StaggeredView';
+import { AnimatedButton } from '../components/AnimatedButton';
 import { performGoogleSignIn } from '../services/googleAuth';
 
 const FEATURES = [
@@ -336,21 +337,16 @@ export default function LoginScreen() {
             </View>
 
             {/* Sign In Button */}
-            <TouchableOpacity
-              style={[styles.signInBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
+            <AnimatedButton
+              title="Sign In"
               onPress={handleLogin}
+              loading={isLoading}
               disabled={isLoading}
-              activeOpacity={0.85}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={isLight ? '#FFF' : '#10120E'} size="small" />
-              ) : (
-                <View style={styles.signInBtnInner}>
-                  <Text style={[styles.signInBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>Sign In</Text>
-                  <Ionicons name="arrow-forward" size={18} color={isLight ? '#FFF' : '#10120E'} />
-                </View>
-              )}
-            </TouchableOpacity>
+              icon={<Ionicons name="arrow-forward" size={18} color={isLight ? '#FFF' : '#10120E'} />}
+              iconPosition="right"
+              style={[styles.signInBtn, { backgroundColor: c.primary }]}
+              textStyle={[styles.signInBtnText, { color: isLight ? '#FFF' : '#10120E' }]}
+            />
 
             {/* Divider */}
             <View style={styles.dividerRow}>
