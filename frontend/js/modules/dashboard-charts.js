@@ -10,27 +10,27 @@
     // most legends below never did). Setting this once here makes every chart
     // element inherit the project's body typeface without touching each config.
     if (typeof Chart !== "undefined") {
-        Chart.defaults.font.family = "'Hanken Grotesk', sans-serif";
-
-        // Chart.js's own default animation (easeOutQuart, no stagger, no
-        // per-property tuning) is flat next to the rest of the site's
-        // spring-based motion system. 'easeOutBack' is Chart.js's built-in
-        // easing with a small overshoot — the closest built-in match to the
-        // CSS --ease-spring token used everywhere else, since Chart.js
-        // easings are fixed named functions rather than arbitrary curves.
-        // The staggered `delay` makes each bar/point/segment animate in
-        // slightly after the last rather than all at once, echoing the
-        // ledger-row stagger already used elsewhere (motion-system.css).
-        Chart.defaults.animation = {
-            duration: 900,
-            easing: 'easeOutBack',
-            delay: (context) => {
-                if (context.type === 'data' && context.mode === 'default' && !context.dropped) {
-                    return context.dataIndex * 26 + context.datasetIndex * 90;
-                }
-                return 0;
+        if (Chart.defaults) {
+            if (Chart.defaults.font) {
+                Chart.defaults.font.family = "'Hanken Grotesk', sans-serif";
             }
-        };
+
+            // Chart.js's own default animation (easeOutQuart, no stagger, no
+            // per-property tuning) is flat next to the rest of the site's
+            // spring-based motion system. 'easeOutBack' is Chart.js's built-in
+            // easing with a small overshoot — the closest built-in match to the
+            // CSS --ease-spring token used everywhere else, since Chart.js
+            // easings are fixed named functions rather than arbitrary curves.
+            // NOTE: Mutate individual properties on Chart.defaults.animation rather
+            // than reassigning Chart.defaults.animation = { ... }, because
+            // reassigning the defaults object wipes out internal schema keys
+            // ('type', 'fn', etc.) that Chart.js relies on to determine animation
+            // interpolation functions.
+            if (Chart.defaults.animation) {
+                Chart.defaults.animation.duration = 900;
+                Chart.defaults.animation.easing = 'easeOutBack';
+            }
+        }
     }
 
     function buildTrendSeries(dailyTotals) {
@@ -98,15 +98,12 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 cutout: '72%',
-                animation: {
-                    animateScale: true
-                },
                 plugins: {
                     legend: {
                         position: 'right',
                         labels: {
                             color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
-                            font: { size: 13, family: 'Hanken Grotesk, sans-serif', weight: '600' },
+                            font: { size: 13, family: "'Hanken Grotesk', sans-serif", weight: '600' },
                             boxWidth: 12, padding: 14, usePointStyle: true
                         }
                     }

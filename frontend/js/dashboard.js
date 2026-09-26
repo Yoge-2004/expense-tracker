@@ -65,7 +65,6 @@ const dashboardDataController = window.DashboardData.createController({
         populateFilterDropdowns(categories, expenses);
         renderCategoryPills(categories);
         applyFilters();
-        renderTrendChart(expenses);
     },
     renderIncomes,
     renderSavingsGoals,
