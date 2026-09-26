@@ -11,5 +11,49 @@
 @import url("motion-extended/mobile-action-controls.css");
 @import url("motion-extended/record-actions.css");
 
+/* ==========================================================================
+   CROSS-PAGE VIEW TRANSITIONS
+   This app is a set of separate .html documents (index -> register ->
+   dashboard, etc.), so every navigation between them was previously a hard
+   cut with no transition at all. `navigation: auto` opts every same-origin
+   navigation into the native View Transitions API with zero JavaScript.
+   Purely additive: a browser without support (or with reduced-motion on)
+   simply navigates exactly as before, nothing to feature-detect around.
+   Uses the same spring-soft easing as the rest of the motion system rather
+   than the browser's default linear crossfade, so a page swap reads as part
+   of the same motion language as everything else on the site. */
+
+@view-transition {
+    navigation: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(root) {
+        animation: motion-page-out var(--motion-base, 280ms) var(--ease-spring-soft, ease) both;
+    }
+
+    ::view-transition-new(root) {
+        animation: motion-page-in var(--motion-slow, 420ms) var(--ease-spring-soft, ease) both;
+    }
+}
+
+@keyframes motion-page-out {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.99); }
+}
+
+@keyframes motion-page-in {
+    from { opacity: 0; transform: scale(1.01) translateY(6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
+}
+
 /* Theme-specific card motion was removed from the critical theme-switch path.
    Pointer/interaction motion remains owned by the existing motion modules. */
