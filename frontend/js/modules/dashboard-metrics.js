@@ -4,6 +4,7 @@
 
     const elements = window.DashboardDom.elements;
     const { formatCurrency } = window.DashboardUtils;
+    const { animateNumber } = window.DashboardEffects;
     const userId = localStorage.getItem("userId");
 
     async function updateProMetrics(expenses) {
@@ -13,7 +14,7 @@
     const totalSpent = expenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
     const count = expenses.length;
     
-    if (elements.totalAmount) elements.totalAmount.textContent = formatCurrency(totalSpent);
+    if (elements.totalAmount) animateNumber(elements.totalAmount, totalSpent, true);
     const countEl = document.getElementById("expenseCountText");
     if (countEl) countEl.textContent = `${count} transaction${count === 1 ? '' : 's'} recorded`;
 
@@ -74,7 +75,7 @@
         const subsBadge = document.getElementById("subsCountBadge");
         if (subsBadge) subsBadge.textContent = `${activeSubs.length} Active`;
         const subsTotal = document.getElementById("subsMonthlyTotal");
-        if (subsTotal) subsTotal.textContent = `${formatCurrency(monthlyTotal)} / mo`;
+        if (subsTotal) animateNumber(subsTotal, monthlyTotal, true, false, " / mo");
     } catch (err) {
         console.error("Subs fetch error", err);
         const subsBadge = document.getElementById("subsCountBadge");

@@ -11,6 +11,26 @@
     // element inherit the project's body typeface without touching each config.
     if (typeof Chart !== "undefined") {
         Chart.defaults.font.family = "'Hanken Grotesk', sans-serif";
+
+        // Chart.js's own default animation (easeOutQuart, no stagger, no
+        // per-property tuning) is flat next to the rest of the site's
+        // spring-based motion system. 'easeOutBack' is Chart.js's built-in
+        // easing with a small overshoot — the closest built-in match to the
+        // CSS --ease-spring token used everywhere else, since Chart.js
+        // easings are fixed named functions rather than arbitrary curves.
+        // The staggered `delay` makes each bar/point/segment animate in
+        // slightly after the last rather than all at once, echoing the
+        // ledger-row stagger already used elsewhere (motion-system.css).
+        Chart.defaults.animation = {
+            duration: 900,
+            easing: 'easeOutBack',
+            delay: (context) => {
+                if (context.type === 'data' && context.mode === 'default' && !context.dropped) {
+                    return context.dataIndex * 26 + context.datasetIndex * 90;
+                }
+                return 0;
+            }
+        };
     }
 
     function buildTrendSeries(dailyTotals) {
@@ -78,6 +98,9 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 cutout: '72%',
+                animation: {
+                    animateScale: true
+                },
                 plugins: {
                     legend: {
                         position: 'right',
