@@ -4,7 +4,7 @@
     const { formatCurrency } = window.DashboardUtils;
     const elements = window.DashboardDom.elements;
 
-    function animateNumber(el, target, isCurrency = false, showSign = false) {
+    function animateNumber(el, target, isCurrency = false, showSign = false, suffix = "") {
         if (!el) return;
         const duration = 850;
         const startTime = performance.now();
@@ -16,12 +16,14 @@
             const easeOutBack = 1 + 2.70158 * Math.pow(progress - 1, 3) + 1.70158 * Math.pow(progress - 1, 2);
             const current = startVal + (target - startVal) * Math.min(Math.max(easeOutBack, 0), 1);
             const sign = showSign ? (current < 0 ? "-" : "+") : "";
-            el.textContent = isCurrency ? `${sign}${formatCurrency(Math.abs(current))}` : Math.round(current);
+            const body = isCurrency ? `${sign}${formatCurrency(Math.abs(current))}` : Math.round(current);
+            el.textContent = `${body}${suffix}`;
             if (progress < 1) {
                 requestAnimationFrame(step);
             } else {
                 const finalSign = showSign ? (target < 0 ? "-" : "+") : "";
-                el.textContent = isCurrency ? `${finalSign}${formatCurrency(Math.abs(target))}` : target;
+                const finalBody = isCurrency ? `${finalSign}${formatCurrency(Math.abs(target))}` : target;
+                el.textContent = `${finalBody}${suffix}`;
             }
         }
         requestAnimationFrame(step);
