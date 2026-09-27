@@ -35,18 +35,21 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 
 | Area | What you can do |
 |---|---|
-| **Expenses** | Record, review, update, and organize spending by category. |
-| **Recurring expenses** | Mark expenses as recurring monthly commitments/subscriptions. |
-| **Income** | Track multiple income streams and review incoming cash flow. |
-| **Budgets** | Define category budgets and compare planned vs actual spending. |
-| **Savings goals** | Create financial targets and make contributions toward them. |
-| **Dashboard** | See spending, income, savings, budgets, trends, and category distribution in one place. |
-| **Reports** | Generate downloadable financial reports in PDF and Excel formats. |
-| **Authentication** | JWT-based authentication plus Google sign-in and WebAuthn/passkey support in the backend. |
-| **Profile & Settings** | Editable display names across web/app, 6-digit security PIN, and multi-currency preferences. |
-| **Machine Learning** | Automatic transaction categorization with interactive tester and retraining feedback loop. |
-| **Persistence** | H2 for development/testing, SQLite fallback, and PostgreSQL/Neon support for hosted deployments. |
-| **Data resilience** | Optional Hugging Face Hub synchronization for SQLite/JSON snapshots. |
+| **Expenses** | Record, review, update, and organize spending with category tagging. |
+| **Receipt OCR** | Client-side Tesseract.js scanner extracting multi-tax breakdowns (CGST, SGST, IGST, VAT, Tips, Discounts) with 1-click auto-fill. |
+| **Recurring finance** | Track recurring monthly commitments, subscriptions, and recurring income streams. |
+| **Income** | Monitor independent incoming cash flows, salary, dividends, and freelance retainers. |
+| **Unified Ledger** | Synchronized chronological cash flow ledger combining outflows and inflows with real-time filtering and sorting. |
+| **Budgets** | Define category spending caps with dynamic velocity tracking and visual progress indicators. |
+| **Savings goals** | Target milestones, track deposits, and monitor goal progress percentages. |
+| **Dashboard** | Skeleton-loaded executive KPI matrix, spending distribution, burn velocity, and financial insights. |
+| **Power BI Excel & Reports** | Download Power BI-grade formatted Excel dashboards and PDF statements, plus full Excel import/export data hub. |
+| **Theme & UI** | Diffused golden aura elevation across Dark & Light modes, custom HUD cursor, and `Ctrl`/`Cmd` + `K` Command Palette. |
+| **Authentication** | JWT-based authentication, Google sign-in, WebAuthn/passkeys, and biometric unlock (Face ID / Fingerprint). |
+| **Profile & Settings** | Display name sync across web/app, 6-digit security PIN for instant recovery, and multi-currency selection. |
+| **Machine Learning** | Dual-engine ML categorization (TF-IDF + Transformer) with interactive tester and continuous retraining feedback loop. |
+| **Persistence** | H2 for development, SQLite client-encrypted fallback, and PostgreSQL / Neon for production. |
+| **Data resilience** | Zero-downtime offline caching, network retry fallbacks, and Hugging Face Hub snapshot sync. |
 
 ---
 
@@ -244,13 +247,51 @@ For Android builds, the Google Cloud OAuth configuration must match the applicat
 
 ## Expense tracking
 
-- Create and manage expense records.
-- Assign expenses to categories.
-- Record amount, description, and date.
-- Support recurring monthly expense definitions.
-- Analyze spending by category and over time.
+- Create and manage expense records with custom descriptions, amounts, and dates.
+- Assign expenses to global or user-created categories with custom icons and color tokens.
+- Support recurring monthly expense definitions with active subscription tracking.
+- Analyze spending by category and over time with responsive chart visualizations.
 
 ![Expense tracking](docs/images/website/expenses.png)
+
+## Multi-Tax Receipt OCR Scanner
+
+- **Client-Side Privacy-First OCR**: Uses browser-integrated Tesseract.js for instant optical character recognition without sending receipt images to external servers.
+- **Complex Multi-Tax Decomposition**: Automatically identifies and extracts individual bill breakdowns:
+  - Base Subtotal / Net Amount
+  - CGST (Central Goods and Services Tax)
+  - SGST (State Goods and Services Tax)
+  - IGST (Integrated Goods and Services Tax)
+  - VAT (Value Added Tax)
+  - Service Charges & Tips
+  - Percentage & Absolute Discounts (e.g. `-10%`, `-₹60.00`)
+- **Interactive Breakdown Matrix**: Renders visual breakdown pills allowing users to review taxes and click any line item to prefill the expense creation modal instantly.
+
+## Modern Power BI-Grade Excel Analytics & Data Hub
+
+- **Executive Workbook Architecture**: Generates beautifully formatted Excel workbooks styled after modern Power BI dashboards:
+  - Executive KPI summary cards (Total Spent, Total Inflows, Net Cash Flow, Savings Rate)
+  - Categorized breakdown matrices with percentage distributions
+  - Tabular transaction ledgers with formatted currency values and status badges
+- **Bidirectional Data Hub**: Full Excel import and export support for both expenses and incomes with built-in validation safeguards.
+
+## Unified Audit Trail & Cash Flow Ledger
+
+- **Synchronized Dual-Stream Ledger**: Combines expense outflows and income inflows into a single chronological ledger.
+- **Instant Filtering & Sorting**: Filter by search query, category, cadence (one-time vs recurring), date range, and sort by date or amount.
+- **Inline Row Actions**: Quick inline edit and delete modal workflows for rapid transaction reconciliation.
+
+## Executive Command Palette (`Ctrl`/`Cmd` + `K`) & HUD Experience
+
+- **Keyboard-First Navigation**: Press `Ctrl + K` (Windows/Linux) or `Cmd + K` (macOS) anywhere on the web dashboard to open an instant command center.
+- **Quick Actions & Navigation**: Jump between ledger tabs, trigger expense or income creation modals, download reports, or toggle themes without touching the mouse.
+- **Integrated Help Guide & About Center**: Contextual modals providing naive-user onboarding, step-by-step feature explanations, and architectural transparency.
+- **Fluid Executive HUD Cursor**: Custom ambient dot-ring pointer providing responsive hover elevation feedback across all interactive elements.
+
+## Offline Resilience & Skeleton Loading
+
+- **Zero-Flicker Skeleton Loaders**: Metric cards and transaction lists initialize in an animated shimmer skeleton state before network hydration, eliminating jarring `0` or default value flashes.
+- **Graceful Offline Fallbacks**: Automatically surfaces cached data when network connectivity is lost, with an intuitive "Offline / Retry" badge.
 
 ## Budget management
 
@@ -316,18 +357,20 @@ The reporting layer supports generated financial documents, including PDF and Ex
 |---|---|
 | Backend language | Java 26 |
 | Backend framework | Spring Boot 4.1.1 |
-| Security | Spring Security, JWT (JJWT 0.13.0), Google OAuth, WebAuthn |
+| Security | Spring Security, JWT (JJWT 0.13.0), Google OAuth 2.0, WebAuthn / Passkeys |
 | Persistence | Spring Data JPA / Hibernate |
-| Databases | H2, SQLite, PostgreSQL / Neon |
-| Reporting | OpenPDF 3.0.5, Apache POI 5.5.1 |
+| Databases | H2, SQLite (encrypted client-side fallback), PostgreSQL / Neon |
+| Reporting & Excel | Apache POI 5.5.1, OpenPDF 3.0.5, SheetJS (xlsx.full.min.js) |
+| Client-Side OCR | Tesseract.js (WebAssembly / multi-tax parser) |
 | API documentation | SpringDoc OpenAPI 3.1.0 / Swagger UI |
-| Web | HTML, CSS, JavaScript, Chart.js where used by the frontend |
-| Mobile | React Native 0.86.3, Expo 57.0.25, Expo Router 57.0.23 |
-| Mobile auth | `@react-native-google-signin/google-signin` 16.1.5 |
-| Machine Learning | Python 3.14, Scikit-learn, TF-IDF Dual-Gram, FastAPI |
-| Testing | JUnit, Mockito, MockMvc, Cucumber, REST-Assured, Selenium, HtmlUnit |
-| Build | Maven |
-| Container | Docker / Eclipse Temurin JRE 26 |
+| Web Frontend | Modern HTML5, Modular JavaScript (ES6+), CSS Custom Properties, Chart.js |
+| Web UX & Theme | Custom HUD Pointer, Command Palette (`Ctrl+K`), Golden Aura elevation |
+| Mobile Framework | React Native 0.86.3, Expo 57.0.25, Expo Router 57.0.23 |
+| Mobile Optimization | Memoized React Context & Hooks (`useMemo`, `useCallback`), Native Driver animations |
+| Mobile Auth & Bio | `@react-native-google-signin/google-signin` 16.1.5, `expo-local-authentication` |
+| Machine Learning | Python 3.14, Scikit-learn, TF-IDF Dual-Gram, Transformer Classifier, FastAPI |
+| Testing | JUnit, Mockito, Cucumber BDD, Playwright (Java + TS), Jest, Detox |
+| Build & Runtime | Maven 3.9+, Docker / Eclipse Temurin JRE 26 |
 | Backend hosting | Hugging Face Spaces |
 | Web hosting | Netlify |
 
