@@ -909,7 +909,7 @@ if (sendMonthlyReportBtn) {
                     // Dynamically insert email badge at top of profile menu
                     const emailDiv = document.createElement("div");
                     emailDiv.id = "profileEmail";
-                    emailDiv.style.cssText = "padding:12px 20px 8px; font-size:12px; color:var(--text-muted); border-bottom:1px solid var(--border); word-break:break-all;";
+                    emailDiv.className = "profile-email-badge";
                     emailDiv.textContent = profile.email;
                     profileMenu.insertBefore(emailDiv, profileMenu.firstChild);
                 }

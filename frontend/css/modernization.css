@@ -1017,3 +1017,26 @@
 @media (pointer: coarse) {
     .executive-reticle { display: none !important; }
 }
+
+/* Animated Mesh Canvas layout styles */
+.animated-mesh-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.95;
+    transition: opacity 0.3s ease;
+}
+
+/* User profile email badge */
+#profileEmail,
+.profile-email-badge {
+    padding: 12px 20px 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    word-break: break-all;
+}
