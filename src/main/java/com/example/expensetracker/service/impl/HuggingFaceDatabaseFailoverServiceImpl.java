@@ -142,7 +142,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         }
     }
 
-    private static String computeSha256(Path file) throws IOException, NoSuchAlgorithmException {
+    /** Package-private (not private) so it's directly unit-testable without
+     *  needing a full backupCurrentDatabase() round-trip through the network. */
+    static String computeSha256(Path file) throws IOException, NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         try (InputStream in = Files.newInputStream(file)) {
             byte[] buffer = new byte[8192];
@@ -159,8 +161,10 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         return sb.toString();
     }
 
+    /** Package-private (not private) so its file/directory permission
+     *  behavior is directly unit-testable. */
     @SuppressWarnings({"java:S5443", "java:S899"})
-    private static Path createSecureTempFile(String suffix) throws IOException {
+    static Path createSecureTempFile(String suffix) throws IOException {
         final String prefix = "expense-db-";
         Path tempDir = Path.of(System.getProperty("java.io.tmpdir"), "expense-tracker-failover");
         if (!Files.exists(tempDir)) {
