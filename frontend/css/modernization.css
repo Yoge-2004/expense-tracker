@@ -750,17 +750,43 @@
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
 }
 
-/* Light Theme Rich Golden Aura Hover Elevation:
-   Provides prominent, unmistakable golden shadow bloom without smears */
-[data-theme="light"] :is(.card, .metric-card, .auth-card, .recent-transactions, .smart-intelligence-card, .float-card, .ledger-column, .budget-item, .savings-goal-card):hover {
-    transform: translateY(-4px) scale(1.01) !important;
+/* Light Theme Soft Floating Golden Aura Hover:
+   Eliminates harsh outline rings and delivers true diffused golden shadow depth like dark theme */
+[data-theme="light"] :is(.card:not(.unified-ledger-card), .metric-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card):hover {
+    transform: translateY(-3px) scale(1.008) !important;
     box-shadow:
-        0 18px 42px -6px rgba(212, 175, 55, 0.42),
-        0 8px 24px -2px rgba(184, 134, 11, 0.28),
-        0 0 24px rgba(212, 175, 55, 0.35),
-        0 2px 6px rgba(15, 23, 42, 0.08),
-        0 0 0 1.5px rgba(212, 175, 55, 0.8) !important;
-    border-color: rgba(212, 175, 55, 0.85) !important;
+        0 16px 34px -4px rgba(180, 115, 10, 0.22),
+        0 6px 16px -2px rgba(15, 23, 42, 0.09),
+        0 0 18px rgba(212, 175, 55, 0.20) !important;
+    border-color: rgba(212, 175, 55, 0.38) !important;
+}
+
+/* Individual Expense & Income Hover: Soft floating lift & golden aura, NO harsh border */
+.expense-item:hover,
+#expenseList .expense-item:hover {
+    transform: translateY(-2px) !important;
+    background: var(--card-bg-hover) !important;
+    border-color: rgba(212, 175, 55, 0.35) !important;
+    box-shadow:
+        0 8px 20px -3px rgba(180, 115, 10, 0.20),
+        0 4px 10px -2px rgba(15, 23, 42, 0.08),
+        0 0 12px rgba(212, 175, 55, 0.15) !important;
+}
+
+#incomeList tbody tr:hover {
+    transform: translateY(-1px) !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+    box-shadow:
+        0 6px 16px -2px rgba(16, 185, 129, 0.20),
+        0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Column containers must never trigger outer outline artifacts */
+.ledger-column,
+.ledger-column:hover,
+#unifiedLedgerCard,
+#unifiedLedgerCard:hover {
+    outline: none !important;
 }
 
 .metric-card.is-loading {

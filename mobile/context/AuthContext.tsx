@@ -4,7 +4,7 @@
  * global currency preference, UI theme switching (Dark / Light), and Biometrics (Face ID / Fingerprint).
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { getSession, saveSession, clearSession, apiRequest } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -308,15 +308,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const toggleTheme = async (): Promise<void> => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    // Immediately update local React state synchronously
-    setTheme(nextTheme);
-    // Persist asynchronously in background without delaying UI reaction
-    SecureStore.setItemAsync('app_theme', nextTheme).catch((e) => {
-      console.warn('[AuthContext] Failed to persist theme preference:', e);
+  const toggleTheme = useCallback(async (): Promise<void> => {
+    setTheme((prevTheme) => {
+      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
+      // Persist asynchronously in background without blocking frame render
+      SecureStore.setItemAsync('app_theme', nextTheme).catch((e) => {
+        console.warn('[AuthContext] Failed to persist theme preference:', e);
+      });
+      return nextTheme;
     });
-  };
+  }, []);
 
   const updateUserName = async (newName: string): Promise<void> => {
     const cleanName = newName.trim();
@@ -358,29 +359,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const authContextValue = useMemo(() => ({
+    isLoading,
+    token,
+    userId,
+    userName,
+    currency,
+    theme,
+    toggleTheme,
+    updateUserName,
+    updateCurrency,
+    login,
+    loginWithGoogle,
+    sendSignupOtp,
+    register,
+    logout,
+    isBiometricsAvailable,
+    isBiometricEnabled,
+    loginWithBiometrics,
+    toggleBiometrics,
+  }), [
+    isLoading,
+    token,
+    userId,
+    userName,
+    currency,
+    theme,
+    toggleTheme,
+    updateUserName,
+    updateCurrency,
+    login,
+    loginWithGoogle,
+    sendSignupOtp,
+    register,
+    logout,
+    isBiometricsAvailable,
+    isBiometricEnabled,
+    loginWithBiometrics,
+    toggleBiometrics,
+  ]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        isLoading,
-        token,
-        userId,
-        userName,
-        currency,
-        theme,
-        toggleTheme,
-        updateUserName,
-        updateCurrency,
-        login,
-        loginWithGoogle,
-        sendSignupOtp,
-        register,
-        logout,
-        isBiometricsAvailable,
-        isBiometricEnabled,
-        loginWithBiometrics,
-        toggleBiometrics,
-      }}
-    >
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );

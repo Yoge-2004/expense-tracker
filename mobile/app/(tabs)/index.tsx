@@ -14,7 +14,7 @@
  * - Pull-to-refresh and local cache hydration with exception recovery.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -130,16 +130,16 @@ interface ThemeToggleProps {
   onToggle: () => void;
 }
 
-const ThemeToggleActionBtn: React.FC<ThemeToggleProps> = ({ isLight, colors, onToggle }) => {
+const ThemeToggleActionBtn: React.FC<ThemeToggleProps> = React.memo(({ isLight, colors, onToggle }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   const handlePressIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     Animated.spring(scaleAnim, {
-      toValue: 0.82,
+      toValue: 0.85,
       useNativeDriver: true,
-      speed: 30,
+      speed: 40,
       bounciness: 4,
     }).start();
   };
@@ -148,7 +148,7 @@ const ThemeToggleActionBtn: React.FC<ThemeToggleProps> = ({ isLight, colors, onT
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
-      speed: 25,
+      speed: 30,
       bounciness: 6,
     }).start();
   };
@@ -157,12 +157,10 @@ const ThemeToggleActionBtn: React.FC<ThemeToggleProps> = ({ isLight, colors, onT
     rotateAnim.setValue(0);
     Animated.timing(rotateAnim, {
       toValue: 1,
-      duration: 260,
+      duration: 180,
       useNativeDriver: true,
     }).start();
-    requestAnimationFrame(() => {
-      onToggle();
-    });
+    onToggle();
   };
 
   const spin = rotateAnim.interpolate({
@@ -193,7 +191,7 @@ const ThemeToggleActionBtn: React.FC<ThemeToggleProps> = ({ isLight, colors, onT
       </Animated.View>
     </TouchableOpacity>
   );
-};
+});
 
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
@@ -563,12 +561,20 @@ export default function DashboardScreen() {
     );
   };
 
-  const now = new Date();
+  // Filtered Expenses List (memoized across theme changes)
+  const filteredExpenses = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const isToday = datePreset === 'today';
+    const isMonth = datePreset === 'month';
+    const isLast30 = datePreset === 'last30';
+    const isCustom = datePreset === 'custom';
+    const nowD = new Date();
+    const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
+    const nowMonth = isMonth ? nowD.getMonth() : -1;
+    const nowYear = isMonth ? nowD.getFullYear() : -1;
+    const thirtyAgo = isLast30 ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : null;
 
-  // Filtered Expenses List (including Custom Date Range)
-  const filteredExpenses = expenses
-    .filter((e) => {
-      const q = searchQuery.toLowerCase().trim();
+    return expenses.filter((e) => {
       const matchSearch =
         !q ||
         (e.description && e.description.toLowerCase().includes(q)) ||
@@ -581,25 +587,18 @@ export default function DashboardScreen() {
       let matchDate = true;
       if (e.expenseDate) {
         try {
-          const expD = new Date(e.expenseDate);
           const expDStr = e.expenseDate.split('T')[0];
 
-          if (datePreset === 'today') {
-            const todayStr = now.toISOString().split('T')[0];
+          if (isToday) {
             matchDate = expDStr === todayStr;
-          } else if (datePreset === 'month') {
-            matchDate = expD.getMonth() === now.getMonth() && expD.getFullYear() === now.getFullYear();
-          } else if (datePreset === 'last30') {
-            const thirtyAgo = new Date();
-            thirtyAgo.setDate(thirtyAgo.getDate() - 30);
-            matchDate = expD >= thirtyAgo;
-          } else if (datePreset === 'custom') {
-            if (startDate.trim() && expDStr < startDate.trim()) {
-              matchDate = false;
-            }
-            if (endDate.trim() && expDStr > endDate.trim()) {
-              matchDate = false;
-            }
+          } else if (isMonth) {
+            const expD = new Date(e.expenseDate);
+            matchDate = expD.getMonth() === nowMonth && expD.getFullYear() === nowYear;
+          } else if (isLast30 && thirtyAgo) {
+            matchDate = new Date(e.expenseDate) >= thirtyAgo;
+          } else if (isCustom) {
+            if (startDate.trim() && expDStr < startDate.trim()) matchDate = false;
+            if (endDate.trim() && expDStr > endDate.trim()) matchDate = false;
           }
         } catch {
           matchDate = true;
@@ -608,11 +607,22 @@ export default function DashboardScreen() {
 
       return matchSearch && matchCategory && matchDate;
     });
+  }, [expenses, searchQuery, selectedCategory, datePreset, startDate, endDate]);
 
-  // Filtered Incomes List
-  const filteredIncomes = incomes
-    .filter((inc) => {
-      const q = searchQuery.toLowerCase().trim();
+  // Filtered Incomes List (memoized across theme changes)
+  const filteredIncomes = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const isToday = datePreset === 'today';
+    const isMonth = datePreset === 'month';
+    const isLast30 = datePreset === 'last30';
+    const isCustom = datePreset === 'custom';
+    const nowD = new Date();
+    const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
+    const nowMonth = isMonth ? nowD.getMonth() : -1;
+    const nowYear = isMonth ? nowD.getFullYear() : -1;
+    const thirtyAgo = isLast30 ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : null;
+
+    return incomes.filter((inc) => {
       const matchSearch =
         !q ||
         (inc.source && inc.source.toLowerCase().includes(q)) ||
@@ -622,25 +632,18 @@ export default function DashboardScreen() {
       const dateStr = inc.incomeDate;
       if (dateStr) {
         try {
-          const incD = new Date(dateStr);
           const incDStr = dateStr.split('T')[0];
 
-          if (datePreset === 'today') {
-            const todayStr = now.toISOString().split('T')[0];
+          if (isToday) {
             matchDate = incDStr === todayStr;
-          } else if (datePreset === 'month') {
-            matchDate = incD.getMonth() === now.getMonth() && incD.getFullYear() === now.getFullYear();
-          } else if (datePreset === 'last30') {
-            const thirtyAgo = new Date();
-            thirtyAgo.setDate(thirtyAgo.getDate() - 30);
-            matchDate = incD >= thirtyAgo;
-          } else if (datePreset === 'custom') {
-            if (startDate.trim() && incDStr < startDate.trim()) {
-              matchDate = false;
-            }
-            if (endDate.trim() && incDStr > endDate.trim()) {
-              matchDate = false;
-            }
+          } else if (isMonth) {
+            const incD = new Date(dateStr);
+            matchDate = incD.getMonth() === nowMonth && incD.getFullYear() === nowYear;
+          } else if (isLast30 && thirtyAgo) {
+            matchDate = new Date(dateStr) >= thirtyAgo;
+          } else if (isCustom) {
+            if (startDate.trim() && incDStr < startDate.trim()) matchDate = false;
+            if (endDate.trim() && incDStr > endDate.trim()) matchDate = false;
           }
         } catch {
           matchDate = true;
@@ -649,35 +652,68 @@ export default function DashboardScreen() {
 
       return matchSearch && matchDate;
     });
+  }, [incomes, searchQuery, datePreset, startDate, endDate]);
 
   // Dashboard metrics intentionally derive from the exact same filtered datasets as the ledger.
-  // This keeps KPIs, insights and charts synchronized with search/category/date filters.
   const dashboardExpenses = filteredExpenses;
   const dashboardIncomes = filteredIncomes;
-  const totalSpent = dashboardExpenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
-  const totalIncome = dashboardIncomes.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
-  const netCashFlow = totalIncome - totalSpent;
-  const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100).toFixed(1) : "0.0";
 
-  const currentDay = Math.max(now.getDate(), 1);
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const currentMonthExpenses = dashboardExpenses.filter((e) => {
-    if (!e.expenseDate) return false;
-    const d = new Date(e.expenseDate);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const currentMonthSpent = currentMonthExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
-  const dailyBurn = currentMonthSpent / currentDay;
-  const monthEndForecast = dailyBurn * daysInMonth;
+  const now = new Date();
 
-  const catSummary: Record<string, number> = {};
-  dashboardExpenses.forEach((e) => {
-    const name = e.categoryName || 'General';
-    catSummary[name] = (catSummary[name] || 0) + Math.max(0, Number(e.amount || 0));
-  });
-  const sortedCats = Object.entries(catSummary).sort((a, b) => b[1] - a[1]);
-  const highestCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
-  const highestCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
+  // Memoized KPIs & Category Summaries (zero compute on theme switch)
+  const {
+    totalSpent,
+    totalIncome,
+    netCashFlow,
+    savingsRate,
+    dailyBurn,
+    monthEndForecast,
+    currentMonthSpent,
+    currentDay,
+    daysInMonth,
+    highestCatName,
+    highestCatAmt,
+  } = useMemo(() => {
+    const spent = dashboardExpenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+    const income = dashboardIncomes.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+    const net = income - spent;
+    const rate = income > 0 ? ((net / income) * 100).toFixed(1) : "0.0";
+
+    const nowD = new Date();
+    const cDay = Math.max(nowD.getDate(), 1);
+    const dInMonth = new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0).getDate();
+    const currentMonthExpenses = dashboardExpenses.filter((e) => {
+      if (!e.expenseDate) return false;
+      const d = new Date(e.expenseDate);
+      return d.getMonth() === nowD.getMonth() && d.getFullYear() === nowD.getFullYear();
+    });
+    const cMonthSpent = currentMonthExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+    const burn = cMonthSpent / cDay;
+    const forecast = burn * dInMonth;
+
+    const catSummary: Record<string, number> = {};
+    dashboardExpenses.forEach((e) => {
+      const name = e.categoryName || 'General';
+      catSummary[name] = (catSummary[name] || 0) + Math.max(0, Number(e.amount || 0));
+    });
+    const sortedCats = Object.entries(catSummary).sort((a, b) => b[1] - a[1]);
+    const topCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
+    const topCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
+
+    return {
+      totalSpent: spent,
+      totalIncome: income,
+      netCashFlow: net,
+      savingsRate: rate,
+      dailyBurn: burn,
+      monthEndForecast: forecast,
+      currentMonthSpent: cMonthSpent,
+      currentDay: cDay,
+      daysInMonth: dInMonth,
+      highestCatName: topCatName,
+      highestCatAmt: topCatAmt,
+    };
+  }, [dashboardExpenses, dashboardIncomes]);
 
   interface UnifiedTxItem {
     id: number;
@@ -692,65 +728,69 @@ export default function DashboardScreen() {
     incomeRaw?: Income;
   }
 
-  // Unified chronological ledger
-  const unifiedTransactions: UnifiedTxItem[] = [
-    ...(ledgerTab === "all" || ledgerTab === "expenses"
-      ? filteredExpenses.map((e) => ({
-          id: e.id,
-          uniqueKey: `exp-${e.id}`,
-          type: "expense" as const,
-          title: e.description || "Expense",
-          categoryOrSource: e.categoryName || "General",
-          amount: Number(e.amount || 0),
-          date: e.expenseDate || "",
-          isRecurring: !!(e.isRecurring || e.recurring),
-          expenseRaw: e,
-        }))
-      : []),
-    ...(ledgerTab === "all" || ledgerTab === "incomes"
-      ? filteredIncomes.map((i) => ({
-          id: i.id,
-          uniqueKey: `inc-${i.id}`,
-          type: "income" as const,
-          title: i.source || "Income",
-          categoryOrSource: i.source || "Inflow",
-          amount: Number(i.amount || 0),
-          date: i.incomeDate || "",
-          isRecurring: !!(i.isRecurring || i.recurring),
-          incomeRaw: i,
-        }))
-      : []),
-  ].sort((a, b) => {
-    try {
-      if (sortOption === 'date-desc') {
-        const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-        if (dDiff !== 0) return dDiff;
-        return (b.id || 0) - (a.id || 0);
+  // Unified chronological ledger (memoized across theme changes)
+  const unifiedTransactions: UnifiedTxItem[] = useMemo(() => {
+    const list: UnifiedTxItem[] = [
+      ...(ledgerTab === "all" || ledgerTab === "expenses"
+        ? filteredExpenses.map((e) => ({
+            id: e.id,
+            uniqueKey: `exp-${e.id}`,
+            type: "expense" as const,
+            title: e.description || "Expense",
+            categoryOrSource: e.categoryName || "General",
+            amount: Number(e.amount || 0),
+            date: e.expenseDate || "",
+            isRecurring: !!(e.isRecurring || e.recurring),
+            expenseRaw: e,
+          }))
+        : []),
+      ...(ledgerTab === "all" || ledgerTab === "incomes"
+        ? filteredIncomes.map((i) => ({
+            id: i.id,
+            uniqueKey: `inc-${i.id}`,
+            type: "income" as const,
+            title: i.source || "Income",
+            categoryOrSource: i.source || "Inflow",
+            amount: Number(i.amount || 0),
+            date: i.incomeDate || "",
+            isRecurring: !!(i.isRecurring || i.recurring),
+            incomeRaw: i,
+          }))
+        : []),
+    ];
+
+    return list.sort((a, b) => {
+      try {
+        if (sortOption === 'date-desc') {
+          const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dDiff !== 0) return dDiff;
+          return (b.id || 0) - (a.id || 0);
+        }
+        if (sortOption === 'date-asc') {
+          const dDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+          if (dDiff !== 0) return dDiff;
+          return (a.id || 0) - (b.id || 0);
+        }
+        if (sortOption === 'amount-desc') {
+          const aDiff = b.amount - a.amount;
+          if (aDiff !== 0) return aDiff;
+          const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dDiff !== 0) return dDiff;
+          return (b.id || 0) - (a.id || 0);
+        }
+        if (sortOption === 'amount-asc') {
+          const aDiff = a.amount - b.amount;
+          if (aDiff !== 0) return aDiff;
+          const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (dDiff !== 0) return dDiff;
+          return (b.id || 0) - (a.id || 0);
+        }
+      } catch {
+        return 0;
       }
-      if (sortOption === 'date-asc') {
-        const dDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
-        if (dDiff !== 0) return dDiff;
-        return (a.id || 0) - (b.id || 0);
-      }
-      if (sortOption === 'amount-desc') {
-        const aDiff = b.amount - a.amount;
-        if (aDiff !== 0) return aDiff;
-        const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-        if (dDiff !== 0) return dDiff;
-        return (b.id || 0) - (a.id || 0);
-      }
-      if (sortOption === 'amount-asc') {
-        const aDiff = a.amount - b.amount;
-        if (aDiff !== 0) return aDiff;
-        const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-        if (dDiff !== 0) return dDiff;
-        return (b.id || 0) - (a.id || 0);
-      }
-    } catch {
       return 0;
-    }
-    return 0;
-  });
+    });
+  }, [ledgerTab, filteredExpenses, filteredIncomes, sortOption]);
 
   if (!isLoading && fetchError && expenses.length === 0) {
     return (
