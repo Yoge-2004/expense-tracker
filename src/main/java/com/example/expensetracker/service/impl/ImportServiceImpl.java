@@ -650,6 +650,16 @@ public class ImportServiceImpl implements ImportService {
                 return colMap.get(c);
             }
         }
+        // Normalize search: match alphanumeric keys ignoring currencies, symbols, parentheses
+        for (String c : candidates) {
+            String candClean = c.replaceAll("[^a-z0-9]", "");
+            for (Map.Entry<String, Integer> entry : colMap.entrySet()) {
+                String keyClean = entry.getKey().replaceAll("[^a-z0-9]", "");
+                if (keyClean.equals(candClean) || keyClean.startsWith(candClean) || keyClean.contains(candClean)) {
+                    return entry.getValue();
+                }
+            }
+        }
         return null;
     }
 
@@ -688,7 +698,10 @@ public class ImportServiceImpl implements ImportService {
                 DateTimeFormatter.ofPattern("dd/MM/yyyy"),
                 DateTimeFormatter.ofPattern("MM/dd/yyyy"),
                 DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-                DateTimeFormatter.ofPattern("yyyy/MM/dd")
+                DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+                DateTimeFormatter.ofPattern("d/M/yyyy"),
+                DateTimeFormatter.ofPattern("d-M-yyyy"),
+                DateTimeFormatter.ofPattern("dd.MM.yyyy")
         );
         for (DateTimeFormatter fmt : formatters) {
             try {
@@ -710,6 +723,18 @@ public class ImportServiceImpl implements ImportService {
             case STRING -> {
                 String clean = cell.getStringCellValue().replaceAll("[^0-9.\\-]", "").trim();
                 yield clean.isEmpty() ? null : new BigDecimal(clean);
+            }
+            case FORMULA -> {
+                try {
+                    yield BigDecimal.valueOf(cell.getNumericCellValue());
+                } catch (Exception ex) {
+                    try {
+                        String clean = cell.getStringCellValue().replaceAll("[^0-9.\\-]", "").trim();
+                        yield clean.isEmpty() ? null : new BigDecimal(clean);
+                    } catch (Exception ignored) {
+                        yield null;
+                    }
+                }
             }
             default -> null;
         };

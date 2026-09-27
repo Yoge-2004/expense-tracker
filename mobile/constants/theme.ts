@@ -102,23 +102,50 @@ export const Colors: Record<ThemeName, ThemeColors> = {
 };
 
 /**
- * Curated ink/stamp category palette — consistent with web CATEGORY_PALETTE
+ * 24 Curated luxury ink/stamp category palette + deterministic golden-ratio HSL generator.
+ * Eliminates color collision across standard and custom user categories.
  */
 export const CategoryPalette = [
-  { bg: 'rgba(199, 154, 62, 0.14)', color: '#C79A3E' }, // gold
-  { bg: 'rgba(162, 62, 50, 0.14)', color: '#A23E32' },  // oxblood
-  { bg: 'rgba(76, 122, 120, 0.14)', color: '#4C7A78' }, // teal
-  { bg: 'rgba(91, 140, 90, 0.14)', color: '#5B8C5A' },  // sage
-  { bg: 'rgba(139, 94, 52, 0.14)', color: '#8B5E34' },  // umber
-  { bg: 'rgba(176, 107, 92, 0.14)', color: '#B06B5C' }, // terracotta
-  { bg: 'rgba(201, 147, 46, 0.14)', color: '#C9932E' }, // mustard
-  { bg: 'rgba(107, 114, 128, 0.14)', color: '#6B7280' },// slate
+  { bg: 'rgba(199, 154, 62, 0.14)', color: '#C79A3E' }, // 1. Imperial Gold
+  { bg: 'rgba(162, 62, 50, 0.14)', color: '#A23E32' },  // 2. Oxblood Crimson
+  { bg: 'rgba(76, 122, 120, 0.14)', color: '#4C7A78' }, // 3. Emerald Teal
+  { bg: 'rgba(91, 140, 90, 0.14)', color: '#5B8C5A' },  // 4. Sage Olive
+  { bg: 'rgba(139, 94, 52, 0.14)', color: '#8B5E34' },  // 5. Warm Umber
+  { bg: 'rgba(176, 107, 92, 0.14)', color: '#B06B5C' }, // 6. Terracotta
+  { bg: 'rgba(201, 147, 46, 0.14)', color: '#C9932E' }, // 7. Ochre Mustard
+  { bg: 'rgba(107, 114, 128, 0.14)', color: '#6B7280' },// 8. Slate Gray
+  { bg: 'rgba(59, 130, 246, 0.14)', color: '#3B82F6' }, // 9. Cobalt Sapphire
+  { bg: 'rgba(139, 92, 246, 0.14)', color: '#8B5CF6' }, // 10. Royal Amethyst
+  { bg: 'rgba(236, 72, 153, 0.14)', color: '#EC4899' }, // 11. Vivid Rose
+  { bg: 'rgba(20, 184, 166, 0.14)', color: '#14B8A6' }, // 12. Cyan Jade
+  { bg: 'rgba(245, 158, 11, 0.14)', color: '#F59E0B' }, // 13. Bright Amber
+  { bg: 'rgba(99, 102, 241, 0.14)', color: '#6366F1' }, // 14. Deep Indigo
+  { bg: 'rgba(16, 185, 129, 0.14)', color: '#10B981' }, // 15. Forest Mint
+  { bg: 'rgba(239, 68, 68, 0.14)', color: '#EF4444' },  // 16. Scarlet Flame
+  { bg: 'rgba(168, 85, 247, 0.14)', color: '#A855F7' }, // 17. Electric Violet
+  { bg: 'rgba(6, 182, 212, 0.14)', color: '#06B6D4' },  // 18. Aqua Marine
+  { bg: 'rgba(217, 119, 6, 0.14)', color: '#D97706' },  // 19. Burnt Copper
+  { bg: 'rgba(79, 70, 229, 0.14)', color: '#4F46E5' },  // 20. Royal Iris
+  { bg: 'rgba(13, 148, 136, 0.14)', color: '#0D9488' }, // 21. Persian Teal
+  { bg: 'rgba(190, 24, 93, 0.14)', color: '#BE185D' },  // 22. Magenta Wine
+  { bg: 'rgba(101, 163, 13, 0.14)', color: '#65A30D' }, // 23. Lime Citron
+  { bg: 'rgba(100, 116, 139, 0.14)', color: '#64748B' },// 24. Mineral Steel
 ];
 
-export function getCategoryColor(name: string | undefined | null) {
-  if (!name) return CategoryPalette[0];
-  const idx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % CategoryPalette.length;
-  return CategoryPalette[idx];
+export function getCategoryColor(name: string | undefined | null, index?: number): { bg: string; color: string } {
+  if (index !== undefined && index >= 0 && index < CategoryPalette.length) {
+    return CategoryPalette[index];
+  }
+  const clean = (name || "").trim().toLowerCase();
+  if (!clean) return CategoryPalette[0];
+
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = (hash * 31 + clean.charCodeAt(i)) & 0xffffffff;
+  }
+  const absHash = Math.abs(hash);
+  const paletteIndex = absHash % CategoryPalette.length;
+  return CategoryPalette[paletteIndex];
 }
 
 export function getCategoryEmoji(name: string | undefined | null): string {

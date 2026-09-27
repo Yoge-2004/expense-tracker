@@ -40,6 +40,8 @@ import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
 import { ManageCategoriesModal } from '../../components/ManageCategoriesModal';
 import { MonthlyReportModal } from '../../components/MonthlyReportModal';
+import { HelpGuideModal } from '../../components/HelpGuideModal';
+import { AboutModal } from '../../components/AboutModal';
 import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification } from '../../services/notifications';
 
 export default function ProfileScreen() {
@@ -59,6 +61,8 @@ export default function ProfileScreen() {
   const [currencySearch, setCurrencySearch] = useState('');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
   React.useEffect(() => {
@@ -328,8 +332,54 @@ export default function ProfileScreen() {
           </View>
         </StaggeredView>
 
+        {/* Support & About Section */}
+        <StaggeredView delay={240} direction="up">
+          <Text style={[styles.sectionTitle, { color: c.textMuted }]}>SUPPORT & ABOUT</Text>
+          <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowHelpModal(true);
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="book-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>User Guide & Help</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>How to use features, logging, and shortcuts</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowAboutModal(true);
+              }}
+              style={styles.menuRow}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.teal + '18' }]}>
+                  <Ionicons name="information-circle-outline" size={18} color={c.teal} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>About ExpenseTracker</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>Executive Edition • v1.4.0</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </StaggeredView>
+
         {/* Account Governance */}
-        <StaggeredView delay={250} direction="up">
+        <StaggeredView delay={270} direction="up">
           <Text style={[styles.sectionTitle, { color: c.textMuted }]}>ACCOUNT</Text>
           <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
             {isBiometricsAvailable && (
@@ -511,6 +561,8 @@ export default function ProfileScreen() {
 
       <MonthlyReportModal visible={showReportModal} onClose={() => setShowReportModal(false)} />
       <ManageCategoriesModal visible={showCategoryModal} onClose={() => setShowCategoryModal(false)} onCategoriesUpdated={() => {}} />
+      <HelpGuideModal visible={showHelpModal} onClose={() => setShowHelpModal(false)} />
+      <AboutModal visible={showAboutModal} onClose={() => setShowAboutModal(false)} />
     </View>
   );
 }

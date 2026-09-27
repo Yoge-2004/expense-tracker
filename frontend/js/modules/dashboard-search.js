@@ -33,14 +33,22 @@
     updateSearchPlaceholder();
 
     window.addEventListener("keydown", (event) => {
+        if (window.CommandPalette && window.CommandPalette.isOpen && window.CommandPalette.isOpen()) {
+            return;
+        }
+
         const isK = event.key === "k" || event.key === "K" || event.code === "KeyK";
         if ((event.metaKey || event.ctrlKey) && isK) {
             event.preventDefault();
             event.stopPropagation();
-            const input = searchInput();
-            if (input) {
-                input.focus();
-                input.select();
+            if (window.CommandPalette && typeof window.CommandPalette.toggle === "function") {
+                window.CommandPalette.toggle();
+            } else {
+                const input = searchInput();
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
             }
             return;
         }

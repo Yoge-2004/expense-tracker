@@ -6,6 +6,19 @@ const API_BASE_URL = (["localhost", "127.0.0.1", ""].includes(window.location.ho
 let activeRequests = 0;
 let loadingTimer;
 let isServerOnline = true;
+let wasOffline = false;
+let healthCheckTimer = null;
+
+function scheduleHealthCheck(delayMs) {
+    if (healthCheckTimer) clearTimeout(healthCheckTimer);
+    healthCheckTimer = setTimeout(async () => {
+        if (typeof document !== "undefined" && !document.hidden) {
+            await checkHealth();
+        } else {
+            scheduleHealthCheck(Math.max(delayMs, 10000));
+        }
+    }, delayMs);
+}
 
 function ensureFeedbackUi() {
     const allPresent = document.getElementById("appToastRegion")
@@ -181,21 +194,37 @@ function invalidateCacheForEndpoint(endpoint) {
 
 async function checkHealth() {
     try {
-        const res = await fetch(`${API_BASE_URL}/health`, { cache: 'no-store' });
+        let signal;
+        if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+            signal = AbortSignal.timeout(6000);
+        }
+        const res = await fetch(`${API_BASE_URL}/health`, { cache: 'no-store', signal });
         if (res.ok) {
             const data = await res.json();
             if (data.status === "UP" || data.database === "UP") {
+                const hadBeenOffline = !isServerOnline || wasOffline;
                 isServerOnline = true;
+                wasOffline = false;
                 updateServerStatus(true, "Connected");
+                scheduleHealthCheck(45000);
+
+                if (hadBeenOffline) {
+                    console.log("[HealthCheck] Proactively detected server recovery. Dispatching reconnect event...");
+                    document.dispatchEvent(new CustomEvent("serverreconnected", { detail: { online: true } }));
+                }
                 return true;
             }
         }
+        wasOffline = true;
         isServerOnline = false;
         updateServerStatus(false, "Waking up server...");
+        scheduleHealthCheck(4000);
         return false;
     } catch (e) {
+        wasOffline = true;
         isServerOnline = false;
         updateServerStatus(false, "Waking up server...");
+        scheduleHealthCheck(4000);
         return false;
     }
 }
@@ -227,6 +256,23 @@ if (typeof document !== "undefined") {
         checkPendingFlashToast();
     }
     setInterval(checkHealth, HEALTH_CHECK_INTERVAL_MS);
+
+    window.addEventListener("online", () => {
+        console.log("[Network] Browser online. Checking server health...");
+        checkHealth();
+    });
+
+    window.addEventListener("focus", () => {
+        if (!isServerOnline || wasOffline) {
+            checkHealth();
+        }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && (!isServerOnline || wasOffline)) {
+            checkHealth();
+        }
+    });
 }
 
 async function apiRequest(endpoint, options = {}) {

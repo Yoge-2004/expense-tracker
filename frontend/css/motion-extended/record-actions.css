@@ -35,9 +35,14 @@
         grid-area: income !important;
     }
 
-    .top-bar-actions > .theme-toggle-btn {
+    .top-bar-actions > .top-bar-utility-group,
+    .top-bar-actions > .theme-toggle-btn,
+    .top-bar-actions > #headerHelpBtn {
         grid-area: theme !important;
         justify-self: start !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
     }
 
     .top-bar-actions > .user-profile {

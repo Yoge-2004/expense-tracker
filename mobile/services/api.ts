@@ -387,3 +387,25 @@ export async function apiRequest(
 
   return responseData;
 }
+
+/**
+ * Proactively checks backend readiness and database connectivity.
+ * Safe, lightweight probe using 5s timeout.
+ */
+export async function checkServerHealth(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`${API_BASE_URL}/health`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.status === "UP" || data.database === "UP";
+  } catch {
+    return false;
+  }
+}

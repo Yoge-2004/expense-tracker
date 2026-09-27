@@ -506,6 +506,9 @@ public class ExportServiceImpl implements ExportService {
                         new CellRangeAddress[]{ new CellRangeAddress(1, rowIdx - 1, 5, 5) }, recurRule);
             }
 
+            if (rowIdx > 1) {
+                sheet.setAutoFilter(new CellRangeAddress(0, rowIdx - 1, 0, headers.length - 1));
+            }
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
                 sheet.setColumnWidth(i, Math.max(sheet.getColumnWidth(i) + 1600, 4200));

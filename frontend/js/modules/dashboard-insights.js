@@ -189,12 +189,40 @@
         }
     
         grid.innerHTML = `
-            <div class="insight-card-item">
-                <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">⚖️</div>
-                    <span class="insight-card-label">Net Cash Flow & Savings Rate</span>
+            <div class="insight-card-item highlight-card" style="grid-column: 1 / -1; background: var(--card-bg, rgba(255,255,255,0.04)); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981; font-size:18px;">📊</div>
+                        <div>
+                            <span class="insight-card-label" style="font-size:14px; font-weight:700; color:var(--text-main);">Monthly Inflows & Outflows Summary</span>
+                            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Net monthly liquidity balance & cash flow performance</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span class="status-badge ${netCashflow >= 0 ? "badge-netflow" : "badge-danger"}" style="font-size:12px; padding:4px 10px; border-radius:6px; font-weight:700;">
+                            ${netCashflow >= 0 ? "Surplus" : "Deficit"}: ${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}
+                        </span>
+                        <span style="font-size:12px; color:var(--text-muted); font-weight:600;">(${savingsRate}% saved)</span>
+                    </div>
                 </div>
-                <div class="insight-card-content">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:12px;">
+                    <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px;">
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#10B981; font-weight:700;">Monthly Inflow</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">+${formatCurrency(activeInflow)}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${safeIncomes.length} inflow transaction${safeIncomes.length === 1 ? "" : "s"}</div>
+                    </div>
+                    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:12px;">
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#EF4444; font-weight:700;">Monthly Outflow</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">-${formatCurrency(activeOutflow)}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${safeExpenses.length} expense transaction${safeExpenses.length === 1 ? "" : "s"}</div>
+                    </div>
+                    <div style="background:rgba(199,154,62,0.08); border:1px solid rgba(199,154,62,0.25); border-radius:10px; padding:12px;">
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#C79A3E; font-weight:700;">Net Cash Flow</div>
+                        <div style="font-size:18px; font-weight:800; color:${netCashflow >= 0 ? "#10B981" : "#EF4444"}; margin-top:4px;">${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${activeInflow > 0 ? `${savingsRate}% retention` : "No inflow logged"}</div>
+                    </div>
+                </div>
+                <div class="insight-card-content" style="font-size:13px; line-height:1.5; color:var(--text-muted);">
                     ${cashflowInsight}
                 </div>
             </div>

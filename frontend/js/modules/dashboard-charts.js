@@ -21,11 +21,8 @@
             // easing with a small overshoot — the closest built-in match to the
             // CSS --ease-spring token used everywhere else, since Chart.js
             // easings are fixed named functions rather than arbitrary curves.
-            // NOTE: Mutate individual properties on Chart.defaults.animation rather
-            // than reassigning Chart.defaults.animation = { ... }, because
-            // reassigning the defaults object wipes out internal schema keys
-            // ('type', 'fn', etc.) that Chart.js relies on to determine animation
-            // interpolation functions.
+            // Configure global Chart.js animation easing and duration.
+            // Direct property mutation preserves internal animation schema functions.
             if (Chart.defaults.animation) {
                 Chart.defaults.animation.duration = 900;
                 Chart.defaults.animation.easing = 'easeOutBack';
@@ -84,13 +81,17 @@
 
         if (chartState.pieChart) chartState.pieChart.destroy();
 
+        const labels = Object.keys(categoryTotals);
+        const dataValues = Object.values(categoryTotals);
+        const bgColors = labels.map((cat, i) => (utils && utils.getCategoryColor ? utils.getCategoryColor(cat, i).color : '#C79A3E'));
+
         chartState.pieChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(categoryTotals),
+                labels: labels,
                 datasets: [{
-                    data: Object.values(categoryTotals),
-                    backgroundColor: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C'],
+                    data: dataValues,
+                    backgroundColor: bgColors,
                     borderWidth: 2,
                     borderColor: document.body.getAttribute("data-theme") === "light" ? '#FCFBF6' : '#10120E'
                 }]

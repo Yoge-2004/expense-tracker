@@ -27,12 +27,13 @@ import {
   Animated,
   Dimensions,
   useWindowDimensions,
+  AppState,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
-import { apiRequest, ApiError } from '../../services/api';
+import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
 import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -122,6 +123,78 @@ interface Subscription {
 /**
  * Main dashboard screen component.
  */
+
+interface ThemeToggleProps {
+  isLight: boolean;
+  colors: any;
+  onToggle: () => void;
+}
+
+const ThemeToggleActionBtn: React.FC<ThemeToggleProps> = ({ isLight, colors, onToggle }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Animated.spring(scaleAnim, {
+      toValue: 0.82,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 25,
+      bounciness: 6,
+    }).start();
+  };
+
+  const handlePress = () => {
+    rotateAnim.setValue(0);
+    Animated.timing(rotateAnim, {
+      toValue: 1,
+      duration: 260,
+      useNativeDriver: true,
+    }).start();
+    requestAnimationFrame(() => {
+      onToggle();
+    });
+  };
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "180deg"],
+  });
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
+      accessibilityLabel="Toggle Theme"
+      accessibilityRole="button"
+    >
+      <Animated.View
+        style={[
+          styles.topActionBtn,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            transform: [{ scale: scaleAnim }, { rotate: spin }],
+          },
+        ]}
+      >
+        <Ionicons name={isLight ? "moon" : "sunny"} size={18} color={colors.primary} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
   const { showAlert } = useAlert();
@@ -740,13 +813,15 @@ export default function DashboardScreen() {
               <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
             </View>
             <View style={styles.userGreetingCol}>
+              <Text style={[styles.greetingSubtitle, { color: c.textMuted }]}>
+                Welcome back 👋
+              </Text>
               <Text
                 style={[styles.greetingTitle, { color: c.text }]}
                 numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.6}
+                ellipsizeMode="tail"
               >
-                Welcome back, {userName || 'User'} 👋
+                {userName || 'User'}
               </Text>
               <Text style={[styles.todayDate, { color: c.textMuted }]} numberOfLines={1}>
                 {now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
@@ -765,18 +840,8 @@ export default function DashboardScreen() {
               <Ionicons name="share-outline" size={18} color={c.primary} />
             </TouchableOpacity>
 
-            {/* Theme Toggle Button */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                toggleTheme();
-              }}
-              style={[styles.topActionBtn, { backgroundColor: c.card, borderColor: c.border }]}
-              accessibilityLabel="Toggle Theme"
-            >
-              <Ionicons name={isLight ? 'moon' : 'sunny'} size={18} color={c.primary} />
-            </TouchableOpacity>
+            {/* Modern Instant-Feedback Theme Toggle Button */}
+            <ThemeToggleActionBtn isLight={isLight} colors={c} onToggle={toggleTheme} />
           </View>
         </View>
 
@@ -1264,7 +1329,10 @@ export default function DashboardScreen() {
                             <View style={styles.txRowActions}>
                               <TouchableOpacity
                                 activeOpacity={0.7}
-                                onPress={() => handleTransactionEdit(tx)}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                                  handleTransactionEdit(tx);
+                                }}
                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                 style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
                                 accessibilityLabel="Edit transaction"
@@ -1273,7 +1341,10 @@ export default function DashboardScreen() {
                               </TouchableOpacity>
                               <TouchableOpacity
                                 activeOpacity={0.7}
-                                onPress={() => handleTransactionDelete(tx)}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                                  handleTransactionDelete(tx);
+                                }}
                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                 style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
                                 accessibilityLabel="Delete transaction"
@@ -1414,10 +1485,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
   },
+  greetingSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+    marginBottom: 1,
+  },
   greetingTitle: {
-    fontSize: 17,
-    fontWeight: '900',
+    fontSize: 18,
+    fontWeight: '800',
     letterSpacing: -0.4,
+    lineHeight: 22,
   },
   todayDate: {
     fontSize: 12,

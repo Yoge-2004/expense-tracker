@@ -405,6 +405,55 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
 
       {/* Cards Grid */}
       <View style={styles.grid}>
+        {/* CROSS-DOMAIN CARD: Monthly Inflows vs Outflows Summary Pulse */}
+        {(activeTab === "all" || activeTab === "habits" || activeTab === "forecasts") && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              openDetail({
+                title: "Monthly Cash Flow Summary",
+                icon: "swap-horizontal-outline",
+                color: netCashFlow >= 0 ? "#10B981" : "#EF4444",
+                headline:
+                  activeInflow > 0
+                    ? `Monthly Inflow is ${formatAmt(activeInflow)} against ${formatAmt(currentMonthSpent)} total outflow (${netCashFlow >= 0 ? "+" : ""}${formatAmt(netCashFlow)} net balance).`
+                    : `Monthly outflow is ${formatAmt(currentMonthSpent)}. Record your monthly income streams to track your savings rate.`,
+                metrics: [
+                  { label: "Total Inflows", value: `+${formatAmt(activeInflow)}` },
+                  { label: "Total Outflows", value: `-${formatAmt(currentMonthSpent)}` },
+                  { label: "Net Cash Flow", value: `${netCashFlow >= 0 ? "+" : ""}${formatAmt(netCashFlow)}` },
+                  { label: "Savings Rate", value: activeInflow > 0 ? `${savingsRate}%` : "N/A" },
+                ],
+                advice:
+                  activeInflow <= 0
+                    ? "Log your salary or income entries to calculate your net cash flow and savings rate."
+                    : netCashFlow < 0
+                    ? "Spending is currently exceeding income this month. Curtail discretionary expenses to restore positive cash flow."
+                    : savingsRate >= 20
+                    ? "Outstanding! You are retaining over 20% of your earnings, building strong liquidity."
+                    : "Positive cash flow! Aim to increase your retention rate to 20% or higher.",
+              })
+            }
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? "#10B981" : "#EF4444") + "18" }]}>
+                <Ionicons name="swap-horizontal-outline" size={18} color={netCashFlow >= 0 ? "#10B981" : "#EF4444"} />
+              </View>
+              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? "#10B981" : "#EF4444" }]}>
+                {netCashFlow >= 0 ? "Surplus" : "Deficit"}
+              </Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: c.text }]}>Monthly Cash Flow</Text>
+            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? "#10B981" : "#EF4444" }]}>
+              {netCashFlow >= 0 ? "+" : ""}{formatAmt(netCashFlow)}
+            </Text>
+            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
+              In: {formatAmt(activeInflow)} · Out: {formatAmt(currentMonthSpent)}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* CROSS-DOMAIN CARD: Tri-Domain Wealth Interaction Flow */}
         {(activeTab === 'all' || activeTab === 'forecasts' || activeTab === 'habits') && (
           <TouchableOpacity

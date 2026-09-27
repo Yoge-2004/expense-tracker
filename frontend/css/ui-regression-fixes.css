@@ -156,10 +156,15 @@ html[data-theme="light"] #themeToggle .moon-icon { display:block !important; vis
     }
     .top-bar-actions > #openModalBtn { grid-column:1 !important; }
     .top-bar-actions > #openIncomeModalBtn { grid-column:2 !important; }
-    .top-bar-actions > .theme-toggle-btn {
+    .top-bar-actions > .top-bar-utility-group,
+    .top-bar-actions > .theme-toggle-btn,
+    .top-bar-actions > #headerHelpBtn {
         grid-column:1 !important;
         grid-row:3 !important;
         justify-self:start !important;
+        display:inline-flex !important;
+        align-items:center !important;
+        gap:8px !important;
     }
     .top-bar-actions > .user-profile {
         grid-column:2 !important;

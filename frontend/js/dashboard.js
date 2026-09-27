@@ -262,11 +262,14 @@ setBudgetForm?.addEventListener("submit", async (e) => {
 const dashboardFilterController = window.DashboardFilters.createController({
     elements,
     getExpenses: () => allExpenses,
+    getIncomes: () => allIncomes,
+    getSavingsGoals: () => allSavingsGoals,
     parseLocalDate,
     getLocalDateString,
     debounce,
     showToast,
     updateStats,
+    updateCashFlowMetrics,
     renderPieChart,
     renderList,
     renderTrendChart,
@@ -1204,6 +1207,141 @@ function exportIncomesClientSideExcel() {
 }
 
 // Helper to track file upload progress with XMLHttpRequest
+
+// --- MODERN FLOATING LIVE TRANSFER DOCK ---
+const TransferDock = (() => {
+    let dockEl = null;
+    let hideTimeout = null;
+
+    function getOrCreateDock() {
+        if (dockEl && document.body.contains(dockEl)) return dockEl;
+        dockEl = document.createElement("div");
+        dockEl.id = "transferDock";
+        dockEl.className = "transfer-dock";
+        dockEl.innerHTML = `
+            <div class="transfer-dock-header">
+                <div class="transfer-dock-file">
+                    <div class="transfer-dock-icon" id="transferDockIcon">📄</div>
+                    <div class="transfer-dock-info">
+                        <div class="transfer-dock-filename" id="transferDockFilename">File</div>
+                        <div class="transfer-dock-status" id="transferDockStatus">Initializing...</div>
+                    </div>
+                </div>
+                <span class="transfer-dock-badge export" id="transferDockBadge">Export</span>
+            </div>
+            <div class="transfer-progress-track">
+                <div class="transfer-progress-fill" id="transferDockFill"></div>
+            </div>
+            <div class="transfer-dock-footer">
+                <span id="transferDockDetail">Connecting...</span>
+                <span id="transferDockPct" style="font-weight:700;">0%</span>
+            </div>
+        `;
+        document.body.appendChild(dockEl);
+        return dockEl;
+    }
+
+    function getIconForFile(filename) {
+        const lower = String(filename || "").toLowerCase();
+        if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) return "📊";
+        if (lower.endsWith(".pdf")) return "📑";
+        if (lower.endsWith(".csv")) return "📋";
+        if (lower.endsWith(".json")) return "⚙️";
+        return "📁";
+    }
+
+    return {
+        show({ filename, mode = "export", status = "Preparing..." }) {
+            clearTimeout(hideTimeout);
+            const dock = getOrCreateDock();
+            dock.className = `transfer-dock active ${mode}-mode`;
+            const iconEl = document.getElementById("transferDockIcon");
+            if (iconEl) iconEl.textContent = getIconForFile(filename);
+            const nameEl = document.getElementById("transferDockFilename");
+            if (nameEl) nameEl.textContent = filename;
+            const statusEl = document.getElementById("transferDockStatus");
+            if (statusEl) statusEl.textContent = status;
+            const badge = document.getElementById("transferDockBadge");
+            if (badge) {
+                badge.className = `transfer-dock-badge ${mode}`;
+                badge.textContent = mode === "export" ? "Exporting" : "Importing";
+            }
+            const fill = document.getElementById("transferDockFill");
+            if (fill) fill.style.width = "5%";
+            const pctEl = document.getElementById("transferDockPct");
+            if (pctEl) pctEl.textContent = "0%";
+            const detail = document.getElementById("transferDockDetail");
+            if (detail) detail.textContent = "Starting transfer...";
+        },
+        updateProgress(pct, status, detail) {
+            getOrCreateDock();
+            if (pct != null && pct >= 0) {
+                const clamped = Math.min(100, Math.max(0, Math.round(pct)));
+                const fill = document.getElementById("transferDockFill");
+                if (fill) fill.style.width = `${clamped}%`;
+                const pctEl = document.getElementById("transferDockPct");
+                if (pctEl) pctEl.textContent = `${clamped}%`;
+            }
+            if (status) {
+                const statusEl = document.getElementById("transferDockStatus");
+                if (statusEl) statusEl.textContent = status;
+            }
+            if (detail) {
+                const detailEl = document.getElementById("transferDockDetail");
+                if (detailEl) detailEl.textContent = detail;
+            }
+        },
+        complete(message = "Complete") {
+            const dock = getOrCreateDock();
+            dock.className = "transfer-dock active complete-mode";
+            const badge = document.getElementById("transferDockBadge");
+            if (badge) {
+                badge.className = "transfer-dock-badge complete";
+                badge.textContent = "Complete";
+            }
+            const iconEl = document.getElementById("transferDockIcon");
+            if (iconEl) iconEl.textContent = "✅";
+            const fill = document.getElementById("transferDockFill");
+            if (fill) fill.style.width = "100%";
+            const pctEl = document.getElementById("transferDockPct");
+            if (pctEl) pctEl.textContent = "100%";
+            const statusEl = document.getElementById("transferDockStatus");
+            if (statusEl) statusEl.textContent = message;
+            const detail = document.getElementById("transferDockDetail");
+            if (detail) detail.textContent = "Transfer finished";
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                dock.classList.remove("active");
+            }, 3000);
+        },
+        fail(errorMessage = "Transfer failed") {
+            const dock = getOrCreateDock();
+            dock.className = "transfer-dock active";
+            const badge = document.getElementById("transferDockBadge");
+            if (badge) {
+                badge.className = "transfer-dock-badge";
+                badge.style.background = "rgba(239,68,68,0.2)";
+                badge.style.color = "#EF4444";
+                badge.textContent = "Failed";
+            }
+            const iconEl = document.getElementById("transferDockIcon");
+            if (iconEl) iconEl.textContent = "⚠️";
+            const statusEl = document.getElementById("transferDockStatus");
+            if (statusEl) statusEl.textContent = errorMessage;
+            const detail = document.getElementById("transferDockDetail");
+            if (detail) detail.textContent = "Operation stopped";
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                dock.classList.remove("active");
+            }, 4500);
+        },
+        hide() {
+            if (dockEl) dockEl.classList.remove("active");
+        }
+    };
+})();
+window.TransferDock = TransferDock;
+
 function uploadFileWithProgress(url, formData, onProgress) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -1246,13 +1384,11 @@ function uploadFileWithProgress(url, formData, onProgress) {
 
 // Fetching with streaming chunks keeps the token safe and displays download progress.
 async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fallbackFn = null) {
-    if (typeof setProgress === "function") {
-        setProgress(0, loadingMessage);
-    } else if (typeof setLoading === "function") {
-        setLoading(true, loadingMessage);
-    } else {
-        showToast(loadingMessage, "info");
-    }
+    TransferDock.show({
+        filename: fallbackFilename,
+        mode: "export",
+        status: loadingMessage || "Preparing document..."
+    });
     try {
         const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
         const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
@@ -1267,6 +1403,7 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
             reqHeaders["X-Currency"] = activeCurr;
         }
 
+        TransferDock.updateProgress(15, "Connecting to reporting engine...", "Compiling ledger records");
         const res = await fetch(finalUrl, { headers: reqHeaders });
         if (!res.ok) {
             if (res.status === 401) {
@@ -1292,46 +1429,60 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
                 received += value.length;
                 if (total > 0) {
                     const pct = Math.round((received / total) * 100);
-                    if (typeof setProgress === "function") {
-                        setProgress(pct, `Downloading ${filename} (${pct}%)...`);
-                    }
+                    TransferDock.updateProgress(
+                        pct,
+                        `Downloading ${filename}`,
+                        `${Math.round(received / 1024)} KB / ${Math.round(total / 1024)} KB`
+                    );
                 } else {
                     const kb = Math.round(received / 1024);
-                    if (typeof setProgress === "function") {
-                        setProgress(null, `Downloading ${filename} (${kb} KB received)...`);
-                    }
+                    TransferDock.updateProgress(
+                        null,
+                        `Downloading ${filename}`,
+                        `${kb} KB received`
+                    );
                 }
             }
             blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
         } else {
+            TransferDock.updateProgress(85, `Downloading ${filename}`, "Receiving payload...");
             blob = await res.blob();
         }
         triggerFileDownload(blob, filename);
+        TransferDock.complete(`${filename} downloaded`);
         showToast(`${filename} downloaded successfully.`, "success");
     } catch (err) {
         console.warn("downloadAuthenticated backend call failed, attempting fallback:", err);
         if (typeof fallbackFn === "function") {
             try {
+                TransferDock.updateProgress(90, "Using client generator fallback...", "Formatting file");
                 fallbackFn();
+                TransferDock.complete(`${fallbackFilename} generated`);
                 showToast(`${fallbackFilename} generated and downloaded.`, "success");
                 return;
             } catch (fbErr) {
                 console.error("Client fallback generation failed:", fbErr);
             }
         }
+        TransferDock.fail(err.message || "Export failed");
         showToast(err.message || "Export failed", "error");
-    } finally {
-        if (typeof setProgress === "function") setProgress(null);
-        if (typeof setLoading === "function") setLoading(false);
     }
 }
 
 document.getElementById("exportExcelBtn")?.addEventListener("click", () => {
     downloadAuthenticated(
-        `${API_BASE_URL}/reports/user/${userId}/export/excel`,
+        `${API_BASE_URL}/expenses/user/${userId}/export/excel`,
         "expenses.xlsx",
         "Generating Expenses Excel Workbook...",
         () => exportExpensesClientSideExcel()
+    );
+});
+
+document.getElementById("exportReportExcelBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(
+        `${API_BASE_URL}/reports/user/${userId}/export/excel`,
+        "executive_financial_statement.xlsx",
+        "Generating Complete Executive Financial Workbook (Excel)..."
     );
 });
 
@@ -1368,41 +1519,36 @@ importFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        if (typeof setProgress === "function") {
-            setProgress(0, `Preparing to upload ${fname}...`);
-        } else {
-            setLoading(true, "Preparing upload...");
-        }
+        TransferDock.show({
+            filename: fname,
+            mode: "import",
+            status: "Uploading spreadsheet payload..."
+        });
         const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
             const loadedKb = Math.round(loaded / 1024);
             const totalKb = Math.round(total / 1024);
-            if (typeof setProgress === "function") {
-                setProgress(pct, `Uploading ${fname} (${pct}% - ${loadedKb}/${totalKb} KB)...`);
-            } else {
-                setLoading(true, `Uploading ${fname} (${pct}%)...`);
-            }
+            TransferDock.updateProgress(
+                pct,
+                `Uploading ${fname}`,
+                `${pct}% · ${loadedKb} / ${totalKb} KB`
+            );
         });
-        if (typeof setProgress === "function") {
-            setProgress(100, "Processing imported data on server...");
-        }
+        TransferDock.updateProgress(98, "Parsing and committing rows...", "Database sync");
         if (data.failedRows > 0) {
+            TransferDock.complete(`Imported ${data.imported || 0} (${data.failedRows} skipped)`);
             showToast(`${data.imported} imported, ${data.failedRows} row(s) skipped — see console for details.`, data.imported > 0 ? "info" : "error");
             console.warn("Import row errors:", data.errors);
         } else {
+            TransferDock.complete(`Imported ${data.imported || 0} records`);
             showToast(data.message || "Expenses imported successfully!", "success");
         }
         if (typeof window.clearApiCache === "function") window.clearApiCache();
         try { localStorage.removeItem(getCacheKey()); } catch (_) {}
-        // Must be awaited: loadDashboard is async, and without awaiting it here
-        // the `finally` block below runs setLoading(false) immediately — hiding
-        // the loading indicator before the actual refetch/re-render finishes,
-        // which looked like the UI hadn't refreshed at all.
         await loadDashboard(true);
     } catch (err) {
+        TransferDock.fail(err.message || "Import failed");
         showToast(err.message, "error");
     } finally {
-        if (typeof setProgress === "function") setProgress(null);
-        setLoading(false);
         importFileInput.value = "";
     }
 });
@@ -2886,32 +3032,30 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
     }
 
     try {
-        if (typeof setProgress === "function") {
-            setProgress(0, `Preparing to upload ${fname}...`);
-        } else {
-            setLoading(true, "Preparing income upload...");
-        }
+        TransferDock.show({
+            filename: fname,
+            mode: "import",
+            status: "Uploading income spreadsheet..."
+        });
         const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
             const loadedKb = Math.round(loaded / 1024);
             const totalKb = Math.round(total / 1024);
-            if (typeof setProgress === "function") {
-                setProgress(pct, `Uploading ${fname} (${pct}% - ${loadedKb}/${totalKb} KB)...`);
-            } else {
-                setLoading(true, `Uploading ${fname} (${pct}%)...`);
-            }
+            TransferDock.updateProgress(
+                pct,
+                `Uploading ${fname}`,
+                `${pct}% · ${loadedKb} / ${totalKb} KB`
+            );
         });
-        if (typeof setProgress === "function") {
-            setProgress(100, "Processing imported income records...");
-        }
+        TransferDock.updateProgress(98, "Parsing and committing income records...", "Database sync");
+        TransferDock.complete(`Imported ${data.imported || 0} incomes`);
         showToast(data.message || "Incomes imported successfully!", "success");
         if (typeof window.clearApiCache === "function") window.clearApiCache();
         try { localStorage.removeItem(getCacheKey()); } catch (_) {}
         await loadDashboard(true);
     } catch (err) {
+        TransferDock.fail(err.message || "Import failed");
         showToast(err.message, "error");
     } finally {
-        if (typeof setProgress === "function") setProgress(null);
-        setLoading(false);
         importIncomeFileInput.value = "";
     }
 });
@@ -3631,3 +3775,39 @@ biometricAuthBtn?.addEventListener("click", async (e) => {
         showToast(err.message || "Biometric registration was cancelled.", "info");
     }
 });
+
+// ─── Proactive Server Reconnection Auto-Refresh ──────────────────────
+document.addEventListener("serverreconnected", () => {
+    console.log("[Dashboard] Server reconnected proactively. Refreshing dashboard data...");
+    showToast("Server reconnected. Live data restored.", "success");
+    if (typeof loadDashboard === "function") {
+        loadDashboard(true);
+    }
+});
+
+// Help Guide & About Modals
+const helpGuideModal = document.getElementById("helpGuideModal");
+const aboutSystemModal = document.getElementById("aboutSystemModal");
+
+function openHelpModal() {
+    if (typeof toggleProfileMenu === "function") toggleProfileMenu(false);
+    if (typeof openModal === "function" && helpGuideModal) openModal(helpGuideModal);
+}
+function openAboutModal() {
+    if (typeof toggleProfileMenu === "function") toggleProfileMenu(false);
+    if (typeof openModal === "function" && aboutSystemModal) openModal(aboutSystemModal);
+}
+
+document.getElementById("headerHelpBtn")?.addEventListener("click", openHelpModal);
+document.getElementById("helpGuideModalBtn")?.addEventListener("click", (e) => { e.preventDefault(); openHelpModal(); });
+document.getElementById("closeHelpGuideModal")?.addEventListener("click", () => { if (typeof closeModal === "function" && helpGuideModal) closeModal(helpGuideModal); });
+document.getElementById("gotItHelpBtn")?.addEventListener("click", () => { if (typeof closeModal === "function" && helpGuideModal) closeModal(helpGuideModal); });
+helpGuideModal?.addEventListener("click", (e) => { if (e.target === helpGuideModal && typeof closeModal === "function") closeModal(helpGuideModal); });
+
+document.getElementById("aboutSystemModalBtn")?.addEventListener("click", (e) => { e.preventDefault(); openAboutModal(); });
+document.getElementById("closeAboutModal")?.addEventListener("click", () => { if (typeof closeModal === "function" && aboutSystemModal) closeModal(aboutSystemModal); });
+document.getElementById("closeAboutBtn")?.addEventListener("click", () => { if (typeof closeModal === "function" && aboutSystemModal) closeModal(aboutSystemModal); });
+aboutSystemModal?.addEventListener("click", (e) => { if (e.target === aboutSystemModal && typeof closeModal === "function") closeModal(aboutSystemModal); });
+
+window.openHelpModal = openHelpModal;
+window.openAboutModal = openAboutModal;

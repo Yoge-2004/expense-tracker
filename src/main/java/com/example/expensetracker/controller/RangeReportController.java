@@ -15,6 +15,7 @@ import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openpdf.text.Document;
 import org.openpdf.text.DocumentException;
@@ -142,134 +143,323 @@ public class RangeReportController {
 
         try (XSSFWorkbook wb = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            XSSFCellStyle hero = style(wb, "0F172A", "FFFFFF", true, 16);
-            XSSFCellStyle header = style(wb, "334155", "FFFFFF", true, 10);
-            XSSFCellStyle body = style(wb, "F8FAFC", "0F172A", false, 10);
-            XSSFCellStyle good = style(wb, "ECFDF5", "047857", true, 10);
-            XSSFCellStyle bad = style(wb, "FEF2F2", "B91C1C", true, 10);
-            XSSFCellStyle money = style(wb, "F8FAFC", "0F172A", false, 10);
-            money.setDataFormat(wb.createDataFormat().getFormat(
-                    "\"" + symbol + " \"#,##0.00;(\"" + symbol + " \"#,##0.00);\"-\""));
+            // Power BI Executive Styles
+            XSSFCellStyle hero = style(wb, "0F1E36", "FFFFFF", true, 15, HorizontalAlignment.CENTER, false);
+            XSSFCellStyle subHero = style(wb, "1E293B", "94A3B8", true, 9, HorizontalAlignment.CENTER, false);
 
-            Sheet dashboard = wb.createSheet("Executive Dashboard");
+            XSSFCellStyle tblHeader = style(wb, "1E293B", "FFFFFF", true, 10, HorizontalAlignment.LEFT, true);
+            XSSFCellStyle tblHeaderRight = style(wb, "1E293B", "FFFFFF", true, 10, HorizontalAlignment.RIGHT, true);
+            XSSFCellStyle tblHeaderCenter = style(wb, "1E293B", "FFFFFF", true, 10, HorizontalAlignment.CENTER, true);
+
+            XSSFCellStyle dataLeft = style(wb, "FFFFFF", "0F172A", false, 10, HorizontalAlignment.LEFT, true);
+            XSSFCellStyle dataLeftZebra = style(wb, "F8FAFC", "0F172A", false, 10, HorizontalAlignment.LEFT, true);
+
+            XSSFCellStyle dataCenter = style(wb, "FFFFFF", "0F172A", false, 10, HorizontalAlignment.CENTER, true);
+            XSSFCellStyle dataCenterZebra = style(wb, "F8FAFC", "0F172A", false, 10, HorizontalAlignment.CENTER, true);
+
+            String moneyFormat = "\"" + symbol + " \"#,##0.00;(\"" + symbol + " \"#,##0.00);\"-\"";
+            short moneyFormatIdx = wb.createDataFormat().getFormat(moneyFormat);
+
+            XSSFCellStyle dataMoney = style(wb, "FFFFFF", "0F172A", false, 10, HorizontalAlignment.RIGHT, true);
+            dataMoney.setDataFormat(moneyFormatIdx);
+            XSSFCellStyle dataMoneyZebra = style(wb, "F8FAFC", "0F172A", false, 10, HorizontalAlignment.RIGHT, true);
+            dataMoneyZebra.setDataFormat(moneyFormatIdx);
+
+            short pctFormatIdx = wb.createDataFormat().getFormat("0.0%");
+            XSSFCellStyle dataPct = style(wb, "FFFFFF", "0F172A", false, 10, HorizontalAlignment.RIGHT, true);
+            dataPct.setDataFormat(pctFormatIdx);
+            XSSFCellStyle dataPctZebra = style(wb, "F8FAFC", "0F172A", false, 10, HorizontalAlignment.RIGHT, true);
+            dataPctZebra.setDataFormat(pctFormatIdx);
+
+            XSSFCellStyle totalLabelStyle = style(wb, "F1F5F9", "0F172A", true, 10, HorizontalAlignment.RIGHT, true);
+            XSSFCellStyle totalMoneyStyle = style(wb, "F1F5F9", "0F172A", true, 10, HorizontalAlignment.RIGHT, true);
+            totalMoneyStyle.setDataFormat(moneyFormatIdx);
+            totalMoneyStyle.setBorderBottom(BorderStyle.DOUBLE);
+
+            // KPI Card Styles for Executive Dashboard
+            XSSFCellStyle kpiCardHeader = style(wb, "F8FAFC", "64748B", true, 9, HorizontalAlignment.CENTER, true);
+            XSSFCellStyle kpiInflowVal = style(wb, "ECFDF5", "059669", true, 15, HorizontalAlignment.CENTER, true);
+            kpiInflowVal.setDataFormat(moneyFormatIdx);
+            XSSFCellStyle kpiSpendVal = style(wb, "FEF2F2", "DC2626", true, 15, HorizontalAlignment.CENTER, true);
+            kpiSpendVal.setDataFormat(moneyFormatIdx);
+            XSSFCellStyle kpiNetVal = style(wb, net.signum() >= 0 ? "ECFDF5" : "FEF2F2", net.signum() >= 0 ? "059669" : "DC2626", true, 15, HorizontalAlignment.CENTER, true);
+            kpiNetVal.setDataFormat(moneyFormatIdx);
+            XSSFCellStyle kpiTxVal = style(wb, "F1F5F9", "0284C7", true, 15, HorizontalAlignment.CENTER, true);
+            XSSFCellStyle kpiFooter = style(wb, "F8FAFC", "94A3B8", false, 8, HorizontalAlignment.CENTER, true);
+
+            // 1. EXECUTIVE DASHBOARD SHEET
+            XSSFSheet dashboard = wb.createSheet("Executive Dashboard");
+            setTab(dashboard, "4F46E5");
             dashboard.setDisplayGridlines(false);
+
+            // Hero Banner (Rows 0-1)
+            for (int r = 0; r <= 1; r++) {
+                Row row = dashboard.createRow(r);
+                row.setHeightInPoints(r == 0 ? 22 : 18);
+                for (int c = 0; c < 8; c++) put(dashboard, r, c, "", hero);
+            }
             dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 1, 0, 7));
             put(dashboard, 0, 0, "EXPENSETRACKER | EXECUTIVE FINANCIAL DASHBOARD", hero);
-            put(dashboard, 2, 0, "Reporting period", header);
-            put(dashboard, 2, 1, range.label(), body);
-            put(dashboard, 4, 0, "TOTAL SPEND", header);
-            put(dashboard, 5, 0, spend, money);
-            put(dashboard, 4, 2, "TOTAL INCOME", header);
-            put(dashboard, 5, 2, income, money);
-            put(dashboard, 4, 4, "NET CASH FLOW", header);
-            put(dashboard, 5, 4, net, net.signum() >= 0 ? good : bad);
-            put(dashboard, 4, 6, "TRANSACTIONS", header);
-            put(dashboard, 5, 6, d.expenses.size() + d.incomes.size(), body);
-            put(dashboard, 7, 0, "FINANCIAL COVERAGE", header);
-            put(dashboard, 8, 0, "Expenses", body);
-            put(dashboard, 8, 1, d.expenses.size(), body);
-            put(dashboard, 9, 0, "Incomes", body);
-            put(dashboard, 9, 1, d.incomes.size(), body);
-            put(dashboard, 10, 0, "Savings goals", body);
-            put(dashboard, 10, 1, d.savingsGoals.size(), body);
-            put(dashboard, 11, 0, "Subscriptions", body);
-            put(dashboard, 11, 1, d.subscriptions.size(), body);
-            put(dashboard, 12, 0, "Budgets", body);
-            put(dashboard, 12, 1, d.budgets.size(), body);
-            List<String> insights = insights(d, spend, income, symbol);
-            put(dashboard, 7, 3, "KEY INSIGHTS", header);
-            for (int n = 0; n < insights.size(); n++) {
-                put(dashboard, 8 + n, 3, insights.get(n), body);
-            }
-            for (int c = 0; c < 8; c++) dashboard.setColumnWidth(c, 20 * 256);
 
-            Sheet incomeSheet = wb.createSheet("Income Ledger");
-            incomeSheet.setDisplayGridlines(false);
-            String[] ih = {"Date", "Source", "Description", "Amount", "Frequency"};
-            for (int c = 0; c < ih.length; c++) put(incomeSheet, 0, c, ih[c], header);
+            // Sub-Banner (Row 2)
+            Row subRow = dashboard.createRow(2);
+            subRow.setHeightInPoints(20);
+            for (int c = 0; c < 8; c++) put(dashboard, 2, c, "", subHero);
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 0, 7));
+            put(dashboard, 2, 0, "POWER BI EXECUTIVE AUDIT  |  PERIOD: " + range.label().toUpperCase() + "  |  BASE CURRENCY: " + symbol + "  |  GENERATED: " + LocalDate.now(), subHero);
+
+            // Spacer Row 3
+            dashboard.createRow(3).setHeightInPoints(10);
+
+            // Power BI 4-Card Metric Ribbon (Rows 4, 5, 6)
+            dashboard.createRow(4).setHeightInPoints(18);
+            dashboard.createRow(5).setHeightInPoints(30);
+            dashboard.createRow(6).setHeightInPoints(16);
+
+            // Card 1: TOTAL INFLOW (Cols 0-1)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(4, 4, 0, 1));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(5, 5, 0, 1));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(6, 6, 0, 1));
+            put(dashboard, 4, 0, "▲ TOTAL INFLOW", kpiCardHeader);
+            put(dashboard, 4, 1, "", kpiCardHeader);
+            put(dashboard, 5, 0, income, kpiInflowVal);
+            put(dashboard, 5, 1, "", kpiInflowVal);
+            put(dashboard, 6, 0, "Verified incoming revenue streams", kpiFooter);
+            put(dashboard, 6, 1, "", kpiFooter);
+
+            // Card 2: TOTAL SPEND (Cols 2-3)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(4, 4, 2, 3));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(5, 5, 2, 3));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(6, 6, 2, 3));
+            put(dashboard, 4, 2, "▼ TOTAL SPEND", kpiCardHeader);
+            put(dashboard, 4, 3, "", kpiCardHeader);
+            put(dashboard, 5, 2, spend, kpiSpendVal);
+            put(dashboard, 5, 3, "", kpiSpendVal);
+            put(dashboard, 6, 2, "Discretionary & operating outflow", kpiFooter);
+            put(dashboard, 6, 3, "", kpiFooter);
+
+            // Card 3: NET CASH FLOW (Cols 4-5)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(4, 4, 4, 5));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(5, 5, 4, 5));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(6, 6, 4, 5));
+            put(dashboard, 4, 4, "◆ NET CASH FLOW", kpiCardHeader);
+            put(dashboard, 4, 5, "", kpiCardHeader);
+            put(dashboard, 5, 4, net, kpiNetVal);
+            put(dashboard, 5, 4, "", kpiNetVal);
+            put(dashboard, 6, 4, net.signum() >= 0 ? "Net surplus retained" : "Net operating deficit", kpiFooter);
+            put(dashboard, 6, 5, "", kpiFooter);
+
+            // Card 4: TRANSACTIONS (Cols 6-7)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(4, 4, 6, 7));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(5, 5, 6, 7));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(6, 6, 6, 7));
+            put(dashboard, 4, 6, "★ TRANSACTIONS", kpiCardHeader);
+            put(dashboard, 4, 7, "", kpiCardHeader);
+            put(dashboard, 5, 6, d.expenses.size() + d.incomes.size(), kpiTxVal);
+            put(dashboard, 5, 7, "", kpiTxVal);
+            put(dashboard, 6, 6, "Ledger audit count", kpiFooter);
+            put(dashboard, 6, 7, "", kpiFooter);
+
+            // Spacer Row 7
+            dashboard.createRow(7).setHeightInPoints(12);
+
+            // Financial Coverage Section
+            put(dashboard, 8, 0, "PORTFOLIO MODULE", tblHeader);
+            put(dashboard, 8, 1, "RECORD COUNT", tblHeaderRight);
+
+            String[][] cov = {
+                {"Expenses", String.valueOf(d.expenses.size())},
+                {"Incomes", String.valueOf(d.incomes.size())},
+                {"Savings Goals", String.valueOf(d.savingsGoals.size())},
+                {"Subscriptions", String.valueOf(d.subscriptions.size())},
+                {"Budgets", String.valueOf(d.budgets.size())}
+            };
+            for (int i = 0; i < cov.length; i++) {
+                boolean z = (i % 2 == 1);
+                put(dashboard, 9 + i, 0, cov[i][0], z ? dataLeftZebra : dataLeft);
+                put(dashboard, 9 + i, 1, Integer.parseInt(cov[i][1]), z ? dataCenterZebra : dataCenter);
+            }
+
+            // Key Insights Section
+            List<String> insights = insights(d, spend, income, symbol);
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(8, 8, 3, 7));
+            put(dashboard, 8, 3, "EXECUTIVE INSIGHTS & TELEMETRY", tblHeader);
+            for (int c = 4; c < 8; c++) put(dashboard, 8, c, "", tblHeader);
+
+            for (int n = 0; n < insights.size(); n++) {
+                boolean z = (n % 2 == 1);
+                dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(9 + n, 9 + n, 3, 7));
+                put(dashboard, 9 + n, 3, insights.get(n), z ? dataLeftZebra : dataLeft);
+                for (int c = 4; c < 8; c++) put(dashboard, 9 + n, c, "", z ? dataLeftZebra : dataLeft);
+            }
+            for (int c = 0; c < 8; c++) dashboard.setColumnWidth(c, 21 * 256);
+
+            // 2. INCOME LEDGER SHEET
+            XSSFSheet incomeSheet = wb.createSheet("Income Ledger");
+            setTab(incomeSheet, "059669");
+            incomeSheet.setDisplayGridlines(true);
+            incomeSheet.createFreezePane(0, 1);
+            String[] ih = {"Date", "Source", "Description", "Amount (" + symbol + ")", "Frequency"};
+            Row ihRow = incomeSheet.createRow(0);
+            ihRow.setHeightInPoints(24);
+            for (int c = 0; c < ih.length; c++) {
+                put(incomeSheet, 0, c, ih[c], c == 3 ? tblHeaderRight : tblHeader);
+            }
             int row = 1;
             for (Income x : d.incomes) {
-                put(incomeSheet, row, 0, safeDate(x.getIncomeDate()), body);
-                put(incomeSheet, row, 1, safe(x.getSource()), body);
-                put(incomeSheet, row, 2, safe(x.getDescription()), body);
-                put(incomeSheet, row, 3, nz(x.getAmount()), money);
-                put(incomeSheet, row, 4, safe(x.getFrequency()), body);
+                Row r = incomeSheet.createRow(row);
+                r.setHeightInPoints(20);
+                boolean z = (row % 2 == 0);
+                put(incomeSheet, row, 0, safeDate(x.getIncomeDate()), z ? dataCenterZebra : dataCenter);
+                put(incomeSheet, row, 1, safe(x.getSource()), z ? dataLeftZebra : dataLeft);
+                put(incomeSheet, row, 2, safe(x.getDescription()), z ? dataLeftZebra : dataLeft);
+                put(incomeSheet, row, 3, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
+                put(incomeSheet, row, 4, safe(x.getFrequency()), z ? dataCenterZebra : dataCenter);
                 row++;
             }
-            widths(incomeSheet, new int[]{16, 24, 48, 18, 16});
+            if (row > 1) {
+                incomeSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, ih.length - 1));
+                Row totRow = incomeSheet.createRow(row);
+                totRow.setHeightInPoints(22);
+                put(incomeSheet, row, 2, "TOTAL INFLOW (" + symbol + "):", totalLabelStyle);
+                put(incomeSheet, row, 3, "=SUM(D2:D" + row + ")", totalMoneyStyle);
+            }
+            widths(incomeSheet, new int[]{16, 24, 46, 18, 16});
 
-            Sheet expenseSheet = wb.createSheet("Expense Ledger");
-            expenseSheet.setDisplayGridlines(false);
-            String[] eh = {"Date", "Category", "Description", "Amount", "Recurring"};
-            for (int c = 0; c < eh.length; c++) put(expenseSheet, 0, c, eh[c], header);
+            // 3. EXPENSE LEDGER SHEET
+            XSSFSheet expenseSheet = wb.createSheet("Expense Ledger");
+            setTab(expenseSheet, "E11D48");
+            expenseSheet.setDisplayGridlines(true);
+            expenseSheet.createFreezePane(0, 1);
+            String[] eh = {"Date", "Category", "Description", "Amount (" + symbol + ")", "Recurring"};
+            Row ehRow = expenseSheet.createRow(0);
+            ehRow.setHeightInPoints(24);
+            for (int c = 0; c < eh.length; c++) {
+                put(expenseSheet, 0, c, eh[c], c == 3 ? tblHeaderRight : tblHeader);
+            }
             row = 1;
             for (Expense x : d.expenses) {
-                put(expenseSheet, row, 0, safeDate(x.getExpenseDate()), body);
-                put(expenseSheet, row, 1, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), body);
-                put(expenseSheet, row, 2, safe(x.getDescription()), body);
-                put(expenseSheet, row, 3, nz(x.getAmount()), money);
-                put(expenseSheet, row, 4, x.isRecurring() ? "Yes" : "No", body);
+                Row r = expenseSheet.createRow(row);
+                r.setHeightInPoints(20);
+                boolean z = (row % 2 == 0);
+                put(expenseSheet, row, 0, safeDate(x.getExpenseDate()), z ? dataCenterZebra : dataCenter);
+                put(expenseSheet, row, 1, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), z ? dataLeftZebra : dataLeft);
+                put(expenseSheet, row, 2, safe(x.getDescription()), z ? dataLeftZebra : dataLeft);
+                put(expenseSheet, row, 3, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
+                put(expenseSheet, row, 4, x.isRecurring() ? "Yes" : "No", z ? dataCenterZebra : dataCenter);
                 row++;
             }
-            widths(expenseSheet, new int[]{16, 24, 48, 18, 14});
+            if (row > 1) {
+                expenseSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, eh.length - 1));
+                Row totRow = expenseSheet.createRow(row);
+                totRow.setHeightInPoints(22);
+                put(expenseSheet, row, 2, "TOTAL OUTFLOW (" + symbol + "):", totalLabelStyle);
+                put(expenseSheet, row, 3, "=SUM(D2:D" + row + ")", totalMoneyStyle);
+            }
+            widths(expenseSheet, new int[]{16, 24, 46, 18, 14});
 
-            Sheet savingsSheet = wb.createSheet("Savings Goals");
-            savingsSheet.setDisplayGridlines(false);
-            String[] sh = {"Goal", "Target", "Saved", "Progress", "Target Date", "Status", "Recurring", "Next Due"};
-            for (int c = 0; c < sh.length; c++) put(savingsSheet, 0, c, sh[c], header);
+            // 4. SAVINGS GOALS SHEET
+            XSSFSheet savingsSheet = wb.createSheet("Savings Goals");
+            setTab(savingsSheet, "7C3AED");
+            savingsSheet.setDisplayGridlines(true);
+            savingsSheet.createFreezePane(0, 1);
+            String[] sh = {"Goal", "Target Amount (" + symbol + ")", "Current Saved (" + symbol + ")", "Progress", "Target Date", "Status", "Recurring", "Next Due"};
+            Row shRow = savingsSheet.createRow(0);
+            shRow.setHeightInPoints(24);
+            for (int c = 0; c < sh.length; c++) {
+                put(savingsSheet, 0, c, sh[c], (c == 1 || c == 2 || c == 3) ? tblHeaderRight : tblHeader);
+            }
             row = 1;
             for (SavingsGoal x : d.savingsGoals) {
+                Row r = savingsSheet.createRow(row);
+                r.setHeightInPoints(20);
+                boolean z = (row % 2 == 0);
                 BigDecimal target = nz(x.getTargetAmount());
                 BigDecimal saved = nz(x.getCurrentAmount());
                 double pct = target.signum() > 0 ? saved.divide(target, 4, RoundingMode.HALF_UP).doubleValue() : 0d;
-                put(savingsSheet, row, 0, safe(x.getName()), body);
-                put(savingsSheet, row, 1, target, money);
-                put(savingsSheet, row, 2, saved, money);
-                put(savingsSheet, row, 3, pct, body);
-                put(savingsSheet, row, 4, safeDate(x.getTargetDate()), body);
-                put(savingsSheet, row, 5, safe(x.getStatus()), body);
-                put(savingsSheet, row, 6, x.getIsRecurring() ? "Yes" : "No", body);
-                put(savingsSheet, row, 7, safeDate(x.getNextDueDate()), body);
+                put(savingsSheet, row, 0, safe(x.getName()), z ? dataLeftZebra : dataLeft);
+                put(savingsSheet, row, 1, target, z ? dataMoneyZebra : dataMoney);
+                put(savingsSheet, row, 2, saved, z ? dataMoneyZebra : dataMoney);
+                put(savingsSheet, row, 3, pct, z ? dataPctZebra : dataPct);
+                put(savingsSheet, row, 4, safeDate(x.getTargetDate()), z ? dataCenterZebra : dataCenter);
+                put(savingsSheet, row, 5, safe(x.getStatus()), z ? dataCenterZebra : dataCenter);
+                put(savingsSheet, row, 6, x.getIsRecurring() ? "Yes" : "No", z ? dataCenterZebra : dataCenter);
+                put(savingsSheet, row, 7, safeDate(x.getNextDueDate()), z ? dataCenterZebra : dataCenter);
                 row++;
             }
-            widths(savingsSheet, new int[]{28, 18, 18, 14, 16, 16, 12, 16});
+            if (row > 1) {
+                savingsSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, sh.length - 1));
+            }
+            widths(savingsSheet, new int[]{28, 20, 20, 14, 16, 16, 12, 16});
 
-            Sheet subscriptionSheet = wb.createSheet("Subscriptions");
-            subscriptionSheet.setDisplayGridlines(false);
-            String[] rh = {"Subscription", "Amount", "Frequency", "Next Due", "Category"};
-            for (int c = 0; c < rh.length; c++) put(subscriptionSheet, 0, c, rh[c], header);
+            // 5. SUBSCRIPTIONS SHEET
+            XSSFSheet subscriptionSheet = wb.createSheet("Subscriptions");
+            setTab(subscriptionSheet, "D97706");
+            subscriptionSheet.setDisplayGridlines(true);
+            subscriptionSheet.createFreezePane(0, 1);
+            String[] rh = {"Subscription", "Amount (" + symbol + ")", "Frequency", "Next Due", "Category"};
+            Row rhRow = subscriptionSheet.createRow(0);
+            rhRow.setHeightInPoints(24);
+            for (int c = 0; c < rh.length; c++) {
+                put(subscriptionSheet, 0, c, rh[c], c == 1 ? tblHeaderRight : tblHeader);
+            }
             row = 1;
             for (RecurringExpense x : d.subscriptions) {
-                put(subscriptionSheet, row, 0, safe(x.getDescription()), body);
-                put(subscriptionSheet, row, 1, nz(x.getAmount()), money);
-                put(subscriptionSheet, row, 2, safe(x.getFrequency()), body);
-                put(subscriptionSheet, row, 3, safeDate(x.getNextDueDate()), body);
-                put(subscriptionSheet, row, 4,
-                        x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), body);
+                Row r = subscriptionSheet.createRow(row);
+                r.setHeightInPoints(20);
+                boolean z = (row % 2 == 0);
+                put(subscriptionSheet, row, 0, safe(x.getDescription()), z ? dataLeftZebra : dataLeft);
+                put(subscriptionSheet, row, 1, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
+                put(subscriptionSheet, row, 2, safe(x.getFrequency()), z ? dataCenterZebra : dataCenter);
+                put(subscriptionSheet, row, 3, safeDate(x.getNextDueDate()), z ? dataCenterZebra : dataCenter);
+                put(subscriptionSheet, row, 4, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), z ? dataLeftZebra : dataLeft);
                 row++;
+            }
+            if (row > 1) {
+                subscriptionSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, rh.length - 1));
             }
             widths(subscriptionSheet, new int[]{32, 18, 16, 16, 24});
 
-            Sheet budgetSheet = wb.createSheet("Budgets");
-            budgetSheet.setDisplayGridlines(false);
-            String[] bh = {"Category", "Limit", "Period", "Start Date", "End Date", "Interval Days"};
-            for (int c = 0; c < bh.length; c++) put(budgetSheet, 0, c, bh[c], header);
+            // 6. BUDGETS SHEET
+            XSSFSheet budgetSheet = wb.createSheet("Budgets");
+            setTab(budgetSheet, "0D9488");
+            budgetSheet.setDisplayGridlines(true);
+            budgetSheet.createFreezePane(0, 1);
+            String[] bh = {"Category", "Limit (" + symbol + ")", "Period", "Start Date", "End Date", "Interval Days"};
+            Row bhRow = budgetSheet.createRow(0);
+            bhRow.setHeightInPoints(24);
+            for (int c = 0; c < bh.length; c++) {
+                put(budgetSheet, 0, c, bh[c], c == 1 ? tblHeaderRight : tblHeader);
+            }
             row = 1;
             for (Budget x : d.budgets) {
-                put(budgetSheet, row, 0, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), body);
-                put(budgetSheet, row, 1, nz(x.getLimitAmount()), money);
-                put(budgetSheet, row, 2, safe(x.getPeriod()), body);
-                put(budgetSheet, row, 3, safeDate(x.getStartDate()), body);
-                put(budgetSheet, row, 4, safeDate(x.getEndDate()), body);
-                put(budgetSheet, row, 5, x.getIntervalDays() == null ? "" : x.getIntervalDays(), body);
+                Row r = budgetSheet.createRow(row);
+                r.setHeightInPoints(20);
+                boolean z = (row % 2 == 0);
+                put(budgetSheet, row, 0, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), z ? dataLeftZebra : dataLeft);
+                put(budgetSheet, row, 1, nz(x.getLimitAmount()), z ? dataMoneyZebra : dataMoney);
+                put(budgetSheet, row, 2, safe(x.getPeriod()), z ? dataCenterZebra : dataCenter);
+                put(budgetSheet, row, 3, safeDate(x.getStartDate()), z ? dataCenterZebra : dataCenter);
+                put(budgetSheet, row, 4, safeDate(x.getEndDate()), z ? dataCenterZebra : dataCenter);
+                put(budgetSheet, row, 5, x.getIntervalDays() == null ? "" : x.getIntervalDays(), z ? dataCenterZebra : dataCenter);
                 row++;
+            }
+            if (row > 1) {
+                budgetSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, bh.length - 1));
             }
             widths(budgetSheet, new int[]{24, 18, 16, 16, 16, 16});
 
-            Sheet cash = wb.createSheet("Cash Flow");
-            cash.setDisplayGridlines(false);
-            String[] fh = {"Month", "Income", "Spend", "Net"};
-            for (int c = 0; c < fh.length; c++) put(cash, 0, c, fh[c], header);
+            // 7. CASH FLOW SHEET
+            XSSFSheet cash = wb.createSheet("Cash Flow");
+            setTab(cash, "0284C7");
+            cash.setDisplayGridlines(true);
+            cash.createFreezePane(0, 1);
+            String[] fh = {"Month", "Income (" + symbol + ")", "Spend (" + symbol + ")", "Net (" + symbol + ")"};
+            Row fhRow = cash.createRow(0);
+            fhRow.setHeightInPoints(24);
+            for (int c = 0; c < fh.length; c++) {
+                put(cash, 0, c, fh[c], c > 0 ? tblHeaderRight : tblHeader);
+            }
             Map<String, BigDecimal> im = d.incomes.stream()
                     .filter(x -> x.getIncomeDate() != null)
                     .collect(Collectors.groupingBy(x -> x.getIncomeDate().withDayOfMonth(1).toString(),
@@ -285,16 +475,21 @@ public class RangeReportController {
             months.addAll(im.keySet());
             months.addAll(em.keySet());
             for (String m : months) {
+                Row r = cash.createRow(row);
+                r.setHeightInPoints(20);
+                boolean z = (row % 2 == 0);
                 BigDecimal i = im.getOrDefault(m, BigDecimal.ZERO);
                 BigDecimal e = em.getOrDefault(m, BigDecimal.ZERO);
-                put(cash, row, 0, m, body);
-                put(cash, row, 1, i, money);
-                put(cash, row, 2, e, money);
-                put(cash, row, 3, i.subtract(e), i.compareTo(e) >= 0 ? good : bad);
+                put(cash, row, 0, m, z ? dataCenterZebra : dataCenter);
+                put(cash, row, 1, i, z ? dataMoneyZebra : dataMoney);
+                put(cash, row, 2, e, z ? dataMoneyZebra : dataMoney);
+                put(cash, row, 3, i.subtract(e), z ? dataMoneyZebra : dataMoney);
                 row++;
             }
+            if (row > 1) {
+                cash.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, fh.length - 1));
+            }
             widths(cash, new int[]{20, 20, 20, 20});
-
             wb.write(out);
             return out.toByteArray();
         } catch (Exception ex) {
@@ -525,17 +720,43 @@ public class RangeReportController {
     }
 
     private static XSSFCellStyle style(XSSFWorkbook workbook, String bg, String fg, boolean bold, int size) {
+        return style(workbook, bg, fg, bold, size, HorizontalAlignment.LEFT, false);
+    }
+
+    private static XSSFCellStyle style(XSSFWorkbook workbook, String bg, String fg, boolean bold, int size, HorizontalAlignment align, boolean border) {
         XSSFCellStyle style = workbook.createCellStyle();
-        style.setFillForegroundColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#" + bg), null));
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        if (bg != null) {
+            style.setFillForegroundColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#" + bg), null));
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        }
         org.apache.poi.xssf.usermodel.XSSFFont font = workbook.createFont();
-        font.setColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#" + fg), null));
+        if (fg != null) {
+            font.setColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#" + fg), null));
+        }
         font.setBold(bold);
         font.setFontHeightInPoints((short) size);
-        font.setFontName("Aptos");
+        font.setFontName("Segoe UI");
         style.setFont(font);
         style.setVerticalAlignment(VerticalAlignment.CENTER);
+        if (align != null) {
+            style.setAlignment(align);
+        }
+        if (border) {
+            style.setBorderTop(BorderStyle.THIN);
+            style.setBorderBottom(BorderStyle.THIN);
+            style.setBorderLeft(BorderStyle.THIN);
+            style.setBorderRight(BorderStyle.THIN);
+            org.apache.poi.xssf.usermodel.XSSFColor bc = new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#E2E8F0"), null);
+            style.setTopBorderColor(bc);
+            style.setBottomBorderColor(bc);
+            style.setLeftBorderColor(bc);
+            style.setRightBorderColor(bc);
+        }
         return style;
+    }
+
+    private static void setTab(XSSFSheet sheet, String hex) {
+        sheet.setTabColor(new org.apache.poi.xssf.usermodel.XSSFColor(Color.decode("#" + hex), null));
     }
 
     private static void put(Sheet sheet, int row, int column, Object value, CellStyle style) {
@@ -546,6 +767,8 @@ public class RangeReportController {
             cell.setCellValue(decimal.doubleValue());
         } else if (value instanceof Number number) {
             cell.setCellValue(number.doubleValue());
+        } else if (value instanceof String s && s.startsWith("=")) {
+            cell.setCellFormula(s.substring(1));
         } else {
             cell.setCellValue(String.valueOf(value));
         }

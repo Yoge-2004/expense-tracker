@@ -23,6 +23,10 @@
 
         function applyFilters() {
             let filtered = [...(getExpenses() || [])];
+            const rawIncomes = typeof deps.getIncomes === "function" ? (deps.getIncomes() || []) : [];
+            let filteredIncomes = [...rawIncomes];
+            const rawGoals = typeof deps.getSavingsGoals === "function" ? (deps.getSavingsGoals() || []) : [];
+
             const search = elements.filterSearch?.value.toLowerCase().trim() || "";
             const startDate = elements.filterStartDate?.value || "";
             const endDate = elements.filterEndDate?.value || "";
@@ -45,14 +49,22 @@
             }
 
             if (startDate || endDate) {
-                if (startDate) filtered = filtered.filter(expense => (expense.expenseDate || "").split("T")[0] >= startDate);
-                if (endDate) filtered = filtered.filter(expense => (expense.expenseDate || "").split("T")[0] <= endDate);
+                if (startDate) {
+                    filtered = filtered.filter(expense => (expense.expenseDate || "").split("T")[0] >= startDate);
+                    filteredIncomes = filteredIncomes.filter(inc => (inc.incomeDate || "").split("T")[0] >= startDate);
+                }
+                if (endDate) {
+                    filtered = filtered.filter(expense => (expense.expenseDate || "").split("T")[0] <= endDate);
+                    filteredIncomes = filteredIncomes.filter(inc => (inc.incomeDate || "").split("T")[0] <= endDate);
+                }
             } else {
                 if (elements.filterMonth?.value !== "all") {
                     filtered = filtered.filter(expense => parseLocalDate(expense.expenseDate).getMonth() === Number(elements.filterMonth.value));
+                    filteredIncomes = filteredIncomes.filter(inc => parseLocalDate(inc.incomeDate).getMonth() === Number(elements.filterMonth.value));
                 }
                 if (elements.filterYear?.value !== "all") {
                     filtered = filtered.filter(expense => parseLocalDate(expense.expenseDate).getFullYear() === Number(elements.filterYear.value));
+                    filteredIncomes = filteredIncomes.filter(inc => parseLocalDate(inc.incomeDate).getFullYear() === Number(elements.filterYear.value));
                 }
             }
 
@@ -76,12 +88,15 @@
             });
 
             updateStats(filtered);
+            if (typeof deps.updateCashFlowMetrics === "function") {
+                deps.updateCashFlowMetrics(filtered, filteredIncomes, rawGoals);
+            }
             renderPieChart(filtered);
             renderList(filtered);
             renderTrendChart(filtered);
             renderRecurringSplitChart(filtered);
             renderDayOfWeekChart(filtered);
-            renderFinancialInsights(filtered);
+            renderFinancialInsights(filtered, filteredIncomes, rawGoals);
         }
 
         function wireControls() {

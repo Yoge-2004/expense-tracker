@@ -12,20 +12,16 @@ import java.sql.Connection;
 import java.sql.Statement;
 
 /**
- * Applies lightweight, idempotent schema patches on startup for columns that
- * may be missing from an older database (e.g. a Space that's been running
- * since before {@code currency}, {@code account_locked}, or {@code enabled}
- * were added to {@link com.example.expensetracker.model.User}).
+ * Applies idempotent schema initialization on application startup for columns
+ * across application entities (e.g. {@code currency}, {@code account_locked},
+ * {@code security_pin_hash}, or {@code enabled} on {@link com.example.expensetracker.model.User}).
  *
- * <p><b>PostgreSQL-specific:</b> uses {@code ALTER TABLE ... ADD COLUMN IF NOT
- * EXISTS}, which is Postgres syntax. Against a different database engine
- * (e.g. H2 in tests) each statement's exception is caught and logged as a
- * warning rather than failing startup, so this silently does nothing useful
- * there — schema setup for non-Postgres environments relies on JPA's own
- * {@code ddl-auto} instead.</p>
+ * <p><b>Database Portability:</b> Executes {@code ALTER TABLE ... ADD COLUMN IF NOT EXISTS}
+ * for PostgreSQL environments. Non-Postgres test environments catch non-fatal DDL errors gracefully,
+ * where schema setup is managed by JPA {@code ddl-auto}.</p>
  *
- * <p>Runs via {@link ApplicationStartedEvent} at {@code @Order(1)}, before
- * most other startup logic, so later beans can assume these columns exist.</p>
+ * <p>Runs via {@link ApplicationStartedEvent} at {@code @Order(1)} to guarantee all required
+ * schema columns are initialized before dependent services execute.</p>
  */
 @Slf4j
 @Component
@@ -34,7 +30,6 @@ public class DatabaseMigrationConfig {
 
     private final DataSource dataSource;
 
-
     @EventListener(ApplicationStartedEvent.class)
     @Order(1)
     public void runSchemaMigrations() {
@@ -42,7 +37,7 @@ public class DatabaseMigrationConfig {
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // Ensure missing columns exist in PostgreSQL users table
+            // Ensure required columns exist in PostgreSQL users table
             try {
                 //noinspection SqlNoDataSourceInspection
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'INR'");

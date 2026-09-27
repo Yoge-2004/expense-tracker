@@ -56,7 +56,7 @@ interface DonutChartProps {
 /**
  * Renders a segmented circular SVG donut chart showing category spend distribution.
  */
-export const CategoryDonutChart: React.FC<DonutChartProps> = ({ expenses }) => {
+export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expenses }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -159,7 +159,7 @@ export const CategoryDonutChart: React.FC<DonutChartProps> = ({ expenses }) => {
       </View>
     </View>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. SPEND TREND AREA CHART (Daily Spend over last N days)
@@ -175,7 +175,7 @@ interface SpendTrendChartProps {
 /**
  * Renders a smooth cubic SVG spline chart showing daily spend trends.
  */
-export const SpendTrendChart: React.FC<SpendTrendChartProps> = ({ expenses }) => {
+export const SpendTrendChart: React.FC<SpendTrendChartProps> = React.memo(({ expenses }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -291,7 +291,7 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = ({ expenses }) =>
       </View>
     </View>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. RECURRING VS ONE-TIME SPLIT (Horizontal Bar)
@@ -308,7 +308,7 @@ interface RecurringSplitProps {
 /**
  * Renders a horizontal split bar comparing recurring subscription commitments vs discretionary one-off spend.
  */
-export const RecurringSplitChart: React.FC<RecurringSplitProps> = ({ expenses }) => {
+export const RecurringSplitChart: React.FC<RecurringSplitProps> = React.memo(({ expenses }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -365,7 +365,7 @@ export const RecurringSplitChart: React.FC<RecurringSplitProps> = ({ expenses })
       </View>
     </View>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. DAY OF WEEK HABITS (Sun-Sat Bar Histogram)
@@ -383,7 +383,7 @@ const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 /**
  * Renders weekly spending cadence across Sunday through Saturday.
  */
-export const DayOfWeekChart: React.FC<DayOfWeekProps> = ({ expenses }) => {
+export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -440,7 +440,7 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = ({ expenses }) => {
       </View>
     </View>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. BUDGET VS ACTUAL GOVERNANCE DUAL BARS
@@ -466,7 +466,7 @@ interface BudgetVsActualProps {
 /**
  * Renders category-level limit vs actual spend comparisons with over-budget alerts.
  */
-export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = ({ budgets, onEditBudget, onDeleteBudget }) => {
+export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ budgets, onEditBudget, onDeleteBudget }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -568,7 +568,7 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = ({ budgets, on
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   chartCard: {

@@ -71,23 +71,32 @@
                     <span>Record Income</span>
                 </button>
 
-                <button id="themeToggle" class="btn-icon theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
-                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                </button>
+                <div class="top-bar-utility-group">
+                    <button id="themeToggle" class="btn-icon theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
+                        <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
 
+                    <button id="headerHelpBtn" class="header-action-btn" title="User Guide & Help" aria-label="Open User Guide and Help">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>
                 <div class="user-profile" id="profileTrigger" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
                     <div class="avatar">U</div>
                     <div class="profile-menu" id="profileMenu" role="menu" aria-label="Account menu">
@@ -117,6 +126,8 @@
     </svg>
     <span>Biometrics (Touch/Face ID)</span>
 </a>
+                        <a href="#" id="helpGuideModalBtn">📖 User Guide & Help</a>
+                        <a href="#" id="aboutSystemModalBtn">ℹ️ About ExpenseTracker</a>
                         <a href="#" id="logoutBtn">🚪 Logout</a>
                         <a href="#" id="deleteAccountBtn" style="color: #A23E32;">⚠️ Delete Account</a>
                     </div>
@@ -371,6 +382,7 @@
                     </button>
                     <button id="exportExcelBtn" class="btn-icon btn-text-icon" title="Export Expenses Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);">📊 Excel</button>
                     <button id="exportIncomeExcelBtn" class="btn-icon btn-text-icon" title="Export Incomes Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4); display:none;">📊 Incomes Excel</button>
+                    <button id="exportReportExcelBtn" class="btn-icon btn-text-icon" title="Export Executive Financial Report (Excel Workbook)" style="font-weight:700; color:#10B981; border:1px solid rgba(16,185,129,0.4);">📊 Executive Report</button>
                     <button id="exportReportPdfBtn" class="btn-icon btn-text-icon" title="Export Complete Executive Financial Statement (PDF)" style="font-weight:700; color:#3B82F6; border:1px solid rgba(59,130,246,0.4);">📑 Statement</button>
                     <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export Expenses CSV">CSV</button>
                     <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon" title="Export Incomes CSV" style="display:none;">Income CSV</button>
@@ -579,7 +591,38 @@
                 <button class="modal-close" id="closeExpenseModalBtn" aria-label="Close">&times;</button>
             </div>
             <form id="addExpenseForm">
-                <input type="hidden" id="expenseId">
+                                <input type="hidden" id="expenseId">
+                <!-- Receipt OCR Scanner Widget -->
+                <div class="receipt-ocr-widget" id="receiptOcrWidget">
+                    <input type="file" id="receiptFileInput" accept="image/*" capture="environment" style="display:none;">
+                    <div class="receipt-ocr-dropzone" id="receiptDropZone" title="Click or drop a receipt image to auto-fill details">
+                        <div class="receipt-ocr-icon">📷</div>
+                        <div class="receipt-ocr-text">
+                            <span class="receipt-ocr-title">Scan Receipt / Bill (Tesseract OCR)</span>
+                            <span class="receipt-ocr-sub">Drop receipt or photo to auto-extract amount & merchant</span>
+                        </div>
+                        <button type="button" class="btn-scan-receipt" id="triggerReceiptScanBtn">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            Scan
+                        </button>
+                    </div>
+                    <div class="receipt-ocr-progress" id="receiptOcrProgress" style="display:none;">
+                        <div class="receipt-ocr-progress-header">
+                            <span id="receiptOcrStage">Initializing OCR worker...</span>
+                            <span id="receiptOcrPct">0%</span>
+                        </div>
+                        <div class="receipt-ocr-bar-bg">
+                            <div class="receipt-ocr-bar-fill" id="receiptOcrFill"></div>
+                        </div>
+                    </div>
+                    <div class="receipt-ocr-success" id="receiptOcrSuccess" style="display:none; flex-direction:column; align-items:stretch; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span id="receiptOcrSummaryText">✨ Receipt data extracted and pre-filled!</span>
+                            <button type="button" id="dismissReceiptOcrBtn" class="receipt-ocr-dismiss">&times;</button>
+                        </div>
+                        <div class="receipt-ocr-breakdown" id="receiptOcrBreakdown" style="display:none;"></div>
+                    </div>
+                </div>
                 <div class="form-group">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <label for="desc" style="margin-bottom:0;">Description</label>
@@ -1150,6 +1193,165 @@
         </div>
     </div>
 
+    <!-- USER GUIDE & HELP MODAL -->
+    <div class="modal-overlay" id="helpGuideModal" role="dialog" aria-modal="true" aria-labelledby="helpGuideModalTitle">
+        <div class="modal help-guide-modal">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:24px;">📖</span>
+                    <div>
+                        <h2 id="helpGuideModalTitle" style="margin:0; font-size:18px;">ExpenseTracker User Guide</h2>
+                        <span style="font-size:12px; color:var(--text-muted);">Quick tour to mastering your financial ledger</span>
+                    </div>
+                </div>
+                <button class="modal-close" id="closeHelpGuideModal" aria-label="Close user guide">&times;</button>
+            </div>
+            <div class="help-guide-body">
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <span class="help-card-icon">🚀</span>
+                        <div class="help-card-title">1. Dashboard & Cash Flow Matrix</div>
+                    </div>
+                    <div class="help-card-desc">
+                        The top 4 metric cards summarize your overall financial health:
+                        <ul class="help-tips-list">
+                            <li><strong>Total Inflow</strong>: All incoming salary, freelance payouts, and investment returns.</li>
+                            <li><strong>Total Outflow</strong>: All expenses and recurring subscription charges.</li>
+                            <li><strong>Net Cash Flow</strong>: Your real-time surplus or deficit (Inflow minus Outflow). Positive is colored green, negative is red.</li>
+                            <li><strong>Savings Rate</strong>: The percentage of your inflow preserved rather than spent.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <span class="help-card-icon">💸</span>
+                        <div class="help-card-title">2. Inflows, Expenses & Subscriptions</div>
+                    </div>
+                    <div class="help-card-desc">
+                        Log transactions individually or mark them recurring:
+                        <ul class="help-tips-list">
+                            <li><strong>Add Expense</strong>: Click "+ Add Expense" or press <kbd>Ctrl+K</kbd>. Select category, amount, and date.</li>
+                            <li><strong>Add Income</strong>: Click "+ Add Income" to record salary, bonuses, or gifts.</li>
+                            <li><strong>Recurring Subscriptions</strong>: Check "Recurring" on any expense to manage it automatically under Subscriptions.</li>
+                            <li><strong>Switch Streams</strong>: Click "Expenses" or "Incomes" toggle tabs above the main transaction table.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <span class="help-card-icon">📷</span>
+                        <div class="help-card-title">3. Smart Receipt & Bill OCR</div>
+                    </div>
+                    <div class="help-card-desc">
+                        Save time typing manual bills with on-device Optical Character Recognition:
+                        <ul class="help-tips-list">
+                            <li>Click "+ Add Expense" and look at the <strong>Smart Receipt Scanner</strong> box at the top.</li>
+                            <li>Drop an image or tap "Scan Receipt / Bill" to choose a photo or use your camera.</li>
+                            <li>Tesseract.js runs <strong>100% locally in your browser</strong>. Your financial photos are never uploaded to any third-party server.</li>
+                            <li>The amount, date, store merchant, and suggested category will automatically populate into the form!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <span class="help-card-icon">🎯</span>
+                        <div class="help-card-title">4. Envelopes & Savings Goals</div>
+                    </div>
+                    <div class="help-card-desc">
+                        Plan your future and stop lifestyle creep:
+                        <ul class="help-tips-list">
+                            <li><strong>Budgets</strong>: Set monthly spending caps per category (Food, Utilities, Entertainment). Visual progress bars warn you when exceeding 80% or 100%.</li>
+                            <li><strong>Savings Goals</strong>: Create target funds (Emergency Fund, Vacation, New Car) and deposit money with a single click.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <span class="help-card-icon">📊</span>
+                        <div class="help-card-title">5. Executive Reports & Excel Export</div>
+                    </div>
+                    <div class="help-card-desc">
+                        Get institutional-grade financial statements:
+                        <ul class="help-tips-list">
+                            <li><strong>Executive Report (Excel)</strong>: Multi-sheet workbook with AutoFilter, Freeze Panes, and live <code>=SUM</code> formulas.</li>
+                            <li><strong>Statement (PDF)</strong>: Clean, audit-ready financial statement with net flows and category breakdowns.</li>
+                            <li><strong>Import Spreadsheets</strong>: Re-import your Excel or CSV ledgers anytime to restore backups.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-header">
+                        <span class="help-card-icon">⚡</span>
+                        <div class="help-card-title">6. Power Shortcuts</div>
+                    </div>
+                    <div class="help-card-desc">
+                        Navigate effortlessly with keyboard hotkeys:
+                        <ul class="help-tips-list">
+                            <li><kbd>Ctrl + K</kbd> or <kbd>Cmd + K</kbd>: Open Spotlight Command Palette to trigger any action instantly.</li>
+                            <li><kbd>/</kbd>: Instantly jump to and focus table search.</li>
+                            <li><kbd>Esc</kbd>: Dismiss any active dialog, palette, or menu.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:12px 20px; display:flex; justify-content:flex-end;">
+                <button type="button" class="btn btn-primary" id="gotItHelpBtn" style="padding:8px 24px;">Got It!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABOUT SYSTEM MODAL -->
+    <div class="modal-overlay" id="aboutSystemModal" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
+        <div class="modal" style="width: 580px; max-width: 95vw;">
+            <div class="modal-header">
+                <h2 id="aboutModalTitle" style="margin:0; font-size:18px;">About ExpenseTracker</h2>
+                <button class="modal-close" id="closeAboutModal" aria-label="Close about dialog">&times;</button>
+            </div>
+            <div class="about-hero-box">
+                <span class="about-app-badge">Executive Edition &bull; v1.4.0</span>
+                <div class="about-app-title">ExpenseTracker System</div>
+                <p class="about-app-tagline">
+                    An executive-grade, privacy-first personal wealth management system designed for complete financial clarity and offline resilience.
+                </p>
+            </div>
+            <div class="about-pillars-grid">
+                <div class="about-pillar">
+                    <div class="about-pillar-title">🔒 100% Private Ledger</div>
+                    <div class="about-pillar-desc">
+                        No financial profiling or third-party trackers. Receipts are processed client-side via WebAssembly OCR without sending photos to cloud APIs.
+                    </div>
+                </div>
+                <div class="about-pillar">
+                    <div class="about-pillar-title">📊 Executive Spreadsheets</div>
+                    <div class="about-pillar-desc">
+                        Native Apache POI Excel workbooks featuring automated formulas, freeze panes, multi-sheet ledgers, and institutional formatting.
+                    </div>
+                </div>
+                <div class="about-pillar">
+                    <div class="about-pillar-title">⚡ Instant Responsiveness</div>
+                    <div class="about-pillar-desc">
+                        Built with vanilla performance-optimized JavaScript and modern CSS tokens, delivering sub-16ms theme toggling and fluid animations.
+                    </div>
+                </div>
+                <div class="about-pillar">
+                    <div class="about-pillar-title">📱 Unified Ecosystem</div>
+                    <div class="about-pillar-desc">
+                        Seamless cross-platform sync with our React Native Expo mobile app, featuring biometrics, real-time debit alerts, and daily check-ins.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11.5px; color:var(--text-muted);">Spring Boot 4.1.1 &bull; Modern Web ES6+ &bull; Tesseract WebAssembly</span>
+                <button type="button" class="btn btn-secondary" id="closeAboutBtn" style="padding:8px 20px;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/api.js"></script>
     <script src="js/theme-performance.js"></script>
     <script src="js/ui-regression-fixes.js"></script>
@@ -1173,7 +1375,20 @@
     <script src="js/modules/dashboard-filters.js"></script>
     <script src="js/modules/dashboard-ml.js"></script>
     <script src="js/modules/dashboard-notifications.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="js/modules/receipt-ocr.js"></script>
+    <script src="js/modules/command-palette.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/motion.js"></script>
+    <!-- Executive Precision HUD Reticle -->
+    <div id="executiveReticle" class="executive-reticle" aria-hidden="true">
+        <span class="reticle-corner reticle-tl"></span>
+        <span class="reticle-corner reticle-tr"></span>
+        <span class="reticle-corner reticle-br"></span>
+        <span class="reticle-corner reticle-bl"></span>
+        <span class="reticle-center-accent"></span>
+    </div>
+
+    <script src="js/modules/executive-cursor.js"></script>
 </body>
 </html>
