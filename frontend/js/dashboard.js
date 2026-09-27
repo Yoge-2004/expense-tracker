@@ -2145,6 +2145,7 @@ document.addEventListener("click", (e) => {
 // =========================================================================
 
 function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
+    document.querySelectorAll(".grid-4-metrics .metric-card").forEach(card => card.classList.remove("is-loading"));
     const totalSpent = (expenses || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
     const totalIncome = (incomes || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
     const netCashFlow = totalIncome - totalSpent;

@@ -61,8 +61,8 @@
         const igstRegex = /(?:igst|integrated\s*gst)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
         const vatRegex = /(?:vat|value\s*added\s*tax)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
         const genTaxRegex = /(?:service\s*tax|cess|total\s*tax|tax\s*amount|gst(?:\s*@?\s*\d+(?:\.\d+)?%?)?|taxes)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const discountRegex = /(?:discount|coupon|promo|instant\s*savings?|less)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const chargesRegex = /(?:delivery(?:\s*fee|\s*charge)?|packing(?:\s*charge)?|service\s*charge|tip|gratuity|convenience\s*fee)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
+        const discountRegex = /(?:discount|coupon|promo|instant\s*savings?|less)(?:\s*\([^)]*\))?[\s:₹$€£\-]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
+        const chargesRegex = /(?:delivery(?:\s*fee|\s*charge)?|packing(?:\s*charge)?|service\s*charge|tip|gratuity|convenience\s*fee)(?:\s*\([^)]*\))?[\s:₹$€£+]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
         const roundOffRegex = /(?:round\s*off|rounding)[\s:₹$€£]*([+-]?[0-9]+(?:\.[0-9]{2})?)/i;
         const grandTotalRegex = /(?:grand\s*total|net\s*(?:amount\s*)?payable|total\s*payable|amount\s*payable|invoice\s*total|final\s*(?:amount|total)|bill\s*total|total\s*amount|amount\s*due|total\s*due|total\s*paid|paid\s*amount)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
         const genericTotalRegex = /(?:^|\s)total[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;

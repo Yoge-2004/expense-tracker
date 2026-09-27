@@ -750,16 +750,21 @@
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
 }
 
-/* Light Theme Crisp Executive Hover Elevation:
-   Replaces muddy yellow blur with crisp, deep slate drop shadow + warm gold accent rim */
-[data-theme="light"] :is(.card, .metric-card, .auth-card, .recent-transactions, .smart-intelligence-card, .float-card, .ledger-column):hover {
-    transform: translateY(-3px) scale(1.008) !important;
+/* Light Theme Rich Golden Aura Hover Elevation:
+   Provides prominent, unmistakable golden shadow bloom without smears */
+[data-theme="light"] :is(.card, .metric-card, .auth-card, .recent-transactions, .smart-intelligence-card, .float-card, .ledger-column, .budget-item, .savings-goal-card):hover {
+    transform: translateY(-4px) scale(1.01) !important;
     box-shadow:
-        0 16px 32px -8px rgba(15, 23, 42, 0.11),
-        0 6px 14px -3px rgba(15, 23, 42, 0.05),
-        0 0 0 1.5px rgba(199, 154, 62, 0.45),
-        0 4px 16px -2px rgba(199, 154, 62, 0.15) !important;
-    border-color: rgba(199, 154, 62, 0.52) !important;
+        0 18px 42px -6px rgba(212, 175, 55, 0.42),
+        0 8px 24px -2px rgba(184, 134, 11, 0.28),
+        0 0 24px rgba(212, 175, 55, 0.35),
+        0 2px 6px rgba(15, 23, 42, 0.08),
+        0 0 0 1.5px rgba(212, 175, 55, 0.8) !important;
+    border-color: rgba(212, 175, 55, 0.85) !important;
+}
+
+.metric-card.is-loading {
+    pointer-events: none;
 }
 
 /* Eliminate Light Mode Cursor Smudge from .glow-follow::before */

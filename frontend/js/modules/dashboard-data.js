@@ -167,12 +167,18 @@
                     renderSavingsGoals(Array.isArray(state.allSavingsGoals) ? state.allSavingsGoals : []);
                 } else {
                     showToast("Couldn't connect to the server. Check your connection or server status.", "error");
-                    renderDashboardData([], []);
-                    updateCashFlowMetrics([], [], []);
-                    const subsBadge = document.getElementById("subsCountBadge");
-                    if (subsBadge) subsBadge.textContent = "0 Active";
+                    document.querySelectorAll(".grid-4-metrics .metric-card").forEach(c => {
+                        c.classList.remove("is-loading");
+                        const val = c.querySelector(".metric-value");
+                        if (val) val.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
+                        const badge = c.querySelector(".status-badge");
+                        if (badge) {
+                            badge.textContent = "Offline";
+                            badge.className = "status-badge badge-warning";
+                        }
+                    });
                     const subsTotal = document.getElementById("subsMonthlyTotal");
-                    if (subsTotal) subsTotal.textContent = `${(window.DashboardUtils?.formatCurrency || formatCurrency)(0)} / mo`;
+                    if (subsTotal) subsTotal.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
                     const expenseListEl = document.getElementById("expenseList");
                     if (expenseListEl) {
                         expenseListEl.innerHTML = `

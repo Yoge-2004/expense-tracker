@@ -44,28 +44,29 @@
 };
 
     function initCurrencyPlaceholders() {
+    const isSkeleton = (el) => el && (el.querySelector(".skeleton") || el.classList.contains("skeleton") || el.closest(".is-loading"));
     const zeroCurr = DashboardUtils.formatCurrency(0);
-    if (elements.totalAmount && (elements.totalAmount.textContent.trim() === "—" || elements.totalAmount.textContent.includes("₹") || elements.totalAmount.textContent.includes("$"))) {
+    if (elements.totalAmount && !isSkeleton(elements.totalAmount) && (elements.totalAmount.textContent.trim() === "—" || elements.totalAmount.textContent.includes("₹") || elements.totalAmount.textContent.includes("$"))) {
         elements.totalAmount.textContent = zeroCurr;
     }
     const totalIncomeEl = document.getElementById("totalIncomeAmount");
-    if (totalIncomeEl && (totalIncomeEl.textContent.trim() === "—" || totalIncomeEl.textContent.includes("$"))) {
+    if (totalIncomeEl && !isSkeleton(totalIncomeEl) && (totalIncomeEl.textContent.trim() === "—" || totalIncomeEl.textContent.includes("$"))) {
         totalIncomeEl.textContent = zeroCurr;
     }
     const netCashFlowEl = document.getElementById("netCashFlowAmount");
-    if (netCashFlowEl && (netCashFlowEl.textContent.trim() === "—" || netCashFlowEl.textContent.includes("$"))) {
+    if (netCashFlowEl && !isSkeleton(netCashFlowEl) && (netCashFlowEl.textContent.trim() === "—" || netCashFlowEl.textContent.includes("$"))) {
         netCashFlowEl.textContent = zeroCurr;
     }
     const dailyBurnEl = document.getElementById("dailyBurnRate");
-    if (dailyBurnEl && (dailyBurnEl.textContent.includes("—") || dailyBurnEl.textContent.includes("₹"))) {
+    if (dailyBurnEl && !isSkeleton(dailyBurnEl) && (dailyBurnEl.textContent.includes("—") || dailyBurnEl.textContent.includes("₹"))) {
         dailyBurnEl.textContent = `${zeroCurr} / day`;
     }
     const totalSavedProgress = document.getElementById("totalSavedProgress");
-    if (totalSavedProgress && (totalSavedProgress.textContent.includes("—") || totalSavedProgress.textContent.includes("$"))) {
+    if (totalSavedProgress && !isSkeleton(totalSavedProgress) && (totalSavedProgress.textContent.includes("—") || totalSavedProgress.textContent.includes("$"))) {
         totalSavedProgress.textContent = `Saved: ${zeroCurr}`;
     }
     const subsTotal = document.getElementById("subsMonthlyTotal");
-    if (subsTotal && (subsTotal.textContent.includes("—") || subsTotal.textContent.includes("₹"))) {
+    if (subsTotal && !isSkeleton(subsTotal) && (subsTotal.textContent.includes("—") || subsTotal.textContent.includes("₹"))) {
         subsTotal.textContent = `${zeroCurr} / mo`;
     }
 }
@@ -73,9 +74,20 @@
 
     function showSkeletonLoading() {
     // Metric card skeletons
-    document.querySelectorAll('.metric-value').forEach(el => {
-        el.dataset.realContent = el.textContent;
-        el.innerHTML = '<span class="skeleton skeleton-value"></span>';
+    document.querySelectorAll(".grid-4-metrics .metric-card").forEach(card => {
+        card.classList.add("is-loading");
+        const val = card.querySelector(".metric-value");
+        if (val) {
+            val.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:115px; height:28px; display:inline-block; margin-bottom:0;\"></span>";
+        }
+        const badge = card.querySelector(".status-badge");
+        if (badge) {
+            badge.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:48px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;\"></span>";
+        }
+        const footerSpan = card.querySelector(".metric-footer span");
+        if (footerSpan && !footerSpan.querySelector(".skeleton")) {
+            footerSpan.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:85px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        }
     });
     // Expense list skeleton
     if (elements.expenseList) {
