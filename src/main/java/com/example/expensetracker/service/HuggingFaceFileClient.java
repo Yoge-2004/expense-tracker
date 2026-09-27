@@ -25,10 +25,18 @@ import java.util.Base64;
  */
 public final class HuggingFaceFileClient {
 
-    /** e.g. {@code Yoge-2004/expense-tracker-backend} */
-    private static final String REPO_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$";
-    /** e.g. {@code database/expense_tracker.sqlite.enc} — no traversal, no query chars */
-    private static final String PATH_PATTERN = "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$";
+    /** e.g. {@code Yoge-2004/expense-tracker-backend}.
+     *  Ends in \z (strict end-of-input), not $ — by default (no MULTILINE),
+     *  Java's $ tolerates exactly one trailing line terminator even under
+     *  String.matches() (confirmed against the Pattern javadoc: "$ matches
+     *  at the end of the entire input sequence, but also matches just
+     *  before the last line terminator if this is not followed by any
+     *  other input character"), so a value like "a/b\n" would otherwise
+     *  silently pass validation with the newline intact. */
+    private static final String REPO_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*\\z";
+    /** e.g. {@code database/expense_tracker.sqlite.enc} — no traversal, no query chars.
+     *  Same \z reasoning as REPO_PATTERN above. */
+    private static final String PATH_PATTERN = "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*\\z";
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(120);
@@ -120,22 +128,27 @@ public final class HuggingFaceFileClient {
         return true;
     }
 
-    private static String requireRepo(String repo) {
+    /** Package-private (not private) so validation can be unit-tested directly,
+     *  with zero risk of a test accidentally reaching the network. */
+    static String requireRepo(String repo) {
         if (repo == null || !repo.matches(REPO_PATTERN)) {
             throw new IllegalArgumentException("Invalid Hugging Face repository identifier");
         }
         return repo;
     }
 
-    private static String requirePath(String path) {
+    static String requirePath(String path) {
         if (path == null || !path.matches(PATH_PATTERN) || path.contains("..")) {
             throw new IllegalArgumentException("Invalid Hugging Face file path");
         }
         return path;
     }
 
-    /** Escapes a string for embedding inside a JSON string literal. */
-    private static String jsonEscape(String value) {
+    /** Escapes a string for embedding inside a JSON string literal.
+     *  Package-private (not private) specifically so it can be unit-tested
+     *  directly — its only other caller path is {@link #upload}, which
+     *  requires a real network round-trip to observe the result. */
+    static String jsonEscape(String value) {
         StringBuilder sb = new StringBuilder(value.length() + 8);
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
