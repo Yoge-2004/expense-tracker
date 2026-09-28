@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.*;
 
 /**
@@ -692,26 +693,90 @@ public class ImportServiceImpl implements ImportService {
             Date d = cell.getDateCellValue();
             return d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         }
+        return parseDateString(fallbackStr);
+    }
+
+    /**
+     * STRICT resolver + "uuuu" (proleptic year), not the default SMART + "yyyy"
+     * (year-of-era): under SMART, DateTimeFormatter.ofPattern silently CLAMPS an
+     * out-of-range day-of-month to the last valid day (per the ResolverStyle
+     * javadoc), so "31/04/2026" would import as 30 April and "30/02/2026" as
+     * 28 February with no error at all. STRICT rejects those outright, but
+     * STRICT can't resolve year-of-era ("yyyy") without an era field, hence
+     * "uuuu".
+     */
+    private static DateTimeFormatter strictFormatter(String pattern) {
+        return DateTimeFormatter.ofPattern(pattern).withResolverStyle(ResolverStyle.STRICT);
+    }
+
+    private static final DateTimeFormatter DD_MM_SLASH = strictFormatter("dd/MM/uuuu");
+    private static final DateTimeFormatter MM_DD_SLASH = strictFormatter("MM/dd/uuuu");
+    private static final List<DateTimeFormatter> NON_COLLIDING_FORMATTERS = List.of(
+            strictFormatter("dd-MM-uuuu"),
+            strictFormatter("uuuu/MM/dd"),
+            strictFormatter("d/M/uuuu"),
+            strictFormatter("d-M-uuuu"),
+            strictFormatter("dd.MM.uuuu")
+    );
+
+    /** Package-private (not private) so the ambiguity-detection logic below is
+     *  directly unit-testable without needing a POI Cell fixture — everything
+     *  here is a pure function of the input string. */
+    static LocalDate parseDateString(String fallbackStr) {
         String s = fallbackStr.trim();
-        List<DateTimeFormatter> formatters = List.of(
-                DateTimeFormatter.ISO_LOCAL_DATE,
-                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-                DateTimeFormatter.ofPattern("MM/dd/yyyy"),
-                DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-                DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-                DateTimeFormatter.ofPattern("d/M/yyyy"),
-                DateTimeFormatter.ofPattern("d-M-yyyy"),
-                DateTimeFormatter.ofPattern("dd.MM.yyyy")
-        );
-        for (DateTimeFormatter fmt : formatters) {
-            try {
-                return LocalDate.parse(s, fmt);
-            } catch (DateTimeParseException ignored) {
-                // Try next pattern
+
+        // ISO is unambiguous by construction (only one valid reading) — try it
+        // on its own, first. (ISO_LOCAL_DATE is already STRICT.)
+        LocalDate isoResult = tryParseDate(s, DateTimeFormatter.ISO_LOCAL_DATE);
+        if (isoResult != null) {
+            return isoResult;
+        }
+
+        // dd/MM/yyyy and MM/dd/yyyy are the one pair among these formatters that
+        // can BOTH successfully parse the exact same 2-digit/2-digit/4-digit
+        // input (whenever day and month are each <=12) while producing two
+        // DIFFERENT dates — e.g. "03/04/2026" is either 3 April or 4 March
+        // depending on which is meant, and there is no way to tell from the
+        // string alone. Previously this list was walked in order and the first
+        // formatter to match silently won, meaning every ambiguous date in an
+        // imported file was effectively a coin flip that could silently swap
+        // the day and month. Every other formatter below has no competing
+        // "flipped" counterpart in this list (there's no MM-dd-yyyy or M-d-yyyy
+        // attempted at all), so none of them can collide the same way — this
+        // check is scoped to exactly the one pair that actually can.
+        LocalDate ddMm = tryParseDate(s, DD_MM_SLASH);
+        LocalDate mmDd = tryParseDate(s, MM_DD_SLASH);
+        if (ddMm != null && mmDd != null && !ddMm.equals(mmDd)) {
+            throw new IllegalArgumentException(
+                    "Ambiguous date '" + s + "': could be " + ddMm + " (read as DD/MM/YYYY) or "
+                            + mmDd + " (read as MM/DD/YYYY). Please use an unambiguous format "
+                            + "such as YYYY-MM-DD.");
+        }
+        if (ddMm != null) {
+            return ddMm;
+        }
+        if (mmDd != null) {
+            return mmDd;
+        }
+
+        for (DateTimeFormatter fmt : NON_COLLIDING_FORMATTERS) {
+            LocalDate result = tryParseDate(s, fmt);
+            if (result != null) {
+                return result;
             }
         }
         throw new IllegalArgumentException("Unrecognised date format: '" + s
                 + "'. Expected YYYY-MM-DD, DD/MM/YYYY, etc.");
+    }
+
+    /** Returns the parsed date, or null if {@code s} doesn't match {@code fmt} —
+     *  never throws, so callers can freely probe multiple formats. */
+    private static LocalDate tryParseDate(String s, DateTimeFormatter fmt) {
+        try {
+            return LocalDate.parse(s, fmt);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     private BigDecimal parseCellAmount(Cell cell) {
