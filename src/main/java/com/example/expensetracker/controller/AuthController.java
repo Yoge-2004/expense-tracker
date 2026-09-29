@@ -242,10 +242,10 @@ public class AuthController {
         description = "Resets the password given a valid 6-digit Security PIN or email OTP.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Password reset successfully"),
-        @ApiResponse(responseCode = "401", description = "Invalid, expired or already-used OTP/PIN",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "404", description = "No account found with this email address",
+        @ApiResponse(responseCode = "401",
+            description = "Invalid, expired or already-used OTP/PIN. Also returned when no account exists for the "
+                        + "email — deliberately indistinguishable, so this endpoint cannot be used to discover "
+                        + "which addresses are registered",
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "429", description = "Too many password reset attempts (rate limit exceeded)",
