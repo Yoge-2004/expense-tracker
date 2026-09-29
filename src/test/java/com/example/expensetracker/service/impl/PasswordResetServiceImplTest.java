@@ -163,7 +163,7 @@ class PasswordResetServiceImplTest {
     @Test
     @DisplayName("sendSignupOtp skips when email is already registered")
     void sendSignupOtp_alreadyRegistered_returnsFalse() {
-        when(userRepository.existsByEmail("user@example.com")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("user@example.com")).thenReturn(true);
 
         boolean sent = service.sendSignupOtp("user@example.com", "Existing User");
 
@@ -174,7 +174,7 @@ class PasswordResetServiceImplTest {
     @Test
     @DisplayName("sendSignupOtp creates OTP for new user")
     void sendSignupOtp_newUser_returnsTrue() {
-        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
         when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc("new@example.com", "SIGNUP"))
                 .thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashedOtp");
@@ -218,7 +218,7 @@ class PasswordResetServiceImplTest {
         org.springframework.test.util.ReflectionTestUtils.setField(service, "mailEnabled", true);
         org.springframework.test.util.ReflectionTestUtils.setField(service, "configuredMailHost", "smtp.example.com");
 
-        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
         JavaMailSender mailSender = mock(JavaMailSender.class);
         when(mailSenderProvider.getIfAvailable()).thenReturn(mailSender);
         jakarta.mail.internet.MimeMessage mimeMessage = mock(jakarta.mail.internet.MimeMessage.class);
