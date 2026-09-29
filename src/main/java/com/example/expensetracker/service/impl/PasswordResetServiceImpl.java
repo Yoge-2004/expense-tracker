@@ -17,6 +17,7 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +26,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -51,6 +51,14 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     private static final int OTP_TTL_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 5;
+
+    /**
+     * The single client-facing failure message for every "cannot authorise this
+     * reset" outcome (wrong code, wrong PIN, rejected BYPASS token, and an email
+     * that has no account). Kept as one constant on purpose: if these messages
+     * ever differ, the difference becomes an account-enumeration oracle.
+     */
+    private static final String INVALID_CODE_MESSAGE = "Invalid verification code or Security PIN.";
 
     private final UserRepository userRepository;
     private final PasswordResetOtpRepository otpRepository;
@@ -115,12 +123,20 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         if ("BYPASS".equalsIgnoreCase(otp.trim())) {
             log.warn("Security violation: Rejected deprecated BYPASS token attempt for email={}",
                     LoggingUtils.maskEmail(email));
-            throw new BadCredentialsException("Invalid verification code or Security PIN.");
+            throw new BadCredentialsException(INVALID_CODE_MESSAGE);
         }
 
+        // An unknown email must be indistinguishable from a known email with a
+        // wrong code. requestReset() already hides whether an account exists;
+        // throwing NoSuchElementException here (mapped to a 404 that echoed the
+        // address back) let anyone probe which emails are registered through
+        // this public endpoint just by comparing 404 against 401.
         User user = userRepository.findByEmailIgnoreCase(email.trim())
-                .orElseThrow(() -> new NoSuchElementException(
-                        "No account found with email address: " + email.trim()));
+                .orElseThrow(() -> {
+                    log.warn("Password reset rejected: no account for email={}",
+                            LoggingUtils.maskEmail(email));
+                    return new BadCredentialsException(INVALID_CODE_MESSAGE);
+                });
 
         if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
             long minutesRemaining = ChronoUnit.MINUTES.between(
@@ -176,7 +192,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                         LoggingUtils.maskEmail(email));
             }
             userRepository.save(user);
-            throw new BadCredentialsException("Invalid verification code or Security PIN.");
+            throw new BadCredentialsException(INVALID_CODE_MESSAGE);
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -191,14 +207,23 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new IllegalArgumentException("Email address is required.");
         }
 
-        if (userRepository.existsByEmail(email)) {
+        // registerUser() trims and rejects duplicates case-insensitively, so this
+        // check must too — an exact-match lookup let "User@x.com" through for an
+        // account registered as "user@x.com" (a pointless OTP email, then a
+        // rejection at the very last step). OTP rows are keyed on the lower-cased
+        // address so the code still verifies if the client changes the casing
+        // between the "send" and "verify" steps.
+        String recipient = email.trim();
+        String otpKey = signupOtpKey(email);
+
+        if (userRepository.existsByEmailIgnoreCase(recipient)) {
             log.info("Signup OTP skipped: email already registered: {}", LoggingUtils.maskEmail(email));
             return false;
         }
 
         log.info("Generating signup OTP for email={}", LoggingUtils.maskEmail(email));
 
-        otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
+        otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(otpKey, "SIGNUP")
                 .ifPresent(existing -> {
                     existing.setUsed(true);
                     otpRepository.save(existing);
@@ -207,15 +232,15 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         String otp = generateOtp();
 
         PasswordResetOtp record = new PasswordResetOtp();
-        record.setEmail(email);
+        record.setEmail(otpKey);
         record.setPurpose("SIGNUP");
         record.setOtpHash(passwordEncoder.encode(otp));
         record.setExpiresAt(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES));
         otpRepository.save(record);
 
         User tempUser = new User();
-        tempUser.setName(name != null && !name.isBlank() ? name : email);
-        tempUser.setEmail(email);
+        tempUser.setName(name != null && !name.isBlank() ? name : recipient);
+        tempUser.setEmail(recipient);
         sendOtpEmail(tempUser, otp, "SIGNUP");
         return true;
     }
@@ -229,7 +254,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         PasswordResetOtp record = otpRepository
-                .findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, "SIGNUP")
+                .findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(signupOtpKey(email), "SIGNUP")
                 .orElseThrow(() -> {
                     log.warn("Signup OTP verification failed: no active OTP found for email={}",
                             LoggingUtils.maskEmail(email));
@@ -251,7 +276,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new BadCredentialsException("Too many incorrect attempts. Please request a new verification code.");
         }
 
-        if (!passwordEncoder.matches(otp, record.getOtpHash())) {
+        if (!passwordEncoder.matches(otp.trim(), record.getOtpHash())) {
             record.setAttempts(record.getAttempts() + 1);
             otpRepository.save(record);
             log.warn("Signup OTP verification failed: incorrect OTP for email={}, attempt={}",
@@ -262,6 +287,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setUsed(true);
         otpRepository.save(record);
         log.info("Signup OTP verified successfully for email={}", LoggingUtils.maskEmail(email));
+    }
+
+    /** Trimmed, lower-cased key under which a SIGNUP OTP row is stored and looked up. */
+    static String signupOtpKey(String email) {
+        return email.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private String generateOtp() {
@@ -322,7 +352,17 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
     }
 
-    private String buildOtpHtml(String recipientName, String otp, String purpose) {
+    /**
+     * Package-private (not private) so the escaping can be unit-tested directly.
+     * {@code recipientName} is attacker-controllable: {@code POST
+     * /api/auth/signup/send-otp} is public and accepts any non-blank {@code name},
+     * which used to be interpolated raw, so anyone could send a victim a genuine
+     * email from this app's own sender containing arbitrary HTML (fake links,
+     * tracking pixels). The name is HTML-escaped; the headline and instructions
+     * are trusted constants that intentionally contain markup and are not.
+     */
+    String buildOtpHtml(String recipientName, String otp, String purpose) {
+        String safeName = recipientName != null ? HtmlUtils.htmlEscape(recipientName, "UTF-8") : "there";
         String headline = "PASSWORD_RESET".equals(purpose)
                 ? "Password Reset Verification"
                 : "Confirm Your Email Address";
@@ -353,6 +393,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 </div>
             </body>
             </html>
-            """.formatted(headline, recipientName != null ? recipientName : "there", instructions, otp);
+            """.formatted(headline, safeName, instructions, otp);
     }
 }
