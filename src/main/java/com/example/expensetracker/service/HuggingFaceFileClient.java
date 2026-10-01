@@ -26,16 +26,17 @@ import java.util.Base64;
 public final class HuggingFaceFileClient {
 
     /** e.g. {@code Yoge-2004/expense-tracker-backend}.
-     *  Ends in \z (strict end-of-input), not $ — by default (no MULTILINE),
-     *  Java's $ tolerates exactly one trailing line terminator even under
-     *  String.matches() (confirmed against the Pattern javadoc: "$ matches
-     *  at the end of the entire input sequence, but also matches just
-     *  before the last line terminator if this is not followed by any
-     *  other input character"), so a value like "a/b\n" would otherwise
-     *  silently pass validation with the newline intact. */
+     *  Ends in \z (absolute end of input) rather than $. NOTE for future readers:
+     *  with {@code String.matches()} the two behave identically, because matches()
+     *  must consume the whole input and a trailing newline is therefore rejected
+     *  either way (verified on a real JVM: "a/b\n".matches(...$) is false). The
+     *  difference only appears if these patterns are ever reused with find() or
+     *  lookingAt(), where $ would tolerate one trailing line terminator and \z
+     *  would not. \z is kept so the intent ("nothing may follow") is explicit and
+     *  survives that kind of refactor. It is hardening, not a bug fix. */
     private static final String REPO_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*\\z";
     /** e.g. {@code database/expense_tracker.sqlite.enc} — no traversal, no query chars.
-     *  Same \z reasoning as REPO_PATTERN above. */
+     *  Same \z note as REPO_PATTERN above. */
     private static final String PATH_PATTERN = "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*\\z";
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);

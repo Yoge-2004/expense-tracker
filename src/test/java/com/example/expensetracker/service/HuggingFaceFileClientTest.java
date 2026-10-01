@@ -114,13 +114,10 @@ class HuggingFaceFileClientTest {
 
         @Test
         @DisplayName(
-                "REGRESSION: a single trailing newline is rejected, not silently tolerated. By default "
-                + "(no MULTILINE), Java's $ anchor matches just before a final trailing line terminator "
-                + "even under String.matches() — 'a/b\\n' would incorrectly pass a pattern ending in plain "
-                + "$, silently letting a newline through validation and into a string later concatenated "
-                + "directly into a URL. The pattern must end in \\z (strict end-of-input, no exception), "
-                + "not $. Confirmed against the java.util.regex.Pattern javadoc and independently "
-                + "cross-checked before this was fixed at the source.")
+                "a single trailing newline or carriage return is rejected, not trimmed away. (This "
+                + "holds with either $ or \\z under String.matches(), which needs a full match — "
+                + "verified on a real JVM; \\z is used so the intent stays explicit if the patterns "
+                + "are ever reused with find(), where $ WOULD tolerate one trailing terminator.)")
         void trailingNewlineRejectedNotTolerated() {
             assertThrows(IllegalArgumentException.class, () -> HuggingFaceFileClient.requireRepo("a/b\n"));
             assertThrows(IllegalArgumentException.class, () -> HuggingFaceFileClient.requireRepo("a/b\r"));

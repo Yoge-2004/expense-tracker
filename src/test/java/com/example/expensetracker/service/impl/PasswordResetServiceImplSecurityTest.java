@@ -56,11 +56,19 @@ class PasswordResetServiceImplSecurityTest {
 
     private PasswordResetServiceImpl service;
 
+    private static final String DUMMY = "DUMMY_HASH";
+
     @BeforeEach
     void setUp() {
+        // The constructor derives its dummy hash from the injected encoder; giving it a
+        // recognisable value lets tests tell dummy comparisons apart from real ones.
+        when(passwordEncoder.encode(anyString())).thenReturn(DUMMY);
         service = new PasswordResetServiceImpl(
                 userRepository, otpRepository, passwordEncoder,
                 mailSenderProvider, otpDeliveryListenerProvider);
+        // Forget the constructor's own encode() call so tests can count encode() calls
+        // made by the code under test.
+        clearInvocations(passwordEncoder);
     }
 
     private static User user(String email, int failedAttempts) {
@@ -106,7 +114,8 @@ class PasswordResetServiceImplSecurityTest {
                     () -> service.resetPassword("real@example.com", "123456", "newpassword"));
 
             assertEquals(wrongCode.getMessage(), unknown.getMessage());
-            assertEquals("Invalid verification code or Security PIN.", unknown.getMessage());
+            assertTrue(unknown.getMessage().startsWith("Invalid verification code or Security PIN."),
+                    unknown.getMessage());
         }
 
         @Test
@@ -236,7 +245,7 @@ class PasswordResetServiceImplSecurityTest {
         }
 
         @Test
-        @DisplayName("5 prior attempts: even the correct code is refused WITHOUT being compared")
+        @DisplayName("5 prior attempts: even the correct code is refused WITHOUT being compared to the real hash")
         void fivePriorAttemptsRefusedWithoutComparing() {
             User u = user(KEY, 0);
             PasswordResetOtp rec = otp(KEY, "HASH", LocalDateTime.now().plusMinutes(5), 5);
@@ -244,14 +253,15 @@ class PasswordResetServiceImplSecurityTest {
 
             assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "123456", "newpassword"));
 
-            verify(passwordEncoder, never()).matches(any(), any());
+            verify(passwordEncoder, never()).matches(any(), eq("HASH"));
+            verify(passwordEncoder, times(2)).matches("123456", DUMMY);
             verify(otpRepository, never()).save(any());
             assertEquals(5, rec.getAttempts());
             assertEquals(1, u.getFailedPinAttempts());
         }
 
         @Test
-        @DisplayName("an expired OTP (1 minute ago) is refused without being compared")
+        @DisplayName("an expired OTP (1 minute ago) is refused without being compared to the real hash")
         void expiredOtpRefusedWithoutComparing() {
             User u = user(KEY, 0);
             PasswordResetOtp rec = otp(KEY, "HASH", LocalDateTime.now().minusMinutes(1), 0);
@@ -259,7 +269,8 @@ class PasswordResetServiceImplSecurityTest {
 
             assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "123456", "newpassword"));
 
-            verify(passwordEncoder, never()).matches(any(), any());
+            verify(passwordEncoder, never()).matches(any(), eq("HASH"));
+            verify(passwordEncoder, times(2)).matches("123456", DUMMY);
             assertFalse(rec.isUsed());
         }
 
@@ -285,7 +296,7 @@ class PasswordResetServiceImplSecurityTest {
     }
 
     @Nested
-    @DisplayName("resetPassword: recovery lockout after repeated failures")
+    @DisplayName("resetPassword: recovery lockout")
     class Lockout {
 
         private static final String KEY = "u@example.com";
@@ -316,6 +327,251 @@ class PasswordResetServiceImplSecurityTest {
 
             assertEquals(4, u.getFailedPinAttempts());
             assertNull(u.getPinLockedUntil());
+        }
+
+        @Test
+        @DisplayName("REGRESSION: once a lock has expired the counter starts again from zero — one wrong "
+                + "guess afterwards is failure #1, not failure #6 that instantly re-locks")
+        void expiredLockGrantsAFreshBudget() {
+            User u = user(KEY, 5);
+            u.setPinLockedUntil(LocalDateTime.now().minusMinutes(1));
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+
+            assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "000000", "newpassword"));
+
+            assertEquals(1, u.getFailedPinAttempts());
+            assertNull(u.getPinLockedUntil());
+            verify(userRepository).save(u);
+        }
+
+        @Test
+        @DisplayName("after a lock expires a full new run of 4 wrong guesses is tolerated and the 5th re-locks")
+        void freshBudgetIsExactlyFiveAttempts() {
+            User u = user(KEY, 5);
+            u.setPinLockedUntil(LocalDateTime.now().minusSeconds(30));
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+
+            for (int i = 1; i <= 4; i++) {
+                assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "000000", "newpassword"));
+                assertEquals(i, u.getFailedPinAttempts());
+                assertNull(u.getPinLockedUntil(), "must not be locked after failure #" + i);
+            }
+            assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "000000", "newpassword"));
+            assertEquals(5, u.getFailedPinAttempts());
+            assertNotNull(u.getPinLockedUntil());
+            assertTrue(u.getPinLockedUntil().isAfter(LocalDateTime.now().plusMinutes(14)));
+        }
+
+        @Test
+        @DisplayName("an expired lock does not block a correct credential, and success leaves clean counters")
+        void expiredLockCorrectCredentialSucceeds() {
+            User u = user(KEY, 5);
+            u.setPinLockedUntil(LocalDateTime.now().minusMinutes(1));
+            u.setSecurityPinHash("PINHASH");
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+            when(passwordEncoder.matches("123456", "PINHASH")).thenReturn(true);
+            when(passwordEncoder.encode("newpassword")).thenReturn("ENC");
+
+            assertDoesNotThrow(() -> service.resetPassword(KEY, "123456", "newpassword"));
+
+            assertEquals(0, u.getFailedPinAttempts());
+            assertNull(u.getPinLockedUntil());
+            assertEquals("ENC", u.getPassword());
+        }
+
+        @Test
+        @DisplayName("while a lock is active even the correct credential is refused, and the counters and "
+                + "lock time are left exactly as they were — attempts during a lock can never extend it")
+        void activeLockRefusesAndIsNotExtended() {
+            LocalDateTime lockedUntil = LocalDateTime.now().plusMinutes(10);
+            User u = user(KEY, 5);
+            u.setPinLockedUntil(lockedUntil);
+            u.setSecurityPinHash("PINHASH");
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+
+            assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "123456", "newpassword"));
+
+            assertEquals(5, u.getFailedPinAttempts());
+            assertEquals(lockedUntil, u.getPinLockedUntil());
+            verify(userRepository, never()).save(any());
+            verifyNoInteractions(otpRepository);
+            verify(passwordEncoder, never()).matches(any(), eq("PINHASH"));
+        }
+
+        @Test
+        @DisplayName("a locked account answers with the SAME message as an unknown email, and the message "
+                + "states the policy (5 failed attempts / 15 minutes) so a locked-out user knows what to do")
+        void lockedMessageIdenticalToUnknownAndStatesPolicy() {
+            User locked = user("locked@example.com", 5);
+            locked.setPinLockedUntil(LocalDateTime.now().plusMinutes(10));
+            when(userRepository.findByEmailIgnoreCase("locked@example.com")).thenReturn(Optional.of(locked));
+            when(userRepository.findByEmailIgnoreCase("ghost@example.com")).thenReturn(Optional.empty());
+
+            BadCredentialsException lockedEx = assertThrows(BadCredentialsException.class,
+                    () -> service.resetPassword("locked@example.com", "123456", "newpassword"));
+            BadCredentialsException unknownEx = assertThrows(BadCredentialsException.class,
+                    () -> service.resetPassword("ghost@example.com", "123456", "newpassword"));
+
+            assertEquals(unknownEx.getMessage(), lockedEx.getMessage());
+            assertTrue(lockedEx.getMessage().contains("15 minutes"), lockedEx.getMessage());
+            assertTrue(lockedEx.getMessage().contains("5 failed attempts"), lockedEx.getMessage());
+            assertFalse(lockedEx.getMessage().matches(".*\\d+ minute\\(s\\).*"),
+                    "must not leak a per-account remaining-time figure");
+        }
+
+        @Test
+        @DisplayName("a NULL failure-counter column (legacy row) behaves as zero: the first failure is #1")
+        void nullCounterTreatedAsZero() {
+            User u = user(KEY, 0);
+            org.springframework.test.util.ReflectionTestUtils.setField(u, "failedPinAttempts", null);
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+
+            assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "000000", "newpassword"));
+
+            assertEquals(1, u.getFailedPinAttempts());
+        }
+    }
+
+    @Nested
+    @DisplayName("resetPassword: constant hashing work (timing equalisation)")
+    class ConstantWork {
+
+        private static final String KEY = "u@example.com";
+        private static final String CODE = "123456";
+
+        private void attempt(String email) {
+            assertThrows(BadCredentialsException.class, () -> service.resetPassword(email, CODE, "newpassword"));
+        }
+
+        @Test
+        @DisplayName("an unknown email costs exactly two (dummy) hash comparisons")
+        void unknownEmail() {
+            when(userRepository.findByEmailIgnoreCase("ghost@example.com")).thenReturn(Optional.empty());
+            attempt("ghost@example.com");
+            verify(passwordEncoder, times(2)).matches(CODE, DUMMY);
+            verify(passwordEncoder, times(2)).matches(any(), any());
+        }
+
+        @Test
+        @DisplayName("a locked account costs exactly two (dummy) hash comparisons, like an unknown email")
+        void lockedAccount() {
+            User u = user(KEY, 5);
+            u.setPinLockedUntil(LocalDateTime.now().plusMinutes(10));
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+            attempt(KEY);
+            verify(passwordEncoder, times(2)).matches(CODE, DUMMY);
+            verify(passwordEncoder, times(2)).matches(any(), any());
+        }
+
+        @Test
+        @DisplayName("a real account with no PIN and no pending OTP costs the same two comparisons")
+        void accountWithNothingToCompare() {
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(user(KEY, 0)));
+            attempt(KEY);
+            verify(passwordEncoder, times(2)).matches(CODE, DUMMY);
+            verify(passwordEncoder, times(2)).matches(any(), any());
+        }
+
+        @Test
+        @DisplayName("PIN only: one real comparison + one dummy")
+        void pinOnly() {
+            User u = user(KEY, 0);
+            u.setSecurityPinHash("PINHASH");
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+            when(passwordEncoder.matches(CODE, "PINHASH")).thenReturn(false);
+            attempt(KEY);
+            verify(passwordEncoder, times(1)).matches(CODE, "PINHASH");
+            verify(passwordEncoder, times(1)).matches(CODE, DUMMY);
+            verify(passwordEncoder, times(2)).matches(any(), any());
+        }
+
+        @Test
+        @DisplayName("OTP only: one real comparison + one dummy")
+        void otpOnly() {
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(user(KEY, 0)));
+            when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(KEY, "PASSWORD_RESET"))
+                    .thenReturn(Optional.of(otp(KEY, "OTPHASH", LocalDateTime.now().plusMinutes(5), 0)));
+            when(passwordEncoder.matches(CODE, "OTPHASH")).thenReturn(false);
+            attempt(KEY);
+            verify(passwordEncoder, times(1)).matches(CODE, "OTPHASH");
+            verify(passwordEncoder, times(1)).matches(CODE, DUMMY);
+            verify(passwordEncoder, times(2)).matches(any(), any());
+        }
+
+        @Test
+        @DisplayName("PIN and OTP both present: two real comparisons, no dummy")
+        void pinAndOtp() {
+            User u = user(KEY, 0);
+            u.setSecurityPinHash("PINHASH");
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+            when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(KEY, "PASSWORD_RESET"))
+                    .thenReturn(Optional.of(otp(KEY, "OTPHASH", LocalDateTime.now().plusMinutes(5), 0)));
+            when(passwordEncoder.matches(CODE, "PINHASH")).thenReturn(false);
+            when(passwordEncoder.matches(CODE, "OTPHASH")).thenReturn(false);
+            attempt(KEY);
+            verify(passwordEncoder, never()).matches(CODE, DUMMY);
+            verify(passwordEncoder, times(2)).matches(any(), any());
+        }
+
+        @Test
+        @DisplayName("an exhausted OTP (5 attempts) and an expired OTP each cost two comparisons, none against the real OTP hash")
+        void ineligibleOtps() {
+            for (PasswordResetOtp ineligible : new PasswordResetOtp[]{
+                    otp(KEY, "OTPHASH", LocalDateTime.now().plusMinutes(5), 5),
+                    otp(KEY, "OTPHASH", LocalDateTime.now().minusMinutes(1), 0)}) {
+                clearInvocations(passwordEncoder);
+                when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(user(KEY, 0)));
+                when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(KEY, "PASSWORD_RESET"))
+                        .thenReturn(Optional.of(ineligible));
+                attempt(KEY);
+                verify(passwordEncoder, never()).matches(any(), eq("OTPHASH"));
+                verify(passwordEncoder, times(2)).matches(CODE, DUMMY);
+            }
+        }
+
+        @Test
+        @DisplayName("a correct PIN authorises the reset and leaves a pending OTP completely untouched")
+        void correctPinDoesNotBurnPendingOtp() {
+            User u = user(KEY, 2);
+            u.setSecurityPinHash("PINHASH");
+            PasswordResetOtp pending = otp(KEY, "OTPHASH", LocalDateTime.now().plusMinutes(5), 2);
+            when(userRepository.findByEmailIgnoreCase(KEY)).thenReturn(Optional.of(u));
+            when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(KEY, "PASSWORD_RESET"))
+                    .thenReturn(Optional.of(pending));
+            when(passwordEncoder.matches(CODE, "PINHASH")).thenReturn(true);
+            when(passwordEncoder.encode("newpassword")).thenReturn("ENC");
+
+            assertDoesNotThrow(() -> service.resetPassword(KEY, CODE, "newpassword"));
+
+            assertEquals(2, pending.getAttempts());
+            assertFalse(pending.isUsed());
+            verify(otpRepository, never()).save(any());
+            assertEquals(0, u.getFailedPinAttempts());
+        }
+
+        @Test
+        @DisplayName("the rejected BYPASS token returns before any hashing, for every account alike")
+        void bypassDoesNoHashing() {
+            assertThrows(BadCredentialsException.class, () -> service.resetPassword(KEY, "BYPASS", "newpassword"));
+            verify(passwordEncoder, never()).matches(any(), any());
+        }
+
+        @Test
+        @DisplayName("the dummy hash is generated by the live encoder from a fresh random value per instance")
+        void dummyHashComesFromTheEncoder() {
+            ArgumentCaptor<String> seed = ArgumentCaptor.forClass(String.class);
+            clearInvocations(passwordEncoder);
+
+            new PasswordResetServiceImpl(userRepository, otpRepository, passwordEncoder,
+                    mailSenderProvider, otpDeliveryListenerProvider);
+            new PasswordResetServiceImpl(userRepository, otpRepository, passwordEncoder,
+                    mailSenderProvider, otpDeliveryListenerProvider);
+
+            verify(passwordEncoder, times(2)).encode(seed.capture());
+            assertNotEquals(seed.getAllValues().get(0), seed.getAllValues().get(1));
+            for (String v : seed.getAllValues()) {
+                assertTrue(v.matches("[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}"), v);
+            }
         }
     }
 

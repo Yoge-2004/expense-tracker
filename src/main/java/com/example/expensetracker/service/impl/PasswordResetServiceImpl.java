@@ -9,7 +9,6 @@ import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.OtpDeliveryListener;
 import com.example.expensetracker.service.PasswordResetService;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,9 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Implements {@link PasswordResetService} — see that interface for the
@@ -45,20 +43,39 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PasswordResetServiceImpl implements PasswordResetService {
 
     private static final int OTP_TTL_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 5;
 
+    /** Consecutive failed reset attempts that lock recovery for an account. */
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    /** How long recovery stays locked once {@link #MAX_FAILED_ATTEMPTS} is reached. */
+    private static final int LOCK_MINUTES = 15;
+
     /**
-     * The single client-facing failure message for every "cannot authorise this
-     * reset" outcome (wrong code, wrong PIN, rejected BYPASS token, and an email
-     * that has no account). Kept as one constant on purpose: if these messages
-     * ever differ, the difference becomes an account-enumeration oracle.
+     * Number of password-hash comparisons every reset attempt performs, whatever
+     * the outcome. BCrypt dominates the cost of an attempt, so a fixed count means
+     * an unknown email, a locked account, an account with no PIN and no pending
+     * OTP, and an account with both all take (to within DB latency) the same time.
+     * Two = one for the Security PIN and one for the emailed OTP.
      */
-    private static final String INVALID_CODE_MESSAGE = "Invalid verification code or Security PIN.";
+    private static final int HASH_COMPARISONS_PER_ATTEMPT = 2;
+
+    /**
+     * The single client-facing failure message for EVERY "cannot authorise this
+     * reset" outcome: wrong code, wrong PIN, rejected BYPASS token, an email that
+     * has no account, and an account that is currently locked. Deliberately one
+     * constant and deliberately silent about which case applied — if these ever
+     * differ (an "account not found" here, a "locked, try in N minutes" there) the
+     * difference becomes an account-enumeration oracle, because an unknown email
+     * can never be locked. The policy is stated instead so a legitimate user who
+     * has been locked out still knows what to do.
+     */
+    private static final String INVALID_CODE_MESSAGE =
+            "Invalid verification code or Security PIN. Recovery is temporarily locked for "
+                    + LOCK_MINUTES + " minutes after " + MAX_FAILED_ATTEMPTS + " failed attempts.";
 
     private final UserRepository userRepository;
     private final PasswordResetOtpRepository otpRepository;
@@ -66,6 +83,27 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final ObjectProvider<OtpDeliveryListener> otpDeliveryListenerProvider;
     private final SecureRandom random = new SecureRandom();
+
+    /**
+     * A genuine hash produced by the live {@link PasswordEncoder}, so comparing
+     * against it costs exactly what comparing against a real stored hash costs
+     * (same algorithm, same work factor — including if either is changed later).
+     * Only used to burn equivalent time; its result is always discarded.
+     */
+    private final String dummyHash;
+
+    public PasswordResetServiceImpl(UserRepository userRepository,
+                                    PasswordResetOtpRepository otpRepository,
+                                    PasswordEncoder passwordEncoder,
+                                    ObjectProvider<JavaMailSender> mailSenderProvider,
+                                    ObjectProvider<OtpDeliveryListener> otpDeliveryListenerProvider) {
+        this.userRepository = userRepository;
+        this.otpRepository = otpRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.mailSenderProvider = mailSenderProvider;
+        this.otpDeliveryListenerProvider = otpDeliveryListenerProvider;
+        this.dummyHash = passwordEncoder.encode(UUID.randomUUID().toString());
+    }
 
     @Value("${spring.mail.host:}")
     private String configuredMailHost;
@@ -126,70 +164,82 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new BadCredentialsException(INVALID_CODE_MESSAGE);
         }
 
-        // An unknown email must be indistinguishable from a known email with a
-        // wrong code. requestReset() already hides whether an account exists;
-        // throwing NoSuchElementException here (mapped to a 404 that echoed the
-        // address back) let anyone probe which emails are registered through
-        // this public endpoint just by comparing 404 against 401.
-        User user = userRepository.findByEmailIgnoreCase(email.trim())
-                .orElseThrow(() -> {
-                    log.warn("Password reset rejected: no account for email={}",
-                            LoggingUtils.maskEmail(email));
-                    return new BadCredentialsException(INVALID_CODE_MESSAGE);
-                });
+        String inputCode = otp.trim();
 
-        if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
-            long minutesRemaining = ChronoUnit.MINUTES.between(
-                    LocalDateTime.now().atZone(ZoneId.systemDefault()),
-                    user.getPinLockedUntil().atZone(ZoneId.systemDefault())) + 1;
-            log.warn("Recovery attempt blocked for locked account email={}; minutesRemaining={}",
-                    LoggingUtils.maskEmail(email), minutesRemaining);
-            throw new BadCredentialsException(
-                    "Account recovery temporarily locked due to too many failed attempts. Please try again in "
-                    + minutesRemaining + " minute(s).");
+        // An unknown email must be indistinguishable from a known email with a
+        // wrong code — same exception, same message, same amount of hashing work.
+        // requestReset() already hides whether an account exists; throwing
+        // NoSuchElementException here (mapped to a 404 that echoed the address back)
+        // let anyone probe which emails are registered just by comparing 404 to 401.
+        Optional<User> account = userRepository.findByEmailIgnoreCase(email.trim());
+        if (account.isEmpty()) {
+            log.warn("Password reset rejected: no account for email={}", LoggingUtils.maskEmail(email));
+            burnHashWork(inputCode, 0);
+            throw new BadCredentialsException(INVALID_CODE_MESSAGE);
+        }
+        User user = account.get();
+
+        if (user.getPinLockedUntil() != null) {
+            if (user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
+                // Still locked. Refuse without touching the counters (so attempts made
+                // while locked can never extend the lock), and answer exactly like any
+                // other failure — see INVALID_CODE_MESSAGE.
+                log.warn("Recovery attempt blocked for locked account email={}; lockedUntil={}",
+                        LoggingUtils.maskEmail(email), user.getPinLockedUntil());
+                burnHashWork(inputCode, 0);
+                throw new BadCredentialsException(INVALID_CODE_MESSAGE);
+            }
+            // The lock has been served: start from a clean slate. Without this the
+            // counter stayed at >= 5, so ONE wrong guess after expiry re-locked the
+            // account for another full period.
+            user.setPinLockedUntil(null);
+            user.setFailedPinAttempts(0);
         }
 
-        String inputCode = otp.trim();
-        boolean verified = false;
+        // Always do HASH_COMPARISONS_PER_ATTEMPT comparisons: real ones first (for
+        // whichever credentials actually exist), then dummy ones to make up the count.
+        int comparisons = 0;
 
-        if (user.getSecurityPinHash() != null && passwordEncoder.matches(inputCode, user.getSecurityPinHash())) {
-            verified = true;
-            user.setFailedPinAttempts(0);
-            user.setPinLockedUntil(null);
+        boolean pinOk = false;
+        String pinHash = user.getSecurityPinHash();
+        if (pinHash != null && !pinHash.isBlank()) {
+            pinOk = passwordEncoder.matches(inputCode, pinHash);
+            comparisons++;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        PasswordResetOtp eligibleOtp = otpRepository
+                .findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
+                .filter(r -> !r.getExpiresAt().isBefore(now) && r.getAttempts() < MAX_ATTEMPTS)
+                .orElse(null);
+        boolean otpOk = false;
+        if (eligibleOtp != null) {
+            otpOk = passwordEncoder.matches(inputCode, eligibleOtp.getOtpHash());
+            comparisons++;
+        }
+
+        burnHashWork(inputCode, comparisons);
+
+        if (pinOk) {
+            clearRecoveryFailures(user);
             log.info("Password reset authorized via 6-digit Security PIN for email={}",
                     LoggingUtils.maskEmail(email));
-        }
-
-        if (!verified) {
-            Optional<PasswordResetOtp> recordOpt =
-                    otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(
-                            user.getEmail(), "PASSWORD_RESET");
-            if (recordOpt.isPresent()) {
-                PasswordResetOtp record = recordOpt.get();
-                if (!record.getExpiresAt().isBefore(LocalDateTime.now()) && record.getAttempts() < MAX_ATTEMPTS) {
-                    if (passwordEncoder.matches(inputCode, record.getOtpHash())) {
-                        verified = true;
-                        record.setUsed(true);
-                        otpRepository.save(record);
-                        user.setFailedPinAttempts(0);
-                        user.setPinLockedUntil(null);
-                        log.info("Password reset authorized via Email OTP for email={}",
-                                LoggingUtils.maskEmail(email));
-                    } else {
-                        record.setAttempts(record.getAttempts() + 1);
-                        otpRepository.save(record);
-                    }
-                }
+        } else if (otpOk) {
+            eligibleOtp.setUsed(true);
+            otpRepository.save(eligibleOtp);
+            clearRecoveryFailures(user);
+            log.info("Password reset authorized via Email OTP for email={}", LoggingUtils.maskEmail(email));
+        } else {
+            if (eligibleOtp != null) {
+                eligibleOtp.setAttempts(eligibleOtp.getAttempts() + 1);
+                otpRepository.save(eligibleOtp);
             }
-        }
-
-        if (!verified) {
-            int failed = user.getFailedPinAttempts() + 1;
+            int failed = user.getFailedPinAttempts() + 1; // entity getter already maps a null column to 0
             user.setFailedPinAttempts(failed);
-            if (failed >= 5) {
-                user.setPinLockedUntil(LocalDateTime.now().plusMinutes(15));
-                log.warn("Account recovery locked for 15 minutes due to 5 consecutive failed attempts for email={}",
-                        LoggingUtils.maskEmail(email));
+            if (failed >= MAX_FAILED_ATTEMPTS) {
+                user.setPinLockedUntil(LocalDateTime.now().plusMinutes(LOCK_MINUTES));
+                log.warn("Account recovery locked for {} minutes after {} consecutive failed attempts for email={}",
+                        LOCK_MINUTES, failed, LoggingUtils.maskEmail(email));
             }
             userRepository.save(user);
             throw new BadCredentialsException(INVALID_CODE_MESSAGE);
@@ -287,6 +337,22 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         record.setUsed(true);
         otpRepository.save(record);
         log.info("Signup OTP verified successfully for email={}", LoggingUtils.maskEmail(email));
+    }
+
+    private static void clearRecoveryFailures(User user) {
+        user.setFailedPinAttempts(0);
+        user.setPinLockedUntil(null);
+    }
+
+    /**
+     * Performs however many dummy hash comparisons are needed to bring an attempt
+     * that has already done {@code alreadyDone} real ones up to
+     * {@link #HASH_COMPARISONS_PER_ATTEMPT}. The results are discarded.
+     */
+    private void burnHashWork(String inputCode, int alreadyDone) {
+        for (int i = alreadyDone; i < HASH_COMPARISONS_PER_ATTEMPT; i++) {
+            passwordEncoder.matches(inputCode, dummyHash);
+        }
     }
 
     /** Trimmed, lower-cased key under which a SIGNUP OTP row is stored and looked up. */

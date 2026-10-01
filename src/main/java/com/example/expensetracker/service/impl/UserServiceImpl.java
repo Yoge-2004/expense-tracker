@@ -140,10 +140,17 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (user.getPinLockedUntil() != null && user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
-            log.warn("Security PIN verification blocked: userId={} is locked until {}",
-                    userId, user.getPinLockedUntil());
-            throw new IllegalStateException("Security PIN verification temporarily locked");
+        if (user.getPinLockedUntil() != null) {
+            if (user.getPinLockedUntil().isAfter(LocalDateTime.now())) {
+                log.warn("Security PIN verification blocked: userId={} is locked until {}",
+                        userId, user.getPinLockedUntil());
+                throw new IllegalStateException("Security PIN verification temporarily locked");
+            }
+            // The lock has been served: start from a clean slate. Without this the
+            // counter stayed at >= 5, so a single wrong PIN after expiry re-locked
+            // the account for another full 15 minutes.
+            user.setPinLockedUntil(null);
+            user.setFailedPinAttempts(0);
         }
 
         if (user.getSecurityPinHash() == null || user.getSecurityPinHash().isBlank()) {
