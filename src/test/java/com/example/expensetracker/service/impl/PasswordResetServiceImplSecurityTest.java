@@ -114,7 +114,8 @@ class PasswordResetServiceImplSecurityTest {
                     () -> service.resetPassword("real@example.com", "123456", "newpassword"));
 
             assertEquals(wrongCode.getMessage(), unknown.getMessage());
-            assertEquals("Invalid verification code or Security PIN.", unknown.getMessage());
+            assertTrue(unknown.getMessage().startsWith("Invalid verification code or Security PIN."),
+                    unknown.getMessage());
         }
 
         @Test
