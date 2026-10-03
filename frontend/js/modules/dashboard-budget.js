@@ -18,6 +18,7 @@
             appConfirm,
             openModal,
             closeModal,
+            getExpenses,
             getCachedBudgets,
             setCachedBudgets
         } = deps;
@@ -106,7 +107,11 @@
                 }
 
                 renderBudgetVsActualChart(normalizedBudgets);
-                renderFinancialInsights(window.allExpenses || []);
+                // `allExpenses` is a script-scoped `let` in dashboard.js, NOT a property of
+                // `window`, so the previous `window.allExpenses || []` was always `[]` and
+                // re-rendered the whole Smart Intelligence panel with zero expenses every
+                // time budgets finished loading. Read it through the injected accessor.
+                renderFinancialInsights(getExpenses());
             } catch (error) {
                 console.error("Budget Error", error);
                 if (elements.budgetList) {
