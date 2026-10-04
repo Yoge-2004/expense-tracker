@@ -268,10 +268,59 @@
         setupNotificationToggle();
     }
 
+    async function notifySalaryCredit(amount, currency = '₹', source = 'Salary') {
+        const title = `💰 ${source} Credited: ${currency} ${Number(amount).toLocaleString('en-IN')}`;
+        const body = 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!';
+        if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+                if (swRegistration && 'showNotification' in swRegistration) {
+                    await swRegistration.showNotification(title, {
+                        body,
+                        icon: 'assets/icon-192.png',
+                        badge: 'assets/icon-192.png',
+                        tag: 'salary-inflow'
+                    });
+                } else {
+                    new Notification(title, { body, icon: 'assets/icon-192.png' });
+                }
+            } catch (e) {
+                console.warn('[DashboardNotifications] Error:', e);
+            }
+        }
+    }
+
+    async function notifyBudgetThresholdAlert(categoryName, percentSpent, remainingAmt, currency = '₹') {
+        const isExceeded = percentSpent >= 100;
+        const title = isExceeded
+            ? `🚨 Budget Exceeded: ${categoryName}`
+            : `⚠️ Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
+        const body = isExceeded
+            ? `You have exceeded your limit for ${categoryName} by ${currency} ${Math.abs(remainingAmt).toLocaleString('en-IN')}.`
+            : `You have used ${Math.round(percentSpent)}% of your ${categoryName} budget. Remaining buffer: ${currency} ${remainingAmt.toLocaleString('en-IN')}.`;
+        if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+                if (swRegistration && 'showNotification' in swRegistration) {
+                    await swRegistration.showNotification(title, {
+                        body,
+                        icon: 'assets/icon-192.png',
+                        badge: 'assets/icon-192.png',
+                        tag: `budget-${categoryName}`
+                    });
+                } else {
+                    new Notification(title, { body, icon: 'assets/icon-192.png' });
+                }
+            } catch (e) {
+                console.warn('[DashboardNotifications] Error:', e);
+            }
+        }
+    }
+
     window.DashboardNotifications = Object.freeze({
         parseFinancialDebitText,
         requestNotificationPermission,
         notifyInstantDebit,
+        notifySalaryCredit,
+        notifyBudgetThresholdAlert,
         ingestFinancialMessage,
         handleNotificationAction
     });

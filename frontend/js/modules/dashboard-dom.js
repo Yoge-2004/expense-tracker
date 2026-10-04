@@ -84,9 +84,14 @@
         if (badge) {
             badge.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:48px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;\"></span>";
         }
-        const footerSpan = card.querySelector(".metric-footer span");
-        if (footerSpan && !footerSpan.querySelector(".skeleton")) {
-            footerSpan.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:85px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        const dailyBurn = card.querySelector("#dailyBurnRate");
+        if (dailyBurn) {
+            dailyBurn.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        } else {
+            const footerSpan = card.querySelector(".metric-footer span");
+            if (footerSpan && !footerSpan.querySelector(".skeleton")) {
+                footerSpan.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:85px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+            }
         }
     });
     // Expense list skeleton

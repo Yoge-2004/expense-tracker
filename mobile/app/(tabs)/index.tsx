@@ -55,6 +55,7 @@ import {
 } from '../../components/FinancialCharts';
 import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
+import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -123,75 +124,6 @@ interface Subscription {
 /**
  * Main dashboard screen component.
  */
-
-interface ThemeToggleProps {
-  isLight: boolean;
-  colors: any;
-  onToggle: () => void;
-}
-
-const ThemeToggleActionBtn: React.FC<ThemeToggleProps> = React.memo(({ isLight, colors, onToggle }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  const handlePressIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    Animated.spring(scaleAnim, {
-      toValue: 0.85,
-      useNativeDriver: true,
-      speed: 40,
-      bounciness: 4,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 30,
-      bounciness: 6,
-    }).start();
-  };
-
-  const handlePress = () => {
-    rotateAnim.setValue(0);
-    Animated.timing(rotateAnim, {
-      toValue: 1,
-      duration: 180,
-      useNativeDriver: true,
-    }).start();
-    onToggle();
-  };
-
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "180deg"],
-  });
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={handlePress}
-      accessibilityLabel="Toggle Theme"
-      accessibilityRole="button"
-    >
-      <Animated.View
-        style={[
-          styles.topActionBtn,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            transform: [{ scale: scaleAnim }, { rotate: spin }],
-          },
-        ]}
-      >
-        <Ionicons name={isLight ? "moon" : "sunny"} size={18} color={colors.primary} />
-      </Animated.View>
-    </TouchableOpacity>
-  );
-});
 
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
@@ -279,6 +211,7 @@ export default function DashboardScreen() {
   const fetchData = async (silent: boolean = false) => {
     if (!userId) return;
     if (!silent) setIsLoading(true);
+    else setRefreshing(true);
 
     try {
       const [expensesData, budgetsData, globalCats, userCats, subsData, incomesData, savingsData] = await Promise.all([
@@ -749,7 +682,7 @@ export default function DashboardScreen() {
             id: i.id,
             uniqueKey: `inc-${i.id}`,
             type: "income" as const,
-            title: i.source || "Income",
+            title: (i.description && i.description.trim()) ? i.description.trim() : (i.source || "Income"),
             categoryOrSource: i.source || "Inflow",
             amount: Number(i.amount || 0),
             date: i.incomeDate || "",
@@ -881,22 +814,36 @@ export default function DashboardScreen() {
             </TouchableOpacity>
 
             {/* Modern Instant-Feedback Theme Toggle Button */}
-            <ThemeToggleActionBtn isLight={isLight} colors={c} onToggle={toggleTheme} />
+            <ThemeToggleBtn />
           </View>
         </View>
 
         {/* Offline / Cached Data Banner */}
         {fetchError && expenses.length > 0 && (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => fetchData(true)}
+          <View
             style={[styles.offlineBanner, { backgroundColor: '#C79A3E18', borderColor: '#C79A3E40' }]}
           >
             <Ionicons name="cloud-offline" size={16} color="#C79A3E" />
             <Text style={[styles.offlineBannerText, { color: '#C79A3E' }]}>
-              Offline mode {cachedTime ? `· Cached at ${cachedTime}` : ''} · Tap to retry
+              Offline mode {cachedTime ? `· Cached at ${cachedTime}` : ''}
             </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              disabled={refreshing}
+              onPress={() => fetchData(true)}
+              style={styles.retryPillBtn}
+              accessibilityLabel="Retry Connection"
+            >
+              {refreshing ? (
+                <ActivityIndicator size="small" color="#10120E" />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={12} color="#10120E" />
+                  <Text style={styles.retryPillText}>Retry</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* =========================================
@@ -1345,7 +1292,7 @@ export default function DashboardScreen() {
                               </Text>
                               <View style={styles.txSubRow}>
                                 <Text style={[styles.txCatName, { color: catColor }]}>
-                                  {isIncome ? "Inflow" : tx.categoryOrSource}
+                                  {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
                                 </Text>
                                 <Text style={[styles.txDot, { color: c.textMuted }]}>•</Text>
                                 <Text style={[styles.txDate, { color: c.textMuted }]}>{tx.date}</Text>
@@ -1494,6 +1441,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 11.5,
     fontWeight: '600',
+  },
+  retryPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: '#C79A3E',
+  },
+  retryPillText: {
+    color: '#10120E',
+    fontWeight: '700',
+    fontSize: 11,
   },
   topBar: {
     flexDirection: 'row',

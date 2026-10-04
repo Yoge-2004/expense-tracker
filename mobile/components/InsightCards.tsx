@@ -12,7 +12,7 @@
  * 8. Fixed Recurring Overhead Ratio
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -100,7 +100,7 @@ const ESSENTIAL_CATEGORIES = [
 /**
  * Intelligent Financial Analytics component.
  */
-export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, incomes = [], savingsGoals = [] }) => {
+export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses, budgets, incomes = [], savingsGoals = [] }) => {
   const { theme, currency } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -110,6 +110,8 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
 
   const safeExpenses = expenses || [];
   const safeBudgets = budgets || [];
+  const safeIncomes = incomes || [];
+  const safeGoals = savingsGoals || [];
 
   const now = new Date();
   const currentDay = Math.max(now.getDate(), 1);
@@ -121,6 +123,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
     return `${currSym}${val.toLocaleString('en-IN')}`;
   };
 
+  const metrics = useMemo(() => {
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. Burn Velocity & Projections
   // ─────────────────────────────────────────────────────────────────────────────
@@ -339,13 +342,113 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
   const totalCommittedOverhead = recurringTotal + recurringChitTotal;
   const commitmentAutonomyRatio = activeInflow > 0 ? Math.round((totalCommittedOverhead / activeInflow) * 100) : 0;
 
+  // 12. CROSS-DOMAIN SYNTHESIS: Income Stream Composition & Salary Coverage
+  const salaryInflow = currentMonthIncomes
+    .filter((i) => (i.source || '').toLowerCase().includes('salary'))
+    .reduce((s, i) => s + Math.max(0, Number(i.amount || 0)), 0);
+  const otherInflow = Math.max(0, activeInflow - salaryInflow);
+  const salarySharePct = activeInflow > 0 ? Math.round((salaryInflow / activeInflow) * 100) : 0;
+  const salaryCoverageRatio = currentMonthSpent > 0
+    ? Math.round((salaryInflow / currentMonthSpent) * 100)
+    : (salaryInflow > 0 ? 100 : 0);
+
+  // 13. CROSS-DOMAIN SYNTHESIS: Emergency Savings Runway
+  const allTimeSpent = safeExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+  const monthlyBurnBaseline = currentMonthSpent > 0 ? currentMonthSpent : allTimeSpent;
+  const emergencyRunwayMonths = (monthlyBurnBaseline > 0 && totalGoalsCurrent > 0)
+    ? (totalGoalsCurrent / monthlyBurnBaseline).toFixed(1)
+    : '0';
+
+
+    return {
+      currentMonthSpent,
+      dailyBurn,
+      projectedSpent,
+      essentialSpent,
+      discretionarySpent,
+      discretionaryPct,
+      potentialSavings,
+      weekendSpent,
+      weekdaySpent,
+      avgWeekendTx,
+      avgWeekdayTx,
+      weekendMultiplier,
+      governanceScore,
+      breachedBudgetsCount,
+      warningBudgetsCount,
+      burnout: earliestBurnout as BurnoutCandidate | null,
+      txCount,
+      avgTicketSize,
+      txPerDay,
+      peak: peakExpense as ExpenseItem | null,
+      recurringTotal,
+      recurringRatio,
+      totalMonthlyInflow,
+      activeInflow,
+      netCashFlow,
+      savingsRate,
+      totalGoalsTarget,
+      totalGoalsCurrent,
+      totalGoalsRemaining,
+      goalsFundingPct,
+      monthsToFundGoals,
+      recurringChitTotal,
+      totalCommittedOverhead,
+      commitmentAutonomyRatio,
+      salaryInflow,
+      otherInflow,
+      salarySharePct,
+      salaryCoverageRatio,
+      emergencyRunwayMonths,
+    };
+  }, [safeExpenses, safeBudgets, incomes, savingsGoals, currentDay, daysInMonth]);
+
+  const {
+    currentMonthSpent,
+    dailyBurn,
+    projectedSpent,
+    essentialSpent,
+    discretionarySpent,
+    discretionaryPct,
+    potentialSavings,
+    weekendSpent,
+    weekdaySpent,
+    avgWeekendTx,
+    avgWeekdayTx,
+    weekendMultiplier,
+    governanceScore,
+    breachedBudgetsCount,
+    warningBudgetsCount,
+    burnout,
+    txCount,
+    avgTicketSize,
+    txPerDay,
+    peak,
+    recurringTotal,
+    recurringRatio,
+    totalMonthlyInflow,
+    activeInflow,
+    netCashFlow,
+    savingsRate,
+    totalGoalsTarget,
+    totalGoalsCurrent,
+    totalGoalsRemaining,
+    goalsFundingPct,
+    monthsToFundGoals,
+    recurringChitTotal,
+    totalCommittedOverhead,
+    commitmentAutonomyRatio,
+    salaryInflow,
+    otherInflow,
+    salarySharePct,
+    salaryCoverageRatio,
+    emergencyRunwayMonths,
+  } = metrics;
+
   const openDetail = (data: DetailedInsightModalData) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setSelectedInsight(data);
   };
-
-  const burnout = earliestBurnout as BurnoutCandidate | null;
-  const peak = peakExpense as ExpenseItem | null;
 
   return (
     <View style={styles.container}>
@@ -538,6 +641,98 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
               Locked: <Text style={{ color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6', fontWeight: '700' }}>{formatAmt(totalCommittedOverhead)}</Text>/mo
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* CROSS-DOMAIN CARD: Income Stream Composition & Salary Coverage */}
+        {(activeTab === 'all' || activeTab === 'forecasts' || activeTab === 'habits') && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              openDetail({
+                title: 'Income Streams & Salary Coverage',
+                icon: 'cash-outline',
+                color: salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B',
+                headline:
+                  activeInflow > 0
+                    ? `Base salary provides ${salarySharePct}% of total inflows (${formatAmt(salaryInflow)}), covering ${salaryCoverageRatio}% of your monthly living expenses.`
+                    : 'Log salary and secondary income streams to model income stability and coverage ratios.',
+                metrics: [
+                  { label: 'Base Salary', value: formatAmt(salaryInflow) },
+                  { label: 'Other Inflows', value: formatAmt(otherInflow) },
+                  { label: 'Monthly Expenses', value: formatAmt(currentMonthSpent) },
+                  { label: 'Salary Coverage Ratio', value: `${salaryCoverageRatio}%` },
+                ],
+                advice:
+                  activeInflow <= 0
+                    ? 'Log your salary and secondary earnings to analyze your income stability and safety margins.'
+                    : salaryCoverageRatio >= 100
+                    ? 'Excellent! Your base salary alone covers 100% of all monthly expenses, allowing bonus/other income to go straight to savings.'
+                    : 'Your monthly expenses currently exceed base salary. You depend on irregular or secondary inflows to balance the budget.',
+              })
+            }
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: (salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B') + '18' }]}>
+                <Ionicons name="cash-outline" size={18} color={salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B'} />
+              </View>
+              <Text style={[styles.cardTag, { color: salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B' }]}>Income Intel</Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: c.text }]}>Salary Coverage</Text>
+            <Text style={[styles.cardPrimaryVal, { color: salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B' }]}>
+              {activeInflow > 0 ? `${salaryCoverageRatio}%` : 'N/A'}
+            </Text>
+            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
+              Salary: {formatAmt(salaryInflow)} · Other: {formatAmt(otherInflow)}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* CROSS-DOMAIN CARD: Emergency Savings Runway */}
+        {(activeTab === 'all' || activeTab === 'forecasts') && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              openDetail({
+                title: 'Emergency Savings Runway',
+                icon: 'shield-checkmark-outline',
+                color: Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B',
+                headline:
+                  totalGoalsCurrent > 0
+                    ? `Current accumulated reserves (${formatAmt(totalGoalsCurrent)}) can sustain your living expenses for ${emergencyRunwayMonths} months without any new income.`
+                    : 'Configure savings goals or reserves to calculate your emergency runway.',
+                metrics: [
+                  { label: 'Accumulated Reserves', value: formatAmt(totalGoalsCurrent) },
+                  { label: 'Monthly Burn Rate', value: formatAmt(currentMonthSpent) },
+                  { label: 'Emergency Runway', value: `${emergencyRunwayMonths} Months` },
+                  { label: 'Target 6-Mo Reserve', value: formatAmt(currentMonthSpent * 6) },
+                ],
+                advice:
+                  totalGoalsCurrent <= 0
+                    ? 'Build a dedicated emergency fund goal covering at least 3 to 6 months of expenses for financial resilience.'
+                    : Number(emergencyRunwayMonths) >= 6
+                    ? 'Institutional Gold Standard! You have over 6 months of living expenses safely banked.'
+                    : Number(emergencyRunwayMonths) >= 3
+                    ? 'Healthy safety cushion! Maintain this baseline while directing surplus cash flow toward investments.'
+                    : 'Runway is below the recommended 3 months. Prioritize building reserves before increasing discretionary spending.',
+              })
+            }
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: (Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B') + '18' }]}>
+                <Ionicons name="shield-checkmark-outline" size={18} color={Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B'} />
+              </View>
+              <Text style={[styles.cardTag, { color: Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B' }]}>Resilience</Text>
+            </View>
+            <Text style={[styles.cardTitle, { color: c.text }]}>Emergency Runway</Text>
+            <Text style={[styles.cardPrimaryVal, { color: Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B' }]}>
+              {emergencyRunwayMonths} Mo
+            </Text>
+            <Text style={[styles.cardSubText, { color: c.textMuted }]}>
+              Reserves: <Text style={{ color: c.text, fontWeight: '700' }}>{formatAmt(totalGoalsCurrent)}</Text>
             </Text>
           </TouchableOpacity>
         )}
@@ -1058,7 +1253,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({ expenses, budgets, i
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

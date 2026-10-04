@@ -331,6 +331,8 @@
     position: sticky;
     top: 0;
     background: var(--card-bg, #161814);
+    border-top-left-radius: 22px !important;
+    border-top-right-radius: 22px !important;
     z-index: 2;
     flex-shrink: 0;
 }

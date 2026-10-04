@@ -23,6 +23,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * Keeps the latest database snapshot in the Hugging Face Space repository.
@@ -204,4 +206,31 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 || encryptionKey == null || encryptionKey.isBlank()
                 || space == null || space.isBlank();
     }
+
+    @Override
+    public Map<String, Object> getDiagnostics() {
+        Map<String, Object> diag = new LinkedHashMap<>();
+        boolean tokenPresent = token != null && !token.isBlank();
+        boolean keyPresent = encryptionKey != null && !encryptionKey.isBlank();
+        boolean spacePresent = space != null && !space.isBlank();
+
+        diag.put("space", space != null ? space : "unset");
+        diag.put("tokenConfigured", tokenPresent);
+        diag.put("encryptionKeyConfigured", keyPresent);
+        diag.put("isConfigured", !isNotConfigured());
+
+        if (!tokenPresent) {
+            diag.put("statusMessage", "HF_TOKEN is missing or blank. Please set HF_TOKEN environment variable.");
+        } else if (!keyPresent) {
+            diag.put("statusMessage", "DB_BACKUP_KEY is missing. Database snapshots require an encryption key.");
+        } else if (!spacePresent) {
+            diag.put("statusMessage", "HF_SPACE_REPO is missing.");
+        } else {
+            String tokenDiagnosis = HuggingFaceFileClient.inspectToken(token);
+            diag.put("tokenDiagnosis", tokenDiagnosis);
+            diag.put("statusMessage", tokenDiagnosis);
+        }
+        return diag;
+    }
 }
+

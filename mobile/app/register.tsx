@@ -37,7 +37,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { AmbientAura } from '../components/AmbientAura';
 import { StaggeredView } from '../components/StaggeredView';
+import { ThemeToggleBtn } from '../components/ThemeToggleBtn';
 import { performGoogleSignIn } from '../services/googleAuth';
+import { requestNotificationPermissions, scheduleDailyExpenseReminders } from '../services/notifications';
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -192,6 +194,12 @@ export default function RegisterScreen() {
     setIsLoading(true);
     try {
       await register(name.trim(), username.trim(), email.trim(), password, '', currency, securityPin.trim());
+      try {
+        const granted = await requestNotificationPermissions();
+        if (granted) {
+          await scheduleDailyExpenseReminders();
+        }
+      } catch (_) {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('🎉 Welcome!', 'Account created successfully! Please sign in with your credentials.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
@@ -213,6 +221,12 @@ export default function RegisterScreen() {
     setIsLoading(true);
     try {
       await register(name.trim(), username.trim(), email.trim(), password, otp.trim(), currency, securityPin.trim());
+      try {
+        const granted = await requestNotificationPermissions();
+        if (granted) {
+          await scheduleDailyExpenseReminders();
+        }
+      } catch (_) {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert('🎉 Welcome!', 'Account created successfully! Please sign in.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
@@ -247,6 +261,10 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <ThemeToggleBtn />
+        </View>
+
         <Animated.View
           style={[
             styles.card,

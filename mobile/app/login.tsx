@@ -32,6 +32,7 @@ import * as Haptics from 'expo-haptics';
 import { AmbientAura } from '../components/AmbientAura';
 import { StaggeredView } from '../components/StaggeredView';
 import { AnimatedButton } from '../components/AnimatedButton';
+import { ThemeToggleBtn } from '../components/ThemeToggleBtn';
 import { performGoogleSignIn } from '../services/googleAuth';
 
 const FEATURES = [
@@ -172,6 +173,10 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <ThemeToggleBtn />
+        </View>
+
         {/* HERO BRANDING SECTION */}
         <Animated.View
           style={[styles.heroSection, { opacity: fadeAnim, transform: [{ translateY: heroSlide }] }]}

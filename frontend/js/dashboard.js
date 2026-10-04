@@ -2197,6 +2197,26 @@ function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
     if (totalSavedProgress) {
         totalSavedProgress.textContent = `Saved: ${formatCurrency(totalSaved)}`;
     }
+
+    let dailyBurnEl = document.getElementById("dailyBurnRate");
+    if (!dailyBurnEl) {
+        const burnBadge = document.getElementById("burnRateBadge");
+        if (burnBadge) {
+            burnBadge.innerHTML = 'Burn: <span id="dailyBurnRate"></span>';
+            dailyBurnEl = document.getElementById("dailyBurnRate");
+        }
+    }
+    if (dailyBurnEl && (dailyBurnEl.querySelector(".skeleton") || dailyBurnEl.textContent.trim() === "" || dailyBurnEl.textContent.includes("—"))) {
+        const now = new Date();
+        const currentDay = Math.max(now.getDate(), 1);
+        const currentMonthExpenses = (expenses || []).filter(e => {
+            const d = new Date(e.expenseDate);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+        const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const dailyBurn = currentMonthSpent / currentDay;
+        dailyBurnEl.textContent = `${formatCurrency(dailyBurn)} / day`;
+    }
 }
 
 function formatGoalFrequency(freq, interval) {
@@ -3480,8 +3500,70 @@ periodViewReportBtn?.addEventListener("click", () => {
     openMonthlyReportPreview(selectedReportYear, selectedReportMonth);
 });
 
+async function downloadMonthlyPdf(year = selectedReportYear, month = selectedReportMonth) {
+    if (!userId) {
+        showToast("Session expired, please sign in again.", "error");
+        return;
+    }
+    try {
+        const targetYear = year || selectedReportYear || new Date().getFullYear();
+        const targetMonth = month || selectedReportMonth || (new Date().getMonth() + 1);
+        const padMonth = String(targetMonth).padStart(2, "0");
+        const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+        const from = `${targetYear}-${padMonth}-01`;
+        const to = `${targetYear}-${padMonth}-${String(lastDay).padStart(2, "0")}`;
+        const curr = (typeof userCurrency !== "undefined" && userCurrency) ? userCurrency : (localStorage.getItem("preferredCurrency") || "INR");
+        const url = `${API_BASE_URL}/reports/user/${userId}/export/range/pdf?from=${from}&to=${to}&currency=${encodeURIComponent(curr)}`;
+        const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
+            ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
+            : { name: `Month_${padMonth}` };
+        downloadAuthenticated(
+            url,
+            `ExpenseTracker_Statement_${monthObj.name}_${targetYear}.pdf`,
+            `Generating ${monthObj.name} ${targetYear} Executive PDF Statement...`
+        );
+    } catch (err) {
+        showToast(err.message || "Failed to download PDF report", "error");
+    }
+}
+
+async function downloadMonthlyExcel(year = selectedReportYear, month = selectedReportMonth) {
+    if (!userId) {
+        showToast("Session expired, please sign in again.", "error");
+        return;
+    }
+    try {
+        const targetYear = year || selectedReportYear || new Date().getFullYear();
+        const targetMonth = month || selectedReportMonth || (new Date().getMonth() + 1);
+        const padMonth = String(targetMonth).padStart(2, "0");
+        const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+        const from = `${targetYear}-${padMonth}-01`;
+        const to = `${targetYear}-${padMonth}-${String(lastDay).padStart(2, "0")}`;
+        const curr = (typeof userCurrency !== "undefined" && userCurrency) ? userCurrency : (localStorage.getItem("preferredCurrency") || "INR");
+        const url = `${API_BASE_URL}/reports/user/${userId}/export/range/excel?from=${from}&to=${to}&currency=${encodeURIComponent(curr)}`;
+        const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
+            ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
+            : { name: `Month_${padMonth}` };
+        downloadAuthenticated(
+            url,
+            `ExpenseTracker_Workbook_${monthObj.name}_${targetYear}.xlsx`,
+            `Generating ${monthObj.name} ${targetYear} PowerBI Excel Workbook...`
+        );
+    } catch (err) {
+        showToast(err.message || "Failed to download Excel workbook", "error");
+    }
+}
+
 periodDownloadReportBtn?.addEventListener("click", () => {
     downloadMonthlyReport(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodDownloadPdfBtn")?.addEventListener("click", () => {
+    downloadMonthlyPdf(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodDownloadExcelBtn")?.addEventListener("click", () => {
+    downloadMonthlyExcel(selectedReportYear, selectedReportMonth);
 });
 
 document.getElementById("periodExportCsvBtn")?.addEventListener("click", () => {

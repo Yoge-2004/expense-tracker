@@ -244,3 +244,126 @@ export async function processIncomingMessageForDebitNotification(rawText: string
   }
   return null;
 }
+
+
+const ALERTS_CHANNEL_ID = 'financial-alerts';
+
+/**
+ * Triggers a push notification when Salary or a major income stream is received.
+ */
+export async function notifySalaryCredit(amount: number, currency: string = '₹', source: string = 'Salary'): Promise<boolean> {
+  if (isExpoGo || !Notifications) return false;
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return false;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `💰 ${source} Credited: ${currency} ${amount.toLocaleString('en-IN')}`,
+        body: 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!',
+        sound: true,
+        data: { screen: '/(tabs)/index', tab: 'incomes' },
+        ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
+      },
+      trigger: null,
+    });
+    return true;
+  } catch (error) {
+    console.warn('[Notifications] Failed to trigger salary notification:', error);
+    return false;
+  }
+}
+
+/**
+ * Triggers a push notification when a category budget crosses 80% or 100%.
+ */
+export async function notifyBudgetThresholdAlert(categoryName: string, percentSpent: number, remainingAmt: number, currency: string = '₹'): Promise<boolean> {
+  if (isExpoGo || !Notifications) return false;
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return false;
+
+    const isExceeded = percentSpent >= 100;
+    const title = isExceeded
+      ? `🚨 Budget Exceeded: ${categoryName}`
+      : `⚠️ Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
+    const body = isExceeded
+      ? `You have exceeded your limit for ${categoryName} by ${currency} ${Math.abs(remainingAmt).toLocaleString('en-IN')}.`
+      : `You have used ${Math.round(percentSpent)}% of your ${categoryName} budget. Remaining buffer: ${currency} ${remainingAmt.toLocaleString('en-IN')}.`;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+        data: { screen: '/(tabs)/index' },
+        ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
+      },
+      trigger: null,
+    });
+    return true;
+  } catch (error) {
+    console.warn('[Notifications] Failed to trigger budget alert:', error);
+    return false;
+  }
+}
+
+/**
+ * Triggers a reminder 2 days before a recurring subscription renews.
+ */
+export async function notifySubscriptionDue(subscriptionName: string, amount: number, dueDate: string, currency: string = '₹'): Promise<boolean> {
+  if (isExpoGo || !Notifications) return false;
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return false;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `🔁 Upcoming Renewal: ${subscriptionName}`,
+        body: `${subscriptionName} (${currency} ${amount.toFixed(2)}) is scheduled to renew on ${dueDate}. Review or ensure adequate balance.`,
+        sound: true,
+        data: { screen: '/(tabs)/subscriptions' },
+        ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
+      },
+      trigger: null,
+    });
+    return true;
+  } catch (error) {
+    console.warn('[Notifications] Failed to trigger subscription notification:', error);
+    return false;
+  }
+}
+
+/**
+ * Triggers a milestone celebration notification when a savings goal milestone is hit.
+ */
+export async function notifySavingsGoalMilestone(goalName: string, progressPercent: number, savedAmount: number, targetAmount: number, currency: string = '₹'): Promise<boolean> {
+  if (isExpoGo || !Notifications) return false;
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return false;
+
+    const isComplete = progressPercent >= 100;
+    const title = isComplete
+      ? `🎉 Goal Accomplished: ${goalName}!`
+      : `🎯 Milestone Reached: ${goalName} (${progressPercent}%)`;
+    const body = isComplete
+      ? `Congratulations! You have reached 100% of your target: ${currency} ${savedAmount.toLocaleString('en-IN')}.`
+      : `Great progress! You have saved ${currency} ${savedAmount.toLocaleString('en-IN')} of ${currency} ${targetAmount.toLocaleString('en-IN')} (${progressPercent}%).`;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+        data: { screen: '/(tabs)/index' },
+        ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
+      },
+      trigger: null,
+    });
+    return true;
+  } catch (error) {
+    console.warn('[Notifications] Failed to trigger savings milestone notification:', error);
+    return false;
+  }
+}
