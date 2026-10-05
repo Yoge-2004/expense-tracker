@@ -14,6 +14,10 @@ jobs:
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -26,6 +30,28 @@ jobs:
         run: |
           set -o pipefail
           mvn -B test 2>&1 | tee backend-test.log
+      - name: TEMP diagnostics (do not merge)
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo '### Backend failure digest (temporary)'
+            echo '```'
+            grep -E "Tests run:.*Fail|^\[ERROR\]|<<< (FAILURE|ERROR)|expected:|Wanted but not invoked|TooManyActual|Unnecessary|PotentialStubbing" backend-test.log | grep -v "^\[ERROR\] *$" | head -140
+            echo '```'
+          } > /tmp/digest.md
+          python3 - <<'PY'
+          import json, os, urllib.request
+          body = open('/tmp/digest.md').read()[:60000]
+          url = "https://api.github.com/repos/" + os.environ["GITHUB_REPOSITORY"] + "/issues/" + os.environ["PR_NUMBER"] + "/comments"
+          req = urllib.request.Request(url, data=json.dumps({"body": body}).encode(), method="POST")
+          req.add_header("Authorization", "Bearer " + os.environ["GH_TOKEN"])
+          req.add_header("Accept", "application/vnd.github+json")
+          urllib.request.urlopen(req)
+          PY
       - name: Upload backend test log and reports
         if: always()
         uses: actions/upload-artifact@v7
