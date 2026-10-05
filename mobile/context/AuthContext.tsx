@@ -311,7 +311,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(async (): Promise<void> => {
     setTheme((prevTheme) => {
       const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      // Persist asynchronously in background without blocking frame render
+      // Persist asynchronously in background without blocking immediate frame render
       SecureStore.setItemAsync('app_theme', nextTheme).catch((e) => {
         console.warn('[AuthContext] Failed to persist theme preference:', e);
       });

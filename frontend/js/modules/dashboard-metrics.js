@@ -32,7 +32,14 @@
     const dailyBurn = currentMonthSpent / currentDay;
     const projectedSpent = dailyBurn * daysInMonth;
 
-    const dailyBurnEl = document.getElementById("dailyBurnRate");
+    let dailyBurnEl = document.getElementById("dailyBurnRate");
+    if (!dailyBurnEl) {
+        const burnBadge = document.getElementById("burnRateBadge");
+        if (burnBadge) {
+            burnBadge.innerHTML = 'Burn: <span id="dailyBurnRate"></span>';
+            dailyBurnEl = document.getElementById("dailyBurnRate");
+        }
+    }
     if (dailyBurnEl) dailyBurnEl.textContent = `${formatCurrency(dailyBurn)} / day`;
     const forecastEl = document.getElementById("monthForecast");
     if (forecastEl) forecastEl.textContent = `Projected: ${formatCurrency(projectedSpent)}`;

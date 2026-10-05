@@ -61,10 +61,12 @@ public class FileDbSyncServiceImpl implements FileDbSyncService {
 
     private Map<String, Object> backupResult(String operation) {
         Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> diag = failoverService.getDiagnostics();
         boolean success = failoverService.backupCurrentDatabase();
         result.put("status", success ? "success" : "error");
+        result.put("diagnostics", diag);
         result.put("message", success ? operation + " completed successfully."
-                : operation + " failed or is not configured.");
+                : operation + " failed. Diagnosis: " + diag.get("statusMessage"));
         return result;
     }
 }

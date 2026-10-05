@@ -8,7 +8,7 @@ import { saveFileToDevice } from '../utils/fileDownloader';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors } from '../constants/theme';
-import { apiRequest, API_BASE_URL } from '../services/api';
+import { apiRequest, API_BASE_URL, getSession } from '../services/api';
 
 interface Props { visible: boolean; expenses: any[]; onClose: () => void; onDataImported: () => void; }
 interface TransferProgressInfo {
@@ -140,6 +140,72 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
     } catch (e: any) {
       setTransferProgress(null);
       showAlert('Export Failed', e.message || 'Could not create the report.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const downloadHtmlReport = async () => {
+    if (!userId) return;
+    try {
+      setBusy('html');
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename: `Financial_Statement_${range.label}.html`,
+        stage: 'Querying monthly ledger...',
+        percent: 25,
+        detail: `Aggregating period: ${range.label}`,
+      });
+
+      const session = await getSession();
+      const token = session?.token;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      let reqYear = year;
+      let reqMonth = month + 1;
+      if (mode === 'custom' && from) {
+        reqYear = parseInt(from.slice(0, 4), 10) || year;
+        reqMonth = parseInt(from.slice(5, 7), 10) || (month + 1);
+      }
+
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename: `Financial_Statement_${range.label}.html`,
+        stage: 'Generating executive HTML statement...',
+        percent: 60,
+        detail: 'Compiling Obsidian & Gold themes and KPI insights',
+      });
+
+      const res = await fetch(
+        `${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${reqYear}&month=${reqMonth}`,
+        { headers }
+      );
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
+      const htmlText = await res.text();
+
+      const safeLabel = range.label.replace(/[^A-Za-z0-9]+/g, '_');
+      const filename = `Financial_Statement_${safeLabel}.html`;
+      const base = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
+      const uri = `${base}${filename}`;
+
+      await FileSystem.writeAsStringAsync(uri, htmlText, { encoding: FileSystem.EncodingType.UTF8 });
+      await save(uri, filename, 'text/html', 'public.html');
+
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'HTML Statement exported successfully!',
+        percent: 100,
+        done: true,
+      });
+      setTimeout(() => setTransferProgress(null), 3000);
+    } catch (e: any) {
+      setTransferProgress(null);
+      showAlert('Export Failed', e.message || 'Could not export HTML statement.');
     } finally {
       setBusy(null);
     }
@@ -329,7 +395,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         {mode==='custom'&&<View style={[styles.periodCard,{backgroundColor:c.inputBg,borderColor:c.border}]}><Text style={[styles.helper,{color:c.textMuted}]}>Enter dates in YYYY-MM-DD format</Text><View style={styles.dateRow}><TextInput value={from} onChangeText={setFrom} placeholder="Start date" placeholderTextColor={c.textMuted} style={[styles.input,{backgroundColor:c.surface,borderColor:c.border,color:c.text}]}/><Text style={{color:c.textMuted}}>to</Text><TextInput value={to} onChangeText={setTo} placeholder="End date" placeholderTextColor={c.textMuted} style={[styles.input,{backgroundColor:c.surface,borderColor:c.border,color:c.text}]}/></View></View>}
         <View style={[styles.selected,{backgroundColor:c.inputBg,borderColor:c.border}]}><Text style={[styles.selectedLabel,{color:c.textMuted}]}>SELECTED PERIOD</Text><Text style={[styles.selectedValue,{color:c.text}]}>{range.label}</Text></View>
         <Text style={[styles.label,{color:c.textMuted}]}>2. EXECUTIVE EXPORTS</Text>
-        <View style={styles.grid}>{[['excel','Excel Dashboard','PowerBI-style workbook'],['pdf','Executive PDF','Insights + KPI report'],['csv','CSV Ledger','Fresh filtered transactions'],['json','JSON Ledger','Fresh raw transaction data'],['summary','Summary','Compact management brief']].map(([key,title,sub])=><TouchableOpacity key={key} disabled={busy!==null} onPress={()=>key==='excel'||key==='pdf'?downloadReport(key as any):exportDataFile(key as any)} style={[styles.action,{backgroundColor:c.inputBg,borderColor:c.border}]}><View style={[styles.icon,{backgroundColor:c.primary+'20'}]}>{busy===key?<ActivityIndicator size="small" color={c.primary}/>:<Ionicons name={key==='excel'?'grid-outline':key==='pdf'?'document-text-outline':key==='csv'?'receipt-outline':key==='json'?'code-slash-outline':'analytics-outline'} size={20} color={c.primary}/>}</View><Text style={[styles.actionTitle,{color:c.text}]}>{title}</Text><Text style={[styles.actionSub,{color:c.textMuted}]}>{sub}</Text></TouchableOpacity>)}</View>
+        <View style={styles.grid}>{[['excel','Excel Dashboard','PowerBI-style workbook'],['pdf','Executive PDF','Insights + KPI report'],['html','HTML Statement','Obsidian & Gold web report'],['csv','CSV Ledger','Fresh filtered transactions'],['json','JSON Ledger','Fresh raw transaction data'],['summary','Summary','Compact management brief']].map(([key,title,sub])=><TouchableOpacity key={key} disabled={busy!==null} onPress={()=>key==='excel'||key==='pdf'?downloadReport(key as any):key==='html'?downloadHtmlReport():exportDataFile(key as any)} style={[styles.action,{backgroundColor:c.inputBg,borderColor:c.border}]}><View style={[styles.icon,{backgroundColor:c.primary+'20'}]}>{busy===key?<ActivityIndicator size="small" color={c.primary}/>:<Ionicons name={key==='excel'?'grid-outline':key==='pdf'?'document-text-outline':key==='html'?'globe-outline':key==='csv'?'receipt-outline':key==='json'?'code-slash-outline':'analytics-outline'} size={20} color={c.primary}/>}</View><Text style={[styles.actionTitle,{color:c.text}]}>{title}</Text><Text style={[styles.actionSub,{color:c.textMuted}]}>{sub}</Text></TouchableOpacity>)}</View>
         <Text style={[styles.label,{color:c.textMuted,marginTop:22}]}>3. IMPORT</Text>
         <View style={styles.grid}>{[['excel','Import Excel'],['csv','Import CSV'],['json','Import JSON']].map(([key,title])=><TouchableOpacity key={key} disabled={busy!==null} onPress={()=>importFile(key as any)} style={[styles.action,{backgroundColor:c.inputBg,borderColor:c.border}]}><View style={[styles.icon,{backgroundColor:c.primary+'20'}]}><Ionicons name="cloud-upload-outline" size={20} color={c.primary}/></View><Text style={[styles.actionTitle,{color:c.text}]}>{title}</Text><Text style={[styles.actionSub,{color:c.textMuted}]}>Refreshes dashboard after import</Text></TouchableOpacity>)}</View>
         <TouchableOpacity onPress={()=>setShowJson(v=>!v)} style={[styles.paste,{borderColor:c.border,backgroundColor:c.inputBg}]}><Text style={[styles.actionTitle,{color:c.text}]}>Paste JSON manually</Text><Ionicons name={showJson?'chevron-up':'chevron-down'} size={18} color={c.text}/></TouchableOpacity>

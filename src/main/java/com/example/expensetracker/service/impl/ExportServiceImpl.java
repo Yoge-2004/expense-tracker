@@ -315,6 +315,17 @@ public class ExportServiceImpl implements ExportService {
         return exportExpensesToPdf(user, null);
     }
 
+    private static String pdfSymbol(CurrencyMeta curr) {
+        if (curr == null) return "Rs.";
+        if ("INR".equalsIgnoreCase(curr.code)) return "Rs.";
+        if (curr.symbol != null && !curr.symbol.isBlank()) {
+            if ("$".equals(curr.symbol) || "€".equals(curr.symbol) || "£".equals(curr.symbol) || "¥".equals(curr.symbol)) {
+                return curr.symbol;
+            }
+        }
+        return curr.code != null ? curr.code : "Rs.";
+    }
+
     @Override
     public byte[] exportExpensesToPdf(User user, String preferredCurrency) {
         if (user == null) {
@@ -322,6 +333,7 @@ public class ExportServiceImpl implements ExportService {
         }
         List<Expense> expenses = expenseRepository.findByUser(user);
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
+        String pdfSym = pdfSymbol(curr);
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4, 36, 36, 36, 36);
@@ -336,7 +348,7 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
-                            + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
+                            + curr.code + " (" + pdfSym + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -347,12 +359,12 @@ public class ExportServiceImpl implements ExportService {
             table.setWidths(new float[]{20, 25, 35, 20});
 
             org.openpdf.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.WHITE);
-            Color headerBg = new Color(37, 99, 235);
+            Color headerBg = new Color(15, 23, 42);
 
             addHeaderCell(table, "Date", headerFont, headerBg);
             addHeaderCell(table, "Category", headerFont, headerBg);
             addHeaderCell(table, "Description", headerFont, headerBg);
-            addHeaderCell(table, "Amount (" + curr.symbol + ")", headerFont, headerBg);
+            addHeaderCell(table, "Amount (" + pdfSym + ")", headerFont, headerBg);
 
             BigDecimal total = BigDecimal.ZERO;
             org.openpdf.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
@@ -365,15 +377,15 @@ public class ExportServiceImpl implements ExportService {
                                 exp.getCategory().getName() : "Uncategorized", dataFont));
                 table.addCell(new Phrase(exp.getDescription() != null ? exp.getDescription() : "", dataFont));
                 BigDecimal amt = exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO;
-                table.addCell(new Phrase(curr.symbol + " " + formatAmount(amt, curr.decimals), dataFont));
+                table.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals), dataFont));
                 total = total.add(amt);
             }
             document.add(table);
 
             org.openpdf.text.Font totalFont = FontFactory.getFont(
-                    FontFactory.HELVETICA_BOLD, 14, new Color(37, 99, 235));
+                    FontFactory.HELVETICA_BOLD, 14, new Color(199, 154, 62));
             Paragraph totalPara =
-                    new Paragraph("\nTotal Expenses: " + curr.symbol + " "
+                    new Paragraph("\nTotal Expenses: " + pdfSym + " "
                             + formatAmount(total, curr.decimals), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
@@ -588,6 +600,7 @@ public class ExportServiceImpl implements ExportService {
         }
         List<Income> incomes = incomeRepository.findByUser(user);
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
+        String pdfSym = pdfSymbol(curr);
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4, 36, 36, 36, 36);
@@ -602,7 +615,7 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
-                            + curr.code + " (" + curr.symbol + ")\nGenerated: " + LocalDate.now() + "\n\n",
+                            + curr.code + " (" + pdfSym + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -618,7 +631,7 @@ public class ExportServiceImpl implements ExportService {
             addHeaderCell(table, "Date", headerFont, headerBg);
             addHeaderCell(table, "Source", headerFont, headerBg);
             addHeaderCell(table, "Description", headerFont, headerBg);
-            addHeaderCell(table, "Amount (" + curr.symbol + ")", headerFont, headerBg);
+            addHeaderCell(table, "Amount (" + pdfSym + ")", headerFont, headerBg);
 
             BigDecimal total = BigDecimal.ZERO;
             org.openpdf.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK);
@@ -628,7 +641,7 @@ public class ExportServiceImpl implements ExportService {
                 table.addCell(new Phrase(inc.getSource() != null ? inc.getSource() : "", dataFont));
                 table.addCell(new Phrase(inc.getDescription() != null ? inc.getDescription() : "", dataFont));
                 BigDecimal amt = inc.getAmount() != null ? inc.getAmount() : BigDecimal.ZERO;
-                table.addCell(new Phrase(curr.symbol + " " + formatAmount(amt, curr.decimals), dataFont));
+                table.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals), dataFont));
                 total = total.add(amt);
             }
             document.add(table);
@@ -636,7 +649,7 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font totalFont = FontFactory.getFont(
                     FontFactory.HELVETICA_BOLD, 14, new Color(4, 120, 87));
             Paragraph totalPara =
-                    new Paragraph("\nTotal Incomes: " + curr.symbol + " "
+                    new Paragraph("\nTotal Incomes: " + pdfSym + " "
                             + formatAmount(total, curr.decimals), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
@@ -2562,6 +2575,7 @@ public class ExportServiceImpl implements ExportService {
         List<Income> incomes = incomeRepository.findByUser(user);
         List<SavingsGoal> savingsGoals = savingsGoalRepository.findByUser(user);
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
+        String pdfSym = pdfSymbol(curr);
 
         BigDecimal totalIncome = incomes.stream()
                 .map(Income::getAmount)
@@ -2584,7 +2598,7 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
-                            + curr.code + " (" + curr.symbol + ") | Generated: " + LocalDate.now() + "\n\n",
+                            + curr.code + " (" + pdfSym + ") | Generated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -2596,14 +2610,14 @@ public class ExportServiceImpl implements ExportService {
             kpiTable.setWidths(new float[]{33, 33, 34});
 
             org.openpdf.text.Font kpiHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
-            addHeaderCell(kpiTable, "Total Earnings (" + curr.symbol + ")", kpiHeaderFont, new Color(16, 185, 129));
-            addHeaderCell(kpiTable, "Total Spendings (" + curr.symbol + ")", kpiHeaderFont, new Color(239, 68, 68));
-            addHeaderCell(kpiTable, "Net Cash Flow (" + curr.symbol + ")", kpiHeaderFont, new Color(59, 130, 246));
+            addHeaderCell(kpiTable, "Total Earnings (" + pdfSym + ")", kpiHeaderFont, new Color(16, 185, 129));
+            addHeaderCell(kpiTable, "Total Spendings (" + pdfSym + ")", kpiHeaderFont, new Color(239, 68, 68));
+            addHeaderCell(kpiTable, "Net Cash Flow (" + pdfSym + ")", kpiHeaderFont, new Color(59, 130, 246));
 
             org.openpdf.text.Font kpiValueFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY);
-            addKpiCell(kpiTable, curr.symbol + " " + formatAmount(totalIncome, curr.decimals), kpiValueFont);
-            addKpiCell(kpiTable, curr.symbol + " " + formatAmount(totalExpenses, curr.decimals), kpiValueFont);
-            addKpiCell(kpiTable, curr.symbol + " " + formatAmount(netSavings, curr.decimals), kpiValueFont);
+            addKpiCell(kpiTable, pdfSym + " " + formatAmount(totalIncome, curr.decimals), kpiValueFont);
+            addKpiCell(kpiTable, pdfSym + " " + formatAmount(totalExpenses, curr.decimals), kpiValueFont);
+            addKpiCell(kpiTable, pdfSym + " " + formatAmount(netSavings, curr.decimals), kpiValueFont);
 
             document.add(kpiTable);
             document.add(new Paragraph("\n"));
@@ -2624,7 +2638,7 @@ public class ExportServiceImpl implements ExportService {
             addHeaderCell(expTable, "Date", tableHeaderFont, expHeaderBg);
             addHeaderCell(expTable, "Category", tableHeaderFont, expHeaderBg);
             addHeaderCell(expTable, "Description", tableHeaderFont, expHeaderBg);
-            addHeaderCell(expTable, "Amount (" + curr.symbol + ")", tableHeaderFont, expHeaderBg);
+            addHeaderCell(expTable, "Amount (" + pdfSym + ")", tableHeaderFont, expHeaderBg);
 
             org.openpdf.text.Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 8, Color.BLACK);
             int expCount = 0;
@@ -2636,7 +2650,7 @@ public class ExportServiceImpl implements ExportService {
                         new Phrase(exp.getCategory() != null ? exp.getCategory().getName() : "General", dataFont));
                 expTable.addCell(new Phrase(exp.getDescription() != null ? exp.getDescription() : "", dataFont));
                 BigDecimal amt = exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO;
-                expTable.addCell(new Phrase(curr.symbol + " " + formatAmount(amt, curr.decimals), dataFont));
+                expTable.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals), dataFont));
             }
             if (expenses.isEmpty()) {
                 PdfPCell emptyCell = new PdfPCell(new Phrase("No expense records available", dataFont));
@@ -2662,8 +2676,8 @@ public class ExportServiceImpl implements ExportService {
 
                 Color goalHeaderBg = new Color(139, 92, 246);
                 addHeaderCell(goalTable, "Goal Name", tableHeaderFont, goalHeaderBg);
-                addHeaderCell(goalTable, "Target (" + curr.symbol + ")", tableHeaderFont, goalHeaderBg);
-                addHeaderCell(goalTable, "Current (" + curr.symbol + ")", tableHeaderFont, goalHeaderBg);
+                addHeaderCell(goalTable, "Target (" + pdfSym + ")", tableHeaderFont, goalHeaderBg);
+                addHeaderCell(goalTable, "Current (" + pdfSym + ")", tableHeaderFont, goalHeaderBg);
                 addHeaderCell(goalTable, "Progress", tableHeaderFont, goalHeaderBg);
 
                 for (SavingsGoal goal : savingsGoals) {
@@ -2671,10 +2685,10 @@ public class ExportServiceImpl implements ExportService {
                     // newer openpdf versions and would NPE. Guard with a fallback label.
                     goalTable.addCell(new Phrase(goal.getName() != null ? goal.getName() : "Unnamed Goal", dataFont));
                     goalTable.addCell(
-                            new Phrase(curr.symbol + " "
+                            new Phrase(pdfSym + " "
                                     + formatAmount(goal.getTargetAmount(), curr.decimals), dataFont));
                     goalTable.addCell(
-                            new Phrase(curr.symbol + " "
+                            new Phrase(pdfSym + " "
                                     + formatAmount(goal.getCurrentAmount(), curr.decimals), dataFont));
                     double progress = 0.0;
                     if (goal.getTargetAmount() != null && goal.getTargetAmount().compareTo(BigDecimal.ZERO) > 0) {

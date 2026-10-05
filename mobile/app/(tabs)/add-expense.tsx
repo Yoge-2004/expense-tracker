@@ -4,7 +4,7 @@
  * and setting category spending caps with enterprise-grade defensive validation and exception handling.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,11 +12,14 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   ActivityIndicator,
   Alert,
   Animated,
   useWindowDimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
@@ -31,6 +34,7 @@ import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
 import { ManageCategoriesModal } from '../../components/ManageCategoriesModal';
 import { CalendarPickerModal } from '../../components/CalendarPickerModal';
+import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 
 interface Category {
   id: number;
@@ -150,6 +154,7 @@ export default function AddExpenseScreen() {
   const [goalFrequency, setGoalFrequency] = useState('MONTHLY');
   const [goalIntervalDays, setGoalIntervalDays] = useState('30');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -194,12 +199,29 @@ export default function AddExpenseScreen() {
   // Animations
   const subFormAnim = useRef(new Animated.Value(0)).current;
 
+  const [refreshing, setRefreshing] = useState(false);
+
   /**
-   * Fetches merged global & user-defined categories.
+   * Fetches merged global & user-defined categories with offline cache fallback.
    */
   const loadCategories = async () => {
     if (!userId) return;
     try {
+      // Hydrate from cached categories if current state is empty
+      if (categories.length === 0) {
+        try {
+          const cachedRaw = await AsyncStorage.getItem(`expense_cache_v4_${userId}`);
+          if (cachedRaw) {
+            const parsed = JSON.parse(cachedRaw);
+            if (Array.isArray(parsed.categories) && parsed.categories.length > 0) {
+              setCategories(parsed.categories);
+              if (!categoryId) setCategoryId(parsed.categories[0].id);
+              if (!budgetCategoryId) setBudgetCategoryId(parsed.categories[0].id);
+            }
+          }
+        } catch (_) {}
+      }
+
       const [globalCats, userCats] = await Promise.all([
         apiRequest('/categories/global').catch(() => []),
         apiRequest(`/categories/user/${userId}`).catch(() => []),
@@ -218,8 +240,8 @@ export default function AddExpenseScreen() {
         }
       });
 
-      setCategories(uniqueCats);
       if (uniqueCats.length > 0) {
+        setCategories(uniqueCats);
         if (!categoryId) setCategoryId(uniqueCats[0].id);
         if (!budgetCategoryId) setBudgetCategoryId(uniqueCats[0].id);
       }
@@ -227,8 +249,15 @@ export default function AddExpenseScreen() {
       console.warn('[AddExpenseScreen] Error fetching categories:', e);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCategories();
+    }, [userId])
+  );
 
   useEffect(() => {
     loadCategories();
@@ -677,10 +706,20 @@ export default function AddExpenseScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              loadCategories();
+            }}
+            tintColor={c.primary}
+          />
+        }
       >
         {/* Top Header */}
-        <View style={[styles.header, isEditMode && { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }]}>
-          <View style={{ flex: 1, paddingRight: isEditMode ? 12 : 0 }}>
+        <View style={[styles.header, { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }]}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Text style={[styles.pageTitle, { color: c.text }]}>
                 {isEditMode
@@ -704,26 +743,29 @@ export default function AddExpenseScreen() {
             </Text>
           </View>
 
-          {isEditMode && (
-            <TouchableOpacity
-              onPress={resetToAddNew}
-              activeOpacity={0.8}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 5,
-                backgroundColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.08)",
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: c.border,
-              }}
-            >
-              <Ionicons name="add-circle" size={16} color={c.primary} />
-              <Text style={{ fontSize: 12.5, fontWeight: "700", color: c.primary }}>Add New</Text>
-            </TouchableOpacity>
-          )}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {isEditMode && (
+              <TouchableOpacity
+                onPress={resetToAddNew}
+                activeOpacity={0.8}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 5,
+                  backgroundColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.08)",
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: c.border,
+                }}
+              >
+                <Ionicons name="add-circle" size={16} color={c.primary} />
+                <Text style={{ fontSize: 12.5, fontWeight: "700", color: c.primary }}>Add New</Text>
+              </TouchableOpacity>
+            )}
+            <ThemeToggleBtn />
+          </View>
         </View>
 
         {/* Tab Switcher: Expense vs Income vs Savings vs Budget */}
@@ -839,13 +881,27 @@ export default function AddExpenseScreen() {
             <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Source / Payor</Text>
-                <TextInput
-                  style={[styles.textInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
-                  placeholder="e.g. Primary Tech Salary, Consulting"
-                  placeholderTextColor={c.textMuted}
-                  value={incomeSource}
-                  onChangeText={setIncomeSource}
-                />
+                <View
+                  style={[
+                    styles.inputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: focusedField === 'incomeSource' ? '#10B981' : '#10B981',
+                      borderWidth: focusedField === 'incomeSource' ? 2 : 1.5,
+                    },
+                  ]}
+                >
+                  <Ionicons name="cash-outline" size={18} color="#10B981" style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.textInput, { color: c.text }]}
+                    placeholder="e.g. Primary Tech Salary, Consulting"
+                    placeholderTextColor={c.textMuted}
+                    value={incomeSource}
+                    onChangeText={setIncomeSource}
+                    onFocus={() => setFocusedField('incomeSource')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
@@ -893,13 +949,27 @@ export default function AddExpenseScreen() {
 
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Description (Optional)</Text>
-                <TextInput
-                  style={[styles.textInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
-                  placeholder="e.g. Direct deposit from employer"
-                  placeholderTextColor={c.textMuted}
-                  value={incomeDesc}
-                  onChangeText={setIncomeDesc}
-                />
+                <View
+                  style={[
+                    styles.inputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: focusedField === 'incomeDesc' ? '#10B981' : c.border,
+                      borderWidth: focusedField === 'incomeDesc' ? 2 : 1,
+                    },
+                  ]}
+                >
+                  <Ionicons name="document-text-outline" size={18} color={c.textMuted} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.textInput, { color: c.text }]}
+                    placeholder="e.g. Direct deposit from employer"
+                    placeholderTextColor={c.textMuted}
+                    value={incomeDesc}
+                    onChangeText={setIncomeDesc}
+                    onFocus={() => setFocusedField('incomeDesc')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
@@ -1003,13 +1073,27 @@ export default function AddExpenseScreen() {
             <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Milestone Name</Text>
-                <TextInput
-                  style={[styles.textInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]}
-                  placeholder="e.g. Emergency Fund, Tesla Model Y"
-                  placeholderTextColor={c.textMuted}
-                  value={goalName}
-                  onChangeText={setGoalName}
-                />
+                <View
+                  style={[
+                    styles.inputWrap,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: focusedField === 'goalName' ? '#F59E0B' : '#F59E0B',
+                      borderWidth: focusedField === 'goalName' ? 2 : 1.5,
+                    },
+                  ]}
+                >
+                  <Ionicons name="flag-outline" size={18} color="#F59E0B" style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.textInput, { color: c.text }]}
+                    placeholder="e.g. Emergency Fund, Tesla Model Y"
+                    placeholderTextColor={c.textMuted}
+                    value={goalName}
+                    onChangeText={setGoalName}
+                    onFocus={() => setFocusedField('goalName')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
@@ -1224,11 +1308,17 @@ export default function AddExpenseScreen() {
                     styles.inputWrap,
                     {
                       backgroundColor: c.inputBg,
-                      borderColor: errors.description ? c.accent : c.border,
+                      borderColor: errors.description ? c.accent : c.primary,
+                      borderWidth: focusedField === "expenseDesc" ? 2 : 1.5,
                     },
                   ]}
                 >
-                  <Ionicons name="pencil-outline" size={18} color={c.textMuted} style={styles.inputIcon} />
+                  <Ionicons
+                    name="pencil-outline"
+                    size={18}
+                    color={errors.description ? c.accent : c.primary}
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={[styles.textInput, { color: c.text }]}
                     placeholder="e.g. Blue Tokai Coffee, Figma Plan"
@@ -1237,8 +1327,10 @@ export default function AddExpenseScreen() {
                     maxLength={255}
                     onChangeText={(v) => {
                       setDescription(v);
-                      if (errors.description) setErrors((prev) => ({ ...prev, description: '' }));
+                      if (errors.description) setErrors((prev) => ({ ...prev, description: "" }));
                     }}
+                    onFocus={() => setFocusedField("expenseDesc")}
+                    onBlur={() => setFocusedField(null)}
                   />
                 </View>
                 {!!errors.description && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.description}</Text>}

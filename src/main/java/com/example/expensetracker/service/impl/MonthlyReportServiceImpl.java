@@ -202,6 +202,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 .toList();
 
         // Insights Generation
+        String userCurrency = user.getCurrency() != null ? user.getCurrency() : "INR";
         List<String> insights = new ArrayList<>();
         String monthName = Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH);
 
@@ -239,7 +240,46 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     completedGoals, completedGoals > 1 ? "s" : ""));
         }
 
-        String userCurrency = user.getCurrency() != null ? user.getCurrency() : "INR";
+        // Salary Coverage Insight
+        BigDecimal salaryTotal = incomes.stream()
+                .filter(i -> (i.getSource() != null && i.getSource().toLowerCase().contains("salary"))
+                        || (i.getDescription() != null && i.getDescription().toLowerCase().contains("salary")))
+                .map(Income::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (salaryTotal.compareTo(BigDecimal.ZERO) > 0 && totalOutflow.compareTo(BigDecimal.ZERO) > 0) {
+            double coverage = salaryTotal.divide(totalOutflow, 4, RoundingMode.HALF_UP).doubleValue() * 100.0;
+            insights.add(String.format("Salary Coverage: Active monthly salary covered %.1f%%%% of your total expenditures.", coverage));
+        }
+
+        // Emergency Savings Runway Insight
+        BigDecimal totalSaved = savingsGoals.stream()
+                .map(g -> g.getCurrentAmount() != null ? g.getCurrentAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalOutflow.compareTo(BigDecimal.ZERO) > 0 && totalSaved.compareTo(BigDecimal.ZERO) > 0) {
+            double runwayMonths = totalSaved.divide(totalOutflow, 1, RoundingMode.HALF_UP).doubleValue();
+            insights.add(String.format("Emergency Runway: Accumulated savings reserve (%s %s) provides ~%.1f months of runway at your current monthly burn rate.",
+                    userCurrency, totalSaved, runwayMonths));
+        }
+
+        // Discretionary vs Essentials
+        BigDecimal essentials = expenses.stream()
+                .filter(e -> {
+                    String c = e.getCategory() != null ? e.getCategory().getName().toLowerCase() : "";
+                    return c.contains("rent") || c.contains("grocer") || c.contains("food") || c.contains("util")
+                            || c.contains("bill") || c.contains("medic") || c.contains("health") || c.contains("emi")
+                            || c.contains("fuel") || c.contains("transport");
+                })
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalOutflow.compareTo(BigDecimal.ZERO) > 0 && essentials.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal discretionary = totalOutflow.subtract(essentials).max(BigDecimal.ZERO);
+            double essPct = essentials.divide(totalOutflow, 3, RoundingMode.HALF_UP).doubleValue() * 100.0;
+            double discPct = 100.0 - essPct;
+            insights.add(String.format("Capital Allocation: Essentials accounted for %.1f%%%% (%s %s) while discretionary spending represented %.1f%%%% (%s %s).",
+                    essPct, userCurrency, essentials, discPct, userCurrency, discretionary));
+        }
+
+
         String period = monthName + " " + year;
 
         return new MonthlyReportDto(
@@ -398,6 +438,13 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
      * budget limits, income inflows, and savings goals milestones.
      */
     private String buildMonthlyReportHtml(String userName, MonthlyReportDto report) {
+        String rawCurr = report.currency() != null ? report.currency() : "INR";
+        String currSymbol = "INR".equalsIgnoreCase(rawCurr) ? "₹"
+                : ("USD".equalsIgnoreCase(rawCurr) ? "$"
+                : ("EUR".equalsIgnoreCase(rawCurr) ? "€"
+                : ("GBP".equalsIgnoreCase(rawCurr) ? "£"
+                : ("JPY".equalsIgnoreCase(rawCurr) ? "¥" : rawCurr))));
+
         // Categories
         StringBuilder categoryRows = new StringBuilder();
         for (MonthlyReportDto.CategoryReportDto c : report.categoryBreakdown()) {
@@ -415,7 +462,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         </span>
                     </td>
                 </tr>
-                """.formatted(escapeHtml(c.categoryName()), report.currency(), c.totalAmount(), c.percentage()));
+                """.formatted(escapeHtml(c.categoryName()), currSymbol, c.totalAmount(), c.percentage()));
         }
 
         // Budgets
@@ -446,7 +493,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     </div>
                 </div>
                 """.formatted(escapeHtml(b.categoryName()), badgeColor, badgeText, b.usagePercentage(),
-                        badgeColor, barWidth, report.currency(), b.spentAmount(), report.currency(), b.limitAmount()));
+                        badgeColor, barWidth, currSymbol, b.spentAmount(), currSymbol, b.limitAmount()));
         }
 
         // Savings Goals
@@ -482,9 +529,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         badgeText,
                         badgeColor,
                         barWidth,
-                        report.currency(),
+                        currSymbol,
                         g.currentAmount(),
-                        report.currency(),
+                        currSymbol,
                         g.targetAmount(),
                         g.targetDate() != null ? " · Due " + g.targetDate() : ""
                     ));
@@ -511,7 +558,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         escapeHtml(inc.description() != null && !inc.description().isBlank()
                             ? inc.description() : "Income Inflow"),
                         escapeHtml(inc.source() != null ? inc.source() : "General"),
-                        report.currency(),
+                        currSymbol,
                         inc.amount()
                     ));
             }
@@ -551,7 +598,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         escapeHtml(exp.description() != null && !exp.description().isBlank()
                             ? exp.description() : "General Expense"),
                         escapeHtml(exp.categoryName() != null ? exp.categoryName() : "General"),
-                        report.currency(),
+                        currSymbol,
                         exp.amount()
                     ));
             }
@@ -631,7 +678,20 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             <body>
               <div class="email-container">
                 <div class="email-header">
-                  <div class="brand-badge">📊 Executive Financial Summary</div>
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(199, 154, 62, 0.25) 0%%, rgba(19, 23, 17, 0.9) 100%%); border: 1.5px solid #c79a3e; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(199, 154, 62, 0.25);">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#c79a3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="#c79a3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="#c79a3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div style="text-align: left;">
+                      <div style="font-size: 19px; font-weight: 900; letter-spacing: -0.3px; color: #ece7d8;">ExpenseTracker<span style="color: #c79a3e;"> Pro</span></div>
+                      <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.8px; color: #a8a395; text-transform: uppercase;">Financial Intelligence Suite</div>
+                    </div>
+                  </div>
+                  <div class="brand-badge"><span style="color:#c79a3e; margin-right:4px;">✦</span> OBSIDIAN &amp; LUXURY GOLD EXECUTIVE STATEMENT</div>
                   <h2 style="margin: 14px 0 0; color: #ece7d8; font-size: 24px;">%s</h2>
                 </div>
                 <div class="email-body">
@@ -763,20 +823,20 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             """.formatted(
                 report.period(),
                 userName != null ? userName : "User",
-                report.currency(),
+                currSymbol,
                 report.totalOutflow(),
                 report.transactionCount(),
-                report.currency(),
+                currSymbol,
                 report.totalIncome(),
                 report.savingsRate(),
-                report.currency(),
+                currSymbol,
                 report.netCashFlow(),
-                report.currency(),
+                currSymbol,
                 report.dailyAverage(),
                 report.budgetHealthScore(),
-                report.currency(),
+                currSymbol,
                 report.highestExpenseAmount(),
-                report.currency(),
+                currSymbol,
                 report.recurringTotal(),
                 insightItems.toString(),
                 !incomeRows.isEmpty() ? incomeRows.toString()

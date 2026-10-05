@@ -224,18 +224,33 @@
             });
         });
 
-        document.querySelectorAll('.metric-card, .float-card, .perk-item, .card').forEach((el) => {
+        document.querySelectorAll('.metric-card, .float-card, .perk-item, .card:not(.unified-ledger-card):not(.recent-transactions):not(#unifiedLedgerCard)').forEach((el) => {
             el.classList.add('tilt-target', 'glow-follow');
-            el.addEventListener('mousemove', (e) => {
-                const rect = el.getBoundingClientRect();
-                const px = (e.clientX - rect.left) / rect.width;
-                const py = (e.clientY - rect.top) / rect.height;
-                el.style.setProperty('--tilt-x', `${(px - 0.5) * 6}deg`);
-                el.style.setProperty('--tilt-y', `${(0.5 - py) * 6}deg`);
-                el.style.setProperty('--glow-x', `${px * 100}%`);
-                el.style.setProperty('--glow-y', `${py * 100}%`);
+            let rect = null;
+            let rafId = null;
+            el.addEventListener('mouseenter', () => {
+                rect = el.getBoundingClientRect();
             });
+            el.addEventListener('mousemove', (e) => {
+                if (!rect) rect = el.getBoundingClientRect();
+                if (rafId) return;
+                rafId = requestAnimationFrame(() => {
+                    rafId = null;
+                    if (!rect || rect.width === 0 || rect.height === 0) return;
+                    const px = (e.clientX - rect.left) / rect.width;
+                    const py = (e.clientY - rect.top) / rect.height;
+                    el.style.setProperty('--tilt-x', `${(px - 0.5) * 6}deg`);
+                    el.style.setProperty('--tilt-y', `${(0.5 - py) * 6}deg`);
+                    el.style.setProperty('--glow-x', `${px * 100}%`);
+                    el.style.setProperty('--glow-y', `${py * 100}%`);
+                });
+            }, { passive: true });
             el.addEventListener('mouseleave', () => {
+                rect = null;
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
                 el.style.setProperty('--tilt-x', '0deg');
                 el.style.setProperty('--tilt-y', '0deg');
             });

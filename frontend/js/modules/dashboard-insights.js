@@ -118,6 +118,35 @@
             recurringInsight = `No recurring subscriptions or income streams detected. Tag salary or SaaS renewals as Recurring for baseline tracking.`;
         }
     
+        // 5b. Income Stream Composition & Salary Coverage
+        const salaryInflow = safeIncomes
+            .filter(i => (i.source || '').toLowerCase().includes('salary'))
+            .reduce((acc, i) => acc + Number(i.amount || 0), 0);
+        const otherInflow = Math.max(0, activeInflow - salaryInflow);
+        const salaryCoverageRatio = activeOutflow > 0
+            ? Math.round((salaryInflow / activeOutflow) * 100)
+            : (salaryInflow > 0 ? 100 : 0);
+
+        let salaryInsight = '';
+        if (salaryInflow > 0) {
+            salaryInsight = `Base salary of <strong>+${formatCurrency(salaryInflow)}</strong> covers <strong>${salaryCoverageRatio}%</strong> of monthly living costs.${otherInflow > 0 ? ` Secondary inflows add <strong>+${formatCurrency(otherInflow)}</strong> buffer.` : ''}`;
+        } else if (activeInflow > 0) {
+            salaryInsight = `Total inflows: <strong>+${formatCurrency(activeInflow)}</strong> across ${safeIncomes.length} stream(s).`;
+        } else {
+            salaryInsight = 'Log salary or freelance income to track coverage ratio against expenses.';
+        }
+
+        // 5c. Emergency Savings Runway (in months)
+        const emergencyRunway = (activeOutflow > 0 && totalGoalsCurrent > 0)
+            ? (totalGoalsCurrent / activeOutflow).toFixed(1)
+            : '0';
+        let runwayInsight = '';
+        if (totalGoalsCurrent > 0) {
+            runwayInsight = `Accumulated reserves (<strong>${formatCurrency(totalGoalsCurrent)}</strong>) provide ~<strong>${emergencyRunway} months</strong> of emergency living expenses without any active income.`;
+        } else {
+            runwayInsight = 'Set up an Emergency Fund goal to build a 3–6 month liquidity buffer.';
+        }
+
         // 6. Category Concentration & Top Outflow
         const catMap = {};
         let totalCategorized = 0;
@@ -237,6 +266,26 @@
                 </div>
             </div>
     
+            <div class="insight-card-item">
+                <div class="insight-card-item-header">
+                    <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">💵</div>
+                    <span class="insight-card-label">Salary Coverage & Stability</span>
+                </div>
+                <div class="insight-card-content">
+                    ${salaryInsight}
+                </div>
+            </div>
+
+            <div class="insight-card-item">
+                <div class="insight-card-item-header">
+                    <div class="insight-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">🛡️</div>
+                    <span class="insight-card-label">Emergency Savings Runway</span>
+                </div>
+                <div class="insight-card-content">
+                    ${runwayInsight}
+                </div>
+            </div>
+
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
                     <div class="insight-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;">🔄</div>

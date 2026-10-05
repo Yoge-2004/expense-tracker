@@ -1,50 +1,17 @@
 /**
  * @file _layout.tsx
  * @description Bottom navigation tab bar layout with safe area handling and centered action button.
- * Uses vertical tab layout to ensure icons and labels are 100% visible on all Android and iOS screens.
+ * Uses native React Navigation tab bar labels and icons to ensure touch feedback and ripples
+ * align symmetrically and encompass both icon and text on all screen sizes with WCAG-compliant contrast.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, Platform, type ColorValue } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { Colors } from '../../constants/theme';
-
-interface TabIconProps {
-  name: string;
-  focused: boolean;
-  color: ColorValue | string;
-  label: string;
-  activeColor: string;
-}
-
-function TabIcon({ name, focused, color, label, activeColor }: TabIconProps) {
-  return (
-    <View style={styles.tabItem}>
-      <View style={[styles.iconWrap, focused && { backgroundColor: activeColor + '20' }]}>
-        <Ionicons
-          name={name as any}
-          size={22}
-          color={focused ? activeColor : color}
-        />
-      </View>
-      <Text
-        style={[
-          styles.tabLabel,
-          {
-            color: focused ? activeColor : color,
-            fontWeight: focused ? '800' : '600',
-          },
-        ]}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-    </View>
-  );
-}
 
 export default function TabLayout() {
   const { theme } = useAuth();
@@ -53,17 +20,30 @@ export default function TabLayout() {
   const c = Colors[theme];
   const isLight = theme === 'light';
 
-  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 16 : 10);
-  const tabHeight = 60 + bottomInset;
+  // High-contrast, WCAG AA/AAA-compliant colors for crisp visibility across light and dark themes
+  const activeColor = isLight ? '#92400E' : '#F5C842';
+  const inactiveColor = isLight ? '#64748B' : '#9CA3AF';
+  const activePillBg = isLight ? 'rgba(146, 64, 14, 0.12)' : 'rgba(245, 200, 66, 0.16)';
+
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 16 : 8);
+  const tabHeight = 62 + bottomInset;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: c.primary,
-        tabBarInactiveTintColor: c.textMuted,
-        tabBarShowLabel: false,
+        tabBarActiveTintColor: activeColor,
+        tabBarInactiveTintColor: inactiveColor,
+        tabBarShowLabel: true,
+        tabBarLabelPosition: 'below-icon',
+        tabBarLabelStyle: {
+          fontSize: 9.5,
+          fontWeight: '700',
+          letterSpacing: -0.2,
+          marginTop: -2,
+          marginBottom: 3,
+        },
         tabBarStyle: {
-          backgroundColor: isLight ? 'rgba(255,255,255,0.98)' : 'rgba(23,26,20,0.98)',
+          backgroundColor: isLight ? '#FFFFFF' : 'rgba(23, 26, 20, 0.98)',
           borderTopColor: c.border,
           borderTopWidth: 1,
           height: tabHeight,
@@ -79,6 +59,7 @@ export default function TabLayout() {
         tabBarItemStyle: {
           justifyContent: 'center',
           alignItems: 'center',
+          paddingVertical: 2,
         },
         headerShown: false,
       }}
@@ -86,16 +67,17 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
+          tabBarLabel: 'Home',
           tabBarAccessibilityLabel: 'Dashboard',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={focused ? 'grid' : 'grid-outline'}
-              focused={focused}
-              color={color}
-              label="Home"
-              activeColor={c.primary}
-            />
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
+              <Ionicons
+                name={focused ? 'grid' : 'grid-outline'}
+                size={24}
+                color={focused ? activeColor : inactiveColor}
+              />
+            </View>
           ),
         }}
       />
@@ -129,18 +111,19 @@ export default function TabLayout() {
         })}
         options={{
           title: 'Add Record',
+          tabBarLabel: () => null,
           tabBarAccessibilityLabel: 'Add record',
           tabBarIcon: () => (
             <View
               style={[
                 styles.fabBtn,
                 {
-                  backgroundColor: c.primary,
-                  shadowColor: c.primary,
+                  backgroundColor: activeColor,
+                  shadowColor: activeColor,
                 },
               ]}
             >
-              <Ionicons name="add" size={26} color={isLight ? '#FFF' : '#10120E'} />
+              <Ionicons name="add" size={28} color={isLight ? '#FFFFFF' : '#10120E'} />
             </View>
           ),
         }}
@@ -150,15 +133,16 @@ export default function TabLayout() {
         name="subscriptions"
         options={{
           title: 'Subscriptions',
+          tabBarLabel: 'Subscriptions',
           tabBarAccessibilityLabel: 'Subscriptions',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={focused ? 'repeat' : 'repeat-outline'}
-              focused={focused}
-              color={color}
-              label="Subs"
-              activeColor={c.teal}
-            />
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
+              <Ionicons
+                name={focused ? 'repeat' : 'repeat-outline'}
+                size={24}
+                color={focused ? activeColor : inactiveColor}
+              />
+            </View>
           ),
         }}
       />
@@ -167,15 +151,16 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          tabBarLabel: 'Profile',
           tabBarAccessibilityLabel: 'Profile and settings',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon
-              name={focused ? 'person' : 'person-outline'}
-              focused={focused}
-              color={color}
-              label="Profile"
-              activeColor={c.primary}
-            />
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
+              <Ionicons
+                name={focused ? 'person' : 'person-outline'}
+                size={24}
+                color={focused ? activeColor : inactiveColor}
+              />
+            </View>
           ),
         }}
       />
@@ -184,33 +169,24 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 64,
-    height: 48,
-  },
   iconWrap: {
     paddingHorizontal: 12,
     paddingVertical: 3,
     borderRadius: 14,
-    marginBottom: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabLabel: {
-    fontSize: 10.5,
-    letterSpacing: -0.2,
+    marginBottom: 2,
   },
   fabBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35,
     shadowRadius: 6,
     elevation: 6,
+    marginTop: -2,
   },
 });
