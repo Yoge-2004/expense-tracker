@@ -25,6 +25,7 @@ import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
 import { NumberTicker } from '../../components/NumberTicker';
 import { EditSubscriptionModal } from '../../components/EditSubscriptionModal';
+import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 
 interface Subscription {
   id: number;
@@ -458,15 +459,18 @@ export default function SubscriptionsScreen() {
               {totalCommitmentCount} active recurring commitment{totalCommitmentCount === 1 ? '' : 's'}
             </Text>
           </View>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push({ pathname: '/(tabs)/add-expense', params: { editId: '', editType: '' } })}
-            style={[styles.addBtn, { backgroundColor: c.primary }]}
-            accessibilityLabel="Add Commitment"
-          >
-            <Ionicons name="add" size={20} color={isLight ? '#FFF' : '#10120E'} />
-            <Text style={[styles.addBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>New</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.push({ pathname: '/(tabs)/add-expense', params: { editId: '', editType: '' } })}
+              style={[styles.addBtn, { backgroundColor: c.primary }]}
+              accessibilityLabel="Add Commitment"
+            >
+              <Ionicons name="add" size={20} color={isLight ? '#FFF' : '#10120E'} />
+              <Text style={[styles.addBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>New</Text>
+            </TouchableOpacity>
+            <ThemeToggleBtn />
+          </View>
         </View>
 
         {/* Tri-Domain Recurring Run-Rate Banner */}
@@ -574,7 +578,7 @@ export default function SubscriptionsScreen() {
                 { color: activeTab === 'expenses' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
               ]}
             >
-              Subs ({subscriptions.length})
+              Subscriptions ({subscriptions.length})
             </Text>
           </TouchableOpacity>
 

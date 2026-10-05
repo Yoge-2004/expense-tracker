@@ -42,6 +42,7 @@ import { ManageCategoriesModal } from '../../components/ManageCategoriesModal';
 import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
+import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification } from '../../services/notifications';
 
 export default function ProfileScreen() {
@@ -239,9 +240,12 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.pageTitle, { color: c.text }]}>Settings & Account</Text>
-          <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>Personalize preferences, themes, and global currency</Text>
+        <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+          <View style={{ flex: 1, paddingRight: 12 }}>
+            <Text style={[styles.pageTitle, { color: c.text }]}>Settings & Account</Text>
+            <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>Personalize preferences, themes, and global currency</Text>
+          </View>
+          <ThemeToggleBtn />
         </View>
 
         {/* User Card (Without User ID) */}

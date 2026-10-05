@@ -245,6 +245,86 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!userId) return;
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    try {
+      const padMonth = String(selectedMonth).padStart(2, '0');
+      const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+      const from = `${selectedYear}-${padMonth}-01`;
+      const to = `${selectedYear}-${padMonth}-${String(lastDay).padStart(2, '0')}`;
+      const params = new URLSearchParams({
+        from,
+        to,
+        currency: currency || 'INR',
+      });
+      const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
+      const filename = `ExpenseTracker_Statement_${monthObj?.name || 'Report'}_${selectedYear}.pdf`;
+      const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
+      const url = `${API_BASE_URL}/reports/user/${userId}/export/range/pdf?${params.toString()}`;
+
+      const session = await getSession();
+      const token = session?.token;
+      const downloadResumable = FileSystem.createDownloadResumable(
+        url,
+        uri,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      const result = await downloadResumable.downloadAsync();
+      if (!result || result.status !== 200) {
+        throw new Error(`Server returned HTTP ${result?.status || 500}`);
+      }
+      await saveFileToDevice(result.uri, filename, 'application/pdf', 'com.adobe.pdf', {
+        onComplete: () => showAlert('Download Complete', `${filename} saved successfully!`, undefined, 'success')
+      });
+    } catch (err: any) {
+      showAlert('PDF Export Failed', err.message || 'Could not export PDF statement.', undefined, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!userId) return;
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    try {
+      const padMonth = String(selectedMonth).padStart(2, '0');
+      const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
+      const from = `${selectedYear}-${padMonth}-01`;
+      const to = `${selectedYear}-${padMonth}-${String(lastDay).padStart(2, '0')}`;
+      const params = new URLSearchParams({
+        from,
+        to,
+        currency: currency || 'INR',
+      });
+      const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
+      const filename = `ExpenseTracker_Workbook_${monthObj?.name || 'Report'}_${selectedYear}.xlsx`;
+      const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
+      const url = `${API_BASE_URL}/reports/user/${userId}/export/range/excel?${params.toString()}`;
+
+      const session = await getSession();
+      const token = session?.token;
+      const downloadResumable = FileSystem.createDownloadResumable(
+        url,
+        uri,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      const result = await downloadResumable.downloadAsync();
+      if (!result || result.status !== 200) {
+        throw new Error(`Server returned HTTP ${result?.status || 500}`);
+      }
+      await saveFileToDevice(result.uri, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'com.microsoft.excel.xlsx', {
+        onComplete: () => showAlert('Download Complete', `${filename} saved successfully!`, undefined, 'success')
+      });
+    } catch (err: any) {
+      showAlert('Excel Export Failed', err.message || 'Could not export Excel workbook.', undefined, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /**
    * Generates physical .html file on device storage and dispatches native file share dialog.
    */
@@ -450,6 +530,33 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                   Email Statement
                 </Text>
               </TouchableOpacity>
+
+              {/* Option 3: Export PDF & Excel for Selected Period */}
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  disabled={loading}
+                  onPress={handleExportPdf}
+                  style={[styles.secondaryActionBtn, { flex: 1, backgroundColor: c.inputBg, borderColor: c.border }]}
+                >
+                  <Ionicons name="document-text-outline" size={17} color={c.primary} />
+                  <Text style={[styles.secondaryActionText, { color: c.text, fontSize: 13 }]}>
+                    Export PDF
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  disabled={loading}
+                  onPress={handleExportExcel}
+                  style={[styles.secondaryActionBtn, { flex: 1, backgroundColor: c.inputBg, borderColor: c.border }]}
+                >
+                  <Ionicons name="grid-outline" size={17} color={c.primary} />
+                  <Text style={[styles.secondaryActionText, { color: c.text, fontSize: 13 }]}>
+                    Export Excel
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>

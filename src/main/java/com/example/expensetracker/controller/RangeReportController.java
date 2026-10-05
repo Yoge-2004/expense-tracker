@@ -23,6 +23,7 @@ import org.openpdf.text.Font;
 import org.openpdf.text.FontFactory;
 import org.openpdf.text.PageSize;
 import org.openpdf.text.Paragraph;
+import org.openpdf.text.Rectangle;
 import org.openpdf.text.Phrase;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
@@ -48,7 +49,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping({"/api/reports", "/api/expenses"})
 public class RangeReportController {
 
     private static final MediaType XLSX = MediaType.parseMediaType(
@@ -245,54 +246,152 @@ public class RangeReportController {
             put(dashboard, 4, 4, "◆ NET CASH FLOW", kpiCardHeader);
             put(dashboard, 4, 5, "", kpiCardHeader);
             put(dashboard, 5, 4, net, kpiNetVal);
-            put(dashboard, 5, 4, "", kpiNetVal);
+            put(dashboard, 5, 5, "", kpiNetVal);
             put(dashboard, 6, 4, net.signum() >= 0 ? "Net surplus retained" : "Net operating deficit", kpiFooter);
             put(dashboard, 6, 5, "", kpiFooter);
 
-            // Card 4: TRANSACTIONS (Cols 6-7)
+            // Card 4: CAPITAL RETENTION RATE (Cols 6-7)
+            double savingsRate = income.compareTo(BigDecimal.ZERO) > 0
+                    ? Math.max(0.0, net.divide(income, 4, RoundingMode.HALF_UP).doubleValue()) : 0.0;
             dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(4, 4, 6, 7));
             dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(5, 5, 6, 7));
             dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(6, 6, 6, 7));
-            put(dashboard, 4, 6, "★ TRANSACTIONS", kpiCardHeader);
+            put(dashboard, 4, 6, "SAVINGS RETENTION RATE", kpiCardHeader);
             put(dashboard, 4, 7, "", kpiCardHeader);
-            put(dashboard, 5, 6, d.expenses.size() + d.incomes.size(), kpiTxVal);
-            put(dashboard, 5, 7, "", kpiTxVal);
-            put(dashboard, 6, 6, "Ledger audit count", kpiFooter);
+            put(dashboard, 5, 6, savingsRate, dataPct);
+            put(dashboard, 5, 7, "", dataPct);
+            put(dashboard, 6, 6, "Target Benchmark: >= 20.0%", kpiFooter);
             put(dashboard, 6, 7, "", kpiFooter);
 
             // Spacer Row 7
-            dashboard.createRow(7).setHeightInPoints(12);
+            dashboard.createRow(7).setHeightInPoints(8);
 
-            // Financial Coverage Section
-            put(dashboard, 8, 0, "PORTFOLIO MODULE", tblHeader);
-            put(dashboard, 8, 1, "RECORD COUNT", tblHeaderRight);
+            // Secondary 4-Card Resilience & Velocity Ribbon (Rows 8, 9, 10 across Cols 0-7)
+            dashboard.createRow(8).setHeightInPoints(18);
+            dashboard.createRow(9).setHeightInPoints(28);
+            dashboard.createRow(10).setHeightInPoints(16);
 
-            String[][] cov = {
-                {"Expenses", String.valueOf(d.expenses.size())},
-                {"Incomes", String.valueOf(d.incomes.size())},
-                {"Savings Goals", String.valueOf(d.savingsGoals.size())},
-                {"Subscriptions", String.valueOf(d.subscriptions.size())},
-                {"Budgets", String.valueOf(d.budgets.size())}
-            };
-            for (int i = 0; i < cov.length; i++) {
-                boolean z = (i % 2 == 1);
-                put(dashboard, 9 + i, 0, cov[i][0], z ? dataLeftZebra : dataLeft);
-                put(dashboard, 9 + i, 1, Integer.parseInt(cov[i][1]), z ? dataCenterZebra : dataCenter);
+            // Health Resilience Score calculation
+            int resilienceScore = 65;
+            if (savingsRate >= 0.20) resilienceScore += 20;
+            else if (savingsRate >= 0.10) resilienceScore += 10;
+            else if (net.signum() < 0) resilienceScore -= 20;
+            if (d.budgets.stream().allMatch(b -> b.getLimitAmount().compareTo(BigDecimal.ZERO) > 0)) resilienceScore += 10;
+            resilienceScore = Math.max(15, Math.min(99, resilienceScore));
+
+            // Daily Burn Calculation
+            int activeDays = Math.max(1, d.expenses.isEmpty() ? 1 : 30);
+            BigDecimal dailyBurn = spend.divide(BigDecimal.valueOf(activeDays), 2, RoundingMode.HALF_UP);
+
+            // Total liquid savings
+            BigDecimal totalSaved = d.savingsGoals.stream()
+                    .map(g -> nz(g.getCurrentAmount()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            double runwayMonths = (spend.compareTo(BigDecimal.ZERO) > 0 && totalSaved.compareTo(BigDecimal.ZERO) > 0)
+                    ? totalSaved.divide(spend, 1, RoundingMode.HALF_UP).doubleValue() : 0.0;
+
+            // Card 5: RESILIENCE SCORE (Cols 0-1)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(8, 8, 0, 1));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(9, 9, 0, 1));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(10, 10, 0, 1));
+            put(dashboard, 8, 0, "FINANCIAL RESILIENCE SCORE", kpiCardHeader);
+            put(dashboard, 8, 1, "", kpiCardHeader);
+            put(dashboard, 9, 0, resilienceScore + " / 100", kpiInflowVal);
+            put(dashboard, 9, 1, "", kpiInflowVal);
+            put(dashboard, 10, 0, resilienceScore >= 80 ? "Grade A - Robust Stability" : "Grade B - Controlled Exposure", kpiFooter);
+            put(dashboard, 10, 1, "", kpiFooter);
+
+            // Card 6: DAILY CASH BURN VELOCITY (Cols 2-3)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(8, 8, 2, 3));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(9, 9, 2, 3));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(10, 10, 2, 3));
+            put(dashboard, 8, 2, "DAILY CASH BURN RATE", kpiCardHeader);
+            put(dashboard, 8, 3, "", kpiCardHeader);
+            put(dashboard, 9, 2, dailyBurn, kpiSpendVal);
+            put(dashboard, 9, 3, "", kpiSpendVal);
+            put(dashboard, 10, 2, "Outflow velocity per 24 hours", kpiFooter);
+            put(dashboard, 10, 3, "", kpiFooter);
+
+            // Card 7: EMERGENCY SAVINGS RUNWAY (Cols 4-5)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(8, 8, 4, 5));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(9, 9, 4, 5));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(10, 10, 4, 5));
+            put(dashboard, 8, 4, "EMERGENCY RESERVES RUNWAY", kpiCardHeader);
+            put(dashboard, 8, 5, "", kpiCardHeader);
+            put(dashboard, 9, 4, String.format(Locale.US, "%.1f Months", runwayMonths), kpiNetVal);
+            put(dashboard, 9, 5, "", kpiNetVal);
+            put(dashboard, 10, 4, "Buffer based on liquid savings", kpiFooter);
+            put(dashboard, 10, 5, "", kpiFooter);
+
+            // Card 8: VERIFIED TRANSACTIONS (Cols 6-7)
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(8, 8, 6, 7));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(9, 9, 6, 7));
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(10, 10, 6, 7));
+            put(dashboard, 8, 6, "VERIFIED TRANSACTIONS", kpiCardHeader);
+            put(dashboard, 8, 7, "", kpiCardHeader);
+            put(dashboard, 9, 6, d.expenses.size() + d.incomes.size(), kpiTxVal);
+            put(dashboard, 9, 7, "", kpiTxVal);
+            put(dashboard, 10, 6, "Dual ledger reconciled", kpiFooter);
+            put(dashboard, 10, 7, "", kpiFooter);
+
+            // Spacer Row 11
+            dashboard.createRow(11).setHeightInPoints(10);
+            dashboard.createFreezePane(0, 11);
+
+            // SECTION 1: Category Distribution Matrix (Cols 0-3) vs Telemetry & Insights (Cols 4-7)
+            put(dashboard, 12, 0, "CATEGORY (PARETO 80/20)", tblHeader);
+            put(dashboard, 12, 1, "ITEMS", tblHeaderRight);
+            put(dashboard, 12, 2, "OUTFLOW (" + symbol + ")", tblHeaderRight);
+            put(dashboard, 12, 3, "SHARE %", tblHeaderRight);
+
+            // Group expenses by category
+            Map<String, List<Expense>> catMap = d.expenses.stream()
+                    .collect(Collectors.groupingBy(e -> e.getCategory() != null ? e.getCategory().getName() : "Uncategorized"));
+            List<Map.Entry<String, List<Expense>>> sortedCats = catMap.entrySet().stream()
+                    .sorted((a, b) -> {
+                        BigDecimal sumA = a.getValue().stream().map(e -> nz(e.getAmount())).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        BigDecimal sumB = b.getValue().stream().map(e -> nz(e.getAmount())).reduce(BigDecimal.ZERO, BigDecimal::add);
+                        return sumB.compareTo(sumA);
+                    })
+                    .limit(8)
+                    .toList();
+
+            double totalSpendDouble = spend.doubleValue();
+            int catRow = 13;
+            for (Map.Entry<String, List<Expense>> entry : sortedCats) {
+                boolean z = (catRow % 2 == 1);
+                BigDecimal cSum = entry.getValue().stream().map(e -> nz(e.getAmount())).reduce(BigDecimal.ZERO, BigDecimal::add);
+                double cPct = totalSpendDouble > 0 ? (cSum.doubleValue() / totalSpendDouble) : 0.0;
+                put(dashboard, catRow, 0, entry.getKey(), z ? dataLeftZebra : dataLeft);
+                put(dashboard, catRow, 1, entry.getValue().size(), z ? dataCenterZebra : dataCenter);
+                put(dashboard, catRow, 2, cSum, z ? dataMoneyZebra : dataMoney);
+                put(dashboard, catRow, 3, cPct, z ? dataPctZebra : dataPct);
+                catRow++;
+            }
+            if (sortedCats.isEmpty()) {
+                put(dashboard, catRow, 0, "No expenses recorded", dataLeft);
+                put(dashboard, catRow, 1, 0, dataCenter);
+                put(dashboard, catRow, 2, BigDecimal.ZERO, dataMoney);
+                put(dashboard, catRow, 3, 0.0, dataPct);
+                catRow++;
             }
 
-            // Key Insights Section
+            // Key Insights Section (Cols 4-7)
             List<String> insights = insights(d, spend, income, symbol);
-            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(8, 8, 3, 7));
-            put(dashboard, 8, 3, "EXECUTIVE INSIGHTS & TELEMETRY", tblHeader);
-            for (int c = 4; c < 8; c++) put(dashboard, 8, c, "", tblHeader);
+            dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(12, 12, 4, 7));
+            put(dashboard, 12, 4, "EXECUTIVE TELEMETRY & STRATEGIC AUDIT", tblHeader);
+            for (int c = 5; c < 8; c++) put(dashboard, 12, c, "", tblHeader);
 
-            for (int n = 0; n < insights.size(); n++) {
+            for (int n = 0; n < Math.max(insights.size(), catRow - 13); n++) {
+                int targetRow = 13 + n;
                 boolean z = (n % 2 == 1);
-                dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(9 + n, 9 + n, 3, 7));
-                put(dashboard, 9 + n, 3, insights.get(n), z ? dataLeftZebra : dataLeft);
-                for (int c = 4; c < 8; c++) put(dashboard, 9 + n, c, "", z ? dataLeftZebra : dataLeft);
+                String insText = n < insights.size() ? insights.get(n) : "";
+                dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(targetRow, targetRow, 4, 7));
+                put(dashboard, targetRow, 4, insText, z ? dataLeftZebra : dataLeft);
+                for (int c = 5; c < 8; c++) put(dashboard, targetRow, c, "", z ? dataLeftZebra : dataLeft);
             }
-            for (int c = 0; c < 8; c++) dashboard.setColumnWidth(c, 21 * 256);
+
+            for (int c = 0; c < 8; c++) dashboard.setColumnWidth(c, 22 * 256);
 
             // 2. INCOME LEDGER SHEET
             XSSFSheet incomeSheet = wb.createSheet("Income Ledger");
@@ -490,6 +589,11 @@ public class RangeReportController {
                 cash.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, fh.length - 1));
             }
             widths(cash, new int[]{20, 20, 20, 20});
+            try {
+                org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator.evaluateAllFormulaCells(wb);
+            } catch (Exception evalEx) {
+                log.debug("Formula pre-evaluation skipped: {}", evalEx.getMessage());
+            }
             wb.write(out);
             return out.toByteArray();
         } catch (Exception ex) {
@@ -507,15 +611,44 @@ public class RangeReportController {
             Document doc = new Document(PageSize.A4, 30, 30, 34, 34);
             PdfWriter.getInstance(doc, out);
             doc.open();
-            var title = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 21, new Color(15, 23, 42));
-            var subtitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, new Color(79, 70, 229));
-            var muted = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, new Color(100, 116, 139));
-            var bold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, new Color(15, 23, 42));
 
-            doc.add(new Paragraph("EXPENSETRACKER", title));
-            doc.add(new Paragraph("Executive Financial Intelligence Report", subtitle));
-            doc.add(new Paragraph("Prepared for " + safe(name) + " | " + range.label() + " | " + currency, muted));
+            // Executive Header Banner
+            PdfPTable banner = new PdfPTable(1);
+            banner.setWidthPercentage(100);
+            PdfPCell bannerCell = new PdfPCell();
+            bannerCell.setBackgroundColor(new Color(15, 23, 42)); // Obsidian Slate
+            bannerCell.setPaddingTop(12);
+            bannerCell.setPaddingBottom(12);
+            bannerCell.setPaddingLeft(16);
+            bannerCell.setPaddingRight(16);
+            bannerCell.setBorder(Rectangle.NO_BORDER);
+
+            Paragraph pTitle = new Paragraph("EXPENSETRACKER PRO",
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 17, Color.WHITE));
+            Paragraph pSub = new Paragraph("Executive Financial Intelligence Statement",
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10.5f, new Color(199, 154, 62))); // Luxury Gold
+            Paragraph pMeta = new Paragraph("Prepared for: " + safe(name) + "  |  Period: " + range.label() + "  |  Currency: " + currency,
+                    FontFactory.getFont(FontFactory.HELVETICA, 8.5f, new Color(148, 163, 184)));
+
+            bannerCell.addElement(pTitle);
+            bannerCell.addElement(pSub);
+            bannerCell.addElement(pMeta);
+            banner.addCell(bannerCell);
+            doc.add(banner);
+
+            // Gold divider
+            PdfPTable goldRule = new PdfPTable(1);
+            goldRule.setWidthPercentage(100);
+            PdfPCell ruleCell = new PdfPCell();
+            ruleCell.setBackgroundColor(new Color(199, 154, 62));
+            ruleCell.setFixedHeight(2.5f);
+            ruleCell.setBorder(Rectangle.NO_BORDER);
+            goldRule.addCell(ruleCell);
+            doc.add(goldRule);
             doc.add(new Paragraph(" "));
+
+            var muted = FontFactory.getFont(FontFactory.HELVETICA, 8.5f, new Color(100, 116, 139));
+            var bold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, new Color(15, 23, 42));
 
             PdfPTable k = new PdfPTable(4);
             k.setWidthPercentage(100);
@@ -525,8 +658,9 @@ public class RangeReportController {
                     net.signum() >= 0 ? new Color(16, 185, 129) : new Color(239, 68, 68));
             kpi(k, "TRANSACTIONS", String.valueOf(d.expenses.size() + d.incomes.size()), new Color(79, 70, 229));
             doc.add(k);
+            doc.add(new Paragraph(" "));
 
-            doc.add(new Paragraph("Coverage", bold));
+            doc.add(new Paragraph("Portfolio Coverage", bold));
             PdfPTable coverage = new PdfPTable(5);
             coverage.setWidthPercentage(100);
             head(coverage, "Expenses");
@@ -540,19 +674,26 @@ public class RangeReportController {
             cell(coverage, String.valueOf(d.subscriptions.size()), muted);
             cell(coverage, String.valueOf(d.budgets.size()), muted);
             doc.add(coverage);
+            doc.add(new Paragraph(" "));
 
-            doc.add(new Paragraph("Key insights", bold));
+            doc.add(new Paragraph("Key Financial Insights", bold));
             for (String insight : insights(d, spend, income, s)) {
-                doc.add(new Paragraph("- " + insight, muted));
+                doc.add(new Paragraph("•  " + insight, muted));
             }
+            doc.add(new Paragraph(" "));
 
             addIncomePdf(doc, d.incomes, s, muted, bold);
+            doc.add(new Paragraph(" "));
             addExpensePdf(doc, d.expenses, s, muted, bold);
+            doc.add(new Paragraph(" "));
             addSavingsPdf(doc, d.savingsGoals, s, muted, bold);
+            doc.add(new Paragraph(" "));
             addSubscriptionPdf(doc, d.subscriptions, s, muted, bold);
+            doc.add(new Paragraph(" "));
             addBudgetPdf(doc, d.budgets, s, muted, bold);
+            doc.add(new Paragraph(" "));
 
-            doc.add(new Paragraph("Generated from live persisted ledger data at export time.", muted));
+            doc.add(new Paragraph("Generated from live persisted ledger data at export time · ExpenseTracker Pro", muted));
             doc.close();
             return out.toByteArray();
         } catch (Exception ex) {
@@ -563,43 +704,47 @@ public class RangeReportController {
 
     private static void addIncomePdf(Document doc, List<Income> incomes, String s,
                                      Font muted, Font bold) throws DocumentException {
-        doc.add(new Paragraph("Income ledger", bold));
+        doc.add(new Paragraph("Income Ledger (" + incomes.size() + ")", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
         head(t, "Date");
         head(t, "Source");
         head(t, "Description");
         head(t, "Amount");
-        for (Income x : incomes) {
-            cell(t, safeDate(x.getIncomeDate()), muted);
-            cell(t, safe(x.getSource()), muted);
-            cell(t, safe(x.getDescription()), muted);
-            cell(t, s + " " + nz(x.getAmount()), muted);
+        for (int i = 0; i < incomes.size(); i++) {
+            Income x = incomes.get(i);
+            boolean z = (i % 2 == 1);
+            cell(t, safeDate(x.getIncomeDate()), muted, z);
+            cell(t, safe(x.getSource()), muted, z);
+            cell(t, safe(x.getDescription()), muted, z);
+            cell(t, s + " " + nz(x.getAmount()), muted, z);
         }
         doc.add(t);
     }
 
     private static void addExpensePdf(Document doc, List<Expense> expenses, String s,
                                       Font muted, Font bold) throws DocumentException {
-        doc.add(new Paragraph("Expense ledger", bold));
+        doc.add(new Paragraph("Expense Ledger (" + expenses.size() + ")", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
         head(t, "Date");
         head(t, "Category");
         head(t, "Description");
         head(t, "Amount");
-        for (Expense x : expenses) {
-            cell(t, safeDate(x.getExpenseDate()), muted);
-            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted);
-            cell(t, safe(x.getDescription()), muted);
-            cell(t, s + " " + nz(x.getAmount()), muted);
+        for (int i = 0; i < expenses.size(); i++) {
+            Expense x = expenses.get(i);
+            boolean z = (i % 2 == 1);
+            cell(t, safeDate(x.getExpenseDate()), muted, z);
+            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted, z);
+            cell(t, safe(x.getDescription()), muted, z);
+            cell(t, s + " " + nz(x.getAmount()), muted, z);
         }
         doc.add(t);
     }
 
     private static void addSavingsPdf(Document doc, List<SavingsGoal> goals, String s,
                                       Font muted, Font bold) throws DocumentException {
-        doc.add(new Paragraph("Savings goals", bold));
+        doc.add(new Paragraph("Savings Goals (" + goals.size() + ")", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
         head(t, "Goal");
@@ -607,22 +752,24 @@ public class RangeReportController {
         head(t, "Saved");
         head(t, "Progress");
         head(t, "Status");
-        for (SavingsGoal x : goals) {
+        for (int i = 0; i < goals.size(); i++) {
+            SavingsGoal x = goals.get(i);
             BigDecimal target = nz(x.getTargetAmount());
             BigDecimal saved = nz(x.getCurrentAmount());
             double pct = target.signum() > 0 ? saved.divide(target, 4, RoundingMode.HALF_UP).doubleValue() * 100 : 0d;
-            cell(t, safe(x.getName()), muted);
-            cell(t, s + " " + target, muted);
-            cell(t, s + " " + saved, muted);
-            cell(t, String.format(Locale.US, "%.1f%%", pct), muted);
-            cell(t, safe(x.getStatus()), muted);
+            boolean z = (i % 2 == 1);
+            cell(t, safe(x.getName()), muted, z);
+            cell(t, s + " " + target, muted, z);
+            cell(t, s + " " + saved, muted, z);
+            cell(t, String.format(Locale.US, "%.1f%%", pct), muted, z);
+            cell(t, safe(x.getStatus()), muted, z);
         }
         doc.add(t);
     }
 
     private static void addSubscriptionPdf(Document doc, List<RecurringExpense> subscriptions, String s,
                                            Font muted, Font bold) throws DocumentException {
-        doc.add(new Paragraph("Subscriptions", bold));
+        doc.add(new Paragraph("Subscriptions (" + subscriptions.size() + ")", bold));
         PdfPTable t = new PdfPTable(5);
         t.setWidthPercentage(100);
         head(t, "Subscription");
@@ -630,30 +777,34 @@ public class RangeReportController {
         head(t, "Frequency");
         head(t, "Next Due");
         head(t, "Category");
-        for (RecurringExpense x : subscriptions) {
-            cell(t, safe(x.getDescription()), muted);
-            cell(t, s + " " + nz(x.getAmount()), muted);
-            cell(t, safe(x.getFrequency()), muted);
-            cell(t, safeDate(x.getNextDueDate()), muted);
-            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted);
+        for (int i = 0; i < subscriptions.size(); i++) {
+            RecurringExpense x = subscriptions.get(i);
+            boolean z = (i % 2 == 1);
+            cell(t, safe(x.getDescription()), muted, z);
+            cell(t, s + " " + nz(x.getAmount()), muted, z);
+            cell(t, safe(x.getFrequency()), muted, z);
+            cell(t, safeDate(x.getNextDueDate()), muted, z);
+            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted, z);
         }
         doc.add(t);
     }
 
     private static void addBudgetPdf(Document doc, List<Budget> budgets, String s,
                                       Font muted, Font bold) throws DocumentException {
-        doc.add(new Paragraph("Budgets", bold));
+        doc.add(new Paragraph("Budgets (" + budgets.size() + ")", bold));
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
         head(t, "Category");
         head(t, "Limit");
         head(t, "Period");
         head(t, "Date Window");
-        for (Budget x : budgets) {
-            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted);
-            cell(t, s + " " + nz(x.getLimitAmount()), muted);
-            cell(t, safe(x.getPeriod()), muted);
-            cell(t, safeDate(x.getStartDate()) + " → " + safeDate(x.getEndDate()), muted);
+        for (int i = 0; i < budgets.size(); i++) {
+            Budget x = budgets.get(i);
+            boolean z = (i % 2 == 1);
+            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted, z);
+            cell(t, s + " " + nz(x.getLimitAmount()), muted, z);
+            cell(t, safe(x.getPeriod()), muted, z);
+            cell(t, safeDate(x.getStartDate()) + " → " + safeDate(x.getEndDate()), muted, z);
         }
         doc.add(t);
     }
@@ -671,19 +822,39 @@ public class RangeReportController {
         BigDecimal avg = d.expenses.isEmpty()
                 ? BigDecimal.ZERO
                 : spend.divide(BigDecimal.valueOf(d.expenses.size()), 2, RoundingMode.HALF_UP);
-        return List.of(
-                "Largest expense category: " + top + ".",
-                "Average expense per transaction: " + symbol + " " + avg + ".",
-                income.compareTo(spend) >= 0
-                        ? "Cash flow is positive for the selected period."
-                        : "Spending exceeded recorded income in the selected period.",
-                d.savingsGoals.isEmpty()
-                        ? "No savings goals are configured."
-                        : d.savingsGoals.size() + " savings goal(s) are included in the export.",
-                d.subscriptions.isEmpty()
-                        ? "No active subscriptions are configured."
-                        : d.subscriptions.size() + " active subscription(s) are included in the export."
-        );
+
+        BigDecimal salaryInflow = d.incomes.stream()
+                .filter(i -> i.getSource() != null && i.getSource().toLowerCase().contains("salary"))
+                .map(i -> nz(i.getAmount()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String salaryInsight = salaryInflow.compareTo(BigDecimal.ZERO) > 0
+                ? "Salary coverage: " + (spend.compareTo(BigDecimal.ZERO) > 0
+                    ? Math.round(salaryInflow.divide(spend, 4, RoundingMode.HALF_UP).doubleValue() * 100) + "% of total spend."
+                    : "100% (Surplus)")
+                : "No primary salary income recorded.";
+
+        BigDecimal totalSavings = d.savingsGoals.stream()
+                .map(g -> nz(g.getCurrentAmount()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String runwayInsight = (spend.compareTo(BigDecimal.ZERO) > 0 && totalSavings.compareTo(BigDecimal.ZERO) > 0)
+                ? "Emergency runway: " + String.format(Locale.US, "%.1f", totalSavings.divide(spend, 2, RoundingMode.HALF_UP).doubleValue()) + " months at current outflow rate."
+                : "Emergency reserve: " + symbol + " " + totalSavings + " saved.";
+
+        List<String> list = new ArrayList<>();
+        list.add("Largest expense category: " + top + ".");
+        list.add("Average expense per transaction: " + symbol + " " + avg + ".");
+        list.add(income.compareTo(spend) >= 0
+                ? "Cash flow is positive for the selected period (+ " + symbol + " " + income.subtract(spend) + ")."
+                : "Spending exceeded recorded income by " + symbol + " " + spend.subtract(income) + ".");
+        list.add(salaryInsight);
+        list.add(runwayInsight);
+        if (!d.savingsGoals.isEmpty()) {
+            list.add(d.savingsGoals.size() + " savings milestone target(s) actively configured.");
+        }
+        if (!d.subscriptions.isEmpty()) {
+            list.add(d.subscriptions.size() + " active recurring subscription commitment(s) monitored.");
+        }
+        return list;
     }
 
     private static BigDecimal total(List<Expense> values) {
@@ -703,20 +874,29 @@ public class RangeReportController {
     }
 
     private static String symbol(String c) {
-        if (c == null || c.isBlank()) return "₹";
-        try {
-            return Currency.getInstance(c.trim().toUpperCase(Locale.ROOT)).getSymbol(Locale.ROOT);
-        } catch (Exception ignored) {
-            return switch (c.toUpperCase(Locale.ROOT)) {
-                case "USD" -> "$";
-                case "EUR" -> "€";
-                case "GBP" -> "£";
-                case "JPY" -> "¥";
-                case "AED" -> "AED";
-                case "INR" -> "₹";
-                default -> c.toUpperCase(Locale.ROOT);
-            };
-        }
+        if (c == null || c.isBlank()) return "Rs.";
+        String upper = c.trim().toUpperCase(Locale.ROOT);
+        return switch (upper) {
+            case "INR" -> "Rs.";
+            case "USD" -> "$";
+            case "EUR" -> "€";
+            case "GBP" -> "£";
+            case "JPY" -> "¥";
+            case "AED" -> "AED";
+            default -> {
+                try {
+                    String sym = Currency.getInstance(upper).getSymbol(Locale.ROOT);
+                    if (sym != null && !sym.isBlank() && !sym.equals(upper)) {
+                        if ("$".equals(sym) || "€".equals(sym) || "£".equals(sym) || "¥".equals(sym)) {
+                            yield sym;
+                        }
+                    }
+                    yield upper;
+                } catch (Exception ignored) {
+                    yield upper;
+                }
+            }
+        };
     }
 
     private static XSSFCellStyle style(XSSFWorkbook workbook, String bg, String fg, boolean bold, int size) {
@@ -781,25 +961,33 @@ public class RangeReportController {
 
     private static void kpi(PdfPTable table, String label, String value, Color accent) {
         PdfPCell cell = new PdfPCell();
-        cell.setPadding(8);
+        cell.setPadding(9);
+        cell.setBackgroundColor(new Color(248, 250, 252));
         cell.setBorderColor(new Color(226, 232, 240));
         cell.addElement(new Paragraph(label, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, accent)));
         cell.addElement(new Paragraph(value,
-                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new Color(15, 23, 42))));
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11.5f, new Color(15, 23, 42))));
         table.addCell(cell);
     }
 
     private static void head(PdfPTable table, String text) {
         PdfPCell cell = new PdfPCell(new Phrase(text,
-                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, Color.WHITE)));
-        cell.setBackgroundColor(new Color(30, 41, 59));
+                FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8f, Color.WHITE)));
+        cell.setBackgroundColor(new Color(15, 23, 42)); // Slate Obsidian
+        cell.setBorderColor(new Color(199, 154, 62)); // Gold border
         cell.setPadding(6);
         table.addCell(cell);
     }
 
     private static void cell(PdfPTable table, String text, Font font) {
+        cell(table, text, font, false);
+    }
+
+    private static void cell(PdfPTable table, String text, Font font, boolean zebra) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setPadding(5);
+        cell.setBackgroundColor(zebra ? new Color(248, 250, 252) : Color.WHITE);
+        cell.setBorderColor(new Color(226, 232, 240));
         table.addCell(cell);
     }
 

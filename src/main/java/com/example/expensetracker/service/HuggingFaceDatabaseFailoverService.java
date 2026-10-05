@@ -1,5 +1,7 @@
 package com.example.expensetracker.service;
 
+import java.util.Map;
+
 /**
  * Service interface for Hugging Face automated database failover and snapshot backups.
  */
@@ -22,4 +24,13 @@ public interface HuggingFaceDatabaseFailoverService {
      * @return {@code true} if successful, {@code false} otherwise
      */
     boolean backupCurrentDatabase();
+
+    /**
+     * Diagnoses configuration status and token permissions.
+     *
+     * @return map with configuration status and diagnostic message
+     */
+    default Map<String, Object> getDiagnostics() {
+        return Map.of("configured", false, "statusMessage", "Not implemented");
+    }
 }

@@ -178,6 +178,11 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
         });
 
         clearInterval(otpTimerInterval);
+        if ('Notification' in window && Notification.permission === 'default') {
+            try {
+                await Notification.requestPermission();
+            } catch (_) {}
+        }
         sessionStorage.setItem('flash_toast', JSON.stringify({
             message: 'Registration successful! Please sign in with your credentials.',
             type: 'success'
