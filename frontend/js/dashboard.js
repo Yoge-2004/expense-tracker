@@ -114,6 +114,7 @@ const dashboardBudgetController = window.DashboardBudget.createController({
     appConfirm: window.appConfirm,
     openModal,
     closeModal,
+    getExpenses: () => allExpenses,
     getCachedBudgets: () => cachedBudgets,
     setCachedBudgets: (next) => {
         cachedBudgets = Array.isArray(next) ? next : [];
