@@ -38,9 +38,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           {
-            echo '### Backend failure digest (temporary)'
+            echo '### Backend failure digest v2 (temporary)'
             echo '```'
-            grep -E "Tests run:.*Fail|^\[ERROR\]|<<< (FAILURE|ERROR)|expected:|Wanted but not invoked|TooManyActual|Unnecessary|PotentialStubbing" backend-test.log | grep -v "^\[ERROR\] *$" | head -140
+            grep -E "Failures: [1-9]|Errors: [1-9]|<<< (FAILURE|ERROR)|^\[ERROR\]|BUILD FAILURE" backend-test.log | head -120
             echo '```'
           } > /tmp/digest.md
           python3 - <<'PY'
