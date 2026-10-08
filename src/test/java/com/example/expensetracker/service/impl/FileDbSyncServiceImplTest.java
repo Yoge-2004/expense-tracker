@@ -31,6 +31,7 @@ class FileDbSyncServiceImplTest {
     @DisplayName("syncDbToFile: triggers failover backup and returns success status")
     void syncDbToFile_success() {
         when(failoverService.backupCurrentDatabase()).thenReturn(true);
+        when(failoverService.getDiagnostics()).thenReturn(Map.of("configured", true, "statusMessage", "OK"));
 
         Map<String, Object> result = syncService.syncDbToFile();
 
@@ -44,12 +45,16 @@ class FileDbSyncServiceImplTest {
     @DisplayName("syncDbToFile: handles backup failure cleanly")
     void syncDbToFile_failure() {
         when(failoverService.backupCurrentDatabase()).thenReturn(false);
+        when(failoverService.getDiagnostics()).thenReturn(
+                Map.of("configured", false, "statusMessage", "HF_TOKEN is missing or blank."));
 
         Map<String, Object> result = syncService.syncDbToFile();
 
         assertNotNull(result);
         assertEquals("error", result.get("status"));
-        assertTrue(result.get("message").toString().contains("failed or is not configured"));
+        // The message now carries the concrete reason from getDiagnostics(), not a generic line.
+        assertTrue(result.get("message").toString().contains("failed. Diagnosis: HF_TOKEN is missing or blank."),
+                result.get("message").toString());
     }
 
     @Test
