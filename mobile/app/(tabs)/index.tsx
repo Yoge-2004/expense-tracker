@@ -56,6 +56,7 @@ import {
 import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { OfflineBanner } from '../../components/OfflineBanner';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -155,6 +156,8 @@ export default function DashboardScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  /** True when the main data loaded but categories, incomes or goals did not. */
+  const [partialError, setPartialError] = useState(false);
   const [cachedTime, setCachedTime] = useState<string | null>(null);
 
   // Filters state
@@ -217,11 +220,13 @@ export default function DashboardScreen() {
       const [expensesData, budgetsData, globalCats, userCats, subsData, incomesData, savingsData] = await Promise.all([
         apiRequest(`/expenses/user/${userId}`),
         apiRequest(`/expenses/budget/status/user/${userId}`),
-        apiRequest(`/categories/global`).catch(() => []),
-        apiRequest(`/categories/user/${userId}`).catch(() => []),
+        // null (not []) marks a failed request, so a transient error is never
+        // mistaken for "the user has no categories/incomes/goals".
+        apiRequest(`/categories/global`).catch(() => null),
+        apiRequest(`/categories/user/${userId}`).catch(() => null),
         apiRequest(`/expenses/recurring/user/${userId}`),
-        apiRequest(`/incomes/user/${userId}`).catch(() => []),
-        apiRequest(`/savings/goals/user/${userId}`).catch(() => []),
+        apiRequest(`/incomes/user/${userId}`).catch(() => null),
+        apiRequest(`/savings/goals/user/${userId}`).catch(() => null),
       ]);
 
       const safeExp = Array.isArray(expensesData) ? expensesData : [];
@@ -242,22 +247,32 @@ export default function DashboardScreen() {
         }
       });
 
+      // Keep what we already had for any optional list whose request failed.
+      // Previously a failed categories request replaced the list with [] and
+      // saveCache() wrote that empty list to disk, wiping the cached
+      // categories the Add tab hydrates from.
+      const categoriesLoaded = Array.isArray(globalCats) || Array.isArray(userCats);
+      const nextCategories = categoriesLoaded ? safeCat : categories;
+      const nextIncomes = Array.isArray(incomesData) ? incomesData : incomes;
+      const nextSavingsGoals = Array.isArray(savingsData) ? savingsData : savingsGoals;
+
       setExpenses(safeExp);
       setBudgets(safeBud);
-      setCategories(safeCat);
+      setCategories(nextCategories);
       setSubscriptions(safeSub);
-      setIncomes(Array.isArray(incomesData) ? incomesData : []);
-      setSavingsGoals(Array.isArray(savingsData) ? savingsData : []);
+      setIncomes(nextIncomes);
+      setSavingsGoals(nextSavingsGoals);
       setFetchError(null);
+      setPartialError(!categoriesLoaded || !Array.isArray(incomesData) || !Array.isArray(savingsData));
       setCachedTime(null);
 
       saveCache({
         expenses: safeExp,
         budgets: safeBud,
-        categories: safeCat,
+        categories: nextCategories,
         subscriptions: safeSub,
-        incomes: Array.isArray(incomesData) ? incomesData : [],
-        savingsGoals: Array.isArray(savingsData) ? savingsData : [],
+        incomes: nextIncomes,
+        savingsGoals: nextSavingsGoals,
       });
     } catch (err: any) {
       console.warn('[Dashboard] Error fetching dashboard data:', err);
@@ -818,32 +833,17 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Offline / Cached Data Banner */}
-        {fetchError && expenses.length > 0 && (
-          <View
-            style={[styles.offlineBanner, { backgroundColor: '#C79A3E18', borderColor: '#C79A3E40' }]}
-          >
-            <Ionicons name="cloud-offline" size={16} color="#C79A3E" />
-            <Text style={[styles.offlineBannerText, { color: '#C79A3E' }]}>
-              Offline mode {cachedTime ? `· Cached at ${cachedTime}` : ''}
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              disabled={refreshing}
-              onPress={() => fetchData(true)}
-              style={styles.retryPillBtn}
-              accessibilityLabel="Retry Connection"
-            >
-              {refreshing ? (
-                <ActivityIndicator size="small" color="#10120E" />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={12} color="#10120E" />
-                  <Text style={styles.retryPillText}>Retry</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+        {/* Offline / Cached Data Banner (only the Retry button is pressable) */}
+        {(fetchError || partialError) && expenses.length > 0 && (
+          <OfflineBanner
+            message={
+              fetchError
+                ? `Offline mode${cachedTime ? ` · Cached at ${cachedTime}` : ''}`
+                : "Some data couldn't be refreshed"
+            }
+            onRetry={() => fetchData(true)}
+            retrying={refreshing}
+          />
         )}
 
         {/* =========================================
@@ -1426,35 +1426,6 @@ const styles = StyleSheet.create({
     color: '#10120E',
     fontWeight: '800',
     fontSize: 14,
-  },
-  offlineBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
-  offlineBannerText: {
-    flex: 1,
-    fontSize: 11.5,
-    fontWeight: '600',
-  },
-  retryPillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: '#C79A3E',
-  },
-  retryPillText: {
-    color: '#10120E',
-    fontWeight: '700',
-    fontSize: 11,
   },
   topBar: {
     flexDirection: 'row',
