@@ -46,11 +46,16 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     @Value("${hf.db.path:" + DEFAULT_PATH + "}")
     private String path;
 
+    /** space (default, matches existing deployments), dataset or model. */
+    @Value("${hf.db.repo-type:${HF_REPO_TYPE:space}}")
+    private String repoType;
+
     @Value("${hf.db.encryption-key:${DB_BACKUP_KEY:}}")
     private String encryptionKey;
 
     private final DatabaseSnapshotService snapshotService;
     private volatile boolean writePermissionWarned = false;
+    private volatile boolean notConfiguredWarned = false;
     private volatile String lastPushedChecksum = null;
 
     @Override
@@ -65,7 +70,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             Path encrypted = createSecureTempFile(".enc");
             Path sqlite = createSecureTempFile(".sqlite");
             try {
-                if (HuggingFaceFileClient.download(space, path, encrypted, token)) {
+                if (HuggingFaceFileClient.download(repoType, space, path, encrypted, token)) {
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
                     int rows = snapshotService.importIntoFallback(sqlite);
                     lastPushedChecksum = computeSha256(sqlite);
@@ -96,6 +101,11 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     @Override
     public synchronized boolean backupCurrentDatabase() {
         if (isNotConfigured()) {
+            if (!notConfiguredWarned) {
+                notConfiguredWarned = true;
+                log.warn("HF database backup is NOT running: {} Backups need HF_TOKEN, DB_BACKUP_KEY and "
+                        + "HF_SPACE_REPO to all be set.", missingSettings());
+            }
             return false;
         }
         try {
@@ -110,7 +120,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     return true;
                 }
                 DatabaseSnapshotService.encrypt(sqlite, encrypted, encryptionKey);
-                HuggingFaceFileClient.upload(space, path, encrypted, token);
+                HuggingFaceFileClient.upload(repoType, space, path, encrypted, token);
                 lastPushedChecksum = currentChecksum;
                 writePermissionWarned = false;
                 log.info("Encrypted production database snapshot pushed to HF Space repository (SHA-256: {}).",
@@ -201,6 +211,15 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         }
     }
 
+    /** Names the settings that are blank, so a silent no-op becomes a readable log line. */
+    private String missingSettings() {
+        StringBuilder missing = new StringBuilder();
+        if (token == null || token.isBlank()) missing.append("HF_TOKEN ");
+        if (encryptionKey == null || encryptionKey.isBlank()) missing.append("DB_BACKUP_KEY ");
+        if (space == null || space.isBlank()) missing.append("HF_SPACE_REPO ");
+        return missing.isEmpty() ? "" : "Missing: " + missing.toString().trim() + ".";
+    }
+
     private boolean isNotConfigured() {
         return token == null || token.isBlank()
                 || encryptionKey == null || encryptionKey.isBlank()
@@ -215,6 +234,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         boolean spacePresent = space != null && !space.isBlank();
 
         diag.put("space", space != null ? space : "unset");
+        diag.put("repoType", repoType != null ? repoType : "space");
         diag.put("tokenConfigured", tokenPresent);
         diag.put("encryptionKeyConfigured", keyPresent);
         diag.put("isConfigured", !isNotConfigured());

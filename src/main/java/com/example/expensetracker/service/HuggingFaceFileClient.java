@@ -49,9 +49,15 @@ public final class HuggingFaceFileClient {
 
     private HuggingFaceFileClient() {}
 
+    /** Uploads to a Space repository (the original, default behaviour). */
     public static void upload(String repo, String path, Path file, String token)
             throws IOException, InterruptedException {
-        String url = "https://huggingface.co/api/spaces/" + requireRepo(repo) + "/commit/main";
+        upload(REPO_TYPE_SPACE, repo, path, file, token);
+    }
+
+    public static void upload(String repoType, String repo, String path, Path file, String token)
+            throws IOException, InterruptedException {
+        String url = commitUrl(repoType, repo);
         String content = Base64.getEncoder().encodeToString(Files.readAllBytes(file));
         String body = "{\"key\":\"header\",\"value\":{\"summary\":\"Update encrypted Expense Tracker snapshot\"}}\n"
                 + "{\"key\":\"file\",\"value\":{\"content\":\"" + content
@@ -110,10 +116,15 @@ public final class HuggingFaceFileClient {
         }
     }
 
+    /** Downloads from a Space repository (the repo type {@link #upload} writes to by default). */
     public static boolean download(String repo, String path, Path destination, String token)
             throws IOException, InterruptedException {
-        String url = "https://huggingface.co/" + requireRepo(repo) + "/resolve/main/"
-                + requirePath(path) + "?download=true";
+        return download(REPO_TYPE_SPACE, repo, path, destination, token);
+    }
+
+    public static boolean download(String repoType, String repo, String path, Path destination, String token)
+            throws IOException, InterruptedException {
+        String url = resolveUrl(repoType, repo, path);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Authorization", "Bearer " + token)
@@ -127,6 +138,42 @@ public final class HuggingFaceFileClient {
         }
         Files.write(destination, response.body());
         return true;
+    }
+
+    public static final String REPO_TYPE_SPACE = "space";
+    public static final String REPO_TYPE_DATASET = "dataset";
+    public static final String REPO_TYPE_MODEL = "model";
+
+    /** Hub API collection segment for a repo type: spaces, datasets or models. */
+    static String apiSegment(String repoType) {
+        String type = repoType == null ? REPO_TYPE_SPACE : repoType.trim().toLowerCase(java.util.Locale.ROOT);
+        return switch (type) {
+            case REPO_TYPE_SPACE, "" -> "spaces";
+            case REPO_TYPE_DATASET -> "datasets";
+            case REPO_TYPE_MODEL -> "models";
+            default -> throw new IllegalArgumentException("Invalid Hugging Face repository type");
+        };
+    }
+
+    /** Commit endpoint for the repo type, e.g. https://huggingface.co/api/spaces/owner/name/commit/main. */
+    static String commitUrl(String repoType, String repo) {
+        return "https://huggingface.co/api/" + apiSegment(repoType) + "/" + requireRepo(repo) + "/commit/main";
+    }
+
+    /**
+     * File URL for the repo type. The Hub only omits the type prefix for model
+     * repositories; Spaces live under /spaces/ and datasets under /datasets/.
+     * Fetching a Space file without that prefix asks for a model repo that does
+     * not exist and always answers 404.
+     */
+    static String resolveUrl(String repoType, String repo, String path) {
+        String prefix = switch (apiSegment(repoType)) {
+            case "spaces" -> "spaces/";
+            case "datasets" -> "datasets/";
+            default -> "";
+        };
+        return "https://huggingface.co/" + prefix + requireRepo(repo) + "/resolve/main/"
+                + requirePath(path) + "?download=true";
     }
 
     /** Package-private (not private) so validation can be unit-tested directly,
