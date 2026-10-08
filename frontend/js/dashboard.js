@@ -1173,7 +1173,7 @@ function triggerFileDownload(blob, filename) {
 }
 
 function exportExpensesClientSideExcel() {
-    const list = (window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : (Array.isArray(allExpenses) ? allExpenses : []);
+    const list = Array.isArray(allExpenses) ? allExpenses : [];
     const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
     const headers = ["ID", "Date", "Category", `Amount (${activeCurr})`, "Description", "Recurring"];
     const rows = list.map((e, idx) => [
@@ -1190,7 +1190,7 @@ function exportExpensesClientSideExcel() {
 }
 
 function exportIncomesClientSideExcel() {
-    const list = (window.allIncomes && window.allIncomes.length > 0) ? window.allIncomes : (Array.isArray(allIncomes) ? allIncomes : []);
+    const list = Array.isArray(allIncomes) ? allIncomes : [];
     const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
     const headers = ["ID", "Date", "Source", `Amount (${activeCurr})`, "Description", "Recurring"];
     const rows = list.map((inc, idx) => [
@@ -1588,8 +1588,8 @@ async function loadSubscriptions() {
     }
 
     try {
-        const activeExpenses = (window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : (allExpenses || []);
-        const activeIncomes = (window.allIncomes && window.allIncomes.length > 0) ? window.allIncomes : (allIncomes || []);
+        const activeExpenses = allExpenses || [];
+        const activeIncomes = allIncomes || [];
 
         const isFileOrOffline = window.location.protocol === "file:" || !navigator.onLine || window.location.search.includes("test_mock_auth") || !userId;
         const [subs, incs, savs] = await Promise.all([
@@ -2482,7 +2482,7 @@ function renderIncomesTableOnly(incomes) {
 }
 
 function openEditSavingsGoal(goalId) {
-    const goal = (window.allSavingsGoals || allSavingsGoals || []).find(g => String(g.id) === String(goalId));
+    const goal = (allSavingsGoals || []).find(g => String(g.id) === String(goalId));
     if (!goal || !savingsGoalModal) return;
     document.getElementById("goalId").value = goal.id;
     document.getElementById("goalName").value = goal.name || "";
@@ -2521,7 +2521,6 @@ window.openEditSavingsGoal = openEditSavingsGoal;
 
 function renderIncomes(incomes) {
     allIncomes = Array.isArray(incomes) ? incomes : [];
-    window.allIncomes = allIncomes;
     applyIncomeFilters();
     updateStreamBadges();
 }
@@ -2529,7 +2528,6 @@ window.renderIncomes = renderIncomes;
 
 function renderSavingsGoals(goals) {
     allSavingsGoals = Array.isArray(goals) ? goals : [];
-    window.allSavingsGoals = allSavingsGoals;
     const container = document.getElementById("savingsGoalsList");
     if (!container) return;
     if (!allSavingsGoals || allSavingsGoals.length === 0) {
@@ -3697,8 +3695,8 @@ if (document.readyState === "loading") {
 }
 
 function updateStreamBadges() {
-    const expCount = (window.allExpenses || allExpenses || []).length;
-    const incCount = (window.allIncomes || allIncomes || []).length;
+    const expCount = (allExpenses || []).length;
+    const incCount = (allIncomes || []).length;
     const totalCount = expCount + incCount;
     
     const bAll = document.getElementById("badgeAllCount");
