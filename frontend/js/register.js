@@ -167,6 +167,19 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
     }
 
     if (submitBtn) submitBtn.disabled = true;
+
+    // Ask for notification permission NOW, while the click that submitted the
+    // form still counts as a user gesture. Firefox and Safari only show the
+    // prompt from a gesture and Chrome may suppress it otherwise; by the time
+    // the register request returns (slow on a cold server) that activation has
+    // expired, so the old prompt-after-the-request often never appeared.
+    let notificationPrompt = null;
+    try {
+        if ('Notification' in window && Notification.permission === 'default') {
+            notificationPrompt = Promise.resolve(Notification.requestPermission()).catch(() => {});
+        }
+    } catch (_) { /* unsupported browser: skip */ }
+
     try {
         const payload = { name, username, email, password, currency };
         if (otp) payload.otp = otp;
@@ -178,11 +191,7 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
         });
 
         clearInterval(otpTimerInterval);
-        if ('Notification' in window && Notification.permission === 'default') {
-            try {
-                await Notification.requestPermission();
-            } catch (_) {}
-        }
+        if (notificationPrompt) await notificationPrompt;
         sessionStorage.setItem('flash_toast', JSON.stringify({
             message: 'Registration successful! Please sign in with your credentials.',
             type: 'success'
