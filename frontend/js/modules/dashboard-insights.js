@@ -30,25 +30,35 @@
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
     
-        // 1. Current month expenses and daily burn
-        const currentMonthExpenses = safeExpenses.filter(e => {
-            const d = new Date(e.expenseDate);
-            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-        });
-        const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-        const totalAllExpenses = safeExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-        const activeOutflow = currentMonthSpent > 0 ? currentMonthSpent : totalAllExpenses;
-        const dailyBurn = currentDay > 0 ? (currentMonthSpent / currentDay) : 0;
-        const projectedSpent = dailyBurn * daysInMonth;
-    
-        // 2. Current month incomes & active inflow
+        // Current month incomes (computed first: the period basis below needs them)
         const currentMonthIncomes = safeIncomes.filter(i => {
             const d = new Date(i.incomeDate);
             return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
         });
         const currentMonthInflow = currentMonthIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
         const totalAllInflow = safeIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-        const activeInflow = currentMonthInflow > 0 ? currentMonthInflow : totalAllInflow;
+    
+        // Current month expenses and daily burn
+        const currentMonthExpenses = safeExpenses.filter(e => {
+            const d = new Date(e.expenseDate);
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        });
+        const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const totalAllExpenses = safeExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        // Inflow and outflow must be measured over the SAME period. The panel
+        // shows the current calendar month when it has any activity; only when
+        // the month is completely empty (a brand-new month, or a filtered view
+        // that excludes it) does it fall back to every record it was given.
+        // Deciding that per side let a month with salary but no spend compare
+        // this month's inflow against the lifetime outflow.
+        const useCurrentMonth = currentMonthSpent > 0 || currentMonthInflow > 0;
+        const activeOutflow = useCurrentMonth ? currentMonthSpent : totalAllExpenses;
+        const outflowCount = useCurrentMonth ? currentMonthExpenses.length : safeExpenses.length;
+        const activeInflow = useCurrentMonth ? currentMonthInflow : totalAllInflow;
+        const inflowCount = useCurrentMonth ? currentMonthIncomes.length : safeIncomes.length;
+        const periodNoun = useCurrentMonth ? "Monthly" : "Total";
+        const dailyBurn = currentDay > 0 ? (currentMonthSpent / currentDay) : 0;
+        const projectedSpent = dailyBurn * daysInMonth;
     
         // 3. Synthesis: Net Cash Flow & Savings Rate (Inflows vs Outflows)
         const netCashflow = activeInflow - activeOutflow;
@@ -119,7 +129,11 @@
         }
     
         // 5b. Income Stream Composition & Salary Coverage
-        const salaryInflow = safeIncomes
+        // Same period as the inflow/outflow figures above: summing salary over
+        // every record ever logged and comparing it with ONE month of outflow
+        // made "salary covers N% of monthly costs" read in the hundreds.
+        const basisIncomes = useCurrentMonth ? currentMonthIncomes : safeIncomes;
+        const salaryInflow = basisIncomes
             .filter(i => (i.source || '').toLowerCase().includes('salary'))
             .reduce((acc, i) => acc + Number(i.amount || 0), 0);
         const otherInflow = Math.max(0, activeInflow - salaryInflow);
@@ -127,18 +141,27 @@
             ? Math.round((salaryInflow / activeOutflow) * 100)
             : (salaryInflow > 0 ? 100 : 0);
 
+        const incomeStreamCount = new Set(
+            basisIncomes.map(i => String(i.source || 'other').trim().toLowerCase())
+        ).size;
+
         let salaryInsight = '';
         if (salaryInflow > 0) {
             salaryInsight = `Base salary of <strong>+${formatCurrency(salaryInflow)}</strong> covers <strong>${salaryCoverageRatio}%</strong> of monthly living costs.${otherInflow > 0 ? ` Secondary inflows add <strong>+${formatCurrency(otherInflow)}</strong> buffer.` : ''}`;
         } else if (activeInflow > 0) {
-            salaryInsight = `Total inflows: <strong>+${formatCurrency(activeInflow)}</strong> across ${safeIncomes.length} stream(s).`;
+            salaryInsight = `Total inflows: <strong>+${formatCurrency(activeInflow)}</strong> across ${incomeStreamCount} stream(s).`;
         } else {
             salaryInsight = 'Log salary or freelance income to track coverage ratio against expenses.';
         }
 
         // 5c. Emergency Savings Runway (in months)
-        const emergencyRunway = (activeOutflow > 0 && totalGoalsCurrent > 0)
-            ? (totalGoalsCurrent / activeOutflow).toFixed(1)
+        // Runway is "months of spending", so it needs a per-month figure. When the
+        // panel is on the all-records basis, activeOutflow is a lifetime total;
+        // average it over the distinct months those expenses span.
+        const spanMonths = new Set(safeExpenses.map(e => String(e.expenseDate || '').slice(0, 7)).filter(Boolean)).size;
+        const monthlyOutflowForRunway = useCurrentMonth ? activeOutflow : (activeOutflow / Math.max(1, spanMonths));
+        const emergencyRunway = (monthlyOutflowForRunway > 0 && totalGoalsCurrent > 0)
+            ? (totalGoalsCurrent / monthlyOutflowForRunway).toFixed(1)
             : '0';
         let runwayInsight = '';
         if (totalGoalsCurrent > 0) {
@@ -236,14 +259,14 @@
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:12px;">
                     <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px;">
-                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#10B981; font-weight:700;">Monthly Inflow</div>
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#10B981; font-weight:700;">${periodNoun} Inflow</div>
                         <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">+${formatCurrency(activeInflow)}</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${safeIncomes.length} inflow transaction${safeIncomes.length === 1 ? "" : "s"}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${inflowCount} inflow transaction${inflowCount === 1 ? "" : "s"}</div>
                     </div>
                     <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:12px;">
-                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#EF4444; font-weight:700;">Monthly Outflow</div>
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#EF4444; font-weight:700;">${periodNoun} Outflow</div>
                         <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">-${formatCurrency(activeOutflow)}</div>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${safeExpenses.length} expense transaction${safeExpenses.length === 1 ? "" : "s"}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${outflowCount} expense transaction${outflowCount === 1 ? "" : "s"}</div>
                     </div>
                     <div style="background:rgba(199,154,62,0.08); border:1px solid rgba(199,154,62,0.25); border-radius:10px; padding:12px;">
                         <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#C79A3E; font-weight:700;">Net Cash Flow</div>
