@@ -434,6 +434,21 @@ class HuggingFaceFileClientTest {
         }
 
         @Test
+        @DisplayName("repo creation body names the dataset, its owner and is private")
+        void createRepoBody() {
+            assertEquals("{\"type\":\"dataset\",\"name\":\"expense-tracker-data\","
+                            + "\"organization\":\"Yoge-2004\",\"private\":true}",
+                    HuggingFaceFileClient.createRepoBody("dataset", "Yoge-2004/expense-tracker-data", true));
+        }
+
+        @Test
+        @DisplayName("a Space is never created through the API, so ensureRepo returns without any request")
+        void ensureRepoIsNoOpForSpaces() {
+            assertDoesNotThrow(() -> HuggingFaceFileClient.ensureRepo("space", "a/b", true, "token"));
+            assertDoesNotThrow(() -> HuggingFaceFileClient.ensureRepo(null, "a/b", true, "token"));
+        }
+
+        @Test
         @DisplayName("an unknown repo type is rejected instead of building a URL")
         void unknownRepoTypeRejected() {
             assertThrows(IllegalArgumentException.class, () -> HuggingFaceFileClient.apiSegment("bucket"));

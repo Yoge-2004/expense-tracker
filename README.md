@@ -526,9 +526,11 @@ Production secrets belong in the hosting environment, not in source control.
 | `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed by CORS. |
 | `JWT_SECRET` | Secret used to sign application JWTs. |
 | `GOOGLE_OAUTH_CLIENT_ID` | Google Web OAuth client ID used for backend token audience verification. |
-| `HF_TOKEN` | Hugging Face token used by optional snapshot synchronization. |
-| `HF_SPACE_REPO` | Target Hugging Face repository, normally `Yoge-2004/expense-tracker-backend`. |
-| `HF_SYNC_ENABLED` | Enables Hugging Face persistence synchronization. |
+| `HF_TOKEN` | Hugging Face token with **write** access to the snapshot repository. Set it as a *runtime* secret in the Space settings; the GitHub Actions `HF_TOKEN` secret only deploys the Space and is a different thing. |
+| `DB_BACKUP_KEY` | **Required for snapshots.** Encrypts and decrypts `database/expense_tracker.sqlite.enc`. With it unset, nothing is ever uploaded. |
+| `HF_SPACE_REPO` | Repository that stores the snapshot, normally `Yoge-2004/expense-tracker-backend`. |
+| `HF_REPO_TYPE` | `space` (default, as designed) or `dataset`. A dataset repo is created privately on first backup and does not rebuild the Space on every snapshot commit. |
+| `SYNC_SECRET_KEY` | Token for `/api/sync/*`, sent as the `X-Sync-Token` header. Needed to read snapshot status or force a backup. |
 | `APP_TRUSTED_PROXY_ENABLED` | When true behind reverse proxies (Nginx), trusts forwarded client IP addresses. |
 | `APP_TRUSTED_PROXY_CIDRS` | Comma-separated CIDR allowlist for trusted upstream proxies (default: `127.0.0.1/32,::1/128`). |
 | `MODEL_ID` | Explicit Hugging Face model repository or local path for Python ML inference. |

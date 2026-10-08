@@ -82,6 +82,46 @@ public final class HuggingFaceFileClient {
     }
 
     /**
+     * Creates the repository when it does not exist yet. Only datasets and models
+     * can be created this way (a Space needs an SDK and is created in the Hub UI),
+     * so a Space is a no-op. "Already exists" (HTTP 409) counts as success.
+     */
+    public static void ensureRepo(String repoType, String repo, boolean isPrivate, String token)
+            throws IOException, InterruptedException {
+        if ("spaces".equals(apiSegment(repoType))) {
+            return;
+        }
+        HttpRequest request = HttpRequest.newBuilder(URI.create("https://huggingface.co/api/repos/create"))
+                .timeout(REQUEST_TIMEOUT)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(createRepoBody(repoType, repo, isPrivate)))
+                .build();
+        HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+        int status = response.statusCode();
+        if ((status >= 200 && status < 300) || status == 409) {
+            return;
+        }
+        if (status == 403) {
+            throw new IllegalStateException("Hugging Face refused to create " + repo + " (HTTP 403): HF_TOKEN needs "
+                    + "permission to create repositories. Create the private " + repoType
+                    + " repository by hand, or use a token that can create repos.");
+        }
+        throw new IllegalStateException("Hugging Face repository creation failed (HTTP " + status + "): "
+                + response.body());
+    }
+
+    /** JSON body for POST /api/repos/create. Package-private so it is unit-testable offline. */
+    static String createRepoBody(String repoType, String repo, boolean isPrivate) {
+        String validated = requireRepo(repo);
+        int slash = validated.indexOf('/');
+        String type = "datasets".equals(apiSegment(repoType)) ? "dataset" : "model";
+        return "{\"type\":\"" + type + "\",\"name\":\"" + jsonEscape(validated.substring(slash + 1))
+                + "\",\"organization\":\"" + jsonEscape(validated.substring(0, slash))
+                + "\",\"private\":" + isPrivate + "}";
+    }
+
+    /**
      * Inspects token validity and permissions with the Hugging Face whoami API.
      */
     public static String inspectToken(String token) {

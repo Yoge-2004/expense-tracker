@@ -18,6 +18,12 @@ public interface FileDbSyncService {
     Map<String, Object> syncFileToDb();
 
     /**
+     * Reports whether the encrypted Hugging Face snapshot is configured and when it last
+     * succeeded or failed. Contains no secrets.
+     */
+    Map<String, Object> getHuggingFaceStatus();
+
+    /**
      * Uploads the encrypted database snapshot backup to Hugging Face.
      */
     Map<String, Object> pushJsonBackupToHuggingFace();

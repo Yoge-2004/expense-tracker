@@ -82,4 +82,14 @@ class FileDbSyncServiceImplTest {
         assertNotNull(result);
         assertEquals("managed", result.get("status"));
     }
+
+    @Test
+    @DisplayName("getHuggingFaceStatus: returns the failover diagnostics untouched")
+    void getHuggingFaceStatus_delegatesToDiagnostics() {
+        Map<String, Object> diag = Map.of("isConfigured", true, "lastError", "none");
+        when(failoverService.getDiagnostics()).thenReturn(diag);
+
+        assertEquals(diag, syncService.getHuggingFaceStatus());
+        verify(failoverService, never()).backupCurrentDatabase();
+    }
 }

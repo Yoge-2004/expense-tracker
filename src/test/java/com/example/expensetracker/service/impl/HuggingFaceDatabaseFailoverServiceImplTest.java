@@ -323,4 +323,47 @@ class HuggingFaceDatabaseFailoverServiceImplTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("diagnostics expose backup status without needing container logs")
+    class StatusDiagnostics {
+
+        @Test
+        @DisplayName("before any attempt: nothing has run yet, no error, and the snapshot path is reported")
+        void freshServiceReportsNeverAndNoError() {
+            // No token => getDiagnostics() returns before any network call (no whoami request).
+            HuggingFaceDatabaseFailoverServiceImpl service = newService(null, "org/repo", "key123");
+            var diag = service.getDiagnostics();
+            assertEquals("never", diag.get("lastAttemptAt"));
+            assertEquals("never", diag.get("lastSuccessAt"));
+            assertEquals("never", diag.get("lastUploadAt"));
+            assertEquals("none", diag.get("lastError"));
+            assertEquals("database/expense_tracker.sqlite.enc", diag.get("snapshotPath"));
+        }
+
+        @Test
+        @DisplayName("an empty export never replaces the stored snapshot and records why")
+        void emptyExportIsRefusedAndExplained() throws Exception {
+            HuggingFaceDatabaseFailoverServiceImpl service = newService("tok", "org/repo", "key123");
+            when(snapshotService.exportCurrentDatabase(any(Path.class))).thenReturn(0);
+
+            assertFalse(service.backupCurrentDatabase());
+
+            // Diagnostics for a configured service call the network (whoami); read the field directly.
+            String error = (String) ReflectionTestUtils.getField(service, "lastError");
+            assertNotNull(error);
+            assertTrue(error.contains("0 rows"), error);
+            assertNotNull(ReflectionTestUtils.getField(service, "lastAttemptAt"));
+            assertNull(ReflectionTestUtils.getField(service, "lastSuccessAt"));
+        }
+
+        @Test
+        @DisplayName("a missing setting is named so the log line says what to fix")
+        void missingSettingsAreNamed() {
+            HuggingFaceDatabaseFailoverServiceImpl service = newService("tok", "org/repo", "");
+            var diag = service.getDiagnostics();
+            assertEquals(false, diag.get("isConfigured"));
+            assertTrue(diag.get("statusMessage").toString().contains("DB_BACKUP_KEY"));
+        }
+    }
 }

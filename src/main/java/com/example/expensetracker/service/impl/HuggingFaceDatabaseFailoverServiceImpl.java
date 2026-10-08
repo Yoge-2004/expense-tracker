@@ -21,6 +21,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.Map;
@@ -56,13 +57,22 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     private final DatabaseSnapshotService snapshotService;
     private volatile boolean writePermissionWarned = false;
     private volatile boolean notConfiguredWarned = false;
+    private volatile boolean repoEnsured = false;
+    // Visible through getDiagnostics() / GET /api/sync/hf-status, so "why is there
+    // no snapshot?" no longer needs access to the Space's container logs.
+    private volatile Instant lastAttemptAt = null;
+    private volatile Instant lastSuccessAt = null;
+    private volatile Instant lastUploadAt = null;
+    private volatile String lastError = null;
     private volatile String lastPushedChecksum = null;
 
     @Override
     @EventListener(ApplicationReadyEvent.class)
     public void initializeFailoverSnapshot() {
         if (isNotConfigured()) {
-            log.warn("HF database failover is disabled until HF_TOKEN and DB_BACKUP_KEY are configured.");
+            log.warn("HF database failover is disabled. {} Both HF_TOKEN and DB_BACKUP_KEY must be set as "
+                    + "runtime secrets on the Space (the GitHub Actions secret is a different thing).",
+                    missingSettings());
             return;
         }
         log.info("HF failover token scope check: {}", HuggingFaceFileClient.inspectToken(token));
@@ -89,6 +99,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         } catch (Exception e) {
             log.error("Failed to initialize HF database failover", e);
         }
+        // Do not wait for the next 10-minute tick: take the first snapshot now so
+        // the file exists in the repository right after a deploy or restart.
+        Thread.ofVirtual().name("hf-initial-backup").start(this::backupCurrentDatabase);
     }
 
     /** Snapshot the currently active database every 10 minutes. */
@@ -108,23 +121,41 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             }
             return false;
         }
+        lastAttemptAt = Instant.now();
         try {
             Path sqlite = createSecureTempFile(".sqlite");
             Path encrypted = createSecureTempFile(".enc");
             try {
-                snapshotService.exportCurrentDatabase(sqlite);
+                int rows = snapshotService.exportCurrentDatabase(sqlite);
+                if (rows <= 0) {
+                    // An empty export (fresh database, or the app started while Neon was
+                    // unreachable and fell back to an empty local store) must never replace
+                    // a good snapshot that is already in the repository.
+                    lastError = "Skipped: the database export had 0 rows, so the stored snapshot was not replaced.";
+                    log.warn("HF database backup skipped: the export contained 0 rows; keeping the existing snapshot.");
+                    return false;
+                }
                 String currentChecksum = computeSha256(sqlite);
                 if (currentChecksum.equals(lastPushedChecksum)) {
                     log.info("Database snapshot unchanged (SHA-256: {}); skipping redundant Hugging Face backup.",
                             currentChecksum);
+                    lastSuccessAt = Instant.now();
+                    lastError = null;
                     return true;
                 }
                 DatabaseSnapshotService.encrypt(sqlite, encrypted, encryptionKey);
+                if (!repoEnsured) {
+                    HuggingFaceFileClient.ensureRepo(repoType, space, true, token);
+                    repoEnsured = true;
+                }
                 HuggingFaceFileClient.upload(repoType, space, path, encrypted, token);
                 lastPushedChecksum = currentChecksum;
                 writePermissionWarned = false;
-                log.info("Encrypted production database snapshot pushed to HF Space repository (SHA-256: {}).",
-                        currentChecksum);
+                lastUploadAt = Instant.now();
+                lastSuccessAt = lastUploadAt;
+                lastError = null;
+                log.info("Encrypted database snapshot pushed to HF {} repository {} (SHA-256: {}, {} rows).",
+                        repoType == null ? "space" : repoType, space, currentChecksum, rows);
                 return true;
             } finally {
                 Files.deleteIfExists(sqlite);
@@ -132,9 +163,11 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
+            lastError = "Backup interrupted.";
             log.error("HF database backup interrupted", ie);
             return false;
         } catch (IllegalStateException ise) {
+            lastError = summarize(ise);
             if (ise.getMessage() != null && ise.getMessage().contains("HTTP 403")) {
                 if (!writePermissionWarned) {
                     writePermissionWarned = true;
@@ -149,9 +182,18 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             log.error("HF encrypted database backup failed", ise);
             return false;
         } catch (Exception e) {
+            lastError = summarize(e);
             log.error("HF encrypted database backup failed", e);
             return false;
         }
+    }
+
+    /** One-line, length-bounded description of a failure for the status endpoint (no stack trace, no secrets). */
+    private static String summarize(Exception e) {
+        String message = e.getMessage() == null || e.getMessage().isBlank()
+                ? e.getClass().getSimpleName() : e.getMessage();
+        message = message.replaceAll("[\\r\\n]+", " ");
+        return message.length() > 300 ? message.substring(0, 300) + "…" : message;
     }
 
     /** Package-private (not private) so it's directly unit-testable without
@@ -238,6 +280,11 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         diag.put("tokenConfigured", tokenPresent);
         diag.put("encryptionKeyConfigured", keyPresent);
         diag.put("isConfigured", !isNotConfigured());
+        diag.put("snapshotPath", path);
+        diag.put("lastAttemptAt", lastAttemptAt != null ? lastAttemptAt.toString() : "never");
+        diag.put("lastSuccessAt", lastSuccessAt != null ? lastSuccessAt.toString() : "never");
+        diag.put("lastUploadAt", lastUploadAt != null ? lastUploadAt.toString() : "never");
+        diag.put("lastError", lastError != null ? lastError : "none");
 
         if (!tokenPresent) {
             diag.put("statusMessage", "HF_TOKEN is missing or blank. Please set HF_TOKEN environment variable.");

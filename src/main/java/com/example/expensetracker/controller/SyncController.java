@@ -169,6 +169,19 @@ public class SyncController {
         return ResponseEntity.ok(result);
     }
 
+    @Operation(summary = "Hugging Face snapshot status",
+               description = "Shows whether the encrypted database snapshot is configured (without revealing "
+                       + "any secret), when the last attempt and last success happened, and the last error.")
+    @SecurityRequirements
+    @GetMapping("/hf-status")
+    public ResponseEntity<Map<String, Object>> huggingFaceStatus(
+            @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
+            HttpServletRequest request) {
+        ResponseEntity<Map<String, Object>> accessError = validateHfSyncAccess(syncToken, request);
+        if (accessError != null) return accessError;
+        return ResponseEntity.ok(syncService.getHuggingFaceStatus());
+    }
+
     @Operation(summary = "Pull JSON backup from Hugging Face Spaces",
                description = "Downloads expenses_sync.json from HF Space "
                        + "and imports any missing records into database.")
