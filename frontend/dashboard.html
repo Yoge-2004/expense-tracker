@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/style.css?v=20260911">
     <link rel="stylesheet" href="css/motion-extended.css?v=20260911">
     <link rel="stylesheet" href="css/ai-intelligence.css?v=20260918">
+    <link rel="stylesheet" href="css/components/money-flow.css?v=20261009">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
     <script>
@@ -214,6 +215,20 @@
                     <a href="#" id="manageSubsLink" class="link-action subs-link-action">Manage Subscriptions &rarr;</a>
                 </div>
             </div>
+        </section>
+
+        <!-- MONTHLY MONEY FLOW: income in, spending out (net of money that came back), what is left -->
+        <section class="money-flow animate-cascade delay-3" id="moneyFlowPanel" aria-labelledby="moneyFlowTitle">
+            <header class="money-flow-header">
+                <h2 id="moneyFlowTitle">Money flow</h2>
+                <div class="money-flow-nav">
+                    <button type="button" id="moneyFlowPrev" aria-label="Previous month">&lsaquo;</button>
+                    <span id="moneyFlowMonth" aria-live="polite"></span>
+                    <button type="button" id="moneyFlowNext" aria-label="Next month">&rsaquo;</button>
+                </div>
+            </header>
+            <div id="moneyFlowBody"></div>
+            <p class="money-flow-note" id="moneyFlowNote" hidden></p>
         </section>
 
         <!-- SMART FINANCIAL INSIGHTS INTELLIGENCE PANEL -->
@@ -919,6 +934,26 @@
                     <input type="date" id="incomeDate" required class="dark-date">
                 </div>
                 <div class="form-group">
+                    <label for="incomeKind">Type</label>
+                    <select id="incomeKind">
+                        <option value="">Automatic (salary if the source says so)</option>
+                        <option value="SALARY">Salary</option>
+                        <option value="OTHER">Other income</option>
+                        <option value="REIMBURSEMENT">Money back (reimbursement or refund)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="incomeMonthGroup">
+                    <label for="incomeCountsToward">Counts toward</label>
+                    <select id="incomeCountsToward"></select>
+                    <small class="field-hint">Pick next month when your salary is paid early.</small>
+                </div>
+                <div class="form-group" id="incomeReimbursedGroup" hidden>
+                    <label for="incomeReimbursedCategory">Pays back spending on</label>
+                    <select id="incomeReimbursedCategory">
+                        <option value="">The month as a whole</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Description (Optional)</label>
                     <input type="text" id="incomeDesc" placeholder="e.g. Direct deposit from employer">
                 </div>
@@ -1369,6 +1404,7 @@
     <script src="js/custom-controls.js"></script>
     <script src="js/biometrics.js?v=20260909-bio2"></script>
     <script src="js/modules/dashboard-utils.js?v=20260910"></script>
+    <script src="js/modules/money-flow.js?v=20261009"></script>
     <script src="js/modules/dashboard-dom.js"></script>
     <script src="js/modules/dashboard-chart-state.js"></script>
     <script src="js/modules/dashboard-charts.js"></script>
@@ -1380,6 +1416,7 @@
     <script src="js/modules/dashboard-insights.js"></script>
     <script src="js/modules/dashboard-insight-cards.js"></script>
     <script src="js/modules/dashboard-metrics.js"></script>
+    <script src="js/modules/dashboard-money-flow.js?v=20261009"></script>
     <script src="js/modules/dashboard-data.js"></script>
     <script src="js/modules/dashboard-budget.js"></script>
     <script src="js/modules/dashboard-filters.js"></script>
