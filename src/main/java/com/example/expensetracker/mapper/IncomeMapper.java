@@ -35,7 +35,10 @@ public final class IncomeMapper {
                 income.getCreatedAt(),
                 income.getFrequency(),
                 income.getIntervalDays(),
-                income.getNextDueDate()
+                income.getNextDueDate(),
+                IncomeRules.effectiveKind(income).name(),
+                IncomeRules.effectiveMonth(income) != null ? IncomeRules.effectiveMonth(income).toString() : null,
+                income.getReimbursedCategoryId()
         );
     }
 
@@ -60,6 +63,7 @@ public final class IncomeMapper {
         income.setFrequency(request.frequency());
         income.setIntervalDays(request.intervalDays());
         income.setUser(user);
+        IncomeRules.apply(income, request);
         return income;
     }
 }

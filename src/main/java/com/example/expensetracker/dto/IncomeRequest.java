@@ -41,7 +41,17 @@ public record IncomeRequest(
         String frequency,
 
         @Schema(description = "Interval in days when frequency is CUSTOM", example = "14")
-        Integer intervalDays
+        Integer intervalDays,
+        @Schema(description = "SALARY, OTHER or REIMBURSEMENT. Omit to leave unchanged (inferred from the source "
+                + "for new records); blank clears it.", example = "SALARY")
+        String kind,
+        @Schema(description = "Month this money counts toward as YYYY-MM when it differs from the credit date "
+                + "(e.g. next month's salary credited early). Omit to leave unchanged; blank clears it.",
+                example = "2026-11")
+        String countsTowardMonth,
+        @Schema(description = "For a REIMBURSEMENT, the expense category it offsets. Omit to leave unchanged; "
+                + "0 clears it.", example = "3")
+        Long reimbursedCategoryId
 ) {
     public IncomeRequest {
         if (isRecurring == null) {
@@ -52,5 +62,11 @@ public record IncomeRequest(
     public IncomeRequest(BigDecimal amount, String source, String description,
                          LocalDate incomeDate, Boolean isRecurring) {
         this(amount, source, description, incomeDate, isRecurring, null, null);
+    }
+
+    /** Pre-classification shape, kept so existing callers compile unchanged. */
+    public IncomeRequest(BigDecimal amount, String source, String description,
+                         LocalDate incomeDate, Boolean isRecurring, String frequency, Integer intervalDays) {
+        this(amount, source, description, incomeDate, isRecurring, frequency, intervalDays, null, null, null);
     }
 }
