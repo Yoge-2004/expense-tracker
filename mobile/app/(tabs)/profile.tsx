@@ -35,6 +35,7 @@ import { WORLD_CURRENCIES } from '../../services/currency';
 import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { clearSavedPin, savedPinEmail, savePinForFingerprint } from '../../utils/pinVault';
 
 import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
@@ -117,15 +118,31 @@ export default function ProfileScreen() {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [isSavingPin, setIsSavingPin] = useState(false);
+  const [accountEmail, setAccountEmail] = useState('');
+  /** A fingerprint-protected copy of the PIN is saved on this phone for this account. */
+  const [fingerprintResetEnabled, setFingerprintResetEnabled] = useState(false);
+  /** Set when the switch was turned on: the next PIN save also stores it behind the fingerprint. */
+  const [enableFingerprintOnSave, setEnableFingerprintOnSave] = useState(false);
 
   React.useEffect(() => {
     if (!userId) return;
     apiRequest(`/users/${userId}`)
       .then((u) => {
         if (u && u.hasSecurityPin) setHasSecurityPin(true);
+        if (u && u.email) {
+          setAccountEmail(u.email);
+          savedPinEmail().then((saved) => setFingerprintResetEnabled(!!saved && saved === String(u.email).trim().toLowerCase()));
+        }
       })
       .catch(() => {});
   }, [userId]);
+
+  // Dismissing the dialog cancels a pending "store behind the fingerprint" request, so it can never
+  // apply to some later, unrelated PIN change.
+  const closePinModal = () => {
+    setShowPinModal(false);
+    setEnableFingerprintOnSave(false);
+  };
 
   const handleSavePin = async () => {
     if (!/^[0-9]{6}$/.test(newPin.trim())) {
@@ -142,12 +159,24 @@ export default function ProfileScreen() {
         method: 'PUT',
         body: JSON.stringify({ securityPin: newPin.trim() }),
       });
+      const savedPin = newPin.trim();
       setHasSecurityPin(true);
       setShowPinModal(false);
       setNewPin('');
       setConfirmPin('');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert('Security PIN Saved 🔒', 'Your 6-digit recovery PIN has been configured successfully.', undefined, 'success');
+
+      // Keep the fingerprint copy in step with the PIN, or create it when the switch asked for it.
+      let fingerprintNote = '';
+      if ((fingerprintResetEnabled || enableFingerprintOnSave) && accountEmail) {
+        const stored = await savePinForFingerprint(accountEmail, savedPin);
+        setFingerprintResetEnabled(stored);
+        fingerprintNote = stored
+          ? ' Your fingerprint can now fill it in when you reset your password.'
+          : ' Your fingerprint could not be linked on this device.';
+      }
+      setEnableFingerprintOnSave(false);
+      showAlert('Security PIN Saved 🔒', `Your 6-digit recovery PIN has been configured successfully.${fingerprintNote}`, undefined, 'success');
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not save Security PIN.';
       showAlert('Save Failed', msg, undefined, 'error');
@@ -393,6 +422,33 @@ export default function ProfileScreen() {
               </View>
             )}
 
+            {isBiometricsAvailable && hasSecurityPin && (
+              <View style={[styles.menuRow, { borderBottomColor: c.border, justifyContent: 'space-between' }]}>
+                <View style={styles.menuRowLeft}>
+                  <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="finger-print-outline" size={18} color={c.primary} /></View>
+                  <View>
+                    <Text style={[styles.menuRowTitle, { color: c.text }]}>Fingerprint password reset</Text>
+                    <Text style={[styles.menuRowSub, { color: c.textMuted }]}>Fill in your PIN with your fingerprint</Text>
+                  </View>
+                </View>
+                <Switch
+                  value={fingerprintResetEnabled}
+                  onValueChange={async (on) => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                    if (on) {
+                      // The PIN is never readable from the server, so ask for it again to store it behind the fingerprint.
+                      setEnableFingerprintOnSave(true);
+                      setShowPinModal(true);
+                    } else {
+                      await clearSavedPin();
+                      setFingerprintResetEnabled(false);
+                    }
+                  }}
+                  trackColor={{ false: c.border, true: c.primary }}
+                />
+              </View>
+            )}
+
             <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); setShowPinModal(true); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>
               <View style={styles.menuRowLeft}><View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="shield-checkmark-outline" size={18} color={c.primary} /></View><View><Text style={[styles.menuRowTitle, { color: c.text }]}>6-Digit Security PIN</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{hasSecurityPin ? 'Active (Zero-email recovery enabled)' : 'Not configured (Tap to setup)'}</Text></View></View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -455,7 +511,7 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* Security PIN Setup Modal */}
-      <Modal visible={showPinModal} transparent={true} animationType="fade" onRequestClose={() => setShowPinModal(false)}>
+      <Modal visible={showPinModal} transparent={true} animationType="fade" onRequestClose={closePinModal}>
         <View style={styles.modalBackdrop}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxWidth: 420 }}>
             <View style={[styles.pinModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -466,7 +522,7 @@ export default function ProfileScreen() {
                   <Text style={[styles.pinModalTitle, { color: c.text }]}>Security PIN Setup</Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => setShowPinModal(false)}
+                  onPress={closePinModal}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }]}
                 >
