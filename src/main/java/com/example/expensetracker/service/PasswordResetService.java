@@ -1,5 +1,7 @@
 package com.example.expensetracker.service;
 
+import com.example.expensetracker.model.User;
+
 /**
  * Handles OTP flows for both the "forgot password" and email-verified
  * signup flows.
@@ -31,6 +33,13 @@ public interface PasswordResetService {
      *         if there is no matching, unexpired, unused OTP, or too many attempts have been made
      */
     void resetPassword(String email, String otp, String newPassword);
+
+    /**
+     * Sets a new password for an account whose owner has ALREADY been verified by a stronger factor than a
+     * code (a user-verified passkey assertion). Applies the same password rule as {@link #resetPassword},
+     * clears recovery lockout counters and retires any outstanding reset code.
+     */
+    void resetPasswordForVerifiedUser(User user, String newPassword);
 
     /**
      * Issues a 6-digit signup verification OTP to the given email address.

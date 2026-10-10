@@ -43,6 +43,15 @@ public interface WebAuthnService {
     Map<String, Object> finishAuthentication(String transactionId, String assertionJson);
 
     /**
+     * Verifies a passkey assertion exactly like {@link #finishAuthentication} (signature, single-use
+     * challenge, user verification, account usable) but returns the account instead of issuing a
+     * session. Used by account recovery, which then applies its own action.
+     *
+     * @throws org.springframework.web.server.ResponseStatusException 401 when the assertion is not valid
+     */
+    User verifyAssertionForRecovery(String transactionId, String assertionJson);
+
+    /**
      * Revokes and removes all registered WebAuthn credentials for a user.
      *
      * @param user the user whose biometric credentials are removed

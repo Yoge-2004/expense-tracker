@@ -215,6 +215,25 @@ public class WebAuthnServiceImpl implements WebAuthnService {
     @Override
     @Transactional
     public Map<String, Object> finishAuthentication(String transactionId, String assertionJson) {
+        User user = verifyAssertion(transactionId, assertionJson);
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", jwtService.generateToken(user.getEmail()));
+        response.put("userId", user.getId());
+        response.put("name", user.getName() != null ? user.getName() : "");
+        response.put("username", user.getUsername() != null ? user.getUsername() : "");
+        response.put("email", user.getEmail() != null ? user.getEmail() : "");
+        response.put("currency", user.getCurrency() != null ? user.getCurrency() : "INR");
+        response.put("hasSecurityPin", user.hasSecurityPin());
+        return response;
+    }
+
+    @Override
+    public User verifyAssertionForRecovery(String transactionId, String assertionJson) {
+        return verifyAssertion(transactionId, assertionJson);
+    }
+
+    /** Shared by sign-in and recovery so both enforce the same checks. Returns the verified, usable account. */
+    private User verifyAssertion(String transactionId, String assertionJson) {
         if (transactionId == null || transactionId.isBlank()) {
             throw new IllegalArgumentException("Transaction ID cannot be null or blank");
         }
@@ -257,15 +276,7 @@ public class WebAuthnServiceImpl implements WebAuthnService {
             log.info("WebAuthn assertion verified successfully for userId={}, credentialId={}",
                     user.getId(), stored.getCredentialId());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("token", jwtService.generateToken(user.getEmail()));
-            response.put("userId", user.getId());
-            response.put("name", user.getName() != null ? user.getName() : "");
-            response.put("username", user.getUsername() != null ? user.getUsername() : "");
-            response.put("email", user.getEmail() != null ? user.getEmail() : "");
-            response.put("currency", user.getCurrency() != null ? user.getCurrency() : "INR");
-            response.put("hasSecurityPin", user.hasSecurityPin());
-            return response;
+            return user;
         } catch (AssertionFailedException | IllegalArgumentException ex) {
             log.warn("WebAuthn assertion failed for transactionId={}: {}", transactionId, ex.getMessage());
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Biometric verification failed.", ex);

@@ -67,6 +67,7 @@ public class SecurityConfig {
                                 "/error/**",
                                 "/api/auth/**",
                                 "/api/webauthn/login/**",
+                                "/api/webauthn/recovery/**",
                                 "/api/users/suggest-usernames",
                                 "/api/health/**",
                                 "/api/sync/**",
