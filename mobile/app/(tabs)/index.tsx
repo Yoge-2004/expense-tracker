@@ -129,6 +129,16 @@ export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
+
+  // Unread count for the bell, refreshed whenever this screen comes into focus.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      apiRequest(`/notifications/user/${userId}?limit=1`)
+        .then((inbox) => setUnreadNotifications(inbox?.unreadCount || 0))
+        .catch(() => {});
+    }, [userId])
+  );
   const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
   const isLight = theme === 'light';
@@ -155,6 +165,8 @@ export default function DashboardScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  /** Unread notifications, shown as a badge on the bell. */
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [cachedTime, setCachedTime] = useState<string | null>(null);
 
   // Filters state
@@ -811,6 +823,21 @@ export default function DashboardScreen() {
               accessibilityLabel="Export Data"
             >
               <Ionicons name="share-outline" size={18} color={c.primary} />
+            </TouchableOpacity>
+
+            {/* Notification inbox with unread badge */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.push('/notifications' as any)}
+              style={[styles.topActionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+              accessibilityLabel={unreadNotifications > 0 ? `Notifications, ${unreadNotifications} unread` : 'Notifications'}
+            >
+              <Ionicons name="notifications-outline" size={18} color={c.primary} />
+              {unreadNotifications > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             {/* Modern Instant-Feedback Theme Toggle Button */}
@@ -1507,6 +1534,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bellBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
   },
   topActionBtn: {
     width: 42,

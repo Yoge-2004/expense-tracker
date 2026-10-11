@@ -134,6 +134,7 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ animation: 'fade' }} />
         <Stack.Screen name="register" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="expo-auth-session" options={{ animation: 'none' }} />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       </Stack>

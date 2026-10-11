@@ -11,12 +11,29 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { apiRequest } from './api';
 
 const REMINDERS_STORAGE_KEY = 'expense_tracker_daily_reminders_enabled';
 const MIDDAY_NOTIFICATION_ID = 'daily_midday_expense_reminder';
 const EVENING_NOTIFICATION_ID = 'daily_evening_expense_reminder';
 
+const PUSH_TOKEN_KEY = 'expense_tracker_push_token';
+const SERVER_PUSH_KEY = 'expense_tracker_server_push_active';
+
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+/**
+ * True once this phone is registered for server push. The server then sends the budget, bill and goal
+ * alerts itself (even when the app is closed), so the on-device versions below stand down instead of
+ * showing the same alert twice.
+ */
+async function serverPushActive(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(SERVER_PUSH_KEY)) === '1';
+  } catch {
+    return false;
+  }
+}
 
 // Conditionally load expo-notifications only outside Expo Go to prevent top-level console error
 let Notifications: any = null;
@@ -279,6 +296,7 @@ export async function notifySalaryCredit(amount: number, currency: string = '₹
  */
 export async function notifyBudgetThresholdAlert(categoryName: string, percentSpent: number, remainingAmt: number, currency: string = '₹'): Promise<boolean> {
   if (isExpoGo || !Notifications) return false;
+  if (await serverPushActive()) return false;
   try {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return false;
@@ -313,6 +331,7 @@ export async function notifyBudgetThresholdAlert(categoryName: string, percentSp
  */
 export async function notifySubscriptionDue(subscriptionName: string, amount: number, dueDate: string, currency: string = '₹'): Promise<boolean> {
   if (isExpoGo || !Notifications) return false;
+  if (await serverPushActive()) return false;
   try {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return false;
@@ -339,6 +358,7 @@ export async function notifySubscriptionDue(subscriptionName: string, amount: nu
  */
 export async function notifySavingsGoalMilestone(goalName: string, progressPercent: number, savedAmount: number, targetAmount: number, currency: string = '₹'): Promise<boolean> {
   if (isExpoGo || !Notifications) return false;
+  if (await serverPushActive()) return false;
   try {
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return false;
@@ -365,5 +385,52 @@ export async function notifySavingsGoalMilestone(goalName: string, progressPerce
   } catch (error) {
     console.warn('[Notifications] Failed to trigger savings milestone notification:', error);
     return false;
+  }
+}
+
+/**
+ * Registers this phone with the server so it can receive push notifications. Never shows a permission
+ * prompt (that happens at sign-up or in settings); it only registers when permission is already granted.
+ * Returns true when the phone is registered.
+ */
+export async function registerPushToken(userId: string): Promise<boolean> {
+  if (isExpoGo || !Notifications) return false;
+  try {
+    const permission = await Notifications.getPermissionsAsync();
+    if (permission.status !== 'granted') return false;
+
+    if (Platform.OS === 'android') {
+      // Android 8+ needs a channel before a push token can be used to display anything.
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+    }
+
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? (Constants as any).easConfig?.projectId;
+    const token = (await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)).data;
+    await apiRequest(`/notifications/user/${userId}/devices`, {
+      method: 'POST',
+      body: JSON.stringify({ token, platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID' }),
+    });
+    await AsyncStorage.multiSet([[PUSH_TOKEN_KEY, token], [SERVER_PUSH_KEY, '1']]);
+    return true;
+  } catch (e) {
+    console.log('[Notifications] Push registration skipped:', e);
+    return false;
+  }
+}
+
+/** Stops server push to this phone (call while still signed in, e.g. on logout). */
+export async function unregisterPushToken(userId: string): Promise<void> {
+  try {
+    const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
+    if (token) {
+      await apiRequest(`/notifications/user/${userId}/devices?token=${encodeURIComponent(token)}`, { method: 'DELETE' });
+    }
+  } catch (e) {
+    console.log('[Notifications] Push unregistration skipped:', e);
+  } finally {
+    await AsyncStorage.multiRemove([PUSH_TOKEN_KEY, SERVER_PUSH_KEY]).catch(() => {});
   }
 }
