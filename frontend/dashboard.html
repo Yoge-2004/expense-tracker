@@ -31,6 +31,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/components/notification-inbox.css?v=20261010">
 </head>
 
 <body>
@@ -98,6 +99,28 @@
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
                     </button>
+
+                    <div class="inbox" id="inbox">
+                        <button type="button" id="inboxBell" class="header-action-btn inbox-bell" title="Notifications" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span class="inbox-badge" id="inboxBadge" hidden>0</span>
+                        </button>
+                        <section class="inbox-panel" id="inboxPanel" role="dialog" aria-label="Notifications" hidden>
+                            <header class="inbox-header">
+                                <h2>Notifications</h2>
+                                <button type="button" id="inboxMarkAll" class="inbox-link">Mark all read</button>
+                            </header>
+                            <ul class="inbox-list" id="inboxList"></ul>
+                            <details class="inbox-settings">
+                                <summary>Notification settings</summary>
+                                <div id="inboxPrefs"></div>
+                                <button type="button" id="inboxTest" class="inbox-link">Send a test notification</button>
+                            </details>
+                        </section>
+                    </div>
                 </div>
                 <div class="user-profile" id="profileTrigger" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
                     <div class="avatar">U</div>
@@ -1385,6 +1408,7 @@
     <script src="js/modules/dashboard-filters.js"></script>
     <script src="js/modules/dashboard-ml.js"></script>
     <script src="js/modules/dashboard-notifications.js"></script>
+    <script src="js/modules/dashboard-inbox.js?v=20261010"></script>
         <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="js/modules/receipt-ocr.js"></script>
     <script src="js/modules/command-palette.js"></script>
