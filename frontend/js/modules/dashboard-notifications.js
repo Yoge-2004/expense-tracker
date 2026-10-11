@@ -289,6 +289,33 @@
         }
     }
 
+    /**
+     * Confirms a debit (expense) or credit (income) the user has just recorded, with its amount.
+     * Only shown when notification permission is already granted (it never prompts) and only for
+     * new entries; the caller does not use it for edits.
+     */
+    async function notifyTransactionRecorded({ kind, amount, label, detail }) {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        const isDebit = kind === "DEBIT";
+        const formatted = window.DashboardUtils && typeof window.DashboardUtils.formatCurrency === "function"
+            ? window.DashboardUtils.formatCurrency(Number(amount))
+            : Number(amount).toLocaleString("en-IN");
+        const title = `${isDebit ? "💸 Debit" : "💰 Credit"} recorded: ${formatted}`;
+        const body = [label, detail].filter((part) => part && String(part).trim()).join(" · ")
+            || (isDebit ? "Expense saved." : "Income saved.");
+        // A unique tag so each entry gets its own notification instead of replacing the previous one.
+        const tag = `transaction-${Date.now()}`;
+        try {
+            if (swRegistration && "showNotification" in swRegistration) {
+                await swRegistration.showNotification(title, { body, icon: "assets/icon-192.png", badge: "assets/icon-192.png", tag });
+            } else {
+                new Notification(title, { body, icon: "assets/icon-192.png", tag });
+            }
+        } catch (e) {
+            console.warn("[DashboardNotifications] Error:", e);
+        }
+    }
+
     async function notifyBudgetThresholdAlert(categoryName, percentSpent, remainingAmt, currency = '₹') {
         const isExceeded = percentSpent >= 100;
         const title = isExceeded
@@ -320,6 +347,7 @@
         requestNotificationPermission,
         notifyInstantDebit,
         notifySalaryCredit,
+        notifyTransactionRecorded,
         notifyBudgetThresholdAlert,
         ingestFinancialMessage,
         handleNotificationAction
