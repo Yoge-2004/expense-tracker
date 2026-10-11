@@ -43,7 +43,7 @@ import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
-import { enableSmartReminders, disableSmartReminders, getSmartRemindersEnabled } from '../../services/notifications';
+import { enableSmartReminders, disableSmartReminders, getSmartRemindersEnabled, getTransactionAlertsEnabled, setTransactionAlertsEnabled } from '../../services/notifications';
 import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification } from '../../services/notifications';
 
 export default function ProfileScreen() {
@@ -68,11 +68,26 @@ export default function ProfileScreen() {
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
   const [smartRemindersEnabled, setSmartRemindersEnabled] = useState(true);
+  const [transactionAlertsEnabled, setTransactionAlertsOn] = useState(true);
 
   React.useEffect(() => {
     getDailyRemindersEnabled().then((enabled) => setRemindersEnabled(enabled));
     getSmartRemindersEnabled().then((enabled) => setSmartRemindersEnabled(enabled));
+    getTransactionAlertsEnabled().then((enabled) => setTransactionAlertsOn(enabled));
   }, []);
+
+  const handleToggleTransactionAlerts = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const next = !transactionAlertsEnabled;
+    await setTransactionAlertsEnabled(next);
+    setTransactionAlertsOn(next);
+    showAlert(
+      next ? 'Confirmations On' : 'Confirmations Off',
+      next ? 'You will get a notification each time you record a debit or a credit.' : 'You will no longer get a notification when you record a transaction.',
+      undefined,
+      next ? 'success' : 'info'
+    );
+  };
 
   const handleToggleSmartReminders = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -330,6 +345,14 @@ export default function ProfileScreen() {
                 <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Bills, Salary & Reviews</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{smartRemindersEnabled ? 'Morning plan, due dates, weekly & monthly check-ins' : 'Paused'}</Text></View>
               </View>
               <Ionicons name={smartRemindersEnabled ? 'checkbox' : 'square-outline'} size={22} color={smartRemindersEnabled ? c.primary : c.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleTransactionAlerts} style={[styles.menuRow, { borderBottomColor: c.border }]}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="receipt-outline" size={18} color={c.primary} /></View>
+                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Transaction Confirmations</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{transactionAlertsEnabled ? 'Notify me for every debit and credit I record' : 'Off'}</Text></View>
+              </View>
+              <Ionicons name={transactionAlertsEnabled ? 'checkbox' : 'square-outline'} size={22} color={transactionAlertsEnabled ? c.primary : c.textMuted} />
             </TouchableOpacity>
 
             <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); setInstantDebitEnabled(!instantDebitEnabled); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>

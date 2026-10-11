@@ -72,6 +72,28 @@ function whenLabel(offset: number): string {
 }
 
 /**
+ * The next {@code count} LAST days of a month at {@code hour}:00. Months end on the 28th, 29th, 30th or
+ * 31st, so the date is computed per month instead of repeating on a fixed day.
+ */
+export function planMonthEndReminders(now: Date = new Date(), hour = 9, count = 3): PlannedReminder[] {
+  const planned: PlannedReminder[] = [];
+  for (let i = 0; planned.length < count && i < count + 2; i++) {
+    // Day 0 of the following month is the last day of this one.
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + i + 1, 0);
+    const date = atHour(lastDay, 0, hour);
+    if (date.getTime() <= now.getTime() + MIN_LEAD_MS) continue;
+    planned.push({
+      id: `${REMINDER_ID_PREFIX}month_end_${dayKey(lastDay).slice(0, 6)}`,
+      title: '⏳ Last day of the month',
+      body: 'Check your budgets and top up your savings goals before the month closes.',
+      date,
+      screen: '/(tabs)',
+    });
+  }
+  return planned;
+}
+
+/**
  * Reminders for what is coming up in the next {@code lookaheadDays}:
  * - a bill: 3 days before, 1 day before and on the day (9:00)
  * - a recurring salary or income: on the day

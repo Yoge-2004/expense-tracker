@@ -25,6 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
+import { notifyTransactionRecorded } from '../../services/notifications';
 import { Colors, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -429,6 +430,15 @@ export default function AddExpenseScreen() {
           body: JSON.stringify(payload),
         });
 
+        // Confirm every new debit with its amount (edits do not notify).
+        notifyTransactionRecorded({
+          kind: 'DEBIT',
+          amount: numAmount,
+          currency: currSymbol,
+          label: categories.find((cat) => cat.id === categoryId)?.name ?? 'Expense',
+          detail: cleanDesc,
+        }).catch(() => {});
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert('🎉 Logged!', 'Transaction recorded successfully.', [
           { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
@@ -489,6 +499,14 @@ export default function AddExpenseScreen() {
           method: "POST",
           body: JSON.stringify(payload),
         });
+        // Confirm every new credit with its amount (edits do not notify).
+        notifyTransactionRecorded({
+          kind: 'CREDIT',
+          amount: numAmt,
+          currency: currSymbol,
+          label: incomeSource.trim(),
+          detail: incomeDesc.trim() || undefined,
+        }).catch(() => {});
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert("Recorded!", "Income stream logged successfully.", [
           { text: "View Dashboard", onPress: () => router.replace("/(tabs)") },

@@ -11,7 +11,7 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { planDueReminders, ReminderSources, REMINDER_ID_PREFIX } from '../utils/reminderPlan';
+import { planDueReminders, planMonthEndReminders, ReminderSources, REMINDER_ID_PREFIX } from '../utils/reminderPlan';
 
 const REMINDERS_STORAGE_KEY = 'expense_tracker_daily_reminders_enabled';
 const MIDDAY_NOTIFICATION_ID = 'daily_midday_expense_reminder';
@@ -401,12 +401,6 @@ function fixedSmartReminders() {
       body: "Set this month's budgets and log your salary when it arrives.",
       trigger: { type: types.MONTHLY, day: 1, hour: 9, minute: 0 },
     },
-    {
-      id: `${REMINDER_ID_PREFIX}month_end`,
-      title: '⏳ Month ending soon',
-      body: 'Check your budgets and top up your savings goals before the month closes.',
-      trigger: { type: types.MONTHLY, day: 28, hour: 9, minute: 0 },
-    },
   ];
 }
 
@@ -434,16 +428,25 @@ async function runSmartSchedule(sources?: ReminderSources): Promise<boolean> {
 
   const fixed = fixedSmartReminders();
   const dated = sources ? planDueReminders(sources) : null;
+  // The real last day of each coming month (28, 29, 30 or 31): scheduled by date, not on a fixed day.
+  const monthEnds = planMonthEndReminders();
+
+  // An earlier build repeated a "month end" reminder on the 28th of every month; remove it.
+  await Notifications.cancelScheduledNotificationAsync(`${REMINDER_ID_PREFIX}month_end`).catch(() => {});
 
   // Drop reminders that no longer apply (a bill that was paid, a deleted goal). Without data only the
   // fixed ones are touched, so a launch-time run never wipes the bill reminders from the last refresh.
   if (dated) {
-    await cancelSmartMatching(new Set([...fixed.map((f) => f.id), ...dated.map((r) => r.id)]));
+    await cancelSmartMatching(new Set([
+      ...fixed.map((f) => f.id),
+      ...monthEnds.map((r) => r.id),
+      ...dated.map((r) => r.id),
+    ]));
   }
   for (const f of fixed) {
     await scheduleSmart(f.id, f.title, f.body, '/(tabs)', f.trigger);
   }
-  for (const r of dated ?? []) {
+  for (const r of [...monthEnds, ...(dated ?? [])]) {
     await scheduleSmart(r.id, r.title, r.body, r.screen, {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: r.date,
@@ -491,4 +494,78 @@ export async function disableSmartReminders(): Promise<void> {
   const run = smartQueue.then(() => cancelSmartMatching(new Set()));
   smartQueue = run.catch(() => undefined);
   await run.catch((error) => console.warn('[Notifications] Failed to cancel reminders:', error));
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Confirmation when you record a debit (expense) or a credit (income)
+// ---------------------------------------------------------------------------------------------------
+
+const TRANSACTION_ALERTS_KEY = 'expense_tracker_transaction_alerts_enabled';
+
+/** Whether a notification is shown each time you record an expense or income (on by default). */
+export async function getTransactionAlertsEnabled(): Promise<boolean> {
+  try {
+    const value = await AsyncStorage.getItem(TRANSACTION_ALERTS_KEY);
+    return value === null ? true : value === 'true';
+  } catch {
+    return true;
+  }
+}
+
+export async function setTransactionAlertsEnabled(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(TRANSACTION_ALERTS_KEY, String(enabled));
+}
+
+export interface RecordedTransaction {
+  /** DEBIT for an expense, CREDIT for income. */
+  kind: 'DEBIT' | 'CREDIT';
+  amount: number;
+  currency?: string;
+  /** Category for a debit, source for a credit. */
+  label: string;
+  /** Description or note. */
+  detail?: string;
+}
+
+/**
+ * Shows a notification right after you record a debit (expense) or a credit (income), so every entry is
+ * confirmed with its amount. Only for new entries; edits do not notify. Returns true when it was shown.
+ */
+export async function notifyTransactionRecorded(transaction: RecordedTransaction): Promise<boolean> {
+  if (isExpoGo || !Notifications) return false;
+  try {
+    if (!(await getTransactionAlertsEnabled())) return false;
+    if (!(await requestNotificationPermissions())) return false;
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync(DEBIT_CHANNEL_ID, {
+        name: 'Instant Debit & Transaction Alerts',
+        description: 'Real-time alerts when debit/payment transactions occur.',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 200, 100, 200],
+        enableVibrate: true,
+        showBadge: true,
+      }).catch(() => {});
+    }
+
+    const currency = transaction.currency ?? '₹';
+    const amountText = `${currency} ${transaction.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    const isDebit = transaction.kind === 'DEBIT';
+    const body = [transaction.label, transaction.detail].filter((part) => part && part.trim()).join(' · ');
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: isDebit ? `💸 Debit recorded: ${amountText}` : `💰 Credit recorded: ${amountText}`,
+        body: body || (isDebit ? 'Expense saved.' : 'Income saved.'),
+        sound: true,
+        data: { screen: '/(tabs)' },
+        ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
+      },
+      trigger: null,
+    });
+    return true;
+  } catch (error) {
+    console.warn('[Notifications] Failed to show transaction confirmation:', error);
+    return false;
+  }
 }
