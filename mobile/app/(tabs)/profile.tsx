@@ -43,6 +43,7 @@ import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { enableSmartReminders, disableSmartReminders, getSmartRemindersEnabled } from '../../services/notifications';
 import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification } from '../../services/notifications';
 
 export default function ProfileScreen() {
@@ -66,9 +67,29 @@ export default function ProfileScreen() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
+  const [smartRemindersEnabled, setSmartRemindersEnabled] = useState(true);
+
   React.useEffect(() => {
     getDailyRemindersEnabled().then((enabled) => setRemindersEnabled(enabled));
+    getSmartRemindersEnabled().then((enabled) => setSmartRemindersEnabled(enabled));
   }, []);
+
+  const handleToggleSmartReminders = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (smartRemindersEnabled) {
+      await disableSmartReminders();
+      setSmartRemindersEnabled(false);
+      showAlert('Reminders Paused', 'Bill, salary, weekly and monthly reminders have been turned off.', undefined, 'info');
+    } else {
+      const success = await enableSmartReminders();
+      if (success) {
+        setSmartRemindersEnabled(true);
+        showAlert('Reminders Active ⏰', 'You will get a morning plan, bill and salary reminders, a Sunday-evening review, and month-start and month-end check-ins.', undefined, 'success');
+      } else {
+        showAlert('Permission Needed', 'Please allow notification permissions in your device settings to receive reminders.', undefined, 'warning');
+      }
+    }
+  };
 
 
   const [instantDebitEnabled, setInstantDebitEnabled] = useState(true);
@@ -301,6 +322,14 @@ export default function ProfileScreen() {
                 <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Daily Reminders (2x Daily)</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{remindersEnabled ? 'Enabled: 1:30 PM & 8:30 PM check-ins' : 'Disabled'}</Text></View>
               </View>
               <Ionicons name={remindersEnabled ? 'checkbox' : 'square-outline'} size={22} color={remindersEnabled ? c.primary : c.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleSmartReminders} style={[styles.menuRow, { borderBottomColor: c.border }]}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="calendar-outline" size={18} color={c.primary} /></View>
+                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Bills, Salary & Reviews</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{smartRemindersEnabled ? 'Morning plan, due dates, weekly & monthly check-ins' : 'Paused'}</Text></View>
+              </View>
+              <Ionicons name={smartRemindersEnabled ? 'checkbox' : 'square-outline'} size={22} color={smartRemindersEnabled ? c.primary : c.textMuted} />
             </TouchableOpacity>
 
             <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); setInstantDebitEnabled(!instantDebitEnabled); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>
