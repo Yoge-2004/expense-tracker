@@ -88,12 +88,12 @@ window.loadDashboard = loadDashboard;
 /**
  * Computes and renders real-time financial insights into the Smart Intelligence panel.
  */
-function renderFinancialInsights(expenses) {
-    return window.DashboardInsights.renderFinancialInsights(
-        expenses,
-        allIncomes,
-        allSavingsGoals
-    );
+function renderFinancialInsights(expenses, incomes = allIncomes, goals = allSavingsGoals) {
+    // The filter controller passes the already-filtered incomes alongside the
+    // filtered expenses. Defaulting (instead of ignoring the parameters) keeps
+    // single-argument callers working while stopping a month/year filter from
+    // pairing filtered outflow with all-time inflow.
+    return window.DashboardInsights.renderFinancialInsights(expenses, incomes, goals);
 }
 
 window.renderFinancialInsights = renderFinancialInsights;
