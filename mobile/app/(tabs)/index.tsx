@@ -14,7 +14,7 @@
  * - Pull-to-refresh and local cache hydration with exception recovery.
  */
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react';
 import {
   StyleSheet,
   Text,
@@ -35,7 +35,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
-import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
+import { Colors, getCategoryColor, getCategoryEmoji, ThemeColors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -129,6 +129,157 @@ interface Subscription {
 /**
  * Main dashboard screen component.
  */
+
+interface UnifiedTxItem {
+  id: number;
+  uniqueKey: string;
+  type: "expense" | "income";
+  title: string;
+  categoryOrSource: string;
+  amount: number;
+  date: string;
+  isRecurring: boolean;
+  expenseRaw?: Expense;
+  incomeRaw?: Income;
+}
+
+/** How many ledger rows are drawn at a time; more load as you scroll or tap "Show more". */
+const PAGE_SIZE = 25;
+
+interface TransactionRowProps {
+  tx: UnifiedTxItem;
+  colors: ThemeColors;
+  currSymbol: string;
+  onPress: (tx: UnifiedTxItem) => void;
+  onEdit: (tx: UnifiedTxItem) => void;
+  onDelete: (tx: UnifiedTxItem) => void;
+}
+
+/**
+ * One ledger row. Memoised: it redraws only when its own transaction, the theme or the currency
+ * changes, so typing in search, scrolling or unrelated state changes on the screen do not repaint
+ * every row.
+ */
+const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, onPress, onEdit, onDelete }: TransactionRowProps) {
+  const isIncome = tx.type === "income";
+  const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => onPress(tx)}
+      onLongPress={() => onPress(tx)}
+      style={[styles.txCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+    >
+      <View style={styles.txLeft}>
+        <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
+          {isIncome ? (
+            <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
+          ) : (
+            <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
+          )}
+        </View>
+        <View style={styles.txMeta}>
+          <Text style={[styles.txDesc, { color: colors.text }]} numberOfLines={1}>
+            {tx.title}
+          </Text>
+          <View style={styles.txSubRow}>
+            <Text style={[styles.txCatName, { color: catColor }]}>
+              {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
+            </Text>
+            <Text style={[styles.txDot, { color: colors.textMuted }]}>•</Text>
+            <Text style={[styles.txDate, { color: colors.textMuted }]}>{tx.date}</Text>
+            {tx.isRecurring && (
+              <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : colors.primary) + "18" }]}>
+                <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : colors.primary} />
+                <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : colors.primary }]}>
+                  {isIncome ? "Recurring Inflow" : "Sub"}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.txRight}>
+        <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : colors.text, fontWeight: "800" }]}>
+          {isIncome ? "+" : "-"}{currSymbol}
+          {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+        </Text>
+        <View style={styles.txRowActions}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              onEdit(tx);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+            accessibilityLabel="Edit transaction"
+          >
+            <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              onDelete(tx);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+            accessibilityLabel="Delete transaction"
+          >
+            <Ionicons name="trash-outline" size={12} color={colors.accent} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+/**
+ * The ledger search box. It owns the text being typed, so typing and the clear button update at once;
+ * the filtering of the list follows shortly after (and immediately on clear), without holding the
+ * input back.
+ */
+function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; colors: ThemeColors }) {
+  const [text, setText] = useState('');
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const change = (value: string) => {
+    setText(value);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => onSearch(value), 200);
+  };
+
+  const clear = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setText('');
+    onSearch('');
+  };
+
+  return (
+    <View style={[styles.searchBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+      <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
+      <TextInput
+        style={[styles.searchInput, { color: colors.text }]}
+        placeholder="Search description or category..."
+        placeholderTextColor={colors.textMuted}
+        value={text}
+        onChangeText={change}
+        returnKeyType="search"
+      />
+      {text.length > 0 && (
+        <TouchableOpacity onPress={clear} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Clear search">
+          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
 
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
@@ -674,19 +825,6 @@ export default function DashboardScreen() {
     };
   }, [dashboardExpenses, dashboardIncomes]);
 
-  interface UnifiedTxItem {
-    id: number;
-    uniqueKey: string;
-    type: "expense" | "income";
-    title: string;
-    categoryOrSource: string;
-    amount: number;
-    date: string;
-    isRecurring: boolean;
-    expenseRaw?: Expense;
-    incomeRaw?: Income;
-  }
-
   // Unified chronological ledger (memoized across theme changes)
   const unifiedTransactions: UnifiedTxItem[] = useMemo(() => {
     const list: UnifiedTxItem[] = [
@@ -750,6 +888,28 @@ export default function DashboardScreen() {
       return 0;
     });
   }, [ledgerTab, filteredExpenses, filteredIncomes, sortOption]);
+
+  // Only the first page of rows is drawn; it grows as you scroll. Filtering or re-sorting starts over.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
+  const visibleTransactions = useMemo(
+    () => unifiedTransactions.slice(0, visibleCount),
+    [unifiedTransactions, visibleCount]
+  );
+
+  // Rows are memoised, so the handlers they receive must keep the same identity between renders.
+  const rowActions = useRef({ press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete });
+  rowActions.current = { press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete };
+  const onRowPress = useCallback((tx: UnifiedTxItem) => rowActions.current.press(tx), []);
+  const onRowEdit = useCallback((tx: UnifiedTxItem) => rowActions.current.edit(tx), []);
+  const onRowDelete = useCallback((tx: UnifiedTxItem) => rowActions.current.remove(tx), []);
+
+  // The search text is typed in SearchField; applying it to the list is a non-urgent update.
+  const handleSearch = useCallback((query: string) => {
+    startTransition(() => setSearchQuery(query));
+  }, []);
 
   if (!isLoading && fetchError && expenses.length === 0) {
     return (
@@ -1188,21 +1348,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Search Input */}
-            <View style={[styles.searchBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <Ionicons name="search" size={16} color={c.textMuted} style={styles.searchIcon} />
-              <TextInput
-                style={[styles.searchInput, { color: c.text }]}
-                placeholder="Search description or category..."
-                placeholderTextColor={c.textMuted}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={16} color={c.textMuted} />
-                </TouchableOpacity>
-              )}
-            </View>
+            <SearchField onSearch={handleSearch} colors={c} />
 
             {/* Category Filter Pills & Custom Date Presets */}
             <CategoryPillsBar
@@ -1276,84 +1422,39 @@ export default function DashboardScreen() {
                   style={styles.innerListScroll}
                   nestedScrollEnabled={true}
                   showsVerticalScrollIndicator={true}
+                  scrollEventThrottle={100}
+                  onScroll={({ nativeEvent }) => {
+                    // Load the next page a little before the bottom is reached.
+                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 240) {
+                      setVisibleCount((n) => (n < unifiedTransactions.length ? n + PAGE_SIZE : n));
+                    }
+                  }}
                 >
                   <View style={styles.transactionsList}>
-                    {unifiedTransactions.map((tx) => {
-                      const isIncome = tx.type === "income";
-                      const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
-                      return (
-                        <TouchableOpacity
-                          key={tx.uniqueKey}
-                          activeOpacity={0.7}
-                          onPress={() => handleTransactionPress(tx)}
-                          onLongPress={() => handleTransactionPress(tx)}
-                          style={[styles.txCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
-                        >
-                          <View style={styles.txLeft}>
-                            <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
-                              {isIncome ? (
-                                <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
-                              ) : (
-                                <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
-                              )}
-                            </View>
-                            <View style={styles.txMeta}>
-                              <Text style={[styles.txDesc, { color: c.text }]} numberOfLines={1}>
-                                {tx.title}
-                              </Text>
-                              <View style={styles.txSubRow}>
-                                <Text style={[styles.txCatName, { color: catColor }]}>
-                                  {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
-                                </Text>
-                                <Text style={[styles.txDot, { color: c.textMuted }]}>•</Text>
-                                <Text style={[styles.txDate, { color: c.textMuted }]}>{tx.date}</Text>
-                                {tx.isRecurring && (
-                                  <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : c.primary) + "18" }]}>
-                                    <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : c.primary} />
-                                    <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : c.primary }]}>
-                                      {isIncome ? "Recurring Inflow" : "Sub"}
-                                    </Text>
-                                  </View>
-                                )}
-                              </View>
-                            </View>
-                          </View>
-
-                          <View style={styles.txRight}>
-                            <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : c.text, fontWeight: "800" }]}>
-                              {isIncome ? "+" : "-"}{currSymbol}
-                              {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                            </Text>
-                            <View style={styles.txRowActions}>
-                              <TouchableOpacity
-                                activeOpacity={0.7}
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                                  handleTransactionEdit(tx);
-                                }}
-                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
-                                accessibilityLabel="Edit transaction"
-                              >
-                                <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : c.primary} />
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                activeOpacity={0.7}
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                                  handleTransactionDelete(tx);
-                                }}
-                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
-                                accessibilityLabel="Delete transaction"
-                              >
-                                <Ionicons name="trash-outline" size={12} color={c.accent} />
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                    {visibleTransactions.map((tx) => (
+                      <TransactionRow
+                        key={tx.uniqueKey}
+                        tx={tx}
+                        colors={c}
+                        currSymbol={currSymbol}
+                        onPress={onRowPress}
+                        onEdit={onRowEdit}
+                        onDelete={onRowDelete}
+                      />
+                    ))}
+                    {visibleCount < unifiedTransactions.length && (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                        style={styles.showMoreBtn}
+                        accessibilityRole="button"
+                      >
+                        <Text style={[styles.showMoreText, { color: c.primary }]}>
+                          Show more ({unifiedTransactions.length - visibleCount} left)
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </ScrollView>
               )}
@@ -1489,6 +1590,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
+  },
+  showMoreBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  showMoreText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   topActionBtn: {
     width: 42,
