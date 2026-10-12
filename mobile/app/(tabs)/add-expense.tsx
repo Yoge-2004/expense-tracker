@@ -37,6 +37,7 @@ import { CalendarPickerModal } from '../../components/CalendarPickerModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { ChoiceChips } from '../../components/ChoiceChips';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../../utils/moneyFlow';
+import { OfflineBanner } from '../../components/OfflineBanner';
 
 interface Category {
   id: number;
@@ -226,6 +227,11 @@ export default function AddExpenseScreen() {
   const subFormAnim = useRef(new Animated.Value(0)).current;
 
   const [refreshing, setRefreshing] = useState(false);
+  /** True when the last attempt to load categories failed outright. */
+  const [categoriesError, setCategoriesError] = useState(false);
+  /** Bumped on every failed load so the auto-retry effect re-arms. */
+  const [categoryRetryTick, setCategoryRetryTick] = useState(0);
+  const categoryRetryCount = useRef(0);
 
   /**
    * Fetches merged global & user-defined categories with offline cache fallback.
@@ -248,10 +254,16 @@ export default function AddExpenseScreen() {
         } catch (_) {}
       }
 
-      const [globalCats, userCats] = await Promise.all([
-        apiRequest('/categories/global').catch(() => []),
-        apiRequest(`/categories/user/${userId}`).catch(() => []),
+      // allSettled (not .catch(() => [])): a failed request must not look like
+      // "there are no categories", otherwise the screen shows nothing and never
+      // tells the user or retries.
+      const [globalRes, userRes] = await Promise.allSettled([
+        apiRequest('/categories/global'),
+        apiRequest(`/categories/user/${userId}`),
       ]);
+      const globalCats = globalRes.status === 'fulfilled' ? globalRes.value : null;
+      const userCats = userRes.status === 'fulfilled' ? userRes.value : null;
+      const loadedAny = Array.isArray(globalCats) || Array.isArray(userCats);
       const merged = [
         ...(Array.isArray(globalCats) ? globalCats : []),
         ...(Array.isArray(userCats) ? userCats : []),
@@ -271,8 +283,17 @@ export default function AddExpenseScreen() {
         if (!categoryId) setCategoryId(uniqueCats[0].id);
         if (!budgetCategoryId) setBudgetCategoryId(uniqueCats[0].id);
       }
+      if (loadedAny) {
+        categoryRetryCount.current = 0;
+        setCategoriesError(false);
+      } else {
+        setCategoriesError(true);
+        setCategoryRetryTick((n) => n + 1);
+      }
     } catch (e: any) {
       console.warn('[AddExpenseScreen] Error fetching categories:', e);
+      setCategoriesError(true);
+      setCategoryRetryTick((n) => n + 1);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -284,6 +305,19 @@ export default function AddExpenseScreen() {
       loadCategories();
     }, [userId])
   );
+
+  // While categories cannot be loaded (typically the server is still waking
+  // up), retry on its own with a growing delay, up to 4 times. The Retry button
+  // and pull-to-refresh stay available after that.
+  useEffect(() => {
+    if (!categoriesError || categoryRetryCount.current >= 4) return;
+    const delay = 4000 * (categoryRetryCount.current + 1);
+    const timer = setTimeout(() => {
+      categoryRetryCount.current += 1;
+      loadCategories();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [categoriesError, categoryRetryTick]);
 
   useEffect(() => {
     loadCategories();
@@ -753,6 +787,22 @@ export default function AddExpenseScreen() {
           />
         }
       >
+        {categoriesError && (
+          <OfflineBanner
+            message={
+              categories.length > 0
+                ? 'Offline · showing saved categories'
+                : "Couldn't load categories from the server"
+            }
+            onRetry={() => {
+              categoryRetryCount.current = 0;
+              setRefreshing(true);
+              loadCategories();
+            }}
+            retrying={refreshing}
+          />
+        )}
+
         {/* Top Header */}
         <View style={[styles.header, { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }]}>
           <View style={{ flex: 1, paddingRight: 12 }}>
