@@ -455,6 +455,17 @@ elements.addForm.addEventListener("submit", async (e) => {
             showToast("Expense added.", "success");
         }
 
+        // Confirm every NEW debit with its amount (edits do not notify).
+        if (!id) {
+            const category = (allCategories || []).find(c => String(c.id) === String(expenseData.categoryId));
+            window.DashboardNotifications?.notifyTransactionRecorded({
+                kind: "DEBIT",
+                amount: expenseData.amount,
+                label: category ? category.name : "Expense",
+                detail: expenseData.description
+            });
+        }
+
         if (window.DashboardML && typeof window.DashboardML.onExpenseSaved === "function") {
             window.DashboardML.onExpenseSaved(savedExpense || { id: id, ...expenseData }, expenseData);
         }
@@ -2908,6 +2919,13 @@ incomeForm?.addEventListener("submit", async (e) => {
             });
             celebrateSuccess(e.clientX, e.clientY);
             showToast("Income recorded successfully!", "success");
+            // Confirm every NEW credit with its amount (edits do not notify).
+            window.DashboardNotifications?.notifyTransactionRecorded({
+                kind: "CREDIT",
+                amount: payload.amount,
+                label: payload.source,
+                detail: payload.description
+            });
         }
         closeModal(incomeModal);
         await loadDashboard(true);
