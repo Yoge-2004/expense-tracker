@@ -75,8 +75,26 @@ public record MonthlyReportDto(
         List<IncomeDto> incomes,
 
         @Schema(description = "Active savings goals and milestone targets")
-        List<SavingsGoalDto> savingsGoals
+        List<SavingsGoalDto> savingsGoals,
+
+        @Schema(description = "Money handed back this month (reimbursements and refunds). totalOutflow is already "
+                + "net of it and totalIncome excludes it.", example = "3000.00")
+        BigDecimal totalReimbursed
 ) {
+    /** Pre-reimbursement shape, kept so existing callers compile unchanged. */
+    public MonthlyReportDto(String period, int year, int month, BigDecimal totalOutflow, BigDecimal totalIncome,
+                            BigDecimal netCashFlow, double savingsRate, String currency, int transactionCount,
+                            BigDecimal dailyAverage, BigDecimal highestExpenseAmount,
+                            String highestExpenseDescription, BigDecimal recurringTotal, List<String> insights,
+                            int budgetHealthScore, List<CategoryReportDto> categoryBreakdown,
+                            List<BudgetReportDto> budgetStatuses, List<ExpenseDto> topExpenses,
+                            List<IncomeDto> incomes, List<SavingsGoalDto> savingsGoals) {
+        this(period, year, month, totalOutflow, totalIncome, netCashFlow, savingsRate, currency,
+                transactionCount, dailyAverage, highestExpenseAmount, highestExpenseDescription,
+                recurringTotal, insights, budgetHealthScore, categoryBreakdown, budgetStatuses,
+                topExpenses, incomes, savingsGoals, BigDecimal.ZERO);
+    }
+
     /**
      * DTO representing spending aggregation for a single category.
      */

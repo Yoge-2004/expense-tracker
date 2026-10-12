@@ -7,11 +7,11 @@
     const { animateNumber } = window.DashboardEffects;
     const userId = localStorage.getItem("userId");
 
-    async function updateProMetrics(expenses) {
+    async function updateProMetrics(expenses, incomes) {
     if (!Array.isArray(expenses)) return;
 
-    // Total Spent & Count
-    const totalSpent = expenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    // Total Spent & Count. Money that came back (reimbursements) reduces what was spent.
+    const totalSpent = window.MoneyFlow.netSpent(expenses, incomes);
     const count = expenses.length;
     
     if (elements.totalAmount) animateNumber(elements.totalAmount, totalSpent, true);

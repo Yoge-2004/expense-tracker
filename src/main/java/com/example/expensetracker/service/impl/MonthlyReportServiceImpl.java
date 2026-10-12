@@ -7,10 +7,12 @@ import com.example.expensetracker.dto.SavingsGoalDto;
 import com.example.expensetracker.exception.EmailDeliveryException;
 import com.example.expensetracker.mapper.ExpenseMapper;
 import com.example.expensetracker.mapper.IncomeMapper;
+import com.example.expensetracker.mapper.IncomeRules;
 import com.example.expensetracker.mapper.SavingsGoalMapper;
 import com.example.expensetracker.model.Budget;
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.Income;
+import com.example.expensetracker.model.IncomeKind;
 import com.example.expensetracker.model.MonthlyReportLog;
 import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
@@ -40,6 +42,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.YearMonth;
 import java.time.format.TextStyle;
 import java.util.*;
 
@@ -95,14 +98,38 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
         List<Expense> expenses = expenseRepository.findByUserAndExpenseDateBetween(user, startDate, endDate);
-        List<Income> incomes = incomeRepository.findByUserAndIncomeDateBetween(user, startDate, endDate);
+        // An income belongs to the month it COUNTS TOWARD, which can differ from the day it was
+        // credited (next month's salary paid on the 30th). Read a window around the month and keep
+        // the ones whose effective month is this one.
+        YearMonth reportMonth = YearMonth.of(year, month);
+        List<Income> incomes = incomeRepository.findByUserAndIncomeDateBetween(user,
+                        startDate.minusMonths(IncomeRules.MAX_MONTH_SHIFT), endDate.plusMonths(IncomeRules.MAX_MONTH_SHIFT))
+                .stream()
+                .filter(i -> reportMonth.equals(IncomeRules.effectiveMonth(i)))
+                .toList();
         List<SavingsGoal> savingsGoals = savingsGoalRepository.findByUser(user);
 
-        BigDecimal totalOutflow = expenses.stream()
+        // Reimbursements are not income: money handed back reduces what was spent.
+        List<Income> reimbursements = incomes.stream()
+                .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT)
+                .toList();
+        List<Income> earned = incomes.stream()
+                .filter(i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT)
+                .toList();
+
+        BigDecimal grossOutflow = expenses.stream()
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalIncome = incomes.stream()
+        BigDecimal totalReimbursed = reimbursements.stream()
+                .map(Income::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Spending net of money that came back; never below zero (a refund larger than the
+        // month's spending is not negative spending).
+        BigDecimal totalOutflow = grossOutflow.subtract(totalReimbursed).max(BigDecimal.ZERO);
+
+        BigDecimal totalIncome = earned.stream()
                 .map(Income::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -140,7 +167,19 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         }
 
         List<MonthlyReportDto.CategoryReportDto> categoryBreakdown = new ArrayList<>();
-        double totalDouble = totalOutflow.doubleValue();
+        // Reimbursements tied to a category reduce that category's spending.
+        for (Income r : reimbursements) {
+            if (r.getReimbursedCategoryId() == null) {
+                continue;
+            }
+            expenses.stream()
+                    .filter(e -> e.getCategory() != null && r.getReimbursedCategoryId().equals(e.getCategory().getId()))
+                    .findFirst()
+                    .ifPresent(e -> categorySums.computeIfPresent(e.getCategory().getName(),
+                            (name, sum) -> sum.subtract(r.getAmount()).max(BigDecimal.ZERO)));
+        }
+        // Percentages are relative to what the categories add up to, so they always total 100.
+        double totalDouble = categorySums.values().stream().mapToDouble(BigDecimal::doubleValue).sum();
 
         for (Map.Entry<String, BigDecimal> entry : categorySums.entrySet()) {
             double pct = totalDouble > 0 ? (entry.getValue().doubleValue() / totalDouble) * 100.0 : 0.0;
@@ -241,14 +280,19 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         }
 
         // Salary Coverage Insight
-        BigDecimal salaryTotal = incomes.stream()
-                .filter(i -> (i.getSource() != null && i.getSource().toLowerCase().contains("salary"))
+        BigDecimal salaryTotal = earned.stream()
+                .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.SALARY
                         || (i.getDescription() != null && i.getDescription().toLowerCase().contains("salary")))
                 .map(Income::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (salaryTotal.compareTo(BigDecimal.ZERO) > 0 && totalOutflow.compareTo(BigDecimal.ZERO) > 0) {
             double coverage = salaryTotal.divide(totalOutflow, 4, RoundingMode.HALF_UP).doubleValue() * 100.0;
             insights.add(String.format("Salary Coverage: Active monthly salary covered %.1f%%%% of your total expenditures.", coverage));
+        }
+
+        if (totalReimbursed.compareTo(BigDecimal.ZERO) > 0) {
+            insights.add(String.format("Reimbursements: %s %s came back this month, so net spending is %s %s instead of %s %s.",
+                    userCurrency, totalReimbursed, userCurrency, totalOutflow, userCurrency, grossOutflow));
         }
 
         // Emergency Savings Runway Insight
@@ -271,9 +315,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 })
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (totalOutflow.compareTo(BigDecimal.ZERO) > 0 && essentials.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal discretionary = totalOutflow.subtract(essentials).max(BigDecimal.ZERO);
-            double essPct = essentials.divide(totalOutflow, 3, RoundingMode.HALF_UP).doubleValue() * 100.0;
+        if (grossOutflow.compareTo(BigDecimal.ZERO) > 0 && essentials.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal discretionary = grossOutflow.subtract(essentials).max(BigDecimal.ZERO);
+            double essPct = essentials.divide(grossOutflow, 3, RoundingMode.HALF_UP).doubleValue() * 100.0;
             double discPct = 100.0 - essPct;
             insights.add(String.format("Capital Allocation: Essentials accounted for %.1f%%%% (%s %s) while discretionary spending represented %.1f%%%% (%s %s).",
                     essPct, userCurrency, essentials, discPct, userCurrency, discretionary));
@@ -302,7 +346,8 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 budgetStatuses,
                 topExpenses,
                 incomeDtos,
-                goalDtos
+                goalDtos,
+                totalReimbursed
         );
     }
 

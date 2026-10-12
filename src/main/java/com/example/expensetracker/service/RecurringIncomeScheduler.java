@@ -61,6 +61,8 @@ public class RecurringIncomeScheduler {
                     concrete.setIncomeDate(rec.getNextDueDate());
                     concrete.setUser(rec.getUser());
                     concrete.setIsRecurring(false);
+                    // Same kind as the template; the month is left to follow each generated date.
+                    concrete.setKind(rec.getKind());
                     incomeRepository.save(concrete);
 
                     LocalDate nextDate = nextOccurrence(rec);

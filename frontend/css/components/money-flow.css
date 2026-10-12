@@ -1,0 +1,161 @@
+/* Monthly money-flow panel. Single owner of every .money-flow* selector. */
+.money-flow {
+    margin: 0 0 24px;
+    padding: 20px 22px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card-bg);
+}
+
+.money-flow-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.money-flow-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.money-flow-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.money-flow-nav button {
+    min-width: 32px;
+    min-height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--input-bg);
+    color: var(--text-main);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.money-flow-nav button:hover {
+    border-color: var(--primary);
+}
+
+.money-flow-nav span {
+    min-width: 120px;
+    text-align: center;
+}
+
+.money-flow-rows {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+}
+
+.money-flow-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+.money-flow-row:last-child {
+    border-bottom: 0;
+}
+
+.money-flow-row dt {
+    color: var(--text-muted);
+}
+
+.money-flow-row dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: right;
+}
+
+.money-flow-row dd small {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.money-flow-row--in dd {
+    color: #10b981;
+}
+
+.money-flow-row--out dd {
+    color: #f87171;
+}
+
+.money-flow-row--total dt {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.money-flow-row--positive dt,
+.money-flow-row--positive dd {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.money-flow-row--negative dt,
+.money-flow-row--negative dd {
+    color: #f87171;
+    font-weight: 700;
+}
+
+.money-flow-empty,
+.money-flow-note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.money-flow-note {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--input-bg);
+}
+
+/* Tags on an income row: "Money back" and "Counts toward <month>" */
+.income-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.income-tag {
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-muted);
+}
+
+.income-tag--back {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.income-tag--moved {
+    color: var(--primary);
+    border-color: var(--primary);
+}

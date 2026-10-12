@@ -217,4 +217,70 @@ class MonthlyReportServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> reportService.sendMonthlyReportEmail(1L, 2026, 0));
         assertThrows(IllegalArgumentException.class, () -> reportService.sendMonthlyReportEmail(1L, 1800, 8));
     }
+
+    private Income incomeOf(String amount, String source, LocalDate date) {
+        Income income = new Income();
+        income.setUser(testUser);
+        income.setAmount(new BigDecimal(amount));
+        income.setSource(source);
+        income.setIncomeDate(date);
+        income.setIsRecurring(false);
+        return income;
+    }
+
+    private void stubReportData(List<Income> incomes) {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(expenseRepository.findByUserAndExpenseDateBetween(
+                eq(testUser), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(testExpense));
+        when(incomeRepository.findByUserAndIncomeDateBetween(eq(testUser), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(incomes);
+        when(savingsGoalRepository.findByUser(testUser)).thenReturn(List.of(testGoal));
+        when(budgetRepository.findByUser(testUser)).thenReturn(List.of(testBudget));
+    }
+
+    @Test
+    @DisplayName("generateMonthlyReport: salary credited early counts toward the month it is for, not the day it landed")
+    void generateMonthlyReport_earlySalaryCountsTowardItsMonth() {
+        Income augustSalary = incomeOf("5000.00", "Salary", LocalDate.of(2026, 7, 30));
+        augustSalary.setCountsTowardMonth("2026-08");
+        Income septemberSalary = incomeOf("7000.00", "Salary", LocalDate.of(2026, 8, 30));
+        septemberSalary.setCountsTowardMonth("2026-09");
+        stubReportData(List.of(testIncome, augustSalary, septemberSalary));
+
+        MonthlyReportDto report = reportService.generateMonthlyReport(1L, 2026, 8);
+
+        // 1000 credited in August + 5000 credited on Jul 30 for August; the Aug 30 payment is September's.
+        assertEquals(new BigDecimal("6000.00"), report.totalIncome());
+        assertEquals(2, report.incomes().size());
+    }
+
+    @Test
+    @DisplayName("generateMonthlyReport: money handed back reduces spending and is not counted as income")
+    void generateMonthlyReport_reimbursementReducesSpendingNotIncome() {
+        Income refund = incomeOf("50.00", "Dinner split", LocalDate.of(2026, 8, 10));
+        refund.setKind("REIMBURSEMENT");
+        stubReportData(List.of(testIncome, refund));
+
+        MonthlyReportDto report = reportService.generateMonthlyReport(1L, 2026, 8);
+
+        assertEquals(new BigDecimal("1000.00"), report.totalIncome());
+        assertEquals(new BigDecimal("50.00"), report.totalReimbursed());
+        assertEquals(new BigDecimal("150.00"), report.totalOutflow());
+        assertEquals(new BigDecimal("850.00"), report.netCashFlow());
+        assertEquals(85.0, report.savingsRate());
+    }
+
+    @Test
+    @DisplayName("generateMonthlyReport: a reimbursement larger than the month's spending never makes spending negative")
+    void generateMonthlyReport_reimbursementClampsAtZero() {
+        Income refund = incomeOf("500.00", "Insurance claim", LocalDate.of(2026, 8, 10));
+        refund.setKind("REIMBURSEMENT");
+        stubReportData(List.of(testIncome, refund));
+
+        MonthlyReportDto report = reportService.generateMonthlyReport(1L, 2026, 8);
+
+        assertEquals(0, report.totalOutflow().signum());
+        assertEquals(new BigDecimal("500.00"), report.totalReimbursed());
+    }
 }

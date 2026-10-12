@@ -56,6 +56,7 @@ import {
 import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -99,6 +100,9 @@ interface Income {
   recurring?: boolean;
   frequency?: string;
   intervalDays?: number;
+  kind?: string;
+  countsTowardMonth?: string;
+  reimbursedCategoryId?: number | null;
 }
 
 interface SavingsGoal {
@@ -340,6 +344,9 @@ export default function DashboardScreen() {
           editIsRecurring: String(tx.incomeRaw?.isRecurring || false),
           editFrequency: tx.incomeRaw?.frequency || "MONTHLY",
           editIntervalDays: String(tx.incomeRaw?.intervalDays || "1"),
+          editKind: tx.incomeRaw?.kind || "",
+          editCountsToward: tx.incomeRaw?.countsTowardMonth || "",
+          editReimbursedCategoryId: String(tx.incomeRaw?.reimbursedCategoryId || ""),
         },
       });
     }
@@ -551,8 +558,7 @@ export default function DashboardScreen() {
     const isCustom = datePreset === 'custom';
     const nowD = new Date();
     const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
-    const nowMonth = isMonth ? nowD.getMonth() : -1;
-    const nowYear = isMonth ? nowD.getFullYear() : -1;
+    const thisMonth = isMonth ? monthKey(nowD) : '';
     const thirtyAgo = isLast30 ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : null;
 
     return incomes.filter((inc) => {
@@ -570,8 +576,8 @@ export default function DashboardScreen() {
           if (isToday) {
             matchDate = incDStr === todayStr;
           } else if (isMonth) {
-            const incD = new Date(dateStr);
-            matchDate = incD.getMonth() === nowMonth && incD.getFullYear() === nowYear;
+            // An income counts toward the month it is FOR (salary paid on the 30th for next month).
+            matchDate = effectiveMonth(inc) === thisMonth;
           } else if (isLast30 && thirtyAgo) {
             matchDate = new Date(dateStr) >= thirtyAgo;
           } else if (isCustom) {
@@ -607,8 +613,9 @@ export default function DashboardScreen() {
     highestCatName,
     highestCatAmt,
   } = useMemo(() => {
-    const spent = dashboardExpenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
-    const income = dashboardIncomes.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+    // Money handed back reduces spending and is not income.
+    const spent = netSpent(dashboardExpenses, dashboardIncomes);
+    const income = earnedTotal(dashboardIncomes);
     const net = income - spent;
     const rate = income > 0 ? ((net / income) * 100).toFixed(1) : "0.0";
 
@@ -620,7 +627,11 @@ export default function DashboardScreen() {
       const d = new Date(e.expenseDate);
       return d.getMonth() === nowD.getMonth() && d.getFullYear() === nowD.getFullYear();
     });
-    const cMonthSpent = currentMonthExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+    const thisMonth = monthKey(nowD);
+    const cMonthSpent = netSpent(
+      currentMonthExpenses,
+      dashboardIncomes.filter((i) => effectiveMonth(i) === thisMonth)
+    );
     const burn = cMonthSpent / cDay;
     const forecast = burn * dInMonth;
 
