@@ -186,7 +186,7 @@ class MonthlyReportServiceImplTest {
         assertNotNull(html);
         assertTrue(html.contains("<!DOCTYPE html>"));
         assertTrue(html.contains("Alice Walker"));
-        assertTrue(html.contains("Executive Financial Summary"));
+        assertTrue(html.contains("OBSIDIAN &amp; LUXURY GOLD EXECUTIVE STATEMENT"), "branded report title");
         assertTrue(html.contains("August 2026"));
     }
 
