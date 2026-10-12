@@ -35,6 +35,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
+import { scheduleSmartReminders } from '../../services/notifications';
 import { Colors, getCategoryColor, getCategoryEmoji, ThemeColors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -104,6 +105,7 @@ interface Income {
   kind?: string;
   countsTowardMonth?: string;
   reimbursedCategoryId?: number | null;
+  nextDueDate?: string | null;
 }
 
 interface SavingsGoal {
@@ -117,6 +119,7 @@ interface SavingsGoal {
   recurringAmount?: number;
   frequency?: string;
   intervalDays?: number;
+  nextDueDate?: string | null;
 }
 
 interface Subscription {
@@ -124,6 +127,7 @@ interface Subscription {
   description: string;
   amount: number;
   frequency: string;
+  nextDueDate?: string | null;
 }
 
 /**
@@ -464,6 +468,13 @@ export default function DashboardScreen() {
       loadWithCache();
     }, [userId])
   );
+
+  // Keep the on-device bill, salary and savings reminders in step with the data on screen. Same
+  // mechanism as the 1:30 PM and 8:30 PM reminders: scheduled on the phone, no server needed.
+  useEffect(() => {
+    if (isLoading) return;
+    scheduleSmartReminders({ currency: currSymbol, subscriptions, incomes, goals: savingsGoals }).catch(() => {});
+  }, [isLoading, subscriptions, incomes, savingsGoals, currSymbol]);
 
   const onRefresh = () => {
     setRefreshing(true);
