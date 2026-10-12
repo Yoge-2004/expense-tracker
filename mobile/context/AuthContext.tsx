@@ -8,6 +8,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { getSession, saveSession, clearSession, apiRequest } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { registerPushToken, unregisterPushToken } from '../services/notifications';
 
 interface AuthContextType {
   isLoading: boolean;
@@ -294,9 +295,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * Logs out the active session. Biometric unlock remains enabled so the user
    * can unlock the saved credential again without re-entering the password.
    */
+  // Register this phone for push once signed in. It never prompts: permission is asked at sign-up.
+  useEffect(() => {
+    if (userId) registerPushToken(userId);
+  }, [userId]);
+
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
+      // Needs the session, so it must run before the session is cleared.
+      if (userId) await unregisterPushToken(userId);
       await clearSession();
       setToken(null);
       setUserId(null);
