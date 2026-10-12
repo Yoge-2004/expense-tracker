@@ -252,6 +252,32 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     @Override
     @Transactional
+    public void resetPasswordForVerifiedUser(User user, String newPassword) {
+        if (user == null) {
+            throw new IllegalArgumentException("Account is required.");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new IllegalArgumentException("New password is required.");
+        }
+        if (newPassword.length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters long.");
+        }
+
+        // A reset code requested earlier must not stay usable once the password has been changed another way.
+        otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getEmail(), "PASSWORD_RESET")
+                .ifPresent(pending -> {
+                    pending.setUsed(true);
+                    otpRepository.save(pending);
+                });
+
+        clearRecoveryFailures(user);
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        log.info("Password reset applied via verified passkey for email={}", LoggingUtils.maskEmail(user.getEmail()));
+    }
+
+    @Override
+    @Transactional
     public boolean sendSignupOtp(String email, String name) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Email address is required.");

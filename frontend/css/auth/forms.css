@@ -451,3 +451,25 @@
     flex-shrink: 0;
     transition: color 0.3s;
 }
+
+/* "or" divider above the passkey (fingerprint) alternative on the forgot-password page */
+.passkey-option {
+    margin-top: 4px;
+}
+
+.passkey-option-or {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 14px 0;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.passkey-option-or::before,
+.passkey-option-or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}

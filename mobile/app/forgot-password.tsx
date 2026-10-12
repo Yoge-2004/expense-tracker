@@ -31,6 +31,7 @@ import * as Haptics from "expo-haptics";
 import { AmbientAura } from "../components/AmbientAura";
 import { StaggeredView } from "../components/StaggeredView";
 import { ThemeToggleBtn } from "../components/ThemeToggleBtn";
+import { readPinWithFingerprint, savedPinEmail } from "../utils/pinVault";
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -54,6 +55,8 @@ export default function ForgotPasswordScreen() {
   const [hasSecurityPin, setHasSecurityPin] = useState(false);
   const [isEmailVerificationEnabled, setIsEmailVerificationEnabled] = useState(false);
   const [step, setStep] = useState<"request" | "verify">("request");
+  /** True when a fingerprint-protected PIN is saved on this phone for the account being recovered. */
+  const [fingerprintReady, setFingerprintReady] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -129,10 +132,40 @@ export default function ForgotPasswordScreen() {
     }
   };
 
+  // Offer the fingerprint only when the PIN saved on this phone belongs to the account being recovered.
+  useEffect(() => {
+    if (step !== "verify" || !hasSecurityPin) {
+      setFingerprintReady(false);
+      return;
+    }
+    savedPinEmail().then((saved) => setFingerprintReady(!!saved && saved === email.trim().toLowerCase()));
+  }, [step, hasSecurityPin, email]);
+
+  // Fingerprint releases the saved Security PIN; the server still verifies the PIN as usual.
+  const handleFingerprintReset = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      showAlert("Weak Password", "Choose a new password of at least 6 characters first.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showAlert("Password Mismatch", "New password and confirmation password do not match.");
+      return;
+    }
+    const pin = await readPinWithFingerprint();
+    if (!pin) {
+      showAlert("Fingerprint not confirmed", "Enter your Security PIN instead.", undefined, "warning");
+      return;
+    }
+    setCode(pin);
+    await handleResetPassword(pin);
+  };
+
   // Step 2: Verify PIN/OTP & Set New Password
-  const handleResetPassword = async () => {
+  // `codeOverride` is a string when the PIN came from the fingerprint; as an onPress handler it receives
+  // the press event instead, so only a string counts.
+  const handleResetPassword = async (codeOverride?: unknown) => {
     const trimmedEmail = email.trim();
-    const trimmedCode = code.trim();
+    const trimmedCode = (typeof codeOverride === "string" ? codeOverride : code).trim();
 
     if (!trimmedEmail) {
       showAlert("Missing Email", "Please enter your account email address.");
@@ -357,6 +390,20 @@ export default function ForgotPasswordScreen() {
                   )}
                 </View>
 
+                {fingerprintReady && (
+                  <TouchableOpacity
+                    style={[styles.fingerprintBtn, { borderColor: c.primary, backgroundColor: c.inputBg }]}
+                    onPress={handleFingerprintReset}
+                    disabled={isLoading}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Reset password with fingerprint"
+                  >
+                    <Ionicons name="finger-print-outline" size={20} color={c.primary} />
+                    <Text style={[styles.fingerprintText, { color: c.primary }]}>Use fingerprint instead of typing the PIN</Text>
+                  </TouchableOpacity>
+                )}
+
                 <TouchableOpacity
                   style={[styles.submitBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
                   onPress={handleResetPassword}
@@ -484,6 +531,20 @@ const styles = StyleSheet.create({
   otpActionText: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  fingerprintBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 48,
+    marginBottom: 12,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  fingerprintText: {
+    fontSize: 13.5,
+    fontWeight: "700",
   },
   submitBtn: {
     height: 50,

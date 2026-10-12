@@ -237,4 +237,40 @@ class PasswordResetServiceImplTest {
         assertThrows(IllegalArgumentException.class, () ->
                 service.resetPassword("user@example.com", "123456", null));
     }
+
+    @Test
+    @DisplayName("resetPasswordForVerifiedUser: stores the encoded password, clears lockout and retires a pending reset code")
+    void resetPasswordForVerifiedUser_appliesPasswordAndClearsRecoveryState() {
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setFailedPinAttempts(3);
+        user.setPinLockedUntil(LocalDateTime.now().minusMinutes(1));
+        PasswordResetOtp pending = new PasswordResetOtp();
+        pending.setUsed(false);
+        when(otpRepository.findFirstByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc("user@example.com", "PASSWORD_RESET"))
+                .thenReturn(Optional.of(pending));
+        when(passwordEncoder.encode("brandNewSecret")).thenReturn("encoded");
+
+        service.resetPasswordForVerifiedUser(user, "brandNewSecret");
+
+        assertEquals("encoded", user.getPassword());
+        assertEquals(0, user.getFailedPinAttempts());
+        assertNull(user.getPinLockedUntil());
+        assertTrue(pending.isUsed());
+        verify(otpRepository).save(pending);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("resetPasswordForVerifiedUser: applies the same minimum length as the code-based reset")
+    void resetPasswordForVerifiedUser_rejectsShortPassword() {
+        User user = new User();
+        user.setEmail("user@example.com");
+
+        assertThrows(IllegalArgumentException.class, () -> service.resetPasswordForVerifiedUser(user, "12345"));
+        assertThrows(IllegalArgumentException.class, () -> service.resetPasswordForVerifiedUser(user, " "));
+        assertThrows(IllegalArgumentException.class, () -> service.resetPasswordForVerifiedUser(null, "validPassword"));
+
+        verify(userRepository, never()).save(any());
+    }
 }
