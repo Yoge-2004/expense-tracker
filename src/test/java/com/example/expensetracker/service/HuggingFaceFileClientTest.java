@@ -387,4 +387,78 @@ class HuggingFaceFileClientTest {
             assertEquals("\\\\\\\\\\\\", HuggingFaceFileClient.jsonEscape("\\\\\\"));
         }
     }
+
+    @Nested
+    @DisplayName("repo type URLs — Spaces and datasets live under their own prefix on the Hub")
+    class RepoTypeUrls {
+
+        @Test
+        @DisplayName("a Space file is resolved under /spaces/ (the bare path is a model repo and always 404s)")
+        void spaceResolveUrlHasSpacesPrefix() {
+            assertEquals(
+                    "https://huggingface.co/spaces/Yoge-2004/expense-tracker-backend/resolve/main/"
+                            + "database/expense_tracker.sqlite.enc?download=true",
+                    HuggingFaceFileClient.resolveUrl("space", "Yoge-2004/expense-tracker-backend",
+                            "database/expense_tracker.sqlite.enc"));
+        }
+
+        @Test
+        @DisplayName("a null or blank repo type means space, so existing deployments keep working")
+        void nullAndBlankDefaultToSpace() {
+            assertEquals("spaces", HuggingFaceFileClient.apiSegment(null));
+            assertEquals("spaces", HuggingFaceFileClient.apiSegment("  "));
+            assertEquals("spaces", HuggingFaceFileClient.apiSegment("SPACE"));
+        }
+
+        @Test
+        @DisplayName("dataset repos use /datasets/ for files and /api/datasets/ for commits")
+        void datasetUrls() {
+            assertEquals("https://huggingface.co/datasets/a/b/resolve/main/x.enc?download=true",
+                    HuggingFaceFileClient.resolveUrl("dataset", "a/b", "x.enc"));
+            assertEquals("https://huggingface.co/api/datasets/a/b/commit/main",
+                    HuggingFaceFileClient.commitUrl("dataset", "a/b"));
+        }
+
+        @Test
+        @DisplayName("model repos have no prefix on file URLs")
+        void modelUrlsHaveNoPrefix() {
+            assertEquals("https://huggingface.co/a/b/resolve/main/x.enc?download=true",
+                    HuggingFaceFileClient.resolveUrl("model", "a/b", "x.enc"));
+        }
+
+        @Test
+        @DisplayName("upload and download target the same Space repo through the commit and resolve URLs")
+        void spaceCommitUrl() {
+            assertEquals("https://huggingface.co/api/spaces/a/b/commit/main",
+                    HuggingFaceFileClient.commitUrl("space", "a/b"));
+        }
+
+        @Test
+        @DisplayName("repo creation body names the dataset, its owner and is private")
+        void createRepoBody() {
+            assertEquals("{\"type\":\"dataset\",\"name\":\"expense-tracker-data\","
+                            + "\"organization\":\"Yoge-2004\",\"private\":true}",
+                    HuggingFaceFileClient.createRepoBody("dataset", "Yoge-2004/expense-tracker-data", true));
+        }
+
+        @Test
+        @DisplayName("a Space is never created through the API, so ensureRepo returns without any request")
+        void ensureRepoIsNoOpForSpaces() {
+            assertDoesNotThrow(() -> HuggingFaceFileClient.ensureRepo("space", "a/b", true, "token"));
+            assertDoesNotThrow(() -> HuggingFaceFileClient.ensureRepo(null, "a/b", true, "token"));
+        }
+
+        @Test
+        @DisplayName("an unknown repo type is rejected instead of building a URL")
+        void unknownRepoTypeRejected() {
+            assertThrows(IllegalArgumentException.class, () -> HuggingFaceFileClient.apiSegment("bucket"));
+        }
+
+        @Test
+        @DisplayName("repo and path validation still apply when building URLs")
+        void validationStillApplies() {
+            assertThrows(IllegalArgumentException.class, () -> HuggingFaceFileClient.resolveUrl("space", "noslash", "x.enc"));
+            assertThrows(IllegalArgumentException.class, () -> HuggingFaceFileClient.resolveUrl("space", "a/b", "../x"));
+        }
+    }
 }
