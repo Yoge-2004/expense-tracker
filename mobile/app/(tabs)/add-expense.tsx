@@ -25,6 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
+import { notifyTransactionRecorded } from '../../services/notifications';
 import { Colors, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -35,6 +36,9 @@ import { StaggeredView } from '../../components/StaggeredView';
 import { ManageCategoriesModal } from '../../components/ManageCategoriesModal';
 import { CalendarPickerModal } from '../../components/CalendarPickerModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { ChoiceChips } from '../../components/ChoiceChips';
+import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../../utils/moneyFlow';
+import { OfflineBanner } from '../../components/OfflineBanner';
 
 interface Category {
   id: number;
@@ -78,6 +82,9 @@ export default function AddExpenseScreen() {
     editIsRecurring?: string;
     editFrequency?: string;
     editIntervalDays?: string;
+    editKind?: string;
+    editCountsToward?: string;
+    editReimbursedCategoryId?: string;
     // Savings fields
     editName?: string;
     editTargetAmount?: string;
@@ -141,6 +148,11 @@ export default function AddExpenseScreen() {
   const [incomeIsRecurring, setIncomeIsRecurring] = useState(false);
   const [incomeFrequency, setIncomeFrequency] = useState<'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | 'CUSTOM'>('MONTHLY');
   const [incomeIntervalDays, setIncomeIntervalDays] = useState('1');
+  /** '' = automatic (salary if the source says so). */
+  const [incomeKind, setIncomeKind] = useState<'' | IncomeKind>('');
+  /** '' = the month it is received. Otherwise a "YYYY-MM" the money counts toward. */
+  const [incomeCountsToward, setIncomeCountsToward] = useState('');
+  const [incomeReimbursedCategoryId, setIncomeReimbursedCategoryId] = useState<number | null>(null);
 
   // Savings Goal form state
   const [goalName, setGoalName] = useState('');
@@ -154,6 +166,22 @@ export default function AddExpenseScreen() {
   const [goalFrequency, setGoalFrequency] = useState('MONTHLY');
   const [goalIntervalDays, setGoalIntervalDays] = useState('30');
   const [categories, setCategories] = useState<Category[]>([]);
+  // "Counts toward" choices follow the date being entered: same month, next, previous
+  // (plus a stored month when editing an income assigned further away).
+  const incomeMonthOptions = React.useMemo(() => {
+    const base = monthKey(incomeDate) || monthKey(new Date());
+    const next = shiftMonth(base, 1);
+    const previous = shiftMonth(base, -1);
+    const options = [
+      { value: '', label: `Same month (${monthLabel(base)})` },
+      { value: next, label: `Next month (${monthLabel(next)})` },
+      { value: previous, label: `Previous month (${monthLabel(previous)})` },
+    ];
+    if (incomeCountsToward && !options.some((o) => o.value === incomeCountsToward)) {
+      options.push({ value: incomeCountsToward, label: monthLabel(incomeCountsToward) });
+    }
+    return options;
+  }, [incomeDate, incomeCountsToward]);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -200,6 +228,11 @@ export default function AddExpenseScreen() {
   const subFormAnim = useRef(new Animated.Value(0)).current;
 
   const [refreshing, setRefreshing] = useState(false);
+  /** True when the last attempt to load categories failed outright. */
+  const [categoriesError, setCategoriesError] = useState(false);
+  /** Bumped on every failed load so the auto-retry effect re-arms. */
+  const [categoryRetryTick, setCategoryRetryTick] = useState(0);
+  const categoryRetryCount = useRef(0);
 
   /**
    * Fetches merged global & user-defined categories with offline cache fallback.
@@ -222,10 +255,16 @@ export default function AddExpenseScreen() {
         } catch (_) {}
       }
 
-      const [globalCats, userCats] = await Promise.all([
-        apiRequest('/categories/global').catch(() => []),
-        apiRequest(`/categories/user/${userId}`).catch(() => []),
+      // allSettled (not .catch(() => [])): a failed request must not look like
+      // "there are no categories", otherwise the screen shows nothing and never
+      // tells the user or retries.
+      const [globalRes, userRes] = await Promise.allSettled([
+        apiRequest('/categories/global'),
+        apiRequest(`/categories/user/${userId}`),
       ]);
+      const globalCats = globalRes.status === 'fulfilled' ? globalRes.value : null;
+      const userCats = userRes.status === 'fulfilled' ? userRes.value : null;
+      const loadedAny = Array.isArray(globalCats) || Array.isArray(userCats);
       const merged = [
         ...(Array.isArray(globalCats) ? globalCats : []),
         ...(Array.isArray(userCats) ? userCats : []),
@@ -245,8 +284,17 @@ export default function AddExpenseScreen() {
         if (!categoryId) setCategoryId(uniqueCats[0].id);
         if (!budgetCategoryId) setBudgetCategoryId(uniqueCats[0].id);
       }
+      if (loadedAny) {
+        categoryRetryCount.current = 0;
+        setCategoriesError(false);
+      } else {
+        setCategoriesError(true);
+        setCategoryRetryTick((n) => n + 1);
+      }
     } catch (e: any) {
       console.warn('[AddExpenseScreen] Error fetching categories:', e);
+      setCategoriesError(true);
+      setCategoryRetryTick((n) => n + 1);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -258,6 +306,19 @@ export default function AddExpenseScreen() {
       loadCategories();
     }, [userId])
   );
+
+  // While categories cannot be loaded (typically the server is still waking
+  // up), retry on its own with a growing delay, up to 4 times. The Retry button
+  // and pull-to-refresh stay available after that.
+  useEffect(() => {
+    if (!categoriesError || categoryRetryCount.current >= 4) return;
+    const delay = 4000 * (categoryRetryCount.current + 1);
+    const timer = setTimeout(() => {
+      categoryRetryCount.current += 1;
+      loadCategories();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [categoriesError, categoryRetryTick]);
 
   useEffect(() => {
     loadCategories();
@@ -283,6 +344,10 @@ export default function AddExpenseScreen() {
         }
         if (params.editFrequency) setIncomeFrequency(params.editFrequency as any);
         if (params.editIntervalDays) setIncomeIntervalDays(params.editIntervalDays);
+        setIncomeKind((params.editKind as '' | IncomeKind) || '');
+        const editMonth = params.editCountsToward || '';
+        setIncomeCountsToward(editMonth && editMonth !== monthKey(params.editDate) ? editMonth : '');
+        setIncomeReimbursedCategoryId(params.editReimbursedCategoryId ? Number(params.editReimbursedCategoryId) : null);
       } else if (type === "savings") {
         setActiveTab("savings");
         if (params.editName) setGoalName(params.editName);
@@ -429,6 +494,15 @@ export default function AddExpenseScreen() {
           body: JSON.stringify(payload),
         });
 
+        // Confirm every new debit with its amount (edits do not notify).
+        notifyTransactionRecorded({
+          kind: 'DEBIT',
+          amount: numAmount,
+          currency: currSymbol,
+          label: categories.find((cat) => cat.id === categoryId)?.name ?? 'Expense',
+          detail: cleanDesc,
+        }).catch(() => {});
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert('🎉 Logged!', 'Transaction recorded successfully.', [
           { text: 'View Dashboard', onPress: () => router.replace('/(tabs)') },
@@ -470,9 +544,12 @@ export default function AddExpenseScreen() {
         amount: numAmt,
         incomeDate: incomeDate,
         description: incomeDesc.trim(),
-        isRecurring: incomeIsRecurring,
+        isRecurring: incomeKind === 'REIMBURSEMENT' ? false : incomeIsRecurring,
         frequency: incomeIsRecurring ? incomeFrequency : null,
         intervalDays: incomeIsRecurring && incomeFrequency === "CUSTOM" ? (parseInt(incomeIntervalDays, 10) || 1) : null,
+        kind: incomeKind,
+        countsTowardMonth: incomeCountsToward,
+        reimbursedCategoryId: incomeKind === 'REIMBURSEMENT' ? (incomeReimbursedCategoryId ?? 0) : 0,
       };
 
       if (isEditMode && params.editType === "income" && params.editId) {
@@ -489,6 +566,14 @@ export default function AddExpenseScreen() {
           method: "POST",
           body: JSON.stringify(payload),
         });
+        // Confirm every new credit with its amount (edits do not notify).
+        notifyTransactionRecorded({
+          kind: 'CREDIT',
+          amount: numAmt,
+          currency: currSymbol,
+          label: incomeSource.trim(),
+          detail: incomeDesc.trim() || undefined,
+        }).catch(() => {});
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert("Recorded!", "Income stream logged successfully.", [
           { text: "View Dashboard", onPress: () => router.replace("/(tabs)") },
@@ -500,6 +585,9 @@ export default function AddExpenseScreen() {
       setIncomeIsRecurring(false);
       setIncomeFrequency("MONTHLY");
       setIncomeIntervalDays("1");
+      setIncomeKind('');
+      setIncomeCountsToward('');
+      setIncomeReimbursedCategoryId(null);
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not save income record.';
       showAlert('Save Error', msg);
@@ -717,6 +805,22 @@ export default function AddExpenseScreen() {
           />
         }
       >
+        {categoriesError && (
+          <OfflineBanner
+            message={
+              categories.length > 0
+                ? 'Offline · showing saved categories'
+                : "Couldn't load categories from the server"
+            }
+            onRetry={() => {
+              categoryRetryCount.current = 0;
+              setRefreshing(true);
+              loadCategories();
+            }}
+            retrying={refreshing}
+          />
+        )}
+
         {/* Top Header */}
         <View style={[styles.header, { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }]}>
           <View style={{ flex: 1, paddingRight: 12 }}>
@@ -973,6 +1077,49 @@ export default function AddExpenseScreen() {
               </View>
 
               <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Type</Text>
+                <ChoiceChips
+                  options={[
+                    { value: '', label: 'Automatic' },
+                    { value: 'SALARY', label: 'Salary' },
+                    { value: 'OTHER', label: 'Other income' },
+                    { value: 'REIMBURSEMENT', label: 'Money back' },
+                  ]}
+                  value={incomeKind}
+                  onChange={(next) => {
+                    setIncomeKind(next as '' | IncomeKind);
+                    if (next === 'REIMBURSEMENT') setIncomeIsRecurring(false);
+                  }}
+                  colors={c}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Counts toward</Text>
+                <ChoiceChips
+                  options={incomeMonthOptions}
+                  value={incomeCountsToward}
+                  onChange={setIncomeCountsToward}
+                  colors={c}
+                />
+              </View>
+
+              {incomeKind === 'REIMBURSEMENT' && categories.length > 0 && (
+                <View style={styles.fieldGroup}>
+                  <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Pays back spending on</Text>
+                  <ChoiceChips
+                    options={[
+                      { value: 0, label: 'The month as a whole' },
+                      ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
+                    ]}
+                    value={incomeReimbursedCategoryId ?? 0}
+                    onChange={(next) => setIncomeReimbursedCategoryId(next === 0 ? null : next)}
+                    colors={c}
+                  />
+                </View>
+              )}
+
+              <View style={[styles.fieldGroup, incomeKind === 'REIMBURSEMENT' && styles.hiddenGroup]}>
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={() => setIncomeIsRecurring(!incomeIsRecurring)}
@@ -989,7 +1136,7 @@ export default function AddExpenseScreen() {
                 </TouchableOpacity>
               </View>
 
-              {incomeIsRecurring && (
+              {incomeIsRecurring && incomeKind !== 'REIMBURSEMENT' && (
                 <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: "rgba(16, 185, 129, 0.3)" }]}>
                   <Text style={[styles.recurringBoxLabel, { color: "#10B981" }]}>PAYMENT CADENCE</Text>
                   <View style={styles.freqRow}>
@@ -2046,6 +2193,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.6,
     marginBottom: 8,
+  },
+  hiddenGroup: {
+    display: 'none',
   },
   freqRow: {
     flexDirection: 'row',

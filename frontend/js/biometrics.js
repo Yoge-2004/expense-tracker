@@ -143,7 +143,11 @@ const WebBiometrics = (() => {
         });
     };
 
-    const authenticate = async () => {
+    /**
+     * Runs the passkey assertion ceremony against the given options endpoint and returns the signed
+     * assertion. Sign-in and password recovery share it so they behave identically.
+     */
+    const getAssertion = async (optionsPath, action) => {
         const diagnostics = await getDiagnostics();
         if (!diagnostics.available) {
             if (diagnostics.reason === "secure-context-required") {
@@ -155,12 +159,12 @@ const WebBiometrics = (() => {
             throw new Error("WebAuthn is not available in this browser.");
         }
 
-        const start = await apiRequest("/webauthn/login/options", {
+        const start = await apiRequest(optionsPath, {
             method: "POST",
             skipAuthRedirect: true
         });
         if (!start?.transactionId || !start?.publicKey) {
-            throw new Error("Unable to start biometric sign-in. Please try again.");
+            throw new Error(`Unable to start ${action}. Please try again.`);
         }
 
         let credential;
@@ -169,25 +173,43 @@ const WebBiometrics = (() => {
                 publicKey: prepareRequestOptions(start.publicKey)
             });
         } catch (error) {
-            if (error?.name === "NotAllowedError") throw new Error("Biometric sign-in was cancelled or timed out.");
+            if (error?.name === "NotAllowedError") throw new Error(`${action[0].toUpperCase()}${action.slice(1)} was cancelled or timed out.`);
             if (error?.name === "SecurityError") throw new Error("This site's origin is not permitted for biometric authentication.");
             throw new Error(error?.message || "The device could not verify your biometric credential.");
         }
         if (!credential) throw new Error("The device did not return a biometric assertion.");
 
+        return {
+            transactionId: start.transactionId,
+            credential: JSON.stringify(serializeCredential(credential))
+        };
+    };
+
+    const authenticate = async () => {
+        const assertion = await getAssertion("/webauthn/login/options", "biometric sign-in");
         const finish = await apiRequest("/webauthn/login/finish", {
             method: "POST",
             skipAuthRedirect: true,
-            body: JSON.stringify({
-                transactionId: start.transactionId,
-                credential: JSON.stringify(serializeCredential(credential))
-            })
+            body: JSON.stringify(assertion)
         });
         if (!finish?.token || !finish?.userId) throw new Error("Biometric sign-in returned an incomplete session.");
         return finish;
     };
 
-    return Object.freeze({ getDiagnostics, isAvailable, enroll, authenticate });
+    /**
+     * Resets a forgotten password with a passkey. The new password is sent together with the signed
+     * assertion; the server verifies the assertion first and only then changes the password.
+     */
+    const recover = async (newPassword) => {
+        const assertion = await getAssertion("/webauthn/recovery/options", "password reset");
+        await apiRequest("/webauthn/recovery/finish", {
+            method: "POST",
+            skipAuthRedirect: true,
+            body: JSON.stringify({ ...assertion, newPassword })
+        });
+    };
+
+    return Object.freeze({ getDiagnostics, isAvailable, enroll, authenticate, recover });
 })();
 
 window.WebBiometrics = WebBiometrics;

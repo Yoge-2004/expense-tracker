@@ -27,9 +27,7 @@
             const state = getState();
             const safeCategories = Array.isArray(categories) ? categories : [];
             const currentExpenses = Array.isArray(state.allExpenses) ? state.allExpenses : [];
-            const incomingExpenses = expenses && expenses.length > 0
-                ? expenses
-                : ((window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : currentExpenses);
+            const incomingExpenses = expenses && expenses.length > 0 ? expenses : currentExpenses;
 
             // Sort a copy so cached/shared arrays are not mutated in place. This
             // keeps state ownership explicit and prevents one render from changing

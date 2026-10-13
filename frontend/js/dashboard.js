@@ -71,7 +71,7 @@ const dashboardDataController = window.DashboardData.createController({
     updateCashFlowMetrics,
     renderFinancialData: (expenses) => {
         loadBudgets();
-        updateProMetrics(expenses);
+        updateProMetrics(expenses, allIncomes);
     },
     showToast,
     clearApiCache: window.clearApiCache
@@ -88,12 +88,12 @@ window.loadDashboard = loadDashboard;
 /**
  * Computes and renders real-time financial insights into the Smart Intelligence panel.
  */
-function renderFinancialInsights(expenses) {
-    return window.DashboardInsights.renderFinancialInsights(
-        expenses,
-        allIncomes,
-        allSavingsGoals
-    );
+function renderFinancialInsights(expenses, incomes = allIncomes, goals = allSavingsGoals) {
+    // The filter controller passes the already-filtered incomes alongside the
+    // filtered expenses. Defaulting (instead of ignoring the parameters) keeps
+    // single-argument callers working while stopping a month/year filter from
+    // pairing filtered outflow with all-time inflow.
+    return window.DashboardInsights.renderFinancialInsights(expenses, incomes, goals);
 }
 
 window.renderFinancialInsights = renderFinancialInsights;
@@ -114,6 +114,7 @@ const dashboardBudgetController = window.DashboardBudget.createController({
     appConfirm: window.appConfirm,
     openModal,
     closeModal,
+    getExpenses: () => allExpenses,
     getCachedBudgets: () => cachedBudgets,
     setCachedBudgets: (next) => {
         cachedBudgets = Array.isArray(next) ? next : [];
@@ -452,6 +453,17 @@ elements.addForm.addEventListener("submit", async (e) => {
             savedExpense = await apiRequest(`/expenses/user/${userId}`, { method: "POST", body: JSON.stringify(expenseData) });
             celebrateSuccess(e.clientX, e.clientY);
             showToast("Expense added.", "success");
+        }
+
+        // Confirm every NEW debit with its amount (edits do not notify).
+        if (!id) {
+            const category = (allCategories || []).find(c => String(c.id) === String(expenseData.categoryId));
+            window.DashboardNotifications?.notifyTransactionRecorded({
+                kind: "DEBIT",
+                amount: expenseData.amount,
+                label: category ? category.name : "Expense",
+                detail: expenseData.description
+            });
         }
 
         if (window.DashboardML && typeof window.DashboardML.onExpenseSaved === "function") {
@@ -806,7 +818,7 @@ function refreshAllCurrencyDisplays() {
     updateModalLabels();
     initCurrencyPlaceholders();
     if (Array.isArray(allExpenses)) {
-        updateProMetrics(allExpenses);
+        updateProMetrics(allExpenses, allIncomes);
         applyFilters();
     }
     updateCashFlowMetrics(allExpenses || [], allIncomes || [], allSavingsGoals || []);
@@ -1173,7 +1185,7 @@ function triggerFileDownload(blob, filename) {
 }
 
 function exportExpensesClientSideExcel() {
-    const list = (window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : (Array.isArray(allExpenses) ? allExpenses : []);
+    const list = Array.isArray(allExpenses) ? allExpenses : [];
     const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
     const headers = ["ID", "Date", "Category", `Amount (${activeCurr})`, "Description", "Recurring"];
     const rows = list.map((e, idx) => [
@@ -1190,7 +1202,7 @@ function exportExpensesClientSideExcel() {
 }
 
 function exportIncomesClientSideExcel() {
-    const list = (window.allIncomes && window.allIncomes.length > 0) ? window.allIncomes : (Array.isArray(allIncomes) ? allIncomes : []);
+    const list = Array.isArray(allIncomes) ? allIncomes : [];
     const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
     const headers = ["ID", "Date", "Source", `Amount (${activeCurr})`, "Description", "Recurring"];
     const rows = list.map((inc, idx) => [
@@ -1588,8 +1600,8 @@ async function loadSubscriptions() {
     }
 
     try {
-        const activeExpenses = (window.allExpenses && window.allExpenses.length > 0) ? window.allExpenses : (allExpenses || []);
-        const activeIncomes = (window.allIncomes && window.allIncomes.length > 0) ? window.allIncomes : (allIncomes || []);
+        const activeExpenses = allExpenses || [];
+        const activeIncomes = allIncomes || [];
 
         const isFileOrOffline = window.location.protocol === "file:" || !navigator.onLine || window.location.search.includes("test_mock_auth") || !userId;
         const [subs, incs, savs] = await Promise.all([
@@ -1838,6 +1850,7 @@ window.editIncomeFromSubsModal = (incId) => {
     document.getElementById("incomeAmount").value = inc.amount || "";
     document.getElementById("incomeDate").value = inc.incomeDate || new Date().toISOString().split("T")[0];
     document.getElementById("incomeDesc").value = inc.description || "";
+    setIncomeClassification(inc.kind, inc.countsTowardMonth, inc.reimbursedCategoryId);
 
     const isRec = !!(inc.isRecurring || inc.recurring);
     const incRecEl = document.getElementById("incomeIsRecurring");
@@ -2146,9 +2159,12 @@ document.addEventListener("click", (e) => {
 
 function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
     document.querySelectorAll(".grid-4-metrics .metric-card").forEach(card => card.classList.remove("is-loading"));
-    const totalSpent = (expenses || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-    const totalIncome = (incomes || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    // Income excludes reimbursements; money that came back reduces spending instead.
+    const totalSpent = window.MoneyFlow.netSpent(expenses || [], incomes || []);
+    const totalIncome = window.MoneyFlow.earnedTotal(incomes || []);
     const netCashFlow = totalIncome - totalSpent;
+    // The monthly panel always reads the full data set, even when the cards show a filtered view.
+    window.DashboardMoneyFlow?.render(allExpenses, allIncomes, allSavingsGoals);
     const recurringIncomes = (incomes || []).filter(i => i.isRecurring || i.recurring).length;
     const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100) : 0;
     const totalSaved = (savingsGoals || []).reduce((acc, curr) => acc + Number(curr.currentAmount || 0), 0);
@@ -2398,6 +2414,7 @@ function renderIncomesTableOnly(incomes) {
                                         <span>${getIncomeSourceEmoji(inc.source)}</span>
                                     </div>
                                     <span style="font-weight:600; color:var(--text-main); font-size:13.5px;">${escapeHtml(inc.source || "Income")}</span>
+                                    ${incomeClassificationTags(inc)}
                                 </div>
                             </td>
                             <td class="income-desc-cell" style="padding:10px 12px; color:var(--text-muted); font-size:13px; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(inc.description || "")}">${escapeHtml(inc.description || "—")}</td>
@@ -2410,7 +2427,7 @@ function renderIncomesTableOnly(incomes) {
                                 +${formatCurrency(inc.amount)}
                             </td>
                             <td style="padding:12px 14px; text-align:center;">
-                                <button class="btn-icon edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${isRec}" data-inc-freq="${escapeHtml(inc.frequency || "MONTHLY")}" data-inc-interval="${inc.intervalDays || 1}" title="Edit Income" style="color:var(--text-muted); margin-right:4px;">
+                                <button class="btn-icon edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${isRec}" data-inc-freq="${escapeHtml(inc.frequency || "MONTHLY")}" data-inc-interval="${inc.intervalDays || 1}" data-inc-kind="${escapeHtml(inc.kind || "")}" data-inc-month="${escapeHtml(inc.countsTowardMonth || "")}" data-inc-cat="${inc.reimbursedCategoryId || ""}" title="Edit Income" style="color:var(--text-muted); margin-right:4px;">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 </button>
                                 <button class="btn-icon delete-income-btn" data-income-id="${inc.id}" title="Delete Income" style="color:var(--text-muted);">
@@ -2433,6 +2450,7 @@ function renderIncomesTableOnly(incomes) {
             document.getElementById("incomeAmount").value = btn.getAttribute("data-inc-amount") || "";
             document.getElementById("incomeDate").value = btn.getAttribute("data-inc-date") || new Date().toISOString().split("T")[0];
             document.getElementById("incomeDesc").value = btn.getAttribute("data-inc-desc") || "";
+            setIncomeClassification(btn.getAttribute("data-inc-kind"), btn.getAttribute("data-inc-month"), btn.getAttribute("data-inc-cat"));
 
             const isRec = btn.getAttribute("data-inc-recurring") === "true";
             const incRecEl = document.getElementById("incomeIsRecurring");
@@ -2482,7 +2500,7 @@ function renderIncomesTableOnly(incomes) {
 }
 
 function openEditSavingsGoal(goalId) {
-    const goal = (window.allSavingsGoals || allSavingsGoals || []).find(g => String(g.id) === String(goalId));
+    const goal = (allSavingsGoals || []).find(g => String(g.id) === String(goalId));
     if (!goal || !savingsGoalModal) return;
     document.getElementById("goalId").value = goal.id;
     document.getElementById("goalName").value = goal.name || "";
@@ -2521,7 +2539,6 @@ window.openEditSavingsGoal = openEditSavingsGoal;
 
 function renderIncomes(incomes) {
     allIncomes = Array.isArray(incomes) ? incomes : [];
-    window.allIncomes = allIncomes;
     applyIncomeFilters();
     updateStreamBadges();
 }
@@ -2529,7 +2546,6 @@ window.renderIncomes = renderIncomes;
 
 function renderSavingsGoals(goals) {
     allSavingsGoals = Array.isArray(goals) ? goals : [];
-    window.allSavingsGoals = allSavingsGoals;
     const container = document.getElementById("savingsGoalsList");
     if (!container) return;
     if (!allSavingsGoals || allSavingsGoals.length === 0) {
@@ -2664,6 +2680,7 @@ function openNewIncomeModal() {
     if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
     const descEl = document.getElementById("incomeDesc");
     if (descEl) descEl.value = "";
+    setIncomeClassification("", "", "");
     const recEl = document.getElementById("incomeIsRecurring");
     if (recEl) recEl.checked = false;
     const incFreqEl = document.getElementById("incomeRecurringFrequency");
@@ -2707,6 +2724,72 @@ function updateIncomeRecurrenceUI() {
     }
     syncIncomeRecurringIntervalVisibility();
 }
+
+// ---- Income classification: type, which month it counts toward, and what a reimbursement pays back
+function refreshIncomeMonthOptions(selected) {
+    const select = document.getElementById("incomeCountsToward");
+    if (!select) return;
+    const MoneyFlow = window.MoneyFlow;
+    const base = MoneyFlow.monthKey(document.getElementById("incomeDate")?.value) || MoneyFlow.monthKey(new Date());
+    const keep = selected !== undefined ? selected : select.value;
+    const options = [
+        ["", `Same month it is received (${MoneyFlow.monthLabel(base)})`],
+        [MoneyFlow.shiftMonth(base, 1), `Next month (${MoneyFlow.monthLabel(MoneyFlow.shiftMonth(base, 1))})`],
+        [MoneyFlow.shiftMonth(base, -1), `Previous month (${MoneyFlow.monthLabel(MoneyFlow.shiftMonth(base, -1))})`]
+    ];
+    if (keep && !options.some(([value]) => value === keep)) options.push([keep, MoneyFlow.monthLabel(keep)]);
+    select.innerHTML = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+    select.value = options.some(([value]) => value === keep) ? keep : "";
+}
+
+function populateReimbursedCategories(selectedId) {
+    const select = document.getElementById("incomeReimbursedCategory");
+    if (!select) return;
+    const options = (allCategories || [])
+        .map(c => `<option value="${c.id}">${escapeHtml(c.name || "")}</option>`)
+        .join("");
+    select.innerHTML = `<option value="">The month as a whole</option>${options}`;
+    select.value = selectedId ? String(selectedId) : "";
+}
+
+function syncIncomeKindUI() {
+    const isReimbursement = document.getElementById("incomeKind")?.value === "REIMBURSEMENT";
+    const categoryGroup = document.getElementById("incomeReimbursedGroup");
+    if (categoryGroup) categoryGroup.hidden = !isReimbursement;
+    // Money coming back is a one-off, never a recurring stream.
+    const recurringWrap = incomeIsRecurringEl?.closest("label")?.parentElement;
+    if (recurringWrap) recurringWrap.hidden = isReimbursement;
+    if (isReimbursement && incomeIsRecurringEl?.checked) {
+        incomeIsRecurringEl.checked = false;
+        updateIncomeRecurrenceUI();
+    }
+}
+
+/** Fill the three classification fields. The API reports the month a record counts toward even when it
+ *  is simply the month of its date, so that case is shown as "same month". */
+function setIncomeClassification(kind, countsTowardMonth, reimbursedCategoryId) {
+    const kindEl = document.getElementById("incomeKind");
+    if (kindEl) kindEl.value = kind || "";
+    const dateMonth = window.MoneyFlow.monthKey(document.getElementById("incomeDate")?.value);
+    refreshIncomeMonthOptions(countsTowardMonth && countsTowardMonth !== dateMonth ? countsTowardMonth : "");
+    populateReimbursedCategories(reimbursedCategoryId);
+    syncIncomeKindUI();
+}
+
+/** Small tags on an income row: "Money back" and, when it was assigned elsewhere, the month it counts toward. */
+function incomeClassificationTags(inc) {
+    const MoneyFlow = window.MoneyFlow;
+    const tags = [];
+    if (MoneyFlow.kindOf(inc) === "REIMBURSEMENT") tags.push('<span class="income-tag income-tag--back">Money back</span>');
+    const counted = MoneyFlow.effectiveMonth(inc);
+    if (counted && counted !== MoneyFlow.monthKey(inc.incomeDate)) {
+        tags.push(`<span class="income-tag income-tag--moved">Counts toward ${MoneyFlow.monthLabel(counted)}</span>`);
+    }
+    return tags.length ? `<span class="income-tags">${tags.join("")}</span>` : "";
+}
+
+document.getElementById("incomeKind")?.addEventListener("change", syncIncomeKindUI);
+document.getElementById("incomeDate")?.addEventListener("change", () => refreshIncomeMonthOptions());
 
 incomeIsRecurringEl?.addEventListener("change", updateIncomeRecurrenceUI);
 incomeRecurringFrequencyEl?.addEventListener("change", syncIncomeRecurringIntervalVisibility);
@@ -2813,7 +2896,12 @@ incomeForm?.addEventListener("submit", async (e) => {
         description: (descEl?.value || "").trim(),
         isRecurring: isRecurring,
         frequency: frequency,
-        intervalDays: intervalDays
+        intervalDays: intervalDays,
+        kind: document.getElementById("incomeKind")?.value || "",
+        countsTowardMonth: document.getElementById("incomeCountsToward")?.value || "",
+        reimbursedCategoryId: document.getElementById("incomeKind")?.value === "REIMBURSEMENT"
+            ? (Number(document.getElementById("incomeReimbursedCategory")?.value) || 0)
+            : 0
     };
 
     try {
@@ -2831,6 +2919,13 @@ incomeForm?.addEventListener("submit", async (e) => {
             });
             celebrateSuccess(e.clientX, e.clientY);
             showToast("Income recorded successfully!", "success");
+            // Confirm every NEW credit with its amount (edits do not notify).
+            window.DashboardNotifications?.notifyTransactionRecorded({
+                kind: "CREDIT",
+                amount: payload.amount,
+                label: payload.source,
+                detail: payload.description
+            });
         }
         closeModal(incomeModal);
         await loadDashboard(true);
@@ -3697,8 +3792,8 @@ if (document.readyState === "loading") {
 }
 
 function updateStreamBadges() {
-    const expCount = (window.allExpenses || allExpenses || []).length;
-    const incCount = (window.allIncomes || allIncomes || []).length;
+    const expCount = (allExpenses || []).length;
+    const incCount = (allIncomes || []).length;
     const totalCount = expCount + incCount;
     
     const bAll = document.getElementById("badgeAllCount");

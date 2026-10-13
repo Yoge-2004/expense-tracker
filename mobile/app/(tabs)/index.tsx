@@ -14,7 +14,7 @@
  * - Pull-to-refresh and local cache hydration with exception recovery.
  */
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react';
 import {
   StyleSheet,
   Text,
@@ -35,7 +35,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
-import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
+import { scheduleSmartReminders } from '../../services/notifications';
+import { Colors, getCategoryColor, getCategoryEmoji, ThemeColors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -56,6 +57,8 @@ import {
 import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
+import { OfflineBanner } from '../../components/OfflineBanner';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -99,6 +102,10 @@ interface Income {
   recurring?: boolean;
   frequency?: string;
   intervalDays?: number;
+  kind?: string;
+  countsTowardMonth?: string;
+  reimbursedCategoryId?: number | null;
+  nextDueDate?: string | null;
 }
 
 interface SavingsGoal {
@@ -112,6 +119,7 @@ interface SavingsGoal {
   recurringAmount?: number;
   frequency?: string;
   intervalDays?: number;
+  nextDueDate?: string | null;
 }
 
 interface Subscription {
@@ -119,16 +127,178 @@ interface Subscription {
   description: string;
   amount: number;
   frequency: string;
+  nextDueDate?: string | null;
 }
 
 /**
  * Main dashboard screen component.
  */
 
+interface UnifiedTxItem {
+  id: number;
+  uniqueKey: string;
+  type: "expense" | "income";
+  title: string;
+  categoryOrSource: string;
+  amount: number;
+  date: string;
+  isRecurring: boolean;
+  expenseRaw?: Expense;
+  incomeRaw?: Income;
+}
+
+/** How many ledger rows are drawn at a time; more load as you scroll or tap "Show more". */
+const PAGE_SIZE = 25;
+
+interface TransactionRowProps {
+  tx: UnifiedTxItem;
+  colors: ThemeColors;
+  currSymbol: string;
+  onPress: (tx: UnifiedTxItem) => void;
+  onEdit: (tx: UnifiedTxItem) => void;
+  onDelete: (tx: UnifiedTxItem) => void;
+}
+
+/**
+ * One ledger row. Memoised: it redraws only when its own transaction, the theme or the currency
+ * changes, so typing in search, scrolling or unrelated state changes on the screen do not repaint
+ * every row.
+ */
+const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, onPress, onEdit, onDelete }: TransactionRowProps) {
+  const isIncome = tx.type === "income";
+  const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => onPress(tx)}
+      onLongPress={() => onPress(tx)}
+      style={[styles.txCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+    >
+      <View style={styles.txLeft}>
+        <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
+          {isIncome ? (
+            <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
+          ) : (
+            <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
+          )}
+        </View>
+        <View style={styles.txMeta}>
+          <Text style={[styles.txDesc, { color: colors.text }]} numberOfLines={1}>
+            {tx.title}
+          </Text>
+          <View style={styles.txSubRow}>
+            <Text style={[styles.txCatName, { color: catColor }]}>
+              {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
+            </Text>
+            <Text style={[styles.txDot, { color: colors.textMuted }]}>•</Text>
+            <Text style={[styles.txDate, { color: colors.textMuted }]}>{tx.date}</Text>
+            {tx.isRecurring && (
+              <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : colors.primary) + "18" }]}>
+                <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : colors.primary} />
+                <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : colors.primary }]}>
+                  {isIncome ? "Recurring Inflow" : "Sub"}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.txRight}>
+        <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : colors.text, fontWeight: "800" }]}>
+          {isIncome ? "+" : "-"}{currSymbol}
+          {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+        </Text>
+        <View style={styles.txRowActions}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              onEdit(tx);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+            accessibilityLabel="Edit transaction"
+          >
+            <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              onDelete(tx);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+            accessibilityLabel="Delete transaction"
+          >
+            <Ionicons name="trash-outline" size={12} color={colors.accent} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+/**
+ * The ledger search box. It owns the text being typed, so typing and the clear button update at once;
+ * the filtering of the list follows shortly after (and immediately on clear), without holding the
+ * input back.
+ */
+function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; colors: ThemeColors }) {
+  const [text, setText] = useState('');
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const change = (value: string) => {
+    setText(value);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => onSearch(value), 200);
+  };
+
+  const clear = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setText('');
+    onSearch('');
+  };
+
+  return (
+    <View style={[styles.searchBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+      <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
+      <TextInput
+        style={[styles.searchInput, { color: colors.text }]}
+        placeholder="Search description or category..."
+        placeholderTextColor={colors.textMuted}
+        value={text}
+        onChangeText={change}
+        returnKeyType="search"
+      />
+      {text.length > 0 && (
+        <TouchableOpacity onPress={clear} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Clear search">
+          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
+
+  // Unread count for the bell, refreshed whenever this screen comes into focus.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      apiRequest(`/notifications/user/${userId}?limit=1`)
+        .then((inbox) => setUnreadNotifications(inbox?.unreadCount || 0))
+        .catch(() => {});
+    }, [userId])
+  );
   const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
   const isLight = theme === 'light';
@@ -155,6 +325,10 @@ export default function DashboardScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  /** True when the main data loaded but categories, incomes or goals did not. */
+  const [partialError, setPartialError] = useState(false);
+  /** Unread notifications, shown as a badge on the bell. */
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [cachedTime, setCachedTime] = useState<string | null>(null);
 
   // Filters state
@@ -217,11 +391,13 @@ export default function DashboardScreen() {
       const [expensesData, budgetsData, globalCats, userCats, subsData, incomesData, savingsData] = await Promise.all([
         apiRequest(`/expenses/user/${userId}`),
         apiRequest(`/expenses/budget/status/user/${userId}`),
-        apiRequest(`/categories/global`).catch(() => []),
-        apiRequest(`/categories/user/${userId}`).catch(() => []),
+        // null (not []) marks a failed request, so a transient error is never
+        // mistaken for "the user has no categories/incomes/goals".
+        apiRequest(`/categories/global`).catch(() => null),
+        apiRequest(`/categories/user/${userId}`).catch(() => null),
         apiRequest(`/expenses/recurring/user/${userId}`),
-        apiRequest(`/incomes/user/${userId}`).catch(() => []),
-        apiRequest(`/savings/goals/user/${userId}`).catch(() => []),
+        apiRequest(`/incomes/user/${userId}`).catch(() => null),
+        apiRequest(`/savings/goals/user/${userId}`).catch(() => null),
       ]);
 
       const safeExp = Array.isArray(expensesData) ? expensesData : [];
@@ -242,22 +418,32 @@ export default function DashboardScreen() {
         }
       });
 
+      // Keep what we already had for any optional list whose request failed.
+      // Previously a failed categories request replaced the list with [] and
+      // saveCache() wrote that empty list to disk, wiping the cached
+      // categories the Add tab hydrates from.
+      const categoriesLoaded = Array.isArray(globalCats) || Array.isArray(userCats);
+      const nextCategories = categoriesLoaded ? safeCat : categories;
+      const nextIncomes = Array.isArray(incomesData) ? incomesData : incomes;
+      const nextSavingsGoals = Array.isArray(savingsData) ? savingsData : savingsGoals;
+
       setExpenses(safeExp);
       setBudgets(safeBud);
-      setCategories(safeCat);
+      setCategories(nextCategories);
       setSubscriptions(safeSub);
-      setIncomes(Array.isArray(incomesData) ? incomesData : []);
-      setSavingsGoals(Array.isArray(savingsData) ? savingsData : []);
+      setIncomes(nextIncomes);
+      setSavingsGoals(nextSavingsGoals);
       setFetchError(null);
+      setPartialError(!categoriesLoaded || !Array.isArray(incomesData) || !Array.isArray(savingsData));
       setCachedTime(null);
 
       saveCache({
         expenses: safeExp,
         budgets: safeBud,
-        categories: safeCat,
+        categories: nextCategories,
         subscriptions: safeSub,
-        incomes: Array.isArray(incomesData) ? incomesData : [],
-        savingsGoals: Array.isArray(savingsData) ? savingsData : [],
+        incomes: nextIncomes,
+        savingsGoals: nextSavingsGoals,
       });
     } catch (err: any) {
       console.warn('[Dashboard] Error fetching dashboard data:', err);
@@ -294,6 +480,13 @@ export default function DashboardScreen() {
       loadWithCache();
     }, [userId])
   );
+
+  // Keep the on-device bill, salary and savings reminders in step with the data on screen. Same
+  // mechanism as the 1:30 PM and 8:30 PM reminders: scheduled on the phone, no server needed.
+  useEffect(() => {
+    if (isLoading) return;
+    scheduleSmartReminders({ currency: currSymbol, subscriptions, incomes, goals: savingsGoals }).catch(() => {});
+  }, [isLoading, subscriptions, incomes, savingsGoals, currSymbol]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -340,6 +533,9 @@ export default function DashboardScreen() {
           editIsRecurring: String(tx.incomeRaw?.isRecurring || false),
           editFrequency: tx.incomeRaw?.frequency || "MONTHLY",
           editIntervalDays: String(tx.incomeRaw?.intervalDays || "1"),
+          editKind: tx.incomeRaw?.kind || "",
+          editCountsToward: tx.incomeRaw?.countsTowardMonth || "",
+          editReimbursedCategoryId: String(tx.incomeRaw?.reimbursedCategoryId || ""),
         },
       });
     }
@@ -551,8 +747,7 @@ export default function DashboardScreen() {
     const isCustom = datePreset === 'custom';
     const nowD = new Date();
     const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
-    const nowMonth = isMonth ? nowD.getMonth() : -1;
-    const nowYear = isMonth ? nowD.getFullYear() : -1;
+    const thisMonth = isMonth ? monthKey(nowD) : '';
     const thirtyAgo = isLast30 ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : null;
 
     return incomes.filter((inc) => {
@@ -570,8 +765,8 @@ export default function DashboardScreen() {
           if (isToday) {
             matchDate = incDStr === todayStr;
           } else if (isMonth) {
-            const incD = new Date(dateStr);
-            matchDate = incD.getMonth() === nowMonth && incD.getFullYear() === nowYear;
+            // An income counts toward the month it is FOR (salary paid on the 30th for next month).
+            matchDate = effectiveMonth(inc) === thisMonth;
           } else if (isLast30 && thirtyAgo) {
             matchDate = new Date(dateStr) >= thirtyAgo;
           } else if (isCustom) {
@@ -607,8 +802,9 @@ export default function DashboardScreen() {
     highestCatName,
     highestCatAmt,
   } = useMemo(() => {
-    const spent = dashboardExpenses.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
-    const income = dashboardIncomes.reduce((sum, item) => sum + Math.max(0, Number(item.amount || 0)), 0);
+    // Money handed back reduces spending and is not income.
+    const spent = netSpent(dashboardExpenses, dashboardIncomes);
+    const income = earnedTotal(dashboardIncomes);
     const net = income - spent;
     const rate = income > 0 ? ((net / income) * 100).toFixed(1) : "0.0";
 
@@ -620,7 +816,11 @@ export default function DashboardScreen() {
       const d = new Date(e.expenseDate);
       return d.getMonth() === nowD.getMonth() && d.getFullYear() === nowD.getFullYear();
     });
-    const cMonthSpent = currentMonthExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+    const thisMonth = monthKey(nowD);
+    const cMonthSpent = netSpent(
+      currentMonthExpenses,
+      dashboardIncomes.filter((i) => effectiveMonth(i) === thisMonth)
+    );
     const burn = cMonthSpent / cDay;
     const forecast = burn * dInMonth;
 
@@ -647,19 +847,6 @@ export default function DashboardScreen() {
       highestCatAmt: topCatAmt,
     };
   }, [dashboardExpenses, dashboardIncomes]);
-
-  interface UnifiedTxItem {
-    id: number;
-    uniqueKey: string;
-    type: "expense" | "income";
-    title: string;
-    categoryOrSource: string;
-    amount: number;
-    date: string;
-    isRecurring: boolean;
-    expenseRaw?: Expense;
-    incomeRaw?: Income;
-  }
 
   // Unified chronological ledger (memoized across theme changes)
   const unifiedTransactions: UnifiedTxItem[] = useMemo(() => {
@@ -724,6 +911,28 @@ export default function DashboardScreen() {
       return 0;
     });
   }, [ledgerTab, filteredExpenses, filteredIncomes, sortOption]);
+
+  // Only the first page of rows is drawn; it grows as you scroll. Filtering or re-sorting starts over.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
+  const visibleTransactions = useMemo(
+    () => unifiedTransactions.slice(0, visibleCount),
+    [unifiedTransactions, visibleCount]
+  );
+
+  // Rows are memoised, so the handlers they receive must keep the same identity between renders.
+  const rowActions = useRef({ press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete });
+  rowActions.current = { press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete };
+  const onRowPress = useCallback((tx: UnifiedTxItem) => rowActions.current.press(tx), []);
+  const onRowEdit = useCallback((tx: UnifiedTxItem) => rowActions.current.edit(tx), []);
+  const onRowDelete = useCallback((tx: UnifiedTxItem) => rowActions.current.remove(tx), []);
+
+  // The search text is typed in SearchField; applying it to the list is a non-urgent update.
+  const handleSearch = useCallback((query: string) => {
+    startTransition(() => setSearchQuery(query));
+  }, []);
 
   if (!isLoading && fetchError && expenses.length === 0) {
     return (
@@ -813,37 +1022,37 @@ export default function DashboardScreen() {
               <Ionicons name="share-outline" size={18} color={c.primary} />
             </TouchableOpacity>
 
+            {/* Notification inbox with unread badge */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.push('/notifications' as any)}
+              style={[styles.topActionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+              accessibilityLabel={unreadNotifications > 0 ? `Notifications, ${unreadNotifications} unread` : 'Notifications'}
+            >
+              <Ionicons name="notifications-outline" size={18} color={c.primary} />
+              {unreadNotifications > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             {/* Modern Instant-Feedback Theme Toggle Button */}
             <ThemeToggleBtn />
           </View>
         </View>
 
-        {/* Offline / Cached Data Banner */}
-        {fetchError && expenses.length > 0 && (
-          <View
-            style={[styles.offlineBanner, { backgroundColor: '#C79A3E18', borderColor: '#C79A3E40' }]}
-          >
-            <Ionicons name="cloud-offline" size={16} color="#C79A3E" />
-            <Text style={[styles.offlineBannerText, { color: '#C79A3E' }]}>
-              Offline mode {cachedTime ? `· Cached at ${cachedTime}` : ''}
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              disabled={refreshing}
-              onPress={() => fetchData(true)}
-              style={styles.retryPillBtn}
-              accessibilityLabel="Retry Connection"
-            >
-              {refreshing ? (
-                <ActivityIndicator size="small" color="#10120E" />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={12} color="#10120E" />
-                  <Text style={styles.retryPillText}>Retry</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+        {/* Offline / Cached Data Banner (only the Retry button is pressable) */}
+        {(fetchError || partialError) && expenses.length > 0 && (
+          <OfflineBanner
+            message={
+              fetchError
+                ? `Offline mode${cachedTime ? ` · Cached at ${cachedTime}` : ''}`
+                : "Some data couldn't be refreshed"
+            }
+            onRetry={() => fetchData(true)}
+            retrying={refreshing}
+          />
         )}
 
         {/* =========================================
@@ -1177,21 +1386,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Search Input */}
-            <View style={[styles.searchBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-              <Ionicons name="search" size={16} color={c.textMuted} style={styles.searchIcon} />
-              <TextInput
-                style={[styles.searchInput, { color: c.text }]}
-                placeholder="Search description or category..."
-                placeholderTextColor={c.textMuted}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={16} color={c.textMuted} />
-                </TouchableOpacity>
-              )}
-            </View>
+            <SearchField onSearch={handleSearch} colors={c} />
 
             {/* Category Filter Pills & Custom Date Presets */}
             <CategoryPillsBar
@@ -1265,84 +1460,39 @@ export default function DashboardScreen() {
                   style={styles.innerListScroll}
                   nestedScrollEnabled={true}
                   showsVerticalScrollIndicator={true}
+                  scrollEventThrottle={100}
+                  onScroll={({ nativeEvent }) => {
+                    // Load the next page a little before the bottom is reached.
+                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 240) {
+                      setVisibleCount((n) => (n < unifiedTransactions.length ? n + PAGE_SIZE : n));
+                    }
+                  }}
                 >
                   <View style={styles.transactionsList}>
-                    {unifiedTransactions.map((tx) => {
-                      const isIncome = tx.type === "income";
-                      const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
-                      return (
-                        <TouchableOpacity
-                          key={tx.uniqueKey}
-                          activeOpacity={0.7}
-                          onPress={() => handleTransactionPress(tx)}
-                          onLongPress={() => handleTransactionPress(tx)}
-                          style={[styles.txCard, { backgroundColor: c.inputBg, borderColor: c.border }]}
-                        >
-                          <View style={styles.txLeft}>
-                            <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
-                              {isIncome ? (
-                                <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
-                              ) : (
-                                <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
-                              )}
-                            </View>
-                            <View style={styles.txMeta}>
-                              <Text style={[styles.txDesc, { color: c.text }]} numberOfLines={1}>
-                                {tx.title}
-                              </Text>
-                              <View style={styles.txSubRow}>
-                                <Text style={[styles.txCatName, { color: catColor }]}>
-                                  {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
-                                </Text>
-                                <Text style={[styles.txDot, { color: c.textMuted }]}>•</Text>
-                                <Text style={[styles.txDate, { color: c.textMuted }]}>{tx.date}</Text>
-                                {tx.isRecurring && (
-                                  <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : c.primary) + "18" }]}>
-                                    <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : c.primary} />
-                                    <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : c.primary }]}>
-                                      {isIncome ? "Recurring Inflow" : "Sub"}
-                                    </Text>
-                                  </View>
-                                )}
-                              </View>
-                            </View>
-                          </View>
-
-                          <View style={styles.txRight}>
-                            <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : c.text, fontWeight: "800" }]}>
-                              {isIncome ? "+" : "-"}{currSymbol}
-                              {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                            </Text>
-                            <View style={styles.txRowActions}>
-                              <TouchableOpacity
-                                activeOpacity={0.7}
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                                  handleTransactionEdit(tx);
-                                }}
-                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
-                                accessibilityLabel="Edit transaction"
-                              >
-                                <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : c.primary} />
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                activeOpacity={0.7}
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                                  handleTransactionDelete(tx);
-                                }}
-                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                style={[styles.txMiniActionBtn, { backgroundColor: c.card }]}
-                                accessibilityLabel="Delete transaction"
-                              >
-                                <Ionicons name="trash-outline" size={12} color={c.accent} />
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                    {visibleTransactions.map((tx) => (
+                      <TransactionRow
+                        key={tx.uniqueKey}
+                        tx={tx}
+                        colors={c}
+                        currSymbol={currSymbol}
+                        onPress={onRowPress}
+                        onEdit={onRowEdit}
+                        onDelete={onRowDelete}
+                      />
+                    ))}
+                    {visibleCount < unifiedTransactions.length && (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                        style={styles.showMoreBtn}
+                        accessibilityRole="button"
+                      >
+                        <Text style={[styles.showMoreText, { color: c.primary }]}>
+                          Show more ({unifiedTransactions.length - visibleCount} left)
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </ScrollView>
               )}
@@ -1427,35 +1577,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 14,
   },
-  offlineBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
-  offlineBannerText: {
-    flex: 1,
-    fontSize: 11.5,
-    fontWeight: '600',
-  },
-  retryPillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: '#C79A3E',
-  },
-  retryPillText: {
-    color: '#10120E',
-    fontWeight: '700',
-    fontSize: 11,
-  },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1507,6 +1628,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
+  },
+  showMoreBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  showMoreText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bellBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
   },
   topActionBtn: {
     width: 42,

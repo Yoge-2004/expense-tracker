@@ -91,6 +91,26 @@ public class Income extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    /**
+     * SALARY, OTHER or REIMBURSEMENT. Null on rows created before this existed; callers
+     * should use {@code IncomeRules.effectiveKind}, which infers it from the source.
+     */
+    @Column(name = "income_kind", length = 20)
+    private String kind;
+
+    /**
+     * "YYYY-MM" this money counts toward when that differs from the month of
+     * {@link #incomeDate} (e.g. next month's salary credited early). Null means the credit month.
+     */
+    @Column(name = "counts_toward_month", length = 7)
+    private String countsTowardMonth;
+
+    /**
+     * For a REIMBURSEMENT: the expense category it offsets. Null means it offsets the month as a whole.
+     */
+    @Column(name = "reimbursed_category_id")
+    private Long reimbursedCategoryId;
+
     public Income(Long id, BigDecimal amount, String source, String description,
                   LocalDate incomeDate, Boolean isRecurring, User user) {
         this.id = id;

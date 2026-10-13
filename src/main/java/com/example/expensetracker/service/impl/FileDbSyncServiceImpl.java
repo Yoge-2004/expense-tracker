@@ -59,10 +59,17 @@ public class FileDbSyncServiceImpl implements FileDbSyncService {
         return result;
     }
 
+    @Override
+    public Map<String, Object> getHuggingFaceStatus() {
+        return failoverService.getDiagnostics();
+    }
+
     private Map<String, Object> backupResult(String operation) {
         Map<String, Object> result = new LinkedHashMap<>();
-        Map<String, Object> diag = failoverService.getDiagnostics();
+        // Back up first, then read diagnostics, so lastError/lastSuccessAt in the
+        // response describe the attempt that was just made.
         boolean success = failoverService.backupCurrentDatabase();
+        Map<String, Object> diag = failoverService.getDiagnostics();
         result.put("status", success ? "success" : "error");
         result.put("diagnostics", diag);
         result.put("message", success ? operation + " completed successfully."

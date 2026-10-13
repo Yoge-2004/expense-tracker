@@ -41,8 +41,25 @@ public record IncomeDto(
         Integer intervalDays,
 
         @Schema(description = "Next scheduled recurrence date", example = "2026-09-01")
-        LocalDate nextDueDate
+        LocalDate nextDueDate,
+        @Schema(description = "SALARY, OTHER or REIMBURSEMENT (inferred from the source for older records)",
+                example = "SALARY")
+        String kind,
+        @Schema(description = "Month this money counts toward, YYYY-MM. Equals the month of incomeDate unless "
+                + "it was assigned to another month.", example = "2026-09")
+        String countsTowardMonth,
+        @Schema(description = "For a REIMBURSEMENT, the expense category it offsets (null = the month as a whole)",
+                example = "3")
+        Long reimbursedCategoryId
 ) {
+    /** Pre-classification shape, kept so existing callers compile unchanged. */
+    public IncomeDto(Long id, BigDecimal amount, String source, String description,
+                     LocalDate incomeDate, Boolean isRecurring, LocalDateTime createdAt,
+                     String frequency, Integer intervalDays, LocalDate nextDueDate) {
+        this(id, amount, source, description, incomeDate, isRecurring, createdAt,
+                frequency, intervalDays, nextDueDate, null, null, null);
+    }
+
     public IncomeDto(Long id, BigDecimal amount, String source, String description,
                      LocalDate incomeDate, Boolean isRecurring, LocalDateTime createdAt) {
         this(id, amount, source, description, incomeDate, isRecurring, createdAt, null, null, null);

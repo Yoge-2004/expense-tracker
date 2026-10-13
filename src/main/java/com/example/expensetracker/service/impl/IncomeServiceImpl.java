@@ -4,6 +4,7 @@ import com.example.expensetracker.dto.CashFlowSummaryDto;
 import com.example.expensetracker.dto.IncomeDto;
 import com.example.expensetracker.dto.IncomeRequest;
 import com.example.expensetracker.mapper.IncomeMapper;
+import com.example.expensetracker.mapper.IncomeRules;
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.Income;
 import com.example.expensetracker.model.User;
@@ -176,6 +177,8 @@ public class IncomeServiceImpl implements IncomeService {
         if (request.intervalDays() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
             existing.setIntervalDays(request.intervalDays());
         }
+
+        IncomeRules.apply(existing, request);
 
         Income saved = incomeRepository.save(existing);
         log.info("Income id={} updated successfully for userId={}", saved.getId(), user.getId());

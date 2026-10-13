@@ -49,9 +49,15 @@ public final class HuggingFaceFileClient {
 
     private HuggingFaceFileClient() {}
 
+    /** Uploads to a Space repository (the original, default behaviour). */
     public static void upload(String repo, String path, Path file, String token)
             throws IOException, InterruptedException {
-        String url = "https://huggingface.co/api/spaces/" + requireRepo(repo) + "/commit/main";
+        upload(REPO_TYPE_SPACE, repo, path, file, token);
+    }
+
+    public static void upload(String repoType, String repo, String path, Path file, String token)
+            throws IOException, InterruptedException {
+        String url = commitUrl(repoType, repo);
         String content = Base64.getEncoder().encodeToString(Files.readAllBytes(file));
         String body = "{\"key\":\"header\",\"value\":{\"summary\":\"Update encrypted Expense Tracker snapshot\"}}\n"
                 + "{\"key\":\"file\",\"value\":{\"content\":\"" + content
@@ -73,6 +79,46 @@ public final class HuggingFaceFileClient {
             throw new IllegalStateException("Hugging Face upload failed (HTTP "
                     + response.statusCode() + "): " + responseBody);
         }
+    }
+
+    /**
+     * Creates the repository when it does not exist yet. Only datasets and models
+     * can be created this way (a Space needs an SDK and is created in the Hub UI),
+     * so a Space is a no-op. "Already exists" (HTTP 409) counts as success.
+     */
+    public static void ensureRepo(String repoType, String repo, boolean isPrivate, String token)
+            throws IOException, InterruptedException {
+        if ("spaces".equals(apiSegment(repoType))) {
+            return;
+        }
+        HttpRequest request = HttpRequest.newBuilder(URI.create("https://huggingface.co/api/repos/create"))
+                .timeout(REQUEST_TIMEOUT)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(createRepoBody(repoType, repo, isPrivate)))
+                .build();
+        HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+        int status = response.statusCode();
+        if ((status >= 200 && status < 300) || status == 409) {
+            return;
+        }
+        if (status == 403) {
+            throw new IllegalStateException("Hugging Face refused to create " + repo + " (HTTP 403): HF_TOKEN needs "
+                    + "permission to create repositories. Create the private " + repoType
+                    + " repository by hand, or use a token that can create repos.");
+        }
+        throw new IllegalStateException("Hugging Face repository creation failed (HTTP " + status + "): "
+                + response.body());
+    }
+
+    /** JSON body for POST /api/repos/create. Package-private so it is unit-testable offline. */
+    static String createRepoBody(String repoType, String repo, boolean isPrivate) {
+        String validated = requireRepo(repo);
+        int slash = validated.indexOf('/');
+        String type = "datasets".equals(apiSegment(repoType)) ? "dataset" : "model";
+        return "{\"type\":\"" + type + "\",\"name\":\"" + jsonEscape(validated.substring(slash + 1))
+                + "\",\"organization\":\"" + jsonEscape(validated.substring(0, slash))
+                + "\",\"private\":" + isPrivate + "}";
     }
 
     /**
@@ -110,10 +156,15 @@ public final class HuggingFaceFileClient {
         }
     }
 
+    /** Downloads from a Space repository (the repo type {@link #upload} writes to by default). */
     public static boolean download(String repo, String path, Path destination, String token)
             throws IOException, InterruptedException {
-        String url = "https://huggingface.co/" + requireRepo(repo) + "/resolve/main/"
-                + requirePath(path) + "?download=true";
+        return download(REPO_TYPE_SPACE, repo, path, destination, token);
+    }
+
+    public static boolean download(String repoType, String repo, String path, Path destination, String token)
+            throws IOException, InterruptedException {
+        String url = resolveUrl(repoType, repo, path);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(REQUEST_TIMEOUT)
                 .header("Authorization", "Bearer " + token)
@@ -127,6 +178,42 @@ public final class HuggingFaceFileClient {
         }
         Files.write(destination, response.body());
         return true;
+    }
+
+    public static final String REPO_TYPE_SPACE = "space";
+    public static final String REPO_TYPE_DATASET = "dataset";
+    public static final String REPO_TYPE_MODEL = "model";
+
+    /** Hub API collection segment for a repo type: spaces, datasets or models. */
+    static String apiSegment(String repoType) {
+        String type = repoType == null ? REPO_TYPE_SPACE : repoType.trim().toLowerCase(java.util.Locale.ROOT);
+        return switch (type) {
+            case REPO_TYPE_SPACE, "" -> "spaces";
+            case REPO_TYPE_DATASET -> "datasets";
+            case REPO_TYPE_MODEL -> "models";
+            default -> throw new IllegalArgumentException("Invalid Hugging Face repository type");
+        };
+    }
+
+    /** Commit endpoint for the repo type, e.g. https://huggingface.co/api/spaces/owner/name/commit/main. */
+    static String commitUrl(String repoType, String repo) {
+        return "https://huggingface.co/api/" + apiSegment(repoType) + "/" + requireRepo(repo) + "/commit/main";
+    }
+
+    /**
+     * File URL for the repo type. The Hub only omits the type prefix for model
+     * repositories; Spaces live under /spaces/ and datasets under /datasets/.
+     * Fetching a Space file without that prefix asks for a model repo that does
+     * not exist and always answers 404.
+     */
+    static String resolveUrl(String repoType, String repo, String path) {
+        String prefix = switch (apiSegment(repoType)) {
+            case "spaces" -> "spaces/";
+            case "datasets" -> "datasets/";
+            default -> "";
+        };
+        return "https://huggingface.co/" + prefix + requireRepo(repo) + "/resolve/main/"
+                + requirePath(path) + "?download=true";
     }
 
     /** Package-private (not private) so validation can be unit-tested directly,

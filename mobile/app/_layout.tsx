@@ -24,7 +24,7 @@ import {
 } from '@expo-google-fonts/ibm-plex-mono';
 import { Colors } from '../constants/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { scheduleDailyExpenseReminders, getDailyRemindersEnabled } from '../services/notifications';
+import { scheduleDailyExpenseReminders, getDailyRemindersEnabled, scheduleSmartReminders } from '../services/notifications';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -116,6 +116,8 @@ function RootLayoutNav() {
     getDailyRemindersEnabled().then((enabled) => {
       if (enabled) scheduleDailyExpenseReminders().catch(() => {});
     });
+    // The morning, weekly, month-start and month-end reminders (bills and salary follow once data loads).
+    scheduleSmartReminders().catch(() => {});
   }, [isLoading, token]);
 
   if (isLoading) return <SplashLoader />;
@@ -134,6 +136,7 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ animation: 'fade' }} />
         <Stack.Screen name="register" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="expo-auth-session" options={{ animation: 'none' }} />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       </Stack>
