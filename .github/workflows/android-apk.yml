@@ -93,7 +93,11 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      # Advisory: two of its checks read live data from Expo's servers (config schema, React Native
+      # Directory), so an upstream change can fail it with no change to this repo. It still prints its
+      # findings; it just must not stop the APK from being built.
       - name: Expo Doctor diagnostics
+        continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
