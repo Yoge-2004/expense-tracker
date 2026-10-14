@@ -41,10 +41,6 @@ jobs:
   frontend:
     name: Web frontend checks
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -70,35 +66,10 @@ jobs:
         run: |
           set -o pipefail
           npx --yes expo-doctor 2>&1 | tee expo-doctor.log
-      # Installed Expo packages should match the SDK's expected versions. TEMPORARILY non-blocking while the
-      # packages it names are aligned (see the next step); the TypeScript and Jest gates must still run.
+      # Installed Expo packages must match the SDK's expected versions (strict gate).
       - name: Check Expo dependency alignment
-        id: expo_align
         working-directory: mobile
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          npx expo install --check 2>&1 | tee expo-install-check.log
-      # TEMP: job logs cannot be downloaded here, so post what the check says. Removed in the follow-up.
-      - name: TEMP post Expo alignment findings
-        if: steps.expo_align.outcome == 'failure' && github.event_name == 'pull_request'
-        working-directory: mobile
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-        run: |
-          python3 - <<'PY'
-          import json, os, urllib.request
-          text = open('expo-install-check.log', encoding='utf-8', errors='replace').read()[-6000:]
-          body = "Expo alignment check output:\n```\n" + text + "\n```"
-          req = urllib.request.Request(
-              f"https://api.github.com/repos/{os.environ['REPO']}/issues/{os.environ['PR_NUMBER']}/comments",
-              data=json.dumps({"body": body}).encode(), method="POST",
-              headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json", "Content-Type": "application/json"})
-          print(urllib.request.urlopen(req).status)
-          PY
+        run: npx expo install --check
       - name: Check mobile TypeScript
         working-directory: mobile
         run: npx tsc --noEmit
