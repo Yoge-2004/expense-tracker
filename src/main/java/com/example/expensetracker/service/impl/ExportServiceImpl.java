@@ -4,9 +4,11 @@ import com.example.expensetracker.dto.ExpenseDto;
 import com.example.expensetracker.dto.IncomeDto;
 import com.example.expensetracker.mapper.ExpenseMapper;
 import com.example.expensetracker.mapper.IncomeMapper;
+import com.example.expensetracker.mapper.IncomeRules;
 import com.example.expensetracker.model.Budget;
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.Income;
+import com.example.expensetracker.model.IncomeKind;
 import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.BudgetRepository;
@@ -817,12 +819,21 @@ public class ExportServiceImpl implements ExportService {
         String curFmt = curr.getExcelFormat();
 
         // 1. High-Level Aggregations & Advanced Metrics Calculations
+        // Money handed back (reimbursements) is not income: it reduces what was spent.
         BigDecimal totalIncBd =
-                incomes.stream().map(Income::getAmount)
+                incomes.stream()
+                .filter(i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT)
+                .map(Income::getAmount)
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal reimbursedBd =
+                incomes.stream()
+                .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT)
+                .map(Income::getAmount)
                 .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal totalExpBd =
                 expenses.stream().map(Expense::getAmount)
-                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+                .filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add)
+                .subtract(reimbursedBd).max(BigDecimal.ZERO);
         double totalInc = totalIncBd.doubleValue();
         double totalExp = totalExpBd.doubleValue();
         double netSurplus = totalInc - totalExp;
@@ -2577,12 +2588,19 @@ public class ExportServiceImpl implements ExportService {
         CurrencyMeta curr = resolveCurrency(preferredCurrency, user);
         String pdfSym = pdfSymbol(curr);
 
+        // Money handed back (reimbursements) is not income: it reduces what was spent.
         BigDecimal totalIncome = incomes.stream()
+                .filter(i -> IncomeRules.effectiveKind(i) != IncomeKind.REIMBURSEMENT)
+                .map(Income::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal reimbursed = incomes.stream()
+                .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.REIMBURSEMENT)
                 .map(Income::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal totalExpenses = expenses.stream()
                 .map(Expense::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .subtract(reimbursed).max(BigDecimal.ZERO);
         BigDecimal netSavings = totalIncome.subtract(totalExpenses);
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {

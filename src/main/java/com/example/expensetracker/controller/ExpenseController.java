@@ -70,6 +70,7 @@ public class ExpenseController {
     private final BudgetRepository budgetRepository;
     private final RecurringExpenseRepository recurringRepository;
     private final ExpenseRepository expenseRepository;
+    private final com.example.expensetracker.repository.IncomeRepository incomeRepository;
     private final ExportService exportService;
     private final ImportService importService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
@@ -597,10 +598,30 @@ public class ExpenseController {
                 }
             }
 
-            BigDecimal spent = expenseRepository.findByUserAndExpenseDateBetween(user, start, end)
+            BigDecimal grossSpent = expenseRepository.findByUserAndExpenseDateBetween(user, start, end)
                     .stream()
                     .filter(e -> e.getCategory() != null && e.getCategory().getId().equals(b.getCategory().getId()))
                     .map(Expense::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Money handed back for this category (a friend repaying a bill, a refund) reduces what counts
+            // against the budget. It is placed by the month it counts toward, like everywhere else.
+            final LocalDate periodStart = start;
+            final LocalDate periodEnd = end;
+            BigDecimal reimbursed = incomeRepository
+                    .findByUserAndIncomeDateBetween(user,
+                            start.minusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT),
+                            end.plusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT))
+                    .stream()
+                    .filter(i -> com.example.expensetracker.mapper.IncomeRules.effectiveKind(i)
+                            == com.example.expensetracker.model.IncomeKind.REIMBURSEMENT)
+                    .filter(i -> b.getCategory().getId().equals(i.getReimbursedCategoryId()))
+                    .filter(i -> {
+                        LocalDate counted = com.example.expensetracker.mapper.IncomeRules.effectiveDate(i);
+                        return counted != null && !counted.isBefore(periodStart) && !counted.isAfter(periodEnd);
+                    })
+                    .map(com.example.expensetracker.model.Income::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal spent = grossSpent.subtract(reimbursed).max(BigDecimal.ZERO);
             double pct = b.getLimitAmount().doubleValue() > 0
                     ? spent.doubleValue() / b.getLimitAmount().doubleValue() * 100 : 0;
 

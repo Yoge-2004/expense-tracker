@@ -92,6 +92,19 @@ public final class IncomeRules {
     }
 
     /**
+     * The date this income counts on: its own date moved into the month it counts toward (clamped to that
+     * month's length, so the 31st becomes the 30th or 28th). Equals the credit date when no month was set.
+     * Used to place an income inside a budget or report period.
+     */
+    public static LocalDate effectiveDate(Income income) {
+        YearMonth month = effectiveMonth(income);
+        if (month == null) {
+            return null;
+        }
+        return month.atDay(Math.min(income.getIncomeDate().getDayOfMonth(), month.lengthOfMonth()));
+    }
+
+    /**
      * Applies the classification fields of a request onto an income.
      *
      * <p>For every field, {@code null} means "leave as is" (so older clients that do not know

@@ -88,6 +88,23 @@ class IncomeRulesTest {
         }
 
         @Test
+        @DisplayName("effectiveDate: the credit date moved into the month it counts toward, clamped to that month's length")
+        void effectiveDate() {
+            Income plain = income("Salary", LocalDate.of(2026, 10, 30));
+            assertEquals(LocalDate.of(2026, 10, 30), IncomeRules.effectiveDate(plain));
+
+            Income early = income("Salary", LocalDate.of(2026, 10, 30));
+            early.setCountsTowardMonth("2026-11");
+            assertEquals(LocalDate.of(2026, 11, 30), IncomeRules.effectiveDate(early));
+
+            Income endOfJan = income("Salary", LocalDate.of(2027, 1, 31));
+            endOfJan.setCountsTowardMonth("2027-02");
+            assertEquals(LocalDate.of(2027, 2, 28), IncomeRules.effectiveDate(endOfJan));
+
+            assertNull(IncomeRules.effectiveDate(null));
+        }
+
+        @Test
         @DisplayName("only YYYY-MM is accepted")
         void formatIsStrict() {
             assertThrows(IllegalArgumentException.class, () -> IncomeRules.parseMonth("2026-13"));
