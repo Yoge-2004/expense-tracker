@@ -173,6 +173,17 @@ class NotificationServiceImplTest {
             service.deleteNotification(null, 10L);
             verifyNoMoreInteractions(notificationRepository);
         }
+
+        @Test
+        @DisplayName("clearAll deletes all notifications for user")
+        void clearAllNotifications() {
+            when(notificationRepository.deleteByUser(user)).thenReturn(7L);
+
+            assertEquals(7, service.clearAll(user));
+            verify(notificationRepository).deleteByUser(user);
+
+            assertEquals(0, service.clearAll(null));
+        }
     }
 
     @Nested

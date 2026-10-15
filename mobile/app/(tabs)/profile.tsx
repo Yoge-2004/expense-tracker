@@ -666,9 +666,20 @@ export default function ProfileScreen() {
             <View style={[styles.currSearchBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
               <Ionicons name="search" size={16} color={c.textMuted} style={{ marginRight: 8 }} />
               <TextInput style={[styles.currSearchInput, { color: c.text }]} placeholder="Search by code, symbol, or country..." placeholderTextColor={c.textMuted} value={currencySearch} onChangeText={setCurrencySearch} />
-              {currencySearch.length > 0 && <TouchableOpacity onPress={() => setCurrencySearch('')}><Ionicons name="close-circle" size={16} color={c.textMuted} /></TouchableOpacity>}
+              {currencySearch.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setCurrencySearch('')}
+                  onPressIn={() => setCurrencySearch('')}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  accessibilityLabel="Clear search"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="close-circle" size={16} color={c.textMuted} />
+                </TouchableOpacity>
+              )}
             </View>
             <FlatList
+              keyboardShouldPersistTaps="handled"
               data={filteredCurrencies}
               keyExtractor={(item) => item.code}
               renderItem={({ item }) => {

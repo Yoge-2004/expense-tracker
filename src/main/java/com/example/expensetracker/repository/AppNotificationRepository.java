@@ -29,4 +29,7 @@ public interface AppNotificationRepository extends JpaRepository<AppNotification
 
     @Transactional
     long deleteByUserAndId(User user, Long id);
+
+    @Transactional
+    long deleteByUser(User user);
 }

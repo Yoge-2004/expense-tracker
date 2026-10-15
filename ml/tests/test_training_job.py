@@ -19,7 +19,12 @@ def test_training_job_uses_explicit_paths_and_returns_completed_manifest(tmp_pat
         ]
     ).to_parquet(prepared, index=False)
 
-    manifest = run_training_job(Path("config/datasets.yaml"), prepared, output, include_transformer=False)
+    config_path = (
+        Path("config/datasets.yaml")
+        if Path("config/datasets.yaml").exists()
+        else Path(__file__).resolve().parents[1] / "config" / "datasets.yaml"
+    )
+    manifest = run_training_job(config_path, prepared, output, include_transformer=False)
 
     assert manifest["status"] == "completed"
     assert Path(manifest["run_directory"]).exists()

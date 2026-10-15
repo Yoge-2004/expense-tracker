@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -29,114 +31,62 @@ def save_classification_figures(result: Any, out_dir: Path, prefix: str) -> None
     width = 0.25
     ax.bar(x - width, precision, width, label="Precision")
     ax.bar(x, recall, width, label="Recall")
-    ax.bar(x + width, f1, width, label="F1")
-    ax.set_xticks(x, labels, rotation=40, ha="right")
-    ax.set_ylim(0, 1)
-    ax.set_title(f"{prefix} per-class metrics")
+    ax.bar(x + width, f1, width, label="F1-score")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=40, ha="right", fontsize=9)
+    ax.set_ylim(0, 1.05)
+    ax.set_title(f"{result.model_name} Per-Class Performance")
     ax.legend()
-    _save(fig, out_dir / f"{prefix.lower()}_per_class_metrics.png")
+    _save(fig, out_dir / f"{prefix}_classification_metrics.png")
 
-    cm = np.asarray(result.confusion_matrix)
-    fig, ax = plt.subplots(figsize=(10, 8))
-    ConfusionMatrixDisplay(cm, display_labels=labels).plot(ax=ax, xticks_rotation=45, colorbar=False)
-    ax.set_title(f"{prefix} confusion matrix")
-    _save(fig, out_dir / f"{prefix.lower()}_confusion_matrix.png")
+    fig, ax = plt.subplots(figsize=(11, 9))
+    disp = ConfusionMatrixDisplay(confusion_matrix=np.array(result.confusion_matrix), display_labels=labels)
+    disp.plot(ax=ax, cmap="Blues", xticks_rotation=45, colorbar=False)
+    ax.set_title(f"{result.model_name} Confusion Matrix")
+    _save(fig, out_dir / f"{prefix}_confusion_matrix.png")
 
 
 def save_dataset_figures(frame: pd.DataFrame, out_dir: Path) -> None:
-    counts = frame["label"].value_counts().sort_values(ascending=True)
-    fig, ax = plt.subplots(figsize=(10, 7))
-    counts.plot.barh(ax=ax)
-    ax.set_title("Training dataset class distribution")
-    ax.set_xlabel("Rows")
-    _save(fig, out_dir / "dataset_class_distribution.png")
+    counts = frame["label"].value_counts()
+    fig, ax = plt.subplots(figsize=(10, 5))
+    counts.plot(kind="bar", ax=ax, color="#1f77b4")
+    ax.set_title("Dataset Label Distribution")
+    ax.set_xlabel("Label")
+    ax.set_ylabel("Count")
+    ax.tick_params(axis="x", rotation=40)
+    _save(fig, out_dir / "dataset_label_distribution.png")
+
+    if "country" in frame.columns:
+        counts = frame["country"].value_counts().head(10)
+        fig, ax = plt.subplots(figsize=(8, 4))
+        counts.plot(kind="bar", ax=ax, color="#2ca02c")
+        ax.set_title("Dataset Country Distribution (Top 10)")
+        ax.set_xlabel("Country")
+        ax.set_ylabel("Count")
+        ax.tick_params(axis="x", rotation=30)
+        _save(fig, out_dir / "dataset_country_distribution.png")
 
 
-def save_model_comparison(results: list[dict], out_dir: Path) -> None:
-    if not results:
-        return
-    df = pd.DataFrame(results).set_index("model_name")
-    cols = [c for c in ["accuracy", "macro_f1", "weighted_f1"] if c in df]
-    fig, ax = plt.subplots(figsize=(9, 5))
-    df[cols].plot.bar(ax=ax)
-    ax.set_ylim(0, 1)
-    ax.set_title("Model validation comparison")
-    ax.set_ylabel("Score")
-    ax.tick_params(axis="x", rotation=20)
+def save_model_comparison(results: list[Any], out_dir: Path) -> None:
+    names = [r.model_name for r in results]
+    acc = [r.accuracy for r in results]
+    macro_f1 = [r.macro_f1 for r in results]
+    weighted_f1 = [r.weighted_f1 for r in results]
+
+    x = np.arange(len(names))
+    width = 0.25
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.bar(x - width, acc, width, label="Accuracy")
+    ax.bar(x, macro_f1, width, label="Macro F1")
+    ax.bar(x + width, weighted_f1, width, label="Weighted F1")
+    ax.set_xticks(x)
+    ax.set_xticklabels(names)
+    ax.set_ylim(0, 1.05)
+    ax.set_title("Model Comparison")
+    ax.legend()
     _save(fig, out_dir / "model_comparison.png")
 
 
-def save_anomaly_figure(scores: np.ndarray, out_dir: Path) -> None:
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.hist(scores, bins=40)
-    ax.set_title("Anomaly score distribution")
-    ax.set_xlabel("Anomaly score")
-    ax.set_ylabel("Transactions")
-    _save(fig, out_dir / "anomaly_score_distribution.png")
-
-
-def save_spending_forecast(actual: pd.Series, predicted: pd.Series, out_dir: Path) -> None:
-    fig, ax = plt.subplots(figsize=(12, 5))
-    ax.plot(actual.index, actual.values, label="Actual")
-    ax.plot(predicted.index, predicted.values, label="Predicted")
-    ax.set_title("Spending forecast: chronological holdout")
-    ax.set_ylabel("Spend")
-    ax.legend()
-    _save(fig, out_dir / "spending_forecast.png")
-
-
-def save_data_quality(frame: pd.DataFrame, out_dir: Path) -> dict:
-    summary = {
-        "rows": int(len(frame)),
-        "columns": list(frame.columns),
-        "missing_by_column": {c: int(frame[c].isna().sum()) for c in frame.columns},
-        "duplicate_text_rows": int(frame["text"].duplicated().sum()) if "text" in frame else None,
-    }
-    if "text" in frame:
-        lengths = frame["text"].astype(str).str.len()
-        summary["text_length"] = {
-            "mean": float(lengths.mean()),
-            "median": float(lengths.median()),
-            "p95": float(lengths.quantile(.95)),
-            "max": int(lengths.max()),
-        }
-        fig, ax = plt.subplots(figsize=(9, 5))
-        ax.hist(lengths.clip(upper=250), bins=40)
-        ax.set_title("Transaction text length distribution")
-        ax.set_xlabel("Characters")
-        ax.set_ylabel("Transactions")
-        _save(fig, out_dir / "text_length_distribution.png")
-    return summary
-
-
-def write_json(data: Any, path: Path) -> None:
+def write_json(data: dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-
-
-def write_master_report(manifest: dict, report_dir: Path) -> None:
-    report_dir.mkdir(parents=True, exist_ok=True)
-    rows = []
-    for name, meta in manifest["models"].items():
-        status = meta.get("status", "unknown")
-        reason = meta.get("reason", "")
-        rows.append(f"| {name} | {status} | {meta.get('artifact', '')} | {reason} |")
-    body = "\n".join([
-        f"# Expense Tracker ML Training Report — {manifest['run_id']}",
-        "",
-        f"- Pipeline version: `{manifest['pipeline_version']}`",
-        f"- Seed: `{manifest['seed']}`",
-        f"- Python: `{manifest['python'].splitlines()[0]}`",
-        "",
-        "## Model Artifacts",
-        "",
-        "| Model | Status | Artifact | Notes |",
-        "|---|---|---|---|",
-        *rows,
-        "",
-        "## Outputs",
-        "",
-        "Machine-readable metrics are stored as JSON under `reports/`.",
-        "High-resolution figures are stored under `reports/figures/` as PNG files.",
-    ])
-    (report_dir / "REPORT.md").write_text(body + "\n", encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")

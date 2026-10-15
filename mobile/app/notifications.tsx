@@ -266,6 +266,31 @@ export default function NotificationsScreen() {
     }
   };
 
+  const clearAllNotifications = () => {
+    showAlert(
+      'Clear All Notifications',
+      'Are you sure you want to delete all notifications? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: async () => {
+            setItems([]);
+            setUnread(0);
+            try {
+              await apiRequest(base, { method: 'DELETE' });
+            } catch {
+              // offline fallback
+            }
+            load();
+          },
+        },
+      ],
+      'destructive'
+    );
+  };
+
   const open = async (item: NotificationItem) => {
     if (!item.read) await markRead([item.id]);
     const target = item.route ? ROUTES[item.route] : undefined;
@@ -359,9 +384,14 @@ export default function NotificationsScreen() {
           <Ionicons name="arrow-back" size={18} color={c.primary} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: c.text }]}>Notifications</Text>
-        <TouchableOpacity onPress={() => markRead([])} disabled={unread === 0} accessibilityRole="button">
-          <Text style={[styles.markAll, { color: unread === 0 ? c.textMuted : c.primary }]}>Mark all read</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => markRead([])} disabled={unread === 0} accessibilityRole="button">
+            <Text style={[styles.markAll, { color: unread === 0 ? c.textMuted : c.primary }]}>Mark read</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={clearAllNotifications} disabled={items.length === 0} accessibilityRole="button">
+            <Text style={[styles.clearAll, { color: items.length === 0 ? c.textMuted : (c.accent || '#EF4444') }]}>Clear all</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -395,7 +425,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
   iconBtn: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 18, fontWeight: '800' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   markAll: { fontSize: 13, fontWeight: '700' },
+  clearAll: { fontSize: 13, fontWeight: '700' },
   list: { paddingHorizontal: 20, gap: 10 },
   swipeContainer: {
     position: 'relative',

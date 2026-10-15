@@ -54,6 +54,13 @@ public class NotificationController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Clear all notifications for user")
+    @DeleteMapping
+    public ResponseEntity<Map<String, Integer>> clearAll(@PathVariable Long userId) {
+        int deleted = notificationService.clearAll(owner(userId));
+        return ResponseEntity.ok(Map.of("deleted", deleted));
+    }
+
     @Operation(summary = "Which kinds of notification are on")
     @GetMapping("/preferences")
     public ResponseEntity<List<NotificationPreferenceDto>> preferences(@PathVariable Long userId) {

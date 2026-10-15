@@ -24,6 +24,9 @@ public interface NotificationService {
     /** Deletes/clears a single notification by id for the given user. */
     void deleteNotification(User user, Long id);
 
+    /** Deletes/clears all notifications for the given user. */
+    int clearAll(User user);
+
     List<NotificationPreferenceDto> getPreferences(User user);
 
     /** Replaces the set of switched-off kinds. Unknown names are rejected; locked kinds stay on. */

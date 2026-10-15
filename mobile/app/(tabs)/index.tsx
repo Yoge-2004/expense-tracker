@@ -380,7 +380,13 @@ function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; 
         returnKeyType="search"
       />
       {text.length > 0 && (
-        <TouchableOpacity onPress={clear} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Clear search">
+        <TouchableOpacity
+          onPress={clear}
+          onPressIn={clear}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityLabel="Clear search"
+          accessibilityRole="button"
+        >
           <Ionicons name="close-circle" size={18} color={colors.textMuted} />
         </TouchableOpacity>
       )}
@@ -1094,6 +1100,7 @@ export default function DashboardScreen() {
 
       <ScrollView
         style={styles.scrollView}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.scrollContent,
           {

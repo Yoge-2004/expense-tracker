@@ -98,6 +98,15 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
+    public int clearAll(User user) {
+        if (user == null) {
+            return 0;
+        }
+        return (int) notificationRepository.deleteByUser(user);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<NotificationPreferenceDto> getPreferences(User user) {
         Set<NotificationType> disabled = preferenceRepository.findByUser(user)

@@ -292,6 +292,14 @@
         await markRead([]);
         load();
     });
+    document.getElementById("inboxClearAll")?.addEventListener("click", async () => {
+        try {
+            await apiRequest(base, { method: "DELETE" });
+            load();
+        } catch (error) {
+            showToast(error.message || "Could not clear notifications.", "error");
+        }
+    });
     document.getElementById("inboxTest")?.addEventListener("click", async () => {
         try {
             window.DashboardNotifications?.playCustomNotificationSound?.();
