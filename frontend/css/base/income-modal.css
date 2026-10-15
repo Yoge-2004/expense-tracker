@@ -187,18 +187,6 @@
     box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
 }
 
-/* Close Button in Income Modal */
-#incomeModal .modal-close {
-    outline: none;
-}
-
-#incomeModal .modal-close:hover {
-    color: #10B981;
-    background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
-    outline: none;
-}
 
 /* Savings Goal Modal Recurring Switch - Amber Theme */
 #savingsGoalModal .switch-label,
@@ -245,13 +233,6 @@
     box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
 }
 
-#incomeModal .modal-close:focus,
-#incomeModal .modal-close:focus-visible {
-    outline: 2px solid #10B981;
-    outline-offset: 2px;
-    color: #10B981;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
-}
 
 /* Submit Button in Income Modal */
 #incomeModal .btn-primary,
