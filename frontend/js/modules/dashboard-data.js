@@ -128,6 +128,18 @@
                 }
 
                 if (savingsGoals === null) {
+                    const budgetListEl = document.getElementById("budgetList");
+                    if (budgetListEl) {
+                        budgetListEl.innerHTML = `
+                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
+                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
+                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
+                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                                    <span>Retry Connection</span>
+                                </button>
+                            </div>`;
+                    }
                     const savingsGoalsEl = document.getElementById("savingsGoalsList");
                     if (savingsGoalsEl) {
                         savingsGoalsEl.innerHTML = `
@@ -163,9 +175,12 @@
                     showToast("Couldn't reach the server — showing your last saved data.", "error");
                     renderIncomes(Array.isArray(state.allIncomes) ? state.allIncomes : []);
                     renderSavingsGoals(Array.isArray(state.allSavingsGoals) ? state.allSavingsGoals : []);
+                    if (typeof window.loadBudgets === "function") {
+                        window.loadBudgets().catch(() => {});
+                    }
                 } else {
                     showToast("Couldn't connect to the server. Check your connection or server status.", "error");
-                    document.querySelectorAll(".grid-4-metrics .metric-card").forEach(c => {
+                    document.querySelectorAll(".metric-card, .grid-4-metrics .metric-card").forEach(c => {
                         c.classList.remove("is-loading");
                         const val = c.querySelector(".metric-value");
                         if (val) val.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
@@ -174,9 +189,40 @@
                             badge.textContent = "Offline";
                             badge.className = "status-badge badge-warning";
                         }
+                        const recIncome = c.querySelector("#recurringIncomeText");
+                        if (recIncome) recIncome.textContent = "Offline";
+                        const expCount = c.querySelector("#expenseCountText");
+                        if (expCount) expCount.textContent = "Offline";
+                        const burnRate = c.querySelector("#burnRateBadge");
+                        if (burnRate) burnRate.innerHTML = 'Burn: <span id="dailyBurnRate">Offline</span>';
+                        const totalSaved = c.querySelector("#totalSavedProgress");
+                        if (totalSaved) totalSaved.textContent = "Offline";
+
+                        c.querySelectorAll(".skeleton").forEach(sk => {
+                            if (sk.parentElement) sk.parentElement.textContent = "Offline";
+                            else sk.remove();
+                        });
                     });
                     const subsTotal = document.getElementById("subsMonthlyTotal");
                     if (subsTotal) subsTotal.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
+
+                    const budgetListEl = document.getElementById("budgetList");
+                    if (budgetListEl) {
+                        budgetListEl.innerHTML = `
+                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
+                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
+                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
+                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                                    <span>Retry Connection</span>
+                                </button>
+                            </div>`;
+                    }
+                    const budgetUsageBadge = document.getElementById("budgetUsageBadge");
+                    if (budgetUsageBadge) {
+                        budgetUsageBadge.textContent = "Offline";
+                        budgetUsageBadge.className = "status-badge badge-warning";
+                    }
                     const expenseListEl = document.getElementById("expenseList");
                     if (expenseListEl) {
                         expenseListEl.innerHTML = `

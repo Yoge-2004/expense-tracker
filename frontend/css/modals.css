@@ -62,8 +62,16 @@
     transition: transform 0.35s var(--ease), opacity 0.3s;
     opacity: 0;
     scrollbar-width: thin;
-    scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
-    scrollbar-gutter: stable;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .modal,
+    .help-guide-body,
+    .monthly-report-frame-container,
+    .subs-modal-list,
+    .manage-categories-body {
+        scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
+    }
 }
 
 .modal.modal-wide {
@@ -71,31 +79,51 @@
 }
 
 /* Modal scrollbars adapted for curved dialog boundaries */
-.modal::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+.modal::-webkit-scrollbar,
+.help-guide-body::-webkit-scrollbar,
+.monthly-report-frame-container::-webkit-scrollbar,
+.subs-modal-list::-webkit-scrollbar,
+.manage-categories-body::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
-.modal::-webkit-scrollbar-button {
+.modal::-webkit-scrollbar-button,
+.help-guide-body::-webkit-scrollbar-button,
+.monthly-report-frame-container::-webkit-scrollbar-button,
+.subs-modal-list::-webkit-scrollbar-button,
+.manage-categories-body::-webkit-scrollbar-button {
     display: none !important;
     width: 0;
     height: 0;
     background: transparent;
 }
-.modal::-webkit-scrollbar-track {
+.modal::-webkit-scrollbar-track,
+.help-guide-body::-webkit-scrollbar-track,
+.monthly-report-frame-container::-webkit-scrollbar-track,
+.subs-modal-list::-webkit-scrollbar-track,
+.manage-categories-body::-webkit-scrollbar-track {
     background: transparent;
-    margin-block: 24px;
-    margin-top: 24px;
-    margin-bottom: 24px;
+    margin: 20px 0;
+    margin-top: 20px;
+    margin-bottom: 20px;
     border-radius: 999px;
 }
-.modal::-webkit-scrollbar-thumb {
+.modal::-webkit-scrollbar-thumb,
+.help-guide-body::-webkit-scrollbar-thumb,
+.monthly-report-frame-container::-webkit-scrollbar-thumb,
+.subs-modal-list::-webkit-scrollbar-thumb,
+.manage-categories-body::-webkit-scrollbar-thumb {
     background: rgba(var(--primary-rgb), 0.45);
     border-radius: 999px;
-    border: 1px solid transparent;
+    border: 2px solid transparent;
     background-clip: padding-box;
     transition: background 0.2s var(--ease);
 }
-.modal::-webkit-scrollbar-thumb:hover {
+.modal::-webkit-scrollbar-thumb:hover,
+.help-guide-body::-webkit-scrollbar-thumb:hover,
+.monthly-report-frame-container::-webkit-scrollbar-thumb:hover,
+.subs-modal-list::-webkit-scrollbar-thumb:hover,
+.manage-categories-body::-webkit-scrollbar-thumb:hover {
     background: rgba(var(--primary-rgb), 0.75);
 }
 

@@ -120,21 +120,29 @@
     border-radius: 0 0 20px 20px;
     background: #080a07;
     scrollbar-width: thin;
-    scrollbar-color: rgba(var(--primary-rgb), 0.4) rgba(0, 0, 0, 0.2);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .monthly-report-frame-container {
+        scrollbar-color: rgba(var(--primary-rgb), 0.4) transparent;
+    }
 }
 
 .monthly-report-frame-container::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
 }
 .monthly-report-frame-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    background: transparent;
+    margin: 16px 0;
+    margin-top: 16px;
+    margin-bottom: 16px;
     border-radius: 999px;
 }
 .monthly-report-frame-container::-webkit-scrollbar-thumb {
-    background: rgba(var(--primary-rgb), 0.4);
+    background: rgba(var(--primary-rgb), 0.45);
     border-radius: 999px;
-    border: 1.5px solid transparent;
+    border: 2px solid transparent;
     background-clip: padding-box;
 }
 .monthly-report-frame-container::-webkit-scrollbar-thumb:hover {
@@ -150,15 +158,19 @@
 }
 
 /* Light theme overrides for monthly report modal scrollbars */
-[data-theme="light"] .monthly-report-modal,
-[data-theme="light"] .monthly-report-frame-container {
-    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
-}
-[data-theme="light"] .modal {
-    scrollbar-color: rgba(var(--primary-rgb), 0.5) transparent;
+@supports not selector(::-webkit-scrollbar) {
+    [data-theme="light"] .monthly-report-modal,
+    [data-theme="light"] .monthly-report-frame-container {
+        scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .modal {
+        scrollbar-color: rgba(var(--primary-rgb), 0.5) transparent;
+    }
 }
 [data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
+    background: transparent;
+    margin: 16px 0;
+    border-radius: 999px;
 }
 [data-theme="light"] .modal::-webkit-scrollbar-button {
     display: none;
@@ -167,17 +179,21 @@
 }
 [data-theme="light"] .modal::-webkit-scrollbar-track {
     background: transparent;
-    margin-block: 24px;
-    margin-top: 24px;
-    margin-bottom: 24px;
+    margin: 20px 0;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 999px;
 }
 [data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-thumb {
     background: rgba(199, 154, 62, 0.45);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 [data-theme="light"] .modal::-webkit-scrollbar-thumb {
     background: rgba(var(--primary-rgb), 0.5);
     border-radius: 999px;
-    border: 1px solid transparent;
+    border: 2px solid transparent;
     background-clip: padding-box;
 }
 [data-theme="light"] .modal::-webkit-scrollbar-thumb:hover {
@@ -323,7 +339,12 @@
     display: flex;
     flex-direction: column;
     scrollbar-width: thin;
-    scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .period-picker-modal {
+        scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
+    }
 }
 
 .period-picker-modal .modal-header {
@@ -493,8 +514,10 @@
 [data-theme="light"] .period-picker-modal .modal-header {
     background: #FCFBF6;
 }
-[data-theme="light"] .period-picker-modal {
-    scrollbar-color: rgba(199, 154, 62, 0.5) transparent;
+@supports not selector(::-webkit-scrollbar) {
+    [data-theme="light"] .period-picker-modal {
+        scrollbar-color: rgba(199, 154, 62, 0.5) transparent;
+    }
 }
 [data-theme="light"] .period-picker-modal::-webkit-scrollbar-track {
     background: transparent;

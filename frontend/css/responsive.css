@@ -172,6 +172,8 @@
     .modal::-webkit-scrollbar-thumb {
         background: rgba(var(--primary-rgb), 0.45);
         border-radius: 999px;
+        border: 1px solid transparent;
+        background-clip: padding-box;
     }
 
     .modal-large {
@@ -346,6 +348,8 @@
     .modal::-webkit-scrollbar-thumb {
         background: rgba(var(--primary-rgb), 0.45);
         border-radius: 999px;
+        border: 1px solid transparent;
+        background-clip: padding-box;
     }
 
     .section-title {
