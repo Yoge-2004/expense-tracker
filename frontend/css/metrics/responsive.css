@@ -5,49 +5,49 @@
 
 @media (max-width: 768px) {
     .insights-intelligence-panel {
-        padding: 16px 14px !important;
-        border-radius: 16px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
+        padding: 16px 14px;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        overflow: hidden;
     }
 
     .insights-panel-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 10px !important;
-        width: 100% !important;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
     }
 
     .insights-panel-title-wrap {
-        width: 100% !important;
+        width: 100%;
     }
 
     .insights-panel-heading {
-        font-size: 16px !important;
-        word-break: break-word !important;
+        font-size: 16px;
+        word-break: break-word;
     }
 
     .insights-cards-grid {
-        grid-template-columns: 1fr !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        gap: 10px !important;
-        box-sizing: border-box !important;
+        grid-template-columns: 1fr;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        gap: 10px;
+        box-sizing: border-box;
     }
 
     .insight-card-item {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        min-width: 0 !important;
-        padding: 14px !important;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
+        padding: 14px;
     }
 
     .savings-grid-matrix {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
     }
 }

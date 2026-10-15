@@ -5,8 +5,8 @@
     height: auto;
     min-height: 0;
     align-self: stretch;
-    overflow: visible !important;
-    overscroll-behavior: auto !important;
+    overflow: visible;
+    overscroll-behavior: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -17,9 +17,9 @@
 }
 
 .auth-hero::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 .auth-hero-content {
@@ -262,21 +262,21 @@
 }
 
 [data-theme="light"] .hero-feature-pill {
-    background: rgba(255, 255, 255, 0.94) !important;
-    border: 1px solid rgba(180, 135, 45, 0.36) !important;
-    color: #1E293B !important;
-    box-shadow: 0 3px 10px -2px rgba(180, 140, 60, 0.18), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(180, 135, 45, 0.36);
+    color: #1E293B;
+    box-shadow: 0 3px 10px -2px rgba(180, 140, 60, 0.18), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="light"] .hero-feature-pill svg {
-    stroke: #A87822 !important;
+    stroke: #A87822;
 }
 
 [data-theme="light"] .hero-feature-pill:hover {
-    background: #FFFFFF !important;
-    border-color: rgba(180, 135, 45, 0.65) !important;
-    color: #0F172A !important;
-    box-shadow: 0 5px 16px -2px rgba(180, 140, 60, 0.26) !important;
+    background: #FFFFFF;
+    border-color: rgba(180, 135, 45, 0.65);
+    color: #0F172A;
+    box-shadow: 0 5px 16px -2px rgba(180, 140, 60, 0.26);
     transform: translateY(-1px);
 }
 
@@ -291,7 +291,7 @@
     text-decoration: none;
     transition: color 0.2s;
     width: fit-content;
-    white-space: nowrap !important;
+    white-space: nowrap;
     flex-shrink: 0;
 }
 
@@ -311,12 +311,12 @@
 
 .perks-grid > .perk-item,
 .perks-grid > .float-card {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .perk-item:hover {

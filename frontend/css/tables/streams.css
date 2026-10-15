@@ -18,44 +18,44 @@
 
     /* .server-status-badge chip rendering on small devices */
     .server-status-badge {
-        bottom: 12px !important;
-        right: 12px !important;
-        padding: 4px 10px !important;
-        gap: 6px !important;
-        font-size: 10.5px !important;
-        border-radius: 9999px !important;
-        width: auto !important;
-        height: auto !important;
-        display: inline-flex !important;
-        align-items: center !important;
+        bottom: 12px;
+        right: 12px;
+        padding: 4px 10px;
+        gap: 6px;
+        font-size: 10.5px;
+        border-radius: 9999px;
+        width: auto;
+        height: auto;
+        display: inline-flex;
+        align-items: center;
     }
     .server-status-badge #statusText {
-        display: inline-block !important;
-        font-size: 10px !important;
-        font-weight: 700 !important;
-        white-space: nowrap !important;
-        letter-spacing: 0.02em !important;
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        letter-spacing: 0.02em;
     }
     .server-status-badge .status-dot {
-        width: 6.5px !important;
-        height: 6.5px !important;
+        width: 6.5px;
+        height: 6.5px;
     }
 
     .auth-footer-text {
-        font-size: 12.5px !important;
-        display: flex !important;
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 4px !important;
-        line-height: 1.4 !important;
+        font-size: 12.5px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        line-height: 1.4;
     }
     .auth-footer-text .back-to-prefix {
-        display: none !important;
+        display: none;
     }
     .auth-footer-link {
-        white-space: nowrap !important;
-        display: inline-block !important;
+        white-space: nowrap;
+        display: inline-block;
     }
 }
 
@@ -89,7 +89,7 @@
     height: auto;
     max-height: 500px;
     overflow-y: auto;
-    overflow-x: hidden !important;
+    overflow-x: hidden;
     padding-right: 6px;
     width: 100%;
     box-sizing: border-box;
@@ -137,7 +137,7 @@
 
 #expenseList,
 #incomeList {
-    overflow-x: hidden !important;
+    overflow-x: hidden;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;

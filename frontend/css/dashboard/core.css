@@ -32,16 +32,16 @@
     z-index: 1000;
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    background: rgba(16, 18, 14, 0.88) !important;
-    border-bottom: 1px solid rgba(var(--ink-rgb), 0.08) !important;
+    background: rgba(16, 18, 14, 0.88);
+    border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
     transition:
         background-color 0.3s,
         border-color 0.3s;
 }
 
 [data-theme="light"] .top-bar {
-    background: rgba(238, 241, 246, 0.92) !important;
-    border-bottom-color: rgba(199, 154, 62, 0.2) !important;
+    background: rgba(238, 241, 246, 0.92);
+    border-bottom-color: rgba(199, 154, 62, 0.2);
 }
 
 .user-profile {
@@ -58,7 +58,7 @@
 
 .user-profile.active,
 .user-profile:has(.profile-menu.active) {
-    z-index: 2500 !important;
+    z-index: 2500;
 }
 
 .user-profile:hover {
@@ -108,7 +108,7 @@
     border-radius: 16px;
     flex-direction: column;
     overflow: visible;
-    z-index: 2500 !important;
+    z-index: 2500;
     box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7);
     transform-origin: top right;
     transition:
@@ -116,7 +116,7 @@
         transform 0.25s var(--ease);
     opacity: 0;
     transform: scale(0.95) translateY(-6px);
-    display: flex !important;
+    display: flex;
     pointer-events: none;
 }
 
@@ -176,18 +176,18 @@
 
 .card:hover,
 .metric-card:hover {
-    transform: translateY(-4px) scale(1.01) !important;
+    transform: translateY(-4px) scale(1.01);
     box-shadow:
         0 16px 36px -10px rgba(var(--primary-rgb), 0.25),
-        0 0 16px rgba(var(--primary-rgb), 0.1) !important;
+        0 0 16px rgba(var(--primary-rgb), 0.1);
 }
 
 .card:hover {
-    border-color: rgba(var(--primary-rgb), 0.45) !important;
+    border-color: rgba(var(--primary-rgb), 0.45);
 }
 
 .metric-card:hover {
-    border-color: rgba(var(--primary-rgb), 0.6) !important;
+    border-color: rgba(var(--primary-rgb), 0.6);
 }
 
 .card-label {
@@ -208,18 +208,18 @@
 /* Top Bar Action Buttons */
 .top-bar .add-expense-button,
 .top-bar .add-income-button {
-    width: auto !important;
-    height: 40px !important;
-    padding: 0 16px !important;
-    font-size: 13.5px !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    cursor: pointer !important;
-    border-radius: 8px !important;
+    width: auto;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 13.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    border-radius: 8px;
 }
 
 /* Income Action Buttons — Emerald theme with high-contrast white text */
@@ -227,12 +227,12 @@
 #openIncomeModalBtn,
 #addIncomeTableBtn,
 #incomeForm button[type="submit"] {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(16, 185, 129, 0.5) !important;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.01em !important;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    font-weight: 700;
+    letter-spacing: -0.01em;
     height: 40px;
     padding: 0 16px;
     border-radius: 8px;
@@ -245,41 +245,41 @@
         color 0.25s var(--ease),
         border-color 0.25s var(--ease),
         box-shadow 0.25s var(--ease),
-        transform 0.25s var(--ease) !important;
+        transform 0.25s var(--ease);
 }
 
 .add-income-button span,
 #openIncomeModalBtn span,
 #addIncomeTableBtn span,
 #incomeForm button[type="submit"] span {
-    color: #ffffff !important;
-    font-weight: 700 !important;
+    color: #ffffff;
+    font-weight: 700;
 }
 
 .add-income-button svg,
 #openIncomeModalBtn svg,
 #addIncomeTableBtn svg,
 #incomeForm button[type="submit"] svg {
-    stroke: #ffffff !important;
-    color: #ffffff !important;
+    stroke: #ffffff;
+    color: #ffffff;
 }
 
 .add-income-button:hover,
 #openIncomeModalBtn:hover,
 #addIncomeTableBtn:hover,
 #incomeForm button[type="submit"]:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.5) !important;
-    transform: translateY(-2px) scale(1.02) !important;
-    color: #ffffff !important;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.5);
+    transform: translateY(-2px) scale(1.02);
+    color: #ffffff;
 }
 
 .add-income-button:active,
 #openIncomeModalBtn:active,
 #addIncomeTableBtn:active,
 #incomeForm button[type="submit"]:active {
-    transform: translateY(0) scale(0.98) !important;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .section-heading {
@@ -390,12 +390,12 @@
     }
 
     .expense-item > div:last-child {
-        gap: 5px !important;
+        gap: 5px;
     }
 
     .expense-amount {
         font-size: 14px;
-        margin-right: 2px !important;
+        margin-right: 2px;
     }
 }
 

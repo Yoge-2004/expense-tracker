@@ -32,8 +32,8 @@
     }
 
     .list-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
+        flex-direction: column;
+        align-items: flex-start;
         gap: 12px;
     }
 
@@ -46,7 +46,7 @@
     .command-search-wrapper {
         flex: 1;
         min-width: 0;
-        width: auto !important;
+        width: auto;
     }
 
     .btn-icon {
@@ -104,9 +104,9 @@
 /* ── Dashboard top-bar: prevent export buttons from overflowing ── */
 @media (max-width: 768px) {
     .list-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 12px !important;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 
     .list-header > div:first-child {
@@ -114,69 +114,69 @@
     }
 
     .list-header-actions {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: center !important;
-        gap: 8px !important;
-        width: 100% !important;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
     }
 
     .btn-text-icon {
-        font-size: 11px !important;
-        padding: 0 12px !important;
-        height: 34px !important;
-        width: auto !important;
-        min-width: fit-content !important;
-        white-space: nowrap !important;
-        flex-shrink: 0 !important;
+        font-size: 11px;
+        padding: 0 12px;
+        height: 34px;
+        width: auto;
+        min-width: fit-content;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     /* Budget grid single column */
     .budget-grid-matrix {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
     }
 
     /* Modal: full-width on small screens */
     .modal-overlay {
-        padding: 10px 8px !important;
-        overflow: hidden !important;
+        padding: 10px 8px;
+        overflow: hidden;
     }
 
     .modal {
-        width: 95% !important;
-        max-width: 440px !important;
-        max-height: min(calc(100dvh - 20px), calc(100vh - 20px), 90vh) !important;
-        padding: 22px 18px !important;
-        border-radius: 20px !important;
-        overflow-x: hidden !important;
+        width: 95%;
+        max-width: 440px;
+        max-height: min(calc(100dvh - 20px), calc(100vh - 20px), 90vh);
+        padding: 22px 18px;
+        border-radius: 20px;
+        overflow-x: hidden;
     }
 
     .modal::-webkit-scrollbar {
-        width: 4px !important;
+        width: 4px;
     }
 
     .modal::-webkit-scrollbar-button {
-        display: none !important;
-        width: 0 !important;
-        height: 0 !important;
+        display: none;
+        width: 0;
+        height: 0;
     }
 
     .modal::-webkit-scrollbar-track {
-        background: transparent !important;
-        margin-block: 20px !important;
-        margin-top: 20px !important;
-        margin-bottom: 20px !important;
-        border-radius: 999px !important;
+        background: transparent;
+        margin-block: 20px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        border-radius: 999px;
     }
 
     .modal::-webkit-scrollbar-thumb {
-        background: rgba(var(--primary-rgb), 0.45) !important;
-        border-radius: 999px !important;
+        background: rgba(var(--primary-rgb), 0.45);
+        border-radius: 999px;
     }
 
     .modal-large {
-        width: 95% !important;
-        max-height: 85vh !important;
+        width: 95%;
+        max-height: 85vh;
     }
 
     /* Switch label: always show text before toggle, with space between */
@@ -187,79 +187,79 @@
 
     /* Section heading meta hide */
     .section-meta {
-        display: none !important;
+        display: none;
     }
 
     /* Reduce card padding */
     .card {
-        padding: 16px !important;
+        padding: 16px;
     }
 
     /* Chart heights */
     .chart-wrapper {
-        height: 180px !important;
+        height: 180px;
     }
 
     .trend-chart-wrapper {
-        height: 180px !important;
+        height: 180px;
     }
 
     /* Expense items: wrap gracefully without truncating full expense name */
     .expense-item {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: flex-start !important;
-        gap: 12px !important;
-        padding: 14px 12px !important;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 12px;
     }
 
     .expense-emoji-box {
-        width: 38px !important;
-        height: 38px !important;
-        flex-shrink: 0 !important;
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
     }
 
     .expense-info {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .expense-title {
-        font-size: 14px !important;
-        font-weight: 700 !important;
-        white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: anywhere !important;
-        line-height: 1.35 !important;
-        margin: 0 0 4px 0 !important;
+        font-size: 14px;
+        font-weight: 700;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.35;
+        margin: 0 0 4px 0;
     }
 
     .expense-meta {
-        flex-wrap: wrap !important;
-        gap: 6px !important;
-        font-size: 11px !important;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 11px;
     }
 
     .expense-actions-col {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-end !important;
-        gap: 6px !important;
-        flex-shrink: 0 !important;
-        margin-left: 6px !important;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: 6px;
     }
 
     .expense-amount {
-        font-size: 15px !important;
-        font-weight: 700 !important;
-        white-space: nowrap !important;
+        font-size: 15px;
+        font-weight: 700;
+        white-space: nowrap;
     }
 
     .expense-actions-col .btn-edit,
     .expense-actions-col .btn-delete {
-        width: 28px !important;
-        height: 28px !important;
-        padding: 0 !important;
+        width: 28px;
+        height: 28px;
+        padding: 0;
     }
 }
 
@@ -267,199 +267,199 @@
 @media (max-width: 480px) {
     .dashboard-container {
         /* Keep 20px horizontal padding on narrow screens for consistent edge spacing. */
-        padding: 20px 20px 40px !important;
-        gap: 14px !important;
+        padding: 20px 20px 40px;
+        gap: 14px;
     }
 
     .top-bar-actions {
         /* Keep narrow-screen spacing aligned with the wider responsive tier. */
-        gap: 14px !important;
+        gap: 14px;
     }
 
     .metric-value {
-        font-size: 20px !important;
+        font-size: 20px;
     }
 
     .category-pills-bar {
-        gap: 8px !important;
+        gap: 8px;
     }
 
     .pill-chip {
-        padding: 6px 12px !important;
-        font-size: 12px !important;
+        padding: 6px 12px;
+        font-size: 12px;
     }
 
     .command-search-wrapper {
-        height: 42px !important;
-        padding: 0 10px !important;
-        gap: 8px !important;
-        border-radius: 12px !important;
+        height: 42px;
+        padding: 0 10px;
+        gap: 8px;
+        border-radius: 12px;
     }
 
     .command-search-input {
-        font-size: 14px !important;
-        padding: 0 4px !important;
+        font-size: 14px;
+        padding: 0 4px;
     }
 
     .modal-overlay {
-        padding: 8px 6px !important;
-        overflow: hidden !important;
+        padding: 8px 6px;
+        overflow: hidden;
     }
 
     .modal {
-        padding: 18px 14px !important;
-        width: 96% !important;
-        max-width: 420px !important;
-        max-height: min(calc(100dvh - 16px), calc(100vh - 16px), 92vh) !important;
-        border-radius: 18px !important;
-        overflow-x: hidden !important;
+        padding: 18px 14px;
+        width: 96%;
+        max-width: 420px;
+        max-height: min(calc(100dvh - 16px), calc(100vh - 16px), 92vh);
+        border-radius: 18px;
+        overflow-x: hidden;
     }
 
     .budget-date-row {
-        flex-direction: column !important;
-        gap: 10px !important;
+        flex-direction: column;
+        gap: 10px;
     }
 
     .budget-date-col {
-        width: 100% !important;
-        flex: none !important;
+        width: 100%;
+        flex: none;
     }
 
     .modal::-webkit-scrollbar {
-        width: 4px !important;
+        width: 4px;
     }
 
     .modal::-webkit-scrollbar-button {
-        display: none !important;
-        width: 0 !important;
-        height: 0 !important;
+        display: none;
+        width: 0;
+        height: 0;
     }
 
     .modal::-webkit-scrollbar-track {
-        background: transparent !important;
-        margin-block: 18px !important;
-        margin-top: 18px !important;
-        margin-bottom: 18px !important;
-        border-radius: 999px !important;
+        background: transparent;
+        margin-block: 18px;
+        margin-top: 18px;
+        margin-bottom: 18px;
+        border-radius: 999px;
     }
 
     .modal::-webkit-scrollbar-thumb {
-        background: rgba(var(--primary-rgb), 0.45) !important;
-        border-radius: 999px !important;
+        background: rgba(var(--primary-rgb), 0.45);
+        border-radius: 999px;
     }
 
     .section-title {
-        font-size: 15px !important;
+        font-size: 15px;
     }
 
     .card-label {
-        font-size: 10px !important;
+        font-size: 10px;
     }
 
     .btn-text-icon {
-        min-width: fit-content !important;
-        width: auto !important;
-        padding: 0 10px !important;
-        white-space: nowrap !important;
+        min-width: fit-content;
+        width: auto;
+        padding: 0 10px;
+        white-space: nowrap;
     }
 }
 
 /* ── Auth pages: compact layout on very small screens (<= 400px) ── */
 @media (max-width: 400px) {
     .hero-float-cards {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
-        width: 100% !important;
-        margin-bottom: 4px !important;
-        padding: 0 !important;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        width: 100%;
+        margin-bottom: 4px;
+        padding: 0;
     }
 
     .perks-grid {
-        margin-bottom: 4px !important;
+        margin-bottom: 4px;
     }
 
     .hero-float-cards .float-card:nth-child(3):last-child {
-        grid-column: 1 / -1 !important;
-        max-width: 220px !important;
-        margin: 0 auto !important;
+        grid-column: 1 / -1;
+        max-width: 220px;
+        margin: 0 auto;
     }
 
     .float-card, .perk-item {
-        padding: 6px 8px !important;
-        min-width: 0 !important;
-        gap: 6px !important;
-        border-radius: 10px !important;
-        overflow: hidden !important;
+        padding: 6px 8px;
+        min-width: 0;
+        gap: 6px;
+        border-radius: 10px;
+        overflow: hidden;
     }
 
     .float-card > div:not(.float-card-icon):not(.perk-icon),
     .perk-item > div:not(.float-card-icon):not(.perk-icon) {
-        min-width: 0 !important;
-        flex: 1 1 auto !important;
-        overflow: hidden !important;
+        min-width: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
     }
 
     .float-card-icon, .perk-icon {
-        width: 22px !important;
-        height: 22px !important;
-        min-width: 22px !important;
-        border-radius: 6px !important;
-        flex-shrink: 0 !important;
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        border-radius: 6px;
+        flex-shrink: 0;
     }
 
     .float-card-icon svg, .perk-icon svg {
-        width: 12px !important;
-        height: 12px !important;
+        width: 12px;
+        height: 12px;
     }
 
     .float-card-value, .perk-title {
-        font-size: 10px !important;
-        line-height: 1.2 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-width: 100% !important;
-        display: block !important;
+        font-size: 10px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        display: block;
     }
 
     .float-card-label, .perk-sub {
-        font-size: 8.5px !important;
-        line-height: 1.25 !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-width: 100% !important;
+        font-size: 8.5px;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
 
     .hero-features {
-        display: none !important;
+        display: none;
     }
 
     .auth-hero {
-        position: relative !important;
-        top: auto !important;
-        height: auto !important;
-        min-height: 0 !important;
-        padding: 14px 10px 4px !important;
+        position: relative;
+        top: auto;
+        height: auto;
+        min-height: 0;
+        padding: 14px 10px 4px;
     }
 
     .auth-form-section {
-        padding: 8px 10px 24px !important;
+        padding: 8px 10px 24px;
     }
 
     .auth-card {
-        padding: 18px 12px 20px !important;
+        padding: 18px 12px 20px;
     }
 
     .auth-card-header {
-        margin-bottom: 12px !important;
+        margin-bottom: 12px;
     }
 
     .hero-headline {
-        font-size: 20px !important;
+        font-size: 20px;
     }
 }
 
@@ -467,285 +467,285 @@
 @media (min-width: 481px) and (max-width: 768px) {
     /* Hero takes full width across the tablet: all 3 cards arranged in a sleek 3-column row */
     .hero-float-cards:not(.perks-grid) {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 10px !important;
-        width: 100% !important;
-        margin-bottom: 8px !important;
-        padding-bottom: 0 !important;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 8px;
+        padding-bottom: 0;
     }
 
     .hero-float-cards:not(.perks-grid) .float-card-1,
     .hero-float-cards:not(.perks-grid) .float-card-2,
     .hero-float-cards:not(.perks-grid) .float-card-3 {
-        grid-column: auto !important;
-        width: 100% !important;
-        margin: 0 !important;
+        grid-column: auto;
+        width: 100%;
+        margin: 0;
     }
 
     .perks-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 10px !important;
-        width: 100% !important;
-        margin-bottom: 8px !important;
-        padding-bottom: 0 !important;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 8px;
+        padding-bottom: 0;
     }
 
     .auth-hero {
-        position: relative !important;
-        top: auto !important;
-        height: auto !important;
-        min-height: 0 !important;
-        padding-bottom: 8px !important;
+        position: relative;
+        top: auto;
+        height: auto;
+        min-height: 0;
+        padding-bottom: 8px;
     }
 
     .auth-form-section {
-        padding-top: 14px !important;
+        padding-top: 14px;
     }
 
     .float-card, .perk-item {
-        margin: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        padding: 10px 12px !important;
-        border-radius: 12px !important;
-        gap: 10px !important;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 10px 12px;
+        border-radius: 12px;
+        gap: 10px;
     }
 
     .float-card-icon, .perk-icon {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
-        border-radius: 8px !important;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 8px;
     }
     .float-card-icon svg, .perk-icon svg {
-        width: 14px !important;
-        height: 14px !important;
+        width: 14px;
+        height: 14px;
     }
 
     .float-card-value, .perk-title {
-        font-size: 12px !important;
+        font-size: 12px;
     }
     .float-card-label, .perk-sub {
-        font-size: 10px !important;
+        font-size: 10px;
     }
 }
 
 /* ── Medium Desktop & Tablet Landscape (769px–1024px): Proportional compact dashboard layout ── */
 @media (min-width: 769px) and (max-width: 1024px) {
     .auth-hero-content {
-        max-width: 440px !important;
+        max-width: 440px;
     }
 
     .hero-float-cards {
-        gap: 10px !important;
-        margin-bottom: 16px !important;
-        width: 100% !important;
+        gap: 10px;
+        margin-bottom: 16px;
+        width: 100%;
     }
 
     .float-card, .perk-item {
-        padding: 11px 14px !important;
-        border-radius: 14px !important;
-        gap: 11px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        margin: 0 !important;
+        padding: 11px 14px;
+        border-radius: 14px;
+        gap: 11px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0;
     }
 
     .float-card-icon, .perk-icon {
-        width: 32px !important;
-        height: 32px !important;
-        min-width: 32px !important;
-        border-radius: 9px !important;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 9px;
     }
     .float-card-icon svg, .perk-icon svg {
-        width: 14px !important;
-        height: 14px !important;
+        width: 14px;
+        height: 14px;
     }
 
     .float-card-value, .perk-title {
-        font-size: 13px !important;
+        font-size: 13px;
     }
     .float-card-label, .perk-sub {
-        font-size: 10.5px !important;
+        font-size: 10.5px;
     }
 }
 
 /* ── Standard Desktop (1025px–1399px): Spacious 2-col dashboard cards ── */
 @media (min-width: 1025px) and (max-width: 1399px) {
     .auth-hero-content {
-        max-width: 500px !important;
+        max-width: 500px;
     }
 
     .hero-float-cards {
-        gap: 12px !important;
-        margin-bottom: 20px !important;
-        width: 100% !important;
+        gap: 12px;
+        margin-bottom: 20px;
+        width: 100%;
     }
 
     .float-card, .perk-item {
-        padding: 13px 18px !important;
-        border-radius: 16px !important;
-        gap: 13px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        margin: 0 !important;
+        padding: 13px 18px;
+        border-radius: 16px;
+        gap: 13px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0;
     }
 
     .hero-float-cards:not(.perks-grid) .float-card-1 {
-        padding: 15px 20px !important;
+        padding: 15px 20px;
     }
 
     .float-card-icon, .perk-icon {
-        width: 38px !important;
-        height: 38px !important;
-        min-width: 38px !important;
-        border-radius: 10px !important;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 10px;
     }
     .float-card-icon svg, .perk-icon svg {
-        width: 17px !important;
-        height: 17px !important;
+        width: 17px;
+        height: 17px;
     }
 
     .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-value {
-        font-size: 16px !important;
+        font-size: 16px;
     }
 
     .float-card-value, .perk-title {
-        font-size: 14px !important;
+        font-size: 14px;
     }
     .float-card-label, .perk-sub {
-        font-size: 11.5px !important;
+        font-size: 11.5px;
     }
 }
 
 /* ── Large & Ultra-Wide Displays (>= 1400px): Generous Card Scale & Dashboard Showcase ── */
 @media (min-width: 1400px) {
     .auth-hero-content {
-        max-width: 580px !important;
+        max-width: 580px;
     }
 
     .hero-float-cards {
-        gap: 16px !important;
-        margin-bottom: 26px !important;
-        width: 100% !important;
+        gap: 16px;
+        margin-bottom: 26px;
+        width: 100%;
     }
 
     .float-card, .perk-item {
-        padding: 16px 22px !important;
-        border-radius: 20px !important;
-        gap: 16px !important;
-        box-shadow: 0 16px 42px -8px rgba(0, 0, 0, 0.42) !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        margin: 0 !important;
+        padding: 16px 22px;
+        border-radius: 20px;
+        gap: 16px;
+        box-shadow: 0 16px 42px -8px rgba(0, 0, 0, 0.42);
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0;
     }
 
     /* On index.html, Card 1 is the prominent hero savings banner */
     .hero-float-cards:not(.perks-grid) .float-card-1 {
-        padding: 18px 24px !important;
+        padding: 18px 24px;
     }
 
     .float-card-icon, .perk-icon {
-        width: 44px !important;
-        height: 44px !important;
-        min-width: 44px !important;
-        border-radius: 12px !important;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 12px;
     }
     .float-card-icon svg, .perk-icon svg {
-        width: 20px !important;
-        height: 20px !important;
+        width: 20px;
+        height: 20px;
     }
 
     .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-value {
-        font-size: 18px !important;
+        font-size: 18px;
     }
     .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-label {
-        font-size: 13.5px !important;
+        font-size: 13.5px;
     }
 
     .float-card-value, .perk-title {
-        font-size: 15px !important;
+        font-size: 15px;
     }
     .float-card-label, .perk-sub {
-        font-size: 12px !important;
+        font-size: 12px;
     }
 }
 
 /* ── Tablet layout (901–1200px): tighter dashboard spacing ── */
 @media (min-width: 901px) and (max-width: 1200px) {
     .dashboard-container {
-        max-width: 100% !important;
-        padding: 24px 20px !important;
+        max-width: 100%;
+        padding: 24px 20px;
     }
 
     .top-bar {
-        flex-wrap: wrap !important;
-        row-gap: 12px !important;
-        column-gap: 16px !important;
-        box-sizing: border-box !important;
+        flex-wrap: wrap;
+        row-gap: 12px;
+        column-gap: 16px;
+        box-sizing: border-box;
     }
 
     .dashboard-heading {
-        flex: 0 1 auto !important;
-        min-width: 0 !important;
+        flex: 0 1 auto;
+        min-width: 0;
     }
 
     .top-bar-actions {
-        flex: 1 1 auto !important;
-        justify-content: flex-end !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        gap: 8px !important;
+        flex: 1 1 auto;
+        justify-content: flex-end;
+        max-width: 100%;
+        min-width: 0;
+        gap: 8px;
     }
 
     .top-bar .add-expense-button,
     .top-bar .add-income-button {
-        padding: 0 12px !important;
-        height: 38px !important;
-        font-size: 13px !important;
-        gap: 6px !important;
-        flex-shrink: 0 !important;
-        white-space: nowrap !important;
+        padding: 0 12px;
+        height: 38px;
+        font-size: 13px;
+        gap: 6px;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .top-bar-utility-group {
-        gap: 6px !important;
-        flex-shrink: 0 !important;
+        gap: 6px;
+        flex-shrink: 0;
     }
 
     .user-profile {
-        flex-shrink: 0 !important;
+        flex-shrink: 0;
     }
 
     .command-search-wrapper {
-        width: auto !important;
-        flex: 1 1 180px !important;
-        min-width: 140px !important;
-        max-width: 260px !important;
-        padding: 0 10px !important;
+        width: auto;
+        flex: 1 1 180px;
+        min-width: 140px;
+        max-width: 260px;
+        padding: 0 10px;
     }
 
     .command-search-wrapper:focus-within {
-        flex-basis: 220px !important;
-        max-width: 320px !important;
+        flex-basis: 220px;
+        max-width: 320px;
     }
 
     .grid-4-metrics {
-        gap: 14px !important;
+        gap: 14px;
     }
 
     .metric-card {
-        padding: 18px !important;
+        padding: 18px;
     }
 
     .metric-value {
-        font-size: 22px !important;
+        font-size: 22px;
     }
 }
 
@@ -798,185 +798,185 @@
 
 /* ── Tablet Portrait & Compact View (<= 900px) ── */
 @media (max-width: 900px) {
-    .command-kbd { display: none !important; }
+    .command-kbd { display: none; }
     .top-bar-actions {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-        grid-template-rows: auto auto auto !important;
-        grid-auto-flow: row !important;
-        align-items: center !important;
-        justify-items: stretch !important;
-        column-gap: 12px !important;
-        row-gap: 10px !important;
-        width: 100% !important;
-        min-width: 0 !important;
-        overflow-x: hidden !important;
-        padding: 0 10px !important;
-        box-sizing: border-box !important;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        grid-auto-flow: row;
+        align-items: center;
+        justify-items: stretch;
+        column-gap: 12px;
+        row-gap: 10px;
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+        padding: 0 10px;
+        box-sizing: border-box;
     }
     .top-bar-actions .command-search-wrapper {
-        grid-column: 1 / -1 !important;
-        grid-row: 1 !important;
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        margin-top: 10px !important;
+        grid-column: 1 / -1;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        margin-top: 10px;
     }
     .top-bar-actions > #openModalBtn,
     .top-bar-actions > #openIncomeModalBtn {
-        grid-row: 2 !important;
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        margin: 0 !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
-        white-space: nowrap !important;
-        text-overflow: ellipsis !important;
-        isolation: isolate !important;
-        transform: none !important;
+        grid-row: 2;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        margin: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        isolation: isolate;
+        transform: none;
     }
     .top-bar-actions > #openModalBtn::before,
     .top-bar-actions > #openModalBtn::after,
     .top-bar-actions > #openIncomeModalBtn::before,
     .top-bar-actions > #openIncomeModalBtn::after {
-        display: none !important;
-        content: none !important;
+        display: none;
+        content: none;
     }
-    .top-bar-actions > #openModalBtn { grid-column: 1 !important; }
-    .top-bar-actions > #openIncomeModalBtn { grid-column: 2 !important; }
+    .top-bar-actions > #openModalBtn { grid-column: 1; }
+    .top-bar-actions > #openIncomeModalBtn { grid-column: 2; }
     .top-bar-actions > .top-bar-utility-group,
     .top-bar-actions > .theme-toggle-btn,
     .top-bar-actions > #headerHelpBtn {
-        grid-column: 1 !important;
-        grid-row: 3 !important;
-        justify-self: start !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 8px !important;
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: start;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
     .top-bar-actions > .user-profile {
-        grid-column: 2 !important;
-        grid-row: 3 !important;
-        justify-self: end !important;
-        min-width: 0 !important;
+        grid-column: 2;
+        grid-row: 3;
+        justify-self: end;
+        min-width: 0;
     }
     .top-bar .add-expense-button > svg,
     .top-bar .add-income-button > svg {
-        flex: 0 0 18px !important;
-        width: 18px !important;
-        height: 18px !important;
-        min-width: 18px !important;
-        min-height: 18px !important;
+        flex: 0 0 18px;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        min-height: 18px;
     }
     .top-bar .add-expense-button > span,
     .top-bar .add-income-button > span {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        white-space: nowrap !important;
-        text-align: center !important;
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: center;
     }
     .profile-menu {
-        left: auto !important;
-        right: 0 !important;
-        width: min(320px, calc(100vw - 24px)) !important;
-        min-width: 0 !important;
-        max-width: calc(100vw - 24px) !important;
-        box-sizing: border-box !important;
+        left: auto;
+        right: 0;
+        width: min(320px, calc(100vw - 24px));
+        min-width: 0;
+        max-width: calc(100vw - 24px);
+        box-sizing: border-box;
     }
-    .subs-tab-bar { max-width: 100% !important; }
+    .subs-tab-bar { max-width: 100%; }
 }
 
 /* ── Mobile Screens (<= 760px) ── */
 @media (max-width: 760px) {
     .top-bar .add-expense-button,
     .top-bar .add-income-button {
-        padding-left: 12px !important;
-        padding-right: 12px !important;
-        min-width: 0 !important;
-        overflow: hidden !important;
-        isolation: isolate !important;
+        padding-left: 12px;
+        padding-right: 12px;
+        min-width: 0;
+        overflow: hidden;
+        isolation: isolate;
     }
     .top-bar .add-expense-button::before,
     .top-bar .add-expense-button::after,
     .top-bar .add-income-button::before,
     .top-bar .add-income-button::after {
-        content: none !important;
-        display: none !important;
-        width: 0 !important;
-        height: 0 !important;
-        animation: none !important;
-        transform: none !important;
-        box-shadow: none !important;
+        content: none;
+        display: none;
+        width: 0;
+        height: 0;
+        animation: none;
+        transform: none;
+        box-shadow: none;
     }
     #ledgerStreamTabs, .ledger-stream-tabs {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        min-width: 0 !important;
-        width: 100% !important;
-        scrollbar-width: none !important;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        min-width: 0;
+        width: 100%;
+        scrollbar-width: none;
     }
-    #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display: none !important; }
+    #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display: none; }
     #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
-        flex: 0 0 auto !important;
-        min-width: max-content !important;
-        white-space: nowrap !important;
+        flex: 0 0 auto;
+        min-width: max-content;
+        white-space: nowrap;
     }
     #incomeList .btn-edit, #incomeList .btn-delete {
-        width: 34px !important;
-        height: 34px !important;
-        min-width: 34px !important;
-        min-height: 34px !important;
-        padding: 0 !important;
-        border-radius: 10px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex: 0 0 34px !important;
-        box-sizing: border-box !important;
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        min-height: 34px;
+        padding: 0;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+        box-sizing: border-box;
     }
     #incomeList .btn-edit svg, #incomeList .btn-delete svg {
-        width: 14px !important;
-        height: 14px !important;
-        display: block !important;
+        width: 14px;
+        height: 14px;
+        display: block;
     }
 }
 
 /* ── Mobile Compact (<= 700px) ── */
 @media (max-width: 700px) {
-    .top-bar-actions .command-search-wrapper { width: 100% !important; min-width: 0 !important; flex: 1 1 100% !important; }
-    .budget-status-row { gap: 8px !important; font-size: 10.5px !important; }
-    .budget-item { padding: 13px !important; }
-    .budget-item .budget-bar-track { height: 7px !important; margin-top: 9px !important; }
-    #incomeList tbody tr { width: 100% !important; }
+    .top-bar-actions .command-search-wrapper { width: 100%; min-width: 0; flex: 1 1 100%; }
+    .budget-status-row { gap: 8px; font-size: 10.5px; }
+    .budget-item { padding: 13px; }
+    .budget-item .budget-bar-track { height: 7px; margin-top: 9px; }
+    #incomeList tbody tr { width: 100%; }
 }
 
 /* ── Mobile Handheld (<= 480px) ── */
 @media (max-width: 480px) {
-    .top-bar-actions { gap: 8px !important; column-gap: 12px !important; row-gap: 8px !important; padding-left: 10px !important; padding-right: 10px !important; }
-    .top-bar .add-expense-button, .top-bar .add-income-button { height: 38px !important; padding: 0 9px !important; font-size: 12px !important; gap: 5px !important; border-radius: 9px !important; }
+    .top-bar-actions { gap: 8px; column-gap: 12px; row-gap: 8px; padding-left: 10px; padding-right: 10px; }
+    .top-bar .add-expense-button, .top-bar .add-income-button { height: 38px; padding: 0 9px; font-size: 12px; gap: 5px; border-radius: 9px; }
     .input-wrapper:has(> .input-icon) > input.form-input,
     .input-wrapper:has(> .input-icon) > textarea.form-input,
     .input-wrapper:has(> .input-icon) > select.form-input,
     .input-wrapper:has(> svg.input-icon) > input.form-input,
     .input-wrapper:has(> svg.input-icon) > textarea.form-input,
-    .input-wrapper:has(> svg.input-icon) > select.form-input { padding-left: 38px !important; }
-    .input-wrapper > .input-icon, .input-wrapper > svg.input-icon { left: 10px !important; width: 14px !important; height: 14px !important; max-width: 14px !important; max-height: 14px !important; flex-basis: 14px !important; }
-    .top-bar .add-expense-button > span, .top-bar .add-income-button > span { min-width: 0 !important; max-width: 100% !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
-    .profile-menu { width: calc(100vw - 20px) !important; max-width: calc(100vw - 20px) !important; right: -2px !important; }
+    .input-wrapper:has(> svg.input-icon) > select.form-input { padding-left: 38px; }
+    .input-wrapper > .input-icon, .input-wrapper > svg.input-icon { left: 10px; width: 14px; height: 14px; max-width: 14px; max-height: 14px; flex-basis: 14px; }
+    .top-bar .add-expense-button > span, .top-bar .add-income-button > span { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .profile-menu { width: calc(100vw - 20px); max-width: calc(100vw - 20px); right: -2px; }
 }
 
 /* ── Extra-Small Screens (<= 360px) ── */
 @media (max-width: 360px) {
     .input-wrapper > .input-icon {
-        left: 10px !important;
-        width: 14px !important;
-        height: 14px !important;
+        left: 10px;
+        width: 14px;
+        height: 14px;
     }
     .input-wrapper > input:not([type="hidden"]),
     .input-wrapper > .form-input,
@@ -986,7 +986,7 @@
     .auth-form .input-wrapper > .form-input,
     .input-wrapper > .custom-select-trigger,
     .form-group .input-wrapper > .custom-select-trigger {
-        padding-left: 48px !important;
-        box-sizing: border-box !important;
+        padding-left: 48px;
+        box-sizing: border-box;
     }
 }

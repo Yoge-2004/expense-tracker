@@ -14,14 +14,14 @@
     background:
         radial-gradient(circle at 12% 15%, rgba(var(--primary-rgb), 0.12) 0%, transparent 45%),
         radial-gradient(circle at 88% 18%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 50% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 60%) !important;
+        radial-gradient(circle at 50% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
 }
 
 [data-theme="light"] .hero-bg {
     background:
         radial-gradient(circle at 10% 12%, rgba(212, 175, 55, 0.14) 0%, transparent 45%),
         radial-gradient(circle at 90% 15%, rgba(16, 185, 129, 0.10) 0%, transparent 50%),
-        radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 55%) !important;
+        radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 55%);
 }
 
 /* 2. CARD ELEVATION & FROSTED GLASS EFFECT */
@@ -31,13 +31,13 @@
 .insight-card-item,
 .savings-goal-card,
 .budget-item {
-    background: rgba(23, 26, 20, 0.78) !important;
-    backdrop-filter: blur(20px) saturate(140%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
-    border: 1px solid rgba(236, 231, 216, 0.10) !important;
+    background: rgba(23, 26, 20, 0.78);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(236, 231, 216, 0.10);
     box-shadow:
         0 10px 30px -10px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.03) inset !important;
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
     position: relative;
 }
 
@@ -47,13 +47,13 @@
 [data-theme="light"] .insight-card-item,
 [data-theme="light"] .savings-goal-card,
 [data-theme="light"] .budget-item {
-    background: rgba(255, 255, 255, 0.82) !important;
-    backdrop-filter: blur(24px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
-    border: 1px solid rgba(212, 175, 55, 0.22) !important;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(212, 175, 55, 0.22);
     box-shadow:
         0 14px 34px -10px rgba(180, 140, 60, 0.14),
-        0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+        0 0 0 1px rgba(255, 255, 255, 0.6) inset;
 }
 
 /* Subtle top edge specular highlight */
@@ -84,8 +84,8 @@
 .budget-status-value,
 .expense-amount,
 .income-amount-text {
-    font-variant-numeric: tabular-nums !important;
-    letter-spacing: -0.02em !important;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
 }
 
 /* 4. REFINED METRIC CARD ACCENT UNDERGLOWS */
@@ -93,58 +93,58 @@
     box-shadow:
         0 14px 32px -6px var(--metric-inflow-glow),
         0 0 0 1px var(--metric-inflow),
-        0 0 24px -4px var(--metric-inflow-glow) inset !important;
+        0 0 24px -4px var(--metric-inflow-glow) inset;
 }
 
 .metric-card.metric-card-outflow:hover {
     box-shadow:
         0 14px 32px -6px var(--metric-outflow-glow),
         0 0 0 1px var(--metric-outflow),
-        0 0 24px -4px var(--metric-outflow-glow) inset !important;
+        0 0 24px -4px var(--metric-outflow-glow) inset;
 }
 
 .metric-card.metric-card-netflow:hover {
     box-shadow:
         0 14px 32px -6px var(--metric-netflow-glow),
         0 0 0 1px var(--metric-netflow),
-        0 0 24px -4px var(--metric-netflow-glow) inset !important;
+        0 0 24px -4px var(--metric-netflow-glow) inset;
 }
 
 .metric-card.metric-card-savings:hover {
     box-shadow:
         0 14px 32px -6px var(--metric-savings-glow),
         0 0 0 1px var(--metric-savings),
-        0 0 24px -4px var(--metric-savings-glow) inset !important;
+        0 0 24px -4px var(--metric-savings-glow) inset;
 }
 
 .metric-card.metric-card-subs:hover {
     box-shadow:
         0 14px 32px -6px var(--metric-subs-glow),
         0 0 0 1px var(--metric-subs),
-        0 0 24px -4px var(--metric-subs-glow) inset !important;
+        0 0 24px -4px var(--metric-subs-glow) inset;
 }
 
 /* 5. DYNAMIC SHIMMERING PROGRESS BARS */
 .budget-bar-track,
 .progress-track {
-    background: rgba(0, 0, 0, 0.28) !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) inset !important;
-    position: relative !important;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) inset;
+    position: relative;
 }
 
 [data-theme="light"] .budget-bar-track,
 [data-theme="light"] .progress-track {
-    background: rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) inset !important;
+    background: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) inset;
 }
 
 .budget-bar-fill,
 .goal-progress-fill {
-    position: relative !important;
-    border-radius: 999px !important;
-    box-shadow: 0 0 12px currentColor !important;
+    position: relative;
+    border-radius: 999px;
+    box-shadow: 0 0 12px currentColor;
 }
 
 .budget-bar-fill::after,
@@ -172,67 +172,67 @@
 /* 6. STATUS PILL BADGES & CHIPS REFINEMENT */
 .status-badge,
 .pill-chip {
-    border-radius: 999px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.04em !important;
-    text-transform: uppercase !important;
-    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s ease !important;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s ease;
 }
 
 .status-badge.badge-success {
-    background: rgba(16, 185, 129, 0.14) !important;
-    color: #10B981 !important;
-    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    background: rgba(16, 185, 129, 0.14);
+    color: #10B981;
+    border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .status-badge.badge-warning {
-    background: rgba(245, 158, 11, 0.14) !important;
-    color: #F59E0B !important;
-    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    background: rgba(245, 158, 11, 0.14);
+    color: #F59E0B;
+    border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .status-badge.badge-outflow,
 .status-badge.badge-danger {
-    background: rgba(239, 68, 68, 0.14) !important;
-    color: #EF4444 !important;
-    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+    background: rgba(239, 68, 68, 0.14);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .status-badge.badge-netflow {
-    background: rgba(59, 130, 246, 0.14) !important;
-    color: #3B82F6 !important;
-    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+    background: rgba(59, 130, 246, 0.14);
+    color: #3B82F6;
+    border: 1px solid rgba(59, 130, 246, 0.35);
 }
 
 .status-badge.badge-subs {
-    background: rgba(192, 86, 94, 0.14) !important;
-    color: #E06C75 !important;
-    border: 1px solid rgba(192, 86, 94, 0.35) !important;
+    background: rgba(192, 86, 94, 0.14);
+    color: #E06C75;
+    border: 1px solid rgba(192, 86, 94, 0.35);
 }
 
 /* 7. EMPTY STATE LUXURY ELEVATION */
 .empty-state-compact {
-    border-radius: 16px !important;
-    background: rgba(255, 255, 255, 0.02) !important;
-    border: 1px dashed rgba(var(--primary-rgb), 0.28) !important;
-    backdrop-filter: blur(12px) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
-    transition: border-color 0.25s ease, background-color 0.25s ease !important;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(var(--primary-rgb), 0.28);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: border-color 0.25s ease, background-color 0.25s ease;
 }
 
 .empty-state-compact:hover {
-    background: rgba(var(--primary-rgb), 0.03) !important;
-    border-color: rgba(var(--primary-rgb), 0.45) !important;
+    background: rgba(var(--primary-rgb), 0.03);
+    border-color: rgba(var(--primary-rgb), 0.45);
 }
 
 [data-theme="light"] .empty-state-compact {
-    background: rgba(255, 255, 255, 0.6) !important;
-    border-color: rgba(212, 175, 55, 0.3) !important;
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(212, 175, 55, 0.3);
 }
 
 /* 8. TOP COMMAND BAR BLUR & RADIANT BORDER */
 .top-bar {
-    backdrop-filter: blur(28px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
 }

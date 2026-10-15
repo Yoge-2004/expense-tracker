@@ -1,17 +1,17 @@
 /* EXPENSE TRACKER — CUSTOM SELECT */
 
 .custom-select-native {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .custom-select-wrapper {
@@ -99,12 +99,12 @@
 
 .custom-select-emerald .custom-select-trigger:hover,
 .custom-select-emerald.open .custom-select-trigger {
-    border-color: #10b981 !important;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18) !important;
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
 }
 
 .custom-select-emerald.open .custom-select-arrow {
-    color: #10b981 !important;
+    color: #10b981;
 }
 
 .custom-select-options {
@@ -246,41 +246,41 @@
 }
 
 .custom-select-emerald .custom-option:hover {
-    background: rgba(16, 185, 129, 0.14) !important;
-    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.14);
+    color: #10b981;
 }
 
 .custom-select-emerald .custom-option.selected {
-    background: linear-gradient(135deg, #10b981, #059669) !important;
-    color: #ffffff !important;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
 }
 
 .custom-select-emerald .custom-option.selected .custom-option-check {
-    stroke: #ffffff !important;
+    stroke: #ffffff;
 }
 
 .custom-select-amber .custom-select-trigger:hover,
 .custom-select-amber.open .custom-select-trigger {
-    border-color: #f59e0b !important;
-    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18) !important;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
 }
 
 .custom-select-amber.open .custom-select-arrow {
-    color: #f59e0b !important;
+    color: #f59e0b;
 }
 
 .custom-select-amber .custom-option:hover {
-    background: rgba(245, 158, 11, 0.14) !important;
-    color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.14);
+    color: #f59e0b;
 }
 
 .custom-select-amber .custom-option.selected {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-    color: #ffffff !important;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #ffffff;
 }
 
 .custom-select-amber .custom-option.selected .custom-option-check {
-    stroke: #ffffff !important;
+    stroke: #ffffff;
 }
 
 .custom-select-options::-webkit-scrollbar {

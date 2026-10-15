@@ -1,25 +1,25 @@
 @media (min-width: 901px) {
     .auth-hero {
-        background: transparent !important;
-        position: relative !important;
-        top: auto !important;
-        align-self: stretch !important;
-        overflow: visible !important;
-        overscroll-behavior: auto !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
+        background: transparent;
+        position: relative;
+        top: auto;
+        align-self: stretch;
+        overflow: visible;
+        overscroll-behavior: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
         padding: clamp(28px, 4vh, 48px) clamp(32px, 3.5vw, 48px)
-            clamp(24px, 3vh, 40px) clamp(40px, 5vw, 80px) !important;
-        min-height: 100vh !important;
-        height: auto !important;
-        box-sizing: border-box !important;
+            clamp(24px, 3vh, 40px) clamp(40px, 5vw, 80px);
+        min-height: 100vh;
+        height: auto;
+        box-sizing: border-box;
     }
     .auth-hero::-webkit-scrollbar {
-        display: none !important;
-        width: 0 !important;
-        height: 0 !important;
+        display: none;
+        width: 0;
+        height: 0;
     }
     .auth-hero::before {
         content: "";
@@ -53,22 +53,22 @@
     }
 }
 [data-theme="light"] .auth-card {
-    background: var(--card-bg) !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
+    background: var(--card-bg);
+    border-color: rgba(0, 0, 0, 0.08);
     box-shadow:
         0 20px 50px -10px rgba(0, 0, 0, 0.08),
-        0 0 0 1px rgba(0, 0, 0, 0.04) !important;
-    padding: 48px 40px !important;
-    box-sizing: border-box !important;
+        0 0 0 1px rgba(0, 0, 0, 0.04);
+    padding: 48px 40px;
+    box-sizing: border-box;
 }
 .float-card,
 .perk-item {
-    background: rgba(23, 26, 20, 0.52) !important;
-    border-radius: 18px !important;
-    backdrop-filter: blur(20px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
-    border: 1px solid rgba(236, 231, 216, 0.12) !important;
-    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.38) !important;
+    background: rgba(23, 26, 20, 0.52);
+    border-radius: 18px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(236, 231, 216, 0.12);
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.38);
     transition:
         transform 0.3s var(--ease),
         box-shadow 0.3s,
@@ -76,7 +76,7 @@
 }
 .float-card:hover,
 .perk-item:hover {
-    transform: translateY(-6px) !important;
-    box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.5) !important;
-    border-color: rgba(199, 154, 62, 0.35) !important;
+    transform: translateY(-6px);
+    box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.5);
+    border-color: rgba(199, 154, 62, 0.35);
 }

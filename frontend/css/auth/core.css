@@ -101,34 +101,34 @@
 
 /* Restrained gold gradient — single hue, no shimmer animation */
 .btn-primary, button[type="submit"] {
-    background: var(--primary-gradient) !important;
+    background: var(--primary-gradient);
     transition:
         background-color 0.35s var(--ease),
         background-position 0.35s var(--ease),
         transform 0.35s var(--ease),
-        box-shadow 0.35s var(--ease) !important;
-    box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb), 0.35) !important;
+        box-shadow 0.35s var(--ease);
+    box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb), 0.35);
 }
 
 .btn-primary:hover, button[type="submit"]:hover {
-    background-position: right center !important;
-    transform: translateY(-2px) scale(1.01) !important;
-    box-shadow: 0 12px 32px -4px rgba(var(--primary-rgb), 0.5), 0 0 20px rgba(var(--accent-rgb), 0.25) !important;
+    background-position: right center;
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 12px 32px -4px rgba(var(--primary-rgb), 0.5), 0 0 20px rgba(var(--accent-rgb), 0.25);
 }
 
 .btn-icon:active, .suggestion-chip:active, .card:active {
-    transform: scale(0.97) !important;
+    transform: scale(0.97);
 }
 
 /* Card Elevation & Glowing Hover Interactions */
 .card, .float-card, .perk-item {
-    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease) !important;
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
 }
 
 .card:hover, .float-card:hover {
-    transform: translateY(-3px) scale(1.01) !important;
-    border-color: rgba(var(--primary-rgb), 0.45) !important;
-    box-shadow: 0 14px 36px -10px rgba(var(--primary-rgb), 0.22), 0 0 18px rgba(var(--accent-rgb), 0.12) !important;
+    transform: translateY(-3px) scale(1.01);
+    border-color: rgba(var(--primary-rgb), 0.45);
+    box-shadow: 0 14px 36px -10px rgba(var(--primary-rgb), 0.22), 0 0 18px rgba(var(--accent-rgb), 0.12);
 }
 
 /* Runtime-authored loading indicator: layout belongs to CSS, state belongs to JS. */

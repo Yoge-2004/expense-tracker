@@ -1,38 +1,38 @@
 /* INCOME FILTER TOOLBAR & PILLS */
 #incomePillsBar .pill-chip.active {
-    background: rgba(16, 185, 129, 0.18) !important;
-    border-color: #10B981 !important;
-    color: #10B981 !important;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
-    transform: translateY(-2px) scale(1.03) !important;
+    background: rgba(16, 185, 129, 0.18);
+    border-color: #10B981;
+    color: #10B981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+    transform: translateY(-2px) scale(1.03);
 }
 
 #incomePillsBar .pill-chip:hover {
-    border-color: rgba(16, 185, 129, 0.7) !important;
-    color: #10B981 !important;
-    background: rgba(16, 185, 129, 0.08) !important;
-    transform: translateY(-2px) scale(1.03) !important;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25) !important;
+    border-color: rgba(16, 185, 129, 0.7);
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.08);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
 }
 
 #incomePillsBar .pill-chip.active:hover {
-    transform: translateY(-2px) scale(1.03) !important;
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35) !important;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
 
 #incomeFilterPanel {
-    border-color: rgba(16, 185, 129, 0.22) !important;
+    border-color: rgba(16, 185, 129, 0.22);
 }
 
 #incomeFilterPanel input:focus,
 #incomeFilterPanel select:focus {
-    border-color: #10B981 !important;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22) !important;
-    outline: none !important;
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+    outline: none;
 }
 
 #incomeFilterPanel .dark-date::-webkit-calendar-picker-indicator {
-    filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg) !important;
+    filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg);
 }
 
 /* CATEGORY PILLS WRAPPER & CHIPS SYSTEM */
@@ -61,14 +61,14 @@
     overflow-y: hidden;
     padding: 4px 8px 4px 4px;
     box-sizing: border-box;
-    scrollbar-width: none !important; /* Firefox */
+    scrollbar-width: none; /* Firefox */
     scroll-behavior: smooth;
 }
 
 .category-pills-bar::-webkit-scrollbar {
     display: none !important; /* Chrome, Safari, Edge */
-    width: 0 !important;
-    height: 0 !important;
+    width: 0;
+    height: 0;
 }
 
 /* Unique overflow indicator cleanly docked beside pills without overlapping */
@@ -163,17 +163,17 @@
 }
 
 .pill-chip {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-    min-width: max-content !important;
-    width: auto !important;
-    height: 32px !important;
-    padding: 0 16px !important;
-    border-radius: 100px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: max-content;
+    width: auto;
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 100px;
     background: var(--input-bg);
     border: 1px solid var(--border);
     color: var(--text-muted);
@@ -183,7 +183,7 @@
     cursor: pointer;
     position: relative;
     z-index: 1;
-    overflow: visible !important;
+    overflow: visible;
     transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
                 background-color 0.2s var(--ease),
@@ -201,16 +201,16 @@
 }
 
 .pill-chip.active {
-    background: var(--primary-gradient) !important;
-    color: #fff !important;
-    border-color: transparent !important;
-    box-shadow: 0 4px 12px var(--primary-glow) !important;
-    transform: translateY(-2px) scale(1.03) !important;
+    background: var(--primary-gradient);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px var(--primary-glow);
+    transform: translateY(-2px) scale(1.03);
 }
 
 .pill-chip.active:hover {
-    transform: translateY(-2px) scale(1.03) !important;
-    box-shadow: 0 6px 16px var(--primary-glow) !important;
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 16px var(--primary-glow);
 }
 
 /* BUDGET GRID MATRIX */
@@ -222,11 +222,11 @@
 
 .budget-grid-matrix .empty-state-compact,
 .savings-grid-matrix .empty-state-compact {
-    grid-column: 1 / -1 !important;
-    width: 100% !important;
-    text-align: center !important;
-    justify-self: center !important;
-    box-sizing: border-box !important;
+    grid-column: 1 / -1;
+    width: 100%;
+    text-align: center;
+    justify-self: center;
+    box-sizing: border-box;
 }
 
 .btn-text-icon {
