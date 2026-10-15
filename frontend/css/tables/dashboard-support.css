@@ -3,14 +3,22 @@
 /* 1. Modal Category Group */
 .input-group {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
-.input-group select {
-    flex: 1;
+.input-group select,
+.input-group .custom-select-wrapper {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
 }
 .input-group .btn-icon {
-    width: 50px;
+    width: 42px;
+    min-width: 42px;
+    flex: 0 0 42px;
     height: auto; /* Stretch to match select height */
 
     /* Perfect Centering */
@@ -19,6 +27,18 @@
     justify-content: center;
     padding: 0;
     border-radius: 12px;
+}
+
+@media (max-width: 480px) {
+    .input-group {
+        gap: 6px;
+    }
+    .input-group .btn-icon {
+        width: 38px;
+        min-width: 38px;
+        flex: 0 0 38px;
+        border-radius: 10px;
+    }
 }
 
 /* 2. Monthly Budget & Savings Goal Card Headers */

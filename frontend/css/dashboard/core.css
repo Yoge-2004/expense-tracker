@@ -603,25 +603,35 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 
 /* Subscriptions Tab Bar */
 .subs-tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
+    width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
 }
 .subs-tab-bar::-webkit-scrollbar { display: none; }
 .subs-tab-btn {
     box-sizing: border-box;
-    min-height: 38px;
-    padding: 7px 16px;
+    min-height: 36px;
+    padding: 7px 15px;
     border-width: 1px;
     font-size: 12px;
     line-height: 1.2;
     white-space: nowrap;
     transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
-    flex: 1 1 0;
-    width: 0;
-    min-width: 0;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: max-content;
     text-align: center;
 }
 .subs-tab-btn.active { font-weight: 600; }

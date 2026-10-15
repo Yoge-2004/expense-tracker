@@ -66,6 +66,10 @@
     scrollbar-gutter: stable;
 }
 
+.modal.modal-wide {
+    max-width: 580px;
+}
+
 /* Modal scrollbars adapted for curved dialog boundaries */
 .modal::-webkit-scrollbar {
     width: 6px;
@@ -581,6 +585,10 @@
     color: var(--text-muted);
     cursor: var(--cursor-pointer, pointer);
     transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: max-content;
+    white-space: nowrap;
 }
 .subs-tab-btn:hover {
     color: var(--text-main);

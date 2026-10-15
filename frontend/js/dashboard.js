@@ -2784,6 +2784,7 @@ function refreshIncomeMonthOptions(selected) {
     if (keep && !options.some(([value]) => value === keep)) options.push([keep, MoneyFlow.monthLabel(keep)]);
     select.innerHTML = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
     select.value = options.some(([value]) => value === keep) ? keep : "";
+    if (window.syncCustomSelect) window.syncCustomSelect(select);
 }
 
 function populateReimbursedCategories(selectedId) {
@@ -2794,6 +2795,7 @@ function populateReimbursedCategories(selectedId) {
         .join("");
     select.innerHTML = `<option value="">The month as a whole</option>${options}`;
     select.value = selectedId ? String(selectedId) : "";
+    if (window.syncCustomSelect) window.syncCustomSelect(select);
 }
 
 function syncIncomeKindUI() {
@@ -2813,7 +2815,10 @@ function syncIncomeKindUI() {
  *  is simply the month of its date, so that case is shown as "same month". */
 function setIncomeClassification(kind, countsTowardMonth, reimbursedCategoryId) {
     const kindEl = document.getElementById("incomeKind");
-    if (kindEl) kindEl.value = kind || "";
+    if (kindEl) {
+        kindEl.value = kind || "";
+        if (window.syncCustomSelect) window.syncCustomSelect(kindEl);
+    }
     const dateMonth = window.MoneyFlow.monthKey(document.getElementById("incomeDate")?.value);
     refreshIncomeMonthOptions(countsTowardMonth && countsTowardMonth !== dateMonth ? countsTowardMonth : "");
     populateReimbursedCategories(reimbursedCategoryId);
