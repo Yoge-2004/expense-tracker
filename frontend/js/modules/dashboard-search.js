@@ -15,9 +15,7 @@
         if (window.innerWidth <= 600) {
             input.placeholder = "Search expenses & incomes...";
         } else {
-            input.placeholder = isMacPlatform
-                ? "Search expenses & incomes (Press / or ⌘K)..."
-                : "Search expenses & incomes (Press / or Ctrl+K)...";
+            input.placeholder = "Search expenses & incomes (Press /)...";
         }
     }
 

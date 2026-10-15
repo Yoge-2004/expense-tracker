@@ -22,18 +22,14 @@
     }
 }
 
-.top-bar {
-    padding: 4px 0 16px;
-    margin-bottom: 4px;
-}
-
+/* .top-bar layout and padding are standardized in dashboard/core.css */
 .dashboard-heading h2 {
-    font-size: clamp(26px, 4vw, 34px);
-    letter-spacing: -1px;
+    font-size: clamp(24px, 3.5vw, 28px);
+    letter-spacing: -0.6px;
 }
 
 .dashboard-heading p {
-    margin-top: 10px;
+    margin: 0;
 }
 
 .top-bar-actions {

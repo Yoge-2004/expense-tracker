@@ -1641,6 +1641,7 @@ elements.subsModal?.addEventListener("click", (e) => {
 let currentSubsModalTab = 'expenses';
 let cachedSubsExpenses = [];
 let cachedSubsIncomes = [];
+let isSubsOffline = false;
 
 async function loadSubscriptions() {
     if (elements.subsList) {
@@ -1651,27 +1652,62 @@ async function loadSubscriptions() {
         const activeExpenses = allExpenses || [];
         const activeIncomes = allIncomes || [];
 
+        let subsFailed = false;
+        let incsFailed = false;
+        let savsFailed = false;
+
         const isFileOrOffline = window.location.protocol === "file:" || !navigator.onLine || window.location.search.includes("test_mock_auth") || !userId;
         const [subs, incs, savs] = await Promise.all([
-            (activeExpenses && activeExpenses.some(e => !!(e.isRecurring || e.recurring)))
+            (activeExpenses && activeExpenses.length > 0)
                 ? Promise.resolve(activeExpenses.filter(e => !!(e.isRecurring || e.recurring)))
                 : (isFileOrOffline ? Promise.resolve([]) : apiRequest(`/expenses/recurring/user/${userId}`).catch(err => {
                     console.warn("Failed to load recurring expenses:", err);
-                    return [];
+                    subsFailed = true;
+                    return null;
                 })),
             (activeIncomes && activeIncomes.length > 0)
                 ? Promise.resolve(activeIncomes)
                 : (isFileOrOffline ? Promise.resolve([]) : apiRequest(`/incomes/user/${userId}`).catch(err => {
                     console.warn("Failed to load incomes for recurring modal:", err);
-                    return [];
+                    incsFailed = true;
+                    return null;
                 })),
             (allSavingsGoals && allSavingsGoals.length > 0)
                 ? Promise.resolve(allSavingsGoals)
                 : (isFileOrOffline ? Promise.resolve([]) : apiRequest(`/savings/goals/user/${userId}`).catch(err => {
                     console.warn("Failed to load savings goals for recurring modal:", err);
-                    return [];
+                    savsFailed = true;
+                    return null;
                 }))
         ]);
+
+        isSubsOffline = (subsFailed && incsFailed && savsFailed) || (subs === null && incs === null && savs === null);
+
+        if (isSubsOffline) {
+            const summaryEl = document.getElementById("subsCashflowSummary");
+            if (summaryEl) {
+                summaryEl.innerHTML = `
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                `;
+            }
+            renderSubsModalContent();
+            return;
+        }
 
         cachedSubsExpenses = Array.isArray(subs) ? subs : [];
         cachedSubsIncomes = (Array.isArray(incs) ? incs : []).filter(i => !!(i.isRecurring || i.recurring));
@@ -1731,9 +1767,29 @@ async function loadSubscriptions() {
         renderSubsModalContent();
 
     } catch (error) {
-        if (elements.subsList) {
-            elements.subsList.innerHTML = `<p style="color:var(--danger)">Error: ${error.message}</p>`;
+        isSubsOffline = true;
+        const summaryEl = document.getElementById("subsCashflowSummary");
+        if (summaryEl) {
+            summaryEl.innerHTML = `
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+            `;
         }
+        renderSubsModalContent();
     }
 }
 
@@ -1756,6 +1812,21 @@ window.switchSubsModalTab = switchSubsModalTab;
 
 function renderSubsModalContent() {
     if (!elements.subsList) return;
+
+    if (isSubsOffline) {
+        elements.subsList.innerHTML = `
+            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
+                <div class="empty-state-icon" style="font-size:32px; margin-bottom:8px;">⚠️</div>
+                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
+                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
+                    Could not reach the server to load your subscriptions and recurring cash flow.
+                </div>
+                <button type="button" class="btn-primary btn-sm" onclick="loadSubscriptions()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:8px 18px; font-size:13px; border-radius:8px;">
+                    Retry Connection
+                </button>
+            </div>`;
+        return;
+    }
 
     if (currentSubsModalTab === 'expenses') {
         if (!cachedSubsExpenses || cachedSubsExpenses.length === 0) {
