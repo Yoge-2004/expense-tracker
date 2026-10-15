@@ -195,7 +195,7 @@
     height: 32px;
     background: transparent;
     border: none;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     color: var(--text-muted);
     display: grid;
     place-items: center;
@@ -222,7 +222,7 @@
     color: var(--text-main);
     font-size: 14px;
     font-weight: 600;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -320,7 +320,7 @@
 .custom-option {
     padding: 9px 12px;
     border-radius: 10px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     font-size: 13px;
     font-weight: 600;
     color: var(--text-main);
@@ -353,7 +353,7 @@
     background: var(--primary-gradient);
     border: none;
     border-radius: 14px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     display: flex;
     align-items: center;
     justify-content: center;

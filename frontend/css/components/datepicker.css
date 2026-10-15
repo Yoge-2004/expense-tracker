@@ -3,7 +3,7 @@
    ========================================================================== */
 
 .custom-datepicker-input {
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
 }
 
 .custom-calendar-popover {
@@ -50,7 +50,7 @@
     border: 1px solid var(--border);
     background: var(--input-bg);
     color: var(--text-main);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -154,7 +154,7 @@
     font-size: 13px;
     font-weight: 700;
     padding: 5px 22px 5px 8px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     font-family: inherit;
     outline: none;
     transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
@@ -235,7 +235,7 @@
     border: none;
     background: transparent;
     color: var(--text-main);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: background-color 0.18s var(--ease), color 0.18s var(--ease), transform 0.18s var(--ease);
     outline: none;
 }
@@ -301,7 +301,7 @@
     background: var(--input-bg);
     border: 1px solid var(--border);
     color: var(--text-muted);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: border-color 0.2s, color 0.2s;
     font-family: inherit;
 }
@@ -324,7 +324,7 @@
     background: var(--primary-gradient);
     color: var(--on-primary, #10120e);
     border: none;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: filter 0.2s, transform 0.2s;
     font-family: inherit;
 }

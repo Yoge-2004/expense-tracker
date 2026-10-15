@@ -139,7 +139,7 @@
 
 #incomeModal .dark-date::-webkit-calendar-picker-indicator {
     filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
 }
 
 /* Toggle Switch Outline & Emerald States */

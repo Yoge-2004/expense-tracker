@@ -359,7 +359,7 @@
     border-radius: 6px;
     background: transparent;
     color: var(--text-muted);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     font-size: 14px;
     line-height: 1;
     transition: color 0.2s var(--ease), background-color 0.2s var(--ease);
@@ -474,7 +474,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
@@ -521,7 +521,7 @@
     background: transparent;
     color: var(--text-muted);
     border: none;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
 }
 
 /* Light theme overrides */
@@ -579,7 +579,7 @@
     border: 1px solid var(--border);
     background: var(--input-bg);
     color: var(--text-muted);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 .subs-tab-btn:hover {
@@ -634,7 +634,7 @@
     color: var(--text-muted);
     font-weight: 600;
     font-size: 13px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -765,7 +765,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: background 0.25s var(--ease), border-color 0.25s var(--ease), transform 0.25s var(--ease);
 }
 
@@ -788,7 +788,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     box-shadow: 0 4px 14px rgba(192, 57, 43, 0.35);
     transition: background 0.25s var(--ease), box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
 }

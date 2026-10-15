@@ -285,7 +285,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
 }
 .receipt-ocr-icon {
     font-size: 20px;
@@ -317,7 +317,7 @@
     font-size: 11px;
     font-weight: 800;
     padding: 6px 12px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: transform 0.15s ease, opacity 0.15s ease;
 }
 .btn-scan-receipt:hover {
@@ -369,7 +369,7 @@
     color: #10B981;
     font-size: 16px;
     line-height: 1;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     padding: 0 4px;
 }
 
@@ -467,7 +467,7 @@
     justify-content: space-between;
     padding: 10px 14px;
     border-radius: 10px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: background 0.12s ease;
     user-select: none;
 }
@@ -727,7 +727,7 @@
     background: var(--input-bg, rgba(255, 255, 255, 0.05));
     border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
     color: var(--text-muted, #8E8D8A);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     padding: 0;
 }
@@ -846,7 +846,7 @@
     border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
     color: var(--text-muted, #8E8D8A);
     font-size: 20px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     line-height: 1;
     transition: all 0.15s ease;
     padding: 0;
@@ -894,7 +894,7 @@
     border-radius: 6px;
     font-size: 10.5px;
     font-weight: 600;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--text-main);
@@ -924,15 +924,94 @@
 /* Executive Precision Stealth Cursor */
 @media (pointer: fine) {
     html, body {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M3 2L19 10L11 13L8 21L3 2Z' fill='%230A0E17' fill-opacity='0.96'/%3E%3Cpath d='M3 2L19 10L11 13L8 21L3 2Z' stroke='%23D4AF37' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M3 2L11 13L8 21' stroke='%23F3D27A' stroke-width='1' stroke-linecap='round' fill='rgba(212,175,55,0.22)'/%3E%3Ccircle cx='3' cy='2' r='1.2' fill='%23FFFFFF'/%3E%3C/svg%3E") 3 2, auto;
+        cursor: var(--cursor-default);
     }
 
-    a, button, [role="button"], .tab-item, .card, .clickable {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M3 2L17 9L10 12L7 19L3 2Z' fill='%23D4AF37' fill-opacity='0.9'/%3E%3Cpath d='M3 2L17 9L10 12L7 19L3 2Z' stroke='%23FFFFFF' stroke-width='1.2' stroke-linejoin='round'/%3E%3Ccircle cx='3' cy='2' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 3 2, pointer;
+    /* All Interactive Controls: Links, Buttons, Toggles, Selects, and Clickables */
+    a,
+    button,
+    [role="button"],
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"],
+    input[type="checkbox"],
+    input[type="radio"],
+    select,
+    summary,
+    label[for],
+    .btn,
+    .btn-primary,
+    .btn-secondary,
+    .btn-google,
+    .btn-icon,
+    .btn-small,
+    .btn-submit,
+    .btn-text-icon,
+    .theme-toggle-btn,
+    .header-action-btn,
+    .notification-bell-btn,
+    .money-flow-nav button,
+    .input-eye,
+    .password-toggle,
+    .toggle-password-btn,
+    .custom-select-trigger,
+    .custom-option,
+    .custom-select-arrow,
+    .cal-nav-btn,
+    .cal-btn-action,
+    .cal-btn-done,
+    .cal-day-cell,
+    .user-profile,
+    .avatar,
+    .modal-close,
+    .tab-btn,
+    .tab-item,
+    .subs-tab-btn,
+    .category-pill,
+    .filter-chip,
+    .card,
+    .clickable {
+        cursor: var(--cursor-pointer);
     }
 
-    input[type="text"], input[type="number"], input[type="search"], input[type="email"], textarea {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cline x1='12' y1='3' x2='12' y2='21' stroke='%23D4AF37' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='7' y1='3' x2='17' y2='3' stroke='%23D4AF37' stroke-width='1.5' stroke-linecap='round'/%3E%3Cline x1='7' y1='21' x2='17' y2='21' stroke='%23D4AF37' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") 12 12, text;
+    /* Propagate pointer cursor to nested elements */
+    a *,
+    button *,
+    [role="button"] *,
+    .btn *,
+    .btn-primary *,
+    .btn-secondary *,
+    .btn-google *,
+    .btn-icon *,
+    .theme-toggle-btn *,
+    .header-action-btn *,
+    .notification-bell-btn *,
+    .money-flow-nav button *,
+    .input-eye *,
+    .custom-select-trigger *,
+    .custom-option *,
+    .user-profile * {
+        cursor: inherit;
+    }
+
+    /* All Text and Data Entry Fields (including password, PIN, and search) */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    input:not([type]),
+    textarea {
+        cursor: var(--cursor-text);
+    }
+
+    /* Disabled elements */
+    :disabled,
+    [disabled],
+    .disabled {
+        cursor: not-allowed;
     }
 }
 

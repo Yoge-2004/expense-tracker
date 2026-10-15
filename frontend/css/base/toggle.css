@@ -24,7 +24,7 @@
     min-width: 100%;
     max-width: 100%;
     gap: 16px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     user-select: none;
     margin: 0;
     padding: 6px 0;
@@ -63,7 +63,7 @@
     border-radius: 100px;
     background: var(--input-bg);
     border: 1px solid var(--border);
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: background 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
                 border-color 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);

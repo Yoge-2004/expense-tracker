@@ -86,7 +86,7 @@
     background: var(--input-bg);
     color: var(--text-main);
     font-weight: 650;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
 }
 
 .app-dialog-btn.primary {

@@ -104,7 +104,7 @@
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 .savings-goal-card .edit-goal-btn svg,

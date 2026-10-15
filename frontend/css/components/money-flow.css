@@ -46,7 +46,7 @@
     color: var(--text-main);
     font-size: 18px;
     line-height: 1;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     display: inline-flex;
     align-items: center;
     justify-content: center;
