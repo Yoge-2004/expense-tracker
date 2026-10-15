@@ -16,7 +16,8 @@ const ASSETS_TO_CACHE = [
     "/js/modules/dashboard-notifications.js",
     "/favicon.ico",
     "/assets/icon-192.png",
-    "/assets/badge-72.png"
+    "/assets/badge-72.png",
+    "/assets/custom_chime.wav"
 ];
 
 // Install event - Pre-cache core shell

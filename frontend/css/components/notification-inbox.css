@@ -2,39 +2,57 @@
 .inbox {
     position: relative;
     display: inline-flex;
+    z-index: 1050;
+}
+
+.inbox:has(.inbox-panel:not([hidden])) {
+    z-index: 1200;
 }
 
 .inbox-bell {
     position: relative;
+    overflow: visible !important;
 }
 
 .inbox-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -2px;
+    right: -2px;
     min-width: 18px;
-    padding: 1px 5px;
+    height: 18px;
+    padding: 0 4px;
     border-radius: 999px;
     background: #ef4444;
     color: #fff;
-    font-size: 10.5px;
-    font-weight: 700;
-    line-height: 16px;
-    text-align: center;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 2px solid var(--card-bg, #10120E);
+    pointer-events: none;
+    z-index: 2;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
+}
+
+[data-theme="light"] .inbox-badge {
+    border-color: #FFFFFF;
 }
 
 .inbox-panel {
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    z-index: 60;
+    z-index: 1200;
     width: min(380px, calc(100vw - 24px));
     max-height: min(560px, 80vh);
     overflow-y: auto;
     border: 1px solid var(--border);
     border-radius: 16px;
     background: var(--card-bg);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
 }
 
 .inbox-header {
@@ -145,4 +163,29 @@
 .inbox-toggle-hint {
     font-size: 11.5px;
     color: var(--text-muted);
+}
+
+/* Responsive positioning guard: prevent panel from overflowing on tablets & mobile screens */
+@media (max-width: 1024px) {
+    .inbox-panel {
+        position: fixed !important;
+        top: 72px !important;
+        right: 16px !important;
+        left: auto !important;
+        width: min(380px, calc(100vw - 32px)) !important;
+        max-width: calc(100vw - 32px) !important;
+        max-height: calc(85vh - 70px) !important;
+        z-index: 1200 !important;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .inbox-panel {
+        top: 68px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+        max-width: calc(100vw - 24px) !important;
+    }
 }

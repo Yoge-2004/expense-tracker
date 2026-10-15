@@ -684,22 +684,56 @@
         padding: 24px 20px !important;
     }
 
+    .top-bar {
+        flex-wrap: wrap !important;
+        row-gap: 12px !important;
+        column-gap: 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    .dashboard-heading {
+        flex: 0 1 auto !important;
+        min-width: 0 !important;
+    }
+
     .top-bar-actions {
+        flex: 1 1 auto !important;
+        justify-content: flex-end !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
         gap: 8px !important;
-        flex-shrink: 1 !important;
+    }
+
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        padding: 0 12px !important;
+        height: 38px !important;
+        font-size: 13px !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+    }
+
+    .top-bar-utility-group {
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .user-profile {
+        flex-shrink: 0 !important;
     }
 
     .command-search-wrapper {
         width: auto !important;
         flex: 1 1 180px !important;
-        min-width: 150px !important;
-        max-width: 380px !important;
+        min-width: 140px !important;
+        max-width: 260px !important;
         padding: 0 10px !important;
     }
 
     .command-search-wrapper:focus-within {
-        flex-basis: 260px !important;
-        max-width: 440px !important;
+        flex-basis: 220px !important;
+        max-width: 320px !important;
     }
 
     .grid-4-metrics {

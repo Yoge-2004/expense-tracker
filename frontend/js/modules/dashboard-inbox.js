@@ -117,10 +117,16 @@
         });
     }
 
+    let prevUnreadCount = null;
     async function load() {
         try {
             const inbox = await apiRequest(`${base}?limit=30`);
-            setBadge(inbox?.unreadCount || 0);
+            const currentUnread = inbox?.unreadCount || 0;
+            if (prevUnreadCount !== null && currentUnread > prevUnreadCount) {
+                window.DashboardNotifications?.playCustomNotificationSound?.();
+            }
+            prevUnreadCount = currentUnread;
+            setBadge(currentUnread);
             renderItems(inbox?.items || []);
         } catch (_) { /* offline or signed out: keep what is shown */ }
     }
@@ -147,6 +153,33 @@
         try {
             const prefs = await apiRequest(`${base}/preferences`);
             prefsBox.replaceChildren();
+
+            // Client-side Custom Chime Sound toggle
+            const soundLabel = el("label", "inbox-toggle");
+            const soundInput = document.createElement("input");
+            soundInput.type = "checkbox";
+            soundInput.id = "inboxSoundToggle";
+            const isSoundOn = window.DashboardNotifications?.isNotificationSoundEnabled
+                ? window.DashboardNotifications.isNotificationSoundEnabled()
+                : localStorage.getItem("expense_tracker_notification_sound_enabled") !== "false";
+            soundInput.checked = isSoundOn;
+            soundInput.addEventListener("change", () => {
+                if (window.DashboardNotifications?.setNotificationSoundEnabled) {
+                    window.DashboardNotifications.setNotificationSoundEnabled(soundInput.checked);
+                } else {
+                    localStorage.setItem("expense_tracker_notification_sound_enabled", soundInput.checked ? "true" : "false");
+                }
+                if (soundInput.checked) {
+                    window.DashboardNotifications?.playCustomNotificationSound?.();
+                }
+            });
+            const soundText = el("span", "inbox-toggle-text");
+            soundText.append(
+                el("span", "inbox-toggle-label", "Notification Sound"),
+                el("span", "inbox-toggle-hint", "Play custom chime for notifications and alerts")
+            );
+            soundLabel.append(soundInput, soundText);
+            prefsBox.append(soundLabel);
             (prefs || []).forEach((pref) => {
                 const label = el("label", "inbox-toggle");
                 const input = document.createElement("input");
@@ -163,7 +196,7 @@
     }
 
     async function savePreferences() {
-        const disabledTypes = [...prefsBox.querySelectorAll("input:not(:checked)")].map((input) => input.dataset.type);
+        const disabledTypes = [...prefsBox.querySelectorAll("input:not(:checked)")].map((input) => input.dataset.type).filter(Boolean);
         try {
             await apiRequest(`${base}/preferences`, { method: "PUT", body: JSON.stringify({ disabledTypes }) });
         } catch (error) {
@@ -176,6 +209,11 @@
         const open = typeof forceOpen === "boolean" ? forceOpen : panel.hidden;
         panel.hidden = !open;
         bell.setAttribute("aria-expanded", String(open));
+        bell.classList.toggle("inbox-bell--open", open);
+        const inboxContainer = document.getElementById("inbox");
+        if (inboxContainer) {
+            inboxContainer.style.zIndex = open ? "1200" : "";
+        }
         if (open) {
             load();
             loadPreferences();
@@ -208,6 +246,7 @@
     });
     document.getElementById("inboxTest")?.addEventListener("click", async () => {
         try {
+            window.DashboardNotifications?.playCustomNotificationSound?.();
             await apiRequest(`${base}/test`, { method: "POST" });
             showToast("Test notification sent.", "success");
             load();

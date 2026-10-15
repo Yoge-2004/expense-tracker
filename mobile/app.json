@@ -53,7 +53,9 @@
           "icon": "./assets/notification-icon.png",
           "color": "#D4AF37",
           "defaultChannel": "expense-reminders",
-          "sounds": []
+          "sounds": [
+            "./assets/custom_chime.wav"
+          ]
         }
       ]
     ],

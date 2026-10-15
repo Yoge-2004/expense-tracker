@@ -24,6 +24,7 @@ import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError } from '../services/api';
 import { Colors } from '../constants/theme';
 import { ImmersiveLoader } from '../components/ImmersiveLoader';
+import { getNotificationSoundEnabled, setNotificationSoundEnabled } from '../services/notifications';
 
 interface NotificationItem {
   id: number;
@@ -195,7 +196,18 @@ export default function NotificationsScreen() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
   const [prefs, setPrefs] = useState<Preference[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    getNotificationSoundEnabled().then(setSoundEnabled);
+  }, []);
+
+  const handleToggleSound = async (val: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setSoundEnabled(val);
+    await setNotificationSoundEnabled(val);
+  };
   const [refreshing, setRefreshing] = useState(false);
 
   const base = `/notifications/user/${userId}`;
@@ -285,6 +297,18 @@ export default function NotificationsScreen() {
   const settings = (
     <View style={styles.settings}>
       <Text style={[styles.sectionTitle, { color: c.text }]}>Notification settings</Text>
+      <View style={[styles.prefRow, { borderBottomColor: c.border }]}>
+        <View style={styles.prefText}>
+          <Text style={[styles.prefLabel, { color: c.text }]}>Notification Sound</Text>
+          <Text style={[styles.prefHint, { color: c.textMuted }]}>Play custom chime for notifications and alerts</Text>
+        </View>
+        <Switch
+          value={soundEnabled}
+          onValueChange={handleToggleSound}
+          trackColor={{ false: c.border, true: '#93C5FD' }}
+          thumbColor={soundEnabled ? '#2563EB' : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
+        />
+      </View>
       {prefs.map((pref) => (        <View key={pref.type} style={[styles.prefRow, { borderBottomColor: c.border }]}>
           <View style={styles.prefText}>
             <Text style={[styles.prefLabel, { color: c.text }]}>{pref.label}</Text>

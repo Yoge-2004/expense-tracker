@@ -94,6 +94,78 @@
         };
     }
 
+
+    // 1b. CUSTOM NOTIFICATION CHIME AUDIO SYSTEM
+    const NOTIF_SOUND_STORAGE_KEY = "expense_tracker_notification_sound_enabled";
+
+    function isNotificationSoundEnabled() {
+        return localStorage.getItem(NOTIF_SOUND_STORAGE_KEY) !== "false";
+    }
+
+    function setNotificationSoundEnabled(enabled) {
+        localStorage.setItem(NOTIF_SOUND_STORAGE_KEY, enabled ? "true" : "false");
+    }
+
+    let audioContext = null;
+    function playSynthesizedChime() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            if (!audioContext) audioContext = new AudioCtx();
+            if (audioContext.state === "suspended") {
+                audioContext.resume();
+            }
+            const now = audioContext.currentTime;
+            // 3-note ascending crystal chime: D5 (587.33), A5 (880), D6 (1174.66)
+            const chords = [587.33, 880.00, 1174.66];
+            chords.forEach((freq, idx) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.18, now + idx * 0.08 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.55);
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.6);
+            });
+        } catch (_) {}
+    }
+
+    function playCustomNotificationSound() {
+        if (!isNotificationSoundEnabled()) return;
+        try {
+            const candidatePaths = [
+                "/assets/custom_chime.wav",
+                "assets/custom_chime.wav",
+                "/frontend/assets/custom_chime.wav"
+            ];
+            const audio = new Audio();
+            let played = false;
+            const tryPlay = (idx) => {
+                if (idx >= candidatePaths.length) {
+                    playSynthesizedChime();
+                    return;
+                }
+                audio.src = candidatePaths[idx];
+                audio.volume = 0.65;
+                const p = audio.play();
+                if (p && typeof p.then === "function") {
+                    p.then(() => {
+                        played = true;
+                    }).catch(() => {
+                        if (!played) tryPlay(idx + 1);
+                    });
+                }
+            };
+            tryPlay(0);
+        } catch (_) {
+            playSynthesizedChime();
+        }
+    }
+
     // 2. SERVICE WORKER & WEB NOTIFICATION PERMISSION
     let swRegistration = null;
 
@@ -157,6 +229,7 @@
     // Dispatches notification immediately then-and-there
     async function notifyInstantDebit(parsed) {
         if (!parsed || parsed.direction !== "DEBIT") return false;
+        playCustomNotificationSound();
 
         const title = `💸 Instant Debit Alert: ${parsed.currency} ${parsed.amount.toFixed(2)}`;
         const merchantPart = parsed.merchant ? ` at ${parsed.merchant}` : "";
@@ -269,6 +342,7 @@
     }
 
     async function notifySalaryCredit(amount, currency = '₹', source = 'Salary') {
+        playCustomNotificationSound();
         const title = `💰 ${source} Credited: ${currency} ${Number(amount).toLocaleString('en-IN')}`;
         const body = 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!';
         if ('Notification' in window && Notification.permission === 'granted') {
@@ -295,6 +369,7 @@
      * new entries; the caller does not use it for edits.
      */
     async function notifyTransactionRecorded({ kind, amount, label, detail }) {
+        playCustomNotificationSound();
         if (!("Notification" in window) || Notification.permission !== "granted") return;
         const isDebit = kind === "DEBIT";
         const formatted = window.DashboardUtils && typeof window.DashboardUtils.formatCurrency === "function"
@@ -317,6 +392,7 @@
     }
 
     async function notifyBudgetThresholdAlert(categoryName, percentSpent, remainingAmt, currency = '₹') {
+        playCustomNotificationSound();
         const isExceeded = percentSpent >= 100;
         const title = isExceeded
             ? `🚨 Budget Exceeded: ${categoryName}`
@@ -350,7 +426,10 @@
         notifyTransactionRecorded,
         notifyBudgetThresholdAlert,
         ingestFinancialMessage,
-        handleNotificationAction
+        handleNotificationAction,
+        playCustomNotificationSound,
+        isNotificationSoundEnabled,
+        setNotificationSoundEnabled
     });
 
 })();

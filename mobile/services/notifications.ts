@@ -22,6 +22,27 @@ const EVENING_NOTIFICATION_ID = 'daily_evening_expense_reminder';
 const PUSH_TOKEN_KEY = 'expense_tracker_push_token';
 const SERVER_PUSH_KEY = 'expense_tracker_server_push_active';
 const INSTANT_DEBIT_STORAGE_KEY = 'expense_tracker_instant_debit_alerts_enabled';
+const NOTIFICATION_SOUND_KEY = 'expense_tracker_notification_sound_enabled';
+export const CUSTOM_NOTIFICATION_SOUND = 'custom_chime.wav';
+
+export async function getNotificationSoundEnabled(): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(NOTIFICATION_SOUND_KEY);
+    return val === null ? true : val === 'true';
+  } catch {
+    return true;
+  }
+}
+
+export async function setNotificationSoundEnabled(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(NOTIFICATION_SOUND_KEY, String(enabled));
+}
+
+async function resolveNotificationSound(): Promise<string | boolean | undefined> {
+  const enabled = await getNotificationSoundEnabled();
+  return enabled ? CUSTOM_NOTIFICATION_SOUND : false;
+}
+
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
@@ -44,13 +65,20 @@ if (!isExpoGo) {
   try {
     Notifications = require('expo-notifications');
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
+      handleNotification: async () => {
+        let playSound = true;
+        try {
+          const val = await AsyncStorage.getItem(NOTIFICATION_SOUND_KEY);
+          playSound = val === null ? true : val === 'true';
+        } catch (_) {}
+        return {
+          shouldShowAlert: true,
+          shouldPlaySound: playSound,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        };
+      },
     });
   } catch (e) {
     console.log('[Notifications] Module not available in this runtime.');
@@ -84,6 +112,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
         name: "Daily Expense Reminders",
         description: "Twice-daily reminders to keep your expense ledger up to date.",
         importance: Notifications.AndroidImportance.HIGH,
+        sound: CUSTOM_NOTIFICATION_SOUND,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#D4AF37",
         enableVibrate: true,
@@ -119,7 +148,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
       content: {
         title: '☀️ Midday Expense Check',
         body: 'Did you grab lunch or make a morning purchase? Take 10 seconds to record it now!',
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: { appInternal: true, screen: '/(tabs)/add-expense' },
         ...(Platform.OS === 'android' ? { channelId: 'expense-reminders' } : {}),
       },
@@ -136,7 +165,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
       content: {
         title: '🌙 Daily Ledger Wrap-up',
         body: "Wrap up today's ledger! Log any remaining transactions before heading to sleep.",
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: { appInternal: true, screen: '/(tabs)/add-expense' },
         ...(Platform.OS === 'android' ? { channelId: 'expense-reminders' } : {}),
       },
@@ -266,6 +295,7 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
         name: "Instant Debit & Transaction Alerts",
         description: "Real-time alerts when debit/payment transactions occur.",
         importance: Notifications.AndroidImportance.MAX,
+        sound: CUSTOM_NOTIFICATION_SOUND,
         vibrationPattern: [0, 200, 100, 200],
         lightColor: "#E05D5D",
         enableVibrate: true,
@@ -288,7 +318,7 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
       content: {
         title,
         body,
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: {
           appInternal: true,
           screen: "/(tabs)/index",
@@ -482,7 +512,7 @@ export async function notifySalaryCredit(amount: number, currency: string = '₹
       content: {
         title: `💵 ${source} Credited: ${currency} ${amount.toLocaleString('en-IN')}`,
         body: 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!',
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: { appInternal: true, screen: '/(tabs)/index', tab: 'incomes' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -517,7 +547,7 @@ export async function notifyBudgetThresholdAlert(categoryName: string, percentSp
       content: {
         title,
         body,
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: { appInternal: true, screen: '/(tabs)/index' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -544,7 +574,7 @@ export async function notifySubscriptionDue(subscriptionName: string, amount: nu
       content: {
         title: `🔄 Upcoming Renewal: ${subscriptionName}`,
         body: `${subscriptionName} (${currency} ${amount.toFixed(2)}) is scheduled to renew on ${dueDate}. Review or ensure adequate balance.`,
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: { appInternal: true, screen: '/(tabs)/subscriptions' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -579,7 +609,7 @@ export async function notifySavingsGoalMilestone(goalName: string, progressPerce
       content: {
         title,
         body,
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: { appInternal: true, screen: '/(tabs)/index' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -629,7 +659,7 @@ function fixedSmartReminders() {
 async function scheduleSmart(id: string, title: string, body: string, screen: string, trigger: Record<string, unknown>) {
   await Notifications.scheduleNotificationAsync({
     identifier: id, // a stable id: scheduling again replaces the reminder instead of duplicating it
-    content: { title, body, sound: true, data: { appInternal: true, screen } },
+    content: { title, body, sound: await resolveNotificationSound(), data: { appInternal: true, screen } },
     trigger: Platform.OS === 'android' ? { ...trigger, channelId: REMINDERS_CHANNEL_ID } : trigger,
   });
 }
@@ -760,6 +790,7 @@ export async function notifyTransactionRecorded(transaction: RecordedTransaction
         name: 'Instant Debit & Transaction Alerts',
         description: 'Real-time alerts when debit/payment transactions occur.',
         importance: Notifications.AndroidImportance.MAX,
+        sound: CUSTOM_NOTIFICATION_SOUND,
         vibrationPattern: [0, 200, 100, 200],
         enableVibrate: true,
         showBadge: true,
@@ -775,7 +806,7 @@ export async function notifyTransactionRecorded(transaction: RecordedTransaction
       content: {
         title: isDebit ? `💸 Debit recorded: ${amountText}` : `💵 Credit recorded: ${amountText}`,
         body: body || (isDebit ? 'Expense saved.' : 'Income saved.'),
-        sound: true,
+        sound: await resolveNotificationSound(),
         data: { appInternal: true, screen: '/(tabs)' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -802,6 +833,7 @@ export async function registerPushToken(userId: string): Promise<boolean> {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'default',
+        sound: CUSTOM_NOTIFICATION_SOUND,
         importance: Notifications.AndroidImportance.DEFAULT,
       });
     }
