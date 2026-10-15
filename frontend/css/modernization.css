@@ -718,8 +718,8 @@
 
 /* Header Action Buttons (Help, etc.) */
 .header-action-btn {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 12px;
     display: inline-flex;
     align-items: center;

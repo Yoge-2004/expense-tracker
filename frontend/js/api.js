@@ -714,3 +714,25 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => ripple.remove(), 600);
     });
 });
+
+// --- GLOBAL ERROR & UNHANDLED REJECTION HANDLERS ---
+window.addEventListener("unhandledrejection", (event) => {
+    if (event.reason?.name === "AbortError") {
+        event.preventDefault();
+        return;
+    }
+    console.warn("Handled Promise Rejection:", event.reason);
+    if (typeof showToast === "function" && event.reason?.message) {
+        if (!window._lastGlobalToastTime || Date.now() - window._lastGlobalToastTime > 4000) {
+            window._lastGlobalToastTime = Date.now();
+            if (event.reason?.isNetworkError || event.reason?.message?.includes("connect to the server")) {
+                showToast("Server connection error. Please verify your connection.", "error");
+            }
+        }
+    }
+    event.preventDefault();
+});
+
+window.addEventListener("error", (event) => {
+    console.warn("Handled Window Error:", event.error || event.message);
+});

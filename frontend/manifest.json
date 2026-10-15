@@ -1,9 +1,10 @@
 {
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
   "name": "ExpenseTracker Pro",
   "short_name": "ExpenseTracker",
   "description": "Smart, privacy-first personal finance and expense intelligence platform.",
   "start_url": "index.html",
-  "scope": "/",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#10120E",
   "theme_color": "#10120E",

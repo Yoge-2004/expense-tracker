@@ -999,6 +999,7 @@ function generateXmlSpreadsheet(sheetName, headers, rows, totalColIdx, totalLabe
     // Dynamic column widths tailored to content type
     const colWidths = [50, 95, 140, 125, 260, 85];
 
+    // noinspection XmlUnregisteredUri
     let xml = `<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"

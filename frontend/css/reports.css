@@ -172,10 +172,19 @@
     margin: 16px 0;
     border-radius: 999px;
 }
-[data-theme="light"] .modal::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
+[data-theme="light"] .modal::-webkit-scrollbar-button:single-button:vertical:decrement,
+[data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-button:single-button:vertical:decrement {
+    height: 24px;
+    display: block;
+    background: transparent;
+    border: none;
+}
+[data-theme="light"] .modal::-webkit-scrollbar-button:single-button:vertical:increment,
+[data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-button:single-button:vertical:increment {
+    height: 24px;
+    display: block;
+    background: transparent;
+    border: none;
 }
 [data-theme="light"] .modal::-webkit-scrollbar-track {
     background: transparent;
@@ -363,10 +372,17 @@
 .period-picker-modal::-webkit-scrollbar {
     width: 6px;
 }
-.period-picker-modal::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
+.period-picker-modal::-webkit-scrollbar-button:single-button:vertical:decrement {
+    height: 20px;
+    display: block;
+    background: transparent;
+    border: none;
+}
+.period-picker-modal::-webkit-scrollbar-button:single-button:vertical:increment {
+    height: 20px;
+    display: block;
+    background: transparent;
+    border: none;
 }
 .period-picker-modal::-webkit-scrollbar-track {
     background: transparent;

@@ -87,15 +87,25 @@
     width: 8px;
     height: 8px;
 }
-.modal::-webkit-scrollbar-button,
-.help-guide-body::-webkit-scrollbar-button,
-.monthly-report-frame-container::-webkit-scrollbar-button,
-.subs-modal-list::-webkit-scrollbar-button,
-.manage-categories-body::-webkit-scrollbar-button {
-    display: none !important;
-    width: 0;
-    height: 0;
+.modal::-webkit-scrollbar-button:single-button:vertical:decrement,
+.help-guide-body::-webkit-scrollbar-button:single-button:vertical:decrement,
+.monthly-report-frame-container::-webkit-scrollbar-button:single-button:vertical:decrement,
+.subs-modal-list::-webkit-scrollbar-button:single-button:vertical:decrement,
+.manage-categories-body::-webkit-scrollbar-button:single-button:vertical:decrement {
+    height: 24px;
+    display: block;
     background: transparent;
+    border: none;
+}
+.modal::-webkit-scrollbar-button:single-button:vertical:increment,
+.help-guide-body::-webkit-scrollbar-button:single-button:vertical:increment,
+.monthly-report-frame-container::-webkit-scrollbar-button:single-button:vertical:increment,
+.subs-modal-list::-webkit-scrollbar-button:single-button:vertical:increment,
+.manage-categories-body::-webkit-scrollbar-button:single-button:vertical:increment {
+    height: 24px;
+    display: block;
+    background: transparent;
+    border: none;
 }
 .modal::-webkit-scrollbar-track,
 .help-guide-body::-webkit-scrollbar-track,

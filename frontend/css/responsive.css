@@ -155,10 +155,17 @@
         width: 4px;
     }
 
-    .modal::-webkit-scrollbar-button {
-        display: none;
-        width: 0;
-        height: 0;
+    .modal::-webkit-scrollbar-button:single-button:vertical:decrement {
+        height: 20px;
+        display: block;
+        background: transparent;
+        border: none;
+    }
+    .modal::-webkit-scrollbar-button:single-button:vertical:increment {
+        height: 20px;
+        display: block;
+        background: transparent;
+        border: none;
     }
 
     .modal::-webkit-scrollbar-track {
@@ -331,10 +338,17 @@
         width: 4px;
     }
 
-    .modal::-webkit-scrollbar-button {
-        display: none;
-        width: 0;
-        height: 0;
+    .modal::-webkit-scrollbar-button:single-button:vertical:decrement {
+        height: 18px;
+        display: block;
+        background: transparent;
+        border: none;
+    }
+    .modal::-webkit-scrollbar-button:single-button:vertical:increment {
+        height: 18px;
+        display: block;
+        background: transparent;
+        border: none;
     }
 
     .modal::-webkit-scrollbar-track {

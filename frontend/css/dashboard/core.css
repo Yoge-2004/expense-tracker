@@ -25,7 +25,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 18px 16px;
+    padding: 16px 24px;
     margin-bottom: 8px;
     position: sticky;
     top: 0;
@@ -34,7 +34,7 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     background: rgba(16, 18, 14, 0.88);
     border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
-    border-radius: 16px;
+    border-radius: 18px;
     box-sizing: border-box;
     transition:
         background-color 0.3s,
@@ -316,8 +316,8 @@
 .top-bar .add-expense-button,
 .top-bar .add-income-button {
     width: auto;
-    height: 40px;
-    padding: 0 16px;
+    height: 42px;
+    padding: 0 18px;
     font-size: 13.5px;
     white-space: nowrap;
     flex-shrink: 0;
@@ -326,7 +326,8 @@
     justify-content: center;
     gap: 8px;
     cursor: var(--cursor-pointer, pointer);
-    border-radius: 8px;
+    border-radius: 10px;
+    box-sizing: border-box;
 }
 
 /* Income Action Buttons — Emerald theme with high-contrast white text */
@@ -528,7 +529,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
     box-sizing: border-box;
 }
 .command-search-wrapper { min-width: 0; }
-.command-search-input { min-width: 0; padding-right: 62px; }
+.command-search-input { min-width: 0; padding: 0 4px; }
 .command-kbd {
     min-width: 52px;
     height: 24px;
