@@ -256,7 +256,7 @@
                         <span style="font-size:12px; color:var(--text-muted); font-weight:600;">(${savingsRate}% saved)</span>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:12px;">
+                <div class="insights-metric-triplet">
                     <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px;">
                         <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#10B981; font-weight:700;">${periodNoun} Inflow</div>
                         <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">+${formatCurrency(activeInflow)}</div>

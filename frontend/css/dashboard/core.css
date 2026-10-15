@@ -25,7 +25,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 0 16px;
+    padding: 14px 18px 16px;
     margin-bottom: 8px;
     position: sticky;
     top: 0;
@@ -34,6 +34,8 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     background: rgba(16, 18, 14, 0.88);
     border-bottom: 1px solid rgba(var(--ink-rgb), 0.08);
+    border-radius: 16px;
+    box-sizing: border-box;
     transition:
         background-color 0.3s,
         border-color 0.3s;
@@ -59,6 +61,23 @@
 .top-bar .add-income-button {
     white-space: nowrap;
     flex-shrink: 0;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s var(--ease);
+}
+
+.top-bar .add-expense-button:hover,
+.top-bar .add-income-button:hover,
+#openModalBtn:hover,
+#openIncomeModalBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    filter: brightness(1.08);
+}
+
+.top-bar .add-expense-button:active,
+.top-bar .add-income-button:active,
+#openModalBtn:active,
+#openIncomeModalBtn:active {
+    transform: translateY(0);
 }
 
 .top-bar .add-expense-button > span,
@@ -66,6 +85,31 @@
     white-space: nowrap;
     overflow: visible;
     text-overflow: clip;
+}
+
+.savings-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: clip;
+}
+
+.savings-grid-matrix {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.savings-goal-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .user-profile {
@@ -294,7 +338,7 @@
 #incomeForm button[type="submit"]:hover {
     background: linear-gradient(135deg, #059669 0%, #047857 100%);
     box-shadow: 0 8px 22px rgba(16, 185, 129, 0.5);
-    transform: translateY(-2px) scale(1.02);
+    transform: translateY(-1px);
     color: #ffffff;
 }
 
@@ -302,7 +346,7 @@
 #openIncomeModalBtn:active,
 #addIncomeTableBtn:active,
 #incomeForm button[type="submit"]:active {
-    transform: translateY(0) scale(0.98);
+    transform: translateY(0);
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 

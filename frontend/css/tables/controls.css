@@ -216,14 +216,18 @@
 /* BUDGET GRID MATRIX */
 .budget-grid-matrix {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
     gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .budget-grid-matrix .empty-state-compact,
 .savings-grid-matrix .empty-state-compact {
     grid-column: 1 / -1;
     width: 100%;
+    max-width: 100%;
     text-align: center;
     justify-self: center;
     box-sizing: border-box;

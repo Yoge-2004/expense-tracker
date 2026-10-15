@@ -6,7 +6,7 @@
 }
 
 .btn-primary:hover {
-    animation: gradientAngleRotate 3s infinite alternate ease-in-out !important;
+    animation: gradientAngleRotate 3s infinite alternate ease-in-out;
 }
 
 /* 71. Button Click Concentric Ripple */

@@ -1,16 +1,16 @@
 .top-bar {
-    background: rgba(16, 18, 14, 0.7) !important;
+    background: rgba(16, 18, 14, 0.7);
     backdrop-filter: var(--glass);
     -webkit-backdrop-filter: var(--glass);
-    border-bottom: 1px solid rgba(var(--ink-rgb), 0.06) !important;
+    border-bottom: 1px solid rgba(var(--ink-rgb), 0.06);
     transition: background 0.3s;
 }
 [data-theme="light"] .top-bar {
-    background: rgba(238, 241, 246, 0.9) !important;
-    border-bottom-color: rgba(199, 154, 62, 0.2) !important;
+    background: rgba(238, 241, 246, 0.9);
+    border-bottom-color: rgba(199, 154, 62, 0.2);
 }
 .command-search-wrapper:focus-within {
-    border-color: rgba(var(--primary-rgb), 0.5) !important;
+    border-color: rgba(var(--primary-rgb), 0.5);
     box-shadow:
         0 0 0 3px rgba(var(--primary-rgb), 0.1),
         0 4px 16px rgba(0, 0, 0, 0.2);
