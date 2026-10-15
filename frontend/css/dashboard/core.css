@@ -237,10 +237,12 @@
 .profile-menu a {
     display: flex;
     align-items: center;
-    padding: 14px 20px;
-    font-size: 14px;
+    gap: 12px;
+    padding: 13px 20px;
+    font-size: 13.5px;
     color: var(--text-main);
     border-bottom: 1px solid var(--border);
+    text-decoration: none;
     transition:
         background-color 0.18s var(--ease),
         color 0.18s var(--ease),
@@ -248,10 +250,42 @@
         transform 0.18s var(--ease);
 }
 
+.profile-menu a svg,
+.profile-menu a .menu-svg {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    max-width: 16px;
+    flex-shrink: 0;
+    margin: 0;
+    display: block;
+    stroke: currentColor;
+    color: var(--text-muted);
+    transition: color 0.18s var(--ease);
+}
+
+.profile-menu a span {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.25;
+    font-size: 13.5px;
+    color: inherit;
+}
+
 .profile-menu a:hover {
     background: rgba(var(--primary-rgb), 0.08);
     padding-left: 26px;
     transform: translateX(3px);
+}
+
+.profile-menu a:hover svg,
+.profile-menu a:hover .menu-svg {
+    color: var(--primary);
+}
+
+#deleteAccountBtn svg,
+#deleteAccountBtn .menu-svg {
+    color: inherit;
 }
 
 .profile-menu a:last-child {

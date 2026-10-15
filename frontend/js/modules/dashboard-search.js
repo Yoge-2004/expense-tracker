@@ -12,8 +12,10 @@
     function updateSearchPlaceholder() {
         const input = searchInput();
         if (!input) return;
-        if (window.innerWidth <= 600) {
-            input.placeholder = "Search expenses & incomes...";
+        if (window.innerWidth <= 640) {
+            input.placeholder = "Search expenses...";
+        } else if (window.innerWidth <= 1200) {
+            input.placeholder = "Search transactions...";
         } else {
             input.placeholder = "Search expenses & incomes (Press /)...";
         }

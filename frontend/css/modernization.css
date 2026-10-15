@@ -1159,6 +1159,15 @@
     stroke: currentColor;
     color: inherit;
 }
+.profile-menu a .menu-svg,
+.profile-menu a svg {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    max-width: 16px;
+    display: block;
+}
 .btn-icon svg,
 .btn-text-icon svg,
 .btn-primary svg {

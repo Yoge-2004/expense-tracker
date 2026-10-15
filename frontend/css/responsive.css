@@ -764,16 +764,20 @@
     }
 
     .top-bar-actions .command-search-wrapper {
-        flex: 1 1 160px;
-        min-width: 120px;
-        max-width: 220px;
+        flex: 1 1 200px;
+        min-width: 160px;
+        max-width: 320px;
         width: auto;
-        padding: 0 8px;
+        padding: 0 12px;
+        gap: 8px;
     }
 
     .top-bar-actions .command-search-input {
-        padding-right: 48px;
-        font-size: 12.5px;
+        padding: 0 4px;
+        font-size: 13px;
+        min-width: 0;
+        width: 100%;
+        flex: 1 1 auto;
     }
 
     .top-bar .add-expense-button,
