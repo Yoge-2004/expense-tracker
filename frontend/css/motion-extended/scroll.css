@@ -1,13 +1,13 @@
 /* ==========================================================================
-   MOTION SUITE — PART 2: SCROLL, TOUCH & AMBIENT DEPTH (171 → 226+)
-   Continues the numbered animation suite from style.css (which ends at #170).
+   MOTION SUITE — PART 2: SCROLL, TOUCH & AMBIENT DEPTH 
+   Continues the numbered animation suite from style.css .
    Paired with js/motion.js, which applies these classes/attributes at runtime.
    Organized in five groups:
-     A. Scroll-triggered reveal system      (#171–#182)
-     B. Touch & gesture feedback             (#183–#194)
-     C. Pointer / hover micro-interactions   (#195–#204)
-     D. Ambient background depth             (#205–#214)
-     E. Loading & micro-feedback states      (#215–#226)
+     A. Scroll-triggered reveal system      
+     B. Touch & gesture feedback             
+     C. Pointer / hover micro-interactions   
+     D. Ambient background depth             
+     E. Loading & micro-feedback states      
    ========================================================================== */
 
 /* -------------------------------------------------------------------------
@@ -18,7 +18,7 @@
    rule set instead of ten near-duplicate blocks.
    ------------------------------------------------------------------------- */
 
-/* 171. Reveal: base hidden state + shared transition (desktop fine-pointer) */
+/* Reveal: base hidden state + shared transition (desktop fine-pointer) */
 [data-reveal] {
     --reveal-delay: 0ms;
     opacity: 0;
@@ -29,34 +29,34 @@
     will-change: opacity, transform;
 }
 
-/* 172. Reveal: fade-up */
+/* Reveal: fade-up */
 [data-reveal="fade-up"] { transform: translateY(38px); }
 
-/* 173. Reveal: fade-down */
+/* Reveal: fade-down */
 [data-reveal="fade-down"] { transform: translateY(-34px); }
 
-/* 174. Reveal: fade-left */
+/* Reveal: fade-left */
 [data-reveal="fade-left"] { transform: translateX(-44px); }
 
-/* 175. Reveal: fade-right */
+/* Reveal: fade-right */
 [data-reveal="fade-right"] { transform: translateX(44px); }
 
-/* 176. Reveal: zoom-in */
+/* Reveal: zoom-in */
 [data-reveal="zoom"] { transform: scale(0.88); }
 
-/* 177. Reveal: blur-in */
+/* Reveal: blur-in */
 [data-reveal="blur"] { filter: blur(10px); transform: scale(0.97); }
 
-/* 178. Reveal: flip-x (tips forward, hinges on bottom edge) */
+/* Reveal: flip-x (tips forward, hinges on bottom edge) */
 [data-reveal="flip-x"] { transform: perspective(900px) rotateX(28deg) translateY(20px); transform-origin: bottom center; }
 
-/* 179. Reveal: flip-y (swings in from the side) */
+/* Reveal: flip-y (swings in from the side) */
 [data-reveal="flip-y"] { transform: perspective(900px) rotateY(32deg) translateX(20px); transform-origin: left center; }
 
-/* 180. Reveal: rotate-in */
+/* Reveal: rotate-in */
 [data-reveal="rotate"] { transform: rotate(-6deg) scale(0.92) translateY(24px); }
 
-/* 181. Reveal: skew-in */
+/* Reveal: skew-in */
 [data-reveal="skew"] { transform: skewY(4deg) translateY(30px); }
 
 /* Use :where() so revealed-state styles do not outrank component hover rules. */

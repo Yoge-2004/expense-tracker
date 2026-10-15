@@ -1203,13 +1203,13 @@
    ============================================================================= */
 
 @media (max-width: 768px), (pointer: coarse) {
-    /* 1. Eliminate GPU-stalling backdrop-filter convolution passes */
+    /* Eliminate GPU-stalling backdrop-filter convolution passes */
     *, *::before, *::after {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
     }
 
-    /* 2. Fast pre-composited solid/high-opacity surfaces */
+    /* Fast pre-composited solid/high-opacity surfaces */
     .card,
     .metric-card,
     .chart-card,
@@ -1255,7 +1255,7 @@
         border-bottom-color: #E2E8F0 !important;
     }
 
-    /* 3. Hide expensive full-screen background filters, noise and animated canvas */
+    /* Hide expensive full-screen background filters, noise and animated canvas */
     .animated-mesh-canvas,
     .grain-overlay,
     .dust-mote,
@@ -1263,7 +1263,7 @@
         display: none !important;
     }
 
-    /* 4. Disable continuous ambient breathing/floating keyframe animations */
+    /* Disable continuous ambient breathing/floating keyframe animations */
     .dashboard-container::before {
         animation: none !important;
         opacity: 0.55 !important;
@@ -1275,7 +1275,7 @@
         transform: none !important;
     }
 
-    /* 5. Disable scroll-driven reveal and 3D blur shaders on mobile */
+    /* Disable scroll-driven reveal and 3D blur shaders on mobile */
     [data-reveal],
     :where([data-reveal]).is-revealed {
         animation: none !important;
@@ -1287,12 +1287,12 @@
         will-change: auto !important;
     }
 
-    /* 6. Prevent GPU compositor layer explosion: neutralize will-change when idle */
+    /* Prevent GPU compositor layer explosion: neutralize will-change when idle */
     *:not(:active) {
         will-change: auto !important;
     }
 
-    /* 7. Eliminate layout-thrashing container entrance animations */
+    /* Eliminate layout-thrashing container entrance animations */
     .dashboard-container,
     .main-content,
     .auth-container {
@@ -1307,7 +1307,7 @@
         overscroll-behavior-y: contain;
     }
 
-    /* 8. Mobile theme card transform: flat 2D transform without perspective */
+    /* Mobile theme card transform: flat 2D transform without perspective */
     .grid-4-metrics > .metric-card {
         transform: none !important;
     }

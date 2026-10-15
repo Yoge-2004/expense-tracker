@@ -4,7 +4,7 @@
    under-glows, tabular numeral alignments, and refined pill badges.
    ========================================================================== */
 
-/* 1. LAYERED FROSTED GLASS & AMBIENT RADIANT BACKDROP */
+/* LAYERED FROSTED GLASS & AMBIENT RADIANT BACKDROP */
 .hero-bg {
     position: fixed;
     inset: 0;
@@ -24,7 +24,7 @@
         radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 55%);
 }
 
-/* 2. CARD ELEVATION & FROSTED GLASS EFFECT */
+/* CARD ELEVATION & FROSTED GLASS EFFECT */
 .card,
 .metric-card,
 .unified-ledger-card,
@@ -78,7 +78,7 @@
     background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
 }
 
-/* 3. METRIC VALUES TYPOGRAPHY & TABULAR NUMERALS */
+/* METRIC VALUES TYPOGRAPHY & TABULAR NUMERALS */
 .metric-value,
 .stat-value,
 .budget-status-value,
@@ -88,7 +88,7 @@
     letter-spacing: -0.02em;
 }
 
-/* 4. REFINED METRIC CARD ACCENT UNDERGLOWS */
+/* REFINED METRIC CARD ACCENT UNDERGLOWS */
 .metric-card.metric-card-inflow:hover {
     box-shadow:
         0 14px 32px -6px var(--metric-inflow-glow),
@@ -124,7 +124,7 @@
         0 0 24px -4px var(--metric-subs-glow) inset;
 }
 
-/* 5. DYNAMIC SHIMMERING PROGRESS BARS */
+/* DYNAMIC SHIMMERING PROGRESS BARS */
 .budget-bar-track,
 .progress-track {
     background: rgba(0, 0, 0, 0.28);
@@ -169,7 +169,7 @@
     100% { background-position: 200% 0; }
 }
 
-/* 6. STATUS PILL BADGES & CHIPS REFINEMENT */
+/* STATUS PILL BADGES & CHIPS REFINEMENT */
 .status-badge,
 .pill-chip {
     border-radius: 999px;
@@ -211,7 +211,7 @@
     border: 1px solid rgba(192, 86, 94, 0.35);
 }
 
-/* 7. EMPTY STATE LUXURY ELEVATION */
+/* EMPTY STATE LUXURY ELEVATION */
 .empty-state-compact {
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.02);
@@ -231,7 +231,7 @@
     border-color: rgba(212, 175, 55, 0.3);
 }
 
-/* 8. TOP COMMAND BAR BLUR & RADIANT BORDER */
+/* TOP COMMAND BAR BLUR & RADIANT BORDER */
 .top-bar {
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);

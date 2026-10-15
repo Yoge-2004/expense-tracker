@@ -1,4 +1,4 @@
-/* 40. Theme Shift Radial Glow */
+/* Theme Shift Radial Glow */
 @keyframes themeShiftGlow {
     0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.6); }
     70% { box-shadow: 0 0 0 24px rgba(var(--primary-rgb), 0); }
@@ -10,7 +10,7 @@
     animation: themeShiftGlow 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 41. Ambient Mesh Breathe */
+/* Ambient Mesh Breathe */
 @keyframes ambientMeshBreathe {
     0%, 100% { transform: scale(1); opacity: 0.88; }
     50% { transform: scale(1.04); opacity: 1; }
@@ -20,7 +20,7 @@
     animation: ambientMeshBreathe 14s ease-in-out infinite alternate;
 }
 
-/* 44. Sunburst Expanding Pulse */
+/* Sunburst Expanding Pulse */
 @keyframes sunburstPulse {
     0% { transform: rotate(0deg) scale(0.95); opacity: 0.8; }
     50% { transform: rotate(180deg) scale(1.1); opacity: 1; filter: drop-shadow(0 0 8px #f39c12); }
@@ -31,7 +31,7 @@
     animation: sunburstPulse 12s linear infinite;
 }
 
-/* 45. Moonlight Soft Shimmer */
+/* Moonlight Soft Shimmer */
 @keyframes moonlightShimmer {
     0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
     50% { transform: scale(1.15) rotate(-10deg); opacity: 1; filter: drop-shadow(0 0 10px #74b9ff); }
@@ -41,7 +41,7 @@
     animation: moonlightShimmer 4s ease-in-out infinite;
 }
 
-/* 53. Card 3D Parallax Tilt */
+/* Card 3D Parallax Tilt */
 @keyframes card3DTilt {
     0%, 100% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg); }
     50% { transform: perspective(1000px) rotateX(1.5deg) rotateY(-1.5deg); }
@@ -51,7 +51,7 @@
     animation: card3DTilt 2.5s ease-in-out infinite alternate;
 }
 
-/* 56. Surface Elastic Spring Pop-In */
+/* Surface Elastic Spring Pop-In */
 @keyframes surfaceElasticPop {
     0% { transform: scale(0.88) translateY(20px); opacity: 0; }
     70% { transform: scale(1.02) translateY(-3px); opacity: 1; }
@@ -62,7 +62,7 @@
     animation: surfaceElasticPop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* 58. Card Magnetic Elevation Lift */
+/* Card Magnetic Elevation Lift */
 .metric-card,
 .float-card,
 .perk-item,
@@ -72,7 +72,7 @@
                 border-color 0.35s ease !important;
 }
 
-/* 61. Bento Tile Cascade Stagger */
+/* Bento Tile Cascade Stagger */
 @keyframes bentoCascade {
     0% { opacity: 0; transform: translateY(30px) scale(0.96); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -85,7 +85,7 @@
 .bento-grid > *:nth-child(5) { animation: bentoCascade 0.5s ease 0.25s both; }
 .bento-grid > *:nth-child(6) { animation: bentoCascade 0.5s ease 0.30s both; }
 
-/* 64. Rubber Band Attention Notice */
+/* Rubber Band Attention Notice */
 @keyframes rubberBandNotice {
     0% { transform: scale3d(1, 1, 1); }
     30% { transform: scale3d(1.15, 0.85, 1); }
@@ -101,12 +101,12 @@
     animation: rubberBandNotice 1.2s ease;
 }
 
-/* 66. Card Stack Fan-Out */
+/* Card Stack Fan-Out */
 .stacked-cards:hover > *:nth-child(1) { transform: translateY(-4px) rotate(-1deg); }
 .stacked-cards:hover > *:nth-child(2) { transform: translateY(-8px) rotate(1deg); }
 .stacked-cards:hover > *:nth-child(3) { transform: translateY(-12px) rotate(-1.5deg); }
 
-/* 67. Golden Pulse Highlight on Edit */
+/* Golden Pulse Highlight on Edit */
 @keyframes goldPulseHighlight {
     0% { background-color: rgba(var(--primary-rgb), 0.35); }
     100% { background-color: transparent; }

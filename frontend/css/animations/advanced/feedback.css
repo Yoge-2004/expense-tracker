@@ -1,4 +1,4 @@
-/* 18. Particle Sparkle Burst on Action */
+/* Particle Sparkle Burst on Action */
 @keyframes sparkleBurst {
     0% { transform: scale(0) rotate(0deg); opacity: 1; }
     50% { opacity: 0.9; }
@@ -11,7 +11,7 @@
     animation: sparkleBurst 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 19. Budget Goal Confetti Flutter */
+/* Budget Goal Confetti Flutter */
 @keyframes confettiFlutter {
     0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
     100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
@@ -26,7 +26,7 @@
     pointer-events: none;
 }
 
-/* 20. Glossy Holographic Card Light Sweep */
+/* Glossy Holographic Card Light Sweep */
 @keyframes glossySweep {
     0% { transform: translateX(-120%) rotate(25deg); opacity: 0; }
     40% { opacity: 0.25; }
@@ -57,7 +57,7 @@
     animation: glossySweep 0.95s cubic-bezier(0.2, 0.8, 0.4, 1);
 }
 
-/* 21. Neon Ambient Glowing Border on Open Modals */
+/* Neon Ambient Glowing Border on Open Modals */
 @keyframes modalBorderGlow {
     0%, 100% {
         border-color: rgba(var(--primary-rgb), 0.4);
@@ -69,14 +69,14 @@
     }
 }
 
-/* 22. Chart Container Hover Lift & Canvas Glow */
+/* Chart Container Hover Lift & Canvas Glow */
 .chart-wrapper:hover,
 .trend-chart-wrapper:hover {
     filter: drop-shadow(0 8px 18px rgba(var(--primary-rgb), 0.15));
     transition: filter 0.3s ease;
 }
 
-/* 24. Skeleton Loading Shimmer Wave */
+/* Skeleton Loading Shimmer Wave */
 @keyframes skeletonShimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
@@ -89,7 +89,7 @@
     border-radius: 8px;
 }
 
-/* 25. Animated SVG Stroke Draw for Checkmarks */
+/* Animated SVG Stroke Draw for Checkmarks */
 @keyframes strokeDrawCheck {
     0% { stroke-dashoffset: 50; }
     100% { stroke-dashoffset: 0; }
@@ -101,7 +101,7 @@
     animation: strokeDrawCheck 0.45s ease-out forwards;
 }
 
-/* 26. Delete Warning Pulse Shockwave */
+/* Delete Warning Pulse Shockwave */
 @keyframes deleteWarningPulse {
     0% { box-shadow: 0 0 0 0 rgba(162, 62, 50, 0.7); }
     70% { box-shadow: 0 0 0 10px rgba(162, 62, 50, 0); }
@@ -113,7 +113,7 @@
     animation: deleteWarningPulse 1.2s infinite;
 }
 
-/* 29. Form Button Submit Success Morph */
+/* Form Button Submit Success Morph */
 @keyframes btnSuccessMorph {
     0% { transform: scale(0.96); background: var(--primary); }
     50% { transform: scale(1.04); background: #27ae60; box-shadow: 0 0 20px rgba(39, 174, 96, 0.6); }
@@ -124,7 +124,7 @@
     animation: btnSuccessMorph 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
 }
 
-/* 30. Smooth Accordion Filter Drawer Slide */
+/* Smooth Accordion Filter Drawer Slide */
 @keyframes filterDrawerSlide {
     0% { opacity: 0; transform: translateY(-12px); max-height: 0; }
     100% { opacity: 1; transform: translateY(0); max-height: 600px; }
@@ -134,7 +134,7 @@
     animation: filterDrawerSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 31. Interactive Magnetic Avatar Float & Glow */
+/* Interactive Magnetic Avatar Float & Glow */
 @keyframes avatarGlow {
     0%, 100% { box-shadow: 0 0 0 2px var(--border); }
     50% { box-shadow: 0 0 0 3px var(--primary), 0 0 14px rgba(var(--primary-rgb), 0.4); }
@@ -146,14 +146,14 @@
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* 33. Sync & Refresh Icon Motion */
+/* Sync & Refresh Icon Motion */
 .btn-icon:hover svg,
 .btn-text-icon:hover svg {
     transform: rotate(15deg) scale(1.1);
     transition: transform 0.25s ease;
 }
 
-/* 34. Dynamic Shadow Lift on Cards */
+/* Dynamic Shadow Lift on Cards */
 .float-card-1,
 .perk-item:nth-child(1) {
     animation: cardFloat1 5s ease-in-out infinite !important;
@@ -174,7 +174,7 @@
     animation: cardFloat4 5.5s ease-in-out infinite -4.2s !important;
 }
 
-/* 35. Tooltip Elastic Pop */
+/* Tooltip Elastic Pop */
 @keyframes tooltipElasticPop {
     0% { transform: scale(0.8) translateY(6px); opacity: 0; }
     100% { transform: scale(1) translateY(0); opacity: 1; }
@@ -184,7 +184,7 @@
     animation: tooltipElasticPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* 36. Field Verified Flash */
+/* Field Verified Flash */
 @keyframes validFieldFlash {
     0% { border-color: var(--border); }
     50% { border-color: #27ae60; box-shadow: 0 0 10px rgba(39, 174, 96, 0.35); }
@@ -195,7 +195,7 @@
     animation: validFieldFlash 0.4s ease-out forwards;
 }
 
-/* 37. Presets Bar Glide In */
+/* Presets Bar Glide In */
 @keyframes presetsGlideIn {
     0% { transform: translateX(-15px); opacity: 0; }
     100% { transform: translateX(0); opacity: 1; }
@@ -205,7 +205,7 @@
     animation: presetsGlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 38. Smart Intelligence Star Accent Pulse */
+/* Smart Intelligence Star Accent Pulse */
 @keyframes pulseSparkle {
     0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
     50% { transform: scale(1.25) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 6px var(--primary)); }

@@ -2,7 +2,7 @@
  * =============================================================================
  * Motion Engine — scroll reveal, touch feedback, pointer micro-interactions,
  * and ambient background depth layers.
- * Pairs with css/motion-extended.css (animations #171–#226).
+ * Pairs with css/motion-extended.css (extended motion animations).
  * Self-contained: does nothing if its target elements aren't on the page.
  * Performance-hardened for mobile: zero-overhead execution on handheld devices.
  * =============================================================================

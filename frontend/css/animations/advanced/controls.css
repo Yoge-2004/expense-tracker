@@ -1,4 +1,4 @@
-/* 70. Gradient Angle Rotation */
+/* Gradient Angle Rotation */
 @keyframes gradientAngleRotate {
     0% { filter: hue-rotate(0deg); }
     50% { filter: hue-rotate(15deg); }
@@ -9,7 +9,7 @@
     animation: gradientAngleRotate 3s infinite alternate ease-in-out;
 }
 
-/* 71. Button Click Concentric Ripple */
+/* Button Click Concentric Ripple */
 @keyframes rippleConcentric {
     0% { transform: scale(0); opacity: 0.6; }
     100% { transform: scale(3.5); opacity: 0; }
@@ -35,7 +35,7 @@
     animation: rippleConcentric 0.5s ease-out;
 }
 
-/* 72. Button Press Spring Rebound */
+/* Button Press Spring Rebound */
 .btn-primary:active,
 .btn-secondary:active,
 .btn-oauth:active {
@@ -43,7 +43,7 @@
     transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* 73. Submission Success Morph */
+/* Submission Success Morph */
 @keyframes successMorphCheck {
     0% { transform: scale(0) rotate(-45deg); opacity: 0; }
     70% { transform: scale(1.2) rotate(5deg); opacity: 1; }
@@ -54,7 +54,7 @@
     animation: successMorphCheck 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* 74. Danger Action Shake Error */
+/* Danger Action Shake Error */
 @keyframes shakeErrorAction {
     0%, 100% { transform: translateX(0); }
     20%, 60% { transform: translateX(-6px); }
@@ -65,7 +65,7 @@
     animation: shakeErrorAction 0.45s ease-in-out;
 }
 
-/* 76. Button Underglow Floating Hover */
+/* Button Underglow Floating Hover */
 @keyframes floatUnderglow {
     0%, 100% { box-shadow: 0 8px 20px -4px rgba(var(--primary-rgb), 0.35); }
     50% { box-shadow: 0 14px 30px -2px rgba(var(--primary-rgb), 0.55); }
@@ -75,7 +75,7 @@
     animation: floatUnderglow 2s ease-in-out infinite;
 }
 
-/* 77. Action Arrow Micro Nudge */
+/* Action Arrow Micro Nudge */
 @keyframes arrowNudgeRight {
     0%, 100% { transform: translateX(0); }
     50% { transform: translateX(5px); }
@@ -86,7 +86,7 @@ button[type="submit"]:hover svg {
     animation: arrowNudgeRight 1s ease-in-out infinite;
 }
 
-/* 78. Laser Underline Expansion */
+/* Laser Underline Expansion */
 @keyframes laserUnderlineExpand {
     0% { width: 0%; opacity: 0; }
     100% { width: 100%; opacity: 1; }
@@ -97,7 +97,7 @@ button[type="submit"]:hover svg {
     animation: laserUnderlineExpand 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 79. Elastic Scale Chip Tap */
+/* Elastic Scale Chip Tap */
 @keyframes chipScaleTap {
     0% { transform: scale(0.92); }
     50% { transform: scale(1.08); }
@@ -109,7 +109,7 @@ button[type="submit"]:hover svg {
     animation: chipScaleTap 0.3s ease;
 }
 
-/* 81. Ghost Button Glass Fill Hover */
+/* Ghost Button Glass Fill Hover */
 .btn-ghost,
 .btn-secondary {
     transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
@@ -122,7 +122,7 @@ button[type="submit"]:hover svg {
     transform: translateY(-2px) !important;
 }
 
-/* 82. Reload Sync Spinner */
+/* Reload Sync Spinner */
 @keyframes spinReload360 {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -132,7 +132,7 @@ button[type="submit"]:hover svg {
     animation: spinReload360 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 85. Input Focus Aura Halo */
+/* Input Focus Aura Halo */
 .form-input:focus,
 select:focus {
     outline: none !important;
@@ -141,7 +141,7 @@ select:focus {
     transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
 
-/* 87. Input Prefix Icon Bounce — Preserves vertical centering */
+/* Input Prefix Icon Bounce — Preserves vertical centering */
 .form-group:focus-within .input-icon,
 .input-wrapper:focus-within .input-icon,
 .input-wrapper:focus-within > svg.input-icon {
@@ -150,7 +150,7 @@ select:focus {
     transition: transform 0.2s ease, color 0.2s ease !important;
 }
 
-/* 88. Form Input Jiggle on Invalid */
+/* Form Input Jiggle on Invalid */
 @keyframes inputShakeInvalid {
     0%, 100% { transform: translateX(0); }
     20%, 60% { transform: translateX(-4px); }
@@ -162,7 +162,7 @@ select:focus {
     border-color: var(--danger) !important;
 }
 
-/* 89. Input Emerald Verification Glow */
+/* Input Emerald Verification Glow */
 @keyframes emeraldGlowSuccess {
     0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.5); }
     100% { box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.2); }
@@ -173,7 +173,7 @@ select:focus {
     border-color: #27ae60 !important;
 }
 
-/* 90. Dropdown Spring Unfold */
+/* Dropdown Spring Unfold */
 @keyframes dropdownSpringUnroll {
     0% { opacity: 0; transform: translateY(-10px) scale(0.95); }
     70% { opacity: 1; transform: translateY(2px) scale(1.01); }
@@ -186,7 +186,7 @@ select:focus {
     animation: dropdownSpringUnroll 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 91. Dropdown Option Item Cascade */
+/* Dropdown Option Item Cascade */
 @keyframes optionCascadeSlide {
     from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
@@ -196,7 +196,7 @@ select:focus {
     animation: optionCascadeSlide 0.2s ease forwards;
 }
 
-/* 92. Checkbox Elastic Tick Pop */
+/* Checkbox Elastic Tick Pop */
 @keyframes checkmarkDrawPop {
     0% { transform: scale(0) rotate(-45deg); }
     70% { transform: scale(1.25) rotate(5deg); }
@@ -207,7 +207,7 @@ input[type="checkbox"]:checked {
     animation: checkmarkDrawPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* 93. Radio Selection Expanding Ring */
+/* Radio Selection Expanding Ring */
 @keyframes radioRingPulse {
     0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.6); }
     100% { box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0); }
@@ -217,20 +217,20 @@ input[type="radio"]:checked {
     animation: radioRingPulse 0.4s ease-out;
 }
 
-/* 94. Toggle Switch Glide */
+/* Toggle Switch Glide */
 .theme-switch-slider,
 .toggle-slider {
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease !important;
 }
 
-/* 95. Slider Range Thumb Scale Pop */
+/* Slider Range Thumb Scale Pop */
 input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.3) !important;
     box-shadow: 0 0 12px var(--primary) !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-/* 96. OTP Box Active Golden Pulse */
+/* OTP Box Active Golden Pulse */
 @keyframes otpBoxPulse {
     0%, 100% { box-shadow: 0 0 0 2px var(--primary), 0 0 10px rgba(var(--primary-rgb), 0.2); }
     50% { box-shadow: 0 0 0 3.5px var(--primary), 0 0 18px rgba(var(--primary-rgb), 0.45); }
@@ -240,7 +240,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: otpBoxPulse 1.8s ease-in-out infinite !important;
 }
 
-/* 97. Password Eye Blink Micro-Action */
+/* Password Eye Blink Micro-Action */
 @keyframes eyeBlink {
     0%, 100% { transform: scaleY(1); }
     50% { transform: scaleY(0.1); }
@@ -250,7 +250,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     animation: eyeBlink 0.2s ease;
 }
 
-/* 98. Clear Search Input Spin */
+/* Clear Search Input Spin */
 @keyframes clearBtnSpin {
     0% { transform: scale(0) rotate(-90deg); opacity: 0; }
     100% { transform: scale(1) rotate(0deg); opacity: 1; }

@@ -4,7 +4,7 @@
    gets immediate feedback instead of waiting on the ~click event.
    ------------------------------------------------------------------------- */
 
-/* 183. Touch: instant press-down scale for tappable surfaces */
+/* Touch: instant press-down scale for tappable surfaces */
 .touch-pressable {
     position: relative;
     overflow: hidden;
@@ -15,7 +15,7 @@
     box-shadow: 0 2px 10px -4px rgba(0, 0, 0, 0.3);
 }
 
-/* 184. Touch: ripple wave (distinct from the existing click ripple —
+/* Touch: ripple wave (distinct from the existing click ripple —
    fires on touchstart, so it starts before the click event would) */
 @keyframes touchRippleWave {
     0% { transform: scale(0); opacity: 0.55; }
@@ -30,7 +30,7 @@
     z-index: 5;
 }
 
-/* 185. Touch: long-press radial fill ring (progress toward a long-press action) */
+/* Touch: long-press radial fill ring (progress toward a long-press action) */
 @keyframes longPressRingFill {
     0% { stroke-dashoffset: 126; opacity: 0.4; }
     100% { stroke-dashoffset: 0; opacity: 1; }
@@ -39,7 +39,7 @@
     animation: longPressRingFill 0.55s linear forwards;
 }
 
-/* 186. Touch: long-press ambient glow while held */
+/* Touch: long-press ambient glow while held */
 @keyframes longPressGlow {
     0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.35); }
     100% { box-shadow: 0 0 0 14px rgba(var(--primary-rgb), 0); }
@@ -48,7 +48,7 @@
     animation: longPressGlow 0.6s var(--ease) infinite;
 }
 
-/* 187. Touch: swipe-hint shimmer (nudges the user that a row is swipeable) */
+/* Touch: swipe-hint shimmer (nudges the user that a row is swipeable) */
 @keyframes swipeHintShimmer {
     0%, 100% { transform: translateX(0); }
     50% { transform: translateX(-10px); }
@@ -57,7 +57,7 @@
     animation: swipeHintShimmer 1.4s ease-in-out 1;
 }
 
-/* 188. Touch: swipe-to-reveal action row (transaction/list items) */
+/* Touch: swipe-to-reveal action row (transaction/list items) */
 .swipeable-row {
     transition: transform 0.3s var(--ease);
 }

@@ -1,4 +1,4 @@
-/* 100. Step Progress Bar Gleam Stream */
+/* Step Progress Bar Gleam Stream */
 @keyframes stepBarGleam {
     0% { background-position: -200% center; }
     100% { background-position: 200% center; }
@@ -10,7 +10,7 @@
     animation: stepBarGleam 2.8s infinite linear;
 }
 
-/* 101. Chart Bar Vertical Growth */
+/* Chart Bar Vertical Growth */
 @keyframes chartBarGrowVertical {
     0% { transform: scaleY(0); transform-origin: bottom; }
     100% { transform: scaleY(1); transform-origin: bottom; }
@@ -20,12 +20,12 @@
     animation: chartBarGrowVertical 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 104. Chart Tooltip Elastic Glide */
+/* Chart Tooltip Elastic Glide */
 .chartjs-tooltip {
     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* 107. Stat Counter Ticker Flip */
+/* Stat Counter Ticker Flip */
 @keyframes counterNumberRoll {
     0% { transform: translateY(12px); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
@@ -36,7 +36,7 @@
     animation: counterNumberRoll 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 113. Heatmap Calendar Day Cell Pop */
+/* Heatmap Calendar Day Cell Pop */
 .calendar-heatmap-day {
     transition: transform 0.2s ease, filter 0.2s ease;
 }
@@ -47,7 +47,7 @@
     filter: drop-shadow(0 2px 8px rgba(var(--primary-rgb), 0.5));
 }
 
-/* 115. Metric Number Micro Bounce */
+/* Metric Number Micro Bounce */
 @keyframes metricUpdateBounce {
     0% { transform: scale(1); }
     30% { transform: scale(1.18); color: var(--primary); }
@@ -58,7 +58,7 @@
     animation: metricUpdateBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* 117. Live Radar Status Beacon Pulse */
+/* Live Radar Status Beacon Pulse */
 @keyframes radarBeaconPulse {
     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
     70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
@@ -69,7 +69,7 @@
     animation: radarBeaconPulse 2s infinite !important;
 }
 
-/* 119. Category Filter Pill Click Bounce */
+/* Category Filter Pill Click Bounce */
 @keyframes pillTapBounce {
     0% { transform: scale(0.92); }
     50% { transform: scale(1.06); }
@@ -81,7 +81,7 @@
     animation: pillTapBounce 0.25s ease;
 }
 
-/* 120. Filter Chip Selected Halo */
+/* Filter Chip Selected Halo */
 .filter-chip.active,
 .category-pill.active {
     box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.35) !important;
@@ -89,7 +89,7 @@
     transition: box-shadow 0.25s ease, transform 0.25s ease !important;
 }
 
-/* 121. Overdue Reminder Bell Wiggle */
+/* Overdue Reminder Bell Wiggle */
 @keyframes bellWiggle {
     0%, 100% { transform: rotate(0deg); }
     20%, 60% { transform: rotate(14deg); }
@@ -101,14 +101,14 @@
     transform-origin: top center;
 }
 
-/* 122. Currency Pill Glowing Ring */
+/* Currency Pill Glowing Ring */
 .currency-option:hover,
 .currency-option.selected {
     box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.3) !important;
     border-color: var(--primary) !important;
 }
 
-/* 123. Transaction Tag Slide-In */
+/* Transaction Tag Slide-In */
 @keyframes tagSlideIn {
     0% { opacity: 0; transform: scale(0.8) translateX(10px); }
     100% { opacity: 1; transform: scale(1) translateX(0); }
@@ -118,7 +118,7 @@
     animation: tagSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 125. Notification Counter Pop-In */
+/* Notification Counter Pop-In */
 @keyframes badgePopIn {
     0% { transform: scale(0); opacity: 0; }
     80% { transform: scale(1.25); opacity: 1; }
@@ -129,7 +129,7 @@
     animation: badgePopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* 126. Verified User Stroke Draw */
+/* Verified User Stroke Draw */
 @keyframes checkDrawStroke {
     0% { stroke-dashoffset: 50; }
     100% { stroke-dashoffset: 0; }
@@ -140,7 +140,7 @@
     animation: checkDrawStroke 0.6s ease-out forwards;
 }
 
-/* 127. Unread Alert Glowing Dot */
+/* Unread Alert Glowing Dot */
 @keyframes unreadDotPulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.4); opacity: 0.6; box-shadow: 0 0 8px #e74c3c; }
@@ -150,7 +150,7 @@
     animation: unreadDotPulse 1.8s ease-in-out infinite;
 }
 
-/* 128. Step Circle Ring Expansion */
+/* Step Circle Ring Expansion */
 @keyframes stepRingGlow {
     0%, 100% { box-shadow: 0 0 0 2px var(--primary); }
     50% { box-shadow: 0 0 0 6px rgba(var(--primary-rgb), 0.35); }

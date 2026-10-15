@@ -1,4 +1,4 @@
-/* 1. Cascade Entry Animation on Page Load */
+/* Cascade Entry Animation on Page Load */
 @keyframes cascadeFadeUp {
     0% {
         opacity: 0;
@@ -23,7 +23,7 @@
 .delay-7 { animation-delay: 0.35s !important; }
 .delay-8 { animation-delay: 0.40s !important; }
 
-/* 2. Interactive Card 3D Magnetic Elevation & Luminous Glow */
+/* Interactive Card 3D Magnetic Elevation & Luminous Glow */
 .metric-card,
 .card,
 .auth-card,
@@ -34,7 +34,7 @@
     will-change: transform, box-shadow;
 }
 
-/* 3. Transaction Item Staggered Slide & Scale-In */
+/* Transaction Item Staggered Slide & Scale-In */
 @keyframes itemSlideIn {
     0% {
         opacity: 0;
@@ -46,7 +46,7 @@
     }
 }
 
-/* 4. Progress Bar & Step Bar Shimmer Wave */
+/* Progress Bar & Step Bar Shimmer Wave */
 @keyframes shimmerSweep {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
@@ -62,7 +62,7 @@
     animation: shimmerSweep 2.8s infinite linear;
 }
 
-/* 5. Live Server Status Beacon & Breathing Neon Halo */
+/* Live Server Status Beacon & Breathing Neon Halo */
 @keyframes liveHaloPulse {
     0% {
         box-shadow: 0 0 0 0 rgba(76, 122, 120, 0.75);
@@ -80,7 +80,7 @@
     animation: liveHaloPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
 }
 
-/* 6. Expanding Click Fluid Ripple */
+/* Expanding Click Fluid Ripple */
 .ripple-effect {
     position: absolute;
     border-radius: 50%;
@@ -97,7 +97,7 @@
     }
 }
 
-/* 7. Elastic Spring Modal Entrance & Backdrop Blur Fade */
+/* Elastic Spring Modal Entrance & Backdrop Blur Fade */
 @keyframes modalSpringIn {
     0% {
         opacity: 0;
@@ -129,7 +129,7 @@
                emeraldModalBorderGlow 4s ease-in-out infinite alternate !important;
 }
 
-/* 8. Toast Progress Timer Line */
+/* Toast Progress Timer Line */
 @keyframes toastTimerLine {
     0% { width: 100%; }
     100% { width: 0%; }
@@ -150,14 +150,14 @@
     animation: toastTimerLine 3.5s linear forwards;
 }
 
-/* 9. Category Pill Pop & Active Glow */
+/* Category Pill Pop & Active Glow */
 @keyframes pillPop {
     0% { transform: translateY(-2px) scale(1.03); }
     50% { transform: translateY(-2px) scale(1.07); }
     100% { transform: translateY(-2px) scale(1.03); }
 }
 
-/* 10. Number Counter Flash / Glow on Change */
+/* Number Counter Flash / Glow on Change */
 @keyframes numberGlow {
     0% { color: var(--primary); text-shadow: 0 0 16px rgba(var(--primary-rgb), 0.8); }
     100% { color: var(--text-main); text-shadow: none; }
@@ -167,7 +167,7 @@
     animation: numberGlow 0.75s ease-out;
 }
 
-/* 11. Form Input Radiant Focus Halo & Icon Nudge */
+/* Form Input Radiant Focus Halo & Icon Nudge */
 @keyframes iconNudge {
     0%, 100% { transform: translateY(-50%) scale(1); }
     50% { transform: translateY(-50%) scale(1.08); }
@@ -179,7 +179,7 @@
     box-shadow: none !important;
 }
 
-/* 12. Multi-Ring Dual Speed Action Spinner */
+/* Multi-Ring Dual Speed Action Spinner */
 @keyframes dualSpin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -192,7 +192,7 @@
     animation: dualSpin 0.7s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite !important;
 }
 
-/* 13. 1-Tap Date Preset Energetic Flash */
+/* 1-Tap Date Preset Energetic Flash */
 @keyframes presetActiveFlash {
     0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.8); }
     70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0); }
@@ -203,7 +203,7 @@
     animation: presetActiveFlash 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* 14. Validation Error Harmonic Shake */
+/* Validation Error Harmonic Shake */
 @keyframes errorHarmonicShake {
     0%, 100% { transform: translateX(0); }
     15% { transform: translateX(-8px) rotate(-1deg); }
@@ -218,7 +218,7 @@
     animation: errorHarmonicShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-/* 15. Dropdown Menu Accordion Unfurl */
+/* Dropdown Menu Accordion Unfurl */
 @keyframes dropdownUnfurl {
     0% {
         opacity: 0;
@@ -237,7 +237,7 @@
     animation: dropdownUnfurl 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* 16. Empty State Floating Bobbing Illustration */
+/* Empty State Floating Bobbing Illustration */
 @keyframes gentleFloatBob {
     0% { transform: translateY(0) rotate(0deg); }
     50% { transform: translateY(-9px) rotate(1.5deg); }
@@ -252,7 +252,7 @@
     will-change: transform;
 }
 
-/* 17. Button Magnetic Pulse on Hover */
+/* Button Magnetic Pulse on Hover */
 @keyframes btnPulseGlow {
     0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4); }
     70% { box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0); }

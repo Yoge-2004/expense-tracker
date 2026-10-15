@@ -3,12 +3,12 @@
    motion.js so touch devices never fight these with the touch group above)
    ------------------------------------------------------------------------- */
 
-/* 195. Pointer: magnetic button pull toward cursor */
+/* Pointer: magnetic button pull toward cursor */
 .magnetic-target {
     transition: transform 0.25s var(--ease);
 }
 
-/* 196. Pointer: 3D tilt on cards, composed with the CSS theme-state motion. */
+/* Pointer: 3D tilt on cards, composed with the CSS theme-state motion. */
 .tilt-target {
     --tilt-x: 0deg;
     --tilt-y: 0deg;
@@ -24,7 +24,7 @@
     transform-style: preserve-3d;
 }
 
-/* 197. Pointer: glow that follows the cursor across a card surface */
+/* Pointer: glow that follows the cursor across a card surface */
 .glow-follow {
     --glow-x: 50%;
     --glow-y: 50%;
@@ -46,7 +46,7 @@
 }
 .glow-follow:hover::before { opacity: 1; }
 
-/* 198. Pointer: underline grows from center on hover */
+/* Pointer: underline grows from center on hover */
 .underline-grow {
     position: relative;
 }
@@ -62,7 +62,7 @@
 }
 .underline-grow:hover::after { width: 100%; left: 0; }
 
-/* 199. Pointer: icon spins once on hover */
+/* Pointer: icon spins once on hover */
 @keyframes iconSpinOnce {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -71,7 +71,7 @@
     animation: iconSpinOnce 0.5s var(--ease);
 }
 
-/* 200. Pointer: deep-lift shadow on hover for cards */
+/* Pointer: deep-lift shadow on hover for cards */
 .lift-deep {
     transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
@@ -80,7 +80,7 @@
     box-shadow: 0 30px 55px -20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--primary-rgb), 0.15);
 }
 
-/* 201. Pointer: text color sweep on hover */
+/* Pointer: text color sweep on hover */
 .text-sweep {
     background-image: linear-gradient(90deg, var(--primary) 0%, var(--primary) 50%, var(--text-main) 50%, var(--text-main) 100%);
     background-size: 200% 100%;
@@ -92,19 +92,19 @@
 }
 .text-sweep:hover { background-position: 0 0; }
 
-/* 202. Pointer: arrow nudges right on hover */
+/* Pointer: arrow nudges right on hover */
 .arrow-nudge svg {
     transition: transform 0.28s var(--ease);
 }
 .arrow-nudge:hover svg { transform: translateX(5px); }
 
-/* 203. Pointer: elastic scale bounce on hover */
+/* Pointer: elastic scale bounce on hover */
 .scale-bounce-hover {
     transition: transform 0.3s var(--ease-bounce);
 }
 .scale-bounce-hover:hover { transform: scale(1.045); }
 
-/* 204. Pointer: soft brightness pulse for emphasis targets */
+/* Pointer: soft brightness pulse for emphasis targets */
 @keyframes brightnessPulse {
     0%, 100% { filter: brightness(1); }
     50% { filter: brightness(1.15); }

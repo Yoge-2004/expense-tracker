@@ -1,6 +1,6 @@
 /* ================== 9. ALIGNMENT FIXES ================== */
 
-/* 1. Modal Category Group */
+/* Modal Category Group */
 .input-group {
     display: flex;
     gap: 8px;
@@ -41,7 +41,7 @@
     }
 }
 
-/* 2. Monthly Budget & Savings Goal Card Headers */
+/* Monthly Budget & Savings Goal Card Headers */
 .card-header {
     display: flex;
     justify-content: space-between;
