@@ -255,13 +255,19 @@ public class RangeReportController {
             // Card 4: CAPITAL RETENTION RATE (Cols 6-7)
             double savingsRate = income.compareTo(BigDecimal.ZERO) > 0
                     ? Math.max(0.0, net.divide(income, 4, RoundingMode.HALF_UP).doubleValue()) : 0.0;
+            XSSFCellStyle kpiSavingsVal = style(wb,
+                    savingsRate >= 0.20 ? "ECFDF5" : (savingsRate > 0 ? "FFFBEB" : "FEF2F2"),
+                    savingsRate >= 0.20 ? "059669" : (savingsRate > 0 ? "D97706" : "DC2626"),
+                    true, 15, HorizontalAlignment.CENTER, true);
+            kpiSavingsVal.setDataFormat(pctFormatIdx);
+
             dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(4, 4, 6, 7));
             dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(5, 5, 6, 7));
             dashboard.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(6, 6, 6, 7));
             put(dashboard, 4, 6, "SAVINGS RETENTION RATE", kpiCardHeader);
             put(dashboard, 4, 7, "", kpiCardHeader);
-            put(dashboard, 5, 6, savingsRate, dataPct);
-            put(dashboard, 5, 7, "", dataPct);
+            put(dashboard, 5, 6, savingsRate, kpiSavingsVal);
+            put(dashboard, 5, 7, "", kpiSavingsVal);
             put(dashboard, 6, 6, "Target Benchmark: >= 20.0%", kpiFooter);
             put(dashboard, 6, 7, "", kpiFooter);
 

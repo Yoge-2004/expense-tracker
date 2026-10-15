@@ -1461,7 +1461,7 @@ public class ExportServiceImpl implements ExportService {
             // Card 4: SAVINGS RATE (Cols G–H / 6–7)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 4, 5, 6, 6, 7,
                     "\u2605 CAPITAL RETENTION RATE",
-                    "IF(A6>0, E6/A6, 0)",
+                    "IF(AND(A6>0, E6>0), E6/A6, 0)",
                     PBI_AMBER_GOLD, kpiPctFormat, "Target Benchmark: \u2265 20.0%");
 
             Row spacer7 = dashSheet.createRow(7);

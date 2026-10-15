@@ -46,14 +46,16 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
     rotateAnim.setValue(0);
     Animated.timing(rotateAnim, {
       toValue: 1,
-      duration: 180,
+      duration: 240,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      rotateAnim.setValue(0);
+    });
   };
 
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
+    outputRange: ['0deg', '360deg'],
   });
 
   return (
