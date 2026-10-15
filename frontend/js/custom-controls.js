@@ -641,9 +641,9 @@
         const spaceBelow = window.innerHeight - rect.bottom - 12;
         const spaceAbove = rect.top - 12;
 
-        // If mobile viewport, cramped height (< 580px), or in modal with tight clearance:
-        // Use centered luxury modal mode with backdrop!
-        if (isMobile || window.innerHeight < 580 || (inModal && spaceBelow < popoverHeight && spaceAbove < popoverHeight)) {
+        // When opened inside any modal, on mobile devices, or in viewports with limited clearance,
+        // center the calendar cleanly in viewport with a backdrop for optimal visibility!
+        if (isMobile || inModal || window.innerHeight < 600 || (spaceBelow < popoverHeight && spaceAbove < popoverHeight)) {
             popover.classList.add("cal-mobile-modal");
             popover.style.top = "";
             popover.style.left = "";
