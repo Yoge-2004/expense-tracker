@@ -1196,36 +1196,120 @@
 
 
 /* =============================================================================
-   Mobile Browser Animation, Transition & Compositor Performance Optimizations
+   Mobile Browser Animation, Transition & Compositor Zero-Lag Architecture
+   Completely eliminates scroll stutter, GPU layer explosions, and dropped frames
+   on feature phones and mobile viewports by stripping expensive multi-pass blurs,
+   SVG noise shaders, 3D perspective matrices, and continuous background loops.
    ============================================================================= */
 
-/* Promote scrolling views to GPU compositing layers */
-@media (max-width: 768px) {
+@media (max-width: 768px), (pointer: coarse) {
+    /* 1. Eliminate GPU-stalling backdrop-filter convolution passes */
+    *, *::before, *::after {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* 2. Fast pre-composited solid/high-opacity surfaces */
+    .card,
+    .metric-card,
+    .chart-card,
+    .transactions-card,
+    .unified-ledger-card,
+    .auth-card,
+    .modal-content,
+    .modal,
+    .profile-menu,
+    .custom-select-options,
+    .command-palette-modal,
+    .transfer-dock {
+        background: var(--card-bg, #14181E) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    [data-theme="light"] :is(
+        .card,
+        .metric-card,
+        .chart-card,
+        .transactions-card,
+        .unified-ledger-card,
+        .auth-card,
+        .modal-content,
+        .modal,
+        .profile-menu,
+        .custom-select-options,
+        .command-palette-modal,
+        .transfer-dock
+    ) {
+        background: #FFFFFF !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+        border-color: rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .top-bar,
+    .topbar {
+        background: var(--card-bg, #12151B) !important;
+    }
+
+    [data-theme="light"] :is(.top-bar, .topbar) {
+        background: #F8FAFC !important;
+        border-bottom-color: #E2E8F0 !important;
+    }
+
+    /* 3. Hide expensive full-screen background filters, noise and animated canvas */
+    .animated-mesh-canvas,
+    .grain-overlay,
+    .dust-mote,
+    .light-ray-sweep {
+        display: none !important;
+    }
+
+    /* 4. Disable continuous ambient breathing/floating keyframe animations */
+    .dashboard-container::before {
+        animation: none !important;
+        opacity: 0.55 !important;
+    }
+
+    .float-card,
+    .hero-orb {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    /* 5. Disable scroll-driven reveal and 3D blur shaders on mobile */
+    [data-reveal],
+    :where([data-reveal]).is-revealed {
+        animation: none !important;
+        animation-timeline: auto !important;
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+        will-change: auto !important;
+    }
+
+    /* 6. Prevent GPU compositor layer explosion: neutralize will-change when idle */
+    *:not(:active) {
+        will-change: auto !important;
+    }
+
+    /* 7. Eliminate layout-thrashing container entrance animations */
     .dashboard-container,
-    .dashboard-content,
     .main-content,
+    .auth-container {
+        animation: none !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+    }
+
     .transactions-table-container,
     .unified-ledger-table-wrapper {
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
     }
 
-    /* Reduce heavy multi-pass blur on mobile GPUs while preserving frosted glass aesthetics */
-    .card,
-    .metric-card,
-    .chart-card,
-    .transactions-card,
-    .topbar,
-    .modal-content,
-    .unified-ledger-card {
-        backdrop-filter: blur(6px) !important;
-        -webkit-backdrop-filter: blur(6px) !important;
-    }
-
-    /* Mobile theme card transform: avoid expensive 3D perspective calculations on mobile */
+    /* 8. Mobile theme card transform: flat 2D transform without perspective */
     .grid-4-metrics > .metric-card {
-        transform: translateY(var(--theme-card-y, 0px)) scale(var(--theme-card-scale, 1)) !important;
-        will-change: transform;
+        transform: none !important;
     }
 }
 

@@ -126,3 +126,25 @@
     background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(var(--primary-rgb), 0.05), transparent 65%);
     animation: contentBackdropBreathe 12s ease-in-out infinite;
 }
+
+/* Mobile & Touch Zero-Lag Optimization:
+   Strip continuous GPU shader blending, SVG noise tiles, and floating loops */
+@media (max-width: 768px), (pointer: coarse) {
+    .grain-overlay,
+    .hero-orb-4,
+    .dust-mote,
+    .light-ray-sweep {
+        display: none !important;
+    }
+
+    .dashboard-container::before {
+        animation: none !important;
+        opacity: 0.6 !important;
+    }
+
+    .float-card,
+    .hero-orb {
+        animation: none !important;
+        transform: none !important;
+    }
+}

@@ -5,10 +5,17 @@
  * Generates an active, flowing, multi-layered glowing aurora background with
  * smooth fluid wave physics, glowing particle nodes, mouse glow, and click bursts.
  * Fully optimized for both Dark Theme and Light Theme.
+ * Zero-overhead on mobile devices: pauses rAF and hides canvas to ensure 60fps.
  */
 
 (function () {
     'use strict';
+
+    function isMobileDevice() {
+        return window.innerWidth <= 768 ||
+            (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+            (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0 && window.innerWidth <= 1024);
+    }
 
     function initAnimatedBackground() {
         let canvas = document.querySelector('.animated-mesh-canvas');
@@ -16,6 +23,12 @@
             canvas = document.createElement('canvas');
             canvas.className = 'animated-mesh-canvas';
             document.body.insertBefore(canvas, document.body.firstChild);
+        }
+
+        // On mobile / handheld devices, CSS .mesh-wash provides a static GPU-accelerated
+        // ambient wash at 0% CPU/GPU overhead. Hide canvas and skip rAF completely.
+        if (isMobileDevice()) {
+            canvas.style.display = 'none';
         }
 
         const ctx = canvas.getContext('2d');
@@ -34,9 +47,16 @@
         let resizeFrameId = null;
         function resizeCanvas() {
             resizeFrameId = null;
+            if (isMobileDevice()) {
+                canvas.style.display = 'none';
+                stopAnimation();
+                return;
+            }
+            canvas.style.display = '';
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             initOrbs();
+            startAnimation();
         }
 
         window.addEventListener('resize', () => {
@@ -46,6 +66,7 @@
         }, { passive: true });
 
         window.addEventListener('mousemove', (e) => {
+            if (isMobileDevice()) return;
             targetMouseX = e.clientX;
             targetMouseY = e.clientY;
             isHovering = true;
@@ -55,14 +76,13 @@
             isHovering = false;
         });
 
-        // Click sparkle burst effect. Theme toggles already trigger a large
-        // style/repaint pass, so avoid starting another canvas particle burst
-        // on the same interaction.
+        // Click sparkle burst effect (desktop fine pointer only)
         let clickBursts = [];
         window.addEventListener('click', (e) => {
+            if (isMobileDevice() || prefersReducedMotion) return;
             if (e.target.closest?.('.theme-toggle-btn, #themeToggle')) return;
 
-            const burstCount = 16;
+            const burstCount = 14;
             const x = e.clientX;
             const y = e.clientY;
             for (let i = 0; i < burstCount; i++) {
@@ -217,48 +237,35 @@
 
         let orbs = [];
         let particles = [];
-        const isMobileDevice = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
-        const ORB_COUNT = isMobileDevice ? 3 : 8;
-        const PARTICLE_COUNT = isMobileDevice ? 12 : Math.min(52, Math.max(26, Math.floor(width / 28)));
 
         function initOrbs() {
-            const mobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
-            const orbCount = mobile ? 3 : 8;
+            if (isMobileDevice()) {
+                orbs = [];
+                particles = [];
+                return;
+            }
             orbs = [];
-            for (let i = 0; i < orbCount; i++) {
+            for (let i = 0; i < 8; i++) {
                 orbs.push(new AuroraOrb(i));
             }
             particles = [];
-            const particleCount = mobile ? 12 : Math.min(52, Math.max(26, Math.floor(width / 28)));
+            const particleCount = Math.min(52, Math.max(26, Math.floor(width / 28)));
             for (let i = 0; i < particleCount; i++) {
                 particles.push(new StardustParticle());
             }
         }
 
-        initOrbs();
+        if (!isMobileDevice()) {
+            initOrbs();
+        }
 
         const motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
         let prefersReducedMotion = motionMediaQuery.matches;
-        const TARGET_FPS = isMobileDevice ? 25 : 40;
+        const TARGET_FPS = 40;
         const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
         let animFrameId = null;
         let pauseUntil = 0;
         let lastRenderTime = -Infinity;
-        let isScrolling = false;
-        let scrollTimer = null;
-
-        // On mobile, pause canvas rendering during active scrolling to free up
-        // GPU/compositor resources completely for 60fps scrolling.
-        window.addEventListener('scroll', () => {
-            isScrolling = true;
-            if (scrollTimer !== null) clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(() => {
-                isScrolling = false;
-                if (!document.hidden && !prefersReducedMotion && animFrameId === null) {
-                    animFrameId = requestAnimationFrame(render);
-                }
-            }, 120);
-        }, { passive: true });
 
         function stopAnimation() {
             if (animFrameId !== null) {
@@ -268,7 +275,7 @@
         }
 
         function startAnimation() {
-            if (prefersReducedMotion || document.hidden || animFrameId !== null) return;
+            if (isMobileDevice() || prefersReducedMotion || document.hidden || animFrameId !== null) return;
             animFrameId = requestAnimationFrame(render);
         }
 
@@ -279,8 +286,8 @@
         });
 
         function render(time) {
-            if (isScrolling) {
-                // Pause during scroll
+            if (isMobileDevice()) {
+                stopAnimation();
                 return;
             }
             if (time < pauseUntil || time - lastRenderTime < FRAME_INTERVAL_MS) {
@@ -343,7 +350,7 @@
                 ctx.fill();
             }
 
-            if (!document.hidden && !prefersReducedMotion) {
+            if (!document.hidden && !prefersReducedMotion && !isMobileDevice()) {
                 animFrameId = requestAnimationFrame(render);
             }
         }
@@ -351,16 +358,18 @@
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopAnimation();
-            } else if (!prefersReducedMotion) {
+            } else if (!prefersReducedMotion && !isMobileDevice()) {
                 startAnimation();
             }
         });
 
         const handleMotionPreferenceChange = (event) => {
             prefersReducedMotion = event.matches;
-            if (prefersReducedMotion) {
+            if (prefersReducedMotion || isMobileDevice()) {
                 stopAnimation();
-                render(performance.now());
+                if (!isMobileDevice()) {
+                    render(performance.now());
+                }
             } else {
                 startAnimation();
             }
@@ -372,10 +381,12 @@
             motionMediaQuery.addListener(handleMotionPreferenceChange);
         }
 
-        if (prefersReducedMotion) {
-            render(performance.now());
-        } else {
-            startAnimation();
+        if (!isMobileDevice()) {
+            if (prefersReducedMotion) {
+                render(performance.now());
+            } else {
+                startAnimation();
+            }
         }
     }
 

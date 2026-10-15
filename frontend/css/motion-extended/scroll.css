@@ -18,7 +18,7 @@
    rule set instead of ten near-duplicate blocks.
    ------------------------------------------------------------------------- */
 
-/* 171. Reveal: base hidden state + shared transition */
+/* 171. Reveal: base hidden state + shared transition (desktop fine-pointer) */
 [data-reveal] {
     --reveal-delay: 0ms;
     opacity: 0;
@@ -65,4 +65,17 @@
     filter: blur(0);
     transform: none;
     transition-delay: var(--reveal-delay, 0ms);
+}
+
+/* Mobile & Touch Zero-Lag Optimization:
+   Instantly present elements without 3D rotation, blur filter, or compositor thrashing */
+@media (max-width: 768px), (pointer: coarse) {
+    [data-reveal],
+    :where([data-reveal]).is-revealed {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+        will-change: auto !important;
+    }
 }

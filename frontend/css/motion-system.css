@@ -126,14 +126,13 @@
 }
 
 /* ==========================================================================
-   2. SCROLL-DRIVEN REVEAL
-   The JS IntersectionObserver path in js/motion.js stays as the fallback and
-   is NOT removed — this block simply takes precedence where the platform
-   supports running the animation off the main thread.
+   2. SCROLL-DRIVEN REVEAL (Desktop Fine-Pointer Only)
+   Restricted to desktop so mobile GPUs are never throttled by scroll-linked
+   compositing passes, 3D perspective shifts, or offscreen blur shaders.
    ========================================================================== */
 
 @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
+    @media (prefers-reduced-motion: no-preference) and (min-width: 769px) and (pointer: fine) {
 
         [data-reveal] {
             animation: motion-reveal-up linear both;
@@ -217,26 +216,25 @@
         transition: transform 90ms var(--ease-spring-snap);
     }
 
-    /* Ledger rows stagger in. Staggering is done with :nth-child rather than
-       a JS-set custom property so the list stays a pure render with no
-       per-row style writes. Only the first 10 are staggered — beyond that
-       the delay is capped, so a 400-row ledger doesn't leave the last row
-       waiting ten seconds to appear. */
-    .expense-item {
-        animation: motion-row-in var(--motion-base) var(--ease-spring-soft) both;
-        animation-delay: 220ms; /* cap for rows past the 10th */
-    }
+    /* Ledger rows stagger in on desktop only; on mobile handhelds rows appear
+       instantly to ensure zero scroll jank and immediate visibility. */
+    @media (min-width: 769px) {
+        .expense-item {
+            animation: motion-row-in var(--motion-base) var(--ease-spring-soft) both;
+            animation-delay: 220ms; /* cap for rows past the 10th */
+        }
 
-    .expense-item:nth-child(1)  { animation-delay: 0ms; }
-    .expense-item:nth-child(2)  { animation-delay: 22ms; }
-    .expense-item:nth-child(3)  { animation-delay: 44ms; }
-    .expense-item:nth-child(4)  { animation-delay: 66ms; }
-    .expense-item:nth-child(5)  { animation-delay: 88ms; }
-    .expense-item:nth-child(6)  { animation-delay: 110ms; }
-    .expense-item:nth-child(7)  { animation-delay: 132ms; }
-    .expense-item:nth-child(8)  { animation-delay: 154ms; }
-    .expense-item:nth-child(9)  { animation-delay: 176ms; }
-    .expense-item:nth-child(10) { animation-delay: 198ms; }
+        .expense-item:nth-child(1)  { animation-delay: 0ms; }
+        .expense-item:nth-child(2)  { animation-delay: 22ms; }
+        .expense-item:nth-child(3)  { animation-delay: 44ms; }
+        .expense-item:nth-child(4)  { animation-delay: 66ms; }
+        .expense-item:nth-child(5)  { animation-delay: 88ms; }
+        .expense-item:nth-child(6)  { animation-delay: 110ms; }
+        .expense-item:nth-child(7)  { animation-delay: 132ms; }
+        .expense-item:nth-child(8)  { animation-delay: 154ms; }
+        .expense-item:nth-child(9)  { animation-delay: 176ms; }
+        .expense-item:nth-child(10) { animation-delay: 198ms; }
+    }
 
     /* The theme-switch guard suppresses transitions for the two frames
        around a theme flip (see interaction-performance.css). Row entry

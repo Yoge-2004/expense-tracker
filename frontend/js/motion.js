@@ -4,6 +4,7 @@
  * and ambient background depth layers.
  * Pairs with css/motion-extended.css (animations #171–#226).
  * Self-contained: does nothing if its target elements aren't on the page.
+ * Performance-hardened for mobile: zero-overhead execution on handheld devices.
  * =============================================================================
  */
 (function () {
@@ -11,6 +12,12 @@
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+    function isMobileOrTouch() {
+        return window.innerWidth <= 768 ||
+            (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+            (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0 && window.innerWidth <= 1024);
+    }
 
     function ready(fn) {
         if (document.readyState === 'loading') {
@@ -23,9 +30,12 @@
     /* -------------------------------------------------------------------
        1. Ambient background depth layers — injects the grain overlay,
           mesh wash, dust motes, and a fourth hero orb where relevant.
+          On mobile: skips heavy SVG grain filters and floating DOM nodes.
        ------------------------------------------------------------------- */
     function injectAmbientLayers() {
-        if (!document.querySelector('.grain-overlay')) {
+        const isMobile = isMobileOrTouch();
+
+        if (!isMobile && !document.querySelector('.grain-overlay')) {
             const grain = document.createElement('div');
             grain.className = 'grain-overlay';
             document.body.insertBefore(grain, document.body.firstChild);
@@ -36,10 +46,9 @@
             document.body.insertBefore(mesh, document.body.firstChild);
         }
 
-        // Fourth ambient orb + a few drifting dust motes, only on pages
-        // that have the hero panel (auth pages).
+        // Fourth ambient orb + drifting dust motes, only on desktop auth pages.
         const heroBg = document.querySelector('.auth-hero-bg');
-        if (heroBg && !heroBg.querySelector('.hero-orb-4')) {
+        if (heroBg && !heroBg.querySelector('.hero-orb-4') && !isMobile) {
             const orb4 = document.createElement('div');
             orb4.className = 'hero-orb hero-orb-4';
             heroBg.appendChild(orb4);
@@ -49,7 +58,7 @@
             heroBg.appendChild(ray);
 
             if (!prefersReducedMotion) {
-                const moteCount = 10;
+                const moteCount = 8;
                 for (let i = 0; i < moteCount; i++) {
                     const mote = document.createElement('div');
                     mote.className = 'dust-mote';
@@ -65,11 +74,11 @@
 
     /* -------------------------------------------------------------------
        2. Scroll-triggered reveal — tags common content blocks with
-          [data-reveal] (unless already authored explicitly in the HTML)
-          and toggles .is-revealed via IntersectionObserver.
+          [data-reveal] and toggles .is-revealed via IntersectionObserver.
+          On mobile: instantly marks elements visible to avoid scroll jank
+          and heavy 3D GPU composite allocations.
        ------------------------------------------------------------------- */
     function initScrollReveal() {
-        const revealVariants = ['fade-up', 'fade-left', 'fade-right', 'zoom', 'blur'];
         const selector = [
             '.metric-card', '.insight-card', '.trend-card', '.perk-item',
             '.float-card', '.card:not(.animate-cascade)', '.expense-item',
@@ -80,6 +89,17 @@
         const targets = Array.from(document.querySelectorAll(selector));
         if (!targets.length) return;
 
+        if (isMobileOrTouch() || prefersReducedMotion) {
+            targets.forEach((el) => {
+                el.classList.add('is-revealed');
+                el.style.opacity = '1';
+                el.style.transform = 'none';
+                el.style.filter = 'none';
+            });
+            return;
+        }
+
+        const revealVariants = ['fade-up', 'fade-left', 'fade-right', 'zoom', 'blur'];
         targets.forEach((el, i) => {
             if (!el.hasAttribute('data-reveal')) {
                 el.setAttribute('data-reveal', revealVariants[i % revealVariants.length]);
@@ -87,11 +107,6 @@
             el.style.setProperty('--stagger-index', i % 8);
             el.style.setProperty('--reveal-delay', `${(i % 8) * 60}ms`);
         });
-
-        if (prefersReducedMotion) {
-            targets.forEach((el) => el.classList.add('is-revealed'));
-            return;
-        }
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
@@ -106,14 +121,11 @@
     }
 
     /* -------------------------------------------------------------------
-       3. Touch feedback — press-scale, touch ripple, long-press, and
-          swipe-hint. Uses touchstart/touchend directly for zero-delay
-          feedback rather than waiting on a synthesized click.
+       3. Touch feedback — press-scale, long-press, and swipe-hint.
+          Fast and tactile: zero-delay CSS state transitions without
+          synchronous getComputedStyle reflows or DOM thrashing.
        ------------------------------------------------------------------- */
     function initTouchFeedback() {
-        // Only attach pressable behavior to actionable interactive controls,
-        // avoiding large display cards / containers which causes layout thrashing
-        // and visual jitter during mobile scrolling.
         const pressableSelector = '.btn-primary, .btn-secondary, .btn-oauth, .btn-icon, ' +
             '.preset-btn, button:not(.pill-chip):not(.theme-toggle-btn), .tab-btn, .action-btn';
 
@@ -146,19 +158,6 @@
             touchStartY = touch.clientY;
 
             target.classList.add('is-pressed');
-
-            // Lightweight ripple wave without synchronous getComputedStyle reflows
-            if (!prefersReducedMotion) {
-                const rect = target.getBoundingClientRect();
-                const wave = document.createElement('span');
-                wave.className = 'touch-ripple-wave';
-                const size = Math.max(rect.width, rect.height) * 0.9;
-                wave.style.width = wave.style.height = `${size}px`;
-                wave.style.left = `${touch.clientX - rect.left - size / 2}px`;
-                wave.style.top = `${touch.clientY - rect.top - size / 2}px`;
-                target.appendChild(wave);
-                setTimeout(() => wave.remove(), 700);
-            }
 
             // Long-press: after 550ms of continuous contact
             longPressTarget = target;
@@ -219,7 +218,7 @@
           and a glow that tracks the cursor across card surfaces.
        ------------------------------------------------------------------- */
     function initPointerInteractions() {
-        if (!hasFinePointer || prefersReducedMotion) return;
+        if (!hasFinePointer || prefersReducedMotion || isMobileOrTouch()) return;
 
         document.querySelectorAll('.btn-primary, .btn-oauth:not(#googleOAuthBtn)').forEach((el) => {
             el.classList.add('magnetic-target');
@@ -269,23 +268,24 @@
 
     /* -------------------------------------------------------------------
        5. Scroll parallax for hero orbs/grid — small translateY offset as
-          the page scrolls, capped so it stays subtle.
+          the page scrolls. Strictly restricted to desktop hero backgrounds.
+          Never executes on the dashboard or mobile viewports to prevent
+          invalidating :root styles on every frame.
        ------------------------------------------------------------------- */
     function initScrollParallax() {
-        if (document.querySelector('.auth-page')) return; // Auth pages maintain rock-solid scroll stability without parallax jitter
+        if (isMobileOrTouch() || prefersReducedMotion) return;
         const heroBg = document.querySelector('.auth-hero-bg');
-        const scrollHost = document.querySelector('.dashboard-content') || window;
-        if (!heroBg && scrollHost === window) return;
-        if (prefersReducedMotion) return;
+        if (!heroBg) return;
 
+        const scrollHost = window;
         let ticking = false;
         function update() {
-            const y = scrollHost === window ? window.scrollY : scrollHost.scrollTop;
+            const y = scrollHost.scrollY || 0;
             const offset = Math.max(-40, Math.min(40, y * 0.08));
             document.documentElement.style.setProperty('--parallax-y', `${offset}px`);
             ticking = false;
         }
-        (scrollHost === window ? window : scrollHost).addEventListener('scroll', () => {
+        scrollHost.addEventListener('scroll', () => {
             if (!ticking) {
                 requestAnimationFrame(update);
                 ticking = true;
