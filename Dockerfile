@@ -8,7 +8,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
     UV_PYTHON_BIN_DIR=/opt/uv/bin \
     PATH=/opt/uv/bin:$PATH \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    MODEL_ID=Yoge-2004/expense-intelligence-model \
+    MODEL_REVISION=production \
+    MODEL_TYPE=tfidf \
+    HF_HOME=/data/cache/huggingface
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.15 /uv /uvx /usr/local/bin/
 
