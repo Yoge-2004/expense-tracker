@@ -91,21 +91,39 @@ public class ResilientFallbackDataSourceConfig {
         private final DataSource primaryDs;
         private final DataSource fallbackDs;
         private final AtomicBoolean primaryUnavailable = new AtomicBoolean(false);
+        private volatile long lastPrimaryCheck = 0;
+        private static final long PRIMARY_RETRY_INTERVAL_MS = 15_000;
 
         ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs) {
             this.primaryDs = primaryDs;
             this.fallbackDs = fallbackDs;
         }
 
+        private boolean shouldAttemptPrimary() {
+            if (primaryDs == null) return false;
+            if (!primaryUnavailable.get()) return true;
+            long now = System.currentTimeMillis();
+            return (now - lastPrimaryCheck > PRIMARY_RETRY_INTERVAL_MS);
+        }
+
         @Override
         public Connection getConnection() throws SQLException {
-            if (primaryDs != null && !primaryUnavailable.get()) {
+            if (shouldAttemptPrimary()) {
+                lastPrimaryCheck = System.currentTimeMillis();
                 try {
                     Connection conn = primaryDs.getConnection();
-                    if (conn != null && conn.isValid(2)) return conn;
+                    if (conn != null && conn.isValid(2)) {
+                        if (primaryUnavailable.get()) {
+                            log.info("Primary Neon database restored! Switching back from emergency fallback.");
+                            primaryUnavailable.set(false);
+                        }
+                        return conn;
+                    }
                 } catch (Exception e) {
-                    log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
-                    primaryUnavailable.set(true);
+                    if (!primaryUnavailable.get()) {
+                        log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
+                        primaryUnavailable.set(true);
+                    }
                 }
             }
             log.warn("Serving the emergency local datastore. This is only a recovery store and may be stale.");
@@ -114,13 +132,22 @@ public class ResilientFallbackDataSourceConfig {
 
         @Override
         public Connection getConnection(String username, String password) throws SQLException {
-            if (primaryDs != null && !primaryUnavailable.get()) {
+            if (shouldAttemptPrimary()) {
+                lastPrimaryCheck = System.currentTimeMillis();
                 try {
                     Connection conn = primaryDs.getConnection(username, password);
-                    if (conn != null && conn.isValid(2)) return conn;
+                    if (conn != null && conn.isValid(2)) {
+                        if (primaryUnavailable.get()) {
+                            log.info("Primary Neon database restored! Switching back from emergency fallback.");
+                            primaryUnavailable.set(false);
+                        }
+                        return conn;
+                    }
                 } catch (Exception e) {
-                    log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
-                    primaryUnavailable.set(true);
+                    if (!primaryUnavailable.get()) {
+                        log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
+                        primaryUnavailable.set(true);
+                    }
                 }
             }
             return fallbackDs.getConnection(username, password);

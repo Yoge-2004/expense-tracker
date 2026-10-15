@@ -164,6 +164,7 @@ public class ExpenseController {
         expense.setAmount(request.amount());
         expense.setDescription(request.description());
         expense.setExpenseDate(request.expenseDate());
+        expense.setRecurring(Boolean.TRUE.equals(request.isRecurring()));
         Category category = new Category();
         category.setId(request.categoryId());
         expense.setCategory(category);
@@ -327,6 +328,9 @@ public class ExpenseController {
         expenseUpdates.setDescription(expenseDto.description());
         expenseUpdates.setAmount(expenseDto.amount());
         expenseUpdates.setExpenseDate(expenseDto.expenseDate());
+        if (expenseDto.isRecurring() != null) {
+            expenseUpdates.setRecurring(expenseDto.isRecurring());
+        }
         if (expenseDto.categoryId() != null) {
             Category category = categoryRepository.findById(expenseDto.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
@@ -1014,7 +1018,8 @@ public class ExpenseController {
                 expense.getId(), expense.getAmount(), expense.getDescription(),
                 expense.getExpenseDate(),
                 expense.getCategory() != null ? expense.getCategory().getId()   : null,
-                expense.getCategory() != null ? expense.getCategory().getName() : "Uncategorized"
+                expense.getCategory() != null ? expense.getCategory().getName() : "Uncategorized",
+                expense.isRecurring()
         );
     }
 

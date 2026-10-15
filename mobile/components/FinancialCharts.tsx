@@ -302,6 +302,7 @@ interface RecurringSplitProps {
     amount: number;
     isRecurring?: boolean;
     recurring?: boolean;
+    frequency?: string;
   }>;
 }
 
@@ -319,7 +320,7 @@ export const RecurringSplitChart: React.FC<RecurringSplitProps> = React.memo(({ 
 
   safeExpenses.forEach((e) => {
     const amt = Math.max(0, Number(e.amount || 0));
-    if (e.isRecurring || e.recurring) {
+    if (e.isRecurring || e.recurring || (e as any).frequency) {
       recurring += amt;
     } else {
       onetime += amt;
@@ -394,7 +395,20 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
 
   safeExpenses.forEach((e) => {
     if (!e.expenseDate) return;
-    const day = new Date(e.expenseDate).getDay();
+    let day = -1;
+    const parts = e.expenseDate.split('T')[0].split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        day = new Date(y, m, d).getDay();
+      }
+    }
+    if (day === -1) {
+      const dt = new Date(e.expenseDate);
+      day = isNaN(dt.getTime()) ? -1 : dt.getDay();
+    }
     if (day >= 0 && day <= 6) {
       dowTotals[day] += Math.max(0, Number(e.amount || 0));
       dowCounts[day]++;

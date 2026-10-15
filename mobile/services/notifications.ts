@@ -12,7 +12,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { planDueReminders, planMonthEndReminders, ReminderSources, REMINDER_ID_PREFIX } from '../utils/reminderPlan';
-import { apiRequest } from './api';
+import { apiRequest, getSession, invalidateApiCache } from './api';
 
 const REMINDERS_STORAGE_KEY = 'expense_tracker_daily_reminders_enabled';
 const MIDDAY_NOTIFICATION_ID = 'daily_midday_expense_reminder';
@@ -78,12 +78,12 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('expense-reminders', {
-        name: 'Daily Expense Reminders',
-        description: 'Twice-daily reminders to keep your expense ledger up to date.',
+      await Notifications.setNotificationChannelAsync("expense-reminders", {
+        name: "Daily Expense Reminders",
+        description: "Twice-daily reminders to keep your expense ledger up to date.",
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#D4AF37',
+        lightColor: "#D4AF37",
         enableVibrate: true,
         showBadge: true,
       }).catch(() => {});
@@ -192,6 +192,7 @@ export async function getDailyRemindersEnabled(): Promise<boolean> {
 }
 
 import { parseFinancialMessage, ParsedTransaction } from "./debitParser";
+export { parseFinancialMessage, ParsedTransaction };
 
 const DEBIT_CHANNEL_ID = "debit-alerts";
 
@@ -199,7 +200,7 @@ const DEBIT_CHANNEL_ID = "debit-alerts";
  * Triggers an immediate local push notification for a detected debit / financial transaction.
  * Notifies the user then and there when a debit message or transaction is received.
  */
-export async function notifyInstantDebit(transaction: ParsedTransaction): Promise<boolean> {
+export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdded = false): Promise<boolean> {
   if (isExpoGo || !Notifications) {
     return false;
   }
@@ -221,12 +222,15 @@ export async function notifyInstantDebit(transaction: ParsedTransaction): Promis
     }
 
     const title = transaction.direction === "DEBIT"
-      ? `💸 Debit Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`
+      ? (autoAdded ? `💸 Auto-Added Debit: ${transaction.currency} ${transaction.amount?.toFixed(2)}` : `💸 Debit Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`)
       : `💰 Transaction Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`;
 
     const merchantStr = transaction.merchant ? ` at ${transaction.merchant}` : "";
     const accStr = transaction.accountTail ? ` (Card/A/c xx${transaction.accountTail})` : "";
-    const body = `Spent ${transaction.currency} ${transaction.amount?.toFixed(2)}${merchantStr}${accStr}. Tap to categorize or review now.`;
+    const suffix = autoAdded
+      ? `Recorded to your expenses automatically. Tap to view ledger.`
+      : `Tap to categorize or review now.`;
+    const body = `Spent ${transaction.currency} ${transaction.amount?.toFixed(2)}${merchantStr}${accStr}. ${suffix}`;
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -234,10 +238,10 @@ export async function notifyInstantDebit(transaction: ParsedTransaction): Promis
         body,
         sound: true,
         data: {
-          screen: "/(tabs)/add-expense",
+          screen: "/(tabs)/index",
           amount: transaction.amount,
           merchant: transaction.merchant,
-          direction: transaction.direction
+          direction: transaction.direction,
         },
         ...(Platform.OS === "android" ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -252,17 +256,113 @@ export async function notifyInstantDebit(transaction: ParsedTransaction): Promis
 }
 
 /**
- * Ingests raw SMS or push notification text and immediately dispatches a notification if it is a debit.
+ * Ingests raw SMS or push notification text, parses it, and if it is a debit:
+ * 1. Automatically records the expense to the user's ledger via API (if authenticated).
+ * 2. Emits an instant push notification confirming the debit was detected & added.
  */
-export async function processIncomingMessageForDebitNotification(rawText: string): Promise<ParsedTransaction | null> {
+export async function detectAndAddExpenseFromMessage(
+  rawText: string,
+  targetUserId?: string | null
+): Promise<(ParsedTransaction & { addedToExpense: boolean }) | null> {
   const parsed = parseFinancialMessage(rawText);
-  if (parsed.isFinancial && parsed.direction === "DEBIT") {
-    await notifyInstantDebit(parsed);
-    return parsed;
+  if (!parsed.isFinancial || parsed.direction !== 'DEBIT' || !parsed.amount || parsed.amount <= 0) {
+    return null;
   }
-  return null;
+
+  let added = false;
+  try {
+    let uid = targetUserId;
+    if (!uid) {
+      const session = await getSession();
+      uid = session.userId;
+    }
+
+    if (uid) {
+      // Find suitable category based on merchant text or use default
+      let matchedCategoryId: number | null = null;
+      try {
+        const [globalCats, userCats] = await Promise.allSettled([
+          apiRequest('/categories/global'),
+          apiRequest(`/categories/user/${uid}`),
+        ]);
+        const allCats = [
+          ...(globalCats.status === 'fulfilled' && Array.isArray(globalCats.value) ? globalCats.value : []),
+          ...(userCats.status === 'fulfilled' && Array.isArray(userCats.value) ? userCats.value : []),
+        ];
+
+        const merchantLower = (parsed.merchant || '').toLowerCase();
+        if (merchantLower) {
+          const matched = allCats.find((c: any) => {
+            const name = (c.name || '').toLowerCase();
+            return merchantLower.includes(name) || name.includes(merchantLower);
+          });
+          if (matched?.id) matchedCategoryId = matched.id;
+        }
+
+        if (!matchedCategoryId && allCats.length > 0) {
+          matchedCategoryId = allCats[0].id;
+        }
+      } catch (_) {}
+
+      const description = parsed.merchant
+        ? `${parsed.merchant}${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ''}`
+        : `Bank Debit${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ''}`;
+
+      const payload = {
+        amount: parsed.amount,
+        description,
+        categoryId: matchedCategoryId ?? 1,
+        expenseDate: new Date().toISOString().split('T')[0],
+        isRecurring: false,
+      };
+
+      await apiRequest(`/expenses/user/${uid}`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      invalidateApiCache();
+      added = true;
+    }
+  } catch (err) {
+    console.warn('[Notifications] Failed to auto-record debit to backend:', err);
+  }
+
+  await notifyInstantDebit(parsed, added);
+  return { ...parsed, addedToExpense: added };
 }
 
+/**
+ * Ingests raw SMS or push notification text and immediately dispatches a notification and adds expense if debit.
+ */
+export async function processIncomingMessageForDebitNotification(
+  rawText: string,
+  userId?: string | null
+): Promise<ParsedTransaction | null> {
+  const res = await detectAndAddExpenseFromMessage(rawText, userId);
+  return res;
+}
+
+/**
+ * Registers an on-device listener for incoming push/local notifications outside Expo Go to auto-detect bank debit alerts.
+ */
+export function registerIncomingNotificationListener(userId?: string | null) {
+  if (isExpoGo || !Notifications) return null;
+  try {
+    const sub = Notifications.addNotificationReceivedListener(async (notification: any) => {
+      const title = notification?.request?.content?.title || '';
+      const body = notification?.request?.content?.body || '';
+      const fullText = `${title} ${body}`.trim();
+      if (fullText) {
+        await detectAndAddExpenseFromMessage(fullText, userId);
+      }
+    });
+    return sub;
+  } catch (e) {
+    console.warn('[Notifications] Failed to register incoming notification listener:', e);
+    return null;
+  }
+}
 
 const ALERTS_CHANNEL_ID = 'financial-alerts';
 
@@ -277,7 +377,7 @@ export async function notifySalaryCredit(amount: number, currency: string = '₹
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `💰 ${source} Credited: ${currency} ${amount.toLocaleString('en-IN')}`,
+        title: `💵 ${source} Credited: ${currency} ${amount.toLocaleString('en-IN')}`,
         body: 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!',
         sound: true,
         data: { screen: '/(tabs)/index', tab: 'incomes' },
@@ -575,7 +675,7 @@ export async function notifyTransactionRecorded(transaction: RecordedTransaction
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: isDebit ? `💸 Debit recorded: ${amountText}` : `💰 Credit recorded: ${amountText}`,
+        title: isDebit ? `💸 Debit recorded: ${amountText}` : `💵 Credit recorded: ${amountText}`,
         body: body || (isDebit ? 'Expense saved.' : 'Income saved.'),
         sound: true,
         data: { screen: '/(tabs)' },

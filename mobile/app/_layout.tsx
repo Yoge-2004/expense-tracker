@@ -24,7 +24,12 @@ import {
 } from '@expo-google-fonts/ibm-plex-mono';
 import { Colors } from '../constants/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { scheduleDailyExpenseReminders, getDailyRemindersEnabled, scheduleSmartReminders } from '../services/notifications';
+import {
+  scheduleDailyExpenseReminders,
+  getDailyRemindersEnabled,
+  scheduleSmartReminders,
+  registerIncomingNotificationListener,
+} from '../services/notifications';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -92,7 +97,7 @@ const splashStyles = StyleSheet.create({
 });
 
 function RootLayoutNav() {
-  const { token, isLoading, theme } = useAuth();
+  const { token, userId, isLoading, theme } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const remindersInitialized = useRef(false);
@@ -100,11 +105,11 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
-    if (!token && inAuthGroup) {
+    const isPublicAuthRoute = ['login', 'register', 'forgot-password', 'expo-auth-session'].includes(segments[0] as string);
+    if (!token && !isPublicAuthRoute) {
       remindersInitialized.current = false;
       router.replace('/login');
-    } else if (token && !inAuthGroup) {
+    } else if (token && isPublicAuthRoute) {
       router.replace('/(tabs)');
     }
   }, [token, isLoading, segments, router]);
@@ -119,6 +124,16 @@ function RootLayoutNav() {
     // The morning, weekly, month-start and month-end reminders (bills and salary follow once data loads).
     scheduleSmartReminders().catch(() => {});
   }, [isLoading, token]);
+
+  useEffect(() => {
+    if (isLoading || !token) return;
+    const sub = registerIncomingNotificationListener(userId);
+    return () => {
+      if (sub && typeof sub.remove === 'function') {
+        sub.remove();
+      }
+    };
+  }, [isLoading, token, userId]);
 
   if (isLoading) return <SplashLoader />;
 

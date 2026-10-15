@@ -78,7 +78,7 @@ export class ApiError extends Error {
 
 const apiCache = new Map<string, { data: any; timestamp: number }>();
 
-async function safeStorageSet(key: string, value: string): Promise<void> {
+export async function safeStorageSet(key: string, value: string): Promise<void> {
   try {
     await SecureStore.setItemAsync(key, value);
     return;
@@ -94,7 +94,7 @@ async function safeStorageSet(key: string, value: string): Promise<void> {
   }
 }
 
-async function safeStorageGet(key: string): Promise<string | null> {
+export async function safeStorageGet(key: string): Promise<string | null> {
   try {
     const val = await SecureStore.getItemAsync(key);
     if (val !== null) return val;
@@ -110,7 +110,7 @@ async function safeStorageGet(key: string): Promise<string | null> {
   }
 }
 
-async function safeStorageDelete(key: string): Promise<void> {
+export async function safeStorageDelete(key: string): Promise<void> {
   try {
     await SecureStore.deleteItemAsync(key);
   } catch {

@@ -25,7 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
-import { notifyTransactionRecorded } from '../../services/notifications';
+import { notifyTransactionRecorded, parseFinancialMessage } from '../../services/notifications';
 import { Colors, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -93,6 +93,11 @@ export default function AddExpenseScreen() {
     editRecurringAmount?: string;
     // Budget fields
     editPeriod?: string;
+    // Prefill params
+    amount?: string;
+    description?: string;
+    merchant?: string;
+    categoryId?: string;
   }>();
   const isEditMode = Boolean(params.editId && params.editId !== "undefined" && params.editId !== "");
 
@@ -114,6 +119,10 @@ export default function AddExpenseScreen() {
       editCurrentAmount: "",
       editTargetDate: "",
       editRecurringAmount: "",
+      amount: "",
+      description: "",
+      merchant: "",
+      categoryId: "",
     });
     setDescription("");
     setAmount("");
@@ -371,8 +380,11 @@ export default function AddExpenseScreen() {
       setBudgetLimit("");
       setBudgetPeriod("MONTHLY");
       setBudgetIntervalDays("30");
-      setDescription("");
-      setAmount("");
+      setDescription(params.description || params.merchant || "");
+      setAmount(params.amount || "");
+      if (params.categoryId) {
+        setCategoryId(Number(params.categoryId));
+      }
       setExpenseDate(new Date().toISOString().split("T")[0]);
       setIsRecurring(false);
       setIncomeSource("");
@@ -386,7 +398,7 @@ export default function AddExpenseScreen() {
       setGoalIsRecurring(false);
       setErrors({});
     }
-  }, [userId, params.editId, params.editType]);
+  }, [userId, params.editId, params.editType, params.amount, params.description, params.merchant, params.categoryId]);
 
   useEffect(() => {
     if (activeTab === 'budget' && userId) {
@@ -1473,6 +1485,19 @@ export default function AddExpenseScreen() {
                     value={description}
                     maxLength={255}
                     onChangeText={(v) => {
+                      if (v.length > 25 && (v.toLowerCase().includes('debited') || v.toLowerCase().includes('spent') || v.toLowerCase().includes('paid') || v.toLowerCase().includes('inr') || v.toLowerCase().includes('rs'))) {
+                        const parsed = parseFinancialMessage(v);
+                        if (parsed && parsed.amount != null && parsed.amount > 0) {
+                          setDescription(parsed.merchant || 'Expense');
+                          setAmount(String(parsed.amount));
+                          if (parsed.timestamp) {
+                            setExpenseDate(new Date(parsed.timestamp).toISOString().split('T')[0]);
+                          }
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                          showAlert('SMS Auto-Detected!', `Extracted ${currSymbol}${parsed.amount} for ${parsed.merchant || "Expense"}.`, undefined, 'success');
+                          return;
+                        }
+                      }
                       setDescription(v);
                       if (errors.description) setErrors((prev) => ({ ...prev, description: "" }));
                     }}

@@ -721,8 +721,7 @@ export default function DashboardScreen() {
           if (isToday) {
             matchDate = expDStr === todayStr;
           } else if (isMonth) {
-            const expD = new Date(e.expenseDate);
-            matchDate = expD.getMonth() === nowMonth && expD.getFullYear() === nowYear;
+            matchDate = monthKey(e.expenseDate) === monthKey(nowD);
           } else if (isLast30 && thirtyAgo) {
             matchDate = new Date(e.expenseDate) >= thirtyAgo;
           } else if (isCustom) {
@@ -797,6 +796,7 @@ export default function DashboardScreen() {
     dailyBurn,
     monthEndForecast,
     currentMonthSpent,
+    currentMonthInflow,
     currentDay,
     daysInMonth,
     highestCatName,
@@ -811,15 +811,16 @@ export default function DashboardScreen() {
     const nowD = new Date();
     const cDay = Math.max(nowD.getDate(), 1);
     const dInMonth = new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0).getDate();
-    const currentMonthExpenses = dashboardExpenses.filter((e) => {
-      if (!e.expenseDate) return false;
-      const d = new Date(e.expenseDate);
-      return d.getMonth() === nowD.getMonth() && d.getFullYear() === nowD.getFullYear();
-    });
     const thisMonth = monthKey(nowD);
+    const thisMonthIncomes = incomes.filter((i) => effectiveMonth(i) === thisMonth);
+    const thisMonthInflow = earnedTotal(thisMonthIncomes);
+    const currentMonthExpenses = expenses.filter((e) => {
+      if (!e.expenseDate) return false;
+      return monthKey(e.expenseDate) === thisMonth;
+    });
     const cMonthSpent = netSpent(
       currentMonthExpenses,
-      dashboardIncomes.filter((i) => effectiveMonth(i) === thisMonth)
+      thisMonthIncomes
     );
     const burn = cMonthSpent / cDay;
     const forecast = burn * dInMonth;
@@ -841,12 +842,13 @@ export default function DashboardScreen() {
       dailyBurn: burn,
       monthEndForecast: forecast,
       currentMonthSpent: cMonthSpent,
+      currentMonthInflow: thisMonthInflow,
       currentDay: cDay,
       daysInMonth: dInMonth,
       highestCatName: topCatName,
       highestCatAmt: topCatAmt,
     };
-  }, [dashboardExpenses, dashboardIncomes]);
+  }, [dashboardExpenses, dashboardIncomes, expenses, incomes]);
 
   // Unified chronological ledger (memoized across theme changes)
   const unifiedTransactions: UnifiedTxItem[] = useMemo(() => {
@@ -1147,7 +1149,7 @@ export default function DashboardScreen() {
                 style={[styles.matrixValue, { color: c.teal }]}
               />
               <Text style={[styles.matrixSub, { color: c.textMuted }]}>
-                Day {currentDay} of {daysInMonth}
+                {currentMonthInflow > 0 ? `In: +${currSymbol}${Math.round(currentMonthInflow).toLocaleString('en-IN')} · ` : ''}Day {currentDay} of {daysInMonth}
               </Text>
             </AnimatedCard>
 

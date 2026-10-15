@@ -27,5 +27,12 @@ public record ExpenseRequest(
         @Schema(description = "ID of the category to associate with this expense",
                 example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "Category ID is required")
-        Long categoryId
-) {}
+        Long categoryId,
+
+        @Schema(description = "Whether this is a recurring subscription or commitment", example = "false")
+        Boolean isRecurring
+) {
+    public ExpenseRequest(BigDecimal amount, String description, LocalDate expenseDate, Long categoryId) {
+        this(amount, description, expenseDate, categoryId, false);
+    }
+}

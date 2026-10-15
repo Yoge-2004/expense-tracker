@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { getSession, saveSession, clearSession, apiRequest } from '../services/api';
+import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { registerPushToken, unregisterPushToken } from '../services/notifications';
@@ -49,8 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       setIsBiometricsAvailable(hasHardware && isEnrolled);
 
-      const savedPref = await SecureStore.getItemAsync('biometric_enabled');
-      const savedToken = await SecureStore.getItemAsync('biometric_saved_token');
+      const savedPref = await safeStorageGet('biometric_enabled');
+      const savedToken = await safeStorageGet('biometric_saved_token');
       setIsBiometricEnabled(savedPref === 'true' && !!savedToken);
     } catch (e) {
       console.warn('[AuthContext] Error checking biometrics support:', e);
@@ -60,32 +60,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function loadSession() {
       try {
-        await checkBiometricsSupport();
+        // Load theme, session and currency immediately in parallel so the initial UI
+        // is 100% styled before any screen paint, avoiding any theme-switch delay or flash.
+        const [savedTheme, session, savedCurrency] = await Promise.all([
+          safeStorageGet('app_theme'),
+          getSession(),
+          safeStorageGet('user_currency'),
+        ]);
 
-        const session = await getSession();
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          setTheme(savedTheme);
+        }
+
         if (session.token && session.userId) {
           setToken(session.token);
           setUserId(session.userId);
           setUserName(session.name);
         }
 
-        try {
-          const savedTheme = await SecureStore.getItemAsync('app_theme');
-          if (savedTheme === 'light' || savedTheme === 'dark') {
-            setTheme(savedTheme);
-          }
-        } catch (themeErr) {
-          console.warn('[AuthContext] Could not load persisted theme:', themeErr);
+        if (savedCurrency) {
+          setCurrency(savedCurrency);
         }
 
-        try {
-          const savedCurrency = await SecureStore.getItemAsync('user_currency');
-          if (savedCurrency) {
-            setCurrency(savedCurrency);
-          }
-        } catch (currErr) {
-          console.warn('[AuthContext] Could not load persisted currency:', currErr);
-        }
+        // Biometrics check runs non-blockingly
+        checkBiometricsSupport().catch(() => {});
       } catch (e) {
         console.error('[AuthContext] Critical failure loading session:', e);
       } finally {
@@ -101,10 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const saveBiometricCredentials = async (jwtToken: string, uid: string, name: string) => {
     try {
-      await SecureStore.setItemAsync('biometric_saved_token', jwtToken);
-      await SecureStore.setItemAsync('biometric_saved_userId', uid);
-      await SecureStore.setItemAsync('biometric_saved_name', name || 'User');
-      await SecureStore.setItemAsync('biometric_enabled', 'true');
+      await safeStorageSet('biometric_saved_token', jwtToken);
+      await safeStorageSet('biometric_saved_userId', uid);
+      await safeStorageSet('biometric_saved_name', name || 'User');
+      await safeStorageSet('biometric_enabled', 'true');
       setIsBiometricEnabled(true);
     } catch (e) {
       console.warn('[AuthContext] Could not store biometric credentials:', e);
@@ -117,10 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const clearBiometricCredentials = async () => {
     await Promise.all([
-      SecureStore.deleteItemAsync('biometric_saved_token'),
-      SecureStore.deleteItemAsync('biometric_saved_userId'),
-      SecureStore.deleteItemAsync('biometric_saved_name'),
-      SecureStore.deleteItemAsync('biometric_enabled'),
+      SecureStore.deleteItemAsync('biometric_saved_token').catch(() => {}),
+      SecureStore.deleteItemAsync('biometric_saved_userId').catch(() => {}),
+      SecureStore.deleteItemAsync('biometric_saved_name').catch(() => {}),
+      SecureStore.deleteItemAsync('biometric_enabled').catch(() => {}),
     ]);
     setIsBiometricEnabled(false);
   };
@@ -142,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (data.currency) {
           setCurrency(data.currency);
           try {
-            await SecureStore.setItemAsync('user_currency', data.currency);
+            await safeStorageSet('user_currency', data.currency);
           } catch (e) {
             console.warn('[AuthContext] Failed saving currency preference:', e);
           }
@@ -172,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (data.currency) {
           setCurrency(data.currency);
           try {
-            await SecureStore.setItemAsync('user_currency', data.currency);
+            await safeStorageSet('user_currency', data.currency);
           } catch (e) {
             console.warn('[AuthContext] Failed saving currency preference:', e);
           }
@@ -191,10 +189,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       if (!hasHardware || !isEnrolled) return false;
 
-      const savedToken = await SecureStore.getItemAsync('biometric_saved_token');
-      const savedUserId = await SecureStore.getItemAsync('biometric_saved_userId');
-      const savedName = await SecureStore.getItemAsync('biometric_saved_name');
-      const savedPref = await SecureStore.getItemAsync('biometric_enabled');
+      const savedToken = await safeStorageGet('biometric_saved_token');
+      const savedUserId = await safeStorageGet('biometric_saved_userId');
+      const savedName = await safeStorageGet('biometric_saved_name');
+      const savedPref = await safeStorageGet('biometric_enabled');
 
       if (savedPref !== 'true' || !savedToken || !savedUserId) return false;
 
@@ -282,7 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setCurrency(userCurrency);
       try {
-        await SecureStore.setItemAsync('user_currency', userCurrency);
+        await safeStorageSet('user_currency', userCurrency);
       } catch (e) {
         console.warn('[AuthContext] Failed to persist currency:', e);
       }
@@ -319,8 +317,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(async (): Promise<void> => {
     setTheme((prevTheme) => {
       const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      // Persist asynchronously in background without blocking immediate frame render
-      SecureStore.setItemAsync('app_theme', nextTheme).catch((e) => {
+      // Persist reliably across SecureStore and AsyncStorage in the background
+      safeStorageSet('app_theme', nextTheme).catch((e) => {
         console.warn('[AuthContext] Failed to persist theme preference:', e);
       });
       return nextTheme;
@@ -339,7 +337,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await SecureStore.setItemAsync('user_name', cleanName);
+      await safeStorageSet('user_name', cleanName);
       setUserName(cleanName);
     } catch (e) {
       console.warn('[AuthContext] Failed to save display name:', e);
@@ -361,7 +359,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setCurrency(code);
     try {
-      await SecureStore.setItemAsync('user_currency', code);
+      await safeStorageSet('user_currency', code);
     } catch (e) {
       console.warn('[AuthContext] Failed to persist currency code:', e);
     }

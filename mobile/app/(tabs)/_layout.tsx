@@ -26,7 +26,7 @@ export default function TabLayout() {
   const activePillBg = isLight ? 'rgba(146, 64, 14, 0.12)' : 'rgba(245, 200, 66, 0.16)';
 
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'ios' ? 16 : 8);
-  const tabHeight = 62 + bottomInset;
+  const tabHeight = 64 + bottomInset;
 
   return (
     <Tabs
@@ -36,11 +36,11 @@ export default function TabLayout() {
         tabBarShowLabel: true,
         tabBarLabelPosition: 'below-icon',
         tabBarLabelStyle: {
-          fontSize: 9.5,
+          fontSize: 10,
           fontWeight: '700',
           letterSpacing: -0.2,
-          marginTop: -2,
-          marginBottom: 3,
+          marginTop: 1,
+          marginBottom: 2,
         },
         tabBarStyle: {
           backgroundColor: isLight ? '#FFFFFF' : 'rgba(23, 26, 20, 0.98)',
@@ -55,11 +55,20 @@ export default function TabLayout() {
           shadowOpacity: 0.12,
           shadowRadius: 10,
           elevation: 12,
+          overflow: 'visible',
         },
         tabBarItemStyle: {
           justifyContent: 'center',
           alignItems: 'center',
-          paddingVertical: 2,
+          paddingVertical: 1,
+          overflow: 'visible',
+        },
+        tabBarIconStyle: {
+          width: 52,
+          height: 32,
+          justifyContent: 'center',
+          alignItems: 'center',
+          overflow: 'visible',
         },
         headerShown: false,
       }}
@@ -74,7 +83,7 @@ export default function TabLayout() {
             <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
               <Ionicons
                 name={focused ? 'grid' : 'grid-outline'}
-                size={24}
+                size={23}
                 color={focused ? activeColor : inactiveColor}
               />
             </View>
@@ -113,6 +122,13 @@ export default function TabLayout() {
           title: 'Add Record',
           tabBarLabel: () => null,
           tabBarAccessibilityLabel: 'Add record',
+          tabBarIconStyle: {
+            width: 50,
+            height: 50,
+            justifyContent: 'center',
+            alignItems: 'center',
+            overflow: 'visible',
+          },
           tabBarIcon: () => (
             <View
               style={[
@@ -139,7 +155,7 @@ export default function TabLayout() {
             <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
               <Ionicons
                 name={focused ? 'repeat' : 'repeat-outline'}
-                size={24}
+                size={23}
                 color={focused ? activeColor : inactiveColor}
               />
             </View>
@@ -157,7 +173,7 @@ export default function TabLayout() {
             <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
               <Ionicons
                 name={focused ? 'person' : 'person-outline'}
-                size={24}
+                size={23}
                 color={focused ? activeColor : inactiveColor}
               />
             </View>
@@ -170,23 +186,21 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iconWrap: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
   },
   fabBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
-    shadowRadius: 6,
+    shadowRadius: 5,
     elevation: 6,
-    marginTop: -2,
   },
 });

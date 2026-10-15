@@ -65,7 +65,8 @@ public final class ExpenseMapper {
                 categoryName,
                 null,
                 null,
-                expense.getCreatedAt()
+                expense.getCreatedAt(),
+                expense.isRecurring()
         );
     }
 }

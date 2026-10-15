@@ -39,10 +39,24 @@ public record ExpenseDto(
 
         @Schema(description = "Timestamp when the expense was created in database",
                 accessMode = Schema.AccessMode.READ_ONLY)
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+
+        @Schema(description = "Whether this is a recurring subscription or commitment", example = "false")
+        Boolean isRecurring
 ) {
     public ExpenseDto(Long id, BigDecimal amount, String description,
                       LocalDate expenseDate, Long categoryId, String categoryName) {
-        this(id, amount, description, expenseDate, categoryId, categoryName, null, null, null);
+        this(id, amount, description, expenseDate, categoryId, categoryName, null, null, null, false);
+    }
+
+    public ExpenseDto(Long id, BigDecimal amount, String description,
+                      LocalDate expenseDate, Long categoryId, String categoryName,
+                      String frequency, Integer intervalDays, LocalDateTime createdAt) {
+        this(id, amount, description, expenseDate, categoryId, categoryName, frequency, intervalDays, createdAt, false);
+    }
+
+    public ExpenseDto(Long id, BigDecimal amount, String description,
+                      LocalDate expenseDate, Long categoryId, String categoryName, Boolean isRecurring) {
+        this(id, amount, description, expenseDate, categoryId, categoryName, null, null, null, isRecurring);
     }
 }

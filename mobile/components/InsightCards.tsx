@@ -26,6 +26,7 @@ import { Colors } from '../constants/theme';
 import { getCurrencySymbol } from '../services/currency';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { effectiveMonth, earnedTotal, netSpent, monthKey, kindOf } from '../utils/moneyFlow';
 
 export interface ExpenseItem {
   id: number;
@@ -56,6 +57,8 @@ export interface IncomeItem {
   description?: string;
   isRecurring?: boolean;
   recurring?: boolean;
+  kind?: string | null;
+  countsTowardMonth?: string | null;
 }
 
 export interface SavingsGoalItem {
@@ -117,6 +120,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
   const currentDay = Math.max(now.getDate(), 1);
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const daysRemaining = Math.max(0, daysInMonth - currentDay);
+  const thisMonthKey = monthKey(now);
 
   const formatAmt = (n: number) => {
     const val = isNaN(n) ? 0 : Math.round(n);
@@ -129,18 +133,14 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
   // ─────────────────────────────────────────────────────────────────────────────
   const currentMonthExpenses = safeExpenses.filter((e) => {
     if (!e.expenseDate) return false;
-    try {
-      const d = new Date(e.expenseDate);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    } catch {
-      return false;
-    }
+    return monthKey(e.expenseDate) === thisMonthKey;
   });
 
-  const currentMonthSpent = currentMonthExpenses.reduce(
-    (acc, curr) => acc + Math.max(0, Number(curr.amount || 0)),
-    0
-  );
+  const currentMonthIncomes = safeIncomes.filter((i) => {
+    return effectiveMonth(i) === thisMonthKey;
+  });
+
+  const currentMonthSpent = netSpent(currentMonthExpenses, currentMonthIncomes);
   const dailyBurn = currentMonthSpent / currentDay;
   const projectedSpent = dailyBurn * daysInMonth;
 
@@ -172,11 +172,23 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
 
   currentMonthExpenses.forEach((e) => {
     if (!e.expenseDate) return;
-    const day = new Date(e.expenseDate).getDay();
+    const parts = e.expenseDate.split('T')[0].split('-');
+    let day = -1;
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        day = new Date(y, m, d).getDay();
+      }
+    }
+    if (day === -1) {
+      day = new Date(e.expenseDate).getDay();
+    }
     const amt = Math.max(0, Number(e.amount || 0));
     if (day === 0 || day === 6) {
       weekendSpent += amt;
-    } else {
+    } else if (day >= 1 && day <= 5) {
       weekdaySpent += amt;
     }
   });
@@ -285,7 +297,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
   // 8. Recurring Subscriptions Overhead Ratio
   // ─────────────────────────────────────────────────────────────────────────────
   const recurringTotal = currentMonthExpenses
-    .filter((e) => e.isRecurring || e.recurring)
+    .filter((e) => e.isRecurring || e.recurring || (e as any).frequency)
     .reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
   const recurringRatio =
     currentMonthSpent > 0 ? Math.round((recurringTotal / currentMonthSpent) * 100) : 0;
@@ -293,37 +305,11 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
   // ─────────────────────────────────────────────────────────────────────────────
   // 9. CROSS-DOMAIN SYNTHESIS: Incomes ↔ Expenses (Net Cash Flow & Savings Rate)
   // ─────────────────────────────────────────────────────────────────────────────
-  const safeIncomes = incomes || [];
-  const currentMonthIncomes = safeIncomes.filter((i) => {
-    if (!i.incomeDate) return false;
-    try {
-      const d = new Date(i.incomeDate);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    } catch {
-      return false;
-    }
-  });
-
-  const totalMonthlyInflow = currentMonthIncomes.reduce(
-    (acc, curr) => acc + Math.max(0, Number(curr.amount || 0)),
-    0
-  );
-  // Scoped to the current month only — every metric derived from
-  // `activeInflow` below is displayed as a *monthly* figure ("Active
-  // Monthly Inflow", monthly savings rate, monthly commitment ratio). This
-  // previously fell back to lifetime total income (`totalAllInflow`)
-  // whenever nothing had been logged for the current month yet, which
-  // silently mixed all-time totals into monthly metrics (e.g. a user who
-  // logged income sporadically over past months but not yet this month
-  // would see an inflated "monthly" savings rate built from years of
-  // income against one month of spend). The existing `activeInflow <= 0`
-  // empty states already handle "no income logged this month" gracefully,
-  // so there's no need for a fallback here.
+  const totalMonthlyInflow = earnedTotal(currentMonthIncomes);
   const activeInflow = totalMonthlyInflow;
   const netCashFlow = activeInflow - currentMonthSpent;
   const savingsRate = activeInflow > 0 ? Math.round((netCashFlow / activeInflow) * 100) : 0;
 
-  // ─────────────────────────────────────────────────────────────────────────────
   // 10. CROSS-DOMAIN SYNTHESIS: Savings Goals Funding Velocity
   // ─────────────────────────────────────────────────────────────────────────────
   const safeGoals = savingsGoals || [];
@@ -344,7 +330,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
 
   // 12. CROSS-DOMAIN SYNTHESIS: Income Stream Composition & Salary Coverage
   const salaryInflow = currentMonthIncomes
-    .filter((i) => (i.source || '').toLowerCase().includes('salary'))
+    .filter((i) => kindOf(i) === 'SALARY' || /salary/i.test(i.source || ''))
     .reduce((s, i) => s + Math.max(0, Number(i.amount || 0)), 0);
   const otherInflow = Math.max(0, activeInflow - salaryInflow);
   const salarySharePct = activeInflow > 0 ? Math.round((salaryInflow / activeInflow) * 100) : 0;
@@ -401,7 +387,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
       salaryCoverageRatio,
       emergencyRunwayMonths,
     };
-  }, [safeExpenses, safeBudgets, incomes, savingsGoals, currentDay, daysInMonth]);
+  }, [safeExpenses, safeBudgets, safeIncomes, safeGoals, currentDay, daysInMonth, thisMonthKey]);
 
   const {
     currentMonthSpent,
@@ -594,7 +580,9 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>Tri-Domain Flow</Text>
             <Text style={[styles.cardPrimaryVal, { color: '#3B82F6' }]}>
-              {activeInflow > 0 ? `${savingsRate}% saved` : 'Active'}
+              {activeInflow > 0
+                ? (savingsRate >= 0 ? `${savingsRate}% saved` : `${Math.abs(savingsRate)}% deficit`)
+                : (currentMonthSpent > 0 ? `-${formatAmt(currentMonthSpent)}` : 'Balanced')}
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
               Chits/Goals: <Text style={{ color: '#3B82F6', fontWeight: '700' }}>{formatAmt(totalGoalsCurrent)}</Text>

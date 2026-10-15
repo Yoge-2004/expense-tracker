@@ -177,8 +177,11 @@ public class SyncController {
     public ResponseEntity<Map<String, Object>> huggingFaceStatus(
             @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
             HttpServletRequest request) {
-        ResponseEntity<Map<String, Object>> accessError = validateHfSyncAccess(syncToken, request);
-        if (accessError != null) return accessError;
+        String clientIp = request != null ? request.getRemoteAddr() : "unknown";
+        if (!rateLimiterService.tryAcquire("sync-status:" + clientIp, 30, Duration.ofMinutes(1))) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("status", "error", "message", "Too many status requests. Please try again later."));
+        }
         return ResponseEntity.ok(syncService.getHuggingFaceStatus());
     }
 

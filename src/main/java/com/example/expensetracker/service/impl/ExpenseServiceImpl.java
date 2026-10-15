@@ -225,6 +225,9 @@ public class ExpenseServiceImpl implements ExpenseService {
         if (expenseUpdates.getCategory() != null) {
             existing.setCategory(expenseUpdates.getCategory());
         }
+        if (expenseUpdates.isRecurring() != existing.isRecurring()) {
+            existing.setRecurring(expenseUpdates.isRecurring());
+        }
 
         Expense saved = expenseRepository.save(existing);
         log.info("Updated expense id={} successfully for userId={}", saved.getId(), user.getId());

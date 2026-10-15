@@ -229,18 +229,39 @@ public class IncomeServiceImpl implements IncomeService {
         log.info("Computing cash flow summary for userId={}, period={}-{}", user.getId(), year, month);
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        java.time.YearMonth targetMonth = java.time.YearMonth.of(year, month);
 
-        List<Income> incomes = incomeRepository.findByUserAndIncomeDateBetween(user, startDate, endDate);
+        LocalDate queryStart = startDate.minusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT);
+        LocalDate queryEnd = endDate.plusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT);
+        List<Income> rawIncomes = incomeRepository.findByUserAndIncomeDateBetween(user, queryStart, queryEnd);
+        if (rawIncomes == null || rawIncomes.isEmpty()) {
+            rawIncomes = incomeRepository.findByUserAndIncomeDateBetween(user, startDate, endDate);
+        }
+        if (rawIncomes == null) rawIncomes = List.of();
+
+        List<Income> incomes = rawIncomes.stream()
+                .filter(i -> targetMonth.equals(com.example.expensetracker.mapper.IncomeRules.effectiveMonth(i)))
+                .toList();
+
         List<Expense> expenses = expenseRepository.findByUserAndExpenseDateBetween(user, startDate, endDate);
 
-        BigDecimal totalIncome = incomes.stream()
+        BigDecimal totalReimbursed = incomes.stream()
+                .filter(i -> com.example.expensetracker.mapper.IncomeRules.effectiveKind(i)
+                        == com.example.expensetracker.model.IncomeKind.REIMBURSEMENT)
                 .map(Income::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalExpense = expenses.stream()
+        BigDecimal totalIncome = incomes.stream()
+                .filter(i -> com.example.expensetracker.mapper.IncomeRules.effectiveKind(i)
+                        != com.example.expensetracker.model.IncomeKind.REIMBURSEMENT)
+                .map(Income::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal grossExpense = expenses.stream()
                 .map(Expense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal totalExpense = grossExpense.subtract(totalReimbursed).max(BigDecimal.ZERO);
         BigDecimal netSavings = totalIncome.subtract(totalExpense);
 
         double savingsRate = 0.0;

@@ -76,6 +76,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             return;
         }
         log.info("HF failover token scope check: {}", HuggingFaceFileClient.inspectToken(token));
+        boolean snapshotFound = false;
         try {
             Path encrypted = createSecureTempFile(".enc");
             Path sqlite = createSecureTempFile(".sqlite");
@@ -84,10 +85,11 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
                     int rows = snapshotService.importIntoFallback(sqlite);
                     lastPushedChecksum = computeSha256(sqlite);
+                    snapshotFound = true;
                     log.info("HF encrypted DB snapshot loaded into local failover store: {} rows (SHA-256: {}).",
                             rows, lastPushedChecksum);
                 } else {
-                    log.info("No HF database snapshot exists yet; emergency datastore will start empty.");
+                    log.info("No HF database snapshot exists yet; will replicate database to HF spaces immediately.");
                 }
             } finally {
                 Files.deleteIfExists(encrypted);
@@ -99,9 +101,13 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         } catch (Exception e) {
             log.error("Failed to initialize HF database failover", e);
         }
-        // Do not wait for the next 10-minute tick: take the first snapshot now so
-        // the file exists in the repository right after a deploy or restart.
-        Thread.ofVirtual().name("hf-initial-backup").start(this::backupCurrentDatabase);
+        // If snapshot does not exist on HF space, immediately replicate the current database first!
+        if (!snapshotFound) {
+            log.info("Snapshot not found on HF spaces; replicating database to HF spaces immediately...");
+            backupCurrentDatabase();
+        } else {
+            Thread.ofVirtual().name("hf-initial-backup").start(this::backupCurrentDatabase);
+        }
     }
 
     /** Snapshot the currently active database every 10 minutes. */

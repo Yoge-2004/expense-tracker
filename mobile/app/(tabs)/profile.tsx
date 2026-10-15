@@ -45,7 +45,7 @@ import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { enableSmartReminders, disableSmartReminders, getSmartRemindersEnabled, getTransactionAlertsEnabled, setTransactionAlertsEnabled } from '../../services/notifications';
-import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification } from '../../services/notifications';
+import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification, detectAndAddExpenseFromMessage } from '../../services/notifications';
 
 export default function ProfileScreen() {
   const { userId, userName, theme, toggleTheme, currency, updateCurrency, logout, updateUserName, isBiometricsAvailable, isBiometricEnabled, toggleBiometrics } = useAuth();
@@ -113,11 +113,11 @@ export default function ProfileScreen() {
   const handleSimulateDebit = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const sampleSms = "Alert: Your A/c ending 4589 debited by INR 350.00 on 24-Sep-26 at Starbucks Coffee ref txn882910.";
-    const result = await processIncomingMessageForDebitNotification(sampleSms);
+    const result = await detectAndAddExpenseFromMessage(sampleSms, userId);
     if (result) {
       showAlert(
         "Instant Debit Triggered 💸",
-        `Parsed & dispatched notification immediately: ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}.`,
+        `Parsed & added expense to ledger: ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}.`,
         undefined,
         "success"
       );
