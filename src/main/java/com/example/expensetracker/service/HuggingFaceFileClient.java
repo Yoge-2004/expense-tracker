@@ -1,5 +1,8 @@
 package com.example.expensetracker.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -7,6 +10,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Base64;
 
@@ -19,6 +24,8 @@ import java.util.Base64;
  *       before being interpolated into request URLs or the NDJSON body, closing
  *       JSON-injection and URL-manipulation paths.</li>
  *   <li>The NDJSON payload escapes JSON string content explicitly.</li>
+ *   <li>Supports Git LFS batch uploads for binary and encrypted snapshots, preventing
+ *       Hub commit rejections on binary files.</li>
  *   <li>Connect and request timeouts bound every call so a stalled Hub cannot
  *       pin virtual threads (this service runs on {@code spring.threads.virtual.enabled}).</li>
  * </ul>
@@ -47,6 +54,8 @@ public final class HuggingFaceFileClient {
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private HuggingFaceFileClient() {}
 
     /** Uploads to a Space repository (the original, default behaviour). */
@@ -57,8 +66,17 @@ public final class HuggingFaceFileClient {
 
     public static void upload(String repoType, String repo, String path, Path file, String token)
             throws IOException, InterruptedException {
+        byte[] fileBytes = Files.readAllBytes(file);
+        if (tryLfsUpload(repoType, repo, path, fileBytes, token)) {
+            return;
+        }
+        uploadInline(repoType, repo, path, fileBytes, token);
+    }
+
+    private static void uploadInline(String repoType, String repo, String path, byte[] fileBytes, String token)
+            throws IOException, InterruptedException {
         String url = commitUrl(repoType, repo);
-        String content = Base64.getEncoder().encodeToString(Files.readAllBytes(file));
+        String content = Base64.getEncoder().encodeToString(fileBytes);
         String body = "{\"key\":\"header\",\"value\":{\"summary\":\"Update encrypted Expense Tracker snapshot\"}}\n"
                 + "{\"key\":\"file\",\"value\":{\"content\":\"" + content
                 + "\",\"encoding\":\"base64\",\"path\":\"" + jsonEscape(requirePath(path)) + "\"}}\n";
@@ -78,6 +96,85 @@ public final class HuggingFaceFileClient {
             }
             throw new IllegalStateException("Hugging Face upload failed (HTTP "
                     + response.statusCode() + "): " + responseBody);
+        }
+    }
+
+    static String lfsBatchUrl(String repoType, String repo) {
+        String prefix = switch (apiSegment(repoType)) {
+            case "spaces" -> "spaces/";
+            case "datasets" -> "datasets/";
+            default -> "";
+        };
+        return "https://huggingface.co/" + prefix + requireRepo(repo) + ".git/info/lfs/objects/batch";
+    }
+
+    private static boolean tryLfsUpload(String repoType, String repo, String path, byte[] fileBytes, String token) {
+        try {
+            String oid = sha256Hex(fileBytes);
+            long size = fileBytes.length;
+            String batchUrl = lfsBatchUrl(repoType, repo);
+            String batchPayload = "{\"operation\":\"upload\",\"transfers\":[\"basic\"],\"objects\":[{\"oid\":\""
+                    + oid + "\",\"size\":" + size + "}],\"hash_algo\":\"sha256\"}";
+            HttpRequest batchRequest = HttpRequest.newBuilder(URI.create(batchUrl))
+                    .timeout(REQUEST_TIMEOUT)
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/vnd.git-lfs+json")
+                    .POST(HttpRequest.BodyPublishers.ofString(batchPayload))
+                    .build();
+            HttpResponse<String> batchResponse = HTTP.send(batchRequest, HttpResponse.BodyHandlers.ofString());
+            if (batchResponse.statusCode() < 200 || batchResponse.statusCode() >= 300) {
+                return false;
+            }
+            JsonNode root = MAPPER.readTree(batchResponse.body());
+            JsonNode objects = root.path("objects");
+            if (!objects.isArray() || objects.isEmpty()) {
+                return false;
+            }
+            JsonNode firstObj = objects.get(0);
+            JsonNode uploadAction = firstObj.path("actions").path("upload");
+            if (!uploadAction.isMissingNode() && uploadAction.has("href")) {
+                String uploadHref = uploadAction.path("href").asText();
+                HttpRequest.Builder putBuilder = HttpRequest.newBuilder(URI.create(uploadHref))
+                        .timeout(REQUEST_TIMEOUT)
+                        .PUT(HttpRequest.BodyPublishers.ofByteArray(fileBytes));
+                JsonNode headers = uploadAction.path("header");
+                if (headers.isObject()) {
+                    headers.fields().forEachRemaining(entry -> putBuilder.header(entry.getKey(), entry.getValue().asText()));
+                }
+                HttpResponse<Void> putResponse = HTTP.send(putBuilder.build(), HttpResponse.BodyHandlers.discarding());
+                if (putResponse.statusCode() < 200 || putResponse.statusCode() >= 300) {
+                    return false;
+                }
+            }
+            // Commit the LFS pointer reference
+            String commitUrl = commitUrl(repoType, repo);
+            String body = "{\"key\":\"header\",\"value\":{\"summary\":\"Update encrypted Expense Tracker snapshot\"}}\n"
+                    + "{\"key\":\"lfsFile\",\"value\":{\"path\":\"" + jsonEscape(requirePath(path))
+                    + "\",\"algo\":\"sha256\",\"oid\":\"" + oid + "\",\"size\":" + size + "}}\n";
+            HttpRequest commitRequest = HttpRequest.newBuilder(URI.create(commitUrl))
+                    .timeout(REQUEST_TIMEOUT)
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/x-ndjson")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+            HttpResponse<String> commitResponse = HTTP.send(commitRequest, HttpResponse.BodyHandlers.ofString());
+            return commitResponse.statusCode() >= 200 && commitResponse.statusCode() < 300;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    static String sha256Hex(byte[] bytes) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(bytes);
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
         }
     }
 
@@ -243,6 +340,8 @@ public final class HuggingFaceFileClient {
             switch (c) {
                 case '"' -> sb.append("\\\"");
                 case '\\' -> sb.append("\\\\");
+                case '\b' -> sb.append("\\b");
+                case '\f' -> sb.append("\\f");
                 case '\n' -> sb.append("\\n");
                 case '\r' -> sb.append("\\r");
                 case '\t' -> sb.append("\\t");
