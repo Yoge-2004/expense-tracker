@@ -14,9 +14,11 @@
 
 ## 📦 Releases & Downloads
 
-Official Android APK builds are published through GitHub Releases.
+Official Android APK builds (**v1.0.4**, Version Code **6**) are published through GitHub Releases.
 
-**👉 [Download / View Releases](https://github.com/Yoge-2004/expense-tracker/releases)**
+**👉 [Download / View Releases (v1.0.4)](https://github.com/Yoge-2004/expense-tracker/releases)**
+
+Read detailed changes in [RELEASE_NOTES.md](../RELEASE_NOTES.md) or [mobile/release-notes.md](release-notes.md).
 
 Each release contains the corresponding APK, checksums, version information, and release notes.
 
@@ -36,7 +38,7 @@ The mobile client lives in this directory and is built with **Expo 57, React Nat
 - Communicating with the Expense Tracker REST API.
 - Managing client-side authentication/session state.
 - Providing native Google Sign-In integration.
-- Supporting device-oriented capabilities included by the application, such as secure storage, haptics, document handling, sharing, notifications, and local authentication where used by the corresponding flows.
+- Supporting device-oriented capabilities included by the application, such as secure storage, haptics, document handling, sharing, notifications with one-tap bulk clearing, SMS financial alert listener for automated ML expense classification, and local authentication where used by the corresponding flows.
 
 <!-- IMAGE PLACEHOLDER: Full mobile app overview with 4–6 real screens. -->
 

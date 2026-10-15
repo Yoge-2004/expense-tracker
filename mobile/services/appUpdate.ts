@@ -28,7 +28,7 @@ export interface DownloadProgress {
   percent: number;
 }
 
-export const CURRENT_APP_VERSION = Constants.expoConfig?.version || '1.0.3';
+export const CURRENT_APP_VERSION = Constants.expoConfig?.version || '1.0.4';
 export const DISPLAY_VERSION = `v${CURRENT_APP_VERSION}`;
 
 /**
@@ -66,7 +66,7 @@ export async function checkForAppUpdate(): Promise<AppReleaseInfo> {
     }
 
     const data = await response.json();
-    const latestTag = data.tag_name || 'v1.0.3';
+    const latestTag = data.tag_name || 'v1.0.4';
     const releaseName = data.name || latestTag;
     const releaseUrl = data.html_url || fallbackUrl;
     const releaseNotes = (data.body || '').trim();

@@ -188,8 +188,8 @@ jobs:
       - name: Publish APK & IPA to GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v1.0.3
-          name: "Expense Tracker Mobile v1.0.3"
+          tag_name: v1.0.4
+          name: "Expense Tracker Mobile v1.0.4"
           body_path: mobile/release-notes.md
           files: |
             mobile/expense-tracker.apk

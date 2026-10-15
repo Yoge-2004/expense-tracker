@@ -47,7 +47,8 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 | **Theme & UI** | Diffused golden aura elevation across Dark & Light modes, custom HUD cursor, and `Ctrl`/`Cmd` + `K` Command Palette. |
 | **Authentication** | JWT-based authentication, Google sign-in, WebAuthn/passkeys, and biometric unlock (Face ID / Fingerprint). |
 | **Profile & Settings** | Display name sync across web/app, 6-digit security PIN for instant recovery, and multi-currency selection. |
-| **Machine Learning** | Dual-engine ML categorization (TF-IDF + Transformer) with interactive tester and continuous retraining feedback loop. |
+| **Notifications** | Real-time push alerts, financial event digest, per-type preferences, and one-click bulk inbox clearing on web and mobile. |
+| **Machine Learning** | Dual-engine ML categorization (TF-IDF + Transformer), automated SMS financial alert listener, interactive tester, and continuous retraining feedback loop. |
 | **Persistence** | H2 for development, SQLite client-encrypted fallback, and PostgreSQL / Neon for production. |
 | **Data resilience** | Zero-downtime offline caching, network retry fallbacks, and Hugging Face Hub snapshot sync. |
 
@@ -340,6 +341,9 @@ Expense Tracker integrates an automated, continuous intelligence machine learnin
 - **Hugging Face Model Registry & Auto-Rollback**:
   - Models versioned immutably as `v<run-id>` with an alias pointing to `production`.
   - Zero-downtime serving space restarts with instantaneous health probes and immediate fallback if a model fails validation.
+- **Automated SMS Financial Alert Categorization**:
+  - Mobile background listener detects bank debit/credit transaction notifications.
+  - Automatically parses amounts and passes merchant/counterparty text to the ML categorization pipeline for instant zero-touch bookkeeping.
 
 ![AI Smart Categorizer and Insights Dashboard](docs/images/website/dashboard.png)
 
@@ -1002,9 +1006,9 @@ docs/images/
 
 # 📦 Releases
 
-Download the latest Android builds, view release notes, checksums, and previous versions from the official GitHub Releases page.
+Download the latest Android builds (**v1.0.4**, Version Code **6**), view release notes, checksums, and previous versions from the official GitHub Releases page or read [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
-**👉 [View all releases](https://github.com/Yoge-2004/expense-tracker/releases)**
+**👉 [View all releases (v1.0.4)](https://github.com/Yoge-2004/expense-tracker/releases)**
 
 ---
 
