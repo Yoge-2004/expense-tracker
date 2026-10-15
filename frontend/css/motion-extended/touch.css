@@ -6,6 +6,8 @@
 
 /* 183. Touch: instant press-down scale for tappable surfaces */
 .touch-pressable {
+    position: relative;
+    overflow: hidden;
     transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
 }
 .touch-pressable.is-pressed {
@@ -58,67 +60,4 @@
 /* 188. Touch: swipe-to-reveal action row (transaction/list items) */
 .swipeable-row {
     transition: transform 0.3s var(--ease);
-    touch-action: pan-y;
-}
-.swipeable-row.swiped-open { transform: translateX(-84px); }
-
-/* 189. Touch: drag lift — element gains depth the instant a drag starts */
-@keyframes dragLift {
-    0% { box-shadow: var(--shadow-premium); }
-    100% { box-shadow: 0 26px 48px -18px rgba(0, 0, 0, 0.45); }
-}
-.is-dragging {
-    animation: dragLift 0.25s var(--ease) forwards;
-    cursor: grabbing;
-}
-
-/* 190. Touch: drag release snap-back */
-@keyframes dragSnapBack {
-    0% { transform: scale(1.03); }
-    60% { transform: scale(0.985); }
-    100% { transform: scale(1); }
-}
-.drag-snap-back {
-    animation: dragSnapBack 0.4s var(--ease-bounce);
-}
-
-/* 191. Touch: pull-to-refresh elastic bounce */
-@keyframes pullRefreshBounce {
-    0% { transform: translateY(0) scale(0.9); opacity: 0.5; }
-    60% { transform: translateY(6px) scale(1.08); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-.pull-refresh-indicator.is-triggered {
-    animation: pullRefreshBounce 0.5s var(--ease-bounce);
-}
-
-/* 192. Touch: icon tap bounce (small confirm nudge on icon buttons) */
-@keyframes tapBounceIcon {
-    0% { transform: scale(1); }
-    35% { transform: scale(0.78); }
-    70% { transform: scale(1.12); }
-    100% { transform: scale(1); }
-}
-.btn-icon.is-tapped svg {
-    animation: tapBounceIcon 0.38s var(--ease-bounce);
-}
-
-/* 193. Touch: quick double-tap pulse (e.g. double-tap a metric to expand) */
-@keyframes doubleTapPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.06); }
-    100% { transform: scale(1); }
-}
-.is-double-tapped {
-    animation: doubleTapPulse 0.3s ease-out;
-}
-
-/* 194. Touch: momentum settle for scrollable chip/pill rows */
-@keyframes momentumSettle {
-    0% { transform: translateX(var(--momentum-from, 0)); }
-    100% { transform: translateX(0); }
-}
-.momentum-settle {
-    --momentum-from: 0px;
-    animation: momentumSettle 0.4s var(--ease);
 }

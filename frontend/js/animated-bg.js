@@ -217,16 +217,19 @@
 
         let orbs = [];
         let particles = [];
-        const ORB_COUNT = 8;
-        const PARTICLE_COUNT = Math.min(52, Math.max(26, Math.floor(width / 28)));
+        const isMobileDevice = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+        const ORB_COUNT = isMobileDevice ? 3 : 8;
+        const PARTICLE_COUNT = isMobileDevice ? 12 : Math.min(52, Math.max(26, Math.floor(width / 28)));
 
         function initOrbs() {
+            const mobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+            const orbCount = mobile ? 3 : 8;
             orbs = [];
-            for (let i = 0; i < ORB_COUNT; i++) {
+            for (let i = 0; i < orbCount; i++) {
                 orbs.push(new AuroraOrb(i));
             }
             particles = [];
-            const particleCount = Math.min(52, Math.max(26, Math.floor(width / 28)));
+            const particleCount = mobile ? 12 : Math.min(52, Math.max(26, Math.floor(width / 28)));
             for (let i = 0; i < particleCount; i++) {
                 particles.push(new StardustParticle());
             }
@@ -236,11 +239,26 @@
 
         const motionMediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
         let prefersReducedMotion = motionMediaQuery.matches;
-        const TARGET_FPS = 40;
+        const TARGET_FPS = isMobileDevice ? 25 : 40;
         const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
         let animFrameId = null;
         let pauseUntil = 0;
         let lastRenderTime = -Infinity;
+        let isScrolling = false;
+        let scrollTimer = null;
+
+        // On mobile, pause canvas rendering during active scrolling to free up
+        // GPU/compositor resources completely for 60fps scrolling.
+        window.addEventListener('scroll', () => {
+            isScrolling = true;
+            if (scrollTimer !== null) clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => {
+                isScrolling = false;
+                if (!document.hidden && !prefersReducedMotion && animFrameId === null) {
+                    animFrameId = requestAnimationFrame(render);
+                }
+            }, 120);
+        }, { passive: true });
 
         function stopAnimation() {
             if (animFrameId !== null) {
@@ -261,6 +279,10 @@
         });
 
         function render(time) {
+            if (isScrolling) {
+                // Pause during scroll
+                return;
+            }
             if (time < pauseUntil || time - lastRenderTime < FRAME_INTERVAL_MS) {
                 animFrameId = requestAnimationFrame(render);
                 return;

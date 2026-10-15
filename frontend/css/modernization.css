@@ -1193,3 +1193,61 @@
     border-top-left-radius: 22px;
     border-top-right-radius: 22px;
 }
+
+
+/* =============================================================================
+   Mobile Browser Animation, Transition & Compositor Performance Optimizations
+   ============================================================================= */
+
+/* Promote scrolling views to GPU compositing layers */
+@media (max-width: 768px) {
+    .dashboard-container,
+    .dashboard-content,
+    .main-content,
+    .transactions-table-container,
+    .unified-ledger-table-wrapper {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+    }
+
+    /* Reduce heavy multi-pass blur on mobile GPUs while preserving frosted glass aesthetics */
+    .card,
+    .metric-card,
+    .chart-card,
+    .transactions-card,
+    .topbar,
+    .modal-content,
+    .unified-ledger-card {
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+    }
+
+    /* Mobile theme card transform: avoid expensive 3D perspective calculations on mobile */
+    .grid-4-metrics > .metric-card {
+        transform: translateY(var(--theme-card-y, 0px)) scale(var(--theme-card-scale, 1)) !important;
+        will-change: transform;
+    }
+}
+
+/* Touchscreens: Prevent sticky hover states, layout-thrashing box-shadow transitions & card lifts */
+@media (hover: none) and (pointer: coarse) {
+    .card:hover,
+    .metric-card:hover,
+    .stat-card:hover,
+    .chart-card:hover,
+    .transactions-card:hover,
+    .budget-card:hover,
+    .float-card:hover {
+        transform: none !important;
+        box-shadow: inherit !important;
+    }
+
+    .table tbody tr:hover,
+    .transaction-item:hover,
+    .activity-item:hover,
+    .budget-item:hover,
+    .debt-item:hover {
+        transform: none !important;
+        background: transparent !important;
+    }
+}

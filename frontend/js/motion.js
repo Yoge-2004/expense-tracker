@@ -111,9 +111,11 @@
           feedback rather than waiting on a synthesized click.
        ------------------------------------------------------------------- */
     function initTouchFeedback() {
+        // Only attach pressable behavior to actionable interactive controls,
+        // avoiding large display cards / containers which causes layout thrashing
+        // and visual jitter during mobile scrolling.
         const pressableSelector = '.btn-primary, .btn-secondary, .btn-oauth, .btn-icon, ' +
-            '.preset-btn, .card, .metric-card, .perk-item, .float-card, ' +
-            'button:not(.pill-chip), .expense-item, .subscription-card';
+            '.preset-btn, button:not(.pill-chip):not(.theme-toggle-btn), .tab-btn, .action-btn';
 
         document.querySelectorAll(pressableSelector).forEach((el) => {
             el.classList.add('touch-pressable');
@@ -121,40 +123,8 @@
 
         let longPressTimer = null;
         let longPressTarget = null;
-
-        document.addEventListener('touchstart', (e) => {
-            const target = e.target.closest(pressableSelector);
-            if (!target) return;
-
-            target.classList.add('is-pressed');
-
-            // Touch ripple wave, positioned at the actual touch point.
-            if (!prefersReducedMotion) {
-                const touch = e.touches[0];
-                const rect = target.getBoundingClientRect();
-                const computedPos = window.getComputedStyle(target).position;
-                if (computedPos === 'static') target.style.position = 'relative';
-                target.style.overflow = target.style.overflow || 'hidden';
-
-                const wave = document.createElement('span');
-                wave.className = 'touch-ripple-wave';
-                const size = Math.max(rect.width, rect.height) * 0.9;
-                wave.style.width = wave.style.height = `${size}px`;
-                wave.style.left = `${touch.clientX - rect.left - size / 2}px`;
-                wave.style.top = `${touch.clientY - rect.top - size / 2}px`;
-                target.appendChild(wave);
-                setTimeout(() => wave.remove(), 700);
-            }
-
-            // Long-press: after 550ms of continuous contact, flag it so
-            // any long-press-aware handler (e.g. a context menu) can react,
-            // and give ambient glow feedback either way.
-            longPressTarget = target;
-            longPressTimer = setTimeout(() => {
-                target.classList.add('is-long-pressing');
-                target.dispatchEvent(new CustomEvent('longpress', { bubbles: true }));
-            }, 550);
-        }, { passive: true });
+        let touchStartX = 0;
+        let touchStartY = 0;
 
         function clearPress() {
             if (longPressTimer) {
@@ -166,6 +136,46 @@
                 longPressTarget = null;
             }
         }
+
+        document.addEventListener('touchstart', (e) => {
+            const target = e.target.closest(pressableSelector);
+            if (!target) return;
+
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+
+            target.classList.add('is-pressed');
+
+            // Lightweight ripple wave without synchronous getComputedStyle reflows
+            if (!prefersReducedMotion) {
+                const rect = target.getBoundingClientRect();
+                const wave = document.createElement('span');
+                wave.className = 'touch-ripple-wave';
+                const size = Math.max(rect.width, rect.height) * 0.9;
+                wave.style.width = wave.style.height = `${size}px`;
+                wave.style.left = `${touch.clientX - rect.left - size / 2}px`;
+                wave.style.top = `${touch.clientY - rect.top - size / 2}px`;
+                target.appendChild(wave);
+                setTimeout(() => wave.remove(), 700);
+            }
+
+            // Long-press: after 550ms of continuous contact
+            longPressTarget = target;
+            longPressTimer = setTimeout(() => {
+                target.classList.add('is-long-pressing');
+                target.dispatchEvent(new CustomEvent('longpress', { bubbles: true }));
+            }, 550);
+        }, { passive: true });
+
+        // Cancel press immediately if user moves touch to scroll
+        document.addEventListener('touchmove', (e) => {
+            if (!longPressTarget) return;
+            const touch = e.touches[0];
+            if (Math.abs(touch.clientX - touchStartX) > 8 || Math.abs(touch.clientY - touchStartY) > 8) {
+                clearPress();
+            }
+        }, { passive: true });
 
         document.addEventListener('touchend', clearPress, { passive: true });
         document.addEventListener('touchcancel', clearPress, { passive: true });

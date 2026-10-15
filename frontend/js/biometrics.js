@@ -44,26 +44,51 @@ const WebBiometrics = (() => {
         return result;
     };
 
+    /**
+     * Unwraps options when serialized with a root `publicKey` envelope (e.g. from
+     * Yubico's `toCredentialsCreateJson()` / `toCredentialsGetJson()`).
+     */
+    const unwrapPublicKeyOptions = (raw) => {
+        let options = typeof raw === "string" ? JSON.parse(raw) : raw;
+        while (options && typeof options === "object" && options.publicKey) {
+            options = typeof options.publicKey === "string" ? JSON.parse(options.publicKey) : options.publicKey;
+        }
+        return options;
+    };
+
     const prepareCreationOptions = (publicKey) => {
-        const options = typeof publicKey === "string" ? JSON.parse(publicKey) : publicKey;
-        options.challenge = base64UrlToBytes(options.challenge);
-        if (options.user?.id) options.user.id = base64UrlToBytes(options.user.id);
+        const options = unwrapPublicKeyOptions(publicKey);
+        if (typeof options.challenge === "string") {
+            options.challenge = base64UrlToBytes(options.challenge);
+        }
+        if (options.user?.id && typeof options.user.id === "string") {
+            options.user.id = base64UrlToBytes(options.user.id);
+        }
         if (Array.isArray(options.excludeCredentials)) {
             options.excludeCredentials = options.excludeCredentials.map(item => ({
                 ...item,
-                id: base64UrlToBytes(item.id)
+                id: typeof item.id === "string" ? base64UrlToBytes(item.id) : item.id
             }));
+        }
+        // Standard WebAuthn requires pubKeyCredParams to be a non-empty sequence
+        if (!Array.isArray(options.pubKeyCredParams) || options.pubKeyCredParams.length === 0) {
+            options.pubKeyCredParams = [
+                { type: "public-key", alg: -7 },   // ES256
+                { type: "public-key", alg: -257 }  // RS256
+            ];
         }
         return options;
     };
 
     const prepareRequestOptions = (publicKey) => {
-        const options = typeof publicKey === "string" ? JSON.parse(publicKey) : publicKey;
-        options.challenge = base64UrlToBytes(options.challenge);
+        const options = unwrapPublicKeyOptions(publicKey);
+        if (typeof options.challenge === "string") {
+            options.challenge = base64UrlToBytes(options.challenge);
+        }
         if (Array.isArray(options.allowCredentials)) {
             options.allowCredentials = options.allowCredentials.map(item => ({
                 ...item,
-                id: base64UrlToBytes(item.id)
+                id: typeof item.id === "string" ? base64UrlToBytes(item.id) : item.id
             }));
         }
         return options;

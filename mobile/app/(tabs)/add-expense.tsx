@@ -40,6 +40,8 @@ import { ChoiceChips } from '../../components/ChoiceChips';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../../utils/moneyFlow';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
+import * as DocumentPicker from 'expo-document-picker';
+import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../../services/receiptOcr';
 
 interface Category {
   id: number;
@@ -201,6 +203,9 @@ export default function AddExpenseScreen() {
 
   // Expense form state
   const [description, setDescription] = useState('');
+  const [isScanningOcr, setIsScanningOcr] = useState(false);
+  const [ocrSuccessData, setOcrSuccessData] = useState<ParsedReceipt | null>(null);
+  const [showSampleReceipts, setShowSampleReceipts] = useState(false);
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [isRecurring, setIsRecurring] = useState(false);
@@ -243,6 +248,68 @@ export default function AddExpenseScreen() {
   /** Bumped on every failed load so the auto-retry effect re-arms. */
   const [categoryRetryTick, setCategoryRetryTick] = useState(0);
   const categoryRetryCount = useRef(0);
+
+  const applyReceiptData = (parsed: ParsedReceipt) => {
+    if (parsed.merchant && parsed.merchant !== 'Receipt Purchase') {
+      setDescription(parsed.merchant);
+    } else if (!description) {
+      setDescription('Receipt Expense');
+    }
+    if (parsed.amount > 0) {
+      setAmount(String(parsed.amount));
+    }
+    if (parsed.date) {
+      setExpenseDate(parsed.date);
+    }
+    if (parsed.category && categories.length > 0) {
+      const matched = categories.find(
+        (c) => c.name.toLowerCase() === parsed.category.toLowerCase()
+      );
+      if (matched) {
+        setCategoryId(matched.id);
+      }
+    }
+    setOcrSuccessData(parsed);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    showAlert(
+      'Receipt Scanned!',
+      `Extracted: ${parsed.merchant} · ${currSymbol}${parsed.amount} (${parsed.confidence}% OCR confidence)`,
+      undefined,
+      'success'
+    );
+  };
+
+  const handlePickReceipt = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'text/plain'],
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled || !res.assets || res.assets.length === 0) return;
+
+      const file = res.assets[0];
+      setIsScanningOcr(true);
+      const parsed = await scanReceiptWithOcr(file.uri, file.name, file.mimeType || 'image/png');
+      applyReceiptData(parsed);
+    } catch (err: any) {
+      showAlert('OCR Scan Failed', err?.message || 'Unable to scan receipt document.');
+    } finally {
+      setIsScanningOcr(false);
+    }
+  };
+
+  const handleTestSampleReceipt = (idx: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setShowSampleReceipts(false);
+    setIsScanningOcr(true);
+    setTimeout(() => {
+      const sample = SAMPLE_RECEIPTS[idx] || SAMPLE_RECEIPTS[0];
+      const parsed = parseReceiptText(sample.text);
+      applyReceiptData(parsed);
+      setIsScanningOcr(false);
+    }, 400);
+  };
 
   /**
    * Fetches merged global & user-defined categories with offline cache fallback.
@@ -1460,6 +1527,223 @@ export default function AddExpenseScreen() {
              ========================================= */
           <StaggeredView delay={100} direction="up">
             <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              {/* Receipt OCR Scanner Banner */}
+              <View
+                style={{
+                  backgroundColor: isLight ? 'rgba(212, 175, 55, 0.08)' : 'rgba(212, 175, 55, 0.12)',
+                  borderColor: isLight ? 'rgba(212, 175, 55, 0.3)' : 'rgba(212, 175, 55, 0.25)',
+                  borderWidth: 1.5,
+                  borderRadius: 14,
+                  padding: 12,
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 8 }}>
+                    <View
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        backgroundColor: isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(212, 175, 55, 0.22)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="scan-outline" size={20} color={c.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>
+                        Receipt OCR Scanner
+                      </Text>
+                      <Text style={{ fontSize: 11, color: c.textMuted }}>
+                        Scan bill photo or choose sample receipt to auto-fill
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => setShowSampleReceipts(!showSampleReceipts)}
+                      style={{
+                        paddingHorizontal: 9,
+                        paddingVertical: 7,
+                        borderRadius: 8,
+                        backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                        borderWidth: 1,
+                        borderColor: c.border,
+                      }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: c.primary }}>Sample</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={handlePickReceipt}
+                      disabled={isScanningOcr}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 5,
+                        paddingHorizontal: 12,
+                        paddingVertical: 7,
+                        borderRadius: 8,
+                        backgroundColor: c.primary,
+                        opacity: isScanningOcr ? 0.7 : 1,
+                      }}
+                    >
+                      {isScanningOcr ? (
+                        <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                      ) : (
+                        <>
+                          <Ionicons name="camera-outline" size={14} color={isLight ? '#FFF' : '#10120E'} />
+                          <Text style={{ fontSize: 11.5, fontWeight: '800', color: isLight ? '#FFF' : '#10120E' }}>
+                            Scan Bill
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Sample Receipts Quick Selector */}
+                {showSampleReceipts && (
+                  <View
+                    style={{
+                      marginTop: 10,
+                      paddingTop: 10,
+                      borderTopWidth: 1,
+                      borderTopColor: c.border,
+                      gap: 6,
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: c.textMuted }}>
+                      SELECT SAMPLE RECEIPT TO TEST OCR:
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {SAMPLE_RECEIPTS.map((s, idx) => (
+                        <TouchableOpacity
+                          key={s.name}
+                          activeOpacity={0.75}
+                          onPress={() => handleTestSampleReceipt(idx)}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 5,
+                            backgroundColor: c.inputBg,
+                            borderColor: c.border,
+                            borderWidth: 1,
+                            paddingHorizontal: 10,
+                            paddingVertical: 6,
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Ionicons name={s.icon as any} size={13} color={c.primary} />
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: c.text }}>{s.name}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {/* Extracted Details & Interactive Breakdown Chips */}
+                {ocrSuccessData && (
+                  <View
+                    style={{
+                      marginTop: 10,
+                      paddingTop: 10,
+                      borderTopWidth: 1,
+                      borderTopColor: c.border,
+                      gap: 6,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#10B981' }}>
+                        ✨ {ocrSuccessData.merchant} · {currSymbol}{ocrSuccessData.amount} ({ocrSuccessData.confidence}% confidence)
+                      </Text>
+                      <TouchableOpacity onPress={() => setOcrSuccessData(null)}>
+                        <Ionicons name="close" size={14} color={c.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Breakdown Pills */}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                      {ocrSuccessData.breakdown.grandTotal ? (
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => setAmount(String(ocrSuccessData.breakdown.grandTotal))}
+                          style={{
+                            backgroundColor: amount === String(ocrSuccessData.breakdown.grandTotal) ? c.primary : c.inputBg,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: c.border,
+                          }}
+                        >
+                          <Text style={{ fontSize: 10.5, fontWeight: '700', color: amount === String(ocrSuccessData.breakdown.grandTotal) ? (isLight ? '#FFF' : '#000') : c.text }}>
+                            Total: {currSymbol}{ocrSuccessData.breakdown.grandTotal}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+
+                      {ocrSuccessData.breakdown.subtotal ? (
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => setAmount(String(ocrSuccessData.breakdown.subtotal))}
+                          style={{
+                            backgroundColor: amount === String(ocrSuccessData.breakdown.subtotal) ? c.primary : c.inputBg,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: c.border,
+                          }}
+                        >
+                          <Text style={{ fontSize: 10.5, fontWeight: '700', color: amount === String(ocrSuccessData.breakdown.subtotal) ? (isLight ? '#FFF' : '#000') : c.text }}>
+                            Subtotal: {currSymbol}{ocrSuccessData.breakdown.subtotal}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+
+                      {ocrSuccessData.breakdown.totalTax ? (
+                        <View
+                          style={{
+                            backgroundColor: c.inputBg,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: c.border,
+                          }}
+                        >
+                          <Text style={{ fontSize: 10.5, color: c.textMuted }}>
+                            Tax/GST: {currSymbol}{ocrSuccessData.breakdown.totalTax}
+                          </Text>
+                        </View>
+                      ) : null}
+
+                      {ocrSuccessData.breakdown.discount ? (
+                        <View
+                          style={{
+                            backgroundColor: c.inputBg,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: c.border,
+                          }}
+                        >
+                          <Text style={{ fontSize: 10.5, color: '#10B981' }}>
+                            Discount: -{currSymbol}{ocrSuccessData.breakdown.discount}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
               {/* Description Input */}
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Description / Merchant</Text>
