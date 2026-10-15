@@ -52,7 +52,8 @@ public final class UserMapper {
                 user.getUsername(),
                 user.getEmail(),
                 user.isEnabled(),
-                user.getCurrency()
+                user.getCurrency(),
+                user.getProfilePictureUrl()
         );
     }
 }

@@ -16,6 +16,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react';
 import {
+  PanResponder,
   StyleSheet,
   Text,
   View,
@@ -28,6 +29,7 @@ import {
   Dimensions,
   useWindowDimensions,
   AppState,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,6 +61,7 @@ import { ExportImportModal } from '../../components/ExportImportModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
 import { OfflineBanner } from '../../components/OfflineBanner';
+import { ImmersiveLoader } from '../../components/ImmersiveLoader';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -167,76 +170,176 @@ interface TransactionRowProps {
 const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, onPress, onEdit, onDelete }: TransactionRowProps) {
   const isIncome = tx.type === "income";
   const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
-  return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={() => onPress(tx)}
-      onLongPress={() => onPress(tx)}
-      style={[styles.txCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
-    >
-      <View style={styles.txLeft}>
-        <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
-          {isIncome ? (
-            <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
-          ) : (
-            <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
-          )}
-        </View>
-        <View style={styles.txMeta}>
-          <Text style={[styles.txDesc, { color: colors.text }]} numberOfLines={1}>
-            {tx.title}
-          </Text>
-          <View style={styles.txSubRow}>
-            <Text style={[styles.txCatName, { color: catColor }]}>
-              {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
-            </Text>
-            <Text style={[styles.txDot, { color: colors.textMuted }]}>•</Text>
-            <Text style={[styles.txDate, { color: colors.textMuted }]}>{tx.date}</Text>
-            {tx.isRecurring && (
-              <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : colors.primary) + "18" }]}>
-                <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : colors.primary} />
-                <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : colors.primary }]}>
-                  {isIncome ? "Recurring Inflow" : "Sub"}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const isSwiping = useRef(false);
 
-      <View style={styles.txRight}>
-        <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : colors.text, fontWeight: "800" }]}>
-          {isIncome ? "+" : "-"}{currSymbol}
-          {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-        </Text>
-        <View style={styles.txRowActions}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-              onEdit(tx);
-            }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
-            accessibilityLabel="Edit transaction"
-          >
-            <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-              onDelete(tx);
-            }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
-            accessibilityLabel="Delete transaction"
-          >
-            <Ionicons name="trash-outline" size={12} color={colors.accent} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </TouchableOpacity>
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gesture) => {
+        return Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5;
+      },
+      onPanResponderGrant: () => {
+        isSwiping.current = true;
+      },
+      onPanResponderMove: (_, gesture) => {
+        const clampedX = Math.max(-110, Math.min(110, gesture.dx));
+        pan.setValue({ x: clampedX, y: 0 });
+      },
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dx < -70) {
+          // Swiped left: Delete
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
+            isSwiping.current = false;
+            onDelete(tx);
+          });
+        } else if (gesture.dx > 70) {
+          // Swiped right: Edit
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
+            isSwiping.current = false;
+            onEdit(tx);
+          });
+        } else {
+          // Snap back
+          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start(() => {
+            isSwiping.current = false;
+          });
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start(() => {
+          isSwiping.current = false;
+        });
+      },
+    })
+  ).current;
+
+  const bgOpacity = pan.x.interpolate({
+    inputRange: [-50, -10, 0, 10, 50],
+    outputRange: [1, 0.2, 0, 0.2, 1],
+    extrapolate: "clamp",
+  });
+
+  const deleteOpacity = pan.x.interpolate({
+    inputRange: [-80, -25, 0],
+    outputRange: [1, 0.4, 0],
+    extrapolate: "clamp",
+  });
+
+  const deleteScale = pan.x.interpolate({
+    inputRange: [-80, 0],
+    outputRange: [1, 0.85],
+    extrapolate: "clamp",
+  });
+
+  const editOpacity = pan.x.interpolate({
+    inputRange: [0, 25, 80],
+    outputRange: [0, 0.4, 1],
+    extrapolate: "clamp",
+  });
+
+  const editScale = pan.x.interpolate({
+    inputRange: [0, 80],
+    outputRange: [0.85, 1],
+    extrapolate: "clamp",
+  });
+
+  const isLight = colors.bg === '#F8F9FA';
+  const troughBg = isLight ? '#EAEFF5' : 'rgba(18, 20, 16, 0.95)';
+  const editBg = isLight ? '#D4AF37' : '#C79A3E';
+  const editColorHex = isLight ? '#0F172A' : '#10120E';
+  const deleteBg = isLight ? '#BE123C' : '#991B1B';
+  const deleteColorHex = '#FFFFFF';
+
+  return (
+    <View style={styles.swipeRowWrapper}>
+      <Animated.View style={[styles.swipeRowBg, { backgroundColor: troughBg, borderColor: colors.border, opacity: bgOpacity }]}>
+        <Animated.View style={[styles.swipeActionLeft, { backgroundColor: editBg, opacity: editOpacity, transform: [{ scale: editScale }] }]}>
+          <Ionicons name="pencil" size={14} color={editColorHex} />
+          <Text style={[styles.swipeActionText, { color: editColorHex }]}>Edit</Text>
+        </Animated.View>
+        <Animated.View style={[styles.swipeActionRight, { backgroundColor: deleteBg, opacity: deleteOpacity, transform: [{ scale: deleteScale }] }]}>
+          <Text style={[styles.swipeActionText, { color: deleteColorHex }]}>Delete</Text>
+          <Ionicons name="trash" size={14} color={deleteColorHex} />
+        </Animated.View>
+      </Animated.View>
+
+      <Animated.View style={{ transform: [{ translateX: pan.x }] }} {...panResponder.panHandlers}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            if (!isSwiping.current) onPress(tx);
+          }}
+          onLongPress={() => onPress(tx)}
+          style={[styles.txCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+        >
+          <View style={styles.txLeft}>
+            <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
+              {isIncome ? (
+                <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
+              ) : (
+                <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
+              )}
+            </View>
+            <View style={styles.txMeta}>
+              <Text style={[styles.txDesc, { color: colors.text }]} numberOfLines={1}>
+                {tx.title}
+              </Text>
+              <View style={styles.txSubRow}>
+                <Text style={[styles.txCatName, { color: catColor }]}>
+                  {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
+                </Text>
+                <Text style={[styles.txDot, { color: colors.textMuted }]}>•</Text>
+                <Text style={[styles.txDate, { color: colors.textMuted }]}>{tx.date}</Text>
+                {tx.isRecurring && (
+                  <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : colors.primary) + "18" }]}>
+                    <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : colors.primary} />
+                    <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : colors.primary }]}>
+                      {isIncome ? "Recurring Inflow" : "Sub"}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.txRight}>
+            <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : colors.text, fontWeight: "800" }]}>
+              {isIncome ? "+" : "-"}{currSymbol}
+              {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+            </Text>
+            <View style={styles.txRowActions}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  onEdit(tx);
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+                accessibilityLabel="Edit transaction"
+              >
+                <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                  onDelete(tx);
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+                accessibilityLabel="Delete transaction"
+              >
+                <Ionicons name="trash-outline" size={12} color={colors.accent} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
   );
 });
 
@@ -286,7 +389,7 @@ function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; 
 }
 
 export default function DashboardScreen() {
-  const { userId, userName, theme, toggleTheme, currency } = useAuth();
+  const { userId, userName, theme, toggleTheme, currency, profilePicture } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
 
@@ -341,6 +444,23 @@ export default function DashboardScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [ledgerTab, setLedgerTab] = useState<'all' | 'expenses' | 'incomes'>('all');
+  // Gesture support for swiping between stream tabs (All <-> Outflows <-> Inflows)
+  const streamTabsResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -35) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          setLedgerTab((curr) => (curr === "all" ? "expenses" : curr === "expenses" ? "incomes" : "incomes"));
+        } else if (g.dx > 35) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          setLedgerTab((curr) => (curr === "incomes" ? "expenses" : curr === "expenses" ? "all" : "all"));
+        }
+      },
+    })
+  ).current;
+
 
   // Animation values
   const filterAnim = useRef(new Animated.Value(0)).current;
@@ -961,11 +1081,10 @@ export default function DashboardScreen() {
 
   if (isLoading && !refreshing && expenses.length === 0) {
     return (
-      <View style={[styles.loadingWrapper, { backgroundColor: c.bg }]}>
-        <AmbientAura />
-        <ActivityIndicator size="large" color={c.primary} />
-        <Text style={[styles.loadingSub, { color: c.textMuted }]}>Assembling Financial Ledger...</Text>
-      </View>
+      <ImmersiveLoader
+        message="Assembling Financial Ledger..."
+        subMessage="Calculating spend velocity & intelligence"
+      />
     );
   }
 
@@ -994,7 +1113,11 @@ export default function DashboardScreen() {
         <View style={styles.topBar}>
           <View style={styles.userCol}>
             <View style={[styles.avatarCircle, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}>
-              <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+              {profilePicture ? (
+                <Image source={{ uri: profilePicture }} style={styles.avatarImg} />
+              ) : (
+                <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+              )}
             </View>
             <View style={styles.userGreetingCol}>
               <Text style={[styles.greetingSubtitle, { color: c.textMuted }]}>
@@ -1349,7 +1472,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Activity Stream Selector Pills: All | Expenses | Incomes */}
-            <View style={[styles.streamTabsBar, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+            <View style={[styles.streamTabsBar, { backgroundColor: c.inputBg, borderColor: c.border }]} {...streamTabsResponder.panHandlers}>
               <TouchableOpacity
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -1603,6 +1726,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     flexShrink: 0,
+    overflow: 'hidden',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 22,
   },
   avatarLetter: {
     color: '#10120E',
@@ -2068,5 +2197,52 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
+  },
+  swipeRowWrapper: {
+    position: "relative",
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  swipeRowBg: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 14,
+  },
+  swipeActionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 9,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.16,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  swipeActionRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 9,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.16,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  swipeActionText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

@@ -184,6 +184,7 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
     if (m && m[1]) {
       let candidate = m[1].trim();
       candidate = candidate.replace(/^(the|a|an)\s+/i, "");
+      candidate = candidate.replace(/[.,;:]+$/, "").trim();
       if (candidate.length > 1 && !/^(your|my|account|bank|branch)$/i.test(candidate)) {
         result.merchant = candidate;
         break;

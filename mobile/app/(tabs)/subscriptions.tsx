@@ -26,6 +26,9 @@ import { StaggeredView } from '../../components/StaggeredView';
 import { NumberTicker } from '../../components/NumberTicker';
 import { EditSubscriptionModal } from '../../components/EditSubscriptionModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { OfflineBanner } from '../../components/OfflineBanner';
+import { SwipeableCard } from '../../components/SwipeableCard';
+import { ImmersiveLoader } from '../../components/ImmersiveLoader';
 
 interface Subscription {
   id: number;
@@ -394,10 +397,10 @@ export default function SubscriptionsScreen() {
 
   if (isLoading && !refreshing && totalCommitmentCount === 0) {
     return (
-      <View style={[styles.loadingBox, { backgroundColor: c.bg }]}>
-        <AmbientAura />
-        <ActivityIndicator size="large" color={c.primary} />
-      </View>
+      <ImmersiveLoader
+        message="Loading Commitments & Subscriptions..."
+        subMessage="Projecting recurring cash flow obligations"
+      />
     );
   }
 
@@ -451,6 +454,17 @@ export default function SubscriptionsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
       >
+        {fetchError ? (
+          <OfflineBanner
+            message={`Offline mode · ${fetchError}`}
+            retrying={refreshing}
+            onRetry={() => {
+              setRefreshing(true);
+              fetchAllRecurringData();
+            }}
+          />
+        ) : null}
+
         {/* Header Bar */}
         <View style={styles.header}>
           <View style={styles.headerTitleWrap}>
@@ -659,16 +673,22 @@ export default function SubscriptionsScreen() {
               const days = getDaysUntil(inc.nextDueDate);
               const isToday = days === 0;
               return (
-                <View
+                <SwipeableCard
                   key={`inc-${inc.id}`}
-                  style={[
-                    styles.subCard,
-                    {
-                      backgroundColor: c.card,
-                      borderColor: isToday ? '#10B981' : c.border,
-                    },
-                  ]}
+                  onEdit={() => handleEditIncome(inc)}
+                  onDelete={() => handleDeleteIncome(inc)}
+                  editColor="#10B981"
                 >
+                  <View
+                    style={[
+                      styles.subCard,
+                      {
+                        backgroundColor: c.card,
+                        borderColor: isToday ? '#10B981' : c.border,
+                        marginBottom: 0,
+                      },
+                    ]}
+                  >
                   <View style={styles.subTopRow}>
                     <View style={styles.subLeft}>
                       <View style={[styles.catIconWrap, { backgroundColor: '#10B98118' }]}>
@@ -731,6 +751,7 @@ export default function SubscriptionsScreen() {
                     </View>
                   </View>
                 </View>
+              </SwipeableCard>
               );
             })}
           </View>
@@ -760,16 +781,22 @@ export default function SubscriptionsScreen() {
               const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
 
               return (
-                <View
+                <SwipeableCard
                   key={`sav-${goal.id}`}
-                  style={[
-                    styles.subCard,
-                    {
-                      backgroundColor: c.card,
-                      borderColor: isUrgent ? '#F59E0B' : isOverdue ? c.warning : c.border,
-                    },
-                  ]}
+                  onEdit={() => handleEditSavingsGoal(goal)}
+                  onDelete={() => handleDeleteSavingsGoal(goal)}
+                  editColor="#F59E0B"
                 >
+                  <View
+                    style={[
+                      styles.subCard,
+                      {
+                        backgroundColor: c.card,
+                        borderColor: isUrgent ? '#F59E0B' : isOverdue ? c.warning : c.border,
+                        marginBottom: 0,
+                      },
+                    ]}
+                  >
                   <View style={styles.subTopRow}>
                     <View style={styles.subLeft}>
                       <View style={[styles.catIconWrap, { backgroundColor: '#F59E0B18' }]}>
@@ -879,6 +906,7 @@ export default function SubscriptionsScreen() {
                     </View>
                   </View>
                 </View>
+              </SwipeableCard>
               );
             })}
           </View>
@@ -906,16 +934,21 @@ export default function SubscriptionsScreen() {
               const catColor = getCategoryColor(sub.categoryName || '').color;
 
               return (
-                <View
+                <SwipeableCard
                   key={`sub-${sub.id}`}
-                  style={[
-                    styles.subCard,
-                    {
-                      backgroundColor: c.card,
-                      borderColor: isUrgent ? c.accent : isOverdue ? c.warning : c.border,
-                    },
-                  ]}
+                  onEdit={() => setEditingSub(sub)}
+                  onDelete={() => handleDeleteSubscription(sub)}
                 >
+                  <View
+                    style={[
+                      styles.subCard,
+                      {
+                        backgroundColor: c.card,
+                        borderColor: isUrgent ? c.accent : isOverdue ? c.warning : c.border,
+                        marginBottom: 0,
+                      },
+                    ]}
+                  >
                   <View style={styles.subTopRow}>
                     <View style={styles.subLeft}>
                       <View style={[styles.catIconWrap, { backgroundColor: catColor + '18' }]}>
@@ -1003,6 +1036,7 @@ export default function SubscriptionsScreen() {
                     </View>
                   </View>
                 </View>
+              </SwipeableCard>
               );
             })}
           </View>

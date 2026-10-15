@@ -15,6 +15,7 @@ interface AuthContextType {
   token: string | null;
   userId: string | null;
   userName: string | null;
+  profilePicture: string | null;
   currency: string;
   theme: 'dark' | 'light';
   toggleTheme: () => Promise<void>;
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('INR');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
@@ -76,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(session.token);
           setUserId(session.userId);
           setUserName(session.name);
+          setProfilePicture(session.photo || null);
         }
 
         if (savedCurrency) {
@@ -132,10 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (data && data.token && data.userId) {
-        await saveSession(data.token, data.userId.toString(), data.name);
+        const photo = data.profilePictureUrl || null;
+        await saveSession(data.token, data.userId.toString(), data.name, photo);
         setToken(data.token);
         setUserId(data.userId.toString());
         setUserName(data.name);
+        setProfilePicture(photo);
 
         if (data.currency) {
           setCurrency(data.currency);
@@ -162,10 +167,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (data && data.token && data.userId) {
-        await saveSession(data.token, data.userId.toString(), data.name);
+        const photo = data.profilePictureUrl || null;
+        await saveSession(data.token, data.userId.toString(), data.name, photo);
         setToken(data.token);
         setUserId(data.userId.toString());
         setUserName(data.name);
+        setProfilePicture(photo);
 
         if (data.currency) {
           setCurrency(data.currency);
@@ -307,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(null);
       setUserId(null);
       setUserName(null);
+      setProfilePicture(null);
     } catch (e) {
       console.error('[AuthContext] Error during logout:', e);
     } finally {
@@ -370,6 +378,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token,
     userId,
     userName,
+    profilePicture,
     currency,
     theme,
     toggleTheme,
@@ -389,6 +398,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token,
     userId,
     userName,
+    profilePicture,
     currency,
     theme,
     toggleTheme,

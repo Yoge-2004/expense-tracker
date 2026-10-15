@@ -47,6 +47,16 @@ const ALL_MONTHS = [
   { num: 12, name: 'Dec', full: 'December' },
 ];
 
+interface TransferProgressInfo {
+  active: boolean;
+  type: 'export' | 'import';
+  filename: string;
+  stage: string;
+  percent: number;
+  detail?: string;
+  done?: boolean;
+}
+
 interface MonthlyReportModalProps {
   visible: boolean;
   onClose: () => void;
@@ -77,6 +87,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
   const [loading, setLoading] = useState(false);
+  const [transferProgress, setTransferProgress] = useState<TransferProgressInfo | null>(null);
 
   // Structured Report & HTML Preview state
   const [reportData, setReportData] = useState<any>(null);
@@ -249,7 +260,18 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
     if (!userId) return;
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
+    const filename = `ExpenseTracker_Statement_${monthObj?.name || 'Report'}_${selectedYear}.pdf`;
     try {
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'Generating PDF statement...',
+        percent: 25,
+        detail: `Aggregating period: ${monthObj?.full || 'Report'} ${selectedYear}`,
+      });
+
       const padMonth = String(selectedMonth).padStart(2, '0');
       const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
       const from = `${selectedYear}-${padMonth}-01`;
@@ -259,8 +281,6 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         to,
         currency: currency || 'INR',
       });
-      const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
-      const filename = `ExpenseTracker_Statement_${monthObj?.name || 'Report'}_${selectedYear}.pdf`;
       const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
       const url = `${API_BASE_URL}/reports/user/${userId}/export/range/pdf?${params.toString()}`;
 
@@ -269,16 +289,47 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
       const downloadResumable = FileSystem.createDownloadResumable(
         url,
         uri,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+        (downloadData) => {
+          const total = downloadData.totalBytesExpectedToWrite;
+          const written = downloadData.totalBytesWritten;
+          const pct = total > 0 ? Math.round((written / total) * 100) : 75;
+          setTransferProgress({
+            active: true,
+            type: 'export',
+            filename,
+            stage: 'Streaming PDF document...',
+            percent: Math.min(95, Math.max(30, pct)),
+            detail: total > 0 ? `${Math.round(written / 1024)} KB / ${Math.round(total / 1024)} KB (${pct}%)` : `${Math.round(written / 1024)} KB received`,
+          });
+        }
       );
       const result = await downloadResumable.downloadAsync();
       if (!result || result.status !== 200) {
         throw new Error(`Server returned HTTP ${result?.status || 500}`);
       }
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'Saving to device...',
+        percent: 98,
+        detail: 'Ready to write to local storage',
+      });
       await saveFileToDevice(result.uri, filename, 'application/pdf', 'com.adobe.pdf', {
         onComplete: () => showAlert('Download Complete', `${filename} saved successfully!`, undefined, 'success')
       });
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'PDF exported successfully!',
+        percent: 100,
+        done: true,
+      });
+      setTimeout(() => setTransferProgress(null), 3000);
     } catch (err: any) {
+      setTransferProgress(null);
       showAlert('PDF Export Failed', err.message || 'Could not export PDF statement.', undefined, 'error');
     } finally {
       setLoading(false);
@@ -289,7 +340,18 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
     if (!userId) return;
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
+    const filename = `ExpenseTracker_Workbook_${monthObj?.name || 'Report'}_${selectedYear}.xlsx`;
     try {
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'Generating Excel workbook...',
+        percent: 25,
+        detail: `Aggregating period: ${monthObj?.full || 'Report'} ${selectedYear}`,
+      });
+
       const padMonth = String(selectedMonth).padStart(2, '0');
       const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
       const from = `${selectedYear}-${padMonth}-01`;
@@ -299,8 +361,6 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
         to,
         currency: currency || 'INR',
       });
-      const monthObj = ALL_MONTHS.find((m) => m.num === selectedMonth);
-      const filename = `ExpenseTracker_Workbook_${monthObj?.name || 'Report'}_${selectedYear}.xlsx`;
       const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
       const url = `${API_BASE_URL}/reports/user/${userId}/export/range/excel?${params.toString()}`;
 
@@ -309,16 +369,47 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
       const downloadResumable = FileSystem.createDownloadResumable(
         url,
         uri,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+        (downloadData) => {
+          const total = downloadData.totalBytesExpectedToWrite;
+          const written = downloadData.totalBytesWritten;
+          const pct = total > 0 ? Math.round((written / total) * 100) : 75;
+          setTransferProgress({
+            active: true,
+            type: 'export',
+            filename,
+            stage: 'Streaming Excel document...',
+            percent: Math.min(95, Math.max(30, pct)),
+            detail: total > 0 ? `${Math.round(written / 1024)} KB / ${Math.round(total / 1024)} KB (${pct}%)` : `${Math.round(written / 1024)} KB received`,
+          });
+        }
       );
       const result = await downloadResumable.downloadAsync();
       if (!result || result.status !== 200) {
         throw new Error(`Server returned HTTP ${result?.status || 500}`);
       }
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'Saving to device...',
+        percent: 98,
+        detail: 'Ready to write to local storage',
+      });
       await saveFileToDevice(result.uri, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'com.microsoft.excel.xlsx', {
         onComplete: () => showAlert('Download Complete', `${filename} saved successfully!`, undefined, 'success')
       });
+      setTransferProgress({
+        active: true,
+        type: 'export',
+        filename,
+        stage: 'Workbook exported successfully!',
+        percent: 100,
+        done: true,
+      });
+      setTimeout(() => setTransferProgress(null), 3000);
     } catch (err: any) {
+      setTransferProgress(null);
       showAlert('Excel Export Failed', err.message || 'Could not export Excel workbook.', undefined, 'error');
     } finally {
       setLoading(false);
@@ -401,6 +492,50 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
             <Text style={[styles.subtitle, { color: c.textMuted }]}>
               Account inception: <Text style={{ fontWeight: '700', color: c.text }}>{ALL_MONTHS[startMonth - 1]?.full} {startYear}</Text>
             </Text>
+
+            {/* Transfer Progress Bar */}
+            {transferProgress && transferProgress.active && (
+              <View style={[styles.transferCard, { backgroundColor: c.inputBg, borderColor: transferProgress.done ? '#10B981' : c.primary }]}>
+                <View style={styles.transferHeader}>
+                  <View style={styles.transferIconCol}>
+                    <View style={[styles.transferIconBox, { backgroundColor: (transferProgress.done ? '#10B981' : c.primary) + '25' }]}>
+                      <Ionicons
+                        name={transferProgress.done ? 'checkmark-circle' : 'cloud-download-outline'}
+                        size={22}
+                        color={transferProgress.done ? '#10B981' : c.primary}
+                      />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[styles.transferFilename, { color: c.text }]} numberOfLines={1}>
+                        {transferProgress.filename}
+                      </Text>
+                      <Text style={[styles.transferStage, { color: transferProgress.done ? '#10B981' : c.textMuted }]} numberOfLines={1}>
+                        {transferProgress.stage}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.transferPct, { color: transferProgress.done ? '#10B981' : c.primary }]}>
+                    {Math.round(transferProgress.percent)}%
+                  </Text>
+                </View>
+                <View style={[styles.transferTrack, { backgroundColor: c.card }]}>
+                  <View
+                    style={[
+                      styles.transferFill,
+                      {
+                        width: `${Math.min(100, Math.max(5, transferProgress.percent))}%`,
+                        backgroundColor: transferProgress.done ? '#10B981' : c.primary,
+                      },
+                    ]}
+                  />
+                </View>
+                {transferProgress.detail && (
+                  <Text style={[styles.transferDetail, { color: c.textMuted }]}>
+                    {transferProgress.detail}
+                  </Text>
+                )}
+              </View>
+            )}
 
             {/* Year Selector */}
             <Text style={[styles.sectionLabel, { color: c.textMuted }]}>ACTIVE YEARS</Text>
@@ -938,5 +1073,59 @@ const styles = StyleSheet.create({
   shareBtnText: {
     fontSize: 14,
     fontWeight: '800',
+  },
+  transferCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  transferHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  transferIconCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+    marginRight: 10,
+  },
+  transferIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  transferFilename: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  transferStage: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  transferPct: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  transferTrack: {
+    height: 6,
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  transferFill: {
+    height: '100%',
+    borderRadius: 99,
+  },
+  transferDetail: {
+    fontSize: 10,
+    marginTop: 6,
+    fontWeight: '600',
   },
 });

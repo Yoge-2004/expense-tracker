@@ -4,8 +4,9 @@
  * Schedules automated twice-daily expense reminder notifications:
  * 1. Midday Reminder (13:30 / 1:30 PM) - Lunch & morning transactions.
  * 2. Evening Wrap-up (20:30 / 8:30 PM) - Daily spending review & ledger balance.
- *
- * Implements strict runtime environment guarding to avoid Expo Go warnings.
+ * 
+ * Includes intelligent real-time bank SMS and push notification debit detection,
+ * automatic ledger categorization, instant push confirmation, and loop/deduplication guards.
  */
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
@@ -20,6 +21,7 @@ const EVENING_NOTIFICATION_ID = 'daily_evening_expense_reminder';
 
 const PUSH_TOKEN_KEY = 'expense_tracker_push_token';
 const SERVER_PUSH_KEY = 'expense_tracker_server_push_active';
+const INSTANT_DEBIT_STORAGE_KEY = 'expense_tracker_instant_debit_alerts_enabled';
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
@@ -100,8 +102,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  * Schedules two daily recurring reminders (1:30 PM and 8:30 PM).
  */
 export async function scheduleDailyExpenseReminders(): Promise<boolean> {
-  // Expo Go cannot schedule these notifications in the current runtime. Do not
-  // report success or persist an enabled state when nothing was scheduled.
   if (isExpoGo || !Notifications) {
     return false;
   }
@@ -120,7 +120,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
         title: '☀️ Midday Expense Check',
         body: 'Did you grab lunch or make a morning purchase? Take 10 seconds to record it now!',
         sound: true,
-        data: { screen: '/(tabs)/add-expense' },
+        data: { appInternal: true, screen: '/(tabs)/add-expense' },
         ...(Platform.OS === 'android' ? { channelId: 'expense-reminders' } : {}),
       },
       trigger: {
@@ -137,7 +137,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
         title: '🌙 Daily Ledger Wrap-up',
         body: "Wrap up today's ledger! Log any remaining transactions before heading to sleep.",
         sound: true,
-        data: { screen: '/(tabs)/add-expense' },
+        data: { appInternal: true, screen: '/(tabs)/add-expense' },
         ...(Platform.OS === 'android' ? { channelId: 'expense-reminders' } : {}),
       },
       trigger: {
@@ -150,8 +150,6 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
     await AsyncStorage.setItem(REMINDERS_STORAGE_KEY, 'true');
     return true;
   } catch (error) {
-    // Scheduling is transactional: if either reminder fails, remove any reminder
-    // that may already have been created so storage never reports a false state.
     if (Notifications) {
       await Notifications.cancelScheduledNotificationAsync(MIDDAY_NOTIFICATION_ID).catch(() => {});
       await Notifications.cancelScheduledNotificationAsync(EVENING_NOTIFICATION_ID).catch(() => {});
@@ -191,10 +189,64 @@ export async function getDailyRemindersEnabled(): Promise<boolean> {
   }
 }
 
+// ---------------------------------------------------------------------------------------------------
+// Real-time Debit Alerts & Notification-based Expense Tracking
+// ---------------------------------------------------------------------------------------------------
+
 import { parseFinancialMessage, ParsedTransaction } from "./debitParser";
 export { parseFinancialMessage, ParsedTransaction };
 
 const DEBIT_CHANNEL_ID = "debit-alerts";
+const ALERTS_CHANNEL_ID = "financial-alerts";
+const REMINDERS_CHANNEL_ID = "expense-reminders";
+
+/**
+ * Checks if automatic real-time debit detection and alerts are enabled.
+ */
+export async function getInstantDebitAlertsEnabled(): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(INSTANT_DEBIT_STORAGE_KEY);
+    return val === null ? true : val === 'true';
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Enables or disables automatic real-time debit detection and alerts.
+ */
+export async function setInstantDebitAlertsEnabled(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(INSTANT_DEBIT_STORAGE_KEY, String(enabled));
+}
+
+// In-memory deduplication cache: fingerprint -> timestamp
+const PROCESSED_DEBITS_CACHE = new Map<string, number>();
+const DEDUPLICATION_WINDOW_MS = 5 * 60 * 1000; // 5-minute sliding window
+
+function isDebitDuplicate(parsed: ParsedTransaction): boolean {
+  const now = Date.now();
+  // Evict entries older than deduplication window
+  for (const [key, timestamp] of PROCESSED_DEBITS_CACHE.entries()) {
+    if (now - timestamp > DEDUPLICATION_WINDOW_MS) {
+      PROCESSED_DEBITS_CACHE.delete(key);
+    }
+  }
+
+  const fingerprint = [
+    parsed.amount,
+    parsed.currency,
+    (parsed.merchant || '').toLowerCase(),
+    parsed.accountTail || '',
+    parsed.referenceNumber || '',
+  ].join(':');
+
+  if (PROCESSED_DEBITS_CACHE.has(fingerprint)) {
+    return true;
+  }
+
+  PROCESSED_DEBITS_CACHE.set(fingerprint, now);
+  return false;
+}
 
 /**
  * Triggers an immediate local push notification for a detected debit / financial transaction.
@@ -238,6 +290,7 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
         body,
         sound: true,
         data: {
+          appInternal: true,
           screen: "/(tabs)/index",
           amount: transaction.amount,
           merchant: transaction.merchant,
@@ -257,16 +310,29 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
 
 /**
  * Ingests raw SMS or push notification text, parses it, and if it is a debit:
- * 1. Automatically records the expense to the user's ledger via API (if authenticated).
- * 2. Emits an instant push notification confirming the debit was detected & added.
+ * 1. Checks if Real-time Debit Alerts are enabled.
+ * 2. Checks deduplication cache to avoid duplicate ledger entries.
+ * 3. Automatically records the expense to the user's ledger via API (if authenticated).
+ * 4. Emits an instant push notification confirming the debit was detected & added.
  */
 export async function detectAndAddExpenseFromMessage(
   rawText: string,
   targetUserId?: string | null
-): Promise<(ParsedTransaction & { addedToExpense: boolean }) | null> {
+): Promise<(ParsedTransaction & { addedToExpense: boolean; duplicate?: boolean }) | null> {
+  const isEnabled = await getInstantDebitAlertsEnabled();
+  if (!isEnabled) {
+    return null;
+  }
+
   const parsed = parseFinancialMessage(rawText);
   if (!parsed.isFinancial || parsed.direction !== 'DEBIT' || !parsed.amount || parsed.amount <= 0) {
     return null;
+  }
+
+  // Deduplication check: ignore if this exact transaction was already processed in the window
+  if (isDebitDuplicate(parsed)) {
+    console.log('[Notifications] Duplicate debit alert suppressed:', parsed.amount, parsed.merchant);
+    return { ...parsed, addedToExpense: false, duplicate: true };
   }
 
   let added = false;
@@ -345,26 +411,63 @@ export async function processIncomingMessageForDebitNotification(
 
 /**
  * Registers an on-device listener for incoming push/local notifications outside Expo Go to auto-detect bank debit alerts.
+ * Strictly guards against internal app notifications to prevent notification echoes and recursive loops.
  */
 export function registerIncomingNotificationListener(userId?: string | null) {
   if (isExpoGo || !Notifications) return null;
   try {
-    const sub = Notifications.addNotificationReceivedListener(async (notification: any) => {
+    const handleNotification = async (notification: any) => {
+      if (!notification) return;
+
+      // 1. Guard against internal app-generated payloads
+      const data = notification?.request?.content?.data;
+      if (data?.appInternal) return;
+
+      const identifier = notification?.request?.identifier;
+      if (typeof identifier === 'string' && (identifier.startsWith(REMINDER_ID_PREFIX) || identifier.startsWith('daily_'))) {
+        return;
+      }
+
+      // 2. Guard against app channels
+      const channelId = notification?.request?.content?.channelId;
+      if (channelId === DEBIT_CHANNEL_ID || channelId === REMINDERS_CHANNEL_ID || channelId === ALERTS_CHANNEL_ID) {
+        return;
+      }
+
+      // 3. Guard against internal notification keywords
       const title = notification?.request?.content?.title || '';
       const body = notification?.request?.content?.body || '';
       const fullText = `${title} ${body}`.trim();
+
+      if (/Auto-Added Debit|Debit Alert|Transaction Alert|Debit recorded|Credit recorded|ExpenseTracker|Midday Expense Check|Daily Ledger Wrap-up/i.test(fullText)) {
+        return;
+      }
+
       if (fullText) {
         await detectAndAddExpenseFromMessage(fullText, userId);
       }
+    };
+
+    const subReceived = Notifications.addNotificationReceivedListener(handleNotification);
+    const subResponse = Notifications.addNotificationResponseReceivedListener((response: any) => {
+      handleNotification(response?.notification);
     });
-    return sub;
+
+    return {
+      remove: () => {
+        try {
+          subReceived?.remove?.();
+        } catch (_) {}
+        try {
+          subResponse?.remove?.();
+        } catch (_) {}
+      },
+    };
   } catch (e) {
     console.warn('[Notifications] Failed to register incoming notification listener:', e);
     return null;
   }
 }
-
-const ALERTS_CHANNEL_ID = 'financial-alerts';
 
 /**
  * Triggers a push notification when Salary or a major income stream is received.
@@ -380,7 +483,7 @@ export async function notifySalaryCredit(amount: number, currency: string = '₹
         title: `💵 ${source} Credited: ${currency} ${amount.toLocaleString('en-IN')}`,
         body: 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!',
         sound: true,
-        data: { screen: '/(tabs)/index', tab: 'incomes' },
+        data: { appInternal: true, screen: '/(tabs)/index', tab: 'incomes' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
       trigger: null,
@@ -415,7 +518,7 @@ export async function notifyBudgetThresholdAlert(categoryName: string, percentSp
         title,
         body,
         sound: true,
-        data: { screen: '/(tabs)/index' },
+        data: { appInternal: true, screen: '/(tabs)/index' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
       trigger: null,
@@ -439,10 +542,10 @@ export async function notifySubscriptionDue(subscriptionName: string, amount: nu
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `🔁 Upcoming Renewal: ${subscriptionName}`,
+        title: `🔄 Upcoming Renewal: ${subscriptionName}`,
         body: `${subscriptionName} (${currency} ${amount.toFixed(2)}) is scheduled to renew on ${dueDate}. Review or ensure adequate balance.`,
         sound: true,
-        data: { screen: '/(tabs)/subscriptions' },
+        data: { appInternal: true, screen: '/(tabs)/subscriptions' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
       trigger: null,
@@ -477,7 +580,7 @@ export async function notifySavingsGoalMilestone(goalName: string, progressPerce
         title,
         body,
         sound: true,
-        data: { screen: '/(tabs)/index' },
+        data: { appInternal: true, screen: '/(tabs)/index' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
       trigger: null,
@@ -494,7 +597,6 @@ export async function notifySavingsGoalMilestone(goalName: string, progressPerce
 // ---------------------------------------------------------------------------------------------------
 
 const SMART_REMINDERS_KEY = 'expense_tracker_smart_reminders_enabled';
-const REMINDERS_CHANNEL_ID = 'expense-reminders';
 
 /** Serialises scheduling runs so a launch-time run and a data-refresh run never cancel each other's work. */
 let smartQueue: Promise<unknown> = Promise.resolve();
@@ -527,7 +629,7 @@ function fixedSmartReminders() {
 async function scheduleSmart(id: string, title: string, body: string, screen: string, trigger: Record<string, unknown>) {
   await Notifications.scheduleNotificationAsync({
     identifier: id, // a stable id: scheduling again replaces the reminder instead of duplicating it
-    content: { title, body, sound: true, data: { screen } },
+    content: { title, body, sound: true, data: { appInternal: true, screen } },
     trigger: Platform.OS === 'android' ? { ...trigger, channelId: REMINDERS_CHANNEL_ID } : trigger,
   });
 }
@@ -548,14 +650,10 @@ async function runSmartSchedule(sources?: ReminderSources): Promise<boolean> {
 
   const fixed = fixedSmartReminders();
   const dated = sources ? planDueReminders(sources) : null;
-  // The real last day of each coming month (28, 29, 30 or 31): scheduled by date, not on a fixed day.
   const monthEnds = planMonthEndReminders();
 
-  // An earlier build repeated a "month end" reminder on the 28th of every month; remove it.
   await Notifications.cancelScheduledNotificationAsync(`${REMINDER_ID_PREFIX}month_end`).catch(() => {});
 
-  // Drop reminders that no longer apply (a bill that was paid, a deleted goal). Without data only the
-  // fixed ones are touched, so a launch-time run never wipes the bill reminders from the last refresh.
   if (dated) {
     await cancelSmartMatching(new Set([
       ...fixed.map((f) => f.id),
@@ -678,7 +776,7 @@ export async function notifyTransactionRecorded(transaction: RecordedTransaction
         title: isDebit ? `💸 Debit recorded: ${amountText}` : `💵 Credit recorded: ${amountText}`,
         body: body || (isDebit ? 'Expense saved.' : 'Income saved.'),
         sound: true,
-        data: { screen: '/(tabs)' },
+        data: { appInternal: true, screen: '/(tabs)' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
       trigger: null,
@@ -702,7 +800,6 @@ export async function registerPushToken(userId: string): Promise<boolean> {
     if (permission.status !== 'granted') return false;
 
     if (Platform.OS === 'android') {
-      // Android 8+ needs a channel before a push token can be used to display anything.
       await Notifications.setNotificationChannelAsync('default', {
         name: 'default',
         importance: Notifications.AndroidImportance.DEFAULT,

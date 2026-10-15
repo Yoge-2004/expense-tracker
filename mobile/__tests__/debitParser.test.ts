@@ -24,6 +24,38 @@ describe("DebitParser", () => {
     expect(res.accountTail).toBe("8812");
   });
 
+  test("parses ICICI bank notification with rupee symbol and balance", () => {
+    const msg = "ICICI Bank Alert: ₹850.00 debited from A/c XX5678 on 15-Oct-26 towards Zomato. Avbl Bal: ₹12,450.00.";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(true);
+    expect(res.direction).toBe("DEBIT");
+    expect(res.amount).toBe(850);
+    expect(res.currency).toBe("INR");
+    expect(res.merchant).toBe("Zomato");
+    expect(res.accountTail).toBe("5678");
+  });
+
+  test("parses international USD transaction", () => {
+    const msg = "Chase Alert: Your card ending 1024 was charged $42.50 at Target Store on 14-Oct-2026.";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(true);
+    expect(res.direction).toBe("DEBIT");
+    expect(res.amount).toBe(42.50);
+    expect(res.currency).toBe("USD");
+    expect(res.merchant).toBe("Target Store");
+    expect(res.accountTail).toBe("1024");
+  });
+
+  test("parses European EUR subscription payment", () => {
+    const msg = "N26: €14.99 paid to Netflix via Direct Debit on 12-Oct-2026.";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(true);
+    expect(res.direction).toBe("DEBIT");
+    expect(res.amount).toBe(14.99);
+    expect(res.currency).toBe("EUR");
+    expect(res.merchant).toBe("Netflix");
+  });
+
   test("parses credit / salary alert", () => {
     const msg = "Your a/c no. xx1234 is credited by Rs. 50,000.00 on 24-Sep-26 by transfer from ACME Corp. Ref 11223344.";
     const res = parseFinancialMessage(msg);

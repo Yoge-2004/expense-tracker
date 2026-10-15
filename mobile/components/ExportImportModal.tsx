@@ -111,7 +111,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
             filename,
             stage: 'Streaming document payload...',
             percent: Math.min(95, Math.max(50, pct)),
-            detail: total > 0 ? `${Math.round(written / 1024)} KB / ${Math.round(total / 1024)} KB` : `${Math.round(written / 1024)} KB received`,
+            detail: total > 0 ? `${Math.round(written / 1024)} KB / ${Math.round(total / 1024)} KB (${pct}%)` : `${Math.round(written / 1024)} KB received`,
           });
         }
       );
@@ -301,11 +301,12 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         active: true,
         type: 'import',
         filename: asset.name || `${kind.toUpperCase()} file`,
-        stage: 'Uploading multipart payload...',
-        percent: 40,
-        detail: 'Sending file stream to server ledger parser',
+        stage: 'Connecting to import service...',
+        percent: 15,
+        detail: 'Preparing multipart payload stream',
       });
-      const res = await FileSystem.uploadAsync(
+
+      const uploadTask = FileSystem.createUploadTask(
         `${API_BASE_URL}/expenses/user/${userId}/import/${kind}`,
         asset.uri,
         {
@@ -313,10 +314,26 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
           httpMethod: 'POST',
           uploadType: FileSystem.FileSystemUploadType.MULTIPART,
           headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+        (uploadData) => {
+          const total = uploadData.totalBytesExpectedToSend;
+          const sent = uploadData.totalBytesSent;
+          const pct = total > 0 ? Math.round((sent / total) * 100) : 50;
+          setTransferProgress({
+            active: true,
+            type: 'import',
+            filename: asset.name || `${kind.toUpperCase()} file`,
+            stage: pct >= 100 ? 'Server ledger parsing & schema validation...' : 'Streaming multipart payload...',
+            percent: Math.min(96, Math.max(15, pct)),
+            detail: total > 0 ? `${Math.round(sent / 1024)} KB / ${Math.round(total / 1024)} KB (${pct}%)` : `${Math.round(sent / 1024)} KB uploaded`,
+          });
         }
       );
-      if (res.status < 200 || res.status >= 300) throw new Error(res.body || `HTTP ${res.status}`);
+
+      const res = await uploadTask.uploadAsync();
+      if (!res || res.status < 200 || res.status >= 300) throw new Error(res?.body || `HTTP ${res?.status || 500}`);
       const data = JSON.parse(res.body || '{}');
+
       setTransferProgress({
         active: true,
         type: 'import',
@@ -399,7 +416,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         <Text style={[styles.label,{color:c.textMuted,marginTop:22}]}>3. IMPORT</Text>
         <View style={styles.grid}>{[['excel','Import Excel'],['csv','Import CSV'],['json','Import JSON']].map(([key,title])=><TouchableOpacity key={key} disabled={busy!==null} onPress={()=>importFile(key as any)} style={[styles.action,{backgroundColor:c.inputBg,borderColor:c.border}]}><View style={[styles.icon,{backgroundColor:c.primary+'20'}]}><Ionicons name="cloud-upload-outline" size={20} color={c.primary}/></View><Text style={[styles.actionTitle,{color:c.text}]}>{title}</Text><Text style={[styles.actionSub,{color:c.textMuted}]}>Refreshes dashboard after import</Text></TouchableOpacity>)}</View>
         <TouchableOpacity onPress={()=>setShowJson(v=>!v)} style={[styles.paste,{borderColor:c.border,backgroundColor:c.inputBg}]}><Text style={[styles.actionTitle,{color:c.text}]}>Paste JSON manually</Text><Ionicons name={showJson?'chevron-up':'chevron-down'} size={18} color={c.text}/></TouchableOpacity>
-        {showJson&&<View style={[styles.jsonBox,{backgroundColor:c.inputBg,borderColor:c.border}]}><TextInput value={json} onChangeText={setJson} multiline numberOfLines={6} placeholder='[{"description":"Groceries","amount":450,"expenseDate":"2026-09-09","categoryId":1}]' placeholderTextColor={c.textMuted} style={[styles.jsonInput,{color:c.text,borderColor:c.border,backgroundColor:c.surface}]}/><TouchableOpacity onPress={importJson} style={[styles.ingest,{backgroundColor:c.primary}]}><Text style={{fontWeight:'800',color:'#111'}}>Ingest & Refresh</Text></TouchableOpacity></View>}
+        {showJson&&<View style={[styles.jsonBox,{backgroundColor:c.inputBg,borderColor:c.border}]}><TextInput value={json} onChangeText={setJson} multiline numberOfLines={6} placeholder='[{"description":"Groceries","amount":450,"expenseDate":\"2026-09-09\","categoryId":1}]' placeholderTextColor={c.textMuted} style={[styles.jsonInput,{color:c.text,borderColor:c.border,backgroundColor:c.surface}]}/><TouchableOpacity onPress={importJson} style={[styles.ingest,{backgroundColor:c.primary}]}><Text style={{fontWeight:'800',color:'#111'}}>Ingest & Refresh</Text></TouchableOpacity></View>}
       </ScrollView>
     </View></View>
   </Modal>;

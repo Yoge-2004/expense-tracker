@@ -283,8 +283,8 @@ class IncomeServiceImplTest {
         exp.setAmount(BigDecimal.valueOf(2500));
         exp.setExpenseDate(LocalDate.of(2026, 9, 10));
 
-        when(incomeRepository.findByUserAndIncomeDateBetween(user, start, end)).thenReturn(List.of(inc1, inc2));
-        when(expenseRepository.findByUserAndExpenseDateBetween(user, start, end)).thenReturn(List.of(exp));
+        when(incomeRepository.findByUserAndIncomeDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of(inc1, inc2));
+        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of(exp));
 
         CashFlowSummaryDto summary = service.getCashFlowSummary(user, 2026, 9);
 
@@ -314,8 +314,8 @@ class IncomeServiceImplTest {
         LocalDate start = LocalDate.of(2026, 9, 1);
         LocalDate end = LocalDate.of(2026, 9, 30);
 
-        when(incomeRepository.findByUserAndIncomeDateBetween(user, start, end)).thenReturn(List.of());
-        when(expenseRepository.findByUserAndExpenseDateBetween(user, start, end)).thenReturn(List.of());
+        when(incomeRepository.findByUserAndIncomeDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of());
+        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of());
 
         CashFlowSummaryDto summary = service.getCashFlowSummary(user, 2026, 9);
 

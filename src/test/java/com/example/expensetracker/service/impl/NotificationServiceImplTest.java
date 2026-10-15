@@ -162,6 +162,17 @@ class NotificationServiceImplTest {
             assertEquals(1, service.markRead(user, List.of(5L)));
             verify(notificationRepository, never()).findByUserAndReadAtIsNull(any());
         }
+
+        @Test
+        @DisplayName("deleteNotification deletes specific notification for user")
+        void deleteSpecificNotification() {
+            service.deleteNotification(user, 10L);
+            verify(notificationRepository).deleteByUserAndId(user, 10L);
+
+            service.deleteNotification(user, null);
+            service.deleteNotification(null, 10L);
+            verifyNoMoreInteractions(notificationRepository);
+        }
     }
 
     @Nested

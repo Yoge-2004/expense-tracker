@@ -23,6 +23,11 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
         localStorage.setItem("userEmail", response.email || email);
         if (response.username) localStorage.setItem("userUsername", response.username);
         if (response.currency) localStorage.setItem("userCurrency", response.currency);
+        if (response.profilePictureUrl) {
+            localStorage.setItem("userProfilePicture", response.profilePictureUrl);
+        } else {
+            localStorage.removeItem("userProfilePicture");
+        }
         showToast("Signed in successfully!", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
     } catch (error) {
@@ -115,6 +120,12 @@ async function handleCredentialResponse(credentialResponse) {
         localStorage.setItem("userEmail", response.email || (payload?.email) || "");
         if (response.username) localStorage.setItem("userUsername", response.username);
         if (response.currency) localStorage.setItem("userCurrency", response.currency);
+        const photoUrl = response.profilePictureUrl || payload?.picture || "";
+        if (photoUrl) {
+            localStorage.setItem("userProfilePicture", photoUrl);
+        } else {
+            localStorage.removeItem("userProfilePicture");
+        }
         showToast("Signed in with Google! Redirecting...", "success");
         setTimeout(() => { window.location.href = "dashboard.html"; }, 500);
     } catch (error) {
@@ -188,6 +199,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 localStorage.setItem("userEmail", res.email || "");
                 if (res.username) localStorage.setItem("userUsername", res.username);
                 if (res.currency) localStorage.setItem("userCurrency", res.currency);
+                if (res.profilePictureUrl) {
+                    localStorage.setItem("userProfilePicture", res.profilePictureUrl);
+                }
                 showToast("Biometric sign-in verified. Welcome back!", "success");
                 setTimeout(() => { window.location.href = "dashboard.html"; }, 400);
             } catch (err) {

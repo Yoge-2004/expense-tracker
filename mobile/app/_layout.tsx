@@ -7,7 +7,8 @@ import React, { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AlertProvider } from '../context/AlertContext';
-import { ActivityIndicator, View, Text, Animated, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, Animated, StyleSheet, StatusBar, Easing } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useFonts } from 'expo-font';
 import { Fraunces_500Medium, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
@@ -35,65 +36,237 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 WebBrowser.maybeCompleteAuthSession();
 
 function SplashLoader() {
-  const pulseAnim = useRef(new Animated.Value(0.3)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const shimmerAnim = useRef(new Animated.Value(-80)).current;
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    const fade = Animated.timing(fadeAnim, {
+    Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: reducedMotion ? 0 : 400,
+      duration: reducedMotion ? 0 : 350,
       useNativeDriver: true,
-    });
-
-    fade.start();
+    }).start();
 
     if (reducedMotion) {
       pulseAnim.setValue(1);
-      return () => fade.stop();
+      shimmerAnim.setValue(40);
+      return;
     }
 
-    const pulse = Animated.loop(
+    const rotateLoop = Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    const pulseLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
       ])
     );
 
-    pulse.start();
+    const shimmerLoop = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 160,
+        duration: 1300,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      })
+    );
+
+    rotateLoop.start();
+    pulseLoop.start();
+    shimmerLoop.start();
 
     return () => {
-      fade.stop();
-      pulse.stop();
-      fadeAnim.stopAnimation();
-      pulseAnim.stopAnimation();
+      rotateLoop.stop();
+      pulseLoop.stop();
+      shimmerLoop.stop();
     };
-  }, [fadeAnim, pulseAnim, reducedMotion]);
+  }, [fadeAnim, pulseAnim, rotateAnim, shimmerAnim, reducedMotion]);
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const auraScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.92, 1.2],
+  });
+
+  const auraOpacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.35, 0.75],
+  });
+
+  const logoScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.97, 1.03],
+  });
 
   return (
     <Animated.View style={[splashStyles.container, { opacity: fadeAnim }]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.dark.bg} />
-      <View style={splashStyles.iconWrapper}>
-        <View style={splashStyles.iconGlow} />
-        <Text style={splashStyles.icon}>📓</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#10120E" />
+
+      {/* Bespoke animated brand aura & rotating orbital halo */}
+      <View style={splashStyles.coreContainer}>
+        <Animated.View
+          style={[
+            splashStyles.auraGlow,
+            {
+              transform: [{ scale: auraScale }],
+              opacity: auraOpacity,
+            },
+          ]}
+        />
+
+        <Animated.View
+          style={[
+            splashStyles.orbitalRing,
+            {
+              transform: [{ rotate: spin }],
+            },
+          ]}
+        />
+
+        <Animated.View
+          style={[
+            splashStyles.logoBox,
+            {
+              transform: [{ scale: logoScale }],
+            },
+          ]}
+        >
+          <Ionicons name="wallet" size={32} color="#10120E" />
+        </Animated.View>
       </View>
-      <Text style={splashStyles.brand}>ExpenseTracker</Text>
-      <Text style={splashStyles.pro}>PRO</Text>
-      <Animated.View style={[splashStyles.loadingBar, { opacity: pulseAnim }]}>
-        <ActivityIndicator size="small" color={Colors.dark.gold} />
-      </Animated.View>
+
+      <Text style={splashStyles.brandName}>ExpenseTracker</Text>
+      <View style={splashStyles.badge}>
+        <Text style={splashStyles.badgeText}>EXECUTIVE COMMAND CENTER</Text>
+      </View>
+
+      {/* Custom Shimmer Progress Beam (No generic Android/iOS spinner) */}
+      <View style={splashStyles.loadingTrack}>
+        <Animated.View
+          style={[
+            splashStyles.shimmerBeam,
+            {
+              transform: [{ translateX: shimmerAnim }],
+            },
+          ]}
+        />
+      </View>
+      <Text style={splashStyles.statusText}>AUTHENTICATING SECURE LEDGER</Text>
     </Animated.View>
   );
 }
 
 const splashStyles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.bg, gap: 8 },
-  iconWrapper: { position: 'relative', marginBottom: 16 },
-  iconGlow: { position: 'absolute', width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(199,154,62,0.15)', top: -10, left: -10 },
-  icon: { fontSize: 56 },
-  brand: { fontSize: 26, fontWeight: '600', color: Colors.dark.ink, letterSpacing: -0.5 },
-  pro: { fontSize: 11, fontWeight: '700', color: Colors.dark.gold, letterSpacing: 2, marginTop: -2 },
-  loadingBar: { marginTop: 24 },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#10120E',
+    paddingHorizontal: 24,
+  },
+  coreContainer: {
+    width: 96,
+    height: 96,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  auraGlow: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(245, 200, 66, 0.18)',
+  },
+  orbitalRing: {
+    position: 'absolute',
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    borderWidth: 2,
+    borderColor: 'rgba(245, 200, 66, 0.15)',
+    borderTopColor: '#F5C842',
+    borderRightColor: '#E6A817',
+  },
+  logoBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F5C842',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#F5C842',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 8,
+  },
+  brandName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#F9F6EF',
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  badge: {
+    backgroundColor: 'rgba(245, 200, 66, 0.14)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 200, 66, 0.3)',
+    marginBottom: 28,
+  },
+  badgeText: {
+    color: '#F5C842',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  loadingTrack: {
+    width: 140,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  shimmerBeam: {
+    width: 60,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#F5C842',
+  },
+  statusText: {
+    color: '#8A8E85',
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
 });
 
 function RootLayoutNav() {

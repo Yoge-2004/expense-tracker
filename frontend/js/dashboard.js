@@ -10,8 +10,26 @@ if (!token || !userId) {
 // UI Setup (guarded against missing elements)
 const topBarP = document.querySelector(".top-bar p");
 if (topBarP) topBarP.textContent = `Welcome back, ${userName}`;
-const avatarEl = document.querySelector(".avatar");
-if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
+function renderDashboardAvatar(name, photoUrl) {
+    const avatarEl = document.querySelector(".avatar");
+    if (!avatarEl) return;
+    const initial = (name || "U").charAt(0).toUpperCase();
+    const photo = photoUrl || localStorage.getItem("userProfilePicture");
+    if (photo && photo.trim().length > 0) {
+        avatarEl.innerHTML = `<img src="${photo}" alt="${initial}" class="avatar-img" onerror="this.onerror=null; this.parentElement.textContent='${initial}';" />`;
+    } else {
+        avatarEl.textContent = initial;
+    }
+}
+renderDashboardAvatar(userName, localStorage.getItem("userProfilePicture"));
+if (userId && typeof apiRequest === "function") {
+    apiRequest(`/users/${userId}`).then(profile => {
+        if (profile?.profilePictureUrl) {
+            localStorage.setItem("userProfilePicture", profile.profilePictureUrl);
+            renderDashboardAvatar(profile.name || userName, profile.profilePictureUrl);
+        }
+    }).catch(() => {});
+}
 
 // Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
 const { getLocalDateString, parseLocalDate, escapeHtml, jsAttrEscape, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
@@ -2071,10 +2089,7 @@ if (editProfileBtn && editProfileModal) {
             if (userWelcomeText) {
                 userWelcomeText.textContent = `Welcome back, ${updatedName}`;
             }
-            const avatarEl = document.querySelector(".avatar");
-            if (avatarEl) {
-                avatarEl.textContent = updatedName.charAt(0).toUpperCase();
-            }
+            renderDashboardAvatar(updatedName, localStorage.getItem("userProfilePicture"));
             showToast("Profile name updated successfully!", "success");
             closeEditModal();
         } catch (err) {
@@ -3847,6 +3862,46 @@ function initLedgerStreamTabs() {
             }
         });
     });
+    // Touch gesture swipe support for cycling between stream tabs (All <-> Expenses <-> Incomes)
+    const targetSwipeElements = [document.getElementById("ledgerStreamTabs"), grid, document.getElementById("recentTransactionsTable")].filter(Boolean);
+
+    targetSwipeElements.forEach(el => {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let swiped = false;
+
+        el.addEventListener("touchstart", (e) => {
+            if (e.touches.length !== 1) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            swiped = false;
+        }, { passive: true });
+
+        el.addEventListener("touchend", (e) => {
+            if (swiped || e.changedTouches.length !== 1) return;
+            const diffX = e.changedTouches[0].clientX - touchStartX;
+            const diffY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+                swiped = true;
+                const modes = ["all", "expenses", "incomes"];
+                const activeTab = document.querySelector("#ledgerStreamTabs .stream-pill-btn.active");
+                const currentMode = activeTab ? activeTab.getAttribute("data-tab") : "all";
+                const currentIndex = modes.indexOf(currentMode);
+                if (currentIndex !== -1) {
+                    if (diffX < 0 && currentIndex < modes.length - 1) {
+                        navigator.vibrate?.(15);
+                        const nextTab = document.querySelector(`#ledgerStreamTabs .stream-pill-btn[data-tab="${modes[currentIndex + 1]}"]`);
+                        if (nextTab) nextTab.click();
+                    } else if (diffX > 0 && currentIndex > 0) {
+                        navigator.vibrate?.(15);
+                        const prevTab = document.querySelector(`#ledgerStreamTabs .stream-pill-btn[data-tab="${modes[currentIndex - 1]}"]`);
+                        if (prevTab) prevTab.click();
+                    }
+                }
+            }
+        }, { passive: true });
+    });
+
     updateStreamBadges();
 }
 window.initLedgerStreamTabs = initLedgerStreamTabs;

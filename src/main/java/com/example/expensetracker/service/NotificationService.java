@@ -21,6 +21,9 @@ public interface NotificationService {
     /** Marks the given notifications (or all of them when {@code ids} is null/empty) as read; returns how many changed. */
     int markRead(User user, List<Long> ids);
 
+    /** Deletes/clears a single notification by id for the given user. */
+    void deleteNotification(User user, Long id);
+
     List<NotificationPreferenceDto> getPreferences(User user);
 
     /** Replaces the set of switched-off kinds. Unknown names are rejected; locked kinds stay on. */

@@ -31,11 +31,23 @@ function ensureFeedbackUi() {
     document.getElementById("appToastRegion")?.remove();
     document.body.insertAdjacentHTML("beforeend", `
         <div id="appLoading" class="app-loading" aria-live="polite" aria-busy="true">
-            <span class="spinner" aria-hidden="true"></span>
-            <div class="loading-body" style="display:flex; flex-direction:column; gap:4px; min-width:180px;">
-                <span id="loadingText">Connecting to the server…</span>
-                <div id="loadingProgressTrack" class="loading-progress-track" style="display:none; width:100%; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; overflow:hidden;">
-                    <div id="loadingProgressBar" class="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
+            <div class="immersive-loader-card">
+                <div class="immersive-halo-wrap">
+                    <div class="immersive-radiant-glow"></div>
+                    <div class="immersive-ring-outer"></div>
+                    <div class="immersive-ring-inner"></div>
+                    <div class="immersive-core">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="6 3 18 3 22 9 12 22 2 9 6 3"></polygon>
+                        </svg>
+                    </div>
+                </div>
+                <div class="loading-body" style="display:flex; flex-direction:column; align-items:center; gap:6px; min-width:200px; text-align:center;">
+                    <span id="loadingText" class="immersive-loading-text">Connecting to the server…</span>
+                    <span class="immersive-loading-sub">Secured Ledger Synchronization</span>
+                    <div id="loadingProgressTrack" class="loading-progress-track" style="display:none; width:100%; height:4px; background:rgba(255,255,255,0.12); border-radius:2px; overflow:hidden; margin-top:4px;">
+                        <div id="loadingProgressBar" class="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
+                    </div>
                 </div>
             </div>
         </div>

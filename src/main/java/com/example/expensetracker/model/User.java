@@ -120,6 +120,13 @@ public class User {
     private String currency = "INR";
 
     /**
+     * URL of the user profile avatar picture (e.g. from Google OAuth).
+     * Nullable for standard registrations or if no picture was provided.
+     */
+    @Column(name = "profile_picture_url", length = 512)
+    private String profilePictureUrl;
+
+    /**
      * The list of all expense records owned by this user.
      * Mapped via the {@code user} field on {@link Expense}.
      * Fetched lazily to avoid unintended bulk loading.

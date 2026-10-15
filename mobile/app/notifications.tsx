@@ -1,16 +1,29 @@
 /**
- * Notification inbox: the newest notifications, mark all read, a switch per notification kind and a
- * button to send yourself a test notification.
+ * Notification inbox: the newest notifications, mark all read, swipe gesture to clear,
+ * a switch per notification kind, and a button to send yourself a test notification.
  */
-import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useState, useRef, useMemo } from 'react';
+import {
+  Animated,
+  FlatList,
+  PanResponder,
+  Platform,
+  RefreshControl,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError } from '../services/api';
 import { Colors } from '../constants/theme';
+import { ImmersiveLoader } from '../components/ImmersiveLoader';
 
 interface NotificationItem {
   id: number;
@@ -31,8 +44,7 @@ interface Preference {
 }
 
 /** Where tapping a notification goes. Anything not listed is only marked as read. */
-const ROUTES: Record<string, string> = {
-  budgets: '/(tabs)',
+const ROUTES: Record<string, string> = { budgets: '/(tabs)',
   goals: '/(tabs)',
   dashboard: '/(tabs)',
   subscriptions: '/(tabs)/subscriptions',
@@ -49,6 +61,129 @@ function timeAgo(value: string): string {
   const days = Math.round(hours / 24);
   return days === 1 ? 'yesterday' : then.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
+
+interface SwipeableItemProps {
+  item: NotificationItem;
+  theme: any;
+  onOpen: (item: NotificationItem) => void;
+  onClear: (id: number) => void;
+}
+
+const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: c, onOpen, onClear }) => {
+  const pan = useRef(new Animated.ValueXY()).current;
+  const isSwiping = useRef(false);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          return Math.abs(gestureState.dx) > 12 && Math.abs(gestureState.dy) < 12;
+        },
+        onPanResponderGrant: () => {
+          isSwiping.current = true;
+        },
+        onPanResponderMove: (_, gestureState) => {
+          pan.x.setValue(gestureState.dx);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (Math.abs(gestureState.dx) > 85) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            Animated.timing(pan.x, {
+              toValue: gestureState.dx > 0 ? 450 : -450,
+              duration: 180,
+              useNativeDriver: true,
+            }).start(() => {
+              onClear(item.id);
+            });
+          } else {
+            Animated.spring(pan.x, {
+              toValue: 0,
+              friction: 7,
+              tension: 50,
+              useNativeDriver: true,
+            }).start(() => {
+              isSwiping.current = false;
+            });
+          }
+        },
+      }),
+    [item.id, onClear, pan.x]
+  );
+
+  // Background and directional actions interpolate opacity so resting card is completely opaque with ZERO clear bleeding
+  const bgOpacity = pan.x.interpolate({
+    inputRange: [-60, -15, 0, 15, 60],
+    outputRange: [1, 0.25, 0, 0.25, 1],
+    extrapolate: 'clamp',
+  });
+
+  const leftActionOpacity = pan.x.interpolate({
+    inputRange: [0, 20, 65],
+    outputRange: [0, 0.4, 1],
+    extrapolate: 'clamp',
+  });
+
+  const leftActionScale = pan.x.interpolate({
+    inputRange: [0, 65],
+    outputRange: [0.8, 1],
+    extrapolate: 'clamp',
+  });
+
+  const rightActionOpacity = pan.x.interpolate({
+    inputRange: [-65, -20, 0],
+    outputRange: [1, 0.4, 0],
+    extrapolate: 'clamp',
+  });
+
+  const rightActionScale = pan.x.interpolate({
+    inputRange: [-65, 0],
+    outputRange: [1, 0.8],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <View style={styles.swipeContainer}>
+      {/* Background Clear / Trash Action - dynamically reveals ONLY on active swipe */}
+      <Animated.View style={[styles.swipeBackground, { backgroundColor: c.accent, opacity: bgOpacity }]}>
+        <Animated.View style={[styles.swipeActionLeft, { opacity: leftActionOpacity, transform: [{ scale: leftActionScale }] }]}>
+          <Ionicons name="trash-outline" size={17} color="#FFFFFF" />
+          <Text style={styles.swipeActionText}>Clear</Text>
+        </Animated.View>
+        <Animated.View style={[styles.swipeActionRight, { opacity: rightActionOpacity, transform: [{ scale: rightActionScale }] }]}>
+          <Text style={styles.swipeActionText}>Clear</Text>
+          <Ionicons name="trash-outline" size={17} color="#FFFFFF" />
+        </Animated.View>
+      </Animated.View>
+
+      {/* Foreground sliding card */}
+      <Animated.View
+        style={[
+          styles.item,
+          {
+            backgroundColor: c.card,
+            borderColor: item.read ? c.border : c.primary,
+            transform: [{ translateX: pan.x }],
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => onOpen(item)}
+          accessibilityRole="button"
+        >
+          <View style={styles.itemHeader}>
+            <Text style={[styles.itemTitle, { color: c.text }]}>{item.title}</Text>
+            {!item.read && <View style={[styles.unreadDot, { backgroundColor: c.primary }]} />}
+          </View>
+          <Text style={[styles.itemBody, { color: c.textMuted }]}>{item.body}</Text>
+          <Text style={[styles.itemTime, { color: c.textMuted }]}>{timeAgo(item.createdAt)}</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
 
 export default function NotificationsScreen() {
   const { userId, theme } = useAuth();
@@ -98,6 +233,16 @@ export default function NotificationsScreen() {
     load();
   };
 
+  const clearNotification = async (id: number) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setUnread((prev) => Math.max(0, prev - 1));
+    try {
+      await apiRequest(`${base}/${id}`, { method: 'DELETE' });
+    } catch {
+      // offline fallback
+    }
+  };
+
   const open = async (item: NotificationItem) => {
     if (!item.read) await markRead([item.id]);
     const target = item.route ? ROUTES[item.route] : undefined;
@@ -129,35 +274,39 @@ export default function NotificationsScreen() {
   };
 
   const renderItem = ({ item }: { item: NotificationItem }) => (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => open(item)}
-      accessibilityRole="button"
-      style={[styles.item, { backgroundColor: c.card, borderColor: item.read ? c.border : c.primary }]}
-    >
-      <View style={styles.itemHeader}>
-        <Text style={[styles.itemTitle, { color: c.text }]}>{item.title}</Text>
-        {!item.read && <View style={[styles.unreadDot, { backgroundColor: c.primary }]} />}
-      </View>
-      <Text style={[styles.itemBody, { color: c.textMuted }]}>{item.body}</Text>
-      <Text style={[styles.itemTime, { color: c.textMuted }]}>{timeAgo(item.createdAt)}</Text>
-    </TouchableOpacity>
+    <SwipeableNotificationItem
+      item={item}
+      theme={c}
+      onOpen={open}
+      onClear={clearNotification}
+    />
   );
 
   const settings = (
     <View style={styles.settings}>
       <Text style={[styles.sectionTitle, { color: c.text }]}>Notification settings</Text>
-      {prefs.map((pref) => (
-        <View key={pref.type} style={[styles.prefRow, { borderBottomColor: c.border }]}>
+      {prefs.map((pref) => (        <View key={pref.type} style={[styles.prefRow, { borderBottomColor: c.border }]}>
           <View style={styles.prefText}>
             <Text style={[styles.prefLabel, { color: c.text }]}>{pref.label}</Text>
             <Text style={[styles.prefHint, { color: c.textMuted }]}>{pref.description}</Text>
           </View>
           <Switch
             value={pref.enabled}
-            disabled={pref.locked}
-            onValueChange={(value) => togglePreference(pref.type, value)}
-            trackColor={{ false: c.border, true: c.primary }}
+            onValueChange={(value) => {
+              if (pref.locked) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+                showAlert(
+                  'Essential Notification',
+                  'Account and system security notices are mandatory and cannot be switched off.',
+                  undefined,
+                  'info'
+                );
+                return;
+              }
+              togglePreference(pref.type, value);
+            }}
+            trackColor={{ false: c.border, true: '#93C5FD' }}
+            thumbColor={pref.enabled ? '#2563EB' : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
           />
         </View>
       ))}
@@ -181,7 +330,7 @@ export default function NotificationsScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator style={styles.loader} color={c.primary} />
+        <ImmersiveLoader message="Syncing Notifications..." compact />
       ) : (
         <FlatList
           data={items}
@@ -212,8 +361,37 @@ const styles = StyleSheet.create({
   iconBtn: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 18, fontWeight: '800' },
   markAll: { fontSize: 13, fontWeight: '700' },
-  loader: { marginTop: 48 },
   list: { paddingHorizontal: 20, gap: 10 },
+  swipeContainer: {
+    position: 'relative',
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  swipeBackground: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  swipeActionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  swipeActionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  swipeActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   item: { padding: 14, borderRadius: 14, borderWidth: 1, gap: 4 },
   itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   itemTitle: { flex: 1, fontSize: 14, fontWeight: '700' },

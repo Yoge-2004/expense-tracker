@@ -19,6 +19,7 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || REMOTE_API_URL;
 const TOKEN_KEY = 'auth_token';
 const USER_ID_KEY = 'user_id';
 const NAME_KEY = 'user_name';
+const PHOTO_KEY = 'user_photo';
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
@@ -123,12 +124,17 @@ export async function safeStorageDelete(key: string): Promise<void> {
   }
 }
 
-export async function saveSession(token: string, userId: string, name: string): Promise<void> {
+export async function saveSession(token: string, userId: string, name: string, photo?: string | null): Promise<void> {
   try {
     apiCache.clear();
     await safeStorageSet(TOKEN_KEY, token);
     await safeStorageSet(USER_ID_KEY, userId);
     await safeStorageSet(NAME_KEY, name || 'Tracker');
+    if (photo) {
+      await safeStorageSet(PHOTO_KEY, photo);
+    } else {
+      await safeStorageDelete(PHOTO_KEY);
+    }
   } catch (error) {
     console.error('[API] Failed to persist secure session:', error);
     throw new ApiError({
@@ -140,20 +146,27 @@ export async function saveSession(token: string, userId: string, name: string): 
 
 export async function clearSession(): Promise<void> {
   apiCache.clear();
-  await Promise.all([safeStorageDelete(TOKEN_KEY), safeStorageDelete(USER_ID_KEY), safeStorageDelete(NAME_KEY)]);
+  await Promise.all([
+    safeStorageDelete(TOKEN_KEY),
+    safeStorageDelete(USER_ID_KEY),
+    safeStorageDelete(NAME_KEY),
+    safeStorageDelete(PHOTO_KEY),
+  ]);
 }
 
 export async function getSession(): Promise<{
   token: string | null;
   userId: string | null;
   name: string | null;
+  photo: string | null;
 }> {
-  const [token, userId, name] = await Promise.all([
+  const [token, userId, name, photo] = await Promise.all([
     safeStorageGet(TOKEN_KEY),
     safeStorageGet(USER_ID_KEY),
     safeStorageGet(NAME_KEY),
+    safeStorageGet(PHOTO_KEY),
   ]);
-  return { token, userId, name };
+  return { token, userId, name, photo };
 }
 
 export function invalidateApiCache(): void {

@@ -19,9 +19,9 @@ export const StaggeredView: React.FC<StaggeredViewProps> = ({
   direction = 'up',
   scale = true,
 }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const translateAnim = useRef(new Animated.Value(getInitialTranslate(direction))).current;
-  const scaleAnim = useRef(new Animated.Value(scale ? 0.94 : 1)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const translateAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {

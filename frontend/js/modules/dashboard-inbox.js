@@ -58,6 +58,61 @@
                 el("span", "inbox-item-time", timeAgo(item.createdAt)));
             button.addEventListener("click", () => openItem(item));
             row.append(button);
+
+            // Touch gesture support: swipe left/right to dismiss notification
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let currentX = 0;
+            let isSwiping = false;
+
+            row.addEventListener("touchstart", (e) => {
+                if (e.touches.length !== 1) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                currentX = 0;
+                isSwiping = false;
+                row.style.transition = "none";
+            }, { passive: true });
+
+            row.addEventListener("touchmove", (e) => {
+                if (e.touches.length !== 1) return;
+                const diffX = e.touches[0].clientX - touchStartX;
+                const diffY = e.touches[0].clientY - touchStartY;
+                if (!isSwiping && Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+                    isSwiping = true;
+                }
+                if (isSwiping) {
+                    currentX = diffX;
+                    row.style.transform = `translateX(${currentX}px)`;
+                    row.style.opacity = String(Math.max(0.15, 1 - Math.abs(currentX) / 220));
+                }
+            }, { passive: true });
+
+            row.addEventListener("touchend", () => {
+                if (!isSwiping) return;
+                row.style.transition = "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease";
+                if (Math.abs(currentX) > 75) {
+                    navigator.vibrate?.(15);
+                    const flyOutX = currentX > 0 ? 350 : -350;
+                    row.style.transform = `translateX(${flyOutX}px)`;
+                    row.style.opacity = "0";
+                    setTimeout(async () => {
+                        row.style.maxHeight = "0px";
+                        row.style.marginBottom = "0px";
+                        row.style.paddingTop = "0px";
+                        row.style.paddingBottom = "0px";
+                        row.style.overflow = "hidden";
+                        try {
+                            await apiRequest(`${base}/${item.id}`, { method: "DELETE" });
+                        } catch (_) {}
+                        setTimeout(() => row.remove(), 250);
+                    }, 220);
+                } else {
+                    row.style.transform = "translateX(0px)";
+                    row.style.opacity = "1";
+                }
+            });
+
             list.append(row);
         });
     }
@@ -126,6 +181,25 @@
             loadPreferences();
         }
     }
+
+    // Swipe down on inbox panel to dismiss on touch devices
+    let panelTouchStartY = 0;
+    panel.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1 && panel.scrollTop === 0) {
+            panelTouchStartY = e.touches[0].clientY;
+        }
+    }, { passive: true });
+
+    panel.addEventListener("touchend", (e) => {
+        if (panelTouchStartY > 0 && e.changedTouches.length === 1) {
+            const diffY = e.changedTouches[0].clientY - panelTouchStartY;
+            if (diffY > 80) {
+                navigator.vibrate?.(10);
+                toggle(false);
+            }
+        }
+        panelTouchStartY = 0;
+    });
 
     bell.addEventListener("click", () => toggle());
     document.getElementById("inboxMarkAll")?.addEventListener("click", async () => {

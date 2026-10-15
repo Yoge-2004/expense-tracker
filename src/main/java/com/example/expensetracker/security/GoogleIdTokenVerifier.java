@@ -45,7 +45,11 @@ public class GoogleIdTokenVerifier {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public record VerifiedIdentity(String email, String name) {}
+    public record VerifiedIdentity(String email, String name, String picture) {
+        public VerifiedIdentity(String email, String name) {
+            this(email, name, null);
+        }
+    }
 
     public VerifiedIdentity verify(String idToken) {
         if (idToken == null || idToken.isBlank()) {
@@ -94,6 +98,13 @@ public class GoogleIdTokenVerifier {
             name = email.split("@")[0];
         }
 
-        return new VerifiedIdentity(email, name);
+        String picture = payload.path("picture").isMissingNode() || payload.path("picture").isNull()
+                ? null
+                : payload.path("picture").asText(null);
+        if (picture != null && picture.isBlank()) {
+            picture = null;
+        }
+
+        return new VerifiedIdentity(email, name, picture);
     }
 }

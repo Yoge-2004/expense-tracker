@@ -157,6 +157,7 @@ public class UserController {
         map.put("email", user.getEmail());
         map.put("currency", user.getCurrency());
         map.put("hasSecurityPin", user.hasSecurityPin());
+        map.put("profilePictureUrl", user.getProfilePictureUrl());
         return ResponseEntity.ok(map);
     }
 
@@ -191,6 +192,7 @@ public class UserController {
         map.put("email", updated.getEmail());
         map.put("currency", updated.getCurrency());
         map.put("hasSecurityPin", updated.hasSecurityPin());
+        map.put("profilePictureUrl", updated.getProfilePictureUrl());
         return ResponseEntity.ok(map);
     }
 

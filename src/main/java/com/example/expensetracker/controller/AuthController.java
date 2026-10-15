@@ -125,7 +125,8 @@ public class AuthController {
                 user.getUsername(),
                 user.getEmail(),
                 user.getCurrency(),
-                user.hasSecurityPin()
+                user.hasSecurityPin(),
+                user.getProfilePictureUrl()
         ));
     }
 
@@ -287,11 +288,19 @@ public class AuthController {
         GoogleIdTokenVerifier.VerifiedIdentity identity = googleIdTokenVerifier.verify(request.idToken());
         log.info("Google OAuth token verified for email={}", LoggingUtils.maskEmail(identity.email()));
 
-        User user = userService.findByEmail(identity.email()).orElseGet(() -> {
+        User user = userService.findByEmail(identity.email()).map(existingUser -> {
+            if (identity.picture() != null && !identity.picture().isBlank() &&
+                    !identity.picture().equals(existingUser.getProfilePictureUrl())) {
+                userService.updateProfilePicture(existingUser.getId(), identity.picture());
+                existingUser.setProfilePictureUrl(identity.picture());
+            }
+            return existingUser;
+        }).orElseGet(() -> {
             User newUser = new User();
             newUser.setName(identity.name());
             newUser.setEmail(identity.email());
             newUser.setPassword(UUID.randomUUID().toString());
+            newUser.setProfilePictureUrl(identity.picture());
 
             // 1. Resolve currency: client preference > default "INR"
             String reqCurrency = request.currency();
@@ -340,7 +349,8 @@ public class AuthController {
                 user.getUsername(),
                 user.getEmail(),
                 user.getCurrency(),
-                user.hasSecurityPin()
+                user.hasSecurityPin(),
+                user.getProfilePictureUrl()
         ));
     }
 

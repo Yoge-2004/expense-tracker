@@ -21,5 +21,12 @@ public record UserDto(
         boolean enabled,
 
         @Schema(description = "Preferred display currency (ISO 4217 3-letter code)", example = "INR")
-        String currency
-) {}
+        String currency,
+
+        @Schema(description = "URL of the user profile avatar picture (e.g. from Google OAuth)", example = "https://lh3.googleusercontent.com/a/...")
+        String profilePictureUrl
+) {
+    public UserDto(Long id, String name, String username, String email, boolean enabled, String currency) {
+        this(id, name, username, email, enabled, currency, null);
+    }
+}

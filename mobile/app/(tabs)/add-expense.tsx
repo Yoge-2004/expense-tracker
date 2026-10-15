@@ -39,6 +39,7 @@ import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { ChoiceChips } from '../../components/ChoiceChips';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../../utils/moneyFlow';
 import { OfflineBanner } from '../../components/OfflineBanner';
+import { ImmersiveLoader } from '../../components/ImmersiveLoader';
 
 interface Category {
   id: number;
@@ -781,10 +782,10 @@ export default function AddExpenseScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loadingBox, { backgroundColor: c.bg }]}>
-        <AmbientAura />
-        <ActivityIndicator size="large" color={c.primary} />
-      </View>
+      <ImmersiveLoader
+        message="Preparing Transaction Matrix..."
+        subMessage="Synchronizing categories & financial tags"
+      />
     );
   }
 

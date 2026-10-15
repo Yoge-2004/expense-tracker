@@ -242,4 +242,17 @@ public class UserServiceImpl implements UserService {
     public boolean userExistsByUsername(String username) {
         return username != null && userRepository.existsByUsernameIgnoreCase(username.trim());
     }
+
+    @Override
+    @Transactional
+    public void updateProfilePicture(Long userId, String profilePictureUrl) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setProfilePictureUrl(profilePictureUrl);
+        userRepository.save(user);
+        log.info("Profile picture updated successfully for userId={}", userId);
+    }
 }

@@ -165,6 +165,17 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   },
                 ]}
               >
+                {/* Close 'X' button */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={hideAlert}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  style={[styles.closeXBtn, { backgroundColor: c.inputBg }]}
+                  accessibilityLabel="Close alert"
+                >
+                  <Ionicons name="close" size={16} color={c.textMuted} />
+                </TouchableOpacity>
+
                 {/* Icon header */}
                 <View style={[styles.iconWrap, { backgroundColor: icon.bg }]}>
                   <Ionicons name={icon.name} size={28} color={icon.color} />
@@ -257,11 +268,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 24,
     alignItems: 'center',
+    position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 18,
     elevation: 12,
+  },
+  closeXBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   iconWrap: {
     width: 56,
@@ -280,8 +303,8 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 13.5,
-    textAlign: 'center',
     lineHeight: 20,
+    textAlign: 'center',
     marginBottom: 20,
   },
   buttonContainer: {
@@ -299,7 +322,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
 });

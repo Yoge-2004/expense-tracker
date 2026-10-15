@@ -137,4 +137,12 @@ public interface UserService {
      * @param id the primary key of the user to delete
      */
     void deleteUser(Long id);
+
+    /**
+     * Updates the avatar profile picture URL for the given user account.
+     *
+     * @param userId            the primary key of the user to update
+     * @param profilePictureUrl the URL of the avatar image
+     */
+    void updateProfilePicture(Long userId, String profilePictureUrl);
 }

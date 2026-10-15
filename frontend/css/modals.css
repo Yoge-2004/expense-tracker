@@ -184,9 +184,123 @@
     color: #fff;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .2s ease;
+    transition: opacity .25s ease;
 }
 .app-loading.visible { opacity: 1; pointer-events: auto; }
+
+/* Immersive Luxury Web Loader */
+.immersive-loader-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 30px 42px;
+    background: var(--card-bg, rgba(23, 26, 20, 0.94));
+    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.35));
+    border-radius: 24px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 32px rgba(199, 154, 62, 0.12);
+    min-width: 260px;
+    max-width: 90vw;
+    animation: immersive-card-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.immersive-halo-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.immersive-radiant-glow {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(199, 154, 62, 0.34) 0%, rgba(199, 154, 62, 0) 70%);
+    animation: immersive-glow-breathe 2.4s ease-in-out infinite;
+}
+
+.immersive-ring-outer {
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    border-top-color: var(--primary, #c79a3e);
+    border-right-color: rgba(199, 154, 62, 0.45);
+    border-left-color: rgba(199, 154, 62, 0.2);
+    animation: immersive-spin-cw 2.8s linear infinite;
+}
+
+.immersive-ring-inner {
+    position: absolute;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-bottom-color: var(--teal, #4c7a78);
+    border-left-color: rgba(76, 122, 120, 0.75);
+    border-right-color: rgba(76, 122, 120, 0.25);
+    animation: immersive-spin-ccw 2.1s linear infinite;
+}
+
+.immersive-core {
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--surface, #171a14);
+    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.45));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary, #c79a3e);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    animation: immersive-core-pulse 2.4s ease-in-out infinite;
+}
+
+.immersive-loading-text {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--text-main, #ece7d8);
+    letter-spacing: 0.3px;
+    text-align: center;
+}
+
+.immersive-loading-sub {
+    font-size: 11.5px;
+    color: var(--text-muted, #a8a395);
+    text-align: center;
+}
+
+@keyframes immersive-spin-cw {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes immersive-spin-ccw {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+}
+
+@keyframes immersive-core-pulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(199,154,62,0.4)); }
+    50% { transform: scale(1.14); filter: drop-shadow(0 0 16px rgba(199,154,62,0.85)); }
+}
+
+@keyframes immersive-glow-breathe {
+    0%, 100% { transform: scale(0.9); opacity: 0.22; }
+    50% { transform: scale(1.25); opacity: 0.52; }
+}
+
+@keyframes immersive-card-pop {
+    from { transform: scale(0.94); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
 .spinner { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,.28); border-top-color: var(--accent); border-radius: 50%; animation: app-spin .75s linear infinite; }
 .toast-region {
     position: fixed;

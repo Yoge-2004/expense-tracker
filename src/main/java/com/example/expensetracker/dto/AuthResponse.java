@@ -31,8 +31,13 @@ public record AuthResponse(
 
         @Schema(description = "Whether the user has configured a 6-digit Security PIN for zero-email recovery",
                 example = "true")
-        Boolean hasSecurityPin
+        Boolean hasSecurityPin,
+
+        @Schema(description = "URL of the user profile avatar picture (e.g. from Google OAuth)",
+                example = "https://lh3.googleusercontent.com/a/...")
+        String profilePictureUrl
 ) {
-
-
+    public AuthResponse(String token, Long userId, String name, String username, String email, String currency, Boolean hasSecurityPin) {
+        this(token, userId, name, username, email, currency, hasSecurityPin, null);
+    }
 }

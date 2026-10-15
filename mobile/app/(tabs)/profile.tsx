@@ -26,11 +26,14 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
+  Linking,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
-import { apiRequest, ApiError } from '../../services/api';
+import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
+import { OfflineBanner } from '../../components/OfflineBanner';
 import { WORLD_CURRENCIES } from '../../services/currency';
 import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,11 +47,12 @@ import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
-import { enableSmartReminders, disableSmartReminders, getSmartRemindersEnabled, getTransactionAlertsEnabled, setTransactionAlertsEnabled } from '../../services/notifications';
+import { checkForAppUpdate, AppReleaseInfo, DISPLAY_VERSION } from '../../services/appUpdate';
+import { enableSmartReminders, disableSmartReminders, getSmartRemindersEnabled, getTransactionAlertsEnabled, setTransactionAlertsEnabled, getInstantDebitAlertsEnabled, setInstantDebitAlertsEnabled } from '../../services/notifications';
 import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification, detectAndAddExpenseFromMessage } from '../../services/notifications';
 
 export default function ProfileScreen() {
-  const { userId, userName, theme, toggleTheme, currency, updateCurrency, logout, updateUserName, isBiometricsAvailable, isBiometricEnabled, toggleBiometrics } = useAuth();
+  const { userId, userName, theme, toggleTheme, currency, updateCurrency, logout, updateUserName, isBiometricsAvailable, isBiometricEnabled, toggleBiometrics, profilePicture } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
   const isLight = theme === 'light';
@@ -68,6 +72,69 @@ export default function ProfileScreen() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
+  const [updateInfo, setUpdateInfo] = useState<AppReleaseInfo | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [retryingProfile, setRetryingProfile] = useState(false);
+
+  const checkConnectivity = async () => {
+    try {
+      const healthy = await checkServerHealth();
+      setIsOffline(!healthy);
+    } catch {
+      setIsOffline(true);
+    }
+  };
+
+  const handleRetryProfile = async () => {
+    setRetryingProfile(true);
+    try {
+      const healthy = await checkServerHealth();
+      setIsOffline(!healthy);
+      if (healthy) {
+        checkForAppUpdate().then((info) => setUpdateInfo(info));
+      }
+    } finally {
+      setRetryingProfile(false);
+    }
+  };
+
+  React.useEffect(() => {
+    checkConnectivity();
+    checkForAppUpdate().then((info) => setUpdateInfo(info));
+  }, []);
+
+  const handleCheckUpdate = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setCheckingUpdate(true);
+    const info = await checkForAppUpdate();
+    setUpdateInfo(info);
+    setCheckingUpdate(false);
+    if (info.hasUpdate) {
+      showAlert(
+        'Update Available 🚀',
+        'A new version (' + info.latestVersion + ') is available.',
+        [
+          { text: 'Later', style: 'cancel' },
+          {
+            text: 'Update Now',
+            onPress: () => {
+              setShowAboutModal(true);
+            },
+          },
+        ],
+        'info'
+      );
+    } else {
+      showAlert(
+        'Up to Date 🎉',
+        'ExpenseTracker is on the latest release (' + DISPLAY_VERSION + ').',
+        undefined,
+        'success'
+      );
+    }
+  };
+
   const [smartRemindersEnabled, setSmartRemindersEnabled] = useState(true);
   const [transactionAlertsEnabled, setTransactionAlertsOn] = useState(true);
 
@@ -75,6 +142,7 @@ export default function ProfileScreen() {
     getDailyRemindersEnabled().then((enabled) => setRemindersEnabled(enabled));
     getSmartRemindersEnabled().then((enabled) => setSmartRemindersEnabled(enabled));
     getTransactionAlertsEnabled().then((enabled) => setTransactionAlertsOn(enabled));
+    getInstantDebitAlertsEnabled().then((enabled) => setInstantDebitEnabled(enabled));
   }, []);
 
   const handleToggleTransactionAlerts = async () => {
@@ -110,21 +178,45 @@ export default function ProfileScreen() {
 
   const [instantDebitEnabled, setInstantDebitEnabled] = useState(true);
 
+  const handleToggleInstantDebit = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const next = !instantDebitEnabled;
+    await setInstantDebitAlertsEnabled(next);
+    setInstantDebitEnabled(next);
+    showAlert(
+      next ? "Debit Detection Active ⚡" : "Debit Detection Paused",
+      next
+        ? "Bank debit SMS and transaction notifications will be automatically detected and added to your ledger."
+        : "Automatic expense creation from debit alerts is paused.",
+      undefined,
+      next ? "success" : "info"
+    );
+  };
+
   const handleSimulateDebit = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const sampleSms = "Alert: Your A/c ending 4589 debited by INR 350.00 on 24-Sep-26 at Starbucks Coffee ref txn882910.";
     const result = await detectAndAddExpenseFromMessage(sampleSms, userId);
     if (result) {
-      showAlert(
-        "Instant Debit Triggered 💸",
-        `Parsed & added expense to ledger: ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}.`,
-        undefined,
-        "success"
-      );
+      if (result.duplicate) {
+        showAlert(
+          "Duplicate Suppressed 🛡️",
+          `This debit (${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}) was already recorded recently and was suppressed to prevent duplicates.`,
+          undefined,
+          "info"
+        );
+      } else {
+        showAlert(
+          "Instant Debit Triggered 💸",
+          `Parsed & added expense to ledger: ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}.`,
+          undefined,
+          "success"
+        );
+      }
     } else {
       showAlert(
         "Simulation Result",
-        "Sample debit was processed (device notification permission may be needed in native build).",
+        "Debit detection is currently disabled in your preferences, or message could not be parsed.",
         undefined,
         "info"
       );
@@ -304,6 +396,14 @@ export default function ProfileScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {isOffline && (
+          <OfflineBanner
+            message="Server offline · Operating with local secure cache"
+            retrying={retryingProfile}
+            onRetry={handleRetryProfile}
+          />
+        )}
+
         {/* Header */}
         <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }]}>
           <View style={{ flex: 1, paddingRight: 12 }}>
@@ -318,7 +418,11 @@ export default function ProfileScreen() {
           <View style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <View style={styles.userCardTop}>
               <View style={[styles.bigAvatar, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}>
-                <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+                {profilePicture ? (
+                  <Image source={{ uri: profilePicture }} style={styles.bigAvatarImg} />
+                ) : (
+                  <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+                )}
               </View>
               <View style={styles.userMeta}>
                 {isEditing ? (
@@ -384,7 +488,7 @@ export default function ProfileScreen() {
               <Ionicons name={transactionAlertsEnabled ? 'checkbox' : 'square-outline'} size={22} color={transactionAlertsEnabled ? c.primary : c.textMuted} />
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); setInstantDebitEnabled(!instantDebitEnabled); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>
+            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleInstantDebit} style={[styles.menuRow, { borderBottomColor: c.border }]}>
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}><Ionicons name="flash-outline" size={18} color={c.accent} /></View>
                 <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Real-time Debit Alerts</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{instantDebitEnabled ? 'Active: Instant push then & there on debit' : 'Disabled'}</Text></View>
@@ -443,6 +547,37 @@ export default function ProfileScreen() {
 
             <TouchableOpacity
               activeOpacity={0.8}
+              onPress={handleCheckUpdate}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="cloud-download-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Check for Updates</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    {checkingUpdate
+                      ? 'Checking GitHub releases...'
+                      : updateInfo?.hasUpdate
+                      ? ('New release available (' + updateInfo.latestVersion + ')')
+                      : ('Version ' + DISPLAY_VERSION + ' • Latest')}
+                  </Text>
+                </View>
+              </View>
+              {checkingUpdate ? (
+                <ActivityIndicator size="small" color={c.primary} />
+              ) : updateInfo?.hasUpdate ? (
+                <View style={[styles.updateBadge, { backgroundColor: c.accent }]}>
+                  <Text style={styles.updateBadgeText}>UPDATE</Text>
+                </View>
+              ) : (
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                 setShowAboutModal(true);
@@ -455,7 +590,7 @@ export default function ProfileScreen() {
                 </View>
                 <View>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>About ExpenseTracker</Text>
-                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>Executive Edition • v1.4.0</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>Executive Edition • {DISPLAY_VERSION}</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -688,7 +823,8 @@ const styles = StyleSheet.create({
   pageSubtitle: { fontSize: 13, marginTop: 4 },
   userCard: { padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   userCardTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  bigAvatar: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', borderWidth: 2 },
+  bigAvatar: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', borderWidth: 2, overflow: 'hidden' },
+  bigAvatarImg: { width: '100%', height: '100%', borderRadius: 26 },
   avatarLetter: { color: '#10120E', fontSize: 22, fontWeight: '900' },
   userMeta: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -796,5 +932,16 @@ const styles = StyleSheet.create({
   savePinBtnText: {
     fontSize: 14,
     fontWeight: '800',
+  },
+  updateBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  updateBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

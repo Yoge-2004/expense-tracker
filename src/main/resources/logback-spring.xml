@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration scan="true" scanPeriod="30 seconds">
+<configuration scan="false">
 
     <conversionRule conversionWord="mask"
-                    converterClass="com.example.expensetracker.logging.MaskingPatternConverter" />
+                    class="com.example.expensetracker.logging.MaskingPatternConverter" />
 
     <property name="LOG_PATH" value="${LOG_PATH:-logs}" />
     <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH}/application.log}" />
@@ -64,23 +64,19 @@
         <neverBlock>true</neverBlock>
     </appender>
 
-    <!-- Development / Default Profile -->
-    <springProfile name="dev | default">
-        <logger name="com.example.expensetracker" level="INFO" />
-        <logger name="org.springframework.web" level="INFO" />
-        <logger name="org.springframework.security" level="INFO" />
-        <logger name="org.hibernate.SQL" level="WARN" />
-        <root level="INFO">
-            <appender-ref ref="CONSOLE" />
-        </root>
-    </springProfile>
+    <!-- Base / Default Loggers & Root Appender -->
+    <logger name="com.example.expensetracker" level="INFO" />
+    <logger name="org.springframework.web" level="INFO" />
+    <logger name="org.springframework.security" level="INFO" />
+    <logger name="org.hibernate.SQL" level="WARN" />
 
-    <!-- Production Profile -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <!-- Production Profile: Adds Async File Logging alongside Console -->
     <springProfile name="prod">
-        <logger name="com.example.expensetracker" level="INFO" />
         <logger name="org.springframework.web" level="WARN" />
-        <logger name="org.springframework.security" level="INFO" />
-        <logger name="org.hibernate.SQL" level="WARN" />
         <root level="INFO">
             <appender-ref ref="CONSOLE" />
             <appender-ref ref="ASYNC_APPLICATION_FILE" />
@@ -90,12 +86,8 @@
 
     <!-- Test Profile -->
     <springProfile name="test">
-        <logger name="com.example.expensetracker" level="INFO" />
         <logger name="org.springframework" level="WARN" />
         <logger name="org.hibernate" level="WARN" />
-        <root level="INFO">
-            <appender-ref ref="CONSOLE" />
-        </root>
     </springProfile>
 
 </configuration>
