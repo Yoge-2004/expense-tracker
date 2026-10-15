@@ -2,7 +2,9 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.model.Budget;
 import com.example.expensetracker.model.Expense;
+import com.example.expensetracker.mapper.IncomeRules;
 import com.example.expensetracker.model.Income;
+import com.example.expensetracker.model.IncomeKind;
 import com.example.expensetracker.model.RecurringExpense;
 import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.model.User;
@@ -824,7 +826,7 @@ public class RangeReportController {
                 : spend.divide(BigDecimal.valueOf(d.expenses.size()), 2, RoundingMode.HALF_UP);
 
         BigDecimal salaryInflow = d.incomes.stream()
-                .filter(i -> i.getSource() != null && i.getSource().toLowerCase().contains("salary"))
+                .filter(i -> IncomeRules.effectiveKind(i) == IncomeKind.SALARY)
                 .map(i -> nz(i.getAmount()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         String salaryInsight = salaryInflow.compareTo(BigDecimal.ZERO) > 0
@@ -996,12 +998,23 @@ public class RangeReportController {
                         List<SavingsGoal> savingsGoals,
                         List<RecurringExpense> subscriptions,
                         List<Budget> budgets) {
-        BigDecimal spend() {
-            return total(expenses);
+        /** Money handed back (reimbursements and refunds): not income, it reduces what was spent. */
+        BigDecimal reimbursed() {
+            return incomes.stream()
+                    .filter(x -> IncomeRules.effectiveKind(x) == IncomeKind.REIMBURSEMENT)
+                    .map(x -> nz(x.getAmount()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
+        /** Spending net of money that came back; never below zero. */
+        BigDecimal spend() {
+            return total(expenses).subtract(reimbursed()).max(BigDecimal.ZERO);
+        }
+
+        /** Real income only: reimbursements are excluded. */
         BigDecimal income() {
             return incomes.stream()
+                    .filter(x -> IncomeRules.effectiveKind(x) != IncomeKind.REIMBURSEMENT)
                     .map(x -> nz(x.getAmount()))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         }

@@ -27,24 +27,23 @@
         const now = new Date();
         const currentDay = Math.max(now.getDate(), 1);
         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
     
+        // Same rules as the cards and the money-flow panel (see money-flow.js): an income belongs to the
+        // month it COUNTS TOWARD, and money handed back (a reimbursement) is not income, it reduces spending.
+        const MoneyFlow = window.MoneyFlow;
+        const thisMonthKey = MoneyFlow.monthKey(now);
+        const monthIncomes = safeIncomes.filter(i => MoneyFlow.effectiveMonth(i) === thisMonthKey);
+        const earnedIncomes = safeIncomes.filter(i => MoneyFlow.kindOf(i) !== "REIMBURSEMENT");
+
         // Current month incomes (computed first: the period basis below needs them)
-        const currentMonthIncomes = safeIncomes.filter(i => {
-            const d = new Date(i.incomeDate);
-            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-        });
-        const currentMonthInflow = currentMonthIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-        const totalAllInflow = safeIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const currentMonthIncomes = monthIncomes.filter(i => MoneyFlow.kindOf(i) !== "REIMBURSEMENT");
+        const currentMonthInflow = MoneyFlow.earnedTotal(monthIncomes);
+        const totalAllInflow = MoneyFlow.earnedTotal(safeIncomes);
     
         // Current month expenses and daily burn
-        const currentMonthExpenses = safeExpenses.filter(e => {
-            const d = new Date(e.expenseDate);
-            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-        });
-        const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-        const totalAllExpenses = safeExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const currentMonthExpenses = safeExpenses.filter(e => MoneyFlow.monthKey(e.expenseDate) === thisMonthKey);
+        const currentMonthSpent = MoneyFlow.netSpent(currentMonthExpenses, monthIncomes);
+        const totalAllExpenses = MoneyFlow.netSpent(safeExpenses, safeIncomes);
         // Inflow and outflow must be measured over the SAME period. The panel
         // shows the current calendar month when it has any activity; only when
         // the month is completely empty (a brand-new month, or a filtered view
@@ -55,7 +54,7 @@
         const activeOutflow = useCurrentMonth ? currentMonthSpent : totalAllExpenses;
         const outflowCount = useCurrentMonth ? currentMonthExpenses.length : safeExpenses.length;
         const activeInflow = useCurrentMonth ? currentMonthInflow : totalAllInflow;
-        const inflowCount = useCurrentMonth ? currentMonthIncomes.length : safeIncomes.length;
+        const inflowCount = useCurrentMonth ? currentMonthIncomes.length : earnedIncomes.length;
         const periodNoun = useCurrentMonth ? "Monthly" : "Total";
         const dailyBurn = currentDay > 0 ? (currentMonthSpent / currentDay) : 0;
         const projectedSpent = dailyBurn * daysInMonth;
@@ -96,7 +95,7 @@
         }
     
         // 5. Synthesis: Recurring Baseline Coverage (Recurring Incomes vs Subscriptions)
-        const recurringIncomes = safeIncomes.filter(i => !!(i.isRecurring || i.recurring));
+        const recurringIncomes = earnedIncomes.filter(i => !!(i.isRecurring || i.recurring));
         const recurringExpenses = safeExpenses.filter(e => !!(e.isRecurring || e.recurring));
     
         const monthlyRecInflow = recurringIncomes.reduce((acc, i) => {
@@ -132,9 +131,9 @@
         // Same period as the inflow/outflow figures above: summing salary over
         // every record ever logged and comparing it with ONE month of outflow
         // made "salary covers N% of monthly costs" read in the hundreds.
-        const basisIncomes = useCurrentMonth ? currentMonthIncomes : safeIncomes;
+        const basisIncomes = useCurrentMonth ? currentMonthIncomes : earnedIncomes;
         const salaryInflow = basisIncomes
-            .filter(i => (i.source || '').toLowerCase().includes('salary'))
+            .filter(i => MoneyFlow.kindOf(i) === 'SALARY')
             .reduce((acc, i) => acc + Number(i.amount || 0), 0);
         const otherInflow = Math.max(0, activeInflow - salaryInflow);
         const salaryCoverageRatio = activeOutflow > 0

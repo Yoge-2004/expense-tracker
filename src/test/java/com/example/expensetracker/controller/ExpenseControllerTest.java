@@ -3,6 +3,7 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.model.Budget;
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.Expense;
+import com.example.expensetracker.model.Income;
 import com.example.expensetracker.model.RecurringExpense;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.BudgetRepository;
@@ -63,6 +64,7 @@ class ExpenseControllerTest {
     @MockitoBean BudgetRepository budgetRepository;
     @MockitoBean RecurringExpenseRepository recurringExpenseRepository;
     @MockitoBean ExpenseRepository expenseRepository;
+    @MockitoBean com.example.expensetracker.repository.IncomeRepository incomeRepository;
     @MockitoBean ExportService exportService;
     @MockitoBean ImportService importService;
     @MockitoBean UserSecurity userSecurity;
@@ -331,6 +333,51 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$[0].spent").value(350))
                 .andExpect(jsonPath("$[0].percentage").value(35.0))
                 .andExpect(jsonPath("$[0].period").value("MONTHLY"));
+    }
+
+    @Test
+    void getBudgetStatusSubtractsMoneyHandedBackForThatCategory() throws Exception {
+        Budget budget = new Budget();
+        budget.setId(3L);
+        budget.setUser(user);
+        budget.setCategory(food);
+        budget.setLimitAmount(new BigDecimal("1000"));
+        budget.setPeriod("MONTHLY");
+
+        Expense a = expense(1L, new BigDecimal("250"), "A", LocalDate.of(2026, 9, 2), food);
+        Expense b = expense(2L, new BigDecimal("100"), "B", LocalDate.of(2026, 9, 4), food);
+
+        // A friend paid back 100 of a Food bill: it reduces the Food budget's spend...
+        Income foodRefund = refund("100", food.getId());
+        // ...while money returned for another category does not.
+        Income otherRefund = refund("50", 99L);
+        // And plain income is never subtracted.
+        Income salary = new Income();
+        salary.setAmount(new BigDecimal("5000"));
+        salary.setSource("Salary");
+        salary.setIncomeDate(LocalDate.now());
+
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+        when(budgetRepository.findByUser(user)).thenReturn(List.of(budget));
+        when(expenseRepository.findByUserAndExpenseDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(a, b));
+        when(incomeRepository.findByUserAndIncomeDateBetween(eq(user), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(foodRefund, otherRefund, salary));
+
+        mockMvc.perform(get("/api/expenses/budget/status/user/7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].spent").value(250))
+                .andExpect(jsonPath("$[0].percentage").value(25.0));
+    }
+
+    private Income refund(String amount, Long categoryId) {
+        Income income = new Income();
+        income.setAmount(new BigDecimal(amount));
+        income.setSource("Dinner split");
+        income.setKind("REIMBURSEMENT");
+        income.setReimbursedCategoryId(categoryId);
+        income.setIncomeDate(LocalDate.now());
+        return income;
     }
 
     @Test
