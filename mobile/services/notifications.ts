@@ -262,6 +262,7 @@ function isDebitDuplicate(parsed: ParsedTransaction): boolean {
   }
 
   const fingerprint = [
+    parsed.direction,
     parsed.amount,
     parsed.currency,
     (parsed.merchant || '').toLowerCase(),
@@ -387,7 +388,28 @@ export async function detectAndAddExpenseFromMessage(
         ];
 
         const merchantLower = (parsed.merchant || '').toLowerCase();
-        if (merchantLower) {
+        const queryText = parsed.merchant || rawText;
+
+        // 1. Intelligent classification via ML Inference Engine
+        try {
+          const mlRes = await apiRequest('/ml/classify', {
+            method: 'POST',
+            body: JSON.stringify({ description: queryText, top_n: 3 }),
+          });
+          if (mlRes?.category) {
+            const mlCatNormalized = String(mlRes.category).toLowerCase().replace(/[_-]/g, ' ');
+            const matched = allCats.find((c: any) => {
+              const name = (c.name || '').toLowerCase().replace(/[_-]/g, ' ');
+              return name === mlCatNormalized || name.includes(mlCatNormalized) || mlCatNormalized.includes(name);
+            });
+            if (matched?.id) matchedCategoryId = matched.id;
+          }
+        } catch (_) {
+          // Gracefully fallback to keyword heuristic if ML engine is unreachable
+        }
+
+        // 2. Keyword heuristic fallback
+        if (!matchedCategoryId && merchantLower) {
           const matched = allCats.find((c: any) => {
             const name = (c.name || '').toLowerCase();
             return merchantLower.includes(name) || name.includes(merchantLower);
@@ -429,6 +451,75 @@ export async function detectAndAddExpenseFromMessage(
 }
 
 /**
+ * Ingests raw SMS or push notification text, parses it, and if it is a credit (inflow/salary):
+ * 1. Checks if Real-time Debit/Credit Alerts are enabled.
+ * 2. Checks deduplication cache to avoid duplicate ledger entries.
+ * 3. Automatically records the income to the user's ledger via API (if authenticated).
+ * 4. Emits an instant push notification confirming the credit was detected & added.
+ */
+export async function detectAndAddCreditFromMessage(
+  rawText: string,
+  targetUserId?: string | null
+): Promise<(ParsedTransaction & { addedToIncome: boolean; duplicate?: boolean }) | null> {
+  const isEnabled = await getInstantDebitAlertsEnabled();
+  if (!isEnabled) {
+    return null;
+  }
+
+  const parsed = parseFinancialMessage(rawText);
+  if (!parsed.isFinancial || parsed.direction !== 'CREDIT' || !parsed.amount || parsed.amount <= 0) {
+    return null;
+  }
+
+  // Deduplication check: ignore if this exact transaction was already processed in the window
+  if (isDebitDuplicate(parsed)) {
+    console.log('[Notifications] Duplicate credit alert suppressed:', parsed.amount, parsed.merchant);
+    return { ...parsed, addedToIncome: false, duplicate: true };
+  }
+
+  let added = false;
+  try {
+    let uid = targetUserId;
+    if (!uid) {
+      const session = await getSession();
+      uid = session.userId;
+    }
+
+    if (uid) {
+      const source = parsed.merchant || 'Bank Credit';
+      const description = parsed.merchant
+        ? `Credit from ${parsed.merchant}${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ''}`
+        : `Bank Inflow${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ''}`;
+
+      const payload = {
+        amount: parsed.amount,
+        source,
+        description,
+        incomeDate: new Date().toISOString().split('T')[0],
+        isRecurring: false,
+      };
+
+      await apiRequest(`/incomes/user/${uid}`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      invalidateApiCache();
+      added = true;
+    }
+  } catch (err) {
+    console.warn('[Notifications] Failed to auto-record credit to backend:', err);
+  }
+
+  await notifySalaryCredit(
+    parsed.amount,
+    parsed.currency === 'INR' ? '₹' : parsed.currency,
+    parsed.merchant || 'Inflow'
+  );
+  return { ...parsed, addedToIncome: added };
+}
+
+/**
  * Ingests raw SMS or push notification text and immediately dispatches a notification and adds expense if debit.
  */
 export async function processIncomingMessageForDebitNotification(
@@ -437,6 +528,20 @@ export async function processIncomingMessageForDebitNotification(
 ): Promise<ParsedTransaction | null> {
   const res = await detectAndAddExpenseFromMessage(rawText, userId);
   return res;
+}
+
+/**
+ * Universal processor for financial notifications (both credit and debit).
+ */
+export async function processIncomingFinancialMessage(
+  rawText: string,
+  userId?: string | null
+): Promise<ParsedTransaction | null> {
+  const parsed = parseFinancialMessage(rawText);
+  if (parsed.direction === 'CREDIT') {
+    return await detectAndAddCreditFromMessage(rawText, userId);
+  }
+  return await detectAndAddExpenseFromMessage(rawText, userId);
 }
 
 /**
@@ -474,7 +579,14 @@ export function registerIncomingNotificationListener(userId?: string | null) {
       }
 
       if (fullText) {
-        await detectAndAddExpenseFromMessage(fullText, userId);
+        const parsed = parseFinancialMessage(fullText);
+        if (parsed.isFinancial) {
+          if (parsed.direction === 'DEBIT') {
+            await detectAndAddExpenseFromMessage(fullText, userId);
+          } else if (parsed.direction === 'CREDIT') {
+            await detectAndAddCreditFromMessage(fullText, userId);
+          }
+        }
       }
     };
 

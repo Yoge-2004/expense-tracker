@@ -98,21 +98,9 @@ public class ExportServiceImpl implements ExportService {
     /**
      * Currency configuration metadata record.
      */
-    public static class CurrencyMeta {
-        public final String code;
-        public final String symbol;
-        public final boolean decimals;
-        public final boolean symbolAfter;
-
+    public record CurrencyMeta(String code, String symbol, boolean decimals, boolean symbolAfter) {
         public CurrencyMeta(String code, String symbol, boolean decimals) {
             this(code, symbol, decimals, false);
-        }
-
-        public CurrencyMeta(String code, String symbol, boolean decimals, boolean symbolAfter) {
-            this.code = code;
-            this.symbol = symbol;
-            this.decimals = decimals;
-            this.symbolAfter = symbolAfter;
         }
 
         public String getExcelFormat() {
@@ -319,13 +307,13 @@ public class ExportServiceImpl implements ExportService {
 
     private static String pdfSymbol(CurrencyMeta curr) {
         if (curr == null) return "Rs.";
-        if ("INR".equalsIgnoreCase(curr.code)) return "Rs.";
-        if (curr.symbol != null && !curr.symbol.isBlank()) {
-            if ("$".equals(curr.symbol) || "€".equals(curr.symbol) || "£".equals(curr.symbol) || "¥".equals(curr.symbol)) {
-                return curr.symbol;
+        if ("INR".equalsIgnoreCase(curr.code())) return "Rs.";
+        if (curr.symbol() != null && !curr.symbol().isBlank()) {
+            if ("$".equals(curr.symbol()) || "€".equals(curr.symbol()) || "£".equals(curr.symbol()) || "¥".equals(curr.symbol())) {
+                return curr.symbol();
             }
         }
-        return curr.code != null ? curr.code : "Rs.";
+        return curr.code() != null ? curr.code() : "Rs.";
     }
 
     @Override
@@ -350,7 +338,7 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
-                            + curr.code + " (" + pdfSym + ")\nGenerated: " + LocalDate.now() + "\n\n",
+                            + curr.code() + " (" + pdfSym + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -379,7 +367,7 @@ public class ExportServiceImpl implements ExportService {
                                 exp.getCategory().getName() : "Uncategorized", dataFont));
                 table.addCell(new Phrase(exp.getDescription() != null ? exp.getDescription() : "", dataFont));
                 BigDecimal amt = exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO;
-                table.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals), dataFont));
+                table.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals()), dataFont));
                 total = total.add(amt);
             }
             document.add(table);
@@ -388,7 +376,7 @@ public class ExportServiceImpl implements ExportService {
                     FontFactory.HELVETICA_BOLD, 14, new Color(199, 154, 62));
             Paragraph totalPara =
                     new Paragraph("\nTotal Expenses: " + pdfSym + " "
-                            + formatAmount(total, curr.decimals), totalFont);
+                            + formatAmount(total, curr.decimals()), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
 
@@ -440,7 +428,7 @@ public class ExportServiceImpl implements ExportService {
                     createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
 
             Row headerRow = sheet.createRow(0);
-            String[] headers = {"ID", "Date", "Category", "Amount (" + curr.symbol + ")", "Description", "Recurring"};
+            String[] headers = {"ID", "Date", "Category", "Amount (" + curr.symbol() + ")", "Description", "Recurring"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -487,7 +475,7 @@ public class ExportServiceImpl implements ExportService {
             XSSFCellStyle totalValStyle = createTotalValueStyle(workbook, colorMap, df.getFormat(curFmt));
 
             Cell totalLabel = totalRow.createCell(2);
-            totalLabel.setCellValue("TOTAL OUTFLOW (" + curr.symbol + "):");
+            totalLabel.setCellValue("TOTAL OUTFLOW (" + curr.symbol() + "):");
             totalLabel.setCellStyle(totalLabelStyle);
 
             Cell totalVal = totalRow.createCell(3);
@@ -617,7 +605,7 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
-                            + curr.code + " (" + pdfSym + ")\nGenerated: " + LocalDate.now() + "\n\n",
+                            + curr.code() + " (" + pdfSym + ")\nGenerated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -643,7 +631,7 @@ public class ExportServiceImpl implements ExportService {
                 table.addCell(new Phrase(inc.getSource() != null ? inc.getSource() : "", dataFont));
                 table.addCell(new Phrase(inc.getDescription() != null ? inc.getDescription() : "", dataFont));
                 BigDecimal amt = inc.getAmount() != null ? inc.getAmount() : BigDecimal.ZERO;
-                table.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals), dataFont));
+                table.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals()), dataFont));
                 total = total.add(amt);
             }
             document.add(table);
@@ -652,7 +640,7 @@ public class ExportServiceImpl implements ExportService {
                     FontFactory.HELVETICA_BOLD, 14, new Color(4, 120, 87));
             Paragraph totalPara =
                     new Paragraph("\nTotal Incomes: " + pdfSym + " "
-                            + formatAmount(total, curr.decimals), totalFont);
+                            + formatAmount(total, curr.decimals()), totalFont);
             totalPara.setAlignment(Element.ALIGN_RIGHT);
             document.add(totalPara);
 
@@ -704,7 +692,7 @@ public class ExportServiceImpl implements ExportService {
                     createDataRowStyle(workbook, colorMap, true, curFmt, HorizontalAlignment.RIGHT);
 
             Row headerRow = sheet.createRow(0);
-            String[] headers = {"ID", "Date", "Source", "Amount (" + curr.symbol + ")", "Description", "Recurring"};
+            String[] headers = {"ID", "Date", "Source", "Amount (" + curr.symbol() + ")", "Description", "Recurring"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -751,7 +739,7 @@ public class ExportServiceImpl implements ExportService {
             XSSFCellStyle totalValStyle = createTotalValueStyle(workbook, colorMap, df.getFormat(curFmt));
 
             Cell totalLabel = totalRow.createCell(2);
-            totalLabel.setCellValue("TOTAL INCOMES (" + curr.symbol + "):");
+            totalLabel.setCellValue("TOTAL INCOMES (" + curr.symbol() + "):");
             totalLabel.setCellStyle(totalLabelStyle);
 
             Cell totalVal = totalRow.createCell(3);
@@ -1011,8 +999,8 @@ public class ExportServiceImpl implements ExportService {
         }
 
         // Dynamic AI Prescriptions
-        String topCatName = sortedCategories.isEmpty() ? "General" : sortedCategories.get(0).getKey();
-        double topCatSpend = sortedCategories.isEmpty() ? 0.0 : sortedCategories.get(0).getValue();
+        String topCatName = sortedCategories.isEmpty() ? "General" : sortedCategories.getFirst().getKey();
+        double topCatSpend = sortedCategories.isEmpty() ? 0.0 : sortedCategories.getFirst().getValue();
         double topCatShare = totalExp > 0 ? (topCatSpend / totalExp) * 100.0 : 0.0;
         double potentialSaving = topCatSpend * 0.10;
 
@@ -1020,7 +1008,7 @@ public class ExportServiceImpl implements ExportService {
                 "Cost Optimization Priority: '%s' is your largest cost driver, "
                         + "consuming %.1f%% of expenditures (%s %,.2f). "
                         + "Trimming 10%% will redirect %s %,.2f/month back into capital surplus.",
-                topCatName, topCatShare, curr.symbol, topCatSpend, curr.symbol, potentialSaving);
+                topCatName, topCatShare, curr.symbol(), topCatSpend, curr.symbol(), potentialSaving);
 
         String p2;
         if (Double.isInfinite(runwayDays)) {
@@ -1028,12 +1016,12 @@ public class ExportServiceImpl implements ExportService {
                     "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, "
                             + "your net surplus of %s %,.2f provides effectively unlimited reserves "
                             + "(\u221E days) since net burn is zero or negative.",
-                    curr.symbol, dailyBurn, curr.symbol, Math.max(0.0, netSurplus));
+                    curr.symbol(), dailyBurn, curr.symbol(), Math.max(0.0, netSurplus));
         } else {
             p2 = String.format(Locale.US,
                     "Liquidity & Survival Runway: At your current burn velocity of %s %,.2f/day, "
                             + "your net surplus of %s %,.2f provides %.0f days (%.1f months) of reserves buffer.",
-                    curr.symbol, dailyBurn, curr.symbol, Math.max(0.0, netSurplus), runwayDays, runwayMonths);
+                    curr.symbol(), dailyBurn, curr.symbol(), Math.max(0.0, netSurplus), runwayDays, runwayMonths);
         }
 
         String p3;
@@ -1069,7 +1057,7 @@ public class ExportServiceImpl implements ExportService {
             p4 = String.format(Locale.US,
                     "Savings Goals Trajectory: Accumulated %s %,.2f toward total goal targets "
                             + "of %s %,.2f (%.1f%% achieved). Current retention pace supports continuous goal funding.",
-                    curr.symbol, totalGoalSaved, curr.symbol, totalGoalTarget, goalProgress);
+                    curr.symbol(), totalGoalSaved, curr.symbol(), totalGoalTarget, goalProgress);
         } else {
             p4 = "Savings Strategy Recommendation: No active savings goals detected. "
                     + "Establish defined capital targets (Emergency Reserve, Asset Investment) "
@@ -1123,7 +1111,7 @@ public class ExportServiceImpl implements ExportService {
             XSSFCellStyle incHeader = createModernHeaderStyle(workbook, colorMap, new Color(4, 120, 87));
             Row incHeaderRow = incSheet.createRow(0);
             incHeaderRow.setHeightInPoints(26);
-            String[] incCols = {"ID", "Date", "Source", "Amount (" + curr.symbol + ")", "Description", "Recurring"};
+            String[] incCols = {"ID", "Date", "Source", "Amount (" + curr.symbol() + ")", "Description", "Recurring"};
             for (int i = 0; i < incCols.length; i++) {
                 Cell cell = incHeaderRow.createCell(i);
                 cell.setCellValue(incCols[i]);
@@ -1167,7 +1155,7 @@ public class ExportServiceImpl implements ExportService {
             XSSFCellStyle incTotValStyle = createTotalValueStyle(workbook, colorMap, df.getFormat(curFmt));
 
             Cell incTotLbl = incTotalRow.createCell(2);
-            incTotLbl.setCellValue("TOTAL INCOMES (" + curr.symbol + "):");
+            incTotLbl.setCellValue("TOTAL INCOMES (" + curr.symbol() + "):");
             incTotLbl.setCellStyle(incTotLblStyle);
 
             Cell incTotVal = incTotalRow.createCell(3);
@@ -1202,7 +1190,7 @@ public class ExportServiceImpl implements ExportService {
             XSSFCellStyle expHeader = createModernHeaderStyle(workbook, colorMap, new Color(30, 64, 175));
             Row expHeaderRow = expSheet.createRow(0);
             expHeaderRow.setHeightInPoints(26);
-            String[] expCols = {"ID", "Date", "Category", "Amount (" + curr.symbol + ")", "Description", "Recurring"};
+            String[] expCols = {"ID", "Date", "Category", "Amount (" + curr.symbol() + ")", "Description", "Recurring"};
             for (int i = 0; i < expCols.length; i++) {
                 Cell cell = expHeaderRow.createCell(i);
                 cell.setCellValue(expCols[i]);
@@ -1246,7 +1234,7 @@ public class ExportServiceImpl implements ExportService {
             XSSFCellStyle expTotValStyle = createTotalValueStyle(workbook, colorMap, df.getFormat(curFmt));
 
             Cell expTotLbl = expTotalRow.createCell(2);
-            expTotLbl.setCellValue("TOTAL EXPENSES (" + curr.symbol + "):");
+            expTotLbl.setCellValue("TOTAL EXPENSES (" + curr.symbol() + "):");
             expTotLbl.setCellStyle(expTotLblStyle);
 
             Cell expTotVal = expTotalRow.createCell(3);
@@ -1293,8 +1281,8 @@ public class ExportServiceImpl implements ExportService {
             Row goalHeaderRow = goalSheet.createRow(0);
             goalHeaderRow.setHeightInPoints(26);
             String[] goalCols =
-                    {"ID", "Goal Name", "Target Amount (" + curr.symbol + ")",
-                        "Current Amount (" + curr.symbol + ")", "Progress %", "Target Date", "Status"};
+                    {"ID", "Goal Name", "Target Amount (" + curr.symbol() + ")",
+                        "Current Amount (" + curr.symbol() + ")", "Progress %", "Target Date", "Status"};
             for (int i = 0; i < goalCols.length; i++) {
                 Cell cell = goalHeaderRow.createCell(i);
                 cell.setCellValue(goalCols[i]);
@@ -1418,7 +1406,7 @@ public class ExportServiceImpl implements ExportService {
                 cell.setCellStyle(subBannerStyle);
             }
             subRow.getCell(0).setCellValue("PORTFOLIO PERFORMANCE & CASH FLOW ANALYTICS  |  USER: " + user.getName()
-                    + " (" + user.getEmail() + ")  |  BASE CURRENCY: " + curr.code + " (" + curr.symbol + ") "
+                    + " (" + user.getEmail() + ")  |  BASE CURRENCY: " + curr.code() + " (" + curr.symbol() + ") "
                     + " |  GENERATED: " + LocalDate.now() + "  |  PERIOD: FISCAL YEAR-TO-DATE");
             dashSheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 7));
 
@@ -1486,7 +1474,7 @@ public class ExportServiceImpl implements ExportService {
                     "\u26A1 DAILY CASH BURN VELOCITY",
                     String.format(Locale.US, "%.2f", dailyBurn),
                     PBI_ROSE_RED, kpiCurFormat,
-                    String.format(Locale.US, "Monthly Run-Rate: %s %,.0f", curr.symbol, monthlyBurnRunRate));
+                    String.format(Locale.US, "Monthly Run-Rate: %s %,.0f", curr.symbol(), monthlyBurnRunRate));
 
             // Card 7: LIQUIDITY RUNWAY (Cols E–F / 4–5)
             createPowerBiKpiCard(workbook, colorMap, dashSheet, 8, 9, 10, 4, 5,
@@ -1558,7 +1546,7 @@ public class ExportServiceImpl implements ExportService {
 
             String[] bmHeaders = {
                     "Macro Allocation Dimension",
-                    "Allocated Spend (" + curr.symbol + ")",
+                    "Allocated Spend (" + curr.symbol() + ")",
                     "Actual Share %",
                     "Benchmark %",
                     "Variance vs Target",
@@ -1713,12 +1701,12 @@ public class ExportServiceImpl implements ExportService {
 
             String[] mHeaders = {
                     "Category Name",
-                    "Allocated Spend (" + curr.symbol + ")",
+                    "Allocated Spend (" + curr.symbol() + ")",
                     "Share of Outflow",
                     "Pareto Tier",
-                    "Monthly Budget (" + curr.symbol + ")",
+                    "Monthly Budget (" + curr.symbol() + ")",
                     "Utilization Rate",
-                    "Remaining Buffer (" + curr.symbol + ")",
+                    "Remaining Buffer (" + curr.symbol() + ")",
                     "Executive Risk Status"
             };
             for (int c = 0; c < mHeaders.length; c++) {
@@ -1831,11 +1819,11 @@ public class ExportServiceImpl implements ExportService {
             t2HeadRow.setHeightInPoints(24);
             String[] t2Headers = {
                     "Cash Flow Dimension",
-                    "Gross Amount (" + curr.symbol + ")",
+                    "Gross Amount (" + curr.symbol() + ")",
                     "Flow Direction",
                     "Classification",
                     "Portfolio Ratio",
-                    "Monthly Run-Rate (" + curr.symbol + ")",
+                    "Monthly Run-Rate (" + curr.symbol() + ")",
                     "Liquidity Impact",
                     "Strategic Assessment"
             };
@@ -1980,11 +1968,11 @@ public class ExportServiceImpl implements ExportService {
             t3HeadRow.setHeightInPoints(24);
             String[] t3Headers = {
                     "Disbursement Date",
-                    "Daily Outflow (" + curr.symbol + ")",
+                    "Daily Outflow (" + curr.symbol() + ")",
                     "Share of Total Outflow",
                     "Transactions",
-                    "Daily Average Benchmark (" + curr.symbol + ")",
-                    "Variance vs Benchmark (" + curr.symbol + ")",
+                    "Daily Average Benchmark (" + curr.symbol() + ")",
+                    "Variance vs Benchmark (" + curr.symbol() + ")",
                     "Velocity Intensity",
                     "Liquidity Status Tag"
             };
@@ -2148,7 +2136,7 @@ public class ExportServiceImpl implements ExportService {
                 // Chart 1: Cash Flow Column Chart (Cols A–D / 0 to 4, Rows 12 to 27)
                 XSSFClientAnchor anchor1 = drawing.createAnchor(0, 0, 0, 0, 0, 12, 4, 27);
                 XSSFChart chart1 = drawing.createChart(anchor1);
-                chart1.setTitleText("CASH FLOW DYNAMICS & LIQUIDITY (" + curr.symbol + ")");
+                chart1.setTitleText("CASH FLOW DYNAMICS & LIQUIDITY (" + curr.symbol() + ")");
                 chart1.setTitleOverlay(false);
 
                 XDDFChartLegend legend1 = chart1.getOrAddLegend();
@@ -2175,7 +2163,7 @@ public class ExportServiceImpl implements ExportService {
                                 dashSheet, new CellRangeAddress(cfStartRow, cfStartRow + 3, 1, 1));
 
                 XDDFChartData.Series cfSeries = barChart.addSeries(cfCategories, cfValues);
-                cfSeries.setTitle("Portfolio Dynamics (" + curr.symbol + ")", null);
+                cfSeries.setTitle("Portfolio Dynamics (" + curr.symbol() + ")", null);
                 chart1.plot(barChart);
 
                 // Chart 2: Category Expense Donut Chart (Cols E–H / 4 to 8, Rows 12 to 27)
@@ -2207,7 +2195,7 @@ public class ExportServiceImpl implements ExportService {
                 // Chart 3: Daily Outflow Trendline Line Chart (Cols A–H / 0 to 8, Rows 28 to 41)
                 XSSFClientAnchor anchor3 = drawing.createAnchor(0, 0, 0, 0, 0, 28, 8, 41);
                 XSSFChart chart3 = drawing.createChart(anchor3);
-                chart3.setTitleText("DAILY DISBURSEMENT VELOCITY & RUN-RATE (" + curr.symbol + ")");
+                chart3.setTitleText("DAILY DISBURSEMENT VELOCITY & RUN-RATE (" + curr.symbol() + ")");
                 chart3.setTitleOverlay(false);
 
                 XDDFChartLegend legend3 = chart3.getOrAddLegend();
@@ -2229,7 +2217,7 @@ public class ExportServiceImpl implements ExportService {
                                 dashSheet, new CellRangeAddress(timeStartRow, timeEndRow, 1, 1));
 
                 XDDFChartData.Series lineSeries = lineChart.addSeries(timeCategories, timeValues);
-                lineSeries.setTitle("Daily Outflow (" + curr.symbol + ")", null);
+                lineSeries.setTitle("Daily Outflow (" + curr.symbol() + ")", null);
                 chart3.plot(lineChart);
 
             } catch (Exception chartEx) {
@@ -2431,12 +2419,6 @@ public class ExportServiceImpl implements ExportService {
     }
 
     private XSSFCellStyle createDataRowStyle(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap,
-                boolean isZebra, String format) {
-        return createDataRowStyle(workbook, colorMap, isZebra, format,
-                format != null ? HorizontalAlignment.RIGHT : HorizontalAlignment.LEFT);
-    }
-
-    private XSSFCellStyle createDataRowStyle(XSSFWorkbook workbook, DefaultIndexedColorMap colorMap,
                 boolean isZebra, String format, HorizontalAlignment align) {
         XSSFCellStyle style = workbook.createCellStyle();
         XSSFFont font = workbook.createFont();
@@ -2616,7 +2598,7 @@ public class ExportServiceImpl implements ExportService {
             org.openpdf.text.Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 10, Color.GRAY);
             Paragraph userPara = new Paragraph(
                     "User: " + user.getName() + " (" + user.getEmail() + ") | Currency: "
-                            + curr.code + " (" + pdfSym + ") | Generated: " + LocalDate.now() + "\n\n",
+                            + curr.code() + " (" + pdfSym + ") | Generated: " + LocalDate.now() + "\n\n",
                     subTitleFont
             );
             userPara.setAlignment(Element.ALIGN_CENTER);
@@ -2633,9 +2615,9 @@ public class ExportServiceImpl implements ExportService {
             addHeaderCell(kpiTable, "Net Cash Flow (" + pdfSym + ")", kpiHeaderFont, new Color(59, 130, 246));
 
             org.openpdf.text.Font kpiValueFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.DARK_GRAY);
-            addKpiCell(kpiTable, pdfSym + " " + formatAmount(totalIncome, curr.decimals), kpiValueFont);
-            addKpiCell(kpiTable, pdfSym + " " + formatAmount(totalExpenses, curr.decimals), kpiValueFont);
-            addKpiCell(kpiTable, pdfSym + " " + formatAmount(netSavings, curr.decimals), kpiValueFont);
+            addKpiCell(kpiTable, pdfSym + " " + formatAmount(totalIncome, curr.decimals()), kpiValueFont);
+            addKpiCell(kpiTable, pdfSym + " " + formatAmount(totalExpenses, curr.decimals()), kpiValueFont);
+            addKpiCell(kpiTable, pdfSym + " " + formatAmount(netSavings, curr.decimals()), kpiValueFont);
 
             document.add(kpiTable);
             document.add(new Paragraph("\n"));
@@ -2668,7 +2650,7 @@ public class ExportServiceImpl implements ExportService {
                         new Phrase(exp.getCategory() != null ? exp.getCategory().getName() : "General", dataFont));
                 expTable.addCell(new Phrase(exp.getDescription() != null ? exp.getDescription() : "", dataFont));
                 BigDecimal amt = exp.getAmount() != null ? exp.getAmount() : BigDecimal.ZERO;
-                expTable.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals), dataFont));
+                expTable.addCell(new Phrase(pdfSym + " " + formatAmount(amt, curr.decimals()), dataFont));
             }
             if (expenses.isEmpty()) {
                 PdfPCell emptyCell = new PdfPCell(new Phrase("No expense records available", dataFont));
@@ -2704,10 +2686,10 @@ public class ExportServiceImpl implements ExportService {
                     goalTable.addCell(new Phrase(goal.getName() != null ? goal.getName() : "Unnamed Goal", dataFont));
                     goalTable.addCell(
                             new Phrase(pdfSym + " "
-                                    + formatAmount(goal.getTargetAmount(), curr.decimals), dataFont));
+                                    + formatAmount(goal.getTargetAmount(), curr.decimals()), dataFont));
                     goalTable.addCell(
                             new Phrase(pdfSym + " "
-                                    + formatAmount(goal.getCurrentAmount(), curr.decimals), dataFont));
+                                    + formatAmount(goal.getCurrentAmount(), curr.decimals()), dataFont));
                     double progress = 0.0;
                     if (goal.getTargetAmount() != null && goal.getTargetAmount().compareTo(BigDecimal.ZERO) > 0) {
                         progress = (goal.getCurrentAmount() != null ? goal.getCurrentAmount().doubleValue() : 0.0)
@@ -2769,15 +2751,15 @@ public class ExportServiceImpl implements ExportService {
      */
     private String currencyAwareHighExpenseThreshold(CurrencyMeta curr) {
         if (curr == null) return "1000";
-        if (!curr.decimals) {
+        if (!curr.decimals()) {
             // JPY, KRW, VND, IDR, HUF, CLP — amounts are typically 100x larger
             return "100000";
         }
-        String code = curr.code;
+        String code = curr.code();
         if ("INR".equals(code) || "PKR".equals(code) || "NGN".equals(code)
                 || "ARS".equals(code) || "COP".equals(code) || "LBP".equals(code)
                 || "BDT".equals(code) || "LKR".equals(code) || "NPR".equals(code)
-                || "PKR".equals(code) || "EGP".equals(code) || "TRY".equals(code)
+                || "EGP".equals(code) || "TRY".equals(code)
                 || "PHP".equals(code) || "KES".equals(code)) {
             return "10000";
         }
