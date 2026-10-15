@@ -20,15 +20,18 @@ import java.util.regex.Pattern;
 @Service
 public class ReceiptOcrServiceImpl implements ReceiptOcrService {
 
-    private static final Map<String, List<String>> CATEGORY_KEYWORDS = Map.of(
-            "Food & Dining", List.of("restaurant", "cafe", "coffee", "bistro", "burger", "pizza", "swiggy", "zomato", "dining", "bar", "bakery", "kitchen", "grill", "starbucks", "subway", "mcdonald"),
-            "Groceries", List.of("supermarket", "grocery", "mart", "store", "provisions", "reliance", "dmart", "spencer", "vegetables", "fruits", "milk", "dairy", "trader joe", "whole foods", "walmart", "costco"),
-            "Transportation", List.of("fuel", "petrol", "diesel", "gas", "shell", "hpcl", "bpcl", "ioc", "uber", "ola", "metro", "auto", "rail", "parking", "toll", "chevron", "exxon"),
-            "Shopping", List.of("clothing", "apparel", "retail", "mall", "fashion", "zara", "h&m", "uniqlo", "lifestyle", "westside", "amazon", "flipkart", "target", "nike", "adidas"),
-            "Utilities", List.of("electricity", "power", "water", "gas bill", "broadband", "wifi", "internet", "airtel", "jio", "vodafone", "telecom", "utility"),
-            "Health & Medical", List.of("pharmacy", "chemist", "drug", "hospital", "clinic", "medical", "apollo", "medplus", "healthcare", "diagnostic", "lab", "walgreens", "cvs"),
-            "Entertainment", List.of("cinema", "movie", "theatre", "imax", "pvr", "inox", "concert", "game", "bowling", "netflix", "spotify")
-    );
+    private static final Map<String, List<String>> CATEGORY_KEYWORDS;
+    static {
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        map.put("Food & Dining", List.of("restaurant", "cafe", "coffee", "bistro", "burger", "pizza", "swiggy", "zomato", "dining", "bar", "bakery", "kitchen", "grill", "starbucks", "subway", "mcdonald"));
+        map.put("Groceries", List.of("supermarket", "grocery", "mart", "store", "provisions", "reliance", "dmart", "spencer", "vegetables", "fruits", "milk", "dairy", "trader joe", "whole foods", "walmart", "costco"));
+        map.put("Transportation", List.of("fuel", "petrol", "diesel", "gas", "shell", "hpcl", "bpcl", "ioc", "uber", "ola", "metro", "auto", "rail", "parking", "toll", "chevron", "exxon"));
+        map.put("Shopping", List.of("clothing", "apparel", "retail", "mall", "fashion", "zara", "h&m", "uniqlo", "lifestyle", "westside", "amazon", "flipkart", "target", "nike", "adidas"));
+        map.put("Utilities", List.of("electricity", "power", "water", "gas bill", "broadband", "wifi", "internet", "airtel", "jio", "vodafone", "telecom", "utility"));
+        map.put("Health & Medical", List.of("pharmacy", "chemist", "drug", "hospital", "clinic", "medical", "apollo", "medplus", "healthcare", "diagnostic", "lab", "walgreens", "cvs"));
+        map.put("Entertainment", List.of("cinema", "movie", "theatre", "imax", "pvr", "inox", "concert", "game", "bowling", "netflix", "spotify"));
+        CATEGORY_KEYWORDS = Collections.unmodifiableMap(map);
+    }
 
     private static final Pattern SUBTOTAL_REGEX = Pattern.compile(
             "(?:sub\\s*total|item\\s*total|sub-total|items?\\s*value|base\\s*(?:amount|total)|taxable\\s*value|gross\\s*(?:amount|total))[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
@@ -41,7 +44,7 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
     private static final Pattern VAT_REGEX = Pattern.compile(
             "(?:vat|value\\s*added\\s*tax)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
     private static final Pattern GEN_TAX_REGEX = Pattern.compile(
-            "(?:service\\s*tax|cess|total\\s*tax|tax\\s*amount|\\bgst(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?|taxes)[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:service\\s*tax|cess|total\\s*tax|tax\\s*amount|\\btax(?:es)?(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?|\\bgst(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?)[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
     private static final Pattern DISCOUNT_REGEX = Pattern.compile(
             "(?:discount|coupon|promo|instant\\s*savings?|less)(?:\\s*\\([^)]*\\))?[\\s:₹$€£\\-]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
     private static final Pattern CHARGES_REGEX = Pattern.compile(
@@ -265,10 +268,17 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         // 4. Category prediction
         String category = "Miscellaneous";
         String lowerAll = text.toLowerCase();
+        int maxMatches = 0;
         for (Map.Entry<String, List<String>> entry : CATEGORY_KEYWORDS.entrySet()) {
-            if (entry.getValue().stream().anyMatch(lowerAll::contains)) {
+            int matches = 0;
+            for (String kw : entry.getValue()) {
+                if (lowerAll.contains(kw)) {
+                    matches++;
+                }
+            }
+            if (matches > maxMatches) {
+                maxMatches = matches;
                 category = entry.getKey();
-                break;
             }
         }
 

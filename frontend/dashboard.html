@@ -197,6 +197,7 @@
                 </div>
                 <div class="metric-footer">
                     <span class="text-muted" id="expenseCountText"><span class="skeleton skeleton-text short" style="width:110px; height:12px; display:inline-block; margin-bottom:0;"></span></span>
+                    <span class="text-muted" id="topCategoryDetail"> &bull; Top: <strong id="topCategoryName">—</strong> (<span id="topCategoryAmount">$0.00 spent</span>)</span>
                 </div>
             </div>
 
@@ -216,8 +217,7 @@
 
             <!-- Hidden projection anchor to preserve script compatibility -->
             <span id="monthForecast" style="display:none;">Projected: $0.00</span>
-            <span id="topCategoryName" style="display:none;">—</span>
-            <span id="topCategoryAmount" style="display:none;">$0.00</span>
+
             <span id="topCatBadge" style="display:none;"></span>
 
             <!-- Metric 4: Savings Rate & Goals Progress -->
@@ -445,7 +445,7 @@
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                         </svg>
                     </button>
-                    <button id="toggleIncomeFiltersBtn" class="btn-icon" title="Show Income Filters" aria-label="Show income filters" style="display:none;">
+                    <button id="toggleIncomeFiltersBtn" class="btn-icon" title="Show Income Filters" aria-label="Show income filters">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                         </svg>
@@ -744,7 +744,7 @@
                     </label>
                 </div>
 
-                <div id="recurringOptions" hidden class="form-group-box" style="display: none;">
+                <div id="recurringOptions" class="form-group-box">
                     <div class="form-group">
                         <label>Billing Frequency</label>
                         <select id="recurringFrequency">
@@ -755,7 +755,7 @@
                             <option value="CUSTOM">Custom Interval (Days)</option>
                         </select>
                     </div>
-                    <div class="form-group" id="customIntervalWrap" hidden style="display: none;">
+                    <div class="form-group" id="customIntervalWrap">
                         <label>Interval (Days)</label>
                         <input type="number" id="recurringIntervalDays" min="1" value="1">
                     </div>
