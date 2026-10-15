@@ -126,7 +126,63 @@
 .inbox-item {
     position: relative;
     border-top: 1px solid var(--border);
+    overflow: hidden;
+    background: #BE123C;
+    touch-action: pan-y;
+    max-height: 180px;
+    box-sizing: border-box;
     transition: background-color 0.15s ease;
+}
+
+.inbox-item-swipe-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    background: linear-gradient(90deg, #BE123C, #991B1B);
+    color: #ffffff;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.inbox-swipe-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #ffffff;
+    opacity: 0.5;
+    transform: scale(0.9);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.inbox-swipe-action svg {
+    width: 15px;
+    height: 15px;
+    stroke: #ffffff;
+}
+
+.inbox-item-foreground {
+    position: relative;
+    z-index: 2;
+    background: var(--card-bg);
+    width: 100%;
+    will-change: transform;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+[data-theme="light"] .inbox-item-foreground {
+    background: #ffffff;
+}
+
+[data-theme="light"] .inbox-item-swipe-bg {
+    background: linear-gradient(90deg, #DC2626, #B91C1C);
 }
 
 .inbox-item-button {

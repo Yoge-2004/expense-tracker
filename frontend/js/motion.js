@@ -179,37 +179,112 @@
         document.addEventListener('touchend', clearPress, { passive: true });
         document.addEventListener('touchcancel', clearPress, { passive: true });
 
-        // Lightweight horizontal swipe detection for rows opted into it
-        // via .swipeable-row (e.g. a transaction row revealing delete/edit).
-        document.querySelectorAll('.swipeable-row').forEach((row) => {
-            let startX = 0;
-            let currentX = 0;
-            let dragging = false;
+        // Fluid horizontal touch swipe gesture for transaction and income rows
+        // Swiping right reveals/triggers Edit; Swiping left reveals/triggers Delete
+        let activeSwipeRow = null;
+        let rowStartX = 0;
+        let rowStartY = 0;
+        let rowDiffX = 0;
+        let rowDiffY = 0;
+        let isRowSwiping = false;
+        let hasHapticFired = false;
 
-            row.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                dragging = true;
-            }, { passive: true });
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            const row = e.target.closest('.expense-item, .income-table tbody tr, .swipeable-row');
+            if (!row || e.target.closest('button, a, input, select')) return;
+            activeSwipeRow = row;
+            rowStartX = e.touches[0].clientX;
+            rowStartY = e.touches[0].clientY;
+            rowDiffX = 0;
+            rowDiffY = 0;
+            isRowSwiping = false;
+            hasHapticFired = false;
+        }, { passive: true });
 
-            row.addEventListener('touchmove', (e) => {
-                if (!dragging) return;
-                currentX = e.touches[0].clientX - startX;
-                if (currentX < 0 && currentX > -100) {
-                    row.style.transform = `translateX(${currentX}px)`;
+        document.addEventListener('touchmove', (e) => {
+            if (!activeSwipeRow || e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            rowDiffX = touch.clientX - rowStartX;
+            rowDiffY = touch.clientY - rowStartY;
+
+            // Check if vertical scrolling or horizontal swiping
+            if (!isRowSwiping) {
+                if (Math.abs(rowDiffY) > 8 && Math.abs(rowDiffY) >= Math.abs(rowDiffX)) {
+                    // Vertical page scroll — cancel row swipe immediately
+                    activeSwipeRow = null;
+                    return;
                 }
-            }, { passive: true });
+                if (Math.abs(rowDiffX) > 12 && Math.abs(rowDiffX) > Math.abs(rowDiffY) * 1.3) {
+                    isRowSwiping = true;
+                    window._isGlobalRowSwiping = true;
+                    activeSwipeRow.classList.add('is-swiping');
+                    activeSwipeRow.classList.remove('swipe-spring-back');
+                }
+            }
 
-            row.addEventListener('touchend', () => {
-                dragging = false;
-                row.style.transform = '';
-                if (currentX < -48) {
-                    row.classList.add('swiped-open');
+            if (isRowSwiping) {
+                // Clamp horizontal translation to [-95px, 95px]
+                const clampedX = Math.max(-95, Math.min(95, rowDiffX));
+                activeSwipeRow.style.transform = `translateX(${clampedX}px)`;
+
+                if (clampedX > 55) {
+                    activeSwipeRow.classList.add('swipe-edit-ready');
+                    activeSwipeRow.classList.remove('swipe-delete-ready');
+                    if (!hasHapticFired) {
+                        navigator.vibrate?.(12);
+                        hasHapticFired = true;
+                    }
+                } else if (clampedX < -55) {
+                    activeSwipeRow.classList.add('swipe-delete-ready');
+                    activeSwipeRow.classList.remove('swipe-edit-ready');
+                    if (!hasHapticFired) {
+                        navigator.vibrate?.(12);
+                        hasHapticFired = true;
+                    }
                 } else {
-                    row.classList.remove('swiped-open');
+                    activeSwipeRow.classList.remove('swipe-edit-ready', 'swipe-delete-ready');
+                    hasHapticFired = false;
                 }
-                currentX = 0;
-            }, { passive: true });
-        });
+            }
+        }, { passive: true });
+
+        function endRowSwipe() {
+            if (!activeSwipeRow) return;
+            const row = activeSwipeRow;
+            const finalX = rowDiffX;
+            const wasSwiping = isRowSwiping;
+
+            activeSwipeRow = null;
+            isRowSwiping = false;
+            setTimeout(() => { window._isGlobalRowSwiping = false; }, 120);
+
+            if (wasSwiping) {
+                row.classList.remove('is-swiping');
+                row.classList.add('swipe-spring-back');
+                row.style.transform = 'translateX(0px)';
+
+                if (finalX > 65) {
+                    // Swipe right -> Edit
+                    navigator.vibrate?.(15);
+                    const editBtn = row.querySelector('.btn-edit, .edit-income-btn');
+                    if (editBtn) editBtn.click();
+                } else if (finalX < -65) {
+                    // Swipe left -> Delete
+                    navigator.vibrate?.([15, 30, 15]);
+                    const delBtn = row.querySelector('.btn-delete, .delete-income-btn');
+                    if (delBtn) delBtn.click();
+                }
+
+                setTimeout(() => {
+                    row.classList.remove('swipe-spring-back', 'swipe-edit-ready', 'swipe-delete-ready');
+                    row.style.transform = '';
+                }, 300);
+            }
+        }
+
+        document.addEventListener('touchend', endRowSwipe, { passive: true });
+        document.addEventListener('touchcancel', endRowSwipe, { passive: true });
     }
 
     /* -------------------------------------------------------------------

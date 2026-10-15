@@ -8,3 +8,6 @@
 // Until this is set, the "Continue with Google" button shows a setup notice
 // instead of silently pretending to sign the user in.
 const GOOGLE_CLIENT_ID = "487469737581-k1idcre171eknatam925igofmc6jtk00.apps.googleusercontent.com";
+window.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
+window.APP_CONFIG = window.APP_CONFIG || {};
+window.APP_CONFIG.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;

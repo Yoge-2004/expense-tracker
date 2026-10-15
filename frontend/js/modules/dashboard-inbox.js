@@ -52,12 +52,25 @@
         }
         items.forEach((item) => {
             const row = el("li", `inbox-item${item.read ? "" : " inbox-item--unread"}`);
+
+            // Background trough with clear actions underneath
+            const swipeBg = el("div", "inbox-item-swipe-bg");
+            const leftAction = el("div", "inbox-swipe-action inbox-swipe-action--left");
+            leftAction.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Clear</span>';
+            const rightAction = el("div", "inbox-swipe-action inbox-swipe-action--right");
+            rightAction.innerHTML = '<span>Clear</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+            swipeBg.append(leftAction, rightAction);
+            row.append(swipeBg);
+
+            // Sliding foreground container
+            const foreground = el("div", "inbox-item-foreground");
+
             const button = el("button", "inbox-item-button");
             button.type = "button";
             button.append(el("span", "inbox-item-title", item.title), el("span", "inbox-item-body", item.body),
                 el("span", "inbox-item-time", timeAgo(item.createdAt)));
             button.addEventListener("click", () => openItem(item));
-            row.append(button);
+            foreground.append(button);
 
             // Desktop & non-touch delete button
             const deleteBtn = el("button", "inbox-item-delete");
@@ -65,83 +78,115 @@
             deleteBtn.setAttribute("aria-label", "Delete notification");
             deleteBtn.setAttribute("title", "Delete notification");
             deleteBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-            deleteBtn.addEventListener("click", async (e) => {
+            deleteBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                row.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, max-height 0.25s ease, margin 0.25s ease, padding 0.25s ease";
-                row.style.transform = "translateX(50px)";
-                row.style.opacity = "0";
-                setTimeout(async () => {
-                    row.style.maxHeight = "0px";
-                    row.style.marginBottom = "0px";
-                    row.style.paddingTop = "0px";
-                    row.style.paddingBottom = "0px";
-                    row.style.overflow = "hidden";
-                    try {
-                        await apiRequest(`${base}/${item.id}`, { method: "DELETE" });
-                    } catch (_) {}
-                    setTimeout(() => row.remove(), 250);
-                    if (!item.read) {
+                dismissNotification(row, foreground, item, 60);
+            });
+            foreground.append(deleteBtn);
+            row.append(foreground);
+
+            function dismissNotification(rowEl, fgEl, notifItem, swipeDelta) {
+                navigator.vibrate?.(15);
+                const flyOutX = swipeDelta > 0 ? 360 : -360;
+                fgEl.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease";
+                fgEl.style.transform = `translateX(${flyOutX}px)`;
+                fgEl.style.opacity = "0";
+
+                setTimeout(() => {
+                    rowEl.style.transition = "max-height 0.24s cubic-bezier(0.16, 1, 0.3, 1), margin 0.2s ease, padding 0.2s ease, opacity 0.2s ease";
+                    rowEl.style.maxHeight = "0px";
+                    rowEl.style.marginBottom = "0px";
+                    rowEl.style.paddingTop = "0px";
+                    rowEl.style.paddingBottom = "0px";
+                    rowEl.style.opacity = "0";
+                    rowEl.style.overflow = "hidden";
+
+                    if (!notifItem.read) {
                         const curBadge = parseInt(badge.textContent, 10) || 1;
                         setBadge(Math.max(0, curBadge - 1));
                     }
-                }, 200);
-            });
-            row.append(deleteBtn);
 
-            // Touch gesture support: swipe left/right to dismiss notification
+                    setTimeout(async () => {
+                        rowEl.remove();
+                        if (list.querySelectorAll(".inbox-item").length === 0) {
+                            list.replaceChildren(el("li", "inbox-empty", "You're all caught up."));
+                        }
+                        try {
+                            await apiRequest(`${base}/${notifItem.id}`, { method: "DELETE" });
+                        } catch (_) {}
+                    }, 240);
+                }, 160);
+            }
+
+            // Touch gesture support: swipe left/right to clear notification
             let touchStartX = 0;
             let touchStartY = 0;
             let currentX = 0;
             let isSwiping = false;
+            let hasVibrated = false;
 
-            row.addEventListener("touchstart", (e) => {
+            foreground.addEventListener("touchstart", (e) => {
                 if (e.touches.length !== 1) return;
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
                 currentX = 0;
                 isSwiping = false;
-                row.style.transition = "none";
+                hasVibrated = false;
+                foreground.style.transition = "none";
             }, { passive: true });
 
-            row.addEventListener("touchmove", (e) => {
+            foreground.addEventListener("touchmove", (e) => {
                 if (e.touches.length !== 1) return;
                 const diffX = e.touches[0].clientX - touchStartX;
                 const diffY = e.touches[0].clientY - touchStartY;
-                if (!isSwiping && Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
-                    isSwiping = true;
+                if (!isSwiping) {
+                    if (Math.abs(diffY) > 8 && Math.abs(diffY) >= Math.abs(diffX)) {
+                        return; // User is scrolling vertically
+                    }
+                    if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY) * 1.25) {
+                        isSwiping = true;
+                    }
                 }
                 if (isSwiping) {
                     currentX = diffX;
-                    row.style.transform = `translateX(${currentX}px)`;
-                    row.style.opacity = String(Math.max(0.15, 1 - Math.abs(currentX) / 220));
+                    const clampedX = Math.max(-140, Math.min(140, currentX));
+                    foreground.style.transform = `translateX(${clampedX}px)`;
+
+                    if (currentX > 0) {
+                        const progress = Math.min(1, currentX / 65);
+                        leftAction.style.opacity = String(0.4 + progress * 0.6);
+                        leftAction.style.transform = `scale(${0.9 + progress * 0.2})`;
+                        rightAction.style.opacity = "0.2";
+                    } else {
+                        const progress = Math.min(1, Math.abs(currentX) / 65);
+                        rightAction.style.opacity = String(0.4 + progress * 0.6);
+                        rightAction.style.transform = `scale(${0.9 + progress * 0.2})`;
+                        leftAction.style.opacity = "0.2";
+                    }
+
+                    if (Math.abs(currentX) > 65 && !hasVibrated) {
+                        navigator.vibrate?.(15);
+                        hasVibrated = true;
+                    } else if (Math.abs(currentX) <= 65) {
+                        hasVibrated = false;
+                    }
                 }
             }, { passive: true });
 
-            row.addEventListener("touchend", () => {
+            foreground.addEventListener("touchend", () => {
                 if (!isSwiping) return;
-                row.style.transition = "transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease";
-                if (Math.abs(currentX) > 75) {
-                    navigator.vibrate?.(15);
-                    const flyOutX = currentX > 0 ? 350 : -350;
-                    row.style.transform = `translateX(${flyOutX}px)`;
-                    row.style.opacity = "0";
-                    setTimeout(async () => {
-                        row.style.maxHeight = "0px";
-                        row.style.marginBottom = "0px";
-                        row.style.paddingTop = "0px";
-                        row.style.paddingBottom = "0px";
-                        row.style.overflow = "hidden";
-                        try {
-                            await apiRequest(`${base}/${item.id}`, { method: "DELETE" });
-                        } catch (_) {}
-                        setTimeout(() => row.remove(), 250);
-                    }, 220);
+                if (Math.abs(currentX) > 65) {
+                    dismissNotification(row, foreground, item, currentX);
                 } else {
-                    row.style.transform = "translateX(0px)";
-                    row.style.opacity = "1";
+                    foreground.style.transition = "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)";
+                    foreground.style.transform = "translateX(0px)";
+                    leftAction.style.opacity = "";
+                    leftAction.style.transform = "";
+                    rightAction.style.opacity = "";
+                    rightAction.style.transform = "";
                 }
-            });
+            }, { passive: true });
 
             list.append(row);
         });

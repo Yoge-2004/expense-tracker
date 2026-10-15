@@ -3969,7 +3969,12 @@ function initLedgerStreamTabs() {
         });
     });
     // Touch gesture swipe support for cycling between stream tabs (All <-> Expenses <-> Incomes)
-    const targetSwipeElements = [document.getElementById("ledgerStreamTabs"), grid, document.getElementById("recentTransactionsTable")].filter(Boolean);
+    const targetSwipeElements = [
+        document.getElementById("ledgerStreamTabs"),
+        document.getElementById("unifiedLedgerCard"),
+        grid,
+        document.getElementById("recentTransactionsTable")
+    ].filter(Boolean);
 
     targetSwipeElements.forEach(el => {
         let touchStartX = 0;
@@ -3977,14 +3982,14 @@ function initLedgerStreamTabs() {
         let swiped = false;
 
         el.addEventListener("touchstart", (e) => {
-            if (e.touches.length !== 1) return;
+            if (e.touches.length !== 1 || window._isGlobalRowSwiping) return;
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
             swiped = false;
         }, { passive: true });
 
         el.addEventListener("touchend", (e) => {
-            if (swiped || e.changedTouches.length !== 1) return;
+            if (swiped || e.changedTouches.length !== 1 || window._isGlobalRowSwiping) return;
             const diffX = e.changedTouches[0].clientX - touchStartX;
             const diffY = e.changedTouches[0].clientY - touchStartY;
             if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {

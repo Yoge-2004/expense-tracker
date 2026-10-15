@@ -85,5 +85,34 @@
     byId("moneyFlowPrev")?.addEventListener("click", () => move(-1));
     byId("moneyFlowNext")?.addEventListener("click", () => move(1));
 
+    // Touch swipe gesture for fluid monthly navigation
+    const panel = byId("moneyFlowPanel");
+    if (panel) {
+        let startX = 0;
+        let startY = 0;
+        let swiped = false;
+        panel.addEventListener("touchstart", (e) => {
+            if (e.touches.length !== 1) return;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            swiped = false;
+        }, { passive: true });
+        panel.addEventListener("touchend", (e) => {
+            if (swiped || e.changedTouches.length !== 1) return;
+            const diffX = e.changedTouches[0].clientX - startX;
+            const diffY = e.changedTouches[0].clientY - startY;
+            if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.4) {
+                swiped = true;
+                if (diffX < 0) {
+                    navigator.vibrate?.(15);
+                    move(1);
+                } else {
+                    navigator.vibrate?.(15);
+                    move(-1);
+                }
+            }
+        }, { passive: true });
+    }
+
     window.DashboardMoneyFlow = Object.freeze({ render });
 })();

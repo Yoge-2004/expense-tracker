@@ -134,9 +134,49 @@ async function handleCredentialResponse(credentialResponse) {
     }
 }
 
+function isGoogleSignInConfigured() {
+    const cid = (typeof GOOGLE_CLIENT_ID !== "undefined" ? GOOGLE_CLIENT_ID : window.APP_CONFIG?.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID || "");
+    return typeof cid === "string" && cid.trim().length > 0 && !cid.includes("YOUR_GOOGLE_CLIENT_ID");
+}
+
+function getGoogleClientId() {
+    return (typeof GOOGLE_CLIENT_ID !== "undefined" ? GOOGLE_CLIENT_ID : window.APP_CONFIG?.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID || "").trim();
+}
+
+let isGoogleInitialized = false;
+function initGoogleSignIn() {
+    if (isGoogleInitialized || !isGoogleSignInConfigured() || !window.google?.accounts?.id) return;
+    try {
+        const clientId = getGoogleClientId();
+        window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+        });
+        isGoogleInitialized = true;
+
+        const realButtons = document.querySelectorAll("#googleRealButton, .google-real-btn");
+        realButtons.forEach(btnContainer => {
+            btnContainer.style.display = "block";
+            const parentWidth = btnContainer.parentElement?.getBoundingClientRect().width || 380;
+            const width = Math.min(Math.max(Math.round(parentWidth) || 360, 240), 440);
+            window.google.accounts.id.renderButton(btnContainer, {
+                type: "standard",
+                shape: "rectangular",
+                theme: "outline",
+                text: "continue_with",
+                size: "large",
+                width: width
+            });
+        });
+    } catch (e) {
+        console.warn("Google Sign-In initialization:", e);
+    }
+}
+
 function handleGoogleOAuth() {
     setGoogleButtonLoading(true, "Connecting to Google...");
-    showToast("Connecting to Google...", "info");
 
     if (!isGoogleSignInConfigured()) {
         setTimeout(() => {
@@ -152,32 +192,50 @@ function handleGoogleOAuth() {
         return;
     }
 
+    initGoogleSignIn();
+
     try {
-        const client = window.google.accounts.oauth2.initTokenClient({
-            client_id: window.APP_CONFIG.GOOGLE_CLIENT_ID,
-            scope: 'openid email profile',
-            callback: (tokenResponse) => {
-                if (tokenResponse && tokenResponse.access_token) {
-                    showToast("Received OAuth token from Google. Note: Backend requires an ID Token for /auth/oauth/google.", "info");
-                    setGoogleButtonLoading(false);
-                } else {
-                    setGoogleButtonLoading(false);
-                    showToast("Google OAuth was not completed.", "warning");
-                }
-            },
-            error_callback: (err) => {
-                console.error("Google OAuth token client error:", err);
+        window.google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed()) {
+                const reason = notification.getNotDisplayedReason();
+                console.warn("Google One Tap prompt not displayed:", reason);
                 setGoogleButtonLoading(false);
-                showToast("Google sign-in was interrupted or failed.", "error");
+                const realBtn = document.querySelector("#googleRealButton, .google-real-btn");
+                if (realBtn) {
+                    realBtn.style.display = "block";
+                }
+            } else if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
+                setGoogleButtonLoading(false);
             }
         });
-
-        client.requestAccessToken();
     } catch (err) {
-        console.error("Failed to initialize Google Token Client:", err);
+        console.error("Failed to prompt Google Sign-In:", err);
         setGoogleButtonLoading(false);
-        showToast("Google Sign-In initialization failed.", "error");
+        showToast("Google Sign-In prompt failed.", "error");
     }
+}
+
+function setupGoogleIdentity() {
+    if (window.google?.accounts?.id) {
+        initGoogleSignIn();
+    } else {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            if (window.google?.accounts?.id) {
+                clearInterval(interval);
+                initGoogleSignIn();
+            } else if (attempts > 30) {
+                clearInterval(interval);
+            }
+        }, 200);
+    }
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupGoogleIdentity);
+} else {
+    setupGoogleIdentity();
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

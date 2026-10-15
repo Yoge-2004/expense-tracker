@@ -745,7 +745,8 @@
 
     .dashboard-heading {
         flex: 0 0 auto;
-        min-width: 0;
+        min-width: max-content;
+        white-space: nowrap;
     }
 
     .dashboard-heading h2 {
