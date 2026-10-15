@@ -235,6 +235,8 @@
 }
 
 .profile-menu a {
+    display: flex;
+    align-items: center;
     padding: 14px 20px;
     font-size: 14px;
     color: var(--text-main);
@@ -253,8 +255,9 @@
 }
 
 .profile-menu a:last-child {
-    border-radius: 0 0 15px 15px;
+    border-radius: 0 0 14px 14px;
     border-bottom: none;
+    margin-bottom: 4px;
 }
 
 .grid-stats {

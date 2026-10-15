@@ -211,7 +211,7 @@
     function initPointerInteractions() {
         if (!hasFinePointer || prefersReducedMotion) return;
 
-        document.querySelectorAll('.btn-primary, .btn-oauth').forEach((el) => {
+        document.querySelectorAll('.btn-primary, .btn-oauth:not(#googleOAuthBtn)').forEach((el) => {
             el.classList.add('magnetic-target');
             el.addEventListener('mousemove', (e) => {
                 const rect = el.getBoundingClientRect();

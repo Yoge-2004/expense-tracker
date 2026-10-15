@@ -813,12 +813,20 @@
 
 /* Scrollable Profile Menu */
 .profile-menu {
-    max-height: calc(100vh - 85px);
+    max-height: calc(100vh - 150px);
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: contain;
+    scroll-padding-bottom: 24px;
+    padding-bottom: 12px;
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--primary-rgb, 212, 175, 55), 0.4) transparent;
     -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 768px) {
+    .profile-menu {
+        max-height: calc(100vh - 90px);
+    }
 }
 .profile-menu::-webkit-scrollbar {
     width: 6px;
