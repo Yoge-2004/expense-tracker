@@ -176,7 +176,18 @@ const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: 
         >
           <View style={styles.itemHeader}>
             <Text style={[styles.itemTitle, { color: c.text }]}>{item.title}</Text>
-            {!item.read && <View style={[styles.unreadDot, { backgroundColor: c.primary }]} />}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              {!item.read && <View style={[styles.unreadDot, { backgroundColor: c.primary }]} />}
+              <TouchableOpacity
+                activeOpacity={0.6}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                onPress={() => onClear(item.id)}
+                accessibilityLabel="Delete notification"
+                accessibilityRole="button"
+              >
+                <Ionicons name="trash-outline" size={15} color={c.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
           <Text style={[styles.itemBody, { color: c.textMuted }]}>{item.body}</Text>
           <Text style={[styles.itemTime, { color: c.textMuted }]}>{timeAgo(item.createdAt)}</Text>

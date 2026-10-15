@@ -59,6 +59,36 @@
             button.addEventListener("click", () => openItem(item));
             row.append(button);
 
+            // Desktop & non-touch delete button
+            const deleteBtn = el("button", "inbox-item-delete");
+            deleteBtn.type = "button";
+            deleteBtn.setAttribute("aria-label", "Delete notification");
+            deleteBtn.setAttribute("title", "Delete notification");
+            deleteBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+            deleteBtn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                row.style.transition = "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, max-height 0.25s ease, margin 0.25s ease, padding 0.25s ease";
+                row.style.transform = "translateX(50px)";
+                row.style.opacity = "0";
+                setTimeout(async () => {
+                    row.style.maxHeight = "0px";
+                    row.style.marginBottom = "0px";
+                    row.style.paddingTop = "0px";
+                    row.style.paddingBottom = "0px";
+                    row.style.overflow = "hidden";
+                    try {
+                        await apiRequest(`${base}/${item.id}`, { method: "DELETE" });
+                    } catch (_) {}
+                    setTimeout(() => row.remove(), 250);
+                    if (!item.read) {
+                        const curBadge = parseInt(badge.textContent, 10) || 1;
+                        setBadge(Math.max(0, curBadge - 1));
+                    }
+                }, 200);
+            });
+            row.append(deleteBtn);
+
             // Touch gesture support: swipe left/right to dismiss notification
             let touchStartX = 0;
             let touchStartY = 0;
