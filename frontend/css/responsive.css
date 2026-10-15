@@ -923,9 +923,16 @@
     }
     .dashboard-heading {
         width: 100%;
+        padding: 0;
+        margin: 0;
     }
+    .brand-title,
     .dashboard-heading h2 {
-        font-size: 24px;
+        font-size: 22px;
+        letter-spacing: -0.4px;
+    }
+    .brand-badge {
+        gap: 8px;
     }
     .top-bar-actions {
         display: grid;
@@ -1093,6 +1100,14 @@
 
 /* ── Extra-Small Screens (<= 360px) ── */
 @media (max-width: 360px) {
+    .brand-title,
+    .dashboard-heading h2 {
+        font-size: 19px;
+        letter-spacing: -0.3px;
+    }
+    .brand-badge {
+        gap: 6px;
+    }
     .input-wrapper > .input-icon {
         left: 10px;
         width: 14px;
