@@ -749,3 +749,244 @@
     }
 }
 
+
+/* ==========================================================================
+   CONSOLIDATED RESPONSIVE SUITE: Large Screens, Tablet, Mobile Breakpoints
+   ========================================================================== */
+
+/* ── Large Screens (>= 1400px) ── */
+@media (min-width: 1400px) {
+    .budget-section .card-header,
+    .savings-section .card-header {
+        margin-bottom: 20px;
+    }
+    .budget-section .card-header #addBudgetBtn,
+    .savings-section .card-header #addGoalBtn {
+        height: 38px;
+        padding: 8px 18px;
+        font-size: 13.5px;
+        font-weight: 700;
+        border-radius: 11px;
+        gap: 8px;
+    }
+    .budget-section .card-header #addBudgetBtn svg,
+    .savings-section .card-header #addGoalBtn svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+}
+
+@media (min-width: 1920px) {
+    .budget-section .card-header #addBudgetBtn,
+    .savings-section .card-header #addGoalBtn {
+        height: 40px;
+        padding: 8px 20px;
+        font-size: 14px;
+    }
+}
+
+/* ── Tablet & Small Desktop (<= 1200px) ── */
+@media (max-width: 1200px) {
+    .top-bar-actions .command-search-wrapper {
+        width: auto;
+        min-width: 140px;
+        max-width: 260px;
+        flex: 1 1 180px;
+    }
+}
+
+/* ── Tablet Portrait & Compact View (<= 900px) ── */
+@media (max-width: 900px) {
+    .command-kbd { display: none !important; }
+    .top-bar-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        grid-template-rows: auto auto auto !important;
+        grid-auto-flow: row !important;
+        align-items: center !important;
+        justify-items: stretch !important;
+        column-gap: 12px !important;
+        row-gap: 10px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        overflow-x: hidden !important;
+        padding: 0 10px !important;
+        box-sizing: border-box !important;
+    }
+    .top-bar-actions .command-search-wrapper {
+        grid-column: 1 / -1 !important;
+        grid-row: 1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin-top: 10px !important;
+    }
+    .top-bar-actions > #openModalBtn,
+    .top-bar-actions > #openIncomeModalBtn {
+        grid-row: 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        isolation: isolate !important;
+        transform: none !important;
+    }
+    .top-bar-actions > #openModalBtn::before,
+    .top-bar-actions > #openModalBtn::after,
+    .top-bar-actions > #openIncomeModalBtn::before,
+    .top-bar-actions > #openIncomeModalBtn::after {
+        display: none !important;
+        content: none !important;
+    }
+    .top-bar-actions > #openModalBtn { grid-column: 1 !important; }
+    .top-bar-actions > #openIncomeModalBtn { grid-column: 2 !important; }
+    .top-bar-actions > .top-bar-utility-group,
+    .top-bar-actions > .theme-toggle-btn,
+    .top-bar-actions > #headerHelpBtn {
+        grid-column: 1 !important;
+        grid-row: 3 !important;
+        justify-self: start !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    .top-bar-actions > .user-profile {
+        grid-column: 2 !important;
+        grid-row: 3 !important;
+        justify-self: end !important;
+        min-width: 0 !important;
+    }
+    .top-bar .add-expense-button > svg,
+    .top-bar .add-income-button > svg {
+        flex: 0 0 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+    }
+    .top-bar .add-expense-button > span,
+    .top-bar .add-income-button > span {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+    }
+    .profile-menu {
+        left: auto !important;
+        right: 0 !important;
+        width: min(320px, calc(100vw - 24px)) !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 24px) !important;
+        box-sizing: border-box !important;
+    }
+    .subs-tab-bar { max-width: 100% !important; }
+}
+
+/* ── Mobile Screens (<= 760px) ── */
+@media (max-width: 760px) {
+    .top-bar .add-expense-button,
+    .top-bar .add-income-button {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        isolation: isolate !important;
+    }
+    .top-bar .add-expense-button::before,
+    .top-bar .add-expense-button::after,
+    .top-bar .add-income-button::before,
+    .top-bar .add-income-button::after {
+        content: none !important;
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        animation: none !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    #ledgerStreamTabs, .ledger-stream-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        scrollbar-width: none !important;
+    }
+    #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display: none !important; }
+    #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
+        flex: 0 0 auto !important;
+        min-width: max-content !important;
+        white-space: nowrap !important;
+    }
+    #incomeList .btn-edit, #incomeList .btn-delete {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 34px !important;
+        box-sizing: border-box !important;
+    }
+    #incomeList .btn-edit svg, #incomeList .btn-delete svg {
+        width: 14px !important;
+        height: 14px !important;
+        display: block !important;
+    }
+}
+
+/* ── Mobile Compact (<= 700px) ── */
+@media (max-width: 700px) {
+    .top-bar-actions .command-search-wrapper { width: 100% !important; min-width: 0 !important; flex: 1 1 100% !important; }
+    .budget-status-row { gap: 8px !important; font-size: 10.5px !important; }
+    .budget-item { padding: 13px !important; }
+    .budget-item .budget-bar-track { height: 7px !important; margin-top: 9px !important; }
+    #incomeList tbody tr { width: 100% !important; }
+}
+
+/* ── Mobile Handheld (<= 480px) ── */
+@media (max-width: 480px) {
+    .top-bar-actions { gap: 8px !important; column-gap: 12px !important; row-gap: 8px !important; padding-left: 10px !important; padding-right: 10px !important; }
+    .top-bar .add-expense-button, .top-bar .add-income-button { height: 38px !important; padding: 0 9px !important; font-size: 12px !important; gap: 5px !important; border-radius: 9px !important; }
+    .input-wrapper:has(> .input-icon) > input.form-input,
+    .input-wrapper:has(> .input-icon) > textarea.form-input,
+    .input-wrapper:has(> .input-icon) > select.form-input,
+    .input-wrapper:has(> svg.input-icon) > input.form-input,
+    .input-wrapper:has(> svg.input-icon) > textarea.form-input,
+    .input-wrapper:has(> svg.input-icon) > select.form-input { padding-left: 38px !important; }
+    .input-wrapper > .input-icon, .input-wrapper > svg.input-icon { left: 10px !important; width: 14px !important; height: 14px !important; max-width: 14px !important; max-height: 14px !important; flex-basis: 14px !important; }
+    .top-bar .add-expense-button > span, .top-bar .add-income-button > span { min-width: 0 !important; max-width: 100% !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    .profile-menu { width: calc(100vw - 20px) !important; max-width: calc(100vw - 20px) !important; right: -2px !important; }
+}
+
+/* ── Extra-Small Screens (<= 360px) ── */
+@media (max-width: 360px) {
+    .input-wrapper > .input-icon {
+        left: 10px !important;
+        width: 14px !important;
+        height: 14px !important;
+    }
+    .input-wrapper > input:not([type="hidden"]),
+    .input-wrapper > .form-input,
+    .form-group .input-wrapper > input:not([type="hidden"]),
+    .form-group .input-wrapper > .form-input,
+    .auth-form .input-wrapper > input:not([type="hidden"]),
+    .auth-form .input-wrapper > .form-input,
+    .input-wrapper > .custom-select-trigger,
+    .form-group .input-wrapper > .custom-select-trigger {
+        padding-left: 48px !important;
+        box-sizing: border-box !important;
+    }
+}

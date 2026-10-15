@@ -473,3 +473,16 @@
     height: 1px;
     background: var(--border);
 }
+
+/* Google OAuth Native & Overlay Styling */
+.google-oauth-wrapper { position: relative; overflow: visible; isolation: isolate; }
+#googleOAuthBtn.btn-oauth {
+    position: relative; z-index: 1; box-sizing: border-box; min-height: 48px;
+    transform: none; transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, color .2s ease; overflow: visible;
+}
+#googleOAuthBtn.btn-oauth:hover, #googleOAuthBtn.btn-oauth:focus:hover {
+    transform: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .14);
+}
+#googleOAuthBtn svg, #googleOAuthBtn svg.google-g-icon { display: block; width: 18px; height: 18px; flex: 0 0 18px; overflow: visible; }
+#googleOAuthBtn svg path { stroke: none; }
+#googleRealButton, .google-oauth-wrapper #googleRealButton, .google-oauth-wrapper .google-real-btn { display: none !important; }

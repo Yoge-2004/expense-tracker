@@ -78,4 +78,16 @@
     --metric-subs: #C0565E;
     --metric-subs-rgb: 192, 86, 94;
     --metric-subs-glow: rgba(192, 86, 94, 0.18);
+
+    /* Standardized Stacking Order (Z-Index scale) */
+    --z-base: 1;
+    --z-sticky: 100;
+    --z-topbar: 500;
+    --z-dropdown: 1000;
+    --z-inbox: 1200;
+    --z-profile: 1500;
+    --z-modal-backdrop: 2000;
+    --z-modal: 2100;
+    --z-dialog: 2500;
+    --z-toast: 3000;
 }

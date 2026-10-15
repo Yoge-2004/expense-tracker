@@ -40,3 +40,54 @@ input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
+
+/* Theme switching performance safeguard */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Base Input Icon & Wrapper Layout */
+.input-wrapper {
+    position: relative;
+    min-width: 0;
+}
+.input-wrapper > .input-icon,
+.input-wrapper > svg.input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    color: var(--text-muted);
+    stroke: currentColor;
+    fill: none;
+    pointer-events: none;
+    z-index: 5;
+    flex: 0 0 16px;
+}
+.input-wrapper:focus-within > .input-icon,
+.input-wrapper:focus-within > svg.input-icon {
+    color: var(--primary);
+}
+.input-wrapper > .form-input,
+.input-wrapper > input,
+.input-wrapper > textarea,
+.input-wrapper > select {
+    min-width: 0;
+}
+.input-wrapper:has(> .input-icon) > input.form-input,
+.input-wrapper:has(> .input-icon) > textarea.form-input,
+.input-wrapper:has(> .input-icon) > select.form-input,
+.input-wrapper:has(> svg.input-icon) > input.form-input,
+.input-wrapper:has(> svg.input-icon) > textarea.form-input,
+.input-wrapper:has(> svg.input-icon) > select.form-input {
+    padding-left: 42px;
+}

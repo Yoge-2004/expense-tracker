@@ -137,3 +137,23 @@
         border-radius: 9px;
     }
 }
+
+/* Ledger Stream Controls & Transaction Item Sizing */
+#expenseList, #incomeList { min-width: 0; width: 100%; box-sizing: border-box; }
+#expenseList .expense-item, #incomeList tbody tr { min-width: 0; box-sizing: border-box; }
+#ledgerStreamTabs, .ledger-stream-tabs {
+    flex: 1 1 auto;
+    min-width: 0;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+#ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
+    flex: 0 0 auto;
+    min-width: max-content;
+    width: max-content;
+}
+#ledgerStreamTabs .stream-badge-count, .ledger-stream-tabs .stream-badge-count {
+    flex: 0 0 auto;
+    min-width: 2ch;
+    white-space: nowrap;
+}

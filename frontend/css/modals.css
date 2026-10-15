@@ -14,7 +14,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s var(--ease), backdrop-filter 0.3s;
-    z-index: 999;
+    z-index: var(--z-modal-backdrop, 2000);
     padding: 16px;
     box-sizing: border-box;
     overflow: hidden !important;
@@ -63,6 +63,7 @@
     opacity: 0;
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
+    scrollbar-gutter: stable;
 }
 
 /* Modal scrollbars adapted for curved dialog boundaries */
