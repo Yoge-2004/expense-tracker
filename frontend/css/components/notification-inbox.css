@@ -59,7 +59,36 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 16px 10px;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.inbox-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.inbox-header .modal-close {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: var(--cursor-pointer, pointer);
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.inbox-header .modal-close:hover {
+    background: rgba(231, 76, 60, 0.15);
+    border-color: rgba(231, 76, 60, 0.4);
+    color: #E74C3C;
+    transform: translateY(-1px);
 }
 
 .inbox-header h2 {

@@ -875,6 +875,11 @@ function toggleProfileMenu(forceState) {
 window.toggleProfileMenu = toggleProfileMenu;
 
 elements.profileTrigger.addEventListener("click", () => { toggleProfileMenu(); });
+document.getElementById("closeProfileMenuBtn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toggleProfileMenu(false);
+});
 elements.profileTrigger.addEventListener("keydown", (e) => {
     // Was mouse-only: a div with a click listener and no keyboard handling
     // is invisible to keyboard-only and screen-reader users — there was no
@@ -960,7 +965,12 @@ if (sendMonthlyReportBtn) {
                     emailDiv.id = "profileEmail";
                     emailDiv.className = "profile-email-badge";
                     emailDiv.textContent = profile.email;
-                    profileMenu.insertBefore(emailDiv, profileMenu.firstChild);
+                    const header = profileMenu.querySelector(".profile-menu-header");
+                    if (header) {
+                        header.insertAdjacentElement("afterend", emailDiv);
+                    } else {
+                        profileMenu.insertBefore(emailDiv, profileMenu.firstChild);
+                    }
                 }
             }
         }

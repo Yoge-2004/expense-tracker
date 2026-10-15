@@ -195,6 +195,45 @@
     animation: menuDown 0.2s var(--ease) both;
 }
 
+.profile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.profile-menu-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.01em;
+}
+
+.profile-menu-header .modal-close {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: var(--cursor-pointer, pointer);
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.profile-menu-header .modal-close:hover {
+    background: rgba(231, 76, 60, 0.15);
+    border-color: rgba(231, 76, 60, 0.4);
+    color: #E74C3C;
+    transform: translateY(-1px);
+}
+
 .profile-menu a {
     padding: 14px 20px;
     font-size: 14px;

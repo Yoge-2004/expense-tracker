@@ -283,6 +283,11 @@
     });
 
     bell.addEventListener("click", () => toggle());
+    document.getElementById("closeInboxBtn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        toggle(false);
+    });
     document.getElementById("inboxMarkAll")?.addEventListener("click", async () => {
         await markRead([]);
         load();

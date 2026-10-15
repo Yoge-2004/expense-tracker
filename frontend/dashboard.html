@@ -110,7 +110,15 @@
                         <section class="inbox-panel" id="inboxPanel" role="dialog" aria-label="Notifications" hidden>
                             <header class="inbox-header">
                                 <h2>Notifications</h2>
-                                <button type="button" id="inboxMarkAll" class="inbox-link">Mark all read</button>
+                                <div class="inbox-header-actions">
+                                    <button type="button" id="inboxMarkAll" class="inbox-link">Mark all read</button>
+                                    <button type="button" class="modal-close" id="closeInboxBtn" aria-label="Close notifications" title="Close notifications">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
                             </header>
                             <ul class="inbox-list" id="inboxList"></ul>
                             <details class="inbox-settings">
@@ -124,6 +132,15 @@
                 <div class="user-profile" id="profileTrigger" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
                     <div class="avatar">U</div>
                     <div class="profile-menu" id="profileMenu" role="menu" aria-label="Account menu">
+                        <div class="profile-menu-header">
+                            <span class="profile-menu-title">Account Menu</span>
+                            <button type="button" class="modal-close" id="closeProfileMenuBtn" aria-label="Close account menu" title="Close account menu">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                         <div style="padding: 10px 14px; border-bottom: 1px solid var(--border);">
                             <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">PREFERRED CURRENCY</label>
                             <p style="font-size: 10.5px; color: var(--text-muted); margin: -2px 0 8px; line-height: 1.4;">Changes the symbol shown — amounts aren't converted between currencies.</p>
