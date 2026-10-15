@@ -44,6 +44,30 @@
     border-bottom-color: rgba(199, 154, 62, 0.2);
 }
 
+.dashboard-heading {
+    flex-shrink: 0;
+}
+
+.top-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+}
+
+.top-bar .add-expense-button,
+.top-bar .add-income-button {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.top-bar .add-expense-button > span,
+.top-bar .add-income-button > span {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+}
+
 .user-profile {
     position: relative;
     cursor: pointer;
