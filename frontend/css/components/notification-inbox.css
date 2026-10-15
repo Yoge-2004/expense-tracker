@@ -2,11 +2,11 @@
 .inbox {
     position: relative;
     display: inline-flex;
-    z-index: 1050;
+    z-index: 1000;
 }
 
 .inbox:has(.inbox-panel:not([hidden])) {
-    z-index: 1200;
+    z-index: 1500;
 }
 
 .inbox-bell {
@@ -45,7 +45,7 @@
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    z-index: 1200;
+    z-index: 1500;
     width: min(380px, calc(100vw - 24px));
     max-height: min(560px, 80vh);
     overflow-y: auto;
@@ -219,7 +219,7 @@
         width: min(380px, calc(100vw - 32px)) !important;
         max-width: calc(100vw - 32px) !important;
         max-height: calc(85vh - 70px) !important;
-        z-index: 1200 !important;
+        z-index: 1500 !important;
         box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75) !important;
     }
 }

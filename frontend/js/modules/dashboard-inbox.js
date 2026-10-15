@@ -237,12 +237,25 @@
 
     function toggle(forceOpen) {
         const open = typeof forceOpen === "boolean" ? forceOpen : panel.hidden;
+        if (open) {
+            // Mutual exclusion: close profile menu if open
+            if (typeof window.toggleProfileMenu === "function") {
+                window.toggleProfileMenu(false);
+            } else {
+                const pm = document.getElementById("profileMenu");
+                pm?.classList.remove("active");
+                const pt = document.getElementById("profileTrigger");
+                pt?.setAttribute("aria-expanded", "false");
+                pt?.classList.remove("active");
+                if (pt) pt.style.zIndex = "";
+            }
+        }
         panel.hidden = !open;
         bell.setAttribute("aria-expanded", String(open));
         bell.classList.toggle("inbox-bell--open", open);
         const inboxContainer = document.getElementById("inbox");
         if (inboxContainer) {
-            inboxContainer.style.zIndex = open ? "1200" : "";
+            inboxContainer.style.zIndex = open ? "1500" : "";
         }
         if (open) {
             load();
@@ -291,6 +304,14 @@
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && !panel.hidden) toggle(false);
     });
+
+    window.DashboardInbox = {
+        close: () => toggle(false),
+        open: () => toggle(true),
+        toggle,
+        load,
+        setBadge
+    };
 
     load();
     setInterval(() => { if (document.visibilityState === "visible") load(); }, POLL_MS);

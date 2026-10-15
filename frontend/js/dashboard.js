@@ -851,11 +851,30 @@ function refreshAllCurrencyDisplays() {
 
 function toggleProfileMenu(forceState) {
     const isOpen = typeof forceState === "boolean" ? forceState : !elements.profileMenu.classList.contains("active");
+    if (isOpen) {
+        // Mutual exclusion: dismiss notification panel if open
+        if (typeof window.DashboardInbox?.close === "function") {
+            window.DashboardInbox.close();
+        } else {
+            const inboxPanel = document.getElementById("inboxPanel");
+            if (inboxPanel && !inboxPanel.hidden) {
+                inboxPanel.hidden = true;
+                const inboxBell = document.getElementById("inboxBell");
+                inboxBell?.setAttribute("aria-expanded", "false");
+                inboxBell?.classList.remove("inbox-bell--open");
+                const inboxContainer = document.getElementById("inbox");
+                if (inboxContainer) inboxContainer.style.zIndex = "";
+            }
+        }
+    }
     elements.profileMenu.classList.toggle("active", isOpen);
+    elements.profileTrigger.classList.toggle("active", isOpen);
     elements.profileTrigger.setAttribute("aria-expanded", String(isOpen));
+    elements.profileTrigger.style.zIndex = isOpen ? "2500" : "";
 }
+window.toggleProfileMenu = toggleProfileMenu;
 
-elements.profileTrigger.addEventListener("click", (e) => { e.stopPropagation(); toggleProfileMenu(); });
+elements.profileTrigger.addEventListener("click", () => { toggleProfileMenu(); });
 elements.profileTrigger.addEventListener("keydown", (e) => {
     // Was mouse-only: a div with a click listener and no keyboard handling
     // is invisible to keyboard-only and screen-reader users — there was no
