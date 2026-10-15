@@ -71,13 +71,50 @@
         return gradient;
     }
 
-    function renderPieChart(expenses) {
-        const ctx = document.getElementById('expenseChart').getContext('2d');
-        const categoryTotals = {};
-        expenses.forEach(exp => {
-            const cat = exp.categoryName || 'Uncategorized';
-            categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
+    function setChartEmptyState(canvasId, isEmpty, emptyText = "No activity recorded for this period") {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const wrapper = canvas.closest(".chart-wrapper, .trend-chart-wrapper");
+        if (!wrapper) return;
+        let overlay = wrapper.querySelector(".chart-empty-overlay");
+        if (isEmpty) {
+            canvas.style.opacity = "0.15";
+            if (!overlay) {
+                overlay = document.createElement("div");
+                overlay.className = "chart-empty-overlay";
+                overlay.style.cssText = "position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; pointer-events:none; text-align:center; padding:12px; z-index:2;";
+                wrapper.appendChild(overlay);
+            }
+            overlay.innerHTML = `
+                <div style="font-size:20px; opacity:0.6;">📊</div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-muted); max-width:200px; line-height:1.3;">${emptyText}</span>`;
+        } else {
+            canvas.style.opacity = "1";
+            if (overlay) overlay.remove();
+        }
+    }
+
+    function renderChartEmptyStates(isOffline = false) {
+        const msg = isOffline ? "Chart data unavailable offline" : "No activity recorded for this period";
+        ["expenseChart", "trendChart", "recurringSplitChart", "dayOfWeekChart", "budgetVsActualChart"].forEach(id => {
+            setChartEmptyState(id, true, msg);
         });
+    }
+
+    function renderPieChart(expenses) {
+        const canvas = document.getElementById('expenseChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const hasData = Array.isArray(expenses) && expenses.length > 0;
+        setChartEmptyState('expenseChart', !hasData);
+
+        const categoryTotals = {};
+        if (hasData) {
+            expenses.forEach(exp => {
+                const cat = exp.categoryName || 'Uncategorized';
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(exp.amount || 0);
+            });
+        }
 
         if (chartState.pieChart) chartState.pieChart.destroy();
 
@@ -116,16 +153,21 @@
     function renderTrendChart(expenses) {
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;
+        const hasData = Array.isArray(expenses) && expenses.length > 0;
+        setChartEmptyState('trendChart', !hasData);
+
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
         const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
         const textColor = isLight ? '#6B6558' : '#A8A395';
 
         const dailyTotals = {};
-        expenses.forEach(exp => {
-            const date = exp.expenseDate;
-            dailyTotals[date] = (dailyTotals[date] || 0) + Number(exp.amount || 0);
-        });
+        if (hasData) {
+            expenses.forEach(exp => {
+                const date = exp.expenseDate;
+                dailyTotals[date] = (dailyTotals[date] || 0) + Number(exp.amount || 0);
+            });
+        }
 
         const { dates, values } = buildTrendSeries(dailyTotals);
 
@@ -169,13 +211,16 @@
     function renderRecurringSplitChart(expenses) {
         const canvas = document.getElementById('recurringSplitChart');
         if (!canvas) return;
+        const hasData = Array.isArray(expenses) && expenses.length > 0;
+        setChartEmptyState('recurringSplitChart', !hasData);
+
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
         const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
         const textColor = isLight ? '#6B6558' : '#A8A395';
 
         if (chartState.recurringSplitChart) chartState.recurringSplitChart.destroy();
-        if (!Array.isArray(expenses) || expenses.length === 0) return;
+        if (!hasData) return;
 
         let recurringTotal = 0;
         let oneTimeTotal = 0;
@@ -213,6 +258,9 @@
     function renderDayOfWeekChart(expenses) {
         const canvas = document.getElementById('dayOfWeekChart');
         if (!canvas) return;
+        const hasData = Array.isArray(expenses) && expenses.length > 0;
+        setChartEmptyState('dayOfWeekChart', !hasData);
+
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
         const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
@@ -220,7 +268,7 @@
         const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
         if (chartState.dayOfWeekChart) chartState.dayOfWeekChart.destroy();
-        if (!Array.isArray(expenses) || expenses.length === 0) return;
+        if (!hasData) return;
 
         const totalsByDay = [0, 0, 0, 0, 0, 0, 0];
         expenses.forEach(exp => {
@@ -256,16 +304,16 @@
     function renderBudgetVsActualChart(budgets) {
         const canvas = document.getElementById('budgetVsActualChart');
         if (!canvas) return;
+        const hasData = Array.isArray(budgets) && budgets.length > 0;
+        setChartEmptyState('budgetVsActualChart', !hasData, "No budget limits set yet");
+
         const ctx = canvas.getContext('2d');
         const isLight = document.body.getAttribute("data-theme") === "light";
         const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
         const textColor = isLight ? '#6B6558' : '#A8A395';
 
         if (chartState.budgetVsActualChart) chartState.budgetVsActualChart.destroy();
-
-        if (!budgets || budgets.length === 0) {
-            return;
-        }
+        if (!hasData) return;
 
         const labels = budgets.map(b => b.categoryName || 'Uncategorized');
         const limits = budgets.map(b => Number(b.limit || 0));
@@ -363,6 +411,8 @@
     window.renderRecurringSplitChart = renderRecurringSplitChart;
     window.renderDayOfWeekChart = renderDayOfWeekChart;
     window.renderBudgetVsActualChart = renderBudgetVsActualChart;
+    window.renderChartEmptyStates = renderChartEmptyStates;
+    window.setChartEmptyState = setChartEmptyState;
     window.updateChartsTheme = updateChartsTheme;
 
     window.DashboardCharts = {

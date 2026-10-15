@@ -127,6 +127,17 @@
             `<div class="skeleton skeleton-card" style="min-height:110px;"></div>`
         ).join('');
     }
+    // Money flow skeleton
+    const moneyFlowBody = document.getElementById("moneyFlowBody");
+    if (moneyFlowBody && !moneyFlowBody.children.length) {
+        moneyFlowBody.innerHTML = `
+            <div class="money-flow-skeleton" style="display:flex; flex-direction:column; gap:8px; padding:6px 0;">
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
+            </div>`;
+    }
 }
 
 

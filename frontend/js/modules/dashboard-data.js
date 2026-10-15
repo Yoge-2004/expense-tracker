@@ -217,6 +217,33 @@
                                 </button>
                             </div>`;
                     }
+                    const moneyFlowBody = document.getElementById("moneyFlowBody");
+                    if (moneyFlowBody) {
+                        moneyFlowBody.innerHTML = `
+                            <div class="empty-state-compact connection-error" style="text-align:center; padding:24px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                                <div style="font-size:20px; margin-bottom:4px;">⚠️</div>
+                                <p style="font-size:13px; font-weight:600; margin:0 0 4px; color:var(--text-main);">Server Connection Failed</p>
+                                <span style="font-size:11.5px; display:block; margin-bottom:10px;">Could not reach the server to compute monthly cash flow.</span>
+                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:6px 14px; font-size:12px;">
+                                    <span>Retry Connection</span>
+                                </button>
+                            </div>`;
+                    }
+                    const insightsGrid = document.getElementById("insightsCardsGrid");
+                    if (insightsGrid) {
+                        insightsGrid.innerHTML = `
+                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:24px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                                <div style="font-size:20px; margin-bottom:4px;">⚠️</div>
+                                <p style="font-size:13px; font-weight:600; margin:0 0 4px; color:var(--text-main);">Smart Intelligence Unavailable</p>
+                                <span style="font-size:11.5px; display:block; margin-bottom:10px;">Financial intelligence requires connection to your ledger.</span>
+                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:6px 14px; font-size:12px;">
+                                    <span>Retry Connection</span>
+                                </button>
+                            </div>`;
+                    }
+                    if (typeof window.renderChartEmptyStates === "function") {
+                        window.renderChartEmptyStates(true);
+                    }
                 }
             }
         }
