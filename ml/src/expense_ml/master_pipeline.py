@@ -19,7 +19,7 @@ from .data.split import split_dataset
 from .data.taxonomy import CANONICAL_CATEGORIES
 from .evaluate import compare_models, evaluate_by_country, evaluate_model, save_result, validate_quality
 from .models.auxiliary import DuplicateSimilarityModel, MerchantSimilarityIndex, SpendingForecastModel, TransactionAnomalyModel
-from .reporting import save_anomaly_figure, save_classification_figures, save_data_quality, save_dataset_figures, save_spending_forecast, write_json, write_master_report
+from .reporting import save_anomaly_figure, save_classification_figures, save_data_quality, save_dataset_figures, save_model_comparison, save_spending_forecast, write_json, write_master_report  # noqa: F401
 from .resources import configure_resources
 from .train_baseline import train_tfidf
 

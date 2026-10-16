@@ -140,6 +140,8 @@ export default function AddExpenseScreen() {
     setGoalTargetAmount("");
     setGoalInitialAmount("");
     setGoalIsRecurring(false);
+    setAiSuggestion(null);
+    userOverrodeCategory.current = false;
     setErrors({});
   };
   const currSymbol = getCurrencySymbol(currency);
@@ -203,6 +205,14 @@ export default function AddExpenseScreen() {
 
   // Expense form state
   const [description, setDescription] = useState('');
+  const [aiSuggestion, setAiSuggestion] = useState<{
+    category: string;
+    confidence: number;
+    matchedCatId?: number;
+    matchedCatName?: string;
+  } | null>(null);
+  const [isAiClassifying, setIsAiClassifying] = useState(false);
+  const userOverrodeCategory = useRef(false);
   const [isScanningOcr, setIsScanningOcr] = useState(false);
   const [ocrSuccessData, setOcrSuccessData] = useState<ParsedReceipt | null>(null);
   const [showSampleReceipts, setShowSampleReceipts] = useState(false);
@@ -467,6 +477,54 @@ export default function AddExpenseScreen() {
       setErrors({});
     }
   }, [userId, params.editId, params.editType, params.amount, params.description, params.merchant, params.categoryId]);
+
+  useEffect(() => {
+    if (activeTab !== 'expense' || isEditMode) return;
+    const cleanDesc = description.trim();
+    if (cleanDesc.length < 3) {
+      setAiSuggestion(null);
+      setIsAiClassifying(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsAiClassifying(true);
+      try {
+        const res = await apiRequest('/ml/classify', {
+          method: 'POST',
+          body: JSON.stringify({ description: cleanDesc, top_n: 3 }),
+        });
+        if (res && res.category) {
+          const canonical = String(res.category);
+          const conf = Number(res.confidence) || 0;
+          const normCanonical = canonical.toLowerCase().replace(/[_-]/g, ' ');
+
+          const matched = categories.find((cat) => {
+            const name = (cat.name || '').toLowerCase().replace(/[_-]/g, ' ');
+            return name === normCanonical || name.includes(normCanonical) || normCanonical.includes(name);
+          });
+
+          setAiSuggestion({
+            category: canonical,
+            confidence: conf,
+            matchedCatId: matched?.id,
+            matchedCatName: matched?.name,
+          });
+
+          if (!userOverrodeCategory.current && matched?.id && conf >= 0.65) {
+            setCategoryId(matched.id);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          }
+        }
+      } catch (_) {
+        // Silently skip if network or ML unavailable
+      } finally {
+        setIsAiClassifying(false);
+      }
+    }, 320);
+
+    return () => clearTimeout(timer);
+  }, [description, categories, activeTab, isEditMode]);
 
   useEffect(() => {
     if (activeTab === 'budget' && userId) {
@@ -1746,7 +1804,17 @@ export default function AddExpenseScreen() {
               </View>
               {/* Description Input */}
               <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Description / Merchant</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={[styles.fieldLabel, { color: c.textMuted, marginBottom: 0 }]}>Description / Merchant</Text>
+                  {isAiClassifying ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <ActivityIndicator size="small" color={c.primary} />
+                      <Text style={{ fontSize: 10.5, color: c.textMuted, fontWeight: '600' }}>AI Classifying...</Text>
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 10.5, color: c.primary, fontWeight: '700' }}>⚡ AI Categorizer</Text>
+                  )}
+                </View>
                 <View
                   style={[
                     styles.inputWrap,
@@ -1791,6 +1859,39 @@ export default function AddExpenseScreen() {
                   />
                 </View>
                 {!!errors.description && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.description}</Text>}
+
+                {aiSuggestion && (
+                  <View style={[styles.aiSuggestionBox, { backgroundColor: isLight ? 'rgba(199, 154, 62, 0.1)' : 'rgba(212, 175, 55, 0.08)', borderColor: isLight ? 'rgba(199, 154, 62, 0.3)' : 'rgba(212, 175, 55, 0.25)' }]}>
+                    <View style={styles.aiSuggestionHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
+                        <Text style={{ fontSize: 13 }}>⚡</Text>
+                        <Text style={[styles.aiSuggestionLabel, { color: c.textMuted }]}>AI Suggestion:</Text>
+                        <Text style={[styles.aiSuggestionCategory, { color: c.primary }]}>
+                          {getCategoryEmoji(aiSuggestion.matchedCatName || aiSuggestion.category)} {aiSuggestion.matchedCatName || aiSuggestion.category.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())}
+                        </Text>
+                        <View style={[styles.aiConfidenceBadge, { backgroundColor: isLight ? '#E0EDDC' : 'rgba(91, 140, 90, 0.2)' }]}>
+                          <Text style={[styles.aiConfidenceText, { color: '#5B8C5A' }]}>
+                            {Math.round(aiSuggestion.confidence * 100)}% match
+                          </Text>
+                        </View>
+                      </View>
+                      {aiSuggestion.matchedCatId && categoryId !== aiSuggestion.matchedCatId && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (aiSuggestion.matchedCatId) {
+                              setCategoryId(aiSuggestion.matchedCatId);
+                              userOverrodeCategory.current = false;
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                            }
+                          }}
+                          style={[styles.aiApplyBtn, { backgroundColor: c.primary }]}
+                        >
+                          <Text style={[styles.aiApplyBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>Apply</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                )}
               </View>
 
               {/* Amount Input */}
@@ -1842,6 +1943,7 @@ export default function AddExpenseScreen() {
                         key={cat.id}
                         activeOpacity={0.8}
                         onPress={() => {
+                          userOverrodeCategory.current = true;
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                           setCategoryId(cat.id);
                           if (errors.category) setErrors((prev) => ({ ...prev, category: '' }));
@@ -2556,5 +2658,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 5,
     marginLeft: 2,
+  },
+  aiSuggestionBox: {
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  aiSuggestionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  aiSuggestionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  aiSuggestionCategory: {
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  aiConfidenceBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  aiConfidenceText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  aiApplyBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 7,
+  },
+  aiApplyBtnText: {
+    fontSize: 11.5,
+    fontWeight: '800',
   },
 });

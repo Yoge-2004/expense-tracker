@@ -9,6 +9,16 @@
 (function () {
     "use strict";
 
+    function escapeHtml(value) {
+        if (value == null) return "";
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     // 1. CANONICAL TAXONOMY DEFINITIONS (Aligned with trained TF-IDF & backend models)
     const CANONICAL_TAXONOMY = [
         {
@@ -93,9 +103,13 @@
     }
 
     function getTaxonomyItem(canonicalId) {
-        return CANONICAL_TAXONOMY.find(t => t.id === canonicalId) || {
-            id: canonicalId,
-            name: canonicalId.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+        if (!canonicalId) {
+            return { id: "unknown", name: "General Expense", emoji: "🏷️", aliases: [] };
+        }
+        const clean = String(canonicalId).toLowerCase().trim();
+        return CANONICAL_TAXONOMY.find(t => t.id === clean || t.name.toLowerCase() === clean) || {
+            id: clean,
+            name: clean.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
             emoji: "🏷️",
             aliases: []
         };
@@ -123,7 +137,7 @@
                 if (optText === alias) {
                     return opt;
                 }
-                if (optText.includes(alias) && alias.length > bestScore) {
+                if ((optText.includes(alias) || alias.includes(optText)) && alias.length > bestScore) {
                     bestOption = opt;
                     bestScore = alias.length;
                 }
@@ -143,15 +157,13 @@
 
     function resetActiveSession() {
         if (activeSession.debounceTimer) clearTimeout(activeSession.debounceTimer);
-        activeSession = {
-            lastPrediction: null,
-            userOverridden: false,
-            debounceTimer: null,
-            lastClassifiedText: ""
-        };
-
+        activeSession.lastPrediction = null;
+        activeSession.lastClassifiedText = "";
+        activeSession.userOverridden = false;
         const box = document.getElementById("aiSuggestionBox");
         if (box) box.style.display = "none";
+        const autoNotice = document.getElementById("aiAutoAppliedNotice");
+        if (autoNotice) autoNotice.style.display = "none";
         const spinner = document.getElementById("descAiLoading");
         if (spinner) spinner.style.display = "none";
         const dupBox = document.getElementById("duplicateWarningBox");
@@ -164,7 +176,8 @@
         try {
             const response = await window.apiRequest("/ml/classify", {
                 method: "POST",
-                body: JSON.stringify({ description: text.trim(), topN: topN })
+                body: JSON.stringify({ description: text.trim(), topN: topN }),
+                showLoading: false
             });
             return response;
         } catch (err) {
@@ -173,25 +186,76 @@
         }
     }
 
-    async function submitFeedbackRecord(expenseId, text, predictedCanonical, chosenCanonical, confidence, modelRevision) {
-        if (!expenseId || !text || !predictedCanonical || !chosenCanonical) return;
-        try {
-            const payload = {
-                transactionId: String(expenseId),
-                text: text.trim(),
+    async function submitFeedbackRecord(arg1, text, predictedCanonical, chosenCanonical, confidence, modelRevision) {
+        let payload = null;
+        if (typeof arg1 === "object" && arg1 !== null) {
+            payload = {
+                transactionId: String(arg1.transactionId || arg1.expenseId || Date.now()),
+                text: String(arg1.text || arg1.rawDescription || "").trim(),
+                predictedCategory: arg1.predictedCategory || arg1.suggestedCategory,
+                correctedCategory: arg1.correctedCategory || arg1.userSelectedCategory,
+                confidence: Math.min(1.0, Math.max(0.0, Number(arg1.confidence) || 0.95)),
+                modelVersion: arg1.modelVersion || arg1.modelRevision || "production"
+            };
+        } else {
+            payload = {
+                transactionId: String(arg1 || Date.now()),
+                text: String(text || "").trim(),
                 predictedCategory: predictedCanonical,
                 correctedCategory: chosenCanonical,
                 confidence: Math.min(1.0, Math.max(0.0, Number(confidence) || 0.95)),
                 modelVersion: modelRevision || "production"
             };
+        }
+        if (!payload.text || !payload.predictedCategory || !payload.correctedCategory) return;
+        try {
             await window.apiRequest("/ml/feedback", {
                 method: "POST",
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                showLoading: false
             });
-            console.info(`[DashboardML] Continuous learning feedback submitted for expense #${expenseId} (${predictedCanonical} -> ${chosenCanonical})`);
+            console.info(`[DashboardML] Feedback submitted for expense #${payload.transactionId} (${payload.predictedCategory} -> ${payload.correctedCategory})`);
         } catch (err) {
             console.warn("[DashboardML] Continuous learning feedback skipped:", err.message);
         }
+    }
+
+    // Helper to ensure an option is selectable in category dropdown, auto-creating user category if missing
+    async function ensureAndSelectCategory(canonical, selectEl) {
+        if (!selectEl) return null;
+        let opt = findMatchingOption(canonical, selectEl);
+        if (!opt) {
+            const item = getTaxonomyItem(canonical);
+            const userId = localStorage.getItem("userId");
+            if (userId && window.apiRequest) {
+                try {
+                    const newCat = await window.apiRequest(`/categories/user/${userId}`, {
+                        method: "POST",
+                        body: JSON.stringify({ name: item.name }),
+                        showLoading: false
+                    });
+                    if (newCat && newCat.id) {
+                        const newOpt = document.createElement("option");
+                        newOpt.value = newCat.id;
+                        newOpt.textContent = newCat.name;
+                        selectEl.appendChild(newOpt);
+                        if (window.allCategories && Array.isArray(window.allCategories)) {
+                            window.allCategories.push(newCat);
+                        }
+                        opt = newOpt;
+                    }
+                } catch (e) {
+                    console.warn("[DashboardML] Auto-creation of category bypassed:", e.message);
+                }
+            }
+        }
+        if (opt) {
+            selectEl.value = opt.value;
+            if (window.syncCustomSelect) window.syncCustomSelect(selectEl);
+            selectEl.classList.add("category-ai-highlight");
+            setTimeout(() => selectEl.classList.remove("category-ai-highlight"), 1600);
+        }
+        return opt;
     }
 
     // 4. DUPLICATE TRANSACTION DETECTION (Similarity Engine)
@@ -234,7 +298,7 @@
         if (match) {
             const formattedAmt = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(match.amount) : `$${match.amount}`;
             const formattedDate = window.DashboardUtils?.formatDate ? window.DashboardUtils.formatDate(match.expenseDate) : match.expenseDate;
-            dupText.innerHTML = `Identical amount <strong>${formattedAmt}</strong> for "${match.description}" was recorded on <strong>${formattedDate}</strong>.`;
+            dupText.innerHTML = `Identical amount <strong>${formattedAmt}</strong> for "${escapeHtml(match.description)}" was recorded on <strong>${formattedDate}</strong>.`;
             dupBox.style.display = "flex";
         } else {
             dupBox.style.display = "none";
@@ -261,7 +325,7 @@
         const confPct = Math.round((prediction.confidence || 0) * 100);
 
         if (predName) {
-            predName.innerHTML = `${item.emoji} ${item.name}`;
+            predName.innerHTML = `${item.emoji} ${escapeHtml(item.name)}`;
         }
 
         if (confBadge) {
@@ -287,28 +351,28 @@
             autoNotice.style.display = appliedAutomatically ? "flex" : "none";
         }
 
-        // Alternative suggestions pills
+        // Alternative suggestions pills (supports both topK and top_k)
         if (pillsList && altContainer) {
-            const topK = Array.isArray(prediction.topK) ? prediction.topK : [];
-            const alternatives = topK.filter(k => k.category !== canonical).slice(0, 3);
+            const rawTopK = Array.isArray(prediction.topK)
+                ? prediction.topK
+                : (Array.isArray(prediction.top_k) ? prediction.top_k : []);
+            const alternatives = rawTopK.filter(k => k.category !== canonical).slice(0, 3);
 
             if (alternatives.length > 0) {
                 pillsList.innerHTML = alternatives.map(alt => {
                     const altItem = getTaxonomyItem(alt.category);
                     const altConf = Math.round((alt.confidence || 0) * 100);
-                    return `<button type="button" class="ai-pill-chip" data-canonical="${alt.category}">
-                        ${altItem.emoji} ${altItem.name} <span style="opacity:0.75; font-size:10px;">${altConf}%</span>
+                    return `<button type="button" class="ai-pill-chip" data-canonical="${escapeHtml(alt.category)}">
+                        ${altItem.emoji} ${escapeHtml(altItem.name)} <span style="opacity:0.75; font-size:10px;">${altConf}%</span>
                     </button>`;
                 }).join("");
 
                 pillsList.querySelectorAll(".ai-pill-chip").forEach(btn => {
-                    btn.addEventListener("click", () => {
+                    btn.addEventListener("click", async () => {
                         const targetCanonical = btn.getAttribute("data-canonical");
                         if (categorySelect) {
-                            const opt = findMatchingOption(targetCanonical, categorySelect);
+                            const opt = await ensureAndSelectCategory(targetCanonical, categorySelect);
                             if (opt) {
-                                categorySelect.value = opt.value;
-                                if (window.syncCustomSelect) window.syncCustomSelect(categorySelect);
                                 activeSession.userOverridden = true;
                                 if (autoNotice) autoNotice.style.display = "none";
                                 if (window.showToast) window.showToast(`Applied ${getTaxonomyItem(targetCanonical).name}`, "info");
@@ -325,14 +389,12 @@
         // Manual apply button handler
         const applyBtn = document.getElementById("aiApplyBtn");
         if (applyBtn) {
-            applyBtn.onclick = () => {
+            applyBtn.onclick = async () => {
                 if (categorySelect) {
-                    const opt = findMatchingOption(canonical, categorySelect);
+                    const opt = await ensureAndSelectCategory(canonical, categorySelect);
                     if (opt) {
-                        categorySelect.value = opt.value;
-                        if (window.syncCustomSelect) window.syncCustomSelect(categorySelect);
-                        categorySelect.classList.add("category-ai-highlight");
-                        setTimeout(() => categorySelect.classList.remove("category-ai-highlight"), 1600);
+                        activeSession.userOverridden = true;
+                        if (autoNotice) autoNotice.style.display = "none";
                         if (window.showToast) window.showToast(`Selected ${item.name}`, "info");
                     }
                 }
@@ -348,7 +410,6 @@
         const amountInput = document.getElementById("amount");
         const dateInput = document.getElementById("date");
         const categorySelect = document.getElementById("categorySelect");
-        const addExpenseForm = document.getElementById("addExpenseForm");
         const modal = document.getElementById("expenseModal");
 
         if (categorySelect) {
@@ -404,6 +465,10 @@
             });
         }
 
+        // Reset state whenever new expense modal is opened
+        document.getElementById("openModalBtn")?.addEventListener("click", resetActiveSession);
+        document.getElementById("addExpenseTableBtn")?.addEventListener("click", resetActiveSession);
+
         // Listen for modal close to clean up
         document.getElementById("closeExpenseModalBtn")?.addEventListener("click", resetActiveSession);
         modal?.addEventListener("click", (e) => {
@@ -424,7 +489,7 @@
             if (activeSession.lastPrediction) {
                 const predictedCanonical = activeSession.lastPrediction.category;
                 const conf = activeSession.lastPrediction.confidence || 0.95;
-                const revision = activeSession.lastPrediction.modelRevision || "production";
+                const revision = activeSession.lastPrediction.modelRevision || activeSession.lastPrediction.model_revision || "production";
 
                 // Always submit continuous learning feedback (either confirmation or correction)
                 await submitFeedbackRecord(savedExpense.id, text, predictedCanonical, chosenCanonical, conf, revision);
@@ -450,18 +515,41 @@
                 resultContainer.innerHTML = '<span style="color:var(--text-muted); font-size:12px;">Classifying with ML intelligence...</span>';
             }
             try {
-                const predictions = await classifyDescription(query, 3);
-                if (!predictions || !predictions.length) {
+                const response = await classifyDescription(query, 3);
+                if (!response) {
                     if (resultContainer) {
                         resultContainer.innerHTML = '<span style="color:var(--text-muted); font-size:12px;">No confident classification match found.</span>';
                     }
                     return;
                 }
-                const top = predictions[0];
-                const pct = Math.round(top.confidence * 100);
-                const alternatives = predictions.slice(1).map(p =>
-                    `<span class="ml-alt-chip" data-cat="${escapeHtml(p.category)}" style="cursor:pointer; display:inline-block; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); font-size:11px; margin-right:4px;">${escapeHtml(p.category)} (${Math.round(p.confidence * 100)}%)</span>`
-                ).join("");
+
+                const top = Array.isArray(response)
+                    ? response[0]
+                    : { category: response.category, confidence: response.confidence };
+
+                if (!top || !top.category) {
+                    if (resultContainer) {
+                        resultContainer.innerHTML = '<span style="color:var(--text-muted); font-size:12px;">No confident classification match found.</span>';
+                    }
+                    return;
+                }
+
+                const pct = Math.round((top.confidence || 0) * 100);
+                const taxonomyItem = getTaxonomyItem(top.category);
+                const icon = taxonomyItem.emoji || "🏷️";
+                const displayName = taxonomyItem.name || top.category;
+
+                const rawTopK = Array.isArray(response)
+                    ? response.slice(1)
+                    : (Array.isArray(response.topK || response.top_k)
+                        ? (response.topK || response.top_k).filter(p => p.category !== top.category)
+                        : []);
+
+                const alternatives = rawTopK.map(p => {
+                    const altItem = getTaxonomyItem(p.category);
+                    const altConf = Math.round((p.confidence || 0) * 100);
+                    return `<span class="ml-alt-chip" data-cat="${escapeHtml(p.category)}" style="cursor:pointer; display:inline-block; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); font-size:11px; margin-right:4px;">${altItem.emoji} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
+                }).join("");
 
                 if (resultContainer) {
                     resultContainer.innerHTML = `
@@ -470,7 +558,7 @@
                                 <div>
                                     <span style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">ML Predicted Category</span>
                                     <div style="font-size:13.5px; font-weight:700; color:var(--primary, #D4AF37); margin-top:2px;">
-                                        ${top.icon || "🏷️"} ${escapeHtml(top.category)}
+                                        ${icon} ${escapeHtml(displayName)}
                                         <span style="font-size:11px; font-weight:600; color:var(--text-muted); margin-left:4px;">(${pct}% Match)</span>
                                     </div>
                                 </div>
@@ -485,23 +573,20 @@
                     const applyBtn = resultContainer.querySelector("#mlApplyExpenseBtn");
                     if (applyBtn) {
                         applyBtn.addEventListener("click", () => {
-                            const openBtn = document.getElementById("openAddExpenseModalBtn");
-                            if (openBtn) openBtn.click();
+                            if (window.openNewExpenseModal) {
+                                window.openNewExpenseModal();
+                            } else {
+                                document.getElementById("openModalBtn")?.click();
+                            }
                             setTimeout(() => {
-                                const descInput = document.getElementById("desc") || document.getElementById("expenseDescription");
+                                const descInput = document.getElementById("desc");
                                 if (descInput) {
                                     descInput.value = query;
                                     descInput.dispatchEvent(new Event("input", { bubbles: true }));
                                 }
-                                const catSelect = document.getElementById("category") || document.getElementById("expenseCategory");
+                                const catSelect = document.getElementById("categorySelect");
                                 if (catSelect) {
-                                    for (let i = 0; i < catSelect.options.length; i++) {
-                                        if (catSelect.options[i].text.toLowerCase().includes(top.category.toLowerCase())) {
-                                            catSelect.selectedIndex = i;
-                                            catSelect.dispatchEvent(new Event("change", { bubbles: true }));
-                                            break;
-                                        }
-                                    }
+                                    ensureAndSelectCategory(top.category, catSelect);
                                 }
                                 const amtInput = document.getElementById("amount");
                                 if (amtInput) amtInput.focus();
