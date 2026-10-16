@@ -659,8 +659,8 @@
                     <div class="insight-icon-box" style="background: rgba(var(--primary-rgb, 199, 154, 62), 0.15); color: var(--primary, #C79A3E);">⚡</div>
                     <span class="insight-card-label" style="min-width:0; overflow-wrap:break-word;">AI Smart Categorizer</span>
                 </div>
-                <span class="insight-confidence-tag" style="background: ${statusBg}; color: ${statusColor}; border-color: ${statusBorder}; margin-left:auto; flex-shrink:0;">
-                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; margin-right:4px; vertical-align:middle;"></span>${statusText}
+                <span class="insight-confidence-tag" style="display:inline-flex; align-items:center; justify-content:center; gap:5px; line-height:1; background: ${statusBg}; color: ${statusColor}; border-color: ${statusBorder}; margin-left:auto; flex-shrink:0;">
+                    <span class="insight-status-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; transform:translateY(-0.5px);"></span><span class="insight-status-text" style="display:inline-block; line-height:1;">${statusText}</span>
                 </span>
             </div>
             <div class="insight-card-content" style="margin-top:6px;">
