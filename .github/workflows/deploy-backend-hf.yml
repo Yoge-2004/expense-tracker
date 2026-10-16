@@ -72,51 +72,68 @@ jobs:
             exit 1
           fi
 
-      - name: Install Hugging Face CLI
+      - name: Install Hugging Face Hub library
         run: python -m pip install --upgrade huggingface_hub
 
-      - name: Compact HF Space Git history
+      - name: Deploy to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           set -euo pipefail
           python - <<'PY'
-          import os
+          import os, time
           from huggingface_hub import HfApi
 
           repo = os.environ['HF_SPACE_REPO']
           token = os.environ['HF_TOKEN']
-          print(f'Squashing {repo} main history to reclaim repository storage...')
-          HfApi(token=token).super_squash_history(
-              repo_id=repo,
-              branch='main',
-              repo_type='space',
-              token=token,
-              commit_message='Compact Space history before deployment',
-          )
-          print('HF Space history compacted successfully.')
-          PY
+          sha = os.environ.get('GITHUB_SHA', 'latest')[:7]
+          api = HfApi(token=token)
 
-      - name: Upload backend and ML runtime to Space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          set -euo pipefail
-          hf upload "$HF_SPACE_REPO" hf-space-payload . \
-            --repo-type=space \
-            --token "$HF_TOKEN" \
-            --delete 'expense_tracker.db' \
-            --delete 'expenses_sync.json' \
-            --delete '*.sqlite' \
-            --delete '*.sqlite3' \
-            --delete '*.db' \
-            --commit-message="Deploy combined backend + ML ${GITHUB_SHA::7}"
+          # Periodically squash Git history when commit count grows to stay well below 1 GB storage limit
+          try:
+              commits = list(api.list_repo_commits(repo_id=repo, repo_type='space'))
+              if len(commits) > 20:
+                  print(f'Space {repo} has {len(commits)} commits; compacting history to reclaim storage...')
+                  api.super_squash_history(
+                      repo_id=repo,
+                      branch='main',
+                      repo_type='space',
+                      token=token,
+                      commit_message='Compact Space history before deployment',
+                  )
+                  time.sleep(5)
+                  print('History compacted.')
+              else:
+                  print(f'Space {repo} has {len(commits)} commits; compaction not required.')
+          except Exception as exc:
+              print(f'Compaction check warning (continuing deployment): {exc}')
+
+          delete_patterns = ['expense_tracker.db', 'expenses_sync.json', '*.sqlite', '*.sqlite3', '*.db']
+
+          for attempt in range(1, 4):
+              try:
+                  print(f'Uploading payload to {repo} (attempt {attempt}/3)...')
+                  commit_info = api.upload_folder(
+                      folder_path='hf-space-payload',
+                      repo_id=repo,
+                      repo_type='space',
+                      commit_message=f'Deploy combined backend + ML {sha}',
+                      delete_patterns=delete_patterns,
+                  )
+                  print(f'Deployment succeeded: {commit_info.commit_url}')
+                  break
+              except Exception as exc:
+                  print(f'Attempt {attempt} failed: {exc}')
+                  if attempt == 3:
+                      raise
+                  time.sleep(5 * attempt)
+          PY
 
       - name: Publish deployment summary
         run: |
           echo "### Hugging Face combined deployment" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Space: \\`$HF_SPACE_REPO\\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Commit: \\`${GITHUB_SHA::7}\\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Spring Boot: \\`:8080\\` internal" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Python ML: \\`:8000\\` internal" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Space gateway: \\`:7860\\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Space: \`$HF_SPACE_REPO\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`${GITHUB_SHA::7}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Spring Boot: \`:8080\` internal" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Python ML: \`:8000\` internal" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Space gateway: \`:7860\`" >> "$GITHUB_STEP_SUMMARY"
