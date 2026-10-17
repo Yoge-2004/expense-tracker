@@ -74,35 +74,23 @@ jobs:
           BASE_URL: http://localhost:5500
         run: npx playwright test tests/dashboard.spec.ts tests/ui-regressions.spec.ts tests/login.spec.ts tests/expenses.spec.ts tests/budgets.spec.ts tests/incomes.spec.ts --project=chromium --reporter=list 2>&1 | tee /tmp/full-suite.log || true
 
-      - name: TEMP - post full suite results via API
+      - name: TEMP - summarize full suite failures
         if: always()
-        working-directory: e2e
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PASS_COUNT=$(grep -oE '[0-9]+ passed' /tmp/full-suite.log | tail -1 || echo "unknown")
-          FAIL_COUNT=$(grep -oE '[0-9]+ failed' /tmp/full-suite.log | tail -1 || echo "unknown")
-          echo "::error::SUITE SUMMARY - passed: ${PASS_COUNT} failed: ${FAIL_COUNT}"
-          grep -B1 -A8 "^  [0-9]*)" /tmp/full-suite.log | head -c 1800 | while IFS= read -r line; do
-            echo "::error::FAILDETAIL: $line"
-          done
-
-          python3 -c "
-          import json
-          try:
-              txt = open('/tmp/full-suite.log', errors='replace').read()[-6000:]
-          except Exception as e:
-              txt = 'no log captured: ' + str(e)
-          open('/tmp/body.json','w').write(json.dumps({'body': '### TEMP: full untested-suite results\n\`\`\`\n' + txt + '\n\`\`\`'}))
-          "
-          HTTP_CODE=$(curl -s -o /tmp/post_resp.txt -w '%{http_code}' -X POST -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/29/comments" \
-            --data-binary @/tmp/body.json)
-          echo "POST status: $HTTP_CODE"
-          RESP=$(cat /tmp/post_resp.txt | tr '\n' ' ' | cut -c1-500)
-          echo "::error::comment POST returned $HTTP_CODE - response: $RESP"
-          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then exit 1; fi
+          python3 - <<'PY'
+          import re
+          txt = open('/tmp/full-suite.log', errors='replace').read()
+          m = re.findall(r'(\d+) (passed|failed|flaky|skipped)', txt)
+          print('::notice title=Suite totals::' + ', '.join(f'{n} {k}' for n, k in m[-4:]))
+          blocks = re.split(r'\n(?=\s+\d+\) \[)', txt)[1:]
+          out = []
+          for b in blocks:
+              lines = [l.strip() for l in b.splitlines() if l.strip()]
+              keep = [lines[0][:160]] + [l[:140] for l in lines[1:] if re.match(r'(Error:|Locator:|Expected|Received|Timeout:)', l)][:3]
+              out.append(' | '.join(keep))
+          body = '\n'.join(out)[:45000].replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print('::error title=Failing tests (' + str(len(out)) + ')::' + body)
+          PY
 
       - name: Run mobile UI regressions on Pixel 7
         working-directory: e2e
