@@ -187,7 +187,7 @@ jobs:
                   print(f'::error title=Hugging Face upload attempt {attempt} failed::{detail}')
                   if attempt == 3:
                       raise
-                  time.sleep(5 * attempt)
+                  time.sleep(20 * attempt)
           PY
 
       - name: Publish deployment summary
