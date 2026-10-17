@@ -106,7 +106,8 @@ jobs:
               else:
                   print(f'Space {repo} has {len(commits)} commits; compaction not required.')
           except Exception as exc:
-              print(f'Compaction check warning (continuing deployment): {exc}')
+              detail = f'{type(exc).__name__}: {exc}'[:900].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f'::warning title=Space history compaction skipped::{detail}')
 
           delete_patterns = ['expense_tracker.db', 'expenses_sync.json', '*.sqlite', '*.sqlite3', '*.db']
 
@@ -124,6 +125,8 @@ jobs:
                   break
               except Exception as exc:
                   print(f'Attempt {attempt} failed: {exc}')
+                  detail = f'{type(exc).__name__}: {exc}'[:900].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print(f'::error title=Hugging Face upload attempt {attempt} failed::{detail}')
                   if attempt == 3:
                       raise
                   time.sleep(5 * attempt)
