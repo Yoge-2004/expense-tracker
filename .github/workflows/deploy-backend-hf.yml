@@ -75,6 +75,31 @@ jobs:
       - name: Install Hugging Face Hub library
         run: python -m pip install --upgrade huggingface_hub
 
+      - name: Report Space storage (advisory)
+        continue-on-error: true
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os, collections
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ['HF_TOKEN'])
+          repo = os.environ['HF_SPACE_REPO']
+          files = list(api.list_lfs_files(repo_id=repo, repo_type='space'))
+          total = sum(f.size for f in files)
+          commits = len(list(api.list_repo_commits(repo_id=repo, repo_type='space')))
+          groups = collections.defaultdict(list)
+          for f in files:
+              groups[f.filename].append(f)
+          lines = [f'{commits} commits, {len(files)} LFS objects, {total / 1e6:.1f} MB of LFS in total']
+          for name, items in sorted(groups.items(), key=lambda kv: -sum(i.size for i in kv[1]))[:12]:
+              newest = max(items, key=lambda i: (i.pushed_at is not None, i.pushed_at))
+              lines.append(f'{name}: {len(items)} versions, {sum(i.size for i in items) / 1e6:.1f} MB, newest {newest.size / 1e6:.1f} MB pushed {newest.pushed_at} ref={newest.ref}')
+          detail = '\n'.join(lines).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+          print('::notice title=Hugging Face Space storage::' + detail)
+          PY
+
       - name: Deploy to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
