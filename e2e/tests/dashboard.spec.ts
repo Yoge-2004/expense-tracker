@@ -489,8 +489,8 @@ test.describe('Dashboard reports', () => {
     await expect(page.locator('#monthlyReportModal')).toBeAttached();
   });
 
-  test('has a period modal', async ({ page }) => {
-    await expect(page.locator('#periodModal')).toBeAttached();
+  test('has a monthly report period modal', async ({ page }) => {
+    await expect(page.locator('#monthlyReportPeriodModal')).toBeAttached();
   });
 
   test('has a print report button', async ({ page }) => {
@@ -582,7 +582,7 @@ test.describe('Dashboard export buttons', () => {
   });
 
   test('has export-related elements on the page', async ({ page }) => {
-    const exportElements = page.locator('[id*="export" i], [class*="export" i], button:has-text("Export" i), button:has-text("CSV" i), button:has-text("Excel" i), button:has-text("PDF" i), [data-export]');
+    const exportElements = page.locator('[id*="export" i], [class*="export" i], button:has-text("Export"), button:has-text("CSV"), button:has-text("Excel"), button:has-text("PDF"), [data-export]');
     const count = await exportElements.count();
     expect(count).toBeGreaterThan(0);
   });
