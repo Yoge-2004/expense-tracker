@@ -22,9 +22,11 @@ test.describe('Critical UI regressions', () => {
     const fontState = await page.evaluate(async () => {
       await document.fonts.ready;
       const body = getComputedStyle(document.body).fontFamily;
-      const numeric = getComputedStyle(document.querySelector('.metric-value')!).fontFamily;
+      const metricStyle = getComputedStyle(document.querySelector('.metric-value')!);
+      const numeric = metricStyle.fontFamily;
       const bodyFontLoaded = document.fonts.check('16px "Hanken Grotesk"');
-      const monoFontLoaded = document.fonts.check('16px "IBM Plex Mono"');
+      // Browsers only fetch the faces text actually uses, so check the weight the numbers render in.
+      const monoFontLoaded = document.fonts.check(`${metricStyle.fontWeight} 16px "IBM Plex Mono"`);
       const fontLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[href*="fonts.googleapis.com/css2"]'))
         .map(link => link.href);
       return { body, numeric, bodyFontLoaded, monoFontLoaded, fontLinks };
