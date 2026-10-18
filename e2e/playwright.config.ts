@@ -27,6 +27,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   reporter: [
+    // On CI the github reporter turns failures into annotations readable without downloading logs.
+    ...(process.env.CI ? [['github'] as ['github']] : []),
     ['html', { outputFolder: 'playwright-report' }],
     ['list'],
   ],
