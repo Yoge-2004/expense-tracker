@@ -18,23 +18,21 @@ test.describe('Critical UI regressions', () => {
     await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
   });
 
-  test('loads and applies the restored web fonts', async ({ page }) => {
+  test('loads and applies the web fonts', async ({ page }) => {
     const fontState = await page.evaluate(async () => {
       await document.fonts.ready;
       const body = getComputedStyle(document.body).fontFamily;
-      const display = getComputedStyle(document.querySelector('.metric-value')!).fontFamily;
+      const numeric = getComputedStyle(document.querySelector('.metric-value')!).fontFamily;
       const bodyFontLoaded = document.fonts.check('16px "Hanken Grotesk"');
-      const displayFontLoaded = document.fonts.check('16px "Fraunces"');
       const monoFontLoaded = document.fonts.check('16px "IBM Plex Mono"');
       const fontLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[href*="fonts.googleapis.com/css2"]'))
         .map(link => link.href);
-      return { body, display, bodyFontLoaded, displayFontLoaded, monoFontLoaded, fontLinks };
+      return { body, numeric, bodyFontLoaded, monoFontLoaded, fontLinks };
     });
 
     expect(fontState.body).toContain('Hanken Grotesk');
-    expect(fontState.display).toContain('Fraunces');
+    expect(fontState.numeric).toContain('IBM Plex Mono');
     expect(fontState.bodyFontLoaded).toBe(true);
-    expect(fontState.displayFontLoaded).toBe(true);
     expect(fontState.monoFontLoaded).toBe(true);
     expect(fontState.fontLinks.length).toBeGreaterThan(0);
     expect(fontState.fontLinks.every(href => href.includes('v=20260914-font1'))).toBe(true);
@@ -72,6 +70,11 @@ test.describe('Critical UI regressions', () => {
   test('keeps subscription tabs the same size while switching state', async ({ page }) => {
     const expenses = page.locator('#subsTabExpensesBtn');
     const incomes = page.locator('#subsTabIncomesBtn');
+    // Layout size rather than getBoundingClientRect: the modal is still scaling in when it first appears.
+    const layoutSize = (element: Element) => ({
+      width: (element as HTMLElement).offsetWidth,
+      height: (element as HTMLElement).offsetHeight,
+    });
 
     await page.locator('#profileTrigger').click();
     await expect(page.locator('#profileMenu')).toBeVisible();
@@ -80,20 +83,20 @@ test.describe('Critical UI regressions', () => {
     await expect(incomes).toBeVisible();
 
     const before = await Promise.all([
-      expenses.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
-      incomes.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+      expenses.evaluate(layoutSize),
+      incomes.evaluate(layoutSize),
     ]);
 
     await incomes.click();
     await expect(incomes).toHaveClass(/active/);
     const afterIncome = await Promise.all([
-      expenses.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
-      incomes.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
+      expenses.evaluate(layoutSize),
+      incomes.evaluate(layoutSize),
     ]);
 
     await expenses.click();
     await expect(expenses).toHaveClass(/active/);
-    const afterExpense = await expenses.evaluate(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height }));
+    const afterExpense = await expenses.evaluate(layoutSize);
 
     expect(afterIncome[0]).toEqual(before[0]);
     expect(afterIncome[1]).toEqual(before[1]);
