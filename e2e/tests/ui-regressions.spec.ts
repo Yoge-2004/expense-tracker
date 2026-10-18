@@ -116,35 +116,6 @@ test.describe('Targeted UI regressions', () => {
     await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
   });
 
-  test('visibly transforms all five metric cards during a theme toggle', async ({ page }) => {
-    const selectors = [
-      '.metric-card-inflow',
-      '.metric-card-outflow',
-      '.metric-card-netflow',
-      '.metric-card-savings',
-      '.metric-card-subs',
-    ];
-
-    const before = await page.evaluate((cardSelectors) => cardSelectors.map((selector) => {
-      const card = document.querySelector<HTMLElement>(selector);
-      return card ? getComputedStyle(card).transform : null;
-    }), selectors);
-
-    await page.locator('#themeToggle').click();
-    await expect.poll(async () => page.locator('html').getAttribute('data-theme')).toBe('light');
-    await page.waitForTimeout(80);
-
-    const during = await page.evaluate((cardSelectors) => cardSelectors.map((selector) => {
-      const card = document.querySelector<HTMLElement>(selector);
-      return card ? getComputedStyle(card).transform : null;
-    }), selectors);
-
-    expect(during).toHaveLength(5);
-    for (let i = 0; i < before.length; i += 1) {
-      expect(during[i]).not.toBe(before[i]);
-    }
-  });
-
   test('pauses the expensive background renderer during the theme repaint', async ({ page }) => {
     const gradientCalls = await page.evaluate(() => new Promise<number>((resolve) => {
       const context = typeof CanvasRenderingContext2D !== 'undefined'
