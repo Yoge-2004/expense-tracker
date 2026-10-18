@@ -137,4 +137,5 @@ jobs:
         run: |
           set -euo pipefail
           ! git ls-files | grep -E '(^|/)(\.env|.*\.keystore|.*\.db|.*\.mv\.db)$'
+          ! git ls-files | grep -E '(^|/)(node_modules|test-results|playwright-report)/'
           ! grep -R --line-number --exclude-dir=.git --exclude='package-lock.json' 'mock_jwt_token_123\|test_mock_auth=true' frontend mobile src

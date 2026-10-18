@@ -75,6 +75,64 @@ jobs:
       - name: Install Hugging Face Hub library
         run: python -m pip install --upgrade huggingface_hub
 
+      - name: Free Space storage held by superseded builds
+        # Squashing git history does not release Hugging Face LFS storage, so every deploy leaves the
+        # previous app.jar behind until the 1 GB Space limit is hit. This deletes superseded LFS versions
+        # of large files (old jars) that the current Space commit no longer uses. It never touches a file
+        # version used by the current commit and leaves small files (database snapshots) alone.
+        continue-on-error: true
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import collections, os, time
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ['HF_TOKEN'])
+          repo = os.environ['HF_SPACE_REPO']
+          MIN_PRUNE_BYTES = 5_000_000
+
+          def note(kind, title, lines):
+              text = '\n'.join(lines).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+              print(f'::{kind} title={title}::{text}')
+
+          files = list(api.list_lfs_files(repo_id=repo, repo_type='space'))
+          total = sum(f.size for f in files)
+          commits = len(list(api.list_repo_commits(repo_id=repo, repo_type='space')))
+
+          # LFS hashes used by the current Space commit: these are never deleted.
+          in_use = set()
+          for entry in api.list_repo_tree(repo_id=repo, repo_type='space', recursive=True):
+              lfs = getattr(entry, 'lfs', None)
+              if lfs is not None:
+                  in_use.add(lfs.sha256)
+
+          groups = collections.defaultdict(list)
+          for f in files:
+              groups[f.filename].append(f)
+
+          stale, lines = [], [f'before: {commits} commits, {len(files)} LFS objects, {total / 1e6:.1f} MB']
+          for name, items in groups.items():
+              if len(items) < 2:
+                  continue
+              live = [i for i in items if i.oid in in_use or i.file_oid in in_use]
+              if not live:
+                  lines.append(f'skipped {name}: could not identify the version used by the current commit')
+                  continue
+              old = [i for i in items if i not in live and i.size >= MIN_PRUNE_BYTES]
+              if old:
+                  stale.extend(old)
+                  lines.append(f'{name}: keeping {len(live)} in use, deleting {len(old)} superseded ({sum(i.size for i in old) / 1e6:.1f} MB)')
+
+          if stale:
+              api.permanently_delete_lfs_files(repo_id=repo, lfs_files=stale, rewrite_history=True, repo_type='space')
+              lines.append(f'freed {sum(i.size for i in stale) / 1e6:.1f} MB')
+              time.sleep(20)
+          else:
+              lines.append('nothing to free')
+          note('notice', 'Hugging Face Space storage cleanup', lines)
+          PY
+
       - name: Deploy to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -106,7 +164,8 @@ jobs:
               else:
                   print(f'Space {repo} has {len(commits)} commits; compaction not required.')
           except Exception as exc:
-              print(f'Compaction check warning (continuing deployment): {exc}')
+              detail = f'{type(exc).__name__}: {exc}'[:900].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+              print(f'::warning title=Space history compaction skipped::{detail}')
 
           delete_patterns = ['expense_tracker.db', 'expenses_sync.json', '*.sqlite', '*.sqlite3', '*.db']
 
@@ -124,9 +183,11 @@ jobs:
                   break
               except Exception as exc:
                   print(f'Attempt {attempt} failed: {exc}')
+                  detail = f'{type(exc).__name__}: {exc}'[:900].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print(f'::error title=Hugging Face upload attempt {attempt} failed::{detail}')
                   if attempt == 3:
                       raise
-                  time.sleep(5 * attempt)
+                  time.sleep(20 * attempt)
           PY
 
       - name: Publish deployment summary

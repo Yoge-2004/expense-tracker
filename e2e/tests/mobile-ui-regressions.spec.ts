@@ -14,6 +14,20 @@ const emptyApi = async (page: Page) => {
   });
 };
 
+type Box = { x: number; y: number; width: number; height: number };
+
+/** True when the boxes do not overlap and are at least `gap` px apart, side by side or stacked. */
+const separated = (a: Box, b: Box, gap: number) =>
+  a.x + a.width + gap <= b.x || b.x + b.width + gap <= a.x ||
+  a.y + a.height + gap <= b.y || b.y + b.height + gap <= a.y;
+
+/** Whether either record button label is clipped by its button. */
+const labelsTruncated = (page: Page) => page.evaluate(() =>
+  ['#openModalBtn > span', '#openIncomeModalBtn > span'].map((selector) => {
+    const label = document.querySelector<HTMLElement>(selector)!;
+    return label.scrollWidth > label.clientWidth;
+  }));
+
 test.describe('Mobile dashboard regressions', () => {
   test('keeps Record Expense and Record Income controls separated and fully visible', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
@@ -38,14 +52,16 @@ test.describe('Mobile dashboard regressions', () => {
     expect(boxes[0]).not.toBeNull();
     expect(boxes[1]).not.toBeNull();
 
+    // Narrow phones stack the two controls full width so neither label is truncated.
     const first = boxes[0]!;
     const second = boxes[1]!;
-    expect(first.x).toBeGreaterThanOrEqual(10);
-    expect(second.x + second.width).toBeLessThanOrEqual(375 - 10);
-    expect(first.x + first.width).toBeLessThanOrEqual(second.x + 1);
-    expect(second.x - (first.x + first.width)).toBeGreaterThanOrEqual(8);
-    expect(first.width).toBeGreaterThan(120);
-    expect(second.width).toBeGreaterThan(120);
+    for (const box of [first, second]) {
+      expect(box.x).toBeGreaterThanOrEqual(10);
+      expect(box.x + box.width).toBeLessThanOrEqual(375 - 10);
+      expect(box.width).toBeGreaterThan(120);
+    }
+    expect(separated(first, second, 6)).toBe(true);
+    expect(await labelsTruncated(page)).toEqual([false, false]);
 
     const styles = await page.evaluate(() => {
       const expenseEl = document.querySelector('#openModalBtn')!;
@@ -57,19 +73,15 @@ test.describe('Mobile dashboard regressions', () => {
         income: getComputedStyle(incomeEl).overflow,
         expenseAfter: expenseStyle.display,
         incomeAfter: incomeStyle.display,
-        actionPaddingLeft: getComputedStyle(document.querySelector('.top-bar-actions')!).paddingLeft,
-        actionPaddingRight: getComputedStyle(document.querySelector('.top-bar-actions')!).paddingRight,
       };
     });
     expect(styles.expense).toBe('hidden');
     expect(styles.income).toBe('hidden');
     expect(styles.expenseAfter).toBe('none');
     expect(styles.incomeAfter).toBe('none');
-    expect(parseFloat(styles.actionPaddingLeft)).toBeGreaterThanOrEqual(10);
-    expect(parseFloat(styles.actionPaddingRight)).toBeGreaterThanOrEqual(10);
   });
 
-  test('keeps narrow mobile record controls side by side after scrolling', async ({ page }) => {
+  test('keeps narrow mobile record controls inside the viewport and unclipped', async ({ page }) => {
     await page.setViewportSize({ width: 293, height: 261 });
     await page.goto('/index.html');
     await page.evaluate(() => {
@@ -83,32 +95,27 @@ test.describe('Mobile dashboard regressions', () => {
     await page.goto('/dashboard.html');
     await expect(page.locator('.top-bar')).toBeVisible();
 
-    await page.evaluate(() => window.scrollTo(0, 240));
+    const expenseButton = page.locator('#openModalBtn');
+    const incomeButton = page.locator('#openIncomeModalBtn');
+    await incomeButton.scrollIntoViewIfNeeded();
+    await expect(expenseButton).toBeInViewport();
+    await expect(incomeButton).toBeInViewport();
 
     const viewport = { width: 293, height: 261 };
-    const boxes = await Promise.all([
-      page.locator('#openModalBtn').boundingBox(),
-      page.locator('#openIncomeModalBtn').boundingBox(),
-    ]);
+    const boxes = await Promise.all([expenseButton.boundingBox(), incomeButton.boundingBox()]);
     expect(boxes[0]).not.toBeNull();
     expect(boxes[1]).not.toBeNull();
 
     const expense = boxes[0]!;
     const income = boxes[1]!;
-    expect(expense.x).toBeGreaterThanOrEqual(0);
-    expect(income.x + income.width).toBeLessThanOrEqual(viewport.width);
-    expect(expense.y).toBeGreaterThanOrEqual(0);
-    expect(income.y).toBeGreaterThanOrEqual(0);
-    expect(expense.y).toBeCloseTo(income.y, 1);
-    expect(expense.x + expense.width).toBeLessThanOrEqual(income.x + 1);
-    expect(income.x - (expense.x + expense.width)).toBeGreaterThanOrEqual(6);
-
-    const gridColumns = await page.locator('.top-bar-actions').evaluate(el => getComputedStyle(el).gridTemplateColumns);
-    expect(gridColumns.split(' ').length).toBe(2);
-
-    const header = await page.locator('.top-bar').boundingBox();
-    expect(header).not.toBeNull();
-    expect(header!.y).toBeGreaterThanOrEqual(0);
+    for (const box of [expense, income]) {
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+    }
+    expect(separated(expense, income, 6)).toBe(true);
+    expect(await labelsTruncated(page)).toEqual([false, false]);
   });
 
   test('does not reload the dashboard spontaneously after initial navigation', async ({ page }) => {

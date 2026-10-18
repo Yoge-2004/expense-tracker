@@ -1,22 +1,7 @@
-import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { installVirtualAuthenticator } from './support/webauthn';
 
 const base64Url = (value: string) => Buffer.from(value, 'utf8').toString('base64url');
-
-async function installVirtualAuthenticator(context: BrowserContext, page: Page) {
-  const cdp = await context.newCDPSession(page);
-  await cdp.send('WebAuthn.enable');
-  const result = await cdp.send('WebAuthn.addVirtualAuthenticator', {
-    options: {
-      protocol: 'ctap2',
-      transport: 'internal',
-      hasResidentKey: true,
-      hasUserVerification: true,
-      isUserVerified: true,
-      automaticPresenceSimulation: true,
-    },
-  });
-  return { cdp, authenticatorId: result.authenticatorId };
-}
 
 test.describe('WebAuthn biometrics', () => {
   test('diagnoses WebAuthn capability without requiring a registered credential', async ({ page }) => {

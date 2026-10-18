@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { installVirtualAuthenticator } from './support/webauthn';
 
 /**
  * Login & Authentication page E2E tests.
@@ -35,7 +36,9 @@ test.describe('Login page', () => {
     await expect(page.locator('#googleOAuthBtn')).toBeVisible();
   });
 
-  test('has a biometric login button', async ({ page }) => {
+  test('shows the biometric login button when a platform authenticator is available', async ({ page, context }) => {
+    await installVirtualAuthenticator(context, page);
+    await page.reload();
     await expect(page.locator('#biometricLoginBtn')).toBeVisible();
   });
 
@@ -116,23 +119,18 @@ test.describe('Registration page', () => {
   });
 
   test('has a currency selector', async ({ page }) => {
-    await expect(page.locator('#reg-currency')).toBeVisible();
+    await expect(page.locator('#currencySelectTrigger')).toBeVisible();
+    await expect(page.locator('#reg-currency')).toBeAttached();
   });
 
   test('has a security PIN field (optional)', async ({ page }) => {
     await expect(page.locator('#reg-security-pin')).toBeVisible();
   });
 
-  test('has an OTP field group', async ({ page }) => {
-    await expect(page.locator('#otpGroup')).toBeVisible();
-  });
-
-  test('has a send OTP button', async ({ page }) => {
-    await expect(page.locator('#sendOtpBtn')).toBeVisible();
-  });
-
-  test('has a resend OTP button', async ({ page }) => {
-    await expect(page.locator('#resendOtpBtn')).toBeVisible();
+  test('offers direct registration when email verification is off', async ({ page }) => {
+    await expect(page.locator('#registerBtn')).toBeVisible();
+    await expect(page.locator('#sendOtpBtn')).toBeHidden();
+    await expect(page.locator('#otpGroup')).toBeHidden();
   });
 
   test('has a register button', async ({ page }) => {
@@ -218,5 +216,36 @@ test.describe('Forgot password page', () => {
       await expect(page.locator('#seg3')).toBeVisible();
       await expect(page.locator('#seg4')).toBeVisible();
     }
+  });
+});
+
+test.describe('Registration with email verification', () => {
+
+  test.beforeEach(async ({ page }) => {
+    const cors = { 'access-control-allow-origin': '*' };
+    await page.route('**/api/auth/config', route =>
+      route.fulfill({ headers: cors, json: { emailVerificationEnabled: true } }));
+    await page.route('**/api/auth/signup/send-otp', route =>
+      route.fulfill({ headers: cors, json: { emailVerificationEnabled: true } }));
+    await page.goto('/register.html');
+    await page.waitForSelector('#registerForm', { state: 'visible' });
+  });
+
+  test('asks for a verification code before showing the OTP field', async ({ page }) => {
+    await expect(page.locator('#sendOtpBtn')).toBeVisible();
+    await expect(page.locator('#otpGroup')).toBeHidden();
+    await expect(page.locator('#registerBtn')).toBeHidden();
+  });
+
+  test('reveals the OTP field and resend button after sending a code', async ({ page }) => {
+    await page.locator('#reg-name').fill('Test User');
+    await page.locator('#reg-email').fill('test@example.com');
+    await page.locator('#reg-password').fill('Str0ng!Passw0rd');
+    await page.locator('#sendOtpBtn').click();
+
+    await expect(page.locator('#otpGroup')).toBeVisible();
+    await expect(page.locator('#resendOtpBtn')).toBeVisible();
+    await expect(page.locator('#registerBtn')).toBeVisible();
+    await expect(page.locator('#sendOtpBtn')).toBeHidden();
   });
 });

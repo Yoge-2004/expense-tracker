@@ -285,6 +285,14 @@
             pauseUntil = performance.now() + 260;
         });
 
+        // `themechange` is dispatched a frame after the toggle click, which would let one full orb
+        // repaint land in the middle of the theme swap. Pause on the click itself so it cannot.
+        document.addEventListener('click', (event) => {
+            if (event.target instanceof Element && event.target.closest('#themeToggle, .theme-toggle-btn')) {
+                pauseUntil = performance.now() + 260;
+            }
+        }, true);
+
         function render(time) {
             if (isMobileDevice()) {
                 stopAnimation();

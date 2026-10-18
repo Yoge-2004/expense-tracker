@@ -45,3 +45,9 @@ logs/
 
 ### Node ###
 node_modules/
+
+### Playwright ###
+test-results/
+playwright-report/
+blob-report/
+e2e/playwright.local.config.ts

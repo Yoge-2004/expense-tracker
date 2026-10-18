@@ -1148,3 +1148,14 @@
         box-sizing: border-box;
     }
 }
+
+/* Touch layouts: the shimmer sweep on the record buttons is decorative and leaves an artifact on narrow screens. */
+@media (max-width: 900px) {
+    .top-bar-actions > #openModalBtn::before,
+    .top-bar-actions > #openModalBtn::after,
+    .top-bar-actions > #openIncomeModalBtn::before,
+    .top-bar-actions > #openIncomeModalBtn::after {
+        display: none;
+        content: none;
+    }
+}

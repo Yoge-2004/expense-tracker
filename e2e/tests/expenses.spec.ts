@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openExpenseModal, openProfileMenu } from './support/dashboard';
 
 /**
  * Expense management flow E2E tests.
@@ -38,22 +39,27 @@ test.describe('Expense form interactions', () => {
   });
 
   test('can open the add category flow', async ({ page }) => {
+    await openExpenseModal(page);
     await page.locator('#addCategoryBtn').click();
-    await page.waitForTimeout(500);
-    // A modal or input should appear
-    const modal = page.locator('#manageCategoriesModal, .category-modal, [class*="modal" i]:visible');
-    // Just verify the button is clickable without errors
+
+    const dialog = page.locator('.app-dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('.app-dialog-input')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.app-dialog-overlay')).toHaveCount(0);
   });
 
   test('can toggle recurring options', async ({ page }) => {
-    // The recurring checkbox may toggle a frequency selector
-    const recurringCheckbox = page.locator('#isRecurring, input[name="recurring"], [id*="recurring" i][type="checkbox"]').first();
-    if (await recurringCheckbox.isVisible().catch(() => false)) {
-      await recurringCheckbox.check();
-      await page.waitForTimeout(300);
-      await recurringCheckbox.uncheck();
-      await page.waitForTimeout(300);
-    }
+    await openExpenseModal(page);
+    const options = page.locator('#recurringOptions');
+    await expect(options).toBeHidden();
+
+    await page.locator('#isRecurring').check();
+    await expect(options).toBeVisible();
+
+    await page.locator('#isRecurring').uncheck();
+    await expect(options).toBeHidden();
   });
 
   test('can select a recurring frequency', async ({ page }) => {
@@ -130,10 +136,12 @@ test.describe('Filter interactions', () => {
   });
 
   test('can reset filters', async ({ page }) => {
+    await page.locator('#toggleFiltersBtn').click();
+    await expect(page.locator('#filterPanel')).toHaveClass(/active/);
+
     await page.locator('#filterSearch').fill('test');
     await page.locator('#resetFiltersBtn').click();
-    await page.waitForTimeout(500);
-    // The search input should be cleared (or the list reset)
+    await expect(page.locator('#filterSearch')).toHaveValue('');
   });
 
   test('can toggle income filters', async ({ page }) => {
@@ -144,8 +152,12 @@ test.describe('Filter interactions', () => {
   });
 
   test('can reset income filters', async ({ page }) => {
+    await page.locator('#toggleIncomeFiltersBtn').click();
+    await expect(page.locator('#incomeFilterPanel')).toHaveClass(/active/);
+
+    await page.locator('#incomeFilterStartDate').fill('2026-01-01');
     await page.locator('#resetIncomeFiltersBtn').click();
-    await page.waitForTimeout(500);
+    await expect(page.locator('#incomeFilterStartDate')).toHaveValue('');
   });
 });
 
@@ -298,8 +310,9 @@ test.describe('Currency selector', () => {
   });
 
   test('can click the currency trigger', async ({ page }) => {
+    await openProfileMenu(page);
     await page.locator('#dashCurrencyTrigger').click();
-    await page.waitForTimeout(500);
+    await expect(page.locator('#dashCurrencyTrigger')).toHaveAttribute('aria-expanded', 'true');
   });
 
   test('has currency wrapper', async ({ page }) => {
@@ -324,14 +337,15 @@ test.describe('Report period', () => {
     await page.waitForTimeout(2000);
   });
 
-  test('can click change report period button', async ({ page }) => {
-    await page.locator('#changeReportPeriodBtn').click();
-    await page.waitForTimeout(500);
+  test('can open the report period picker from the account menu', async ({ page }) => {
+    await openProfileMenu(page);
+    await page.locator('#viewMonthlyReportBtn').click();
+    await expect(page.locator('#monthlyReportPeriodModal')).toHaveClass(/active/);
   });
 
-  test('can click view monthly report button', async ({ page }) => {
-    await page.locator('#viewMonthlyReportBtn').click();
-    await page.waitForTimeout(500);
+  test('offers a change period control inside the report preview', async ({ page }) => {
+    // The preview only opens once a report has loaded from the API, so check the control is wired in.
+    await expect(page.locator('#monthlyReportModal #changeReportPeriodBtn')).toBeAttached();
   });
 
   test('has report period banner', async ({ page }) => {
