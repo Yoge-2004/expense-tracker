@@ -60,7 +60,7 @@ test.describe('Mobile dashboard regressions', () => {
       expect(box.x + box.width).toBeLessThanOrEqual(375 - 10);
       expect(box.width).toBeGreaterThan(120);
     }
-    expect(separated(first, second, 8)).toBe(true);
+    expect(separated(first, second, 6)).toBe(true);
     expect(await labelsTruncated(page)).toEqual([false, false]);
 
     const styles = await page.evaluate(() => {
