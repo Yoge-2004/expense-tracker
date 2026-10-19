@@ -170,6 +170,21 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         return rows;
     }
 
+    /**
+     * SQLite has no date type, and its JDBC driver stores java.sql.Date/Timestamp as epoch milliseconds. H2 cannot
+     * read those back into a DATE or TIMESTAMP column, so every restore of a table with a date failed. Writing the
+     * JDBC text form ("2026-10-01", "2026-10-01 12:30:00.123456") round-trips through both databases.
+     */
+    private Object exportValue(Object value) {
+        if (value instanceof java.sql.Timestamp
+                || value instanceof java.sql.Date
+                || value instanceof java.sql.Time
+                || value instanceof java.time.temporal.TemporalAccessor) {
+            return value.toString();
+        }
+        return value;
+    }
+
     private Object normalize(Object value) {
         if (value instanceof java.sql.Timestamp ts) {
             return ts.toString();
@@ -199,7 +214,7 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
             int batchCount = 0;
             while (rs.next()) {
                 for (int i = 0; i < columns.size(); i++) {
-                    p.setObject(i + 1, rs.getObject(columns.get(i).name));
+                    p.setObject(i + 1, exportValue(rs.getObject(columns.get(i).name)));
                 }
                 p.addBatch();
                 batchCount++;
