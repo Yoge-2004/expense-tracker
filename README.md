@@ -49,7 +49,10 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 | **Profile & Settings** | Display name sync across web/app, 6-digit security PIN for instant recovery, and multi-currency selection. |
 | **Notifications** | Real-time push alerts, financial event digest, per-type preferences, and one-click bulk inbox clearing on web and mobile. |
 | **Machine Learning** | Dual-engine ML categorization (TF-IDF + Transformer), automated SMS financial alert listener, interactive tester, and continuous retraining feedback loop. |
-| **Floating Calculator** | Draggable & dockable quick calculator on web and mobile with precision-safe math, bill splitting (÷2 to ÷5), and 1-tap auto-insert into expense forms. |
+| **Floating Calculator & FX Converter** | Draggable & dockable quick calculator on web and mobile with precision-safe math, bill splitting (÷2 to ÷5), 1-tap auto-insert, and daily multi-currency live conversions (USD, EUR, GBP, AED ➔ INR) via `open.er-api.com` with 24-hr device caching. |
+| **Stealth / Privacy Mode** | Instant privacy shield (`Alt + S` or header `👁️` toggle) masking financial values with blur and bullets to guard against shoulder-surfing. |
+| **Safe-to-Spend Allowance** | Real-time daily spending guardrail based on remaining monthly budget, scheduled subscriptions, and days left in the month. |
+| **No-Spend Day Streak** | Habit-building tracker celebrating consecutive ₹0 non-recurring expense days with dashboard fire badges and interactive calendar milestone markers. |
 | **Persistence** | H2 for development, SQLite client-encrypted fallback, and PostgreSQL / Neon for production. |
 | **Data resilience** | Zero-downtime offline caching, network retry fallbacks, and Hugging Face Hub snapshot sync. |
 

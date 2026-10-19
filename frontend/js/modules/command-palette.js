@@ -47,6 +47,19 @@
             }
         },
         {
+            id: "toggle-stealth",
+            title: "Toggle Privacy / Stealth Mode",
+            icon: "👁️",
+            category: "Preferences",
+            badge: "Alt+S",
+            keywords: "stealth privacy hide mask blur numbers amounts balances",
+            run: () => {
+                if (typeof window.toggleStealthMode === "function") {
+                    window.toggleStealthMode();
+                }
+            }
+        },
+        {
             id: "quick-calculator",
             title: "Quick Calculator & Bill Splitter",
             icon: "🧮",

@@ -132,6 +132,14 @@
                 </button>
             </div>
 
+            <div class="floating-calc-fx-bar" id="floatingCalcFxBar">
+                <span class="floating-calc-fx-label" title="Live daily rates via open.er-api.com">Fx:</span>
+                <button type="button" class="floating-calc-fx-chip" data-fx="USD" title="Convert USD into ₹">USD ➔ ₹</button>
+                <button type="button" class="floating-calc-fx-chip" data-fx="EUR" title="Convert EUR into ₹">EUR ➔ ₹</button>
+                <button type="button" class="floating-calc-fx-chip" data-fx="GBP" title="Convert GBP into ₹">GBP ➔ ₹</button>
+                <button type="button" class="floating-calc-fx-chip" data-fx="AED" title="Convert AED into ₹">AED ➔ ₹</button>
+            </div>
+
             <div class="floating-calc-grid" id="floatingCalcGrid">
                 <button type="button" class="floating-calc-key is-func" data-action="all-clear">AC</button>
                 <button type="button" class="floating-calc-key is-func" data-action="negate">±</button>
@@ -571,6 +579,73 @@
         } catch (_) {}
     }
 
+    const FX_CACHE_KEY = "et_fx_daily_rates";
+    const FX_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours daily update
+
+    async function convertFx(fromCurr) {
+        const num = parseFloat(state.currentValue);
+        if (isNaN(num) || num === 0) {
+            if (window.showToast) window.showToast("Enter an amount first to convert from " + fromCurr, "warning");
+            return;
+        }
+
+        const chip = document.querySelector(".floating-calc-fx-chip[data-fx="" + fromCurr + ""]");
+        if (chip) chip.classList.add("is-loading");
+
+        try {
+            let rate = null;
+            // 1. Check local storage cache
+            try {
+                const cachedRaw = localStorage.getItem(FX_CACHE_KEY + "_" + fromCurr);
+                if (cachedRaw) {
+                    const cached = JSON.parse(cachedRaw);
+                    if (Date.now() - cached.timestamp < FX_CACHE_TTL && cached.rate) {
+                        rate = cached.rate;
+                    }
+                }
+            } catch (_) {}
+
+            // 2. Fetch fresh rate if not in cache
+            if (!rate) {
+                try {
+                    const res = await fetch("https://open.er-api.com/v6/latest/" + fromCurr);
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json && json.rates && json.rates.INR) {
+                            rate = json.rates.INR;
+                            localStorage.setItem(FX_CACHE_KEY + "_" + fromCurr, JSON.stringify({
+                                timestamp: Date.now(),
+                                rate: rate
+                            }));
+                        }
+                    }
+                } catch (netErr) {
+                    console.warn("Live currency fetch offline, using fallback", netErr);
+                }
+            }
+
+            // 3. Fallback rates if network offline
+            if (!rate) {
+                const STATIC_FALLBACKS = { USD: 83.5, EUR: 90.8, GBP: 106.2, AED: 22.7 };
+                rate = STATIC_FALLBACKS[fromCurr] || 1;
+            }
+
+            const converted = Math.round((num * rate + Number.EPSILON) * 100) / 100;
+            state.expressionStr = num + " " + fromCurr + " @ ₹" + rate.toFixed(2);
+            state.currentValue = String(converted);
+            state.isNewNumber = true;
+            updateDisplay();
+
+            if (window.showToast) {
+                window.showToast("Converted: " + num + " " + fromCurr + " = ₹" + converted.toLocaleString('en-IN') + " (Rate: ₹" + rate.toFixed(2) + ")", "info");
+            }
+        } catch (err) {
+            console.error("FX Conversion error", err);
+        } finally {
+            if (chip) chip.classList.remove("is-loading");
+        }
+    }
+
     function bindEvents() {
         const panel = document.getElementById("floatingCalcPanel");
         const minimizeBtn = document.getElementById("floatingCalcMinimize");
@@ -591,6 +666,17 @@
                 if (chip) {
                     const splitNum = parseInt(chip.getAttribute("data-split"), 10) || 1;
                     setSplit(splitNum);
+                }
+            });
+        }
+
+        const fxBar = document.getElementById("floatingCalcFxBar");
+        if (fxBar) {
+            fxBar.addEventListener("click", (e) => {
+                const chip = e.target.closest(".floating-calc-fx-chip");
+                if (chip) {
+                    const fxCurr = chip.getAttribute("data-fx");
+                    if (fxCurr) convertFx(fxCurr);
                 }
             });
         }

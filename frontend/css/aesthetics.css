@@ -236,3 +236,40 @@
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
 }
+
+/* ==========================================================================
+   STEALTH / PRIVACY MODE (Mask financial numbers from shoulder-surfers)
+   ========================================================================== */
+.stealth-toggle-btn.is-active {
+    color: var(--primary, #C79A3E);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.15);
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.35);
+}
+
+body.stealth-mode .metric-value,
+body.stealth-mode .ledger-amount,
+body.stealth-mode .expense-table td:nth-child(4),
+body.stealth-mode .income-table td:nth-child(4),
+body.stealth-mode .budget-limit-val,
+body.stealth-mode .budget-spent-val,
+body.stealth-mode .budget-remaining-val,
+body.stealth-mode .goal-progress-amt,
+body.stealth-mode #dailyBurnRate,
+body.stealth-mode #safeDailySpend,
+body.stealth-mode .subs-monthly-total,
+body.stealth-mode .insight-stat-num {
+    filter: blur(7px);
+    user-select: none;
+    -webkit-user-select: none;
+    transition: filter 0.18s ease;
+}
+
+body.stealth-mode .metric-card:hover .metric-value,
+body.stealth-mode .expense-table tr:hover td:nth-child(4),
+body.stealth-mode .income-table tr:hover td:nth-child(4),
+body.stealth-mode .budget-card:hover .budget-limit-val,
+body.stealth-mode .budget-card:hover .budget-spent-val,
+body.stealth-mode .budget-card:hover .budget-remaining-val,
+body.stealth-mode .goal-card:hover .goal-progress-amt {
+    filter: none;
+}

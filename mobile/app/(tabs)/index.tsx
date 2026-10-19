@@ -157,6 +157,7 @@ interface TransactionRowProps {
   tx: UnifiedTxItem;
   colors: ThemeColors;
   currSymbol: string;
+  isStealth?: boolean;
   onPress: (tx: UnifiedTxItem) => void;
   onEdit: (tx: UnifiedTxItem) => void;
   onDelete: (tx: UnifiedTxItem) => void;
@@ -167,7 +168,7 @@ interface TransactionRowProps {
  * changes, so typing in search, scrolling or unrelated state changes on the screen do not repaint
  * every row.
  */
-const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, onPress, onEdit, onDelete }: TransactionRowProps) {
+const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, isStealth, onPress, onEdit, onDelete }: TransactionRowProps) {
   const isIncome = tx.type === "income";
   const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -307,8 +308,9 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
 
           <View style={styles.txRight}>
             <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : colors.text, fontWeight: "800" }]}>
-              {isIncome ? "+" : "-"}{currSymbol}
-              {Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+              {isStealth
+                ? `${isIncome ? "+" : "-"}${currSymbol}••••••`
+                : `${isIncome ? "+" : "-"}${currSymbol}${Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
             </Text>
             <View style={styles.txRowActions}>
               <TouchableOpacity
@@ -395,7 +397,7 @@ function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; 
 }
 
 export default function DashboardScreen() {
-  const { userId, userName, theme, toggleTheme, currency, profilePicture } = useAuth();
+  const { userId, userName, theme, toggleTheme, currency, profilePicture, isStealthMode, toggleStealthMode } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
 
@@ -927,6 +929,8 @@ export default function DashboardScreen() {
     daysInMonth,
     highestCatName,
     highestCatAmt,
+    safeDailySpend,
+    noSpendStreak,
   } = useMemo(() => {
     // Money handed back reduces spending and is not income.
     const spent = netSpent(dashboardExpenses, dashboardIncomes);
@@ -960,6 +964,56 @@ export default function DashboardScreen() {
     const topCatName = sortedCats.length > 0 ? sortedCats[0][0] : 'None';
     const topCatAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
 
+    // Safe-to-Spend Daily Allowance
+    const daysLeft = Math.max(1, dInMonth - cDay + 1);
+    const totalBudgetLimit = budgets.reduce((sum, b) => sum + Number(b.limit || 0), 0);
+    let safeSpend = 0;
+    if (totalBudgetLimit > 0) {
+      safeSpend = Math.max(0, (totalBudgetLimit - cMonthSpent) / daysLeft);
+    } else if (thisMonthInflow > 0) {
+      safeSpend = Math.max(0, (thisMonthInflow - cMonthSpent) / daysLeft);
+    } else {
+      safeSpend = Math.max(0, burn * 0.85);
+    }
+
+    // No-Spend Day Streak
+    const spendByDate = new Map<string, number>();
+    expenses.forEach((e) => {
+      if (!e.expenseDate) return;
+      const dStr = e.expenseDate.split('T')[0];
+      if (dStr) {
+        spendByDate.set(dStr, (spendByDate.get(dStr) || 0) + Number(e.amount || 0));
+      }
+    });
+
+    const formatD = (d: Date) => {
+      const yr = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const da = String(d.getDate()).padStart(2, '0');
+      return yr + '-' + mo + '-' + da;
+    };
+
+    let streak = 0;
+    const checkD = new Date();
+    const todayStr = formatD(checkD);
+    const todaySpent = spendByDate.get(todayStr) || 0;
+    if (todaySpent === 0) {
+      streak = 1;
+      checkD.setDate(checkD.getDate() - 1);
+    } else {
+      checkD.setDate(checkD.getDate() - 1);
+    }
+    for (let i = 0; i < 365; i++) {
+      const dStr = formatD(checkD);
+      const spentOnD = spendByDate.get(dStr) || 0;
+      if (spentOnD === 0) {
+        streak++;
+        checkD.setDate(checkD.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
     return {
       totalSpent: spent,
       totalIncome: income,
@@ -973,8 +1027,10 @@ export default function DashboardScreen() {
       daysInMonth: dInMonth,
       highestCatName: topCatName,
       highestCatAmt: topCatAmt,
+      safeDailySpend: safeSpend,
+      noSpendStreak: streak,
     };
-  }, [dashboardExpenses, dashboardIncomes, expenses, incomes]);
+  }, [dashboardExpenses, dashboardIncomes, expenses, incomes, budgets]);
 
   // Unified chronological ledger (memoized across theme changes)
   const unifiedTransactions: UnifiedTxItem[] = useMemo(() => {
@@ -1169,6 +1225,28 @@ export default function DashboardScreen() {
               )}
             </TouchableOpacity>
 
+            {/* Privacy / Stealth Mode Toggle Button */}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                toggleStealthMode();
+              }}
+              style={[
+                styles.topActionBtn,
+                {
+                  backgroundColor: isStealthMode ? c.primary + '22' : c.card,
+                  borderColor: isStealthMode ? c.primary : c.border,
+                },
+              ]}
+              accessibilityLabel="Toggle Privacy Mode"
+            >
+              <Ionicons
+                name={isStealthMode ? 'eye-off' : 'eye-outline'}
+                size={18}
+                color={isStealthMode ? c.primary : c.textMuted}
+              />
+            </TouchableOpacity>
+
             {/* Modern Instant-Feedback Theme Toggle Button */}
             <ThemeToggleBtn />
           </View>
@@ -1209,6 +1287,7 @@ export default function DashboardScreen() {
                 <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Total Inflow</Text>
                 <NumberTicker
                   value={totalIncome}
+                  isStealth={isStealthMode}
                   prefix={`+${currSymbol}`}
                   decimals={0}
                   style={[styles.cashFlowAmount, { color: "#10B981" }]}
@@ -1221,6 +1300,7 @@ export default function DashboardScreen() {
                 <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Total Outflow</Text>
                 <NumberTicker
                   value={totalSpent}
+                  isStealth={isStealthMode}
                   prefix={`-${currSymbol}`}
                   decimals={0}
                   style={[styles.cashFlowAmount, { color: c.text }]}
@@ -1242,6 +1322,37 @@ export default function DashboardScreen() {
           </AnimatedCard>
         </StaggeredView>
 
+        {/* Safe-to-Spend & No-Spend Streak Highlights Bar */}
+        <StaggeredView delay={70} direction="up">
+          <View style={[styles.proMetricsRow, { gap: 10 }]}>
+            {/* Safe-to-Spend Daily Allowance */}
+            <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: safeDailySpend > 0 ? '#10B98150' : '#EF444450' }]}>
+              <View style={[styles.proMetricIconCircle, { backgroundColor: safeDailySpend > 0 ? '#10B98120' : '#EF444420' }]}>
+                <Ionicons name="shield-checkmark" size={13} color={safeDailySpend > 0 ? '#10B981' : '#EF4444'} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>Safe to Spend</Text>
+                <Text style={[styles.proMetricVal, { color: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} numberOfLines={1}>
+                  {isStealthMode ? currSymbol + '••••••' : currSymbol + Math.round(safeDailySpend).toLocaleString('en-IN')}<Text style={{ fontSize: 10, color: c.textMuted }}> /day</Text>
+                </Text>
+              </View>
+            </View>
+
+            {/* No-Spend Streak */}
+            <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: '#F59E0B50' }]}>
+              <View style={[styles.proMetricIconCircle, { backgroundColor: '#F59E0B20' }]}>
+                <Text style={{ fontSize: 12 }}>🔥</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>No-Spend Streak</Text>
+                <Text style={[styles.proMetricVal, { color: '#F59E0B' }]} numberOfLines={1}>
+                  {noSpendStreak} <Text style={{ fontSize: 11, fontWeight: '600', color: c.textMuted }}>{'day' + (noSpendStreak === 1 ? '' : 's')}</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+        </StaggeredView>
+
         {/* =========================================
             2. FOUR-METRIC MATRIX KPI GRID
            ========================================= */}
@@ -1257,6 +1368,7 @@ export default function DashboardScreen() {
               </View>
               <NumberTicker
                 value={totalSpent}
+                isStealth={isStealthMode}
                 prefix={currSymbol}
                 decimals={0}
                 style={[styles.matrixValue, { color: c.text }]}
@@ -1274,6 +1386,7 @@ export default function DashboardScreen() {
               </View>
               <NumberTicker
                 value={currentMonthSpent}
+                isStealth={isStealthMode}
                 prefix={currSymbol}
                 decimals={0}
                 style={[styles.matrixValue, { color: c.teal }]}
@@ -1293,6 +1406,7 @@ export default function DashboardScreen() {
               </View>
               <NumberTicker
                 value={dailyBurn}
+                isStealth={isStealthMode}
                 prefix={currSymbol}
                 suffix="/d"
                 decimals={0}
@@ -1870,6 +1984,45 @@ const styles = StyleSheet.create({
   cashFlowAmount: {
     fontSize: 15,
     fontWeight: "900",
+  },
+  proMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  proMetricBadge: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  proMetricIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  proMetricLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  proMetricVal: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   goalCard: {
     width: 240,

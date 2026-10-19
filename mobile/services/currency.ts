@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * @file currency.ts
  * @description International currency definitions and formatting utilities.
@@ -137,4 +138,66 @@ export function formatCurrencyAmount(
     console.warn('[Currency] Error formatting currency amount:', error);
     return `₹${amount || 0}`;
   }
+}
+
+const RATES_CACHE_PREFIX = '@expense_tracker_fx_rates_';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export const FALLBACK_TO_INR: Record<string, number> = {
+  USD: 83.5,
+  EUR: 90.8,
+  GBP: 106.2,
+  AED: 22.7,
+  JPY: 0.55,
+  CAD: 61.2,
+  AUD: 55.4,
+  SGD: 62.1,
+};
+
+/**
+ * Retrieves daily exchange rate for converting fromCurrency into toCurrency (default INR).
+ * Automatically caches daily rates locally for 24 hours with offline fallbacks.
+ */
+export async function getExchangeRate(fromCurrency: string, toCurrency = 'INR'): Promise<number> {
+  const from = (fromCurrency || 'USD').trim().toUpperCase();
+  const to = (toCurrency || 'INR').trim().toUpperCase();
+  if (from === to) return 1;
+
+  // 1. Check local storage cache
+  try {
+    const cacheKey = RATES_CACHE_PREFIX + from;
+    const raw = await AsyncStorage.getItem(cacheKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.timestamp < CACHE_TTL_MS && parsed.rates && parsed.rates[to]) {
+        return Number(parsed.rates[to]);
+      }
+    }
+  } catch (_) {}
+
+  // 2. Network fetch from open central-bank rate endpoint (open.er-api.com)
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/' + from);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.rates && data.rates[to]) {
+        const rate = Number(data.rates[to]);
+        try {
+          const cacheKey = RATES_CACHE_PREFIX + from;
+          await AsyncStorage.setItem(
+            cacheKey,
+            JSON.stringify({ timestamp: Date.now(), rates: data.rates })
+          );
+        } catch (_) {}
+        return rate;
+      }
+    }
+  } catch (err) {
+    console.warn('[Currency] Live rates fetch error, fallback to static:', err);
+  }
+
+  // 3. Fallback
+  if (to === 'INR' && FALLBACK_TO_INR[from]) return FALLBACK_TO_INR[from];
+  if (from === 'INR' && FALLBACK_TO_INR[to]) return 1 / FALLBACK_TO_INR[to];
+  return 1;
 }

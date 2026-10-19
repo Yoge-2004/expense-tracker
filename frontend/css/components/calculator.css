@@ -237,6 +237,47 @@
     transform: translateY(1px);
 }
 
+/* 5.5 Currency Converter Row */
+.floating-calc-fx-bar {
+    display: flex;
+    align-items: center;
+    padding: 0 12px 8px;
+    gap: 4px;
+    overflow-x: auto;
+}
+
+.floating-calc-fx-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted, #A8A395);
+    margin-right: 2px;
+}
+
+.floating-calc-fx-chip {
+    padding: 2.5px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #A8A395);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+}
+
+.floating-calc-fx-chip:hover {
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.15);
+    color: var(--primary, #C79A3E);
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.35);
+}
+
+.floating-calc-fx-chip.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
 /* 6. Keypad Grid */
 .floating-calc-grid {
     display: grid;

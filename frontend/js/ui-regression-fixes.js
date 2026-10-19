@@ -224,3 +224,54 @@
         init();
     }
 })();
+
+// Stealth / Privacy Mode Controller
+(function() {
+    'use strict';
+    const STORAGE_KEY = 'et_stealth_mode';
+
+    function isStealthActive() {
+        return localStorage.getItem(STORAGE_KEY) === 'true';
+    }
+
+    function applyStealth(active) {
+        if (active) {
+            document.body.classList.add('stealth-mode');
+        } else {
+            document.body.classList.remove('stealth-mode');
+        }
+        const btn = document.getElementById('stealthModeToggle');
+        if (btn) {
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            btn.title = active ? 'Exit Privacy / Stealth Mode (Alt+S)' : 'Toggle Privacy / Stealth Mode (Alt+S)';
+        }
+    }
+
+    function toggleStealth() {
+        const next = !isStealthActive();
+        localStorage.setItem(STORAGE_KEY, next ? 'true' : 'false');
+        applyStealth(next);
+        if (typeof showToast === 'function') {
+            showToast(next ? 'Privacy Mode Enabled (Amounts Hidden)' : 'Privacy Mode Disabled', 'info');
+        }
+    }
+
+    window.toggleStealthMode = toggleStealth;
+    window.isStealthModeActive = isStealthActive;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyStealth(isStealthActive());
+        const btn = document.getElementById('stealthModeToggle');
+        if (btn) {
+            btn.addEventListener('click', toggleStealth);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.altKey && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault();
+                toggleStealth();
+            }
+        });
+    });
+})();

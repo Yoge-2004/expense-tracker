@@ -1,7 +1,7 @@
 /**
  * @file FloatingCalculator.tsx
  * @description Draggable & dockable floating quick calculator for mobile app.
- * Features safe arithmetic, bill splitting, haptics, and 1-tap "Insert into Expense".
+ * Features safe arithmetic, bill splitting, currency converter, haptics, and 1-tap "Insert into Expense".
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useSegments } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
+import { getCurrencySymbol, getExchangeRate } from '../services/currency';
 
 const STORAGE_CALC_POS = '@expense_tracker_calc_pos';
 const BUTTON_SIZE = 54;
@@ -59,9 +60,10 @@ function safeMath(a: string, b: string, op: string): string {
 }
 
 export const FloatingCalculator: React.FC = () => {
-  const { theme, token } = useAuth();
+  const { theme, token, currency } = useAuth();
   const c = Colors[theme || 'dark'];
   const isLight = theme === 'light';
+  const currSymbol = getCurrencySymbol(currency);
   const router = useRouter();
   const segments = useSegments();
   const insets = useSafeAreaInsets();
@@ -75,6 +77,7 @@ export const FloatingCalculator: React.FC = () => {
   const [exprStr, setExprStr] = useState('0');
   const [isNewNum, setIsNewNum] = useState(true);
   const [splitCount, setSplitCount] = useState(1);
+  const [isConverting, setIsConverting] = useState(false);
 
   // Dragging State
   const defaultRight = 20;
@@ -273,6 +276,30 @@ export const FloatingCalculator: React.FC = () => {
     []
   );
 
+  const handleConvertCurrency = useCallback(
+    async (fromCode: string) => {
+      const num = parseFloat(currentVal);
+      if (isNaN(num) || num === 0) return;
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      setIsConverting(true);
+      try {
+        const targetCurr = currency || 'INR';
+        const rate = await getExchangeRate(fromCode, targetCurr);
+        const converted = Math.round((num * rate + Number.EPSILON) * 100) / 100;
+        setExprStr(`${num} ${fromCode} @ ${currSymbol}${rate.toFixed(2)}`);
+        setCurrentVal(String(converted));
+        setIsNewNum(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      } catch (e) {
+        console.warn('Currency conversion failed:', e);
+      } finally {
+        setIsConverting(false);
+      }
+    },
+    [currentVal, currency, currSymbol]
+  );
+
   // Insert Amount into Add Expense
   const handleInsertAmount = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -446,6 +473,31 @@ export const FloatingCalculator: React.FC = () => {
               </TouchableOpacity>
             </View>
 
+            {/* Quick Live Currency Conversion Bar */}
+            <View style={styles.fxRow}>
+              <Text style={[styles.fxLabel, { color: c.textMuted }]}>Fx:</Text>
+              {(['USD', 'EUR', 'GBP', 'AED'] as const).map((currCode) => (
+                <TouchableOpacity
+                  key={currCode}
+                  disabled={isConverting}
+                  onPress={() => handleConvertCurrency(currCode)}
+                  style={[
+                    styles.fxChip,
+                    {
+                      backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.05)',
+                      borderColor: c.border,
+                      opacity: isConverting ? 0.6 : 1,
+                    },
+                  ]}
+                  accessibilityLabel={`Convert ${currCode} to ${currency || 'INR'}`}
+                >
+                  <Text style={[styles.fxChipText, { color: c.primary }]}>
+                    {currCode} ➔ {currSymbol}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             {/* Keypad Grid */}
             <View style={styles.keypadGrid}>
               {/* Row 1 */}
@@ -617,7 +669,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
     gap: 8,
   },
   splitChips: {
@@ -652,6 +704,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     color: '#10120E',
+  },
+  fxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 6,
+  },
+  fxLabel: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    marginRight: 2,
+  },
+  fxChip: {
+    paddingHorizontal: 7,
+    paddingVertical: 3.5,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  fxChipText: {
+    fontFamily: 'IBMPlexMono_600SemiBold',
+    fontSize: 10.5,
+    fontWeight: '700',
   },
   keypadGrid: {
     flexDirection: 'row',

@@ -9,6 +9,7 @@ import {
   WORLD_CURRENCIES,
   getCurrencySymbol,
   formatCurrencyAmount,
+  getExchangeRate,
 } from '../services/currency';
 
 describe('Currency Service', () => {
@@ -154,6 +155,29 @@ describe('Currency Service', () => {
       const result = formatCurrencyAmount(100, 'XYZ');
       expect(result).toContain('XYZ');
       expect(result).toContain('100');
+    });
+  });
+
+  describe('getExchangeRate', () => {
+    test('returns 1 when converting same currency', async () => {
+      const rate = await getExchangeRate('INR', 'INR');
+      expect(rate).toBe(1);
+    });
+
+    test('returns positive rate for USD to INR fallback', async () => {
+      const rate = await getExchangeRate('USD', 'INR');
+      expect(rate).toBeGreaterThan(50);
+    });
+
+    test('returns positive rate for EUR to INR fallback', async () => {
+      const rate = await getExchangeRate('EUR', 'INR');
+      expect(rate).toBeGreaterThan(60);
+    });
+
+    test('is case-insensitive for currency codes', async () => {
+      const rateLower = await getExchangeRate('usd', 'inr');
+      const rateUpper = await getExchangeRate('USD', 'INR');
+      expect(rateLower).toBe(rateUpper);
     });
   });
 });

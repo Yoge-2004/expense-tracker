@@ -90,6 +90,13 @@
                         </svg>
                     </button>
 
+                    <button id="stealthModeToggle" class="header-action-btn stealth-toggle-btn" title="Toggle Privacy / Stealth Mode (Alt+S)" aria-label="Toggle Privacy / Stealth Mode (Alt+S)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+
                     <button id="headerHelpBtn" class="header-action-btn" title="User Guide & Help" aria-label="Open User Guide and Help">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -195,9 +202,14 @@
                 <div class="metric-value-row">
                     <span class="metric-value" id="totalAmount"><span class="skeleton skeleton-value" style="width:115px; height:28px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
-                <div class="metric-footer">
-                    <span class="text-muted" id="expenseCountText"><span class="skeleton skeleton-text short" style="width:110px; height:12px; display:inline-block; margin-bottom:0;"></span></span>
-                    <span class="text-muted" id="topCategoryDetail"> &bull; Top: <strong id="topCategoryName">—</strong> (<span id="topCategoryAmount">$0.00 spent</span>)</span>
+                <div class="metric-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                    <div>
+                        <span class="text-muted" id="expenseCountText"><span class="skeleton skeleton-text short" style="width:110px; height:12px; display:inline-block; margin-bottom:0;"></span></span>
+                        <span class="text-muted" id="topCategoryDetail"> &bull; Top: <strong id="topCategoryName">—</strong> (<span id="topCategoryAmount">bash.00 spent</span>)</span>
+                    </div>
+                    <span class="status-badge badge-warning" id="noSpendStreakBadge" title="Consecutive zero-spend days" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; font-weight:700;">
+                        🔥 <span id="noSpendStreakCount">0</span>d streak
+                    </span>
                 </div>
             </div>
 
@@ -210,8 +222,11 @@
                 <div class="metric-value-row">
                     <span class="metric-value" id="netCashFlowAmount"><span class="skeleton skeleton-value" style="width:115px; height:28px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
-                <div class="metric-footer">
+                <div class="metric-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
                     <span class="text-muted" id="burnRateBadge">Burn: <span id="dailyBurnRate"><span class="skeleton skeleton-text short" style="width:65px; height:12px; display:inline-block; margin-bottom:0;"></span></span></span>
+                    <span class="status-badge badge-success" id="safeDailySpendBadge" title="Safe daily spending limit based on remaining monthly budget and scheduled expenses" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; font-weight:700;">
+                        Safe: <span id="safeDailySpend">bash.00</span>/day
+                    </span>
                 </div>
             </div>
 

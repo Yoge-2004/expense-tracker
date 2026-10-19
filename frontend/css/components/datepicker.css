@@ -232,6 +232,7 @@
 }
 
 .cal-day-cell {
+    position: relative;
     aspect-ratio: 1 / 1;
     min-height: 34px;
     display: flex;
@@ -258,6 +259,17 @@
 .cal-emerald .cal-day-cell:hover {
     background: rgba(16, 185, 129, 0.18);
     color: #10b981;
+}
+
+.cal-day-cell.cal-day-no-spend::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--success, #10b981);
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.7);
 }
 
 .cal-day-cell.cal-day-other {

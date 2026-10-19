@@ -14,6 +14,7 @@ interface NumberTickerProps {
   duration?: number;
   style?: StyleProp<TextStyle>;
   decimals?: number;
+  isStealth?: boolean;
 }
 
 export const NumberTicker: React.FC<NumberTickerProps> = ({
@@ -23,6 +24,7 @@ export const NumberTicker: React.FC<NumberTickerProps> = ({
   duration = 850,
   style,
   decimals = 0,
+  isStealth = false,
 }) => {
   const safeTargetVal = Number.isFinite(Number(value)) ? Number(value) : 0;
   const [displayVal, setDisplayVal] = useState(safeTargetVal);

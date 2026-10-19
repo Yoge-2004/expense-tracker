@@ -30,6 +30,8 @@ interface AuthContextType {
   isBiometricEnabled: boolean;
   loginWithBiometrics: () => Promise<boolean>;
   toggleBiometrics: (enabled: boolean) => Promise<boolean>;
+  isStealthMode: boolean;
+  toggleStealthMode: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+  const [isStealthMode, setIsStealthMode] = useState(false);
 
   const checkBiometricsSupport = async () => {
     try {
@@ -64,11 +67,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Load theme, session and currency immediately in parallel so the initial UI
         // is 100% styled before any screen paint, avoiding any theme-switch delay or flash.
-        const [savedTheme, session, savedCurrency] = await Promise.all([
+        const [savedTheme, session, savedCurrency, savedStealth] = await Promise.all([
           safeStorageGet('app_theme'),
           getSession(),
           safeStorageGet('user_currency'),
+          safeStorageGet('app_stealth_mode'),
         ]);
+
+        if (savedStealth === 'true') {
+          setIsStealthMode(true);
+        }
 
         if (savedTheme === 'light' || savedTheme === 'dark') {
           setTheme(savedTheme);
@@ -322,6 +330,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const toggleStealthMode = useCallback(async (): Promise<void> => {
+    setIsStealthMode((prev) => {
+      const next = !prev;
+      safeStorageSet('app_stealth_mode', next ? 'true' : 'false').catch(() => {});
+      return next;
+    });
+  }, []);
+
   const toggleTheme = useCallback(async (): Promise<void> => {
     setTheme((prevTheme) => {
       const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
@@ -393,6 +409,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isBiometricEnabled,
     loginWithBiometrics,
     toggleBiometrics,
+    isStealthMode,
+    toggleStealthMode,
   }), [
     isLoading,
     token,
@@ -413,6 +431,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isBiometricEnabled,
     loginWithBiometrics,
     toggleBiometrics,
+    isStealthMode,
+    toggleStealthMode,
   ]);
 
   return (

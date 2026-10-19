@@ -609,6 +609,11 @@
         if (dateStr === todayStr) btn.classList.add("cal-day-today");
         if (dateStr === selectedDateStr) btn.classList.add("cal-day-selected");
 
+        if (window.__noSpendDatesSet && window.__noSpendDatesSet.has(dateStr) && dateStr <= todayStr) {
+            btn.classList.add("cal-day-no-spend");
+            btn.title = "No-Spend Day (₹0 spent)";
+        }
+
         btn.textContent = dayNum;
         btn.setAttribute("data-date", dateStr);
         btn.setAttribute("aria-label", dateStr);
