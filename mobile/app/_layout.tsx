@@ -43,12 +43,13 @@ interface SplashLoaderProps {
 
 function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
   const systemScheme = useColorScheme();
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(
-    themeProp || (systemScheme === 'light' ? 'light' : 'dark')
-  );
+  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(() => {
+    if (themeProp === 'light' || themeProp === 'dark') return themeProp;
+    return systemScheme === 'light' ? 'light' : 'dark';
+  });
 
   useEffect(() => {
-    if (themeProp) {
+    if (themeProp === 'light' || themeProp === 'dark') {
       setResolvedTheme(themeProp);
       return;
     }
@@ -242,7 +243,6 @@ const splashStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#10120E',
     paddingHorizontal: 24,
   },
   coreContainer: {
@@ -405,7 +405,7 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  if (!fontsLoaded) return <SplashLoader theme={colorScheme === 'light' ? 'light' : 'dark'} />;
+  if (!fontsLoaded) return <SplashLoader />;
 
   return (
     <ErrorBoundary>

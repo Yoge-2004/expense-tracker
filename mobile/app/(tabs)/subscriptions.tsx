@@ -500,6 +500,7 @@ export default function SubscriptionsScreen() {
               </View>
               <NumberTicker
                 value={monthlyIncomeTotal}
+                isStealth={isStealthMode}
                 prefix={'+' + currSym}
                 decimals={0}
                 style={[styles.kpiValue, { color: '#10B981' }]}
@@ -517,6 +518,7 @@ export default function SubscriptionsScreen() {
               </View>
               <NumberTicker
                 value={monthlyExpenseTotal}
+                isStealth={isStealthMode}
                 prefix={'-' + currSym}
                 decimals={0}
                 style={[styles.kpiValue, { color: c.accent || '#EF4444' }]}
@@ -534,6 +536,7 @@ export default function SubscriptionsScreen() {
               </View>
               <NumberTicker
                 value={monthlySavingsTotal}
+                isStealth={isStealthMode}
                 prefix={currSym}
                 decimals={0}
                 style={[styles.kpiValue, { color: '#F59E0B' }]}
@@ -551,6 +554,7 @@ export default function SubscriptionsScreen() {
               </View>
               <NumberTicker
                 value={Math.abs(netRecurringFlow)}
+                isStealth={isStealthMode}
                 prefix={(netRecurringFlow >= 0 ? '+' : '-') + currSym}
                 decimals={0}
                 style={[styles.kpiValue, { color: netRecurringFlow >= 0 ? '#10B981' : '#EF4444' }]}

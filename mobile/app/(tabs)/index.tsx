@@ -22,6 +22,7 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   TextInput,
   RefreshControl,
@@ -1248,28 +1249,24 @@ export default function DashboardScreen() {
             </TouchableOpacity>
 
             {/* Privacy / Stealth Mode Toggle Button */}
-            <TouchableOpacity
-              activeOpacity={0.88}
+            <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                 toggleStealthMode();
               }}
-              style={[
+              style={({ pressed }) => [
                 styles.topActionBtn,
                 {
                   backgroundColor: isStealthMode
-                    ? (isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(199, 154, 62, 0.22)')
-                    : (isLight ? '#FFFFFF' : c.card),
+                    ? (isLight ? (pressed ? 'rgba(212, 175, 55, 0.28)' : 'rgba(212, 175, 55, 0.18)') : 'rgba(199, 154, 62, 0.22)')
+                    : (isLight ? (pressed ? '#F1F5F9' : '#FFFFFF') : (pressed ? c.cardHover : c.card)),
                   borderColor: isStealthMode
                     ? (isLight ? '#B8860B' : c.primary)
                     : (isLight ? 'rgba(212, 175, 55, 0.45)' : c.border),
-                  shadowColor: isLight ? 'transparent' : '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isLight ? 0 : 0.08,
-                  shadowRadius: 4,
-                  elevation: isLight ? 0 : 2,
+                  transform: [{ scale: pressed ? 0.94 : 1 }],
                 },
               ]}
+              accessibilityRole="button"
               accessibilityLabel="Toggle Privacy Mode"
             >
               <Ionicons
@@ -1281,7 +1278,7 @@ export default function DashboardScreen() {
                     : (isLight ? '#475569' : c.textMuted)
                 }
               />
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Modern Instant-Feedback Theme Toggle Button */}
             <ThemeToggleBtn />
@@ -1956,6 +1953,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   cashFlowCard: {
     borderRadius: 18,

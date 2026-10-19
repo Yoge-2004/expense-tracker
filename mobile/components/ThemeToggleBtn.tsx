@@ -22,31 +22,13 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  const handlePressIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    Animated.spring(scaleAnim, {
-      toValue: 0.85,
-      useNativeDriver: true,
-      speed: 40,
-      bounciness: 4,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 30,
-      bounciness: 6,
-    }).start();
-  };
-
   const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     toggleTheme();
     rotateAnim.setValue(0);
     Animated.timing(rotateAnim, {
       toValue: 1,
-      duration: 240,
+      duration: 220,
       useNativeDriver: true,
     }).start(() => {
       rotateAnim.setValue(0);
@@ -60,9 +42,7 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
 
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      activeOpacity={0.88}
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={`Switch to ${isLight ? 'Dark' : 'Light'} Theme`}
@@ -71,11 +51,6 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
         {
           backgroundColor: isLight ? '#FFFFFF' : c.card,
           borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : 'rgba(199, 154, 62, 0.35)',
-          shadowColor: isLight ? 'transparent' : '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isLight ? 0 : 0.08,
-          shadowRadius: 4,
-          elevation: isLight ? 0 : 2,
         },
         style,
       ]}
