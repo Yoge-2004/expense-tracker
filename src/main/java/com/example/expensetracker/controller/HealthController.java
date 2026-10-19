@@ -1,10 +1,12 @@
 package com.example.expensetracker.controller;
 
+import com.example.expensetracker.resilience.FallbackRecoveryCoordinator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,6 +27,9 @@ public class HealthController {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /** Optional: absent when the app runs against a single database. */
+    @Autowired(required = false)
+    private FallbackRecoveryCoordinator fallbackCoordinator;
 
     @Operation(summary = "Get system health status",
                description = "Checks database connectivity, JVM memory, and system uptime.")
@@ -56,6 +61,14 @@ public class HealthController {
             log.debug("System health check probe passed: UP, uptimeMs={}", uptime);
             statusMap.put("status", "UP");
             statusMap.put("database", "UP");
+            if (fallbackCoordinator != null && fallbackCoordinator.isActive()) {
+                // "UP" alone hides an outage: say whether the primary or the emergency fallback is answering.
+                String databaseMode = fallbackCoordinator.mode().name();
+                statusMap.put("databaseMode", databaseMode);
+                if (!"PRIMARY".equals(databaseMode)) {
+                    statusMap.put("message", "Primary database unavailable; serving the emergency fallback.");
+                }
+            }
             return ResponseEntity.ok(statusMap);
         } else {
             log.warn("System health check probe failed: DOWN, uptimeMs={}", uptime);
