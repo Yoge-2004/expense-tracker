@@ -49,6 +49,7 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 | **Profile & Settings** | Display name sync across web/app, 6-digit security PIN for instant recovery, and multi-currency selection. |
 | **Notifications** | Real-time push alerts, financial event digest, per-type preferences, and one-click bulk inbox clearing on web and mobile. |
 | **Machine Learning** | Dual-engine ML categorization (TF-IDF + Transformer), automated SMS financial alert listener, interactive tester, and continuous retraining feedback loop. |
+| **Floating Calculator** | Draggable & dockable quick calculator on web and mobile with precision-safe math, bill splitting (÷2 to ÷5), and 1-tap auto-insert into expense forms. |
 | **Persistence** | H2 for development, SQLite client-encrypted fallback, and PostgreSQL / Neon for production. |
 | **Data resilience** | Zero-downtime offline caching, network retry fallbacks, and Hugging Face Hub snapshot sync. |
 
@@ -103,6 +104,10 @@ Savings goals represent longer-term targets. Users can create goals, monitor cal
 The backend provides report generation for financial data, including PDF and Excel export capabilities. This makes the application useful beyond the dashboard itself: data can be archived, shared, or analyzed separately.
 
 ![Reports](docs/images/website/reports.png)
+
+### Floating Quick Calculator & Bill Splitter
+
+A draggable, dockable on-screen calculator is accessible across the dashboard. Press <kbd>Alt + C</kbd> or tap the gold floating bubble to crunch numbers, split bills with `1x`, `÷2`, `÷3`, `÷4`, `÷5` chips, and click **Use Amount** to auto-populate the calculated figure directly into the active transaction form.
 
 ### Responsive design
 

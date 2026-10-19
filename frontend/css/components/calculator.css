@@ -123,26 +123,11 @@
     gap: 4px;
 }
 
-.floating-calc-btn-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-muted, #A8A395);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 13px;
-    line-height: 1;
-    transition: all 0.12s ease;
-}
-
-.floating-calc-btn-icon:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-main, #ECE7D8);
-    border-color: var(--border);
+.floating-calc-controls .modal-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 12px;
 }
 
 /* 4. Digital Display Screen */

@@ -382,7 +382,13 @@ export const FloatingCalculator: React.FC = () => {
               <TouchableOpacity
                 onPress={() => setIsOpen(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={[styles.closeBtn, { backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.08)' }]}
+                style={[
+                  styles.closeBtn,
+                  {
+                    backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)',
+                    borderColor: c.border,
+                  },
+                ]}
                 accessibilityLabel="Close Calculator"
               >
                 <Ionicons name="close" size={18} color={c.textMuted} />
@@ -579,9 +585,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   closeBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

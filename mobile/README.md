@@ -39,6 +39,7 @@ The mobile client lives in this directory and is built with **Expo 57, React Nat
 - Managing client-side authentication/session state.
 - Providing native Google Sign-In integration.
 - Supporting device-oriented capabilities included by the application, such as secure storage, haptics, document handling, sharing, notifications with one-tap bulk clearing, SMS financial alert listener for automated ML expense classification, and local authentication where used by the corresponding flows.
+- Providing a draggable, dockable floating quick calculator with tactile haptic keypad feedback, bill splitting (`÷2` to `÷5`), and 1-tap amount insertion into Add Expense.
 
 <!-- IMAGE PLACEHOLDER: Full mobile app overview with 4–6 real screens. -->
 

@@ -107,6 +107,19 @@ const SECTIONS: GuideSection[] = [
       'Biometric Unlock: Protect your ledger using Apple Face ID or Android Fingerprint.',
       '6-Digit Security PIN: Cryptographic zero-email fallback allows offline password resets without external servers.'
     ]
+  },
+  {
+    id: 'calculator',
+    icon: 'calculator-outline',
+    title: '7. Floating Calculator & Bill Splitter',
+    badge: 'Tools',
+    summary: 'Do fast calculations and split group expenses without switching apps.',
+    bullets: [
+      'Draggable Floating Bubble: Position the calculator anywhere on your screen. Your preferred location is saved.',
+      'Haptic Keypad: Precision-safe arithmetic with tactile haptic vibration feedback on every tap.',
+      'Bill Splitter: Tap 1x, ÷2, ÷3, ÷4, ÷5 to divide restaurant bills or shared costs among friends.',
+      '1-Tap Insert: Tap "Insert Amount" to seamlessly populate the calculated total straight into Add Expense!'
+    ]
   }
 ];
 
