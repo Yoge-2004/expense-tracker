@@ -284,6 +284,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    marginBottom: 8,
   },
   radiantAura: {
     position: 'absolute',
@@ -312,7 +313,8 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
     overflow: 'hidden',
-    marginTop: 4,
+    marginTop: 14,
+    marginBottom: 4,
     position: 'relative',
   },
   shimmerBar: {

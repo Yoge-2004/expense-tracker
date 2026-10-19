@@ -69,8 +69,13 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
       style={[
         styles.toggleBtn,
         {
-          backgroundColor: c.card,
+          backgroundColor: isLight ? '#FFFFFF' : c.card,
           borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : 'rgba(199, 154, 62, 0.35)',
+          shadowColor: isLight ? 'transparent' : '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isLight ? 0 : 0.08,
+          shadowRadius: 4,
+          elevation: isLight ? 0 : 2,
         },
         style,
       ]}
@@ -100,10 +105,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
 });

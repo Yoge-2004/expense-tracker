@@ -8,6 +8,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { useColorScheme } from 'react-native';
 import { registerPushToken, unregisterPushToken } from '../services/notifications';
 
 interface AuthContextType {
@@ -42,8 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const systemScheme = useColorScheme();
   const [currency, setCurrency] = useState<string>('INR');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(systemScheme === 'light' ? 'light' : 'dark');
   const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
   const [isStealthMode, setIsStealthMode] = useState(false);

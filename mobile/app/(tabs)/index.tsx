@@ -1202,9 +1202,20 @@ export default function DashboardScreen() {
           <View style={styles.topBarRight}>
             {/* Export / Data Hub Button */}
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.88}
               onPress={() => setExportModalVisible(true)}
-              style={[styles.topActionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+              style={[
+                styles.topActionBtn,
+                {
+                  backgroundColor: isLight ? '#FFFFFF' : c.card,
+                  borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
+                  shadowColor: isLight ? 'transparent' : '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isLight ? 0 : 0.08,
+                  shadowRadius: 4,
+                  elevation: isLight ? 0 : 2,
+                },
+              ]}
               accessibilityLabel="Export Data"
             >
               <Ionicons name="share-outline" size={18} color={c.primary} />
@@ -1212,9 +1223,20 @@ export default function DashboardScreen() {
 
             {/* Notification inbox with unread badge */}
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.88}
               onPress={() => router.push('/notifications' as any)}
-              style={[styles.topActionBtn, { backgroundColor: c.card, borderColor: c.border }]}
+              style={[
+                styles.topActionBtn,
+                {
+                  backgroundColor: isLight ? '#FFFFFF' : c.card,
+                  borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
+                  shadowColor: isLight ? 'transparent' : '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isLight ? 0 : 0.08,
+                  shadowRadius: 4,
+                  elevation: isLight ? 0 : 2,
+                },
+              ]}
               accessibilityLabel={unreadNotifications > 0 ? `Notifications, ${unreadNotifications} unread` : 'Notifications'}
             >
               <Ionicons name="notifications-outline" size={18} color={c.primary} />
@@ -1227,6 +1249,7 @@ export default function DashboardScreen() {
 
             {/* Privacy / Stealth Mode Toggle Button */}
             <TouchableOpacity
+              activeOpacity={0.88}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                 toggleStealthMode();
@@ -1236,10 +1259,15 @@ export default function DashboardScreen() {
                 {
                   backgroundColor: isStealthMode
                     ? (isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(199, 154, 62, 0.22)')
-                    : c.card,
+                    : (isLight ? '#FFFFFF' : c.card),
                   borderColor: isStealthMode
                     ? (isLight ? '#B8860B' : c.primary)
                     : (isLight ? 'rgba(212, 175, 55, 0.45)' : c.border),
+                  shadowColor: isLight ? 'transparent' : '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isLight ? 0 : 0.08,
+                  shadowRadius: 4,
+                  elevation: isLight ? 0 : 2,
                 },
               ]}
               accessibilityLabel="Toggle Privacy Mode"
@@ -1928,11 +1956,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
   cashFlowCard: {
     borderRadius: 18,

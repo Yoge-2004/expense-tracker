@@ -3,11 +3,11 @@
  * @description Top-level Expo Router Layout and Navigation Graph.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AlertProvider } from '../context/AlertContext';
-import { View, Text, Animated, StyleSheet, StatusBar, Easing } from 'react-native';
+import { View, Text, Animated, StyleSheet, StatusBar, Easing, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useFonts } from 'expo-font';
@@ -33,10 +33,37 @@ import {
   registerIncomingNotificationListener,
 } from '../services/notifications';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { safeStorageGet } from '../services/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
-function SplashLoader() {
+interface SplashLoaderProps {
+  theme?: 'dark' | 'light';
+}
+
+function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
+  const systemScheme = useColorScheme();
+  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(
+    themeProp || (systemScheme === 'light' ? 'light' : 'dark')
+  );
+
+  useEffect(() => {
+    if (themeProp) {
+      setResolvedTheme(themeProp);
+      return;
+    }
+    safeStorageGet('app_theme')
+      .then((saved) => {
+        if (saved === 'light' || saved === 'dark') {
+          setResolvedTheme(saved);
+        }
+      })
+      .catch(() => {});
+  }, [themeProp]);
+
+  const isLight = resolvedTheme === 'light';
+  const c = Colors[resolvedTheme];
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -123,8 +150,11 @@ function SplashLoader() {
   });
 
   return (
-    <Animated.View style={[splashStyles.container, { opacity: fadeAnim }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#10120E" />
+    <Animated.View style={[splashStyles.container, { opacity: fadeAnim, backgroundColor: c.bg }]}>
+      <StatusBar
+        barStyle={isLight ? 'dark-content' : 'light-content'}
+        backgroundColor={c.bg}
+      />
 
       {/* Bespoke animated brand aura & rotating orbital halo */}
       <View style={splashStyles.coreContainer}>
@@ -132,6 +162,7 @@ function SplashLoader() {
           style={[
             splashStyles.auraGlow,
             {
+              backgroundColor: isLight ? 'rgba(212, 175, 55, 0.16)' : 'rgba(245, 200, 66, 0.18)',
               transform: [{ scale: auraScale }],
               opacity: auraOpacity,
             },
@@ -142,6 +173,9 @@ function SplashLoader() {
           style={[
             splashStyles.orbitalRing,
             {
+              borderColor: isLight ? 'rgba(212, 175, 55, 0.2)' : 'rgba(245, 200, 66, 0.15)',
+              borderTopColor: isLight ? '#D4AF37' : '#F5C842',
+              borderRightColor: isLight ? '#B8860B' : '#E6A817',
               transform: [{ rotate: spin }],
             },
           ]}
@@ -151,31 +185,54 @@ function SplashLoader() {
           style={[
             splashStyles.logoBox,
             {
+              backgroundColor: isLight ? '#D4AF37' : '#F5C842',
+              shadowColor: isLight ? '#D4AF37' : '#F5C842',
+              shadowOpacity: isLight ? 0.35 : 0.45,
               transform: [{ scale: logoScale }],
             },
           ]}
         >
-          <Ionicons name="wallet" size={32} color="#10120E" />
+          <Ionicons name="wallet" size={32} color={isLight ? '#FFFFFF' : '#10120E'} />
         </Animated.View>
       </View>
 
-      <Text style={splashStyles.brandName}>ExpenseTracker</Text>
-      <View style={splashStyles.badge}>
-        <Text style={splashStyles.badgeText}>EXECUTIVE COMMAND CENTER</Text>
+      <Text style={[splashStyles.brandName, { color: isLight ? '#0F172A' : '#F9F6EF' }]}>ExpenseTracker</Text>
+      <View
+        style={[
+          splashStyles.badge,
+          {
+            backgroundColor: isLight ? 'rgba(212, 175, 55, 0.12)' : 'rgba(245, 200, 66, 0.14)',
+            borderColor: isLight ? 'rgba(212, 175, 55, 0.35)' : 'rgba(245, 200, 66, 0.3)',
+          },
+        ]}
+      >
+        <Text style={[splashStyles.badgeText, { color: isLight ? '#996515' : '#F5C842' }]}>
+          EXECUTIVE COMMAND CENTER
+        </Text>
       </View>
 
-      {/* Custom Shimmer Progress Beam (No generic Android/iOS spinner) */}
-      <View style={splashStyles.loadingTrack}>
+      {/* Custom Shimmer Progress Beam */}
+      <View
+        style={[
+          splashStyles.loadingTrack,
+          {
+            backgroundColor: isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.1)',
+          },
+        ]}
+      >
         <Animated.View
           style={[
             splashStyles.shimmerBeam,
             {
+              backgroundColor: isLight ? '#D4AF37' : '#F5C842',
               transform: [{ translateX: shimmerAnim }],
             },
           ]}
         />
       </View>
-      <Text style={splashStyles.statusText}>AUTHENTICATING SECURE LEDGER</Text>
+      <Text style={[splashStyles.statusText, { color: isLight ? '#475569' : '#8A8E85' }]}>
+        AUTHENTICATING SECURE LEDGER
+      </Text>
     </Animated.View>
   );
 }
@@ -309,7 +366,7 @@ function RootLayoutNav() {
     };
   }, [isLoading, token, userId]);
 
-  if (isLoading) return <SplashLoader />;
+  if (isLoading) return <SplashLoader theme={theme} />;
 
   return (
     <>
@@ -335,6 +392,7 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     Fraunces_500Medium,
     Fraunces_600SemiBold,
@@ -347,7 +405,7 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  if (!fontsLoaded) return <SplashLoader />;
+  if (!fontsLoaded) return <SplashLoader theme={colorScheme === 'light' ? 'light' : 'dark'} />;
 
   return (
     <ErrorBoundary>
