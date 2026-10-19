@@ -560,7 +560,7 @@
             const raw = localStorage.getItem(STORAGE_POS_KEY);
             if (raw) {
                 const pos = JSON.parse(raw);
-                if (pos && typeof pos.leftRatio === "number" && typeof pos.topRatio === "number") {
+                if (pos && typeof pos.leftRatio === "number" && !isNaN(pos.leftRatio) && typeof pos.topRatio === "number" && !isNaN(pos.topRatio)) {
                     let left = pos.leftRatio * window.innerWidth;
                     let top = pos.topRatio * window.innerHeight;
 
@@ -589,7 +589,7 @@
             return;
         }
 
-        const chip = document.querySelector(".floating-calc-fx-chip[data-fx="" + fromCurr + ""]");
+        const chip = document.querySelector(`.floating-calc-fx-chip[data-fx="${fromCurr}"]`);
         if (chip) chip.classList.add("is-loading");
 
         try {
@@ -767,6 +767,29 @@
         open: () => toggleCalculator(true),
         close: () => toggleCalculator(false),
         toggle: () => toggleCalculator(),
+        reset: () => {
+            try {
+                localStorage.removeItem(STORAGE_POS_KEY);
+                localStorage.removeItem(STORAGE_STATE_KEY);
+            } catch (_) {}
+            const trigger = document.getElementById("floatingCalcTrigger");
+            const panel = document.getElementById("floatingCalcPanel");
+            if (trigger) {
+                trigger.style.left = "";
+                trigger.style.top = "";
+                trigger.style.bottom = "28px";
+                trigger.style.right = "28px";
+                trigger.style.display = "flex";
+            }
+            if (panel) {
+                panel.classList.remove("is-open");
+                panel.style.left = "";
+                panel.style.top = "";
+                panel.style.bottom = "28px";
+                panel.style.right = "28px";
+            }
+            state.isOpen = false;
+        },
         getCurrentValue: () => state.currentValue,
         setValue: (val) => {
             state.currentValue = String(val);
