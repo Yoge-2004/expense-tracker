@@ -110,7 +110,7 @@ function toMonthlyRate(amt: number, frequency?: string, intervalDays?: number): 
  * and Recurring Chit Funds / Deposits (Savings) into one comprehensive view.
  */
 export default function SubscriptionsScreen() {
-  const { userId, theme, currency } = useAuth();
+  const { userId, theme, currency, isStealthMode } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -665,7 +665,7 @@ export default function SubscriptionsScreen() {
                 <Text style={[styles.sectionTitle, { color: c.text }]}>Recurring Inflow Streams</Text>
               </View>
               <Text style={[styles.sectionSubtitle, { color: '#10B981' }]}>
-                +{currSym}{monthlyIncomeTotal.toLocaleString()}/mo
+                {isStealthMode ? `+${currSym}••••••/mo` : `+${currSym}${monthlyIncomeTotal.toLocaleString()}/mo`}
               </Text>
             </View>
 
@@ -709,11 +709,12 @@ export default function SubscriptionsScreen() {
 
                     <View style={styles.subRight}>
                       <Text style={[styles.subAmtText, { color: '#10B981', fontWeight: '800' }]}>
-                        +{currSym}
-                        {Number(inc.amount || 0).toLocaleString('en-IN', {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 2,
-                        })}
+                        {isStealthMode
+                          ? `+${currSym}••••••`
+                          : `+${currSym}${Number(inc.amount || 0).toLocaleString('en-IN', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            })}`}
                       </Text>
                     </View>
                   </View>
@@ -768,7 +769,7 @@ export default function SubscriptionsScreen() {
                 <Text style={[styles.sectionTitle, { color: c.text }]}>Chits & Recurring Deposits</Text>
               </View>
               <Text style={[styles.sectionSubtitle, { color: '#F59E0B' }]}>
-                {currSym}{monthlySavingsTotal.toLocaleString()}/mo
+                {isStealthMode ? `${currSym}••••••/mo` : `${currSym}${monthlySavingsTotal.toLocaleString()}/mo`}
               </Text>
             </View>
 
@@ -816,11 +817,12 @@ export default function SubscriptionsScreen() {
 
                     <View style={styles.subRight}>
                       <Text style={[styles.subAmtText, { color: '#F59E0B', fontWeight: '800' }]}>
-                        {currSym}
-                        {Number(goal.recurringAmount || 0).toLocaleString('en-IN', {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 2,
-                        })}
+                        {isStealthMode
+                          ? `${currSym}••••••`
+                          : `${currSym}${Number(goal.recurringAmount || 0).toLocaleString('en-IN', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            })}`}
                         <Text style={{ fontSize: 11, fontWeight: '500', color: c.textMuted }}> / cycle</Text>
                       </Text>
                     </View>
@@ -830,7 +832,7 @@ export default function SubscriptionsScreen() {
                   <View style={styles.goalProgressWrap}>
                     <View style={styles.goalProgressRow}>
                       <Text style={[styles.progressValText, { color: c.textMuted }]}>
-                        Accumulated: {currSym}{current.toLocaleString()} of {currSym}{target.toLocaleString()}
+                        {isStealthMode ? `Accumulated: ${currSym}••••••` : `Accumulated: ${currSym}${current.toLocaleString()} of ${currSym}${target.toLocaleString()}`}
                       </Text>
                       <Text style={[styles.progressPctText, { color: '#F59E0B' }]}>{pct}%</Text>
                     </View>
@@ -923,7 +925,7 @@ export default function SubscriptionsScreen() {
                 <Text style={[styles.sectionTitle, { color: c.text }]}>Subscription Outflows</Text>
               </View>
               <Text style={[styles.sectionSubtitle, { color: c.primary }]}>
-                -{currSym}{monthlyExpenseTotal.toLocaleString()}/mo
+                {isStealthMode ? `-${currSym}••••••/mo` : `-${currSym}${monthlyExpenseTotal.toLocaleString()}/mo`}
               </Text>
             </View>
 
@@ -973,11 +975,12 @@ export default function SubscriptionsScreen() {
 
                     <View style={styles.subRight}>
                       <Text style={[styles.subAmtText, { color: c.text }]}>
-                        {currSym}
-                        {Number(sub.amount || 0).toLocaleString('en-IN', {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 2,
-                        })}
+                        {isStealthMode
+                          ? `${currSym}••••••`
+                          : `${currSym}${Number(sub.amount || 0).toLocaleString('en-IN', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            })}`}
                       </Text>
                     </View>
                   </View>

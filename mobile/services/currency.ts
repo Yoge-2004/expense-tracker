@@ -144,14 +144,31 @@ const RATES_CACHE_PREFIX = '@expense_tracker_fx_rates_';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export const FALLBACK_TO_INR: Record<string, number> = {
+  INR: 1,
   USD: 83.5,
   EUR: 90.8,
   GBP: 106.2,
   AED: 22.7,
+  SAR: 22.25,
+  QAR: 22.9,
+  KWD: 271.5,
+  BHD: 221.4,
+  OMR: 216.8,
   JPY: 0.55,
   CAD: 61.2,
   AUD: 55.4,
   SGD: 62.1,
+  CHF: 94.2,
+  CNY: 11.5,
+  NZD: 50.8,
+  BRL: 16.5,
+  ZAR: 4.5,
+  THB: 2.3,
+  MYR: 17.8,
+  IDR: 0.0053,
+  KRW: 0.062,
+  TRY: 2.6,
+  RUB: 0.91,
 };
 
 /**
@@ -196,8 +213,11 @@ export async function getExchangeRate(fromCurrency: string, toCurrency = 'INR'):
     console.warn('[Currency] Live rates fetch error, fallback to static:', err);
   }
 
-  // 3. Fallback
-  if (to === 'INR' && FALLBACK_TO_INR[from]) return FALLBACK_TO_INR[from];
-  if (from === 'INR' && FALLBACK_TO_INR[to]) return 1 / FALLBACK_TO_INR[to];
+  // 3. Fallback matrix: cross rate using INR base
+  const fromInr = FALLBACK_TO_INR[from] || (from === 'INR' ? 1 : null);
+  const toInr = FALLBACK_TO_INR[to] || (to === 'INR' ? 1 : null);
+  if (fromInr && toInr) {
+    return fromInr / toInr;
+  }
   return 1;
 }

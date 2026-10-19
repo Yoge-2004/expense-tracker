@@ -481,7 +481,7 @@ interface BudgetVsActualProps {
  * Renders category-level limit vs actual spend comparisons with over-budget alerts.
  */
 export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ budgets, onEditBudget, onDeleteBudget }) => {
-  const { theme, currency } = useAuth();
+  const { theme, currency, isStealthMode } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
@@ -529,7 +529,7 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={[styles.budgetFigures, { color: isOver ? c.accent : c.textMuted }]}>
-                    {currSym}{Math.round(spent).toLocaleString('en-IN')} / {currSym}{Math.round(limit).toLocaleString('en-IN')}
+                    {isStealthMode ? `${currSym}•••••• / ${currSym}••••••` : `${currSym}${Math.round(spent).toLocaleString('en-IN')} / ${currSym}${Math.round(limit).toLocaleString('en-IN')}`}
                   </Text>
                   {onEditBudget && (
                     <TouchableOpacity

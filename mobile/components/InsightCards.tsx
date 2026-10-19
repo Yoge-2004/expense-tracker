@@ -104,7 +104,7 @@ const ESSENTIAL_CATEGORIES = [
  * Intelligent Financial Analytics component.
  */
 export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses, budgets, incomes = [], savingsGoals = [] }) => {
-  const { theme, currency } = useAuth();
+  const { theme, currency, isStealthMode } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
@@ -123,6 +123,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
   const thisMonthKey = monthKey(now);
 
   const formatAmt = (n: number) => {
+    if (isStealthMode) return `${currSym}••••••`;
     const val = isNaN(n) ? 0 : Math.round(n);
     return `${currSym}${val.toLocaleString('en-IN')}`;
   };

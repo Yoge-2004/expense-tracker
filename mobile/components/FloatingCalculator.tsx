@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
   Modal,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -25,6 +26,7 @@ import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
 import { getCurrencySymbol, getExchangeRate } from '../services/currency';
 
+const MAJOR_CURRENCIES = ['USD', 'INR', 'EUR', 'GBP', 'AED', 'CAD', 'AUD', 'JPY', 'SGD', 'SAR', 'CHF', 'CNY'] as const;
 const STORAGE_CALC_POS = '@expense_tracker_calc_pos';
 const BUTTON_SIZE = 54;
 
@@ -78,6 +80,8 @@ export const FloatingCalculator: React.FC = () => {
   const [isNewNum, setIsNewNum] = useState(true);
   const [splitCount, setSplitCount] = useState(1);
   const [isConverting, setIsConverting] = useState(false);
+  const [fxFrom, setFxFrom] = useState<string>('USD');
+  const [fxTo, setFxTo] = useState<string>(currency || 'INR');
 
   // Dragging State
   const defaultRight = 20;
@@ -277,17 +281,19 @@ export const FloatingCalculator: React.FC = () => {
   );
 
   const handleConvertCurrency = useCallback(
-    async (fromCode: string) => {
+    async (fromCode: string, toCode?: string) => {
       const num = parseFloat(currentVal);
       if (isNaN(num) || num === 0) return;
 
+      const targetCurr = toCode || fxTo || currency || 'INR';
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       setIsConverting(true);
       try {
-        const targetCurr = currency || 'INR';
         const rate = await getExchangeRate(fromCode, targetCurr);
         const converted = Math.round((num * rate + Number.EPSILON) * 100) / 100;
-        setExprStr(`${num} ${fromCode} @ ${currSymbol}${rate.toFixed(2)}`);
+        const targetSymbol = getCurrencySymbol(targetCurr);
+        const rateStr = rate < 0.01 ? rate.toFixed(4) : (rate < 1 ? rate.toFixed(3) : rate.toFixed(2));
+        setExprStr(`${num} ${fromCode} @ ${targetSymbol}${rateStr} ${targetCurr}`);
         setCurrentVal(String(converted));
         setIsNewNum(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -297,8 +303,33 @@ export const FloatingCalculator: React.FC = () => {
         setIsConverting(false);
       }
     },
-    [currentVal, currency, currSymbol]
+    [currentVal, fxTo, currency]
   );
+
+  const handleSwapFx = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setFxFrom((prev) => {
+      const nextFrom = fxTo;
+      setFxTo(prev);
+      return nextFrom;
+    });
+  }, [fxTo]);
+
+  const handleCycleFrom = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setFxFrom((prev) => {
+      const idx = MAJOR_CURRENCIES.indexOf(prev as any);
+      return MAJOR_CURRENCIES[(idx + 1) % MAJOR_CURRENCIES.length];
+    });
+  }, []);
+
+  const handleCycleTo = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setFxTo((prev) => {
+      const idx = MAJOR_CURRENCIES.indexOf(prev as any);
+      return MAJOR_CURRENCIES[(idx + 1) % MAJOR_CURRENCIES.length];
+    });
+  }, []);
 
   // Insert Amount into Add Expense
   const handleInsertAmount = useCallback(() => {
@@ -473,29 +504,76 @@ export const FloatingCalculator: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Quick Live Currency Conversion Bar */}
-            <View style={styles.fxRow}>
-              <Text style={[styles.fxLabel, { color: c.textMuted }]}>Fx:</Text>
-              {(['USD', 'EUR', 'GBP', 'AED'] as const).map((currCode) => (
+            {/* Comprehensive Bidirectional Currency Conversion Bar */}
+            <View style={styles.fxContainer}>
+              <View style={styles.fxControlsRow}>
+                <Text style={[styles.fxLabel, { color: c.textMuted }]}>Fx:</Text>
                 <TouchableOpacity
-                  key={currCode}
-                  disabled={isConverting}
-                  onPress={() => handleConvertCurrency(currCode)}
-                  style={[
-                    styles.fxChip,
-                    {
-                      backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.05)',
-                      borderColor: c.border,
-                      opacity: isConverting ? 0.6 : 1,
-                    },
-                  ]}
-                  accessibilityLabel={`Convert ${currCode} to ${currency || 'INR'}`}
+                  onPress={handleCycleFrom}
+                  style={[styles.fxSelectBtn, { backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)', borderColor: c.border }]}
+                  accessibilityLabel="Change source currency"
                 >
-                  <Text style={[styles.fxChipText, { color: c.primary }]}>
-                    {currCode} ➔ {currSymbol}
-                  </Text>
+                  <Text style={[styles.fxSelectBtnText, { color: c.text }]}>{fxFrom} ▾</Text>
                 </TouchableOpacity>
-              ))}
+
+                <TouchableOpacity
+                  onPress={handleSwapFx}
+                  style={[styles.fxSwapBtn, { borderColor: c.border, backgroundColor: isLight ? '#F8F9FA' : 'rgba(255,255,255,0.08)' }]}
+                  accessibilityLabel="Swap currencies"
+                >
+                  <Ionicons name="swap-horizontal" size={13} color={c.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleCycleTo}
+                  style={[styles.fxSelectBtn, { backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)', borderColor: c.border }]}
+                  accessibilityLabel="Change target currency"
+                >
+                  <Text style={[styles.fxSelectBtnText, { color: c.text }]}>{fxTo} ▾</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  disabled={isConverting}
+                  onPress={() => handleConvertCurrency(fxFrom, fxTo)}
+                  style={[styles.fxConvertBtn, { backgroundColor: c.primary, opacity: isConverting ? 0.6 : 1 }]}
+                  accessibilityLabel="Convert current value"
+                >
+                  <Text style={styles.fxConvertBtnText}>Convert</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fxQuickScroll}>
+                {[
+                  { from: 'USD', to: currency || 'INR', label: `USD➔${currSymbol}` },
+                  { from: 'EUR', to: currency || 'INR', label: `EUR➔${currSymbol}` },
+                  { from: 'GBP', to: currency || 'INR', label: `GBP➔${currSymbol}` },
+                  { from: 'AED', to: currency || 'INR', label: `AED➔${currSymbol}` },
+                  { from: currency || 'INR', to: 'USD', label: `${currSymbol}➔USD` },
+                  { from: 'CAD', to: currency || 'INR', label: `CAD➔${currSymbol}` },
+                  { from: 'AUD', to: currency || 'INR', label: `AUD➔${currSymbol}` },
+                  { from: 'JPY', to: currency || 'INR', label: `JPY➔${currSymbol}` },
+                ].map((item, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    disabled={isConverting}
+                    onPress={() => {
+                      setFxFrom(item.from);
+                      setFxTo(item.to);
+                      handleConvertCurrency(item.from, item.to);
+                    }}
+                    style={[
+                      styles.fxChip,
+                      {
+                        backgroundColor: isLight ? '#F1F5F9' : 'rgba(255,255,255,0.05)',
+                        borderColor: c.border,
+                        opacity: isConverting ? 0.6 : 1,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.fxChipText, { color: c.primary }]}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
 
             {/* Keypad Grid */}
@@ -705,26 +783,68 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#10120E',
   },
-  fxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  fxContainer: {
     marginBottom: 10,
     gap: 6,
+  },
+  fxControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   fxLabel: {
     fontSize: 10.5,
     fontWeight: '700',
     marginRight: 2,
   },
-  fxChip: {
+  fxSelectBtn: {
     paddingHorizontal: 7,
-    paddingVertical: 3.5,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fxSelectBtnText: {
+    fontFamily: 'IBMPlexMono_600SemiBold',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  fxSwapBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fxConvertBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4.5,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fxConvertBtnText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#10120E',
+  },
+  fxQuickScroll: {
+    flexDirection: 'row',
+    gap: 5,
+    alignItems: 'center',
+  },
+  fxChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
   },
   fxChipText: {
     fontFamily: 'IBMPlexMono_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 9.5,
     fontWeight: '700',
   },
   keypadGrid: {

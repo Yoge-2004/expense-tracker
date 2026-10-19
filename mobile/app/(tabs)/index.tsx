@@ -1234,16 +1234,24 @@ export default function DashboardScreen() {
               style={[
                 styles.topActionBtn,
                 {
-                  backgroundColor: isStealthMode ? c.primary + '22' : c.card,
-                  borderColor: isStealthMode ? c.primary : c.border,
+                  backgroundColor: isStealthMode
+                    ? (isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(199, 154, 62, 0.22)')
+                    : c.card,
+                  borderColor: isStealthMode
+                    ? (isLight ? '#B8860B' : c.primary)
+                    : (isLight ? 'rgba(212, 175, 55, 0.45)' : c.border),
                 },
               ]}
               accessibilityLabel="Toggle Privacy Mode"
             >
               <Ionicons
                 name={isStealthMode ? 'eye-off' : 'eye-outline'}
-                size={18}
-                color={isStealthMode ? c.primary : c.textMuted}
+                size={19}
+                color={
+                  isStealthMode
+                    ? (isLight ? '#996515' : c.primary)
+                    : (isLight ? '#475569' : c.textMuted)
+                }
               />
             </TouchableOpacity>
 
@@ -1392,7 +1400,7 @@ export default function DashboardScreen() {
                 style={[styles.matrixValue, { color: c.teal }]}
               />
               <Text style={[styles.matrixSub, { color: c.textMuted }]}>
-                {currentMonthInflow > 0 ? `In: +${currSymbol}${Math.round(currentMonthInflow).toLocaleString('en-IN')} · ` : ''}Day {currentDay} of {daysInMonth}
+                {currentMonthInflow > 0 ? (isStealthMode ? `In: +${currSymbol}•••••• · ` : `In: +${currSymbol}${Math.round(currentMonthInflow).toLocaleString('en-IN')} · `) : ''}Day {currentDay} of {daysInMonth}
               </Text>
             </AnimatedCard>
 
@@ -1413,7 +1421,7 @@ export default function DashboardScreen() {
                 style={[styles.matrixValue, { color: c.accent }]}
               />
               <Text style={[styles.matrixSub, { color: c.textMuted }]}>
-                Proj: {currSymbol}{Math.round(monthEndForecast).toLocaleString('en-IN')}
+                Proj: {isStealthMode ? `${currSymbol}••••••` : `${currSymbol}${Math.round(monthEndForecast).toLocaleString('en-IN')}`}
               </Text>
             </AnimatedCard>
 
@@ -1429,7 +1437,7 @@ export default function DashboardScreen() {
                 {highestCatName}
               </Text>
               <Text style={[styles.matrixSub, { color: c.textMuted }]}>
-                {currSymbol}{Math.round(highestCatAmt).toLocaleString('en-IN')} (
+                {isStealthMode ? `${currSymbol}••••••` : `${currSymbol}${Math.round(highestCatAmt).toLocaleString('en-IN')}`} (
                 {totalSpent > 0 ? ((highestCatAmt / totalSpent) * 100).toFixed(0) : 0}%)
               </Text>
             </AnimatedCard>
@@ -1520,7 +1528,7 @@ export default function DashboardScreen() {
                     />
                     <View style={styles.goalBottomRow}>
                       <Text style={[styles.goalSaved, { color: c.textMuted }]}>
-                        {currSymbol}{Math.round(goal.currentAmount).toLocaleString("en-IN")} / {currSymbol}{Math.round(goal.targetAmount).toLocaleString("en-IN")}
+                        {isStealthMode ? `${currSymbol}•••••• / ${currSymbol}••••••` : `${currSymbol}${Math.round(goal.currentAmount).toLocaleString("en-IN")} / ${currSymbol}${Math.round(goal.targetAmount).toLocaleString("en-IN")}`}
                       </Text>
                       <Text style={[styles.goalDate, { color: c.textMuted }]}>Due: {goal.targetDate || "Flexible"}</Text>
                     </View>
@@ -1914,15 +1922,15 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   topActionBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    borderWidth: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },

@@ -133,11 +133,50 @@
             </div>
 
             <div class="floating-calc-fx-bar" id="floatingCalcFxBar">
-                <span class="floating-calc-fx-label" title="Live daily rates via open.er-api.com">Fx:</span>
-                <button type="button" class="floating-calc-fx-chip" data-fx="USD" title="Convert USD into ₹">USD ➔ ₹</button>
-                <button type="button" class="floating-calc-fx-chip" data-fx="EUR" title="Convert EUR into ₹">EUR ➔ ₹</button>
-                <button type="button" class="floating-calc-fx-chip" data-fx="GBP" title="Convert GBP into ₹">GBP ➔ ₹</button>
-                <button type="button" class="floating-calc-fx-chip" data-fx="AED" title="Convert AED into ₹">AED ➔ ₹</button>
+                <div class="floating-calc-fx-controls">
+                    <span class="floating-calc-fx-label" title="Live daily rates with fixed fallback">Fx:</span>
+                    <select class="floating-calc-fx-select" id="floatingCalcFxFrom" title="From Currency">
+                        <option value="USD" selected>USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="AED">AED (د.إ)</option>
+                        <option value="INR">INR (₹)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="AUD">AUD ($)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="SGD">SGD (S$)</option>
+                        <option value="SAR">SAR (﷼)</option>
+                        <option value="QAR">QAR (QR)</option>
+                        <option value="KWD">KWD (KD)</option>
+                        <option value="CHF">CHF (Fr)</option>
+                        <option value="CNY">CNY (¥)</option>
+                    </select>
+                    <button type="button" class="floating-calc-fx-swap" id="floatingCalcFxSwap" title="Swap currencies">⇄</button>
+                    <select class="floating-calc-fx-select" id="floatingCalcFxTo" title="To Currency">
+                        <option value="INR" selected>INR (₹)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="AED">AED (د.إ)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="AUD">AUD ($)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="SGD">SGD (S$)</option>
+                        <option value="SAR">SAR (﷼)</option>
+                        <option value="QAR">QAR (QR)</option>
+                        <option value="KWD">KWD (KD)</option>
+                        <option value="CHF">CHF (Fr)</option>
+                        <option value="CNY">CNY (¥)</option>
+                    </select>
+                    <button type="button" class="floating-calc-fx-convert-btn" id="floatingCalcFxConvert" title="Convert current amount">Convert</button>
+                </div>
+                <div class="floating-calc-fx-quick-chips">
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="USD" data-fx-to="INR" title="Convert USD into ₹">USD➔₹</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="EUR" data-fx-to="INR" title="Convert EUR into ₹">EUR➔₹</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="GBP" data-fx-to="INR" title="Convert GBP into ₹">GBP➔₹</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="AED" data-fx-to="INR" title="Convert AED into ₹">AED➔₹</button>
+                    <button type="button" class="floating-calc-fx-chip" data-fx-from="INR" data-fx-to="USD" title="Convert ₹ into USD">₹➔USD</button>
+                </div>
             </div>
 
             <div class="floating-calc-grid" id="floatingCalcGrid">
@@ -582,67 +621,106 @@
     const FX_CACHE_KEY = "et_fx_daily_rates";
     const FX_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours daily update
 
-    async function convertFx(fromCurr) {
+    const STATIC_FALLBACKS_TO_INR = {
+        INR: 1,
+        USD: 83.5,
+        EUR: 90.8,
+        GBP: 106.2,
+        AED: 22.7,
+        SAR: 22.25,
+        QAR: 22.9,
+        KWD: 271.5,
+        BHD: 221.4,
+        OMR: 216.8,
+        JPY: 0.55,
+        CAD: 61.2,
+        AUD: 55.4,
+        SGD: 62.1,
+        CHF: 94.2,
+        CNY: 11.5,
+        NZD: 50.8,
+        BRL: 16.5,
+        ZAR: 4.5,
+        THB: 2.3,
+        MYR: 17.8,
+        IDR: 0.0053,
+        KRW: 0.062,
+        TRY: 2.6,
+        RUB: 0.91
+    };
+
+    async function convertFx(fromCurr, toCurr) {
+        fromCurr = (fromCurr || "USD").toUpperCase();
+        toCurr = (toCurr || "INR").toUpperCase();
+
         const num = parseFloat(state.currentValue);
         if (isNaN(num) || num === 0) {
             if (window.showToast) window.showToast("Enter an amount first to convert from " + fromCurr, "warning");
             return;
         }
 
-        const chip = document.querySelector(`.floating-calc-fx-chip[data-fx="${fromCurr}"]`);
-        if (chip) chip.classList.add("is-loading");
+        const convertBtn = document.getElementById("floatingCalcFxConvert");
+        if (convertBtn) convertBtn.classList.add("is-loading");
 
         try {
             let rate = null;
-            // 1. Check local storage cache
-            try {
-                const cachedRaw = localStorage.getItem(FX_CACHE_KEY + "_" + fromCurr);
-                if (cachedRaw) {
-                    const cached = JSON.parse(cachedRaw);
-                    if (Date.now() - cached.timestamp < FX_CACHE_TTL && cached.rate) {
-                        rate = cached.rate;
-                    }
-                }
-            } catch (_) {}
-
-            // 2. Fetch fresh rate if not in cache
-            if (!rate) {
+            if (fromCurr === toCurr) {
+                rate = 1;
+            } else {
+                // 1. Check local storage cache
                 try {
-                    const res = await fetch("https://open.er-api.com/v6/latest/" + fromCurr);
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (json && json.rates && json.rates.INR) {
-                            rate = json.rates.INR;
-                            localStorage.setItem(FX_CACHE_KEY + "_" + fromCurr, JSON.stringify({
-                                timestamp: Date.now(),
-                                rate: rate
-                            }));
+                    const cachedRaw = localStorage.getItem(FX_CACHE_KEY + "_" + fromCurr);
+                    if (cachedRaw) {
+                        const cached = JSON.parse(cachedRaw);
+                        if (Date.now() - cached.timestamp < FX_CACHE_TTL && cached.rates && cached.rates[toCurr]) {
+                            rate = Number(cached.rates[toCurr]);
                         }
                     }
-                } catch (netErr) {
-                    console.warn("Live currency fetch offline, using fallback", netErr);
-                }
-            }
+                } catch (_) {}
 
-            // 3. Fallback rates if network offline
-            if (!rate) {
-                const STATIC_FALLBACKS = { USD: 83.5, EUR: 90.8, GBP: 106.2, AED: 22.7 };
-                rate = STATIC_FALLBACKS[fromCurr] || 1;
+                // 2. Fetch fresh rates if not in cache
+                if (!rate) {
+                    try {
+                        const res = await fetch("https://open.er-api.com/v6/latest/" + fromCurr);
+                        if (res.ok) {
+                            const json = await res.json();
+                            if (json && json.rates) {
+                                localStorage.setItem(FX_CACHE_KEY + "_" + fromCurr, JSON.stringify({
+                                    timestamp: Date.now(),
+                                    rates: json.rates
+                                }));
+                                if (json.rates[toCurr]) {
+                                    rate = Number(json.rates[toCurr]);
+                                }
+                            }
+                        }
+                    } catch (netErr) {
+                        console.warn("Live currency fetch offline, using fallback", netErr);
+                    }
+                }
+
+                // 3. Fallback rates using INR base cross-calculation
+                if (!rate) {
+                    const fromInr = STATIC_FALLBACKS_TO_INR[fromCurr] || 1;
+                    const toInr = STATIC_FALLBACKS_TO_INR[toCurr] || 1;
+                    rate = fromInr / toInr;
+                }
             }
 
             const converted = Math.round((num * rate + Number.EPSILON) * 100) / 100;
-            state.expressionStr = num + " " + fromCurr + " @ ₹" + rate.toFixed(2);
+            const rateStr = rate < 0.01 ? rate.toFixed(5) : (rate < 1 ? rate.toFixed(4) : rate.toFixed(2));
+            state.expressionStr = num + " " + fromCurr + " @ " + rateStr + " " + toCurr;
             state.currentValue = String(converted);
             state.isNewNumber = true;
             updateDisplay();
 
             if (window.showToast) {
-                window.showToast("Converted: " + num + " " + fromCurr + " = ₹" + converted.toLocaleString('en-IN') + " (Rate: ₹" + rate.toFixed(2) + ")", "info");
+                window.showToast("Converted: " + num + " " + fromCurr + " = " + converted.toLocaleString() + " " + toCurr + " (Rate: " + rateStr + ")", "info");
             }
         } catch (err) {
             console.error("FX Conversion error", err);
         } finally {
-            if (chip) chip.classList.remove("is-loading");
+            if (convertBtn) convertBtn.classList.remove("is-loading");
         }
     }
 
@@ -670,13 +748,35 @@
             });
         }
 
+        const fxSwap = document.getElementById("floatingCalcFxSwap");
+        const fxConvert = document.getElementById("floatingCalcFxConvert");
+        const fxFrom = document.getElementById("floatingCalcFxFrom");
+        const fxTo = document.getElementById("floatingCalcFxTo");
+
+        if (fxSwap && fxFrom && fxTo) {
+            fxSwap.addEventListener("click", () => {
+                const temp = fxFrom.value;
+                fxFrom.value = fxTo.value;
+                fxTo.value = temp;
+            });
+        }
+
+        if (fxConvert && fxFrom && fxTo) {
+            fxConvert.addEventListener("click", () => {
+                convertFx(fxFrom.value, fxTo.value);
+            });
+        }
+
         const fxBar = document.getElementById("floatingCalcFxBar");
         if (fxBar) {
             fxBar.addEventListener("click", (e) => {
                 const chip = e.target.closest(".floating-calc-fx-chip");
                 if (chip) {
-                    const fxCurr = chip.getAttribute("data-fx");
-                    if (fxCurr) convertFx(fxCurr);
+                    const fromCurr = chip.getAttribute("data-fx-from") || chip.getAttribute("data-fx") || "USD";
+                    const toCurr = chip.getAttribute("data-fx-to") || "INR";
+                    if (fxFrom) fxFrom.value = fromCurr;
+                    if (fxTo) fxTo.value = toCurr;
+                    convertFx(fromCurr, toCurr);
                 }
             });
         }

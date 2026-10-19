@@ -248,15 +248,30 @@
 
 body.stealth-mode .metric-value,
 body.stealth-mode .ledger-amount,
-body.stealth-mode .expense-table td:nth-child(4),
+body.stealth-mode .expense-amount,
+body.stealth-mode .income-table td:nth-child(5),
 body.stealth-mode .income-table td:nth-child(4),
+body.stealth-mode .expense-table td:nth-child(4),
 body.stealth-mode .budget-limit-val,
 body.stealth-mode .budget-spent-val,
 body.stealth-mode .budget-remaining-val,
+body.stealth-mode .budget-status-row,
+body.stealth-mode .budget-grid-matrix div[style*="tabular-nums"],
 body.stealth-mode .goal-progress-amt,
+body.stealth-mode .savings-goal-card div > span:not(.status-badge),
+body.stealth-mode .savings-goal-card strong,
 body.stealth-mode #dailyBurnRate,
 body.stealth-mode #safeDailySpend,
+body.stealth-mode #topCategoryAmount,
+body.stealth-mode #totalSavedProgress,
+body.stealth-mode #moneyFlowBody dd,
+body.stealth-mode #moneyFlowNote,
+body.stealth-mode .insights-intelligence-panel strong,
+body.stealth-mode .insights-cards-grid strong,
+body.stealth-mode .insight-card strong,
+body.stealth-mode .insight-card div[style*="font-size:18px"],
 body.stealth-mode .subs-monthly-total,
+body.stealth-mode .subs-summary-val,
 body.stealth-mode .insight-stat-num {
     filter: blur(7px);
     user-select: none;
@@ -265,11 +280,21 @@ body.stealth-mode .insight-stat-num {
 }
 
 body.stealth-mode .metric-card:hover .metric-value,
+body.stealth-mode .metric-card:hover #topCategoryAmount,
+body.stealth-mode .expense-item:hover .expense-amount,
 body.stealth-mode .expense-table tr:hover td:nth-child(4),
+body.stealth-mode .income-table tr:hover td:nth-child(5),
 body.stealth-mode .income-table tr:hover td:nth-child(4),
 body.stealth-mode .budget-card:hover .budget-limit-val,
 body.stealth-mode .budget-card:hover .budget-spent-val,
 body.stealth-mode .budget-card:hover .budget-remaining-val,
-body.stealth-mode .goal-card:hover .goal-progress-amt {
+body.stealth-mode .budget-item:hover .budget-status-row,
+body.stealth-mode .budget-item:hover div[style*="tabular-nums"],
+body.stealth-mode .goal-card:hover .goal-progress-amt,
+body.stealth-mode .savings-goal-card:hover div > span:not(.status-badge),
+body.stealth-mode .savings-goal-card:hover strong,
+body.stealth-mode .money-flow-row:hover dd,
+body.stealth-mode .insight-card:hover strong,
+body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
     filter: none;
 }

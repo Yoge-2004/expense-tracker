@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, TextStyle, StyleProp } from 'react-native';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useAuth } from '../context/AuthContext';
 
 interface NumberTickerProps {
   value: number;
@@ -24,8 +25,14 @@ export const NumberTicker: React.FC<NumberTickerProps> = ({
   duration = 850,
   style,
   decimals = 0,
-  isStealth = false,
+  isStealth,
 }) => {
+  let authStealth = false;
+  try {
+    const auth = useAuth();
+    authStealth = !!auth?.isStealthMode;
+  } catch (_) {}
+  const effectiveStealth = isStealth !== undefined ? isStealth : authStealth;
   const safeTargetVal = Number.isFinite(Number(value)) ? Number(value) : 0;
   const [displayVal, setDisplayVal] = useState(safeTargetVal);
   const prevValRef = useRef(safeTargetVal);
@@ -79,6 +86,10 @@ export const NumberTicker: React.FC<NumberTickerProps> = ({
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
+
+  if (effectiveStealth) {
+    return <Text style={style}>{prefix}••••••{suffix}</Text>;
+  }
 
   return <Text style={style}>{prefix}{formattedNumber}{suffix}</Text>;
 };
