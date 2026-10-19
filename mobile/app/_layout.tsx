@@ -33,7 +33,7 @@ import {
   registerIncomingNotificationListener,
 } from '../services/notifications';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { safeStorageGet } from '../services/api';
+import { readSavedTheme } from '../services/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -53,7 +53,7 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
       setResolvedTheme(themeProp);
       return;
     }
-    safeStorageGet('app_theme')
+    readSavedTheme()
       .then((saved) => {
         if (saved === 'light' || saved === 'dark') {
           setResolvedTheme(saved);
@@ -392,7 +392,21 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const systemScheme = useColorScheme();
+  const [initialTheme, setInitialTheme] = useState<'dark' | 'light'>(
+    systemScheme === 'light' ? 'light' : 'dark'
+  );
+
+  useEffect(() => {
+    readSavedTheme()
+      .then((saved) => {
+        if (saved === 'light' || saved === 'dark') {
+          setInitialTheme(saved);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const [fontsLoaded] = useFonts({
     Fraunces_500Medium,
     Fraunces_600SemiBold,
@@ -405,11 +419,11 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  if (!fontsLoaded) return <SplashLoader />;
+  if (!fontsLoaded) return <SplashLoader theme={initialTheme} />;
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
+      <AuthProvider initialTheme={initialTheme}>
         <AlertProvider>
           <RootLayoutNav />
         </AlertProvider>

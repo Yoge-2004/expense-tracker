@@ -169,11 +169,31 @@ interface TransactionRowProps {
  * changes, so typing in search, scrolling or unrelated state changes on the screen do not repaint
  * every row.
  */
+function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) {
+  return (
+    prev.tx.uniqueKey === next.tx.uniqueKey &&
+    prev.tx.amount === next.tx.amount &&
+    prev.tx.title === next.tx.title &&
+    prev.tx.date === next.tx.date &&
+    prev.tx.categoryOrSource === next.tx.categoryOrSource &&
+    prev.tx.isRecurring === next.tx.isRecurring &&
+    prev.currSymbol === next.currSymbol &&
+    prev.isStealth === next.isStealth &&
+    prev.colors === next.colors &&
+    prev.onPress === next.onPress &&
+    prev.onEdit === next.onEdit &&
+    prev.onDelete === next.onDelete
+  );
+}
+
 const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, isStealth, onPress, onEdit, onDelete }: TransactionRowProps) {
   const isIncome = tx.type === "income";
   const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const isSwiping = useRef(false);
+
+  const actionRefs = useRef({ tx, onEdit, onDelete });
+  actionRefs.current = { tx, onEdit, onDelete };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -194,14 +214,14 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
           Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
             isSwiping.current = false;
-            onDelete(tx);
+            actionRefs.current.onDelete(actionRefs.current.tx);
           });
         } else if (gesture.dx > 70) {
           // Swiped right: Edit
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
           Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
             isSwiping.current = false;
-            onEdit(tx);
+            actionRefs.current.onEdit(actionRefs.current.tx);
           });
         } else {
           // Snap back
@@ -218,35 +238,34 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
     })
   ).current;
 
-  const bgOpacity = pan.x.interpolate({
-    inputRange: [-50, -10, 0, 10, 50],
-    outputRange: [1, 0.2, 0, 0.2, 1],
-    extrapolate: "clamp",
-  });
-
-  const deleteOpacity = pan.x.interpolate({
-    inputRange: [-80, -25, 0],
-    outputRange: [1, 0.4, 0],
-    extrapolate: "clamp",
-  });
-
-  const deleteScale = pan.x.interpolate({
-    inputRange: [-80, 0],
-    outputRange: [1, 0.85],
-    extrapolate: "clamp",
-  });
-
-  const editOpacity = pan.x.interpolate({
-    inputRange: [0, 25, 80],
-    outputRange: [0, 0.4, 1],
-    extrapolate: "clamp",
-  });
-
-  const editScale = pan.x.interpolate({
-    inputRange: [0, 80],
-    outputRange: [0.85, 1],
-    extrapolate: "clamp",
-  });
+  const animatedNodes = useRef({
+    bgOpacity: pan.x.interpolate({
+      inputRange: [-50, -10, 0, 10, 50],
+      outputRange: [1, 0.2, 0, 0.2, 1],
+      extrapolate: "clamp",
+    }),
+    deleteOpacity: pan.x.interpolate({
+      inputRange: [-80, -25, 0],
+      outputRange: [1, 0.4, 0],
+      extrapolate: "clamp",
+    }),
+    deleteScale: pan.x.interpolate({
+      inputRange: [-80, 0],
+      outputRange: [1, 0.85],
+      extrapolate: "clamp",
+    }),
+    editOpacity: pan.x.interpolate({
+      inputRange: [0, 25, 80],
+      outputRange: [0, 0.4, 1],
+      extrapolate: "clamp",
+    }),
+    editScale: pan.x.interpolate({
+      inputRange: [0, 80],
+      outputRange: [0.85, 1],
+      extrapolate: "clamp",
+    }),
+  }).current;
+  const { bgOpacity, deleteOpacity, deleteScale, editOpacity, editScale } = animatedNodes;
 
   const isLight = colors.bg === '#F8F9FA';
   const troughBg = isLight ? '#EAEFF5' : 'rgba(18, 20, 16, 0.95)';
@@ -344,14 +363,14 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
       </Animated.View>
     </View>
   );
-});
+}, areRowPropsEqual);
 
 /**
  * The ledger search box. It owns the text being typed, so typing and the clear button update at once;
  * the filtering of the list follows shortly after (and immediately on clear), without holding the
  * input back.
  */
-function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; colors: ThemeColors }) {
+const SearchField = React.memo(function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; colors: ThemeColors }) {
   const [text, setText] = useState('');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -395,7 +414,7 @@ function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; 
       )}
     </View>
   );
-}
+});
 
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency, profilePicture, isStealthMode, toggleStealthMode } = useAuth();
@@ -1067,27 +1086,23 @@ export default function DashboardScreen() {
     return list.sort((a, b) => {
       try {
         if (sortOption === 'date-desc') {
-          const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-          if (dDiff !== 0) return dDiff;
+          if (b.date !== a.date) return b.date > a.date ? 1 : -1;
           return (b.id || 0) - (a.id || 0);
         }
         if (sortOption === 'date-asc') {
-          const dDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
-          if (dDiff !== 0) return dDiff;
+          if (a.date !== b.date) return a.date > b.date ? 1 : -1;
           return (a.id || 0) - (b.id || 0);
         }
         if (sortOption === 'amount-desc') {
           const aDiff = b.amount - a.amount;
           if (aDiff !== 0) return aDiff;
-          const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-          if (dDiff !== 0) return dDiff;
+          if (b.date !== a.date) return b.date > a.date ? 1 : -1;
           return (b.id || 0) - (a.id || 0);
         }
         if (sortOption === 'amount-asc') {
           const aDiff = a.amount - b.amount;
           if (aDiff !== 0) return aDiff;
-          const dDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-          if (dDiff !== 0) return dDiff;
+          if (b.date !== a.date) return b.date > a.date ? 1 : -1;
           return (b.id || 0) - (a.id || 0);
         }
       } catch {
@@ -1222,31 +1237,41 @@ export default function DashboardScreen() {
               <Ionicons name="share-outline" size={18} color={c.primary} />
             </TouchableOpacity>
 
-            {/* Notification inbox with unread badge */}
-            <TouchableOpacity
-              activeOpacity={0.88}
-              onPress={() => router.push('/notifications' as any)}
-              style={[
-                styles.topActionBtn,
-                {
-                  backgroundColor: isLight ? '#FFFFFF' : c.card,
-                  borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
-                  shadowColor: isLight ? 'transparent' : '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isLight ? 0 : 0.08,
-                  shadowRadius: 4,
-                  elevation: isLight ? 0 : 2,
-                },
-              ]}
-              accessibilityLabel={unreadNotifications > 0 ? `Notifications, ${unreadNotifications} unread` : 'Notifications'}
-            >
-              <Ionicons name="notifications-outline" size={18} color={c.primary} />
+            {/* Notification inbox with unread badge (isolated wrapper prevents container clipping) */}
+            <View style={styles.bellBtnWrapper}>
+              <TouchableOpacity
+                activeOpacity={0.88}
+                onPress={() => router.push('/notifications' as any)}
+                style={[
+                  styles.topActionBtn,
+                  {
+                    backgroundColor: isLight ? '#FFFFFF' : c.card,
+                    borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
+                    shadowColor: isLight ? 'transparent' : '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isLight ? 0 : 0.08,
+                    shadowRadius: 4,
+                    elevation: isLight ? 0 : 2,
+                  },
+                ]}
+                accessibilityLabel={unreadNotifications > 0 ? `Notifications, ${unreadNotifications} unread` : 'Notifications'}
+              >
+                <Ionicons name="notifications-outline" size={18} color={c.primary} />
+              </TouchableOpacity>
               {unreadNotifications > 0 && (
-                <View style={styles.bellBadge}>
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.bellBadge,
+                    {
+                      borderColor: isLight ? '#FFFFFF' : (c.card || '#171A14'),
+                    },
+                  ]}
+                >
                   <Text style={styles.bellBadgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </View>
 
             {/* Privacy / Stealth Mode Toggle Button */}
             <Pressable
@@ -1737,42 +1762,41 @@ export default function DashboardScreen() {
               ) : (
                 <ScrollView
                   style={styles.innerListScroll}
+                  contentContainerStyle={styles.transactionsList}
                   nestedScrollEnabled={true}
                   showsVerticalScrollIndicator={true}
                   scrollEventThrottle={100}
                   onScroll={({ nativeEvent }) => {
-                    // Load the next page a little before the bottom is reached.
                     const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
                     if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 240) {
                       setVisibleCount((n) => (n < unifiedTransactions.length ? n + PAGE_SIZE : n));
                     }
                   }}
                 >
-                  <View style={styles.transactionsList}>
-                    {visibleTransactions.map((tx) => (
-                      <TransactionRow
-                        key={tx.uniqueKey}
-                        tx={tx}
-                        colors={c}
-                        currSymbol={currSymbol}
-                        onPress={onRowPress}
-                        onEdit={onRowEdit}
-                        onDelete={onRowDelete}
-                      />
-                    ))}
-                    {visibleCount < unifiedTransactions.length && (
-                      <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => setVisibleCount((n) => n + PAGE_SIZE)}
-                        style={styles.showMoreBtn}
-                        accessibilityRole="button"
-                      >
-                        <Text style={[styles.showMoreText, { color: c.primary }]}>
-                          Show more ({unifiedTransactions.length - visibleCount} left)
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                  {visibleTransactions.map((tx) => (
+                    <TransactionRow
+                      key={tx.uniqueKey}
+                      tx={tx}
+                      colors={c}
+                      currSymbol={currSymbol}
+                      isStealth={isStealthMode}
+                      onPress={onRowPress}
+                      onEdit={onRowEdit}
+                      onDelete={onRowDelete}
+                    />
+                  ))}
+                  {visibleCount < unifiedTransactions.length && (
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                      style={styles.showMoreBtn}
+                      accessibilityRole="button"
+                    >
+                      <Text style={[styles.showMoreText, { color: c.primary }]}>
+                        Show more ({unifiedTransactions.length - visibleCount} left)
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </ScrollView>
               )}
             </View>
@@ -1922,21 +1946,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  bellBtnWrapper: {
+    position: 'relative',
+    overflow: 'visible',
+    width: 40,
+    height: 40,
+  },
   bellBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -4,
+    right: -4,
     minWidth: 18,
     height: 18,
-    paddingHorizontal: 3,
+    paddingHorizontal: 4,
     borderRadius: 9,
     backgroundColor: '#EF4444',
     borderWidth: 1.5,
-    borderColor: '#10120E',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
-    elevation: 4,
+    zIndex: 25,
+    elevation: 6,
   },
   bellBadgeText: {
     color: '#FFFFFF',
@@ -1953,7 +1982,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   cashFlowCard: {
     borderRadius: 18,

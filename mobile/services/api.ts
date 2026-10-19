@@ -124,6 +124,34 @@ export async function safeStorageDelete(key: string): Promise<void> {
   }
 }
 
+/**
+ * Fast-path theme reader. Reads from AsyncStorage first (instantaneous)
+ * and falls back to SecureStore without blocking UI rendering.
+ */
+export async function readSavedTheme(): Promise<'dark' | 'light' | null> {
+  try {
+    const direct = await AsyncStorage.getItem('app_theme');
+    if (direct === 'light' || direct === 'dark') return direct;
+  } catch {}
+
+  try {
+    const val = await safeStorageGet('app_theme');
+    if (val === 'light' || val === 'dark') return val;
+  } catch {}
+
+  return null;
+}
+
+/**
+ * Persists theme preference to both AsyncStorage (for lightning-fast startup retrieval)
+ * and SecureStore for cross-session resilience.
+ */
+export async function persistSavedTheme(theme: 'light' | 'dark'): Promise<void> {
+  try {
+    await AsyncStorage.setItem('app_theme', theme);
+  } catch {}
+}
+
 export async function saveSession(token: string, userId: string, name: string, photo?: string | null): Promise<void> {
   try {
     apiCache.clear();

@@ -4,8 +4,8 @@
  * global currency preference, UI theme switching (Dark / Light), and Biometrics (Face ID / Fingerprint).
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useColorScheme } from 'react-native';
@@ -37,7 +37,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+  initialTheme,
+}: {
+  children: React.ReactNode;
+  initialTheme?: 'dark' | 'light';
+}) {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -45,10 +51,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const systemScheme = useColorScheme();
   const [currency, setCurrency] = useState<string>('INR');
-  const [theme, setTheme] = useState<'dark' | 'light'>(systemScheme === 'light' ? 'light' : 'dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(
+    initialTheme ?? (systemScheme === 'light' ? 'light' : 'dark')
+  );
   const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
   const [isStealthMode, setIsStealthMode] = useState(false);
+  const userToggledThemeRef = useRef(false);
+
+  useEffect(() => {
+    if (initialTheme && !userToggledThemeRef.current && initialTheme !== theme) {
+      setTheme(initialTheme);
+    }
+  }, [initialTheme]);
 
   const checkBiometricsSupport = async () => {
     try {
@@ -67,10 +82,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function loadSession() {
       try {
-        // Load theme, session and currency immediately in parallel so the initial UI
-        // is 100% styled before any screen paint, avoiding any theme-switch delay or flash.
-        const [savedTheme, session, savedCurrency, savedStealth] = await Promise.all([
-          safeStorageGet('app_theme'),
+        // Fast-path theme load first so UI state aligns before heavyweight crypto/network
+        readSavedTheme()
+          .then((savedTheme) => {
+            if (!userToggledThemeRef.current && (savedTheme === 'light' || savedTheme === 'dark')) {
+              setTheme(savedTheme);
+            }
+          })
+          .catch(() => {});
+
+        const [session, savedCurrency, savedStealth] = await Promise.all([
           getSession(),
           safeStorageGet('user_currency'),
           safeStorageGet('app_stealth_mode'),
@@ -78,10 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (savedStealth === 'true') {
           setIsStealthMode(true);
-        }
-
-        if (savedTheme === 'light' || savedTheme === 'dark') {
-          setTheme(savedTheme);
         }
 
         if (session.token && session.userId) {
@@ -341,10 +358,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(async (): Promise<void> => {
+    userToggledThemeRef.current = true;
     setTheme((prevTheme) => {
       const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      // Persist reliably across SecureStore and AsyncStorage in the background
-      safeStorageSet('app_theme', nextTheme).catch((e) => {
+      persistSavedTheme(nextTheme).catch((e) => {
         console.warn('[AuthContext] Failed to persist theme preference:', e);
       });
       return nextTheme;

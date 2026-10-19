@@ -4,7 +4,7 @@
     "slug": "expense-tracker-mobile",
     "version": "1.0.4",
     "orientation": "default",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "ios": {
       "icon": "./assets/icon.png",

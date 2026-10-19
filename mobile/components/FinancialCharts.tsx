@@ -8,7 +8,7 @@
  * 5. BudgetVsActualChart - Category-level limit vs actual spend comparison.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, Dimensions, useWindowDimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, {
@@ -43,6 +43,9 @@ function formatCompact(num: number, symbol: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+const EMPTY_EXPENSES: any[] = [];
+const EMPTY_BUDGETS: any[] = [];
+
 // 1. CATEGORY DONUT / RING CHART
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -61,25 +64,30 @@ export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expen
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
-  const safeExpenses = expenses || [];
-  const categoryTotals: Record<string, number> = {};
-  let total = 0;
+  const { categories, total } = useMemo(() => {
+    const safeExpenses = expenses || EMPTY_EXPENSES;
+    const categoryTotals: Record<string, number> = {};
+    let tot = 0;
 
-  safeExpenses.forEach((e) => {
-    const cat = e.categoryName || 'Other';
-    const amt = Math.max(0, Number(e.amount || 0));
-    categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
-    total += amt;
-  });
+    for (let i = 0; i < safeExpenses.length; i++) {
+      const e = safeExpenses[i];
+      const cat = e.categoryName || 'Other';
+      const amt = Math.max(0, Number(e.amount || 0));
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
+      tot += amt;
+    }
 
-  const categories = Object.entries(categoryTotals)
-    .map(([name, amount]) => ({
-      name,
-      amount,
-      pct: total > 0 ? (amount / total) * 100 : 0,
-      color: getCategoryColor(name).color,
-    }))
-    .sort((a, b) => b.amount - a.amount);
+    const cats = Object.entries(categoryTotals)
+      .map(([name, amount]) => ({
+        name,
+        amount,
+        pct: tot > 0 ? (amount / tot) * 100 : 0,
+        color: getCategoryColor(name).color,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    return { categories: cats, total: tot };
+  }, [expenses]);
 
   if (categories.length === 0 || total === 0) {
     return (
@@ -181,50 +189,58 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = React.memo(({ exp
   const currSym = getCurrencySymbol(currency);
   const { width: windowWidth } = useWindowDimensions();
 
-  const safeExpenses = expenses || [];
-  const days = 14;
-  const now = new Date();
-  const dayBuckets: { label: string; amount: number; dateStr: string }[] = [];
-
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-    const label = d.toLocaleDateString('en-US', { weekday: 'narrow' });
-    dayBuckets.push({ label, amount: 0, dateStr });
-  }
-
-  safeExpenses.forEach((e) => {
-    if (!e.expenseDate) return;
-    const bucket = dayBuckets.find((b) => b.dateStr === e.expenseDate);
-    if (bucket) {
-      bucket.amount += Number(e.amount || 0);
-    }
-  });
-
-  const maxVal = Math.max(...dayBuckets.map((d) => d.amount), 100);
   const chartHeight = 120;
   const chartInnerWidth = Math.min(windowWidth - (windowWidth >= 1024 ? 64 : 40) - 48, 800);
-  const stepX = chartInnerWidth / (days - 1);
 
-  const points = dayBuckets.map((d, i) => {
-    const x = i * stepX;
-    const y = chartHeight - (d.amount / maxVal) * (chartHeight - 20) - 10;
-    return { x, y, amount: d.amount, label: d.label };
-  });
+  const { points, linePath, areaPath, maxVal, dayBuckets } = useMemo(() => {
+    const safeExpenses = expenses || EMPTY_EXPENSES;
+    const days = 14;
+    const now = new Date();
+    const dayBuckets: { label: string; amount: number; dateStr: string }[] = [];
+    const bucketMap = new Map<string, number>();
 
-  let linePath = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const cpX1 = prev.x + (curr.x - prev.x) / 2;
-    const cpY1 = prev.y;
-    const cpX2 = prev.x + (curr.x - prev.x) / 2;
-    const cpY2 = curr.y;
-    linePath += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${curr.x} ${curr.y}`;
-  }
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('en-US', { weekday: 'narrow' });
+      dayBuckets.push({ label, amount: 0, dateStr });
+      bucketMap.set(dateStr, dayBuckets.length - 1);
+    }
 
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${chartHeight} L ${points[0].x} ${chartHeight} Z`;
+    for (let i = 0; i < safeExpenses.length; i++) {
+      const e = safeExpenses[i];
+      if (!e.expenseDate) continue;
+      const idx = bucketMap.get(e.expenseDate);
+      if (idx !== undefined) {
+        dayBuckets[idx].amount += Number(e.amount || 0);
+      }
+    }
+
+    const calculatedMax = Math.max(...dayBuckets.map((d) => d.amount), 100);
+    const stepX = chartInnerWidth / (days - 1);
+
+    const pts = dayBuckets.map((d, i) => {
+      const x = i * stepX;
+      const y = chartHeight - (d.amount / calculatedMax) * (chartHeight - 20) - 10;
+      return { x, y, amount: d.amount, label: d.label };
+    });
+
+    let lPath = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 1; i < pts.length; i++) {
+      const prev = pts[i - 1];
+      const curr = pts[i];
+      const cpX1 = prev.x + (curr.x - prev.x) / 2;
+      const cpY1 = prev.y;
+      const cpX2 = prev.x + (curr.x - prev.x) / 2;
+      const cpY2 = curr.y;
+      lPath += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${curr.x} ${curr.y}`;
+    }
+
+    const aPath = `${lPath} L ${pts[pts.length - 1].x} ${chartHeight} L ${pts[0].x} ${chartHeight} Z`;
+
+    return { points: pts, linePath: lPath, areaPath: aPath, maxVal: calculatedMax, dayBuckets };
+  }, [expenses, chartInnerWidth]);
 
   return (
     <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -314,22 +330,29 @@ export const RecurringSplitChart: React.FC<RecurringSplitProps> = React.memo(({ 
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
-  const safeExpenses = expenses || [];
-  let recurring = 0;
-  let onetime = 0;
+  const { recurring, onetime, recPct, onePct } = useMemo(() => {
+    const safeExpenses = expenses || EMPTY_EXPENSES;
+    let rec = 0;
+    let one = 0;
 
-  safeExpenses.forEach((e) => {
-    const amt = Math.max(0, Number(e.amount || 0));
-    if (e.isRecurring || e.recurring || (e as any).frequency) {
-      recurring += amt;
-    } else {
-      onetime += amt;
+    for (let i = 0; i < safeExpenses.length; i++) {
+      const e = safeExpenses[i];
+      const amt = Math.max(0, Number(e.amount || 0));
+      if (e.isRecurring || e.recurring || (e as any).frequency) {
+        rec += amt;
+      } else {
+        one += amt;
+      }
     }
-  });
 
-  const total = recurring + onetime;
-  const recPct = total > 0 ? (recurring / total) * 100 : 0;
-  const onePct = total > 0 ? (onetime / total) * 100 : 0;
+    const tot = rec + one;
+    return {
+      recurring: rec,
+      onetime: one,
+      recPct: tot > 0 ? (rec / tot) * 100 : 0,
+      onePct: tot > 0 ? (one / tot) * 100 : 0,
+    };
+  }, [expenses]);
 
   return (
     <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -389,33 +412,35 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
-  const safeExpenses = expenses || [];
-  const dowTotals = [0, 0, 0, 0, 0, 0, 0];
-  const dowCounts = [0, 0, 0, 0, 0, 0, 0];
+  const { dowTotals, maxDayVal } = useMemo(() => {
+    const safeExpenses = expenses || EMPTY_EXPENSES;
+    const totals = [0, 0, 0, 0, 0, 0, 0];
 
-  safeExpenses.forEach((e) => {
-    if (!e.expenseDate) return;
-    let day = -1;
-    const parts = e.expenseDate.split('T')[0].split('-');
-    if (parts.length === 3) {
-      const y = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10) - 1;
-      const d = parseInt(parts[2], 10);
-      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
-        day = new Date(y, m, d).getDay();
+    for (let i = 0; i < safeExpenses.length; i++) {
+      const e = safeExpenses[i];
+      if (!e.expenseDate) continue;
+      let day = -1;
+      const parts = e.expenseDate.split('T')[0].split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+          day = new Date(y, m, d).getDay();
+        }
+      }
+      if (day === -1) {
+        const dt = new Date(e.expenseDate);
+        day = isNaN(dt.getTime()) ? -1 : dt.getDay();
+      }
+      if (day >= 0 && day <= 6) {
+        totals[day] += Math.max(0, Number(e.amount || 0));
       }
     }
-    if (day === -1) {
-      const dt = new Date(e.expenseDate);
-      day = isNaN(dt.getTime()) ? -1 : dt.getDay();
-    }
-    if (day >= 0 && day <= 6) {
-      dowTotals[day] += Math.max(0, Number(e.amount || 0));
-      dowCounts[day]++;
-    }
-  });
 
-  const maxDayVal = Math.max(...dowTotals, 100);
+    const calculatedMax = Math.max(...totals, 100);
+    return { dowTotals: totals, maxDayVal: calculatedMax };
+  }, [expenses]);
   const barMaxHeight = 80;
 
   return (
@@ -485,7 +510,7 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
-  const safeBudgets = budgets || [];
+  const safeBudgets = budgets || EMPTY_BUDGETS;
 
   if (safeBudgets.length === 0) {
     return (

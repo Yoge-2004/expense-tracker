@@ -100,10 +100,20 @@ const ESSENTIAL_CATEGORIES = [
   'education',
 ];
 
+const EMPTY_EXPENSES: ExpenseItem[] = [];
+const EMPTY_BUDGETS: BudgetStatus[] = [];
+const EMPTY_INCOMES: IncomeItem[] = [];
+const EMPTY_GOALS: SavingsGoalItem[] = [];
+
 /**
  * Intelligent Financial Analytics component.
  */
-export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses, budgets, incomes = [], savingsGoals = [] }) => {
+export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
+  expenses = EMPTY_EXPENSES,
+  budgets = EMPTY_BUDGETS,
+  incomes = EMPTY_INCOMES,
+  savingsGoals = EMPTY_GOALS,
+}) => {
   const { theme, currency, isStealthMode } = useAuth();
   const c = Colors[theme];
   const currSym = getCurrencySymbol(currency);
@@ -111,10 +121,10 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
   const [activeTab, setActiveTab] = useState<'all' | 'habits' | 'forecasts'>('all');
   const [selectedInsight, setSelectedInsight] = useState<DetailedInsightModalData | null>(null);
 
-  const safeExpenses = expenses || [];
-  const safeBudgets = budgets || [];
-  const safeIncomes = incomes || [];
-  const safeGoals = savingsGoals || [];
+  const safeExpenses = expenses || EMPTY_EXPENSES;
+  const safeBudgets = budgets || EMPTY_BUDGETS;
+  const safeIncomes = incomes || EMPTY_INCOMES;
+  const safeGoals = savingsGoals || EMPTY_GOALS;
 
   const now = new Date();
   const currentDay = Math.max(now.getDate(), 1);
@@ -252,14 +262,28 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({ expenses,
 
   let earliestBurnout: BurnoutCandidate | null = null;
 
+  // Pre-aggregate monthly category spending for O(1) budget lookup
+  const monthCatSpentById = new Map<number, number>();
+  const monthCatSpentByName = new Map<string, number>();
+  for (let i = 0; i < currentMonthExpenses.length; i++) {
+    const e = currentMonthExpenses[i];
+    const amt = Math.max(0, Number(e.amount || 0));
+    if (e.categoryId) {
+      monthCatSpentById.set(e.categoryId, (monthCatSpentById.get(e.categoryId) || 0) + amt);
+    }
+    if (e.categoryName) {
+      const lower = e.categoryName.toLowerCase();
+      monthCatSpentByName.set(lower, (monthCatSpentByName.get(lower) || 0) + amt);
+    }
+  }
+
   safeBudgets.forEach((b) => {
     const limit = Math.max(1, Number(b.limit || 0));
     const spent = Math.max(0, Number(b.spent || 0));
     const remaining = limit - spent;
-    const catExpenses = currentMonthExpenses.filter(
-      (e) => e.categoryId === b.categoryId || e.categoryName === b.categoryName
-    );
-    const catSpent = catExpenses.reduce((s, e) => s + Math.max(0, Number(e.amount || 0)), 0);
+    const catSpent = (b.categoryId ? monthCatSpentById.get(b.categoryId) : undefined)
+      ?? (b.categoryName ? monthCatSpentByName.get(b.categoryName.toLowerCase()) : undefined)
+      ?? 0;
     const dailyRate = catSpent / currentDay;
 
     if (remaining > 0 && dailyRate > 0) {
