@@ -47,6 +47,19 @@
             }
         },
         {
+            id: "quick-calculator",
+            title: "Quick Calculator & Bill Splitter",
+            icon: "🧮",
+            category: "Tools",
+            badge: "Alt+C",
+            keywords: "calc calculator math divide split bill count numbers total",
+            run: () => {
+                if (window.FloatingCalculator && typeof window.FloatingCalculator.open === "function") {
+                    window.FloatingCalculator.open();
+                }
+            }
+        },
+        {
             id: "export-workbook",
             title: "Export Executive Workbook (Excel)",
             icon: "📊",

@@ -25,6 +25,7 @@ import {
 } from '@expo-google-fonts/ibm-plex-mono';
 import { Colors } from '../constants/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { FloatingCalculator } from '../components/FloatingCalculator';
 import {
   scheduleDailyExpenseReminders,
   getDailyRemindersEnabled,
@@ -328,6 +329,7 @@ function RootLayoutNav() {
         <Stack.Screen name="expo-auth-session" options={{ animation: 'none' }} />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
       </Stack>
+      <FloatingCalculator />
     </>
   );
 }
