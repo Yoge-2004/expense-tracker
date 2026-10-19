@@ -1,10 +1,12 @@
 package com.example.expensetracker.service.impl;
 
+import com.example.expensetracker.resilience.FallbackRecoveryCoordinator;
 import com.example.expensetracker.service.DatabaseSnapshotService;
 import com.example.expensetracker.service.HuggingFaceDatabaseFailoverService;
 import com.example.expensetracker.service.HuggingFaceFileClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -65,6 +67,11 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     private volatile Instant lastUploadAt = null;
     private volatile String lastError = null;
     private volatile String lastPushedChecksum = null;
+    private volatile String lastMirroredChecksum = null;
+
+    /** Optional: absent when the app runs against a single database, as in unit tests. */
+    @Autowired(required = false)
+    private FallbackRecoveryCoordinator fallbackCoordinator;
 
     @Override
     @EventListener(ApplicationReadyEvent.class)
@@ -76,6 +83,8 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             return;
         }
         log.info("HF failover token scope check: {}", HuggingFaceFileClient.inspectToken(token));
+        // Mirrors the primary's schema into the local fallback and merges or protects any writes an earlier run left behind.
+        boolean keepLocalFallback = fallbackCoordinator != null && fallbackCoordinator.prepareFallback();
         boolean snapshotFound = false;
         try {
             Path encrypted = createSecureTempFile(".enc");
@@ -83,11 +92,16 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             try {
                 if (HuggingFaceFileClient.download(repoType, space, path, encrypted, token)) {
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
-                    int rows = snapshotService.importIntoFallback(sqlite);
                     lastPushedChecksum = computeSha256(sqlite);
                     snapshotFound = true;
-                    log.info("HF encrypted DB snapshot loaded into local failover store: {} rows (SHA-256: {}).",
-                            rows, lastPushedChecksum);
+                    if (keepLocalFallback) {
+                        log.info("HF snapshot downloaded but not restored: the local failover store holds newer unmerged writes.");
+                    } else {
+                        int rows = snapshotService.importIntoFallback(sqlite);
+                        lastMirroredChecksum = lastPushedChecksum;
+                        log.info("HF encrypted DB snapshot loaded into local failover store: {} rows (SHA-256: {}).",
+                                rows, lastPushedChecksum);
+                    }
                 } else {
                     log.info("No HF database snapshot exists yet; will replicate database to HF spaces immediately.");
                 }
@@ -100,6 +114,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             log.error("HF database failover initialization interrupted", ie);
         } catch (Exception e) {
             log.error("Failed to initialize HF database failover", e);
+        }
+        if (fallbackCoordinator != null) {
+            fallbackCoordinator.afterSnapshotRestored();
         }
         // If snapshot does not exist on HF space, immediately replicate the current database first!
         if (!snapshotFound) {
@@ -128,6 +145,12 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             return false;
         }
         lastAttemptAt = Instant.now();
+        if (fallbackCoordinator != null && !fallbackCoordinator.safeToOverwriteSnapshot()) {
+            // The fallback holds writes the primary has not accepted yet, and the stored snapshot is the only other copy.
+            lastError = "Skipped: unmerged fallback writes exist, so the stored snapshot was kept.";
+            log.warn("HF database backup skipped: unmerged fallback writes exist; keeping the existing snapshot.");
+            return false;
+        }
         try {
             Path sqlite = createSecureTempFile(".sqlite");
             Path encrypted = createSecureTempFile(".enc");
@@ -142,6 +165,10 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     return false;
                 }
                 String currentChecksum = computeSha256(sqlite);
+                if (fallbackCoordinator != null && !currentChecksum.equals(lastMirroredChecksum)
+                        && fallbackCoordinator.refreshFallback(sqlite)) {
+                    lastMirroredChecksum = currentChecksum;
+                }
                 if (currentChecksum.equals(lastPushedChecksum)) {
                     log.info("Database snapshot unchanged (SHA-256: {}); skipping redundant Hugging Face backup.",
                             currentChecksum);
@@ -302,6 +329,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             String tokenDiagnosis = HuggingFaceFileClient.inspectToken(token);
             diag.put("tokenDiagnosis", tokenDiagnosis);
             diag.put("statusMessage", tokenDiagnosis);
+        }
+        if (fallbackCoordinator != null) {
+            diag.put("fallback", fallbackCoordinator.diagnostics());
         }
         return diag;
     }

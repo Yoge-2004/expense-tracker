@@ -1,5 +1,6 @@
 package com.example.expensetracker.config;
 
+import com.example.expensetracker.resilience.ResilientRoutingDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -7,19 +8,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.datasource.AbstractDataSource;
 
 import javax.sql.DataSource;
 import java.io.File;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Provides a local emergency datastore for environments where the primary database
  * becomes temporarily unreachable. The local store is NOT treated as a replica:
- * it is only safe for recovery when it has been populated by an explicit backup/
- * restore process. Production authority remains Neon PostgreSQL.
+ * it is a mirror that is refreshed while the primary is healthy, and whatever is written
+ * to it during an outage is merged back into the primary when it recovers (see
+ * {@link com.example.expensetracker.resilience.FallbackRecoveryCoordinator}).
+ * Production authority remains Neon PostgreSQL.
  */
 @Slf4j
 @Configuration
@@ -85,72 +84,5 @@ public class ResilientFallbackDataSourceConfig {
 
         log.info("Emergency fallback database path: {}", fallbackFile);
         return new ResilientRoutingDataSource(primaryDs, fallbackDs);
-    }
-
-    private static class ResilientRoutingDataSource extends AbstractDataSource {
-        private final DataSource primaryDs;
-        private final DataSource fallbackDs;
-        private final AtomicBoolean primaryUnavailable = new AtomicBoolean(false);
-        private volatile long lastPrimaryCheck = 0;
-        private static final long PRIMARY_RETRY_INTERVAL_MS = 15_000;
-
-        ResilientRoutingDataSource(DataSource primaryDs, DataSource fallbackDs) {
-            this.primaryDs = primaryDs;
-            this.fallbackDs = fallbackDs;
-        }
-
-        private boolean shouldAttemptPrimary() {
-            if (primaryDs == null) return false;
-            if (!primaryUnavailable.get()) return true;
-            long now = System.currentTimeMillis();
-            return (now - lastPrimaryCheck > PRIMARY_RETRY_INTERVAL_MS);
-        }
-
-        @Override
-        public Connection getConnection() throws SQLException {
-            if (shouldAttemptPrimary()) {
-                lastPrimaryCheck = System.currentTimeMillis();
-                try {
-                    Connection conn = primaryDs.getConnection();
-                    if (conn != null && conn.isValid(2)) {
-                        if (primaryUnavailable.get()) {
-                            log.info("Primary Neon database restored! Switching back from emergency fallback.");
-                            primaryUnavailable.set(false);
-                        }
-                        return conn;
-                    }
-                } catch (Exception e) {
-                    if (!primaryUnavailable.get()) {
-                        log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
-                        primaryUnavailable.set(true);
-                    }
-                }
-            }
-            log.warn("Serving the emergency local datastore. This is only a recovery store and may be stale.");
-            return fallbackDs.getConnection();
-        }
-
-        @Override
-        public Connection getConnection(String username, String password) throws SQLException {
-            if (shouldAttemptPrimary()) {
-                lastPrimaryCheck = System.currentTimeMillis();
-                try {
-                    Connection conn = primaryDs.getConnection(username, password);
-                    if (conn != null && conn.isValid(2)) {
-                        if (primaryUnavailable.get()) {
-                            log.info("Primary Neon database restored! Switching back from emergency fallback.");
-                            primaryUnavailable.set(false);
-                        }
-                        return conn;
-                    }
-                } catch (Exception e) {
-                    if (!primaryUnavailable.get()) {
-                        log.warn("Primary database unavailable; entering emergency fallback mode: {}", e.getMessage());
-                        primaryUnavailable.set(true);
-                    }
-                }
-            }
-            return fallbackDs.getConnection(username, password);
-        }
     }
 }
