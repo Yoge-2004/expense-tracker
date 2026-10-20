@@ -21,6 +21,7 @@ import {
   Text,
   View,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
@@ -31,9 +32,14 @@ import {
   useWindowDimensions,
   AppState,
   Image,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  LayoutChangeEvent,
+  LogBox,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedScrollbar } from '../../components/ThemedScrollbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
@@ -151,8 +157,15 @@ interface UnifiedTxItem {
   incomeRaw?: Income;
 }
 
-/** How many ledger rows are drawn at a time; more load as you scroll or tap "Show more". */
-const PAGE_SIZE = 25;
+// The ledger FlatList sits in the page's ScrollView, but it has a fixed height and scrolls on its own, so its
+// windowing works as intended. React Native still prints its generic nesting warning in development builds.
+LogBox.ignoreLogs(['VirtualizedLists should never be nested inside plain ScrollViews']);
+
+/** Stable key for the virtualised ledger. */
+const ledgerKeyExtractor = (tx: UnifiedTxItem) => tx.uniqueKey;
+
+/** The 8px gap between ledger rows (a FlatList has no `gap`). */
+const LedgerSeparator = () => <View style={styles.ledgerSeparator} />;
 
 interface TransactionRowProps {
   tx: UnifiedTxItem;
@@ -189,13 +202,14 @@ function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) 
 const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, isStealth, onPress, onEdit, onDelete }: TransactionRowProps) {
   const isIncome = tx.type === "income";
   const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
-  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  // useRef(new X()) builds a throwaway X on every render; the lazy initialisers below build each one once.
+  const [pan] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
   const isSwiping = useRef(false);
 
   const actionRefs = useRef({ tx, onEdit, onDelete });
   actionRefs.current = { tx, onEdit, onDelete };
 
-  const panResponder = useRef(
+  const panResponder = useMemo(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gesture) => {
@@ -235,10 +249,10 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
           isSwiping.current = false;
         });
       },
-    })
-  ).current;
+    }),
+  [pan]);
 
-  const animatedNodes = useRef({
+  const animatedNodes = useMemo(() => ({
     bgOpacity: pan.x.interpolate({
       inputRange: [-50, -10, 0, 10, 50],
       outputRange: [1, 0.2, 0, 0.2, 1],
@@ -264,7 +278,7 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
       outputRange: [0.85, 1],
       extrapolate: "clamp",
     }),
-  }).current;
+  }), [pan]);
   const { bgOpacity, deleteOpacity, deleteScale, editOpacity, editScale } = animatedNodes;
 
   const isLight = colors.bg === '#F8F9FA';
@@ -1112,22 +1126,43 @@ export default function DashboardScreen() {
     });
   }, [ledgerTab, filteredExpenses, filteredIncomes, sortOption]);
 
-  // Only the first page of rows is drawn; it grows as you scroll. Filtering or re-sorting starts over.
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
-  const visibleTransactions = useMemo(
-    () => unifiedTransactions.slice(0, visibleCount),
-    [unifiedTransactions, visibleCount]
-  );
-
   // Rows are memoised, so the handlers they receive must keep the same identity between renders.
   const rowActions = useRef({ press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete });
   rowActions.current = { press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete };
   const onRowPress = useCallback((tx: UnifiedTxItem) => rowActions.current.press(tx), []);
   const onRowEdit = useCallback((tx: UnifiedTxItem) => rowActions.current.edit(tx), []);
   const onRowDelete = useCallback((tx: UnifiedTxItem) => rowActions.current.remove(tx), []);
+
+  // The ledger is a virtualised FlatList: only the rows on screen (plus a small buffer) exist, however many
+  // transactions are loaded. A theme change therefore repaints a handful of rows, not every row scrolled past.
+  const ledgerListRef = useRef<FlatList<UnifiedTxItem>>(null);
+  const ledgerScrollY = useRef(new Animated.Value(0)).current;
+  const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
+  const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
+  const onLedgerScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => ledgerScrollY.setValue(e.nativeEvent.contentOffset.y),
+    [ledgerScrollY]
+  );
+  const onLedgerContentSize = useCallback((_w: number, h: number) => setLedgerContentHeight(h), []);
+  const onLedgerLayout = useCallback((e: LayoutChangeEvent) => setLedgerViewHeight(e.nativeEvent.layout.height), []);
+  const renderLedgerItem = useCallback(
+    ({ item }: { item: UnifiedTxItem }) => (
+      <TransactionRow
+        tx={item}
+        colors={c}
+        currSymbol={currSymbol}
+        isStealth={isStealthMode}
+        onPress={onRowPress}
+        onEdit={onRowEdit}
+        onDelete={onRowDelete}
+      />
+    ),
+    [c, currSymbol, isStealthMode, onRowPress, onRowEdit, onRowDelete]
+  );
+  // Changing the filters or sort order starts the list from the top again.
+  useEffect(() => {
+    ledgerListRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
 
   // The search text is typed in SearchField; applying it to the list is a non-urgent update.
   const handleSearch = useCallback((query: string) => {
@@ -1760,44 +1795,35 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
               ) : (
-                <ScrollView
-                  style={styles.innerListScroll}
-                  contentContainerStyle={styles.transactionsList}
-                  nestedScrollEnabled={true}
-                  showsVerticalScrollIndicator={true}
-                  scrollEventThrottle={100}
-                  onScroll={({ nativeEvent }) => {
-                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-                    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 240) {
-                      setVisibleCount((n) => (n < unifiedTransactions.length ? n + PAGE_SIZE : n));
-                    }
-                  }}
-                >
-                  {visibleTransactions.map((tx) => (
-                    <TransactionRow
-                      key={tx.uniqueKey}
-                      tx={tx}
-                      colors={c}
-                      currSymbol={currSymbol}
-                      isStealth={isStealthMode}
-                      onPress={onRowPress}
-                      onEdit={onRowEdit}
-                      onDelete={onRowDelete}
-                    />
-                  ))}
-                  {visibleCount < unifiedTransactions.length && (
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => setVisibleCount((n) => n + PAGE_SIZE)}
-                      style={styles.showMoreBtn}
-                      accessibilityRole="button"
-                    >
-                      <Text style={[styles.showMoreText, { color: c.primary }]}>
-                        Show more ({unifiedTransactions.length - visibleCount} left)
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </ScrollView>
+                <>
+                  <FlatList
+                    ref={ledgerListRef}
+                    style={styles.innerListScroll}
+                    contentContainerStyle={styles.transactionsList}
+                    data={unifiedTransactions}
+                    renderItem={renderLedgerItem}
+                    keyExtractor={ledgerKeyExtractor}
+                    ItemSeparatorComponent={LedgerSeparator}
+                    extraData={`${theme}|${currSymbol}|${isStealthMode}`}
+                    initialNumToRender={8}
+                    maxToRenderPerBatch={6}
+                    windowSize={5}
+                    updateCellsBatchingPeriod={50}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={false}
+                    scrollEventThrottle={16}
+                    onScroll={onLedgerScroll}
+                    onContentSizeChange={onLedgerContentSize}
+                    onLayout={onLedgerLayout}
+                  />
+                  <ThemedScrollbar
+                    scrollY={ledgerScrollY}
+                    contentHeight={ledgerContentHeight}
+                    viewHeight={ledgerViewHeight}
+                    trackColor={c.scrollTrack}
+                    thumbColor={c.scrollThumb}
+                  />
+                </>
               )}
             </View>
           </View>
@@ -1937,14 +1963,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
-  },
-  showMoreBtn: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  showMoreText: {
-    fontSize: 13,
-    fontWeight: '700',
   },
   bellBtnWrapper: {
     position: 'relative',
@@ -2325,7 +2343,10 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   transactionsList: {
-    gap: 8,
+    paddingBottom: 4,
+  },
+  ledgerSeparator: {
+    height: 8,
   },
   txCard: {
     flexDirection: 'row',

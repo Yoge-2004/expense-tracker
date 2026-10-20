@@ -20,6 +20,9 @@ export interface ThemeColors {
   text: string;
   textMuted: string;
   inputBg: string;
+  /** Scrollbar track and thumb, matching the website's custom scrollbar (gold thumb, translucent track). */
+  scrollTrack: string;
+  scrollThumb: string;
   inputBorder: string;
   primary: string;
   primaryGradientEnd: string;
@@ -52,6 +55,8 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     text: '#ECE7D8',
     textMuted: '#A8A395',
     inputBg: 'rgba(23, 26, 20, 0.72)',
+    scrollTrack: 'rgba(0, 0, 0, 0.2)',
+    scrollThumb: 'rgba(199, 154, 62, 0.45)',
     inputBorder: 'rgba(236, 231, 216, 0.09)',
     primary: '#C79A3E',
     primaryGradientEnd: '#A97F2E',
@@ -82,6 +87,8 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     text: '#0F172A',
     textMuted: '#475569',
     inputBg: '#F1F5F9',
+    scrollTrack: 'rgba(0, 0, 0, 0.05)',
+    scrollThumb: 'rgba(199, 154, 62, 0.45)',
     inputBorder: 'rgba(15, 23, 42, 0.12)',
     primary: '#D4AF37',
     primaryGradientEnd: '#B38F22',
