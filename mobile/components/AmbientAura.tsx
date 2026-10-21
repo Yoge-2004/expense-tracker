@@ -120,20 +120,38 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={pointerEvents}>
-      {/* Orb 1 - Primary/Gold Glow */}
+      {/* Orb 1 - Primary/Luxury Gold Glow */}
       <Animated.View
         style={[
           styles.orb,
           {
-            width: Math.min(width, height) * 0.85,
-            height: Math.min(width, height) * 0.85,
-            top: -Math.min(width, height) * 0.25,
-            right: -Math.min(width, height) * 0.2,
-            backgroundColor: isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(199, 154, 62, 0.16)',
+            width: Math.min(width, height) * 1.15,
+            height: Math.min(width, height) * 1.15,
+            top: -Math.min(width, height) * 0.35,
+            right: -Math.min(width, height) * 0.25,
+            backgroundColor: isLight ? 'rgba(212, 175, 55, 0.16)' : 'rgba(212, 175, 55, 0.12)',
             transform: [
               { translateX: orb1TranslateX },
               { translateY: orb1TranslateY },
               { scale: orb1Scale },
+            ],
+          },
+        ]}
+      />
+
+      {/* Orb 4 - Amethyst / Peer Loans Glow */}
+      <Animated.View
+        style={[
+          styles.orb,
+          {
+            width: Math.min(width, height) * 0.75,
+            height: Math.min(width, height) * 0.75,
+            top: height * 0.52,
+            right: -Math.min(width, height) * 0.25,
+            backgroundColor: isLight ? 'rgba(139, 92, 246, 0.10)' : 'rgba(139, 92, 246, 0.08)',
+            transform: [
+              { translateX: orb1TranslateX },
+              { translateY: orb2TranslateY },
             ],
           },
         ]}

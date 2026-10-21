@@ -61,7 +61,7 @@ body {
     -webkit-backdrop-filter: blur(20px);
     border-color: rgba(0, 0, 0, 0.08);
     color: var(--text-main);
-    box-shadow: 0 10px 30px -5px rgba(180, 140, 60, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.15);
+    box-shadow: 0 10px 30px -5px rgba(180, 140, 60, 0.12), 0 0 16px rgba(212, 175, 55, 0.08);
 }
 
 [data-theme="light"] .float-card,

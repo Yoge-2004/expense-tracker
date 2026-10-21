@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for {@link Expense} entities.
@@ -38,6 +39,15 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user "
             + "ORDER BY e.expenseDate DESC, e.id DESC")
     List<Expense> findByUser(@Param("user") User user);
+
+    /**
+     * Finds a single expense by ID and owning user.
+     *
+     * @param id the expense ID
+     * @param user the owning user
+     * @return Optional containing the expense if found and owned by the user
+     */
+    Optional<Expense> findByIdAndUser(Long id, User user);
 
     /**
      * Retrieves all expenses for a user that fall within a given date range (inclusive).

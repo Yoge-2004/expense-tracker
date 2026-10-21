@@ -2,6 +2,9 @@
 const API_BASE_URL = (["localhost", "127.0.0.1", ""].includes(window.location.hostname) || window.location.protocol === "file:")
     ? "http://localhost:8080/api"
     : "https://yoge-2004-expense-tracker-backend.hf.space/api";
+if (typeof window !== "undefined") {
+    window.API_BASE_URL = API_BASE_URL;
+}
 
 let activeRequests = 0;
 let loadingTimer;
@@ -61,13 +64,23 @@ function updateServerStatus(online, message = "Connected") {
     ensureFeedbackUi();
     const badge = document.getElementById("serverStatusBadge");
     const text = document.getElementById("statusText");
-    if (!badge || !text) return;
+    if (badge && text) {
+        if (online) {
+            badge.className = "server-status-badge online";
+            text.textContent = "Connected";
+        } else {
+            badge.className = "server-status-badge offline";
+            text.textContent = message;
+        }
+    }
     if (online) {
-        badge.className = "server-status-badge online";
-        text.textContent = "Connected";
+        document.body.classList.remove("server-offline");
     } else {
-        badge.className = "server-status-badge offline";
-        text.textContent = message;
+        document.body.classList.add("server-offline");
+        const healthBadge = document.getElementById("insightsHealthScoreText");
+        if (healthBadge) {
+            healthBadge.textContent = "Offline";
+        }
     }
 }
 

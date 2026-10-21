@@ -1,6 +1,7 @@
 /**
  * Frontend Tesseract.js Client-Side OCR Engine for Receipts & Invoices.
- * Runs 100% on-device in Web Worker via WebAssembly. Zero backend API calls or data transmission.
+ * Runs on-device in Web Worker via WebAssembly, with intelligent seamless fallback
+ * to backend OCR (/api/expenses/ocr) if offline, worker error, or CDN block occurs.
  * Features multi-component breakdown extraction: Subtotal, GST (CGST, SGST, IGST), VAT, Taxes, Charges, & Grand Total.
  */
 (function (global) {
@@ -10,14 +11,17 @@
     let isProcessing = false;
 
     const CATEGORY_KEYWORDS = {
-        "Food & Dining": ["restaurant", "cafe", "coffee", "bistro", "burger", "pizza", "swiggy", "zomato", "dining", "bar", "bakery", "kitchen", "grill"],
-        "Groceries": ["supermarket", "grocery", "mart", "store", "provisions", "reliance", "dmart", "spencer", "nature's basket", "vegetables", "fruits", "milk", "dairy"],
-        "Transportation": ["fuel", "petrol", "diesel", "gas", "shell", "hpcl", "bpcl", "ioc", "uber", "ola", "metro", "auto", "rail", "parking", "toll"],
-        "Shopping": ["clothing", "apparel", "retail", "mall", "fashion", "zara", "h&m", "uniqlo", "lifestyle", "westside", "amazon", "flipkart"],
-        "Utilities": ["electricity", "power", "water", "gas bill", "broadband", "wifi", "internet", "airtel", "jio", "vodafone"],
-        "Health & Medical": ["pharmacy", "chemist", "drug", "hospital", "clinic", "medical", "apollo", "medplus", "healthcare", "diagnostic", "lab"],
-        "Entertainment": ["cinema", "movie", "theatre", "imax", "pvr", "inox", "concert", "game", "bowling"]
+        "Food & Dining": ["restaurant", "cafe", "coffee", "bistro", "burger", "pizza", "swiggy", "zomato", "dining", "bar", "bakery", "kitchen", "grill", "starbucks", "subway", "mcdonald"],
+        "Groceries": ["supermarket", "grocery", "mart", "store", "provisions", "reliance", "dmart", "spencer", "nature's basket", "vegetables", "fruits", "milk", "dairy", "trader joe", "whole foods", "walmart", "costco"],
+        "Transportation": ["fuel", "petrol", "diesel", "gas", "shell", "hpcl", "bpcl", "ioc", "uber", "ola", "metro", "auto", "rail", "parking", "toll", "chevron", "exxon"],
+        "Shopping": ["clothing", "apparel", "retail", "mall", "fashion", "zara", "h&m", "uniqlo", "lifestyle", "westside", "amazon", "flipkart", "target", "nike", "adidas"],
+        "Utilities": ["electricity", "power", "water", "gas bill", "broadband", "wifi", "internet", "airtel", "jio", "vodafone", "telecom", "utility"],
+        "Health & Medical": ["pharmacy", "chemist", "drug", "hospital", "clinic", "medical", "apollo", "medplus", "healthcare", "diagnostic", "lab", "walgreens", "cvs"],
+        "Entertainment": ["cinema", "movie", "theatre", "imax", "pvr", "inox", "concert", "game", "bowling", "netflix", "spotify"]
     };
+
+    const CURRENCY_PREFIX = "[\\s:₹$€£]*(?:rs\\.?|inr)?[\\s]*";
+    const AMOUNT_PATTERN = "([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)";
 
     function parseReceiptText(text) {
         if (!text || typeof text !== "string") return null;
@@ -55,17 +59,17 @@
         }
 
         // Multi-component Breakdown Regexes
-        const subtotalRegex = /(?:sub\s*total|item\s*total|sub-total|items?\s*value|base\s*(?:amount|total)|taxable\s*value|gross\s*(?:amount|total))[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const cgstRegex = /(?:cgst|central\s*gst)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const sgstRegex = /(?:sgst|state\s*gst|utgst)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const igstRegex = /(?:igst|integrated\s*gst)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const vatRegex = /(?:vat|value\s*added\s*tax)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const genTaxRegex = /(?:service\s*tax|cess|total\s*tax|tax\s*amount|gst(?:\s*@?\s*\d+(?:\.\d+)?%?)?|taxes)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const discountRegex = /(?:discount|coupon|promo|instant\s*savings?|less)(?:\s*\([^)]*\))?[\s:₹$€£\-]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const chargesRegex = /(?:delivery(?:\s*fee|\s*charge)?|packing(?:\s*charge)?|service\s*charge|tip|gratuity|convenience\s*fee)(?:\s*\([^)]*\))?[\s:₹$€£+]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
+        const subtotalRegex = new RegExp("(?:sub\\s*total|item\\s*total|sub-total|items?\\s*value|base\\s*(?:amount|total)|taxable\\s*value|gross\\s*(?:amount|total))" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
+        const cgstRegex = new RegExp("(?:cgst|central\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
+        const sgstRegex = new RegExp("(?:sgst|state\\s*gst|utgst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
+        const igstRegex = new RegExp("(?:igst|integrated\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
+        const vatRegex = new RegExp("(?:vat|value\\s*added\\s*tax)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
+        const genTaxRegex = new RegExp("(?:service\\s*tax|cess|total\\s*tax|tax\\s*amount|gst(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?|taxes)" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
+        const discountRegex = new RegExp("(?:discount|coupon|promo|instant\\s*savings?|less)(?:\\s*\\([^)]*\\))?[\\s:₹$€£\\-]*(?:rs\\.?|inr)?[\\s]*" + AMOUNT_PATTERN, "i");
+        const chargesRegex = new RegExp("(?:delivery(?:\\s*fee|\\s*charge)?|packing(?:\\s*charge)?|service\\s*charge|tip|gratuity|convenience\\s*fee)(?:\\s*\\([^)]*\\))?[\\s:₹$€£+]*" + AMOUNT_PATTERN, "i");
         const roundOffRegex = /(?:round\s*off|rounding)[\s:₹$€£]*([+-]?[0-9]+(?:\.[0-9]{2})?)/i;
-        const grandTotalRegex = /(?:grand\s*total|net\s*(?:amount\s*)?payable|total\s*payable|amount\s*payable|invoice\s*total|final\s*(?:amount|total)|bill\s*total|total\s*amount|amount\s*due|total\s*due|total\s*paid|paid\s*amount)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-        const genericTotalRegex = /(?:^|\s)total[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
+        const grandTotalRegex = new RegExp("(?:grand\\s*total|net\\s*(?:amount\\s*)?payable|total\\s*payable|amount\\s*payable|invoice\\s*total|final\\s*(?:amount|total)|bill\\s*total|total\\s*amount|amount\\s*due|total\\s*due|total\\s*paid|paid\\s*amount)" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
+        const genericTotalRegex = new RegExp("(?:^|\\s)total" + CURRENCY_PREFIX + AMOUNT_PATTERN, "i");
 
         // Scan lines for breakdown components
         for (let i = 0; i < lines.length; i++) {
@@ -149,9 +153,12 @@
 
         // Fallback: If no explicit 'total' line found, find largest decimal number with currency prefix
         if (!result.amount) {
-            const currencyMatch = text.match(/[₹$€£]\s*([0-9]+(?:\.[0-9]{2})?)/g);
+            const currencyMatch = text.match(/(?:[₹$€£]|\brs\.?|\binr)\s*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/gi);
             if (currencyMatch && currencyMatch.length > 0) {
-                const numbers = currencyMatch.map(s => parseFloat(s.replace(/[^0-9.]/g, ""))).filter(n => !isNaN(n));
+                const numbers = currencyMatch.map(s => {
+                    const cleaned = s.replace(/[^0-9.]/g, "");
+                    return parseFloat(cleaned);
+                }).filter(n => !isNaN(n));
                 if (numbers.length > 0) {
                     result.amount = Math.max(...numbers);
                     result.breakdown.grandTotal = result.amount;
@@ -187,13 +194,13 @@
         }
 
         // 3. Merchant / Description Extraction
-        const ignoredHeaders = ["tax invoice", "retail invoice", "bill", "cash memo", "receipt", "welcome", "customer copy", "tax invoice/bill of supply"];
-        for (let i = 0; i < Math.min(4, lines.length); i++) {
+        const ignoredHeaders = ["tax invoice", "retail invoice", "bill", "cash memo", "receipt", "welcome", "customer copy", "tax invoice/bill of supply", "original for recipient"];
+        for (let i = 0; i < Math.min(5, lines.length); i++) {
             const line = lines[i];
             const lower = line.toLowerCase();
             if (!ignoredHeaders.some(h => lower.includes(h)) && line.length >= 3 && !/^\d+$/.test(line)) {
                 result.merchant = line.replace(/[^A-Za-z0-9\s&'-]/g, "").trim();
-                break;
+                if (result.merchant) break;
             }
         }
         if (!result.merchant) {
@@ -215,16 +222,16 @@
     async function initOcrWorker(progressCallback) {
         if (ocrWorker) return ocrWorker;
         if (typeof Tesseract === "undefined") {
-            throw new Error("Tesseract.js OCR library is not loaded. Please verify your connection.");
+            throw new Error("Tesseract.js OCR library is not loaded.");
         }
-        progressCallback("Initializing OCR Engine...", 10);
+        progressCallback?.("Initializing OCR Engine...", 10);
         const worker = await Tesseract.createWorker("eng", 1, {
             logger: m => {
                 if (m.status === "recognizing text" && typeof m.progress === "number") {
                     const pct = Math.round(m.progress * 100);
-                    progressCallback(`Scanning receipt (${pct}%)...`, pct);
+                    progressCallback?.(`Scanning receipt (${pct}%)...`, pct);
                 } else if (m.status) {
-                    progressCallback(`${m.status.charAt(0).toUpperCase() + m.status.slice(1)}...`, 30);
+                    progressCallback?.(`${m.status.charAt(0).toUpperCase() + m.status.slice(1)}...`, 30);
                 }
             }
         });
@@ -238,18 +245,68 @@
 
         try {
             callbacks.onStart?.();
-            callbacks.onProgress?.("Initializing OCR worker...", 15);
+            callbacks.onProgress?.("Initializing OCR scanner...", 15);
 
-            const worker = await initOcrWorker((msg, pct) => {
-                callbacks.onProgress?.(msg, pct);
-            });
+            let extractedText = "";
+            let confidence = 85;
 
-            callbacks.onProgress?.("Recognizing character layout...", 50);
-            const { data } = await worker.recognize(imageFile);
+            // Attempt 1: Browser-integrated Tesseract.js WebAssembly
+            try {
+                if (typeof Tesseract !== "undefined") {
+                    const worker = await initOcrWorker((msg, pct) => {
+                        callbacks.onProgress?.(msg, pct);
+                    });
+
+                    callbacks.onProgress?.("Recognizing character layout...", 50);
+                    const { data } = await worker.recognize(imageFile);
+                    if (data && data.text && data.text.trim().length > 0) {
+                        extractedText = data.text;
+                        confidence = Math.round(data.confidence || 85);
+                    }
+                }
+            } catch (tessErr) {
+                console.warn("[ReceiptOCR] Local worker execution failed or unavailable, falling back to server OCR:", tessErr);
+            }
+
+            // Attempt 2: High-accuracy server OCR endpoint (/api/expenses/ocr)
+            if (!extractedText || extractedText.trim().length === 0) {
+                callbacks.onProgress?.("Contacting server OCR engine...", 60);
+                try {
+                    const formData = new FormData();
+                    formData.append("file", imageFile);
+
+                    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+                    const headers = {};
+                    if (token) headers["Authorization"] = "Bearer " + token;
+
+                    const res = await fetch("/api/expenses/ocr", {
+                        method: "POST",
+                        headers,
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        const apiData = await res.json();
+                        if (apiData && apiData.success) {
+                            callbacks.onProgress?.("Processing receipt details...", 95);
+                            callbacks.onSuccess?.(apiData);
+                            return;
+                        } else if (apiData && apiData.rawText) {
+                            extractedText = apiData.rawText;
+                        }
+                    }
+                } catch (apiErr) {
+                    console.warn("[ReceiptOCR] Server OCR fallback failed:", apiErr);
+                }
+            }
+
+            if (!extractedText || extractedText.trim().length === 0) {
+                throw new Error("Unable to extract legible text from receipt. Please ensure clear lighting and legible text.");
+            }
 
             callbacks.onProgress?.("Parsing financial metadata...", 95);
-            const parsed = parseReceiptText(data.text);
-            parsed.confidence = Math.round(data.confidence || 85);
+            const parsed = parseReceiptText(extractedText);
+            parsed.confidence = confidence;
 
             callbacks.onSuccess?.(parsed);
         } catch (err) {

@@ -1009,14 +1009,16 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               style={[
                 styles.cardPrimaryVal,
                 {
-                  color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.accent,
+                  color: safeExpenses.length === 0 && safeBudgets.length === 0 ? c.textMuted : (governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.accent),
                 },
               ]}
             >
-              {governanceScore}%
+              {safeExpenses.length === 0 && safeBudgets.length === 0 ? '--%' : `${governanceScore}%`}
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              {breachedBudgetsCount > 0
+              {safeExpenses.length === 0 && safeBudgets.length === 0
+                ? 'No data available'
+                : breachedBudgetsCount > 0
                 ? `${breachedBudgetsCount} limits breached`
                 : warningBudgetsCount > 0
                 ? `${warningBudgetsCount} near limit`

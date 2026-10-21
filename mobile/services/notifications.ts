@@ -1001,3 +1001,114 @@ export async function unregisterPushToken(userId: string): Promise<void> {
     await AsyncStorage.multiRemove([PUSH_TOKEN_KEY, SERVER_PUSH_KEY]).catch(() => {});
   }
 }
+
+/**
+ * Schedules customized collection/repayment reminders for unsettled peer loans & friend adjustments.
+ */
+export async function scheduleLoanReminders(loans: any[], currSymbol: string = '₹'): Promise<void> {
+  if (isExpoGo || !Notifications) return;
+  try {
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) return;
+
+    for (const loan of loans) {
+      const id = `${REMINDER_ID_PREFIX}loan_${loan.id}`;
+      // If loan is settled or reminder not enabled, cancel any existing reminder
+      if (loan.isSettled || !loan.reminderEnabled) {
+        await Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+        continue;
+      }
+
+      const isLent = loan.type === 'LENT';
+      const title = isLent
+        ? `🤝 Collect from ${loan.counterparty}`
+        : `💳 Pay back ${loan.counterparty}`;
+      const body = isLent
+        ? `Reminder to collect ${currSymbol}${Number(loan.amount).toLocaleString()} from ${loan.counterparty}${loan.notes ? ` (${loan.notes})` : ''}.`
+        : `Reminder to repay ${currSymbol}${Number(loan.amount).toLocaleString()} to ${loan.counterparty}${loan.notes ? ` (${loan.notes})` : ''}.`;
+
+      // Parse custom time (e.g. "10:00" or default to 10:00 AM)
+      let hour = 10;
+      let minute = 0;
+      if (loan.reminderTime && loan.reminderTime.includes(':')) {
+        const parts = loan.reminderTime.split(':');
+        hour = parseInt(parts[0], 10) || 10;
+        minute = parseInt(parts[1], 10) || 0;
+      }
+
+      const freq = (loan.reminderFrequency || 'ONCE').toUpperCase();
+
+      if (freq === 'DAILY') {
+        await Notifications.scheduleNotificationAsync({
+          identifier: id,
+          content: {
+            title,
+            body,
+            sound: await resolveNotificationSound(),
+            data: { appInternal: true, screen: '/(tabs)' },
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+            hour,
+            minute,
+          },
+        }).catch(() => {});
+      } else if (freq === 'WEEKLY') {
+        await Notifications.scheduleNotificationAsync({
+          identifier: id,
+          content: {
+            title,
+            body,
+            sound: await resolveNotificationSound(),
+            data: { appInternal: true, screen: '/(tabs)' },
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            weekday: 2,
+            hour,
+            minute,
+          },
+        }).catch(() => {});
+      } else if (freq === 'MONTHLY') {
+        await Notifications.scheduleNotificationAsync({
+          identifier: id,
+          content: {
+            title,
+            body,
+            sound: await resolveNotificationSound(),
+            data: { appInternal: true, screen: '/(tabs)' },
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.MONTHLY,
+            day: 1,
+            hour,
+            minute,
+          },
+        }).catch(() => {});
+      } else {
+        // ONE-TIME on reminderDate or dueDate
+        const targetDateStr = loan.reminderDate || loan.dueDate || loan.adjustmentDate;
+        if (targetDateStr) {
+          const targetDate = new Date(`${targetDateStr}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`);
+          if (targetDate.getTime() > Date.now()) {
+            await Notifications.scheduleNotificationAsync({
+              identifier: id,
+              content: {
+                title,
+                body,
+                sound: await resolveNotificationSound(),
+                data: { appInternal: true, screen: '/(tabs)' },
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: targetDate,
+              },
+            }).catch(() => {});
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Notifications] Failed to schedule loan reminders:', err);
+  }
+}

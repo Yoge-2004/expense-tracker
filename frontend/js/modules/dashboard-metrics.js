@@ -11,7 +11,7 @@
         if (!Array.isArray(expenses)) return;
 
         // Total Spent & Count. Money that came back (reimbursements) reduces what was spent.
-        const totalSpent = window.MoneyFlow.netSpent(expenses, incomes);
+        const totalSpent = window.MoneyFlow ? window.MoneyFlow.netSpent(expenses, incomes) : expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
         const count = expenses.length;
         
         if (elements.totalAmount) animateNumber(elements.totalAmount, totalSpent, true);
@@ -87,50 +87,59 @@
 
         // Safe-to-Spend Allowance Calculation
         try {
-            const daysLeftInMonth = Math.max(1, daysInMonth - currentDay + 1);
-            let monthlyBudgetLimit = 0;
-            try {
-                const cachedBudgets = (window.DashboardData && typeof window.DashboardData.getCachedBudgets === 'function')
-                    ? window.DashboardData.getCachedBudgets()
-                    : [];
-                if (Array.isArray(cachedBudgets) && cachedBudgets.length) {
-                    monthlyBudgetLimit = cachedBudgets.reduce((sum, b) => sum + Number(b.limit || 0), 0);
-                }
-            } catch (_) {}
-
-            let safeDaily = 0;
-            if (monthlyBudgetLimit > 0) {
-                const budgetRemaining = Math.max(0, monthlyBudgetLimit - currentMonthSpent);
-                safeDaily = budgetRemaining / daysLeftInMonth;
-            } else {
-                const currentMonthIncomes = Array.isArray(incomes) ? incomes.filter(i => {
-                    const d = new Date(i.incomeDate || i.date);
-                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                }) : [];
-                const currentMonthIncome = currentMonthIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-                if (currentMonthIncome > 0) {
-                    const incomeRemaining = Math.max(0, currentMonthIncome - currentMonthSpent);
-                    safeDaily = incomeRemaining / daysLeftInMonth;
-                } else {
-                    safeDaily = Math.max(0, dailyBurn * 0.85);
-                }
-            }
-
             const safeDailyEl = document.getElementById("safeDailySpend");
             const safeBadge = document.getElementById("safeDailySpendBadge");
-            if (safeDailyEl) {
-                safeDailyEl.textContent = formatCurrency(safeDaily);
-            }
-            if (safeBadge) {
-                if (safeDaily <= 0) {
-                    safeBadge.className = "status-badge badge-danger";
-                    safeBadge.title = "Monthly budget exhausted! $0 safe allowance";
-                } else if (safeDaily < dailyBurn) {
-                    safeBadge.className = "status-badge badge-warning";
-                    safeBadge.title = "Pacing high - lower daily spend recommended";
+
+            if (expenses.length === 0 && (!incomes || incomes.length === 0)) {
+                if (safeDailyEl) safeDailyEl.textContent = "--";
+                if (safeBadge) {
+                    safeBadge.className = "status-badge badge-neutral";
+                    safeBadge.title = "No data available";
+                }
+            } else {
+                const daysLeftInMonth = Math.max(1, daysInMonth - currentDay + 1);
+                let monthlyBudgetLimit = 0;
+                try {
+                    const cachedBudgets = (window.DashboardData && typeof window.DashboardData.getCachedBudgets === 'function')
+                        ? window.DashboardData.getCachedBudgets()
+                        : [];
+                    if (Array.isArray(cachedBudgets) && cachedBudgets.length) {
+                        monthlyBudgetLimit = cachedBudgets.reduce((sum, b) => sum + Number(b.limit || 0), 0);
+                    }
+                } catch (_) {}
+
+                let safeDaily = 0;
+                if (monthlyBudgetLimit > 0) {
+                    const budgetRemaining = Math.max(0, monthlyBudgetLimit - currentMonthSpent);
+                    safeDaily = budgetRemaining / daysLeftInMonth;
                 } else {
-                    safeBadge.className = "status-badge badge-success";
-                    safeBadge.title = "Healthy pace - safe daily spending allowance";
+                    const currentMonthIncomes = Array.isArray(incomes) ? incomes.filter(i => {
+                        const d = new Date(i.incomeDate || i.date);
+                        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                    }) : [];
+                    const currentMonthIncome = currentMonthIncomes.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+                    if (currentMonthIncome > 0) {
+                        const incomeRemaining = Math.max(0, currentMonthIncome - currentMonthSpent);
+                        safeDaily = incomeRemaining / daysLeftInMonth;
+                    } else {
+                        safeDaily = Math.max(0, dailyBurn * 0.85);
+                    }
+                }
+
+                if (safeDailyEl) {
+                    safeDailyEl.textContent = formatCurrency(safeDaily);
+                }
+                if (safeBadge) {
+                    if (safeDaily <= 0) {
+                        safeBadge.className = "status-badge badge-danger";
+                        safeBadge.title = "Monthly budget exhausted! $0 safe allowance";
+                    } else if (safeDaily < dailyBurn) {
+                        safeBadge.className = "status-badge badge-warning";
+                        safeBadge.title = "Pacing high - lower daily spend recommended";
+                    } else {
+                        safeBadge.className = "status-badge badge-success";
+                        safeBadge.title = "Healthy pace - safe daily spending allowance";
+                    }
                 }
             }
         } catch (e) {
@@ -139,6 +148,18 @@
 
         // No-Spend Day Streak Calculation & Calendar Milestones
         try {
+            const streakCountEl = document.getElementById("noSpendStreakCount");
+            const streakBadge = document.getElementById("noSpendStreakBadge");
+
+            if (!expenses || expenses.length === 0) {
+                if (streakCountEl) streakCountEl.textContent = "--";
+                if (streakBadge) {
+                    streakBadge.title = "No transactions recorded yet";
+                    streakBadge.className = "status-badge badge-neutral";
+                }
+                return;
+            }
+
             const spendByDate = new Map();
             expenses.forEach(e => {
                 if (!e.expenseDate) return;
@@ -178,12 +199,11 @@
                 }
             }
 
-            const streakCountEl = document.getElementById("noSpendStreakCount");
             if (streakCountEl) {
-                streakCountEl.textContent = streak;
+                streakCountEl.textContent = `${streak}d streak`;
             }
-            const streakBadge = document.getElementById("noSpendStreakBadge");
             if (streakBadge) {
+                streakBadge.className = "status-badge badge-warning";
                 streakBadge.title = `${streak} consecutive day${streak === 1 ? '' : 's'} with $0 recorded non-recurring expenses`;
             }
 

@@ -30,6 +30,23 @@ describe('Receipt OCR Service', () => {
     expect(parsed.category).toBe('Transportation');
   });
 
+  it('correctly parses Indian Rupee pharmacy bill with Rs. prefix', () => {
+    const parsed = parseReceiptText(SAMPLE_RECEIPTS[3].text);
+
+    expect(parsed.amount).toBe(452.80);
+    expect(parsed.merchant).toBe('APOLLO PHARMACY');
+    expect(parsed.category).toBe('Health & Medical');
+  });
+
+  it('correctly parses integer amounts without decimals', () => {
+    const raw = `SWIGGY FOOD ORDER\nDate: 2026-10-18\nBiryani Combo: Rs 450\nTotal: Rs 450`;
+    const parsed = parseReceiptText(raw);
+
+    expect(parsed.amount).toBe(450);
+    expect(parsed.merchant).toBe('SWIGGY FOOD ORDER');
+    expect(parsed.category).toBe('Food & Dining');
+  });
+
   it('handles empty or malformed text gracefully', () => {
     const parsed = parseReceiptText('');
     expect(parsed.amount).toBe(0);

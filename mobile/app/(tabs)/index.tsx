@@ -69,6 +69,13 @@ import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
+import { LoansSection } from '../../components/LoansSection';
+import {
+  LoanAdjustment,
+  LoanMetrics,
+  getLoans,
+  getLoanMetrics,
+} from '../../services/loans';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -467,6 +474,8 @@ export default function DashboardScreen() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
+  const [loans, setLoans] = useState<LoanAdjustment[]>([]);
+  const [loanMetrics, setLoanMetrics] = useState<LoanMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -550,7 +559,7 @@ export default function DashboardScreen() {
     else setRefreshing(true);
 
     try {
-      const [expensesData, budgetsData, globalCats, userCats, subsData, incomesData, savingsData] = await Promise.all([
+      const [expensesData, budgetsData, globalCats, userCats, subsData, incomesData, savingsData, loansData, loanMetricsData] = await Promise.all([
         apiRequest(`/expenses/user/${userId}`),
         apiRequest(`/expenses/budget/status/user/${userId}`),
         // null (not []) marks a failed request, so a transient error is never
@@ -560,6 +569,8 @@ export default function DashboardScreen() {
         apiRequest(`/expenses/recurring/user/${userId}`),
         apiRequest(`/incomes/user/${userId}`).catch(() => null),
         apiRequest(`/savings/goals/user/${userId}`).catch(() => null),
+        getLoans(userId).catch(() => null),
+        getLoanMetrics(userId).catch(() => null),
       ]);
 
       const safeExp = Array.isArray(expensesData) ? expensesData : [];
@@ -595,6 +606,9 @@ export default function DashboardScreen() {
       setSubscriptions(safeSub);
       setIncomes(nextIncomes);
       setSavingsGoals(nextSavingsGoals);
+      const safeLoans = Array.isArray(loansData) ? loansData : [];
+      setLoans(safeLoans);
+      if (loanMetricsData) setLoanMetrics(loanMetricsData);
       setFetchError(null);
       setPartialError(!categoriesLoaded || !Array.isArray(incomesData) || !Array.isArray(savingsData));
       setCachedTime(null);
@@ -606,6 +620,8 @@ export default function DashboardScreen() {
         subscriptions: safeSub,
         incomes: nextIncomes,
         savingsGoals: nextSavingsGoals,
+        loans: safeLoans,
+        loanMetrics: loanMetricsData,
       });
     } catch (err: any) {
       console.warn('[Dashboard] Error fetching dashboard data:', err);
@@ -630,6 +646,8 @@ export default function DashboardScreen() {
       if (Array.isArray(cached.subscriptions)) setSubscriptions(cached.subscriptions);
       if (Array.isArray(cached.incomes)) setIncomes(cached.incomes);
       if (Array.isArray(cached.savingsGoals)) setSavingsGoals(cached.savingsGoals);
+      if (Array.isArray(cached.loans)) setLoans(cached.loans);
+      if (cached.loanMetrics) setLoanMetrics(cached.loanMetrics);
       setIsLoading(false);
       fetchData(true);
     } else {
@@ -745,6 +763,41 @@ export default function DashboardScreen() {
       `"${tx.title}" — ${isIncome ? "+" : "-"}${currSymbol}${Number(tx.amount || 0).toLocaleString()}`,
       [
         { text: "Cancel", style: "cancel" },
+        ...(!isIncome && userId ? [
+          {
+            text: "Split / Link to Peer Loan",
+            onPress: () => {
+              showAlert(
+                "Convert / Link to Peer Loan",
+                `Convert "${tx.title}" (${currSymbol}${tx.amount}) into a friend loan / split record?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Create Loan",
+                    onPress: async () => {
+                      try {
+                        const { createLoan, getLoanMetrics } = await import('../../services/loans');
+                        const created = await createLoan(userId, {
+                          counterparty: "Friend",
+                          type: "LENT",
+                          amount: tx.amount,
+                          adjustmentDate: tx.date || new Date().toISOString().split('T')[0],
+                          notes: `Split from: ${tx.title}`,
+                          expenseId: tx.id,
+                        });
+                        setLoans((prev) => [created, ...prev]);
+                        getLoanMetrics(userId).then((m) => setLoanMetrics(m)).catch(() => {});
+                        showAlert("Loan Record Created", `Created friend adjustment for ${tx.title}. Tap Edit under Loans to adjust counterparty or split amount.`, undefined, "success");
+                      } catch (err: any) {
+                        showAlert("Action Failed", err?.message || "Could not link expense to loan", undefined, "error");
+                      }
+                    },
+                  },
+                ]
+              );
+            },
+          },
+        ] : []),
         {
           text: "Edit",
           onPress: () => handleTransactionEdit(tx),
@@ -1135,10 +1188,11 @@ export default function DashboardScreen() {
 
   // The ledger is a virtualised FlatList: only the rows on screen (plus a small buffer) exist, however many
   // transactions are loaded. A theme change therefore repaints a handful of rows, not every row scrolled past.
-  const ledgerListRef = useRef<FlatList<UnifiedTxItem>>(null);
+  const ledgerScrollRef = useRef<ScrollView>(null);
   const ledgerScrollY = useRef(new Animated.Value(0)).current;
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
+  const [ledgerDisplayLimit, setLedgerDisplayLimit] = useState(40);
   const onLedgerScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => ledgerScrollY.setValue(e.nativeEvent.contentOffset.y),
     [ledgerScrollY]
@@ -1161,7 +1215,8 @@ export default function DashboardScreen() {
   );
   // Changing the filters or sort order starts the list from the top again.
   useEffect(() => {
-    ledgerListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    ledgerScrollRef.current?.scrollTo({ y: 0, animated: false });
+    setLedgerDisplayLimit(40);
   }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
 
   // The search text is typed in SearchField; applying it to the list is a non-urgent update.
@@ -1334,8 +1389,8 @@ export default function DashboardScreen() {
                 size={19}
                 color={
                   isStealthMode
-                    ? (isLight ? '#996515' : c.primary)
-                    : (isLight ? '#475569' : c.textMuted)
+                    ? (isLight ? '#B8860B' : c.primary)
+                    : (isLight ? '#D4AF37' : c.primary)
                 }
               />
             </Pressable>
@@ -1643,6 +1698,26 @@ export default function DashboardScreen() {
         )}
 
         {/* =========================================
+            4.8 LOANS & FRIEND ADJUSTMENTS
+           ========================================= */}
+        <StaggeredView delay={500} direction="up">
+          <LoansSection
+            userId={userId}
+            currSymbol={currSymbol}
+            isStealthMode={isStealthMode}
+            isLargeScreen={isLargeScreen}
+            colors={c}
+            theme={theme}
+            loans={loans}
+            loanMetrics={loanMetrics}
+            expenses={expenses}
+            setLoans={setLoans}
+            setLoanMetrics={setLoanMetrics}
+            showAlert={showAlert}
+          />
+        </StaggeredView>
+
+        {/* =========================================
             5. BOUNDED TRANSACTIONS CONTAINER
             (Prevents the entire screen from growing infinitely)
            ========================================= */}
@@ -1796,26 +1871,44 @@ export default function DashboardScreen() {
                 </View>
               ) : (
                 <>
-                  <FlatList
-                    ref={ledgerListRef}
+                  <ScrollView
+                    ref={ledgerScrollRef}
                     style={styles.innerListScroll}
                     contentContainerStyle={styles.transactionsList}
-                    data={unifiedTransactions}
-                    renderItem={renderLedgerItem}
-                    keyExtractor={ledgerKeyExtractor}
-                    ItemSeparatorComponent={LedgerSeparator}
-                    extraData={`${theme}|${currSymbol}|${isStealthMode}`}
-                    initialNumToRender={8}
-                    maxToRenderPerBatch={6}
-                    windowSize={5}
-                    updateCellsBatchingPeriod={50}
                     nestedScrollEnabled={true}
                     showsVerticalScrollIndicator={false}
                     scrollEventThrottle={16}
                     onScroll={onLedgerScroll}
                     onContentSizeChange={onLedgerContentSize}
                     onLayout={onLedgerLayout}
-                  />
+                  >
+                    {unifiedTransactions.slice(0, ledgerDisplayLimit).map((item, idx) => (
+                      <React.Fragment key={item.uniqueKey}>
+                        {idx > 0 && <LedgerSeparator />}
+                        <TransactionRow
+                          tx={item}
+                          colors={c}
+                          currSymbol={currSymbol}
+                          isStealth={isStealthMode}
+                          onPress={onRowPress}
+                          onEdit={onRowEdit}
+                          onDelete={onRowDelete}
+                        />
+                      </React.Fragment>
+                    ))}
+                    {unifiedTransactions.length > ledgerDisplayLimit && (
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => setLedgerDisplayLimit((prev) => prev + 40)}
+                        style={[styles.loadMoreRowBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
+                      >
+                        <Text style={[styles.loadMoreRowText, { color: c.primary }]}>
+                          Load More ({unifiedTransactions.length - ledgerDisplayLimit} remaining)
+                        </Text>
+                        <Ionicons name="chevron-down" size={14} color={c.primary} />
+                      </TouchableOpacity>
+                    )}
+                  </ScrollView>
                   <ThemedScrollbar
                     scrollY={ledgerScrollY}
                     contentHeight={ledgerContentHeight}
@@ -2344,6 +2437,20 @@ const styles = StyleSheet.create({
   },
   transactionsList: {
     paddingBottom: 4,
+  },
+  loadMoreRowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    marginTop: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  loadMoreRowText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   ledgerSeparator: {
     height: 8,

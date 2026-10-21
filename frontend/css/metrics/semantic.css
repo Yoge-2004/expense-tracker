@@ -8,7 +8,7 @@
 }
 
 .metric-card.metric-card-inflow:hover {
-    box-shadow: 0 10px 25px -5px var(--metric-inflow-glow), 0 0 0 1px var(--metric-inflow);
+    box-shadow: 0 14px 34px -6px var(--metric-inflow-glow), 0 0 24px rgba(16, 185, 129, 0.15);
 }
 
 .metric-card.metric-card-inflow .card-label,
@@ -25,7 +25,7 @@
 }
 
 .metric-card.metric-card-outflow:hover {
-    box-shadow: 0 10px 25px -5px var(--metric-outflow-glow), 0 0 0 1px var(--metric-outflow);
+    box-shadow: 0 14px 34px -6px var(--metric-outflow-glow), 0 0 24px rgba(239, 68, 68, 0.15);
 }
 
 .metric-card.metric-card-outflow .card-label,
@@ -42,7 +42,7 @@
 }
 
 .metric-card.metric-card-netflow:hover {
-    box-shadow: 0 10px 25px -5px var(--metric-netflow-glow), 0 0 0 1px var(--metric-netflow);
+    box-shadow: 0 14px 34px -6px var(--metric-netflow-glow), 0 0 24px rgba(212, 175, 55, 0.18);
 }
 
 .metric-card.metric-card-netflow .card-label,
@@ -59,7 +59,7 @@
 }
 
 .metric-card.metric-card-savings:hover {
-    box-shadow: 0 10px 25px -5px var(--metric-savings-glow), 0 0 0 1px var(--metric-savings);
+    box-shadow: 0 14px 34px -6px var(--metric-savings-glow), 0 0 24px rgba(139, 92, 246, 0.15);
 }
 
 .metric-card.metric-card-savings .card-label,
@@ -76,7 +76,7 @@
 }
 
 .metric-card.metric-card-subs:hover {
-    box-shadow: 0 10px 25px -5px var(--metric-subs-glow), 0 0 0 1px var(--metric-subs);
+    box-shadow: 0 14px 34px -6px var(--metric-subs-glow), 0 0 24px rgba(59, 130, 246, 0.15);
 }
 
 .metric-card.metric-card-subs .card-label {

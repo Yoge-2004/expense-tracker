@@ -4,24 +4,33 @@
    under-glows, tabular numeral alignments, and refined pill badges.
    ========================================================================== */
 
-/* LAYERED FROSTED GLASS & AMBIENT RADIANT BACKDROP */
+/* LAYERED FROSTED GLASS & DYNAMIC AMBIENT RADIANT BACKDROP */
+@keyframes ambientGlowDrift {
+    0% { transform: scale(1) translate3d(0, 0, 0); opacity: 0.85; }
+    50% { transform: scale(1.05) translate3d(-12px, 14px, 0); opacity: 1; }
+    100% { transform: scale(1) translate3d(0, 0, 0); opacity: 0.85; }
+}
+
 .hero-bg {
     position: fixed;
-    inset: 0;
+    inset: -30px;
     pointer-events: none;
     z-index: 0;
     overflow: hidden;
+    animation: ambientGlowDrift 20s ease-in-out infinite alternate;
     background:
-        radial-gradient(circle at 12% 15%, rgba(var(--primary-rgb), 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 88% 18%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 50% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+        radial-gradient(circle at 14% 16%, rgba(var(--primary-rgb, 212, 175, 55), 0.16) 0%, transparent 46%),
+        radial-gradient(circle at 86% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 46% 86%, rgba(16, 185, 129, 0.10) 0%, transparent 54%),
+        radial-gradient(circle at 80% 78%, rgba(212, 175, 55, 0.09) 0%, transparent 42%);
 }
 
 [data-theme="light"] .hero-bg {
     background:
-        radial-gradient(circle at 10% 12%, rgba(212, 175, 55, 0.14) 0%, transparent 45%),
-        radial-gradient(circle at 90% 15%, rgba(16, 185, 129, 0.10) 0%, transparent 50%),
-        radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 55%);
+        radial-gradient(circle at 12% 14%, rgba(212, 175, 55, 0.20) 0%, transparent 48%),
+        radial-gradient(circle at 88% 18%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 50% 82%, rgba(16, 185, 129, 0.12) 0%, transparent 54%),
+        radial-gradient(circle at 78% 76%, rgba(212, 175, 55, 0.14) 0%, transparent 44%);
 }
 
 /* CARD ELEVATION & FROSTED GLASS EFFECT */
@@ -88,40 +97,50 @@
     letter-spacing: -0.02em;
 }
 
-/* REFINED METRIC CARD ACCENT UNDERGLOWS */
+/* REFINED METRIC CARD ACCENT UNDERGLOWS: Soft diffused glow without rectangular harsh lines */
 .metric-card.metric-card-inflow:hover {
+    transform: translateY(-3px);
+    border-color: rgba(16, 185, 129, 0.28);
     box-shadow:
-        0 14px 32px -6px var(--metric-inflow-glow),
-        0 0 0 1px var(--metric-inflow),
-        0 0 24px -4px var(--metric-inflow-glow) inset;
+        0 18px 42px -10px var(--metric-inflow-glow),
+        0 0 32px 3px rgba(16, 185, 129, 0.22),
+        0 0 55px 8px rgba(16, 185, 129, 0.12);
 }
 
 .metric-card.metric-card-outflow:hover {
+    transform: translateY(-3px);
+    border-color: rgba(239, 68, 68, 0.28);
     box-shadow:
-        0 14px 32px -6px var(--metric-outflow-glow),
-        0 0 0 1px var(--metric-outflow),
-        0 0 24px -4px var(--metric-outflow-glow) inset;
+        0 18px 42px -10px var(--metric-outflow-glow),
+        0 0 32px 3px rgba(239, 68, 68, 0.22),
+        0 0 55px 8px rgba(239, 68, 68, 0.12);
 }
 
 .metric-card.metric-card-netflow:hover {
+    transform: translateY(-3px);
+    border-color: rgba(212, 175, 55, 0.28);
     box-shadow:
-        0 14px 32px -6px var(--metric-netflow-glow),
-        0 0 0 1px var(--metric-netflow),
-        0 0 24px -4px var(--metric-netflow-glow) inset;
+        0 18px 42px -10px var(--metric-netflow-glow),
+        0 0 32px 3px rgba(212, 175, 55, 0.25),
+        0 0 58px 8px rgba(212, 175, 55, 0.14);
 }
 
 .metric-card.metric-card-savings:hover {
+    transform: translateY(-3px);
+    border-color: rgba(139, 92, 246, 0.28);
     box-shadow:
-        0 14px 32px -6px var(--metric-savings-glow),
-        0 0 0 1px var(--metric-savings),
-        0 0 24px -4px var(--metric-savings-glow) inset;
+        0 18px 42px -10px var(--metric-savings-glow),
+        0 0 32px 3px rgba(139, 92, 246, 0.22),
+        0 0 55px 8px rgba(139, 92, 246, 0.12);
 }
 
 .metric-card.metric-card-subs:hover {
+    transform: translateY(-3px);
+    border-color: rgba(59, 130, 246, 0.28);
     box-shadow:
-        0 14px 32px -6px var(--metric-subs-glow),
-        0 0 0 1px var(--metric-subs),
-        0 0 24px -4px var(--metric-subs-glow) inset;
+        0 18px 42px -10px var(--metric-subs-glow),
+        0 0 32px 3px rgba(59, 130, 246, 0.22),
+        0 0 55px 8px rgba(59, 130, 246, 0.12);
 }
 
 /* DYNAMIC SHIMMERING PROGRESS BARS */

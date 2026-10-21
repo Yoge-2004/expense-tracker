@@ -43,7 +43,7 @@
     --danger-gradient: linear-gradient(135deg, #F87171 0%, #DC2626 100%);
 
     --glass: blur(28px);
-    --shadow-premium: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 0 1px rgba(212, 175, 55, 0.14);
+    --shadow-premium: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 20px rgba(212, 175, 55, 0.10);
     --shadow-glow: 0 12px 35px -8px rgba(212, 175, 55, 0.28);
 
     --metric-inflow: #059669;

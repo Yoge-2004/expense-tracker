@@ -750,15 +750,66 @@
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
 }
 
-/* Light Theme Soft Floating Golden Aura Hover:
-   Eliminates harsh outline rings and delivers true diffused golden shadow depth like dark theme */
-[data-theme="light"] :is(.card:not(.unified-ledger-card), .metric-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card):hover {
-    transform: translateY(-3px) scale(1.008);
+/* Universal Soft Floating Luxury Golden Aura Hover:
+   Eliminates harsh outline rings and delivers true diffused golden shadow depth across ALL cards & sections */
+:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury) {
+    border-radius: 14px;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease;
+}
+
+:is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
+    transform: translateY(-3px);
+    border-color: rgba(212, 175, 55, 0.28) !important;
     box-shadow:
-        0 16px 34px -4px rgba(180, 115, 10, 0.22),
-        0 6px 16px -2px rgba(15, 23, 42, 0.09),
-        0 0 18px rgba(212, 175, 55, 0.20);
-    border-color: rgba(212, 175, 55, 0.38);
+        0 18px 46px -10px rgba(0, 0, 0, 0.55),
+        0 0 35px 3px rgba(212, 175, 55, 0.22),
+        0 0 65px 8px rgba(212, 175, 55, 0.12) !important;
+}
+
+[data-theme="light"] :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
+    transform: translateY(-3px);
+    border-color: rgba(212, 175, 55, 0.32) !important;
+    box-shadow:
+        0 16px 40px -8px rgba(15, 23, 42, 0.10),
+        0 0 32px 3px rgba(212, 175, 55, 0.32),
+        0 0 60px 8px rgba(212, 175, 55, 0.16) !important;
+}
+
+/* Primary and CTA Buttons Soft Golden Hover */
+:is(.btn-primary, #openModalBtn, #openIncomeModalBtn, #addLoanBtn, #exportBtn, #importBtn):hover {
+    box-shadow: 0 8px 24px -2px rgba(212, 175, 55, 0.38), 0 0 20px rgba(212, 175, 55, 0.25) !important;
+}
+[data-theme="light"] :is(.btn-primary, #openModalBtn, #openIncomeModalBtn, #addLoanBtn, #exportBtn, #importBtn):hover {
+    box-shadow: 0 8px 22px -2px rgba(184, 134, 11, 0.35), 0 0 18px rgba(212, 175, 55, 0.30) !important;
+}
+
+/* Chips, Pills & Tabs Soft Golden Hover Glow */
+:is(.pill-chip, .loan-tab-btn, .period-chip, .period-month-chip, .stream-pill-btn, .ai-pill-chip):hover {
+    border-color: rgba(212, 175, 55, 0.40) !important;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.28), 0 0 12px rgba(212, 175, 55, 0.18) !important;
+}
+[data-theme="light"] :is(.pill-chip, .loan-tab-btn, .period-chip, .period-month-chip, .stream-pill-btn, .ai-pill-chip):hover {
+    border-color: rgba(184, 134, 11, 0.45) !important;
+    box-shadow: 0 4px 14px rgba(184, 134, 11, 0.25), 0 0 14px rgba(212, 175, 55, 0.22) !important;
+}
+
+/* Eye / Stealth Mode Toggle - Gold in both disabled and enabled states */
+.stealth-toggle-btn {
+    color: var(--primary, #C79A3E) !important;
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.35) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-theme="light"] .stealth-toggle-btn {
+    color: #B8860B !important;
+    border-color: rgba(212, 175, 55, 0.42) !important;
+    background: #FFFFFF;
+}
+.stealth-toggle-btn:hover,
+.stealth-toggle-btn.is-active {
+    color: #D4AF37 !important;
+    border-color: #D4AF37 !important;
+    background: rgba(212, 175, 55, 0.14) !important;
+    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.28) !important;
 }
 
 /* Individual Expense & Income Hover: GPU accelerated, silky smooth hover without layout thrashing */
@@ -771,20 +822,31 @@
 }
 
 .expense-item:hover,
-#expenseList .expense-item:hover {
+#expenseList .expense-item:hover,
+#incomeList tbody tr:hover,
+.loans-table tbody tr:hover,
+.recent-transactions-table tbody tr:hover {
     transform: translate3d(0, -2px, 0);
-    background: var(--card-bg-hover);
-    border-color: rgba(212, 175, 55, 0.35);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    border-color: rgba(212, 175, 55, 0.28) !important;
+    box-shadow:
+        0 6px 20px -4px rgba(0, 0, 0, 0.35),
+        0 0 18px 2px rgba(212, 175, 55, 0.18) !important;
+}
+
+[data-theme="light"] .expense-item:hover,
+[data-theme="light"] #expenseList .expense-item:hover,
+[data-theme="light"] #incomeList tbody tr:hover,
+[data-theme="light"] .loans-table tbody tr:hover,
+[data-theme="light"] .recent-transactions-table tbody tr:hover {
+    transform: translate3d(0, -2px, 0);
+    border-color: rgba(212, 175, 55, 0.32) !important;
+    box-shadow:
+        0 6px 18px -4px rgba(15, 23, 42, 0.08),
+        0 0 16px 2px rgba(212, 175, 55, 0.22) !important;
 }
 
 #incomeList tbody tr {
-    transition: background-color 0.12s ease;
-}
-
-#incomeList tbody tr:hover {
-    background: rgba(16, 185, 129, 0.08);
-    box-shadow: none;
+    transition: background-color 0.12s ease, box-shadow 0.18s ease;
 }
 
 #expenseList,
@@ -806,9 +868,12 @@
     pointer-events: none;
 }
 
-/* Eliminate Light Mode Cursor Smudge from .glow-follow::before */
+/* Soft golden cursor illumination across card surfaces */
+.glow-follow::before {
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.20) 0%, rgba(212, 175, 55, 0.05) 45%, transparent 70%) !important;
+}
 [data-theme="light"] .glow-follow::before {
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.2) 40%, transparent 70%);
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.24) 0%, rgba(212, 175, 55, 0.06) 45%, transparent 70%) !important;
 }
 
 /* Scrollable Profile Menu */
@@ -987,7 +1052,19 @@
     .category-pill,
     .filter-chip,
     .card,
-    .clickable {
+    .clickable,
+    .loan-tab-btn,
+    .pill-chip,
+    .preset-btn,
+    .expense-item,
+    .loan-metric-card,
+    .metric-card,
+    .chart-card,
+    .stat-card,
+    .empty-state-luxury,
+    .stealth-toggle-btn,
+    [onclick],
+    label {
         cursor: var(--cursor-pointer);
     }
 
@@ -1048,6 +1125,7 @@
                 opacity 0.2s ease,
                 border-color 0.2s ease;
     opacity: 0;
+    filter: drop-shadow(0 0 7px rgba(212, 175, 55, 0.50));
 }
 .executive-reticle.active {
     opacity: 1;
@@ -1080,22 +1158,37 @@
     transition: all 0.2s ease;
 }
 
-/* Hovering Interactive Element: Corner Brackets Expand into HUD Lock-On */
+/* Hovering Interactive Element: Soft Circular Luxury Golden Aura Cursor */
 .executive-reticle.is-hovering {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50% !important;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.26) 0%, rgba(212, 175, 55, 0.08) 50%, transparent 72%) !important;
+    box-shadow: 0 0 24px 3px rgba(212, 175, 55, 0.35) !important;
+    border: 1px solid rgba(212, 175, 55, 0.38) !important;
+    filter: none !important;
 }
 .executive-reticle.is-hovering .reticle-corner {
-    width: 8px;
-    height: 8px;
-    border-color: #F59E0B;
-    border-width: 2px;
-    opacity: 1;
-    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+    display: none !important;
 }
 .executive-reticle.is-hovering .reticle-center-accent {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0);
+    width: 4px;
+    height: 4px;
+    background: #D4AF37;
+    border-radius: 50%;
+    opacity: 0.95;
+    box-shadow: 0 0 8px #D4AF37;
+    transform: translate(-50%, -50%);
+}
+
+[data-theme="light"] .executive-reticle.is-hovering {
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.32) 0%, rgba(212, 175, 55, 0.10) 50%, transparent 72%) !important;
+    box-shadow: 0 0 22px 3px rgba(184, 134, 11, 0.40) !important;
+    border: 1px solid rgba(184, 134, 11, 0.42) !important;
+}
+[data-theme="light"] .executive-reticle.is-hovering .reticle-center-accent {
+    background: #B8860B;
+    box-shadow: 0 0 8px #B8860B;
 }
 
 /* Clicking State */
@@ -1334,4 +1427,113 @@
         transform: none !important;
         background: transparent !important;
     }
+}
+
+/* ========================================================
+   LOANS & PEER ADJUSTMENTS SECTION STYLES
+   ======================================================== */
+.loans-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.loan-tab-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: var(--cursor-pointer, pointer);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+}
+
+.loan-tab-btn:hover {
+    color: var(--text-main);
+    border-color: rgba(139, 92, 246, 0.4);
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.loan-tab-btn.active {
+    background: #8B5CF6;
+    border-color: #8B5CF6;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="light"] .loan-tab-btn {
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+    color: #64748B;
+}
+
+[data-theme="light"] .loan-tab-btn:hover {
+    color: #1E293B;
+    border-color: #8B5CF6;
+    background: #F5F3FF;
+}
+
+[data-theme="light"] .loan-tab-btn.active {
+    background: #8B5CF6;
+    border-color: #8B5CF6;
+    color: #FFFFFF;
+}
+
+.loan-type-btn {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: var(--cursor-pointer, pointer);
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.loan-type-btn.active#loanTypeLentBtn {
+    border-color: #10B981;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10B981;
+}
+
+.loan-type-btn.active#loanTypeBorrowedBtn {
+    border-color: #EF4444;
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+}
+
+[data-theme="light"] .loan-type-btn {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+}
+
+[data-theme="light"] .loan-type-btn.active#loanTypeLentBtn {
+    border-color: #059669;
+    background: #ECFDF5;
+    color: #059669;
+}
+
+[data-theme="light"] .loan-type-btn.active#loanTypeBorrowedBtn {
+    border-color: #DC2626;
+    background: #FEF2F2;
+    color: #DC2626;
+}
+
+/* Loans Skeleton Loading Shimmer */
+.loans-skeleton-loader .skeleton-shimmer,
+.loans-skeleton-loader .skeleton-loading {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(212, 175, 55, 0.12) 50%, rgba(255, 255, 255, 0.03) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.6s infinite linear;
+    border-radius: 8px;
+}
+[data-theme="light"] .loans-skeleton-loader .skeleton-shimmer,
+[data-theme="light"] .loans-skeleton-loader .skeleton-loading {
+    background: linear-gradient(90deg, #F1F5F9 25%, rgba(212, 175, 55, 0.18) 50%, #F1F5F9 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.6s infinite linear;
 }

@@ -33,28 +33,31 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         CATEGORY_KEYWORDS = Collections.unmodifiableMap(map);
     }
 
+    private static final String CURRENCY_SYMBOLS = "[\\s:₹$€£]*(?:rs\\.?|inr)?[\\s]*";
+    private static final String AMOUNT_PATTERN = "([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)";
+
     private static final Pattern SUBTOTAL_REGEX = Pattern.compile(
-            "(?:sub\\s*total|item\\s*total|sub-total|items?\\s*value|base\\s*(?:amount|total)|taxable\\s*value|gross\\s*(?:amount|total))[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:sub\\s*total|item\\s*total|sub-total|items?\\s*value|base\\s*(?:amount|total)|taxable\\s*value|gross\\s*(?:amount|total))" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern CGST_REGEX = Pattern.compile(
-            "(?:cgst|central\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:cgst|central\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern SGST_REGEX = Pattern.compile(
-            "(?:sgst|state\\s*gst|utgst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:sgst|state\\s*gst|utgst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern IGST_REGEX = Pattern.compile(
-            "(?:igst|integrated\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:igst|integrated\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern VAT_REGEX = Pattern.compile(
-            "(?:vat|value\\s*added\\s*tax)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:vat|value\\s*added\\s*tax)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern GEN_TAX_REGEX = Pattern.compile(
-            "(?:service\\s*tax|cess|total\\s*tax|tax\\s*amount|\\btax(?:es)?(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?|\\bgst(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?)[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:service\\s*tax|cess|total\\s*tax|tax\\s*amount|\\btax(?:es)?(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?|\\bgst(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?)" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern DISCOUNT_REGEX = Pattern.compile(
-            "(?:discount|coupon|promo|instant\\s*savings?|less)(?:\\s*\\([^)]*\\))?[\\s:₹$€£\\-]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:discount|coupon|promo|instant\\s*savings?|less)(?:\\s*\\([^)]*\\))?[\\s:₹$€£\\-]*(?:rs\\.?|inr)?[\\s]*" + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern CHARGES_REGEX = Pattern.compile(
-            "(?:delivery(?:\\s*fee|\\s*charge)?|packing(?:\\s*charge)?|service\\s*charge|tip|gratuity|convenience\\s*fee)(?:\\s*\\([^)]*\\))?[\\s:₹$€£+]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:delivery(?:\\s*fee|\\s*charge)?|packing(?:\\s*charge)?|service\\s*charge|tip|gratuity|convenience\\s*fee)(?:\\s*\\([^)]*\\))?[\\s:₹$€£+]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern GRAND_TOTAL_REGEX = Pattern.compile(
-            "(?:grand\\s*total|net\\s*(?:amount\\s*)?payable|total\\s*payable|amount\\s*payable|invoice\\s*total|final\\s*(?:amount|total)|bill\\s*total|total\\s*amount|amount\\s*due|total\\s*due|total\\s*paid|paid\\s*amount)[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:grand\\s*total|net\\s*(?:amount\\s*)?payable|total\\s*payable|amount\\s*payable|invoice\\s*total|final\\s*(?:amount|total)|bill\\s*total|total\\s*amount|amount\\s*due|total\\s*due|total\\s*paid|paid\\s*amount)" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern GENERIC_TOTAL_REGEX = Pattern.compile(
-            "(?:^|\\s)total[\\s:₹$€£]*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{2})|[0-9]+[.,][0-9]{2})", Pattern.CASE_INSENSITIVE);
+            "(?:^|\\s)total" + CURRENCY_SYMBOLS + AMOUNT_PATTERN, Pattern.CASE_INSENSITIVE);
     private static final Pattern CURRENCY_PREFIX_REGEX = Pattern.compile(
-            "[₹$€£]\\s*([0-9]+(?:\\.[0-9]{2})?)");
+            "(?:[₹$€£]|\\brs\\.?|\\binr)\\s*([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:\\.[0-9]{1,2})?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern DATE_REGEX = Pattern.compile(
             "\\b(\\d{4}[-/]\\d{1,2}[-/]\\d{1,2})\\b|\\b(\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4})\\b");
 
@@ -107,8 +110,12 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         File tempFile = null;
         try {
             String ext = ".png";
-            if (file.getOriginalFilename() != null && file.getOriginalFilename().contains(".")) {
-                ext = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
+            String orig = file.getOriginalFilename();
+            if (orig != null && orig.lastIndexOf('.') != -1) {
+                String sub = orig.substring(orig.lastIndexOf('.')).toLowerCase();
+                if (sub.matches("^\\.[a-z0-9]{2,5}$")) {
+                    ext = sub;
+                }
             }
             tempFile = File.createTempFile("ocr-receipt-", ext);
             try (FileOutputStream fos = new FileOutputStream(tempFile);
@@ -116,17 +123,15 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                 is.transferTo(fos);
             }
 
-            // Execute Tesseract OCR
-            ProcessBuilder pb = new ProcessBuilder("tesseract", tempFile.getAbsolutePath(), "stdout", "--oem", "1", "-l", "eng");
-            pb.redirectErrorStream(false);
-            Process process = pb.start();
-
-            String text = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            boolean finished = process.waitFor(20, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                log.warn("Tesseract OCR process timed out");
-                return "";
+            // Attempt 1: Standard Tesseract invocation with LSTM eng
+            String text = runTesseractCommand(tempFile, List.of("tesseract", tempFile.getAbsolutePath(), "stdout", "-l", "eng"));
+            if (text.isBlank()) {
+                // Attempt 2: Explicit OEM 1 (LSTM) with PSM 6
+                text = runTesseractCommand(tempFile, List.of("tesseract", tempFile.getAbsolutePath(), "stdout", "--oem", "1", "--psm", "6", "-l", "eng"));
+            }
+            if (text.isBlank()) {
+                // Attempt 3: Default OEM 3
+                text = runTesseractCommand(tempFile, List.of("tesseract", tempFile.getAbsolutePath(), "stdout", "--oem", "3", "-l", "eng"));
             }
             return text;
         } catch (Exception ex) {
@@ -136,6 +141,26 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
             if (tempFile != null && tempFile.exists()) {
                 tempFile.delete();
             }
+        }
+    }
+
+    private String runTesseractCommand(File imageFile, List<String> command) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+            Process process = pb.start();
+
+            String text = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            boolean finished = process.waitFor(15, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.warn("Tesseract OCR process timed out for command: {}", command);
+                return "";
+            }
+            return text.trim();
+        } catch (Exception e) {
+            log.warn("Tesseract command execution failed: {} - {}", command, e.getMessage());
+            return "";
         }
     }
 
@@ -221,7 +246,8 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
             double maxVal = 0.0;
             while (curMatcher.find()) {
                 try {
-                    double val = Double.parseDouble(curMatcher.group(1));
+                    String rawNum = curMatcher.group(1).replaceAll("[\\s,]", "");
+                    double val = Double.parseDouble(rawNum);
                     if (val > maxVal) maxVal = val;
                 } catch (Exception ignored) {}
             }

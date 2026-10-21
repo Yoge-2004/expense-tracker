@@ -7,9 +7,10 @@
  *   salary credited on the 30th).
  * - A REIMBURSEMENT is money handed back for something already paid. It is not income:
  *   it reduces what was spent.
+ * - BORROWED money and casual friend debt settlements are excluded from earned income.
  */
 
-export type IncomeKind = 'SALARY' | 'OTHER' | 'REIMBURSEMENT';
+export type IncomeKind = 'SALARY' | 'OTHER' | 'REIMBURSEMENT' | 'BORROWED' | 'SETTLEMENT';
 
 export interface FlowIncome {
   amount?: number | string | null;
@@ -50,10 +51,12 @@ export function monthLabel(month: string): string {
   return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
-/** SALARY, OTHER or REIMBURSEMENT. Older records have no kind: "salary" in the source means salary. */
+/** SALARY, OTHER, REIMBURSEMENT, BORROWED or SETTLEMENT. Older records have no kind: "salary" in the source means salary. */
 export function kindOf(income: FlowIncome): IncomeKind {
   const raw = String(income.kind || '').toUpperCase();
-  if (raw === 'SALARY' || raw === 'OTHER' || raw === 'REIMBURSEMENT') return raw;
+  if (raw === 'SALARY' || raw === 'OTHER' || raw === 'REIMBURSEMENT' || raw === 'BORROWED' || raw === 'SETTLEMENT') {
+    return raw as IncomeKind;
+  }
   return /salary/i.test(income.source || '') ? 'SALARY' : 'OTHER';
 }
 
@@ -64,10 +67,13 @@ export function effectiveMonth(income: FlowIncome): string {
   return monthKey(income.incomeDate);
 }
 
-/** Total of everything that is real income (reimbursements excluded). */
+/** Total of everything that is real income (reimbursements and loans excluded). */
 export function earnedTotal(incomes: FlowIncome[]): number {
   return incomes
-    .filter((i) => kindOf(i) !== 'REIMBURSEMENT')
+    .filter((i) => {
+      const k = kindOf(i);
+      return k !== 'REIMBURSEMENT' && k !== 'BORROWED' && k !== 'SETTLEMENT';
+    })
     .reduce((sum, i) => sum + amountOf(i.amount), 0);
 }
 

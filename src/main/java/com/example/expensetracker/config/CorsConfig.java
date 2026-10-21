@@ -59,6 +59,12 @@ public class CorsConfig {
         List<String> origins = getCleanOrigins();
 
         config.setAllowedOrigins(origins);
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://10.0.2.2:*",
+                "https://*.netlify.app"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(
                 "Authorization", "Cache-Control", "Content-Type", "Accept",

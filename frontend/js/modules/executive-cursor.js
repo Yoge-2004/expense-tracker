@@ -94,11 +94,22 @@
             if (target.closest("input, textarea, [contenteditable='true']")) {
                 reticleEl.classList.add("is-text");
                 reticleEl.classList.remove("is-hovering");
-            } else if (target.closest("a, button, [role='button'], .tab-item, .card, .clickable, .metric-card, .receipt-breakdown-pill, select")) {
-                reticleEl.classList.add("is-hovering");
-                reticleEl.classList.remove("is-text");
             } else {
-                reticleEl.classList.remove("is-hovering", "is-text");
+                let isClickable = Boolean(target.closest("a, button, [role='button'], select, label, summary, [onclick], .tab-item, .card, .clickable, .metric-card, .receipt-breakdown-pill, .expense-item, tr, .pill-chip, .loan-tab-btn, .period-chip, .period-month-chip, .budget-item, .savings-goal-card, .insight-card-item, .header-action-btn, .btn, .loan-metric-card, .chart-card, .stat-card, .empty-state-luxury, .preset-btn, .cal-nav-btn, .cal-day-cell, .custom-select-trigger, .custom-option, .avatar, .input-eye, .stealth-toggle-btn"));
+                if (!isClickable) {
+                    try {
+                        const comp = window.getComputedStyle(target);
+                        if (comp && comp.cursor && comp.cursor.includes("pointer")) {
+                            isClickable = true;
+                        }
+                    } catch (_) {}
+                }
+                if (isClickable) {
+                    reticleEl.classList.add("is-hovering");
+                    reticleEl.classList.remove("is-text");
+                } else {
+                    reticleEl.classList.remove("is-hovering", "is-text");
+                }
             }
         }, { passive: true });
 

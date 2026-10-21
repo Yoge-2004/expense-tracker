@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * Seeds the system-wide default categories (Food, Transport, Utilities,
- * Entertainment, Health, Shopping, Finance) on startup if they don't already exist, so every
+ * Entertainment, Health, Shopping, Finance, Savings, Loan) on startup if they don't already exist, so every
  * new deployment has a baseline category set without manual setup.
  *
  * <p>Global categories are represented as {@link Category} rows with a
@@ -36,10 +36,13 @@ public class CategoryInitializer {
     @Order(1)
     @Transactional
     public void initGlobalCategories() {
-        List<String> defaultCategories = List.of("Food", "Transport", "Utilities", "Entertainment", "Health", "Shopping", "Finance");
+        List<String> defaultCategories = List.of(
+                "Food", "Transport", "Utilities", "Entertainment",
+                "Health", "Shopping", "Finance", "Savings", "Loan"
+        );
         for (String catName : defaultCategories) {
             try {
-                if (categoryRepository.findByNameIgnoreCase(catName).isEmpty()) {
+                if (categoryRepository.findByUserIsNullAndNameIgnoreCase(catName).isEmpty()) {
                     Category cat = new Category();
                     cat.setName(catName);
                     cat.setUser(null); // Global category

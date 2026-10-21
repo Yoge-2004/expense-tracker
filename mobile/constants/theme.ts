@@ -157,6 +157,8 @@ export function getCategoryColor(name: string | undefined | null, index?: number
 
 export function getCategoryEmoji(name: string | undefined | null): string {
   const n = (name || '').toLowerCase();
+  if (n.includes('saving') || n.includes('deposit')) return '💰';
+  if (n.includes('loan') || n.includes('debt') || n.includes('borrow') || n.includes('lend') || n.includes('adjust')) return '🤝';
   if (n.includes('food') || n.includes('dining') || n.includes('restaurant')) return '🍔';
   if (n.includes('transport') || n.includes('travel') || n.includes('uber') || n.includes('fuel')) return '🚗';
   if (n.includes('shop') || n.includes('cloth') || n.includes('amazon')) return '🛍️';

@@ -8,6 +8,7 @@
  *    credited on the 30th).
  *  - A REIMBURSEMENT is money handed back for something already paid. It is not income:
  *    it reduces what was spent.
+ *  - BORROWED money and peer settlements are excluded from personal earned revenue.
  */
 (function () {
     "use strict";
@@ -43,10 +44,10 @@
         return new Date(y, m - 1, 1).toLocaleDateString(locale || undefined, { month: "long", year: "numeric" });
     }
 
-    /** SALARY, OTHER or REIMBURSEMENT. Older records have no kind: "salary" in the source means salary. */
+    /** SALARY, OTHER, REIMBURSEMENT, BORROWED or SETTLEMENT. Older records have no kind: "salary" in the source means salary. */
     function kindOf(income) {
         const raw = String((income && income.kind) || "").toUpperCase();
-        if (raw === "SALARY" || raw === "OTHER" || raw === "REIMBURSEMENT") return raw;
+        if (raw === "SALARY" || raw === "OTHER" || raw === "REIMBURSEMENT" || raw === "BORROWED" || raw === "SETTLEMENT") return raw;
         return /salary/i.test((income && income.source) || "") ? "SALARY" : "OTHER";
     }
 
@@ -58,7 +59,10 @@
     }
 
     function earnedTotal(incomes) {
-        return sum((incomes || []).filter((i) => kindOf(i) !== "REIMBURSEMENT"), (i) => i.amount);
+        return sum((incomes || []).filter((i) => {
+            const k = kindOf(i);
+            return k !== "REIMBURSEMENT" && k !== "BORROWED" && k !== "SETTLEMENT";
+        }), (i) => i.amount);
     }
 
     function reimbursedTotal(incomes) {
@@ -83,7 +87,10 @@
         const spent = Math.max(0, grossSpent - reimbursed);
         const leftOver = earned - spent;
 
-        const credited = (incomes || []).filter((i) => kindOf(i) !== "REIMBURSEMENT");
+        const credited = (incomes || []).filter((i) => {
+            const k = kindOf(i);
+            return k !== "REIMBURSEMENT" && k !== "BORROWED" && k !== "SETTLEMENT";
+        });
         // Credited in this calendar month but counted toward a different one.
         const creditedForOtherMonths = credited
             .filter((i) => monthKey(i.incomeDate) === month && effectiveMonth(i) !== month)
@@ -93,8 +100,7 @@
             .filter((i) => effectiveMonth(i) === month && monthKey(i.incomeDate) !== month)
             .map((i) => ({ amount: num(i.amount), fromMonth: monthKey(i.incomeDate) }));
 
-        return {
-            month,
+        return {\n            month,
             salary,
             otherIncome,
             earned,

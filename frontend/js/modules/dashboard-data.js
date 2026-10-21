@@ -223,6 +223,24 @@
                         budgetUsageBadge.textContent = "Offline";
                         budgetUsageBadge.className = "status-badge badge-warning";
                     }
+                    const healthBadge = document.getElementById("insightsHealthScoreText");
+                    if (healthBadge) {
+                        healthBadge.textContent = "Offline";
+                    }
+                    const streakCountEl = document.getElementById("noSpendStreakCount");
+                    if (streakCountEl) streakCountEl.textContent = "--";
+                    const streakBadge = document.getElementById("noSpendStreakBadge");
+                    if (streakBadge) {
+                        streakBadge.className = "status-badge badge-neutral";
+                        streakBadge.title = "Streak unavailable (Server offline)";
+                    }
+                    const safeDailyEl = document.getElementById("safeDailySpend");
+                    if (safeDailyEl) safeDailyEl.textContent = "--";
+                    const safeBadge = document.getElementById("safeDailySpendBadge");
+                    if (safeBadge) {
+                        safeBadge.className = "status-badge badge-neutral";
+                        safeBadge.title = "Safe spend allowance unavailable (Server offline)";
+                    }
                     const expenseListEl = document.getElementById("expenseList");
                     if (expenseListEl) {
                         expenseListEl.innerHTML = `

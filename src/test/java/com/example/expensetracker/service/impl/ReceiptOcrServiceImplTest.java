@@ -51,6 +51,40 @@ class ReceiptOcrServiceImplTest {
     }
 
     @Test
+    @DisplayName("parseReceiptText handles Indian Rupee formats and integer amounts")
+    void parseReceiptText_handlesRupeeAndIntegerAmounts() {
+        String receiptText = """
+                APOLLO PHARMACY
+                Healthcare & Diagnostics
+                Date: 2026-10-12
+                Paracetamol 650mg       Rs. 45.00
+                Cough Syrup             Rs. 115.00
+                Sub Total: Rs. 160.00
+                GST @ 12%: Rs. 19.20
+                Net Amount Payable: Rs. 179.20
+                Thank you!
+                """;
+
+        Map<String, Object> result = service.parseReceiptText(receiptText);
+
+        assertNotNull(result);
+        assertEquals(179.20, (Double) result.get("amount"), 0.001);
+        assertEquals("APOLLO PHARMACY", result.get("merchant"));
+        assertEquals("Health & Medical", result.get("category"));
+
+        String integerReceipt = """
+                RELIANCE DIGITAL
+                Invoice Date: 2026-10-14
+                Wireless Mouse: Rs 450
+                Total Amount: Rs 450
+                """;
+
+        Map<String, Object> intRes = service.parseReceiptText(integerReceipt);
+        assertNotNull(intRes);
+        assertEquals(450.0, (Double) intRes.get("amount"), 0.001);
+    }
+
+    @Test
     @DisplayName("processReceipt handles text file parsing cleanly")
     void processReceipt_textFile_returnsParsedData() {
         String receipt = """

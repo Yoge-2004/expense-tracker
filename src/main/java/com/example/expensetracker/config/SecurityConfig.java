@@ -5,6 +5,7 @@ import com.example.expensetracker.security.RestAccessDeniedHandler;
 import com.example.expensetracker.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -50,6 +51,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/",
                                 "/*.html",
@@ -69,6 +71,7 @@ public class SecurityConfig {
                                 "/api/webauthn/login/**",
                                 "/api/webauthn/recovery/**",
                                 "/api/users/suggest-usernames",
+                                "/api/health",
                                 "/api/health/**",
                                 "/api/sync/**",
                                 "/api/internal/ml/**",

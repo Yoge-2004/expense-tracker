@@ -77,7 +77,7 @@
 }
 .lift-deep:hover {
     transform: translateY(-6px);
-    box-shadow: 0 30px 55px -20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(var(--primary-rgb), 0.15);
+    box-shadow: 0 30px 55px -20px rgba(0, 0, 0, 0.5), 0 0 28px rgba(212, 175, 55, 0.18);
 }
 
 /* Pointer: text color sweep on hover */

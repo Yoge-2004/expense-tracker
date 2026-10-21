@@ -4,7 +4,8 @@
     --theme-card-y: 0px;
     --theme-card-scale: 1;
     transition:
-        transform 0.20s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
         background-color 0.16s ease-out,
         border-color 0.16s ease-out,
         border-left-color 0.16s ease-out,

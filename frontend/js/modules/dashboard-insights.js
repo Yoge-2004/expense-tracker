@@ -20,7 +20,7 @@
                     <p class="text-muted" style="margin: 0; font-size: 13.5px; line-height: 1.5; word-break: break-word;">No transactions, incomes, or savings goals recorded. Add entries to generate real-time financial intelligence.</p>
                 </div>
             `;
-            if (healthBadge) healthBadge.textContent = "100% Financial Health";
+            if (healthBadge) healthBadge.textContent = "--% Financial Health";
             return;
         }
     

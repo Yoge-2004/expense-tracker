@@ -38,6 +38,16 @@ const { animateNumber, animatePercent, celebrateSuccess, updateStats } = window.
 
 // Global State
 let allExpenses = [];
+Object.defineProperty(window, 'allExpenses', {
+    configurable: true,
+    get: () => allExpenses,
+    set: (v) => {
+        allExpenses = v;
+        if (window.LoansManager && typeof window.LoansManager.populateExpenseDropdown === 'function') {
+            window.LoansManager.populateExpenseDropdown();
+        }
+    }
+});
 let allCategories = [];
 let userOnlyCategories = []; // subset of allCategories actually deletable (excludes global/seeded ones)
 let allIncomes = [];
@@ -338,6 +348,10 @@ function renderList(expenses) {
             </div>
             <div class="expense-actions-col" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                 <div class="expense-amount" style="font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--text-main); font-size:15px; font-weight:600;">${formatCurrency(exp.amount)}</div>
+                <button class="btn-text-icon btn-split-loan" onclick="window.LoansManager && window.LoansManager.openWithExpense(${exp.id}, '${jsAttrEscape(exp.description || '')}', ${exp.amount}, '${exp.expenseDate}')" title="Split / Link to Peer Loan" style="padding:4px 7px; border-radius:6px; color:#8B5CF6; border:1px solid rgba(139,92,246,0.35); background:rgba(139,92,246,0.08); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                    <span>Split</span>
+                </button>
                 <button class="btn-edit" onclick="editExpense(${exp.id})" title="Edit">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>

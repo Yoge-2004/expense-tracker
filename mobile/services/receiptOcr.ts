@@ -91,13 +91,13 @@ Have a safe journey!`,
     text: `APOLLO PHARMACY
 Healthcare & Diagnostics
 Date: 2026-10-12
-Paracetamol 650mg (15 tab)   ₹45.00
-Vitamin C + Zinc Chewable    ₹280.00
-Cough Relief Syrup 100ml     ₹115.00
-Sub Total: ₹440.00
-GST @ 12%: ₹52.80
-Discount: -₹40.00
-Net Amount Payable: ₹452.80
+Paracetamol 650mg (15 tab)   Rs. 45.00
+Vitamin C + Zinc Chewable    Rs. 280.00
+Cough Relief Syrup 100ml     Rs. 115.00
+Sub Total: Rs. 440.00
+GST @ 12%: Rs. 52.80
+Discount: -Rs. 40.00
+Net Amount Payable: Rs. 452.80
 Payment Mode: UPI Approved`,
   },
   {
@@ -129,16 +129,19 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   'Entertainment': ['cinema', 'movie', 'theatre', 'imax', 'pvr', 'inox', 'concert', 'game', 'bowling', 'netflix', 'spotify'],
 };
 
-const SUBTOTAL_REGEX = /(?:sub\s*total|item\s*total|sub-total|items?\s*value|base\s*(?:amount|total)|taxable\s*value|gross\s*(?:amount|total))[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const CGST_REGEX = /(?:cgst|central\s*gst)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const SGST_REGEX = /(?:sgst|state\s*gst|utgst)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const IGST_REGEX = /(?:igst|integrated\s*gst)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const VAT_REGEX = /(?:vat|value\s*added\s*tax)(?:\s*@?\s*\d+(?:\.\d+)?%?)?[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const GEN_TAX_REGEX = /(?:service\s*tax|cess|total\s*tax|tax\s*amount|gst(?:\s*@?\s*\d+(?:\.\d+)?%?)?|taxes)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const DISCOUNT_REGEX = /(?:discount|coupon|promo|instant\s*savings?|less)(?:\s*\([^)]*\))?[\s:₹$€£\-]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const CHARGES_REGEX = /(?:delivery(?:\\s*fee|\\s*charge)?|packing(?:\\s*charge)?|service\s*charge|tip|gratuity|convenience\s*fee)(?:\s*\([^)]*\))?[\s:₹$€£+]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const GRAND_TOTAL_REGEX = /(?:grand\s*total|net\s*(?:amount\s*)?payable|total\s*payable|amount\s*payable|invoice\s*total|final\s*(?:amount|total)|bill\s*total|total\s*amount|amount\s*due|total\s*due|total\s*paid|paid\s*amount)[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
-const GENERIC_TOTAL_REGEX = /(?:^|\s)total[\s:₹$€£]*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{2})|[0-9]+[.,][0-9]{2})/i;
+const CURRENCY_PREFIX = '[\\s:₹$€£]*(?:rs\\.?|inr)?[\\s]*';
+const AMOUNT_PATTERN = '([0-9]{1,3}(?:[,\\s][0-9]{3})*(?:\\.[0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)';
+
+const SUBTOTAL_REGEX = new RegExp(`(?:sub\\s*total|item\\s*total|sub-total|items?\\s*value|base\\s*(?:amount|total)|taxable\\s*value|gross\\s*(?:amount|total))${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
+const CGST_REGEX = new RegExp(`(?:cgst|central\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
+const SGST_REGEX = new RegExp(`(?:sgst|state\\s*gst|utgst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
+const IGST_REGEX = new RegExp(`(?:igst|integrated\\s*gst)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
+const VAT_REGEX = new RegExp(`(?:vat|value\\s*added\\s*tax)(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
+const GEN_TAX_REGEX = new RegExp(`(?:service\\s*tax|cess|total\\s*tax|tax\\s*amount|\\bgst(?:\\s*@?\\s*\\d+(?:\\.\\d+)?%?)?|taxes)${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
+const DISCOUNT_REGEX = new RegExp(`(?:discount|coupon|promo|instant\\s*savings?|less)(?:\\s*\\([^)]*\\))?[\\s:₹$€£\\-]*(?:rs\\.?|inr)?[\\s]*${AMOUNT_PATTERN}`, 'i');
+const CHARGES_REGEX = new RegExp(`(?:delivery(?:\\s*fee|\\s*charge)?|packing(?:\\s*charge)?|service\\s*charge|tip|gratuity|convenience\\s*fee)(?:\\s*\\([^)]*\\))?[\\s:₹$€£+]*${AMOUNT_PATTERN}`, 'i');
+const GRAND_TOTAL_REGEX = new RegExp(`(?:grand\\s*total|net\\s*(?:amount\\s*)?payable|total\\s*payable|amount\\s*payable|invoice\\s*total|final\\s*(?:amount|total)|bill\\s*total|total\\s*amount|amount\\s*due|total\\s*due|total\\s*paid|paid\\s*amount)${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
+const GENERIC_TOTAL_REGEX = new RegExp(`(?:^|\\s)total${CURRENCY_PREFIX}${AMOUNT_PATTERN}`, 'i');
 const DATE_REGEX = /\b(\d{4}[-/]\d{1,2}[-/]\d{1,2})\b|\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\b/;
 
 const IGNORED_HEADERS = [
@@ -211,7 +214,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
   // Final amount assignment
   let amount = breakdown.grandTotal || breakdown.subtotal || 0;
   if (!amount) {
-    const currencyMatches = text.match(/[₹$€£]\s*([0-9]+(?:\.[0-9]{2})?)/g);
+    const currencyMatches = text.match(/(?:[₹$€£]|\brs\.?|\binr)\s*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/gi);
     if (currencyMatches && currencyMatches.length > 0) {
       const nums = currencyMatches
         .map(s => parseFloat(s.replace(/[^0-9.]/g, '')))
