@@ -927,7 +927,9 @@ export default function AddExpenseScreen() {
             maxWidth: 900,
             width: '100%',
             alignSelf: 'center',
-            paddingHorizontal: isDesktopOrTV ? 36 : (isLargeScreen ? 24 : 16),
+            paddingLeft: Math.max(isDesktopOrTV ? 36 : (isLargeScreen ? 24 : 16), insets.left),
+            paddingRight: Math.max(isDesktopOrTV ? 36 : (isLargeScreen ? 24 : 16), insets.right),
+            paddingBottom: Math.max(insets.bottom + 20, 36),
           },
         ]}
         keyboardShouldPersistTaps="handled"

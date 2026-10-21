@@ -1295,7 +1295,9 @@ export default function DashboardScreen() {
             maxWidth: 1180,
             width: '100%',
             alignSelf: 'center',
-            paddingHorizontal: containerPad,
+            paddingLeft: Math.max(containerPad, insets.left),
+            paddingRight: Math.max(containerPad, insets.right),
+            paddingBottom: Math.max(insets.bottom + 20, 36),
           },
         ]}
         showsVerticalScrollIndicator={false}

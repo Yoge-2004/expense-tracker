@@ -521,17 +521,22 @@ export default function ProfileScreen() {
             maxWidth: isDesktopOrTV ? 960 : isLargeScreen ? 720 : undefined,
             alignSelf: isLargeScreen ? 'center' : undefined,
             width: isLargeScreen ? '100%' : undefined,
+            paddingLeft: Math.max(16, insets.left),
+            paddingRight: Math.max(16, insets.right),
+            paddingBottom: Math.max(insets.bottom + 20, 36),
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Offline Banner */}
         {isOffline && (
-          <OfflineBanner
-            onRetry={handleRetryProfile}
-            retrying={retryingProfile}
-            style={{ marginBottom: 16 }}
-          />
+          <View style={{ marginBottom: 16 }}>
+            <OfflineBanner
+              message="Server is offline · profile changes will sync when connected"
+              onRetry={handleRetryProfile}
+              retrying={retryingProfile}
+            />
+          </View>
         )}
 
         {/* Header */}
@@ -617,7 +622,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-              <ThemeToggleBtn size={20} />
+              <ThemeToggleBtn />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -1255,7 +1260,7 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   onPress={closePinModal}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }] customer-facing}
+                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }]}
                 >
                   <Ionicons name="close" size={18} color={c.text} />
                 </TouchableOpacity>
