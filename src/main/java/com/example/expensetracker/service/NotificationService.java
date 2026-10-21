@@ -2,9 +2,11 @@ package com.example.expensetracker.service;
 
 import com.example.expensetracker.dto.NotificationInboxDto;
 import com.example.expensetracker.dto.NotificationPreferenceDto;
+import com.example.expensetracker.model.DeviceToken;
 import com.example.expensetracker.model.User;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public interface NotificationService {
 
@@ -15,6 +17,13 @@ public interface NotificationService {
      * @return true when a notification was created
      */
     boolean notify(User user, PendingNotification notification);
+
+    /**
+     * Like {@link #notify}, but the push goes only to the user's phones that {@code devices} accepts. The inbox
+     * entry is created once either way. Used when only some of a user's phones need to hear about something,
+     * for example the ones still on an older app version.
+     */
+    boolean notifyDevices(User user, PendingNotification notification, Predicate<DeviceToken> devices);
 
     NotificationInboxDto getInbox(User user, int limit);
 
@@ -32,7 +41,12 @@ public interface NotificationService {
     /** Replaces the set of switched-off kinds. Unknown names are rejected; locked kinds stay on. */
     List<NotificationPreferenceDto> updatePreferences(User user, List<String> disabledTypes);
 
-    void registerDevice(User user, String token, String platform);
+    default void registerDevice(User user, String token, String platform) {
+        registerDevice(user, token, platform, null);
+    }
+
+    /** Registers a phone; {@code appVersion} (may be null) lets the server tell which phones are behind. */
+    void registerDevice(User user, String token, String platform, String appVersion);
 
     void unregisterDevice(User user, String token);
 

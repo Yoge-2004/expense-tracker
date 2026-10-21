@@ -11,6 +11,7 @@ public enum NotificationType {
     GOAL_MILESTONE("Savings milestones", "When a savings goal reaches 25%, 50%, 75% or 100%", true),
     LARGE_EXPENSE("Unusually large expenses", "When an expense is far above what you usually spend", true),
     WEEKLY_DIGEST("Weekly summary", "A short summary of your week, every Sunday evening", true),
+    APP_UPDATE("App updates", "When a newer version of the mobile app is available", true),
     SYSTEM("Account and system", "Important notices about your account", false);
 
     private final String label;

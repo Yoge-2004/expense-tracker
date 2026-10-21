@@ -79,7 +79,7 @@ public class NotificationController {
     @PostMapping("/devices")
     public ResponseEntity<Void> registerDevice(@PathVariable Long userId,
                                                @Valid @RequestBody NotificationRequests.Device request) {
-        notificationService.registerDevice(owner(userId), request.token(), request.platform());
+        notificationService.registerDevice(owner(userId), request.token(), request.platform(), request.appVersion());
         return ResponseEntity.ok().build();
     }
 

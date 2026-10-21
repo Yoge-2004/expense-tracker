@@ -24,7 +24,9 @@ public final class NotificationRequests {
             @NotBlank(message = "Push token is required")
             @Size(max = 255, message = "Push token is too long")
             @Schema(example = "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]") String token,
-            @Schema(description = "ANDROID or IOS", example = "ANDROID") String platform
+            @Schema(description = "ANDROID or IOS", example = "ANDROID") String platform,
+            @Size(max = 32, message = "App version is too long")
+            @Schema(description = "Installed app version, used to tell phones that are behind about updates", example = "1.0.4") String appVersion
     ) {
     }
 }

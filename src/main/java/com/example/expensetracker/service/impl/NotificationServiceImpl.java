@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,6 +37,11 @@ public class NotificationServiceImpl implements NotificationService {
     // below must not run inside one.
     @Override
     public boolean notify(User user, PendingNotification notification) {
+        return notifyDevices(user, notification, device -> true);
+    }
+
+    @Override
+    public boolean notifyDevices(User user, PendingNotification notification, Predicate<DeviceToken> devices) {
         if (!isEnabled(user, notification.type())) {
             return false;
         }
@@ -55,7 +61,7 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (DataIntegrityViolationException duplicate) {
             return false;   // another run created the same event first
         }
-        push(user, notification);
+        push(user, notification, devices);
         return true;
     }
 
@@ -141,7 +147,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void registerDevice(User user, String token, String platform) {
+    public void registerDevice(User user, String token, String platform, String appVersion) {
         if (!ExpoPushClient.isValidToken(token)) {
             throw new IllegalArgumentException("That is not a valid Expo push token.");
         }
@@ -150,6 +156,7 @@ public class NotificationServiceImpl implements NotificationService {
         device.setUser(user);
         device.setToken(token);
         device.setPlatform(normalisePlatform(platform));
+        device.setAppVersion(cleanVersion(appVersion));
         device.setLastSeenAt(LocalDateTime.now());
         deviceTokenRepository.save(device);
     }
@@ -178,9 +185,17 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElse(true);
     }
 
-    private void push(User user, PendingNotification notification) {
+    private static String cleanVersion(String version) {
+        if (version == null || version.isBlank()) {
+            return null;
+        }
+        return clip(version.trim(), 32);
+    }
+
+    private void push(User user, PendingNotification notification, Predicate<DeviceToken> devices) {
         try {
             List<String> tokens = deviceTokenRepository.findByUser(user).stream()
+                    .filter(devices)
                     .map(DeviceToken::getToken)
                     .filter(ExpoPushClient::isValidToken)
                     .collect(Collectors.toList());

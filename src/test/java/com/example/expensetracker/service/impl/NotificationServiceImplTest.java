@@ -277,4 +277,52 @@ class NotificationServiceImplTest {
             verifyNoMoreInteractions(deviceTokenRepository);
         }
     }
+
+    @Nested
+    @DisplayName("app updates")
+    class AppUpdates {
+
+        @Test
+        @DisplayName("registering a phone stores the installed app version, and a blank one is stored as unknown")
+        void storesAppVersion() {
+            when(deviceTokenRepository.findByToken("ExponentPushToken[abc]")).thenReturn(Optional.empty());
+
+            service.registerDevice(user, "ExponentPushToken[abc]", "android", " 1.0.4 ");
+
+            ArgumentCaptor<DeviceToken> saved = ArgumentCaptor.forClass(DeviceToken.class);
+            verify(deviceTokenRepository).save(saved.capture());
+            assertEquals("1.0.4", saved.getValue().getAppVersion());
+
+            DeviceToken existing = new DeviceToken();
+            existing.setAppVersion("1.0.3");
+            when(deviceTokenRepository.findByToken("ExponentPushToken[def]")).thenReturn(Optional.of(existing));
+            service.registerDevice(user, "ExponentPushToken[def]", "android", "  ");
+            assertNull(existing.getAppVersion());
+        }
+
+        @Test
+        @DisplayName("the push considers only the phones the filter accepts, while the inbox entry is created once")
+        void pushHonoursTheDeviceFilter() {
+            when(preferenceRepository.findByUser(user)).thenReturn(Optional.empty());
+            DeviceToken behind = new DeviceToken();
+            behind.setId(1L);
+            behind.setToken("not-a-push-token-a");
+            DeviceToken current = new DeviceToken();
+            current.setId(2L);
+            current.setToken("not-a-push-token-b");
+            when(deviceTokenRepository.findByUser(user)).thenReturn(List.of(behind, current));
+            List<Long> asked = new java.util.ArrayList<>();
+
+            boolean created = service.notifyDevices(user,
+                    new PendingNotification(NotificationType.APP_UPDATE, "Update available", "Body", "app-update", "app-update:1.0.5"),
+                    device -> {
+                        asked.add(device.getId());
+                        return device.getId() == 1L;
+                    });
+
+            assertTrue(created);
+            assertEquals(List.of(1L, 2L), asked);
+            verify(notificationRepository, times(1)).save(any());
+        }
+    }
 }
