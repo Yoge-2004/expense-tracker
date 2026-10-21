@@ -25,6 +25,8 @@ import { apiRequest, ApiError } from '../services/api';
 import { Colors } from '../constants/theme';
 import { ImmersiveLoader } from '../components/ImmersiveLoader';
 import { getNotificationSoundEnabled, setNotificationSoundEnabled } from '../services/notifications';
+import { APP_UPDATE_ROUTE } from '../services/appUpdate';
+import { useUpdate } from '../context/UpdateContext';
 
 interface NotificationItem {
   id: number;
@@ -201,6 +203,7 @@ export default function NotificationsScreen() {
   const { userId, theme } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
+  const { openPrompt } = useUpdate();
   const insets = useSafeAreaInsets();
   const c = Colors[theme];
 
@@ -293,6 +296,10 @@ export default function NotificationsScreen() {
 
   const open = async (item: NotificationItem) => {
     if (!item.read) await markRead([item.id]);
+    if (item.route === APP_UPDATE_ROUTE) {
+      openPrompt();
+      return;
+    }
     const target = item.route ? ROUTES[item.route] : undefined;
     if (target) router.replace(target as any);
   };

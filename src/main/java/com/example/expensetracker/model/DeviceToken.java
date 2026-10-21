@@ -32,4 +32,12 @@ public class DeviceToken extends BaseEntity {
 
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
+
+    /** Version of the mobile app installed on this phone, as reported when it registered; null for older apps. */
+    @Column(name = "app_version", length = 32)
+    private String appVersion;
+
+    /** The newest app version this phone has already been told about, so each release is announced once per phone. */
+    @Column(name = "update_announced_version", length = 32)
+    private String updateAnnouncedVersion;
 }
