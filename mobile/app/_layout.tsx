@@ -7,6 +7,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AlertProvider } from '../context/AlertContext';
+import { UpdateProvider, useUpdate } from '../context/UpdateContext';
+import UpdateBanner from '../components/UpdateBanner';
+import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Text, Animated, StyleSheet, StatusBar, Easing, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
@@ -329,6 +332,8 @@ const splashStyles = StyleSheet.create({
 
 function RootLayoutNav() {
   const { token, userId, isLoading, theme } = useAuth();
+  const { hasUpdate } = useUpdate();
+  const insets = useSafeAreaInsets();
   const segments = useSegments();
   const router = useRouter();
   const remindersInitialized = useRef(false);
@@ -371,21 +376,29 @@ function RootLayoutNav() {
   return (
     <>
       <StatusBar barStyle={theme === 'light' ? 'dark-content' : 'light-content'} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: Colors[theme].bg },
-          animation: 'fade_from_bottom',
-          animationDuration: 180,
-        }}
-      >
-        <Stack.Screen name="login" options={{ animation: 'fade' }} />
-        <Stack.Screen name="register" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="expo-auth-session" options={{ animation: 'none' }} />
-        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-      </Stack>
+      <View style={{ flex: 1 }}>
+        {/* The banner covers the status-bar area, so while it shows the screens get no extra top inset. */}
+        <UpdateBanner />
+        <SafeAreaInsetsContext.Provider value={hasUpdate ? { ...insets, top: 0 } : insets}>
+          <View style={{ flex: 1 }}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: Colors[theme].bg },
+                animation: 'fade_from_bottom',
+                animationDuration: 180,
+              }}
+            >
+              <Stack.Screen name="login" options={{ animation: 'fade' }} />
+              <Stack.Screen name="register" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="expo-auth-session" options={{ animation: 'none' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+            </Stack>
+          </View>
+        </SafeAreaInsetsContext.Provider>
+      </View>
       <FloatingCalculator />
     </>
   );
@@ -425,7 +438,9 @@ export default function RootLayout() {
     <ErrorBoundary>
       <AuthProvider initialTheme={initialTheme}>
         <AlertProvider>
-          <RootLayoutNav />
+          <UpdateProvider>
+            <RootLayoutNav />
+          </UpdateProvider>
         </AlertProvider>
       </AuthProvider>
     </ErrorBoundary>

@@ -223,6 +223,7 @@ export async function getDailyRemindersEnabled(): Promise<boolean> {
 // ---------------------------------------------------------------------------------------------------
 
 import { parseFinancialMessage, ParsedTransaction } from "./debitParser";
+import { APP_UPDATE_ROUTE, CURRENT_APP_VERSION } from './appUpdate';
 export { parseFinancialMessage, ParsedTransaction };
 
 const DEBIT_CHANNEL_ID = "debit-alerts";
@@ -954,13 +955,36 @@ export async function registerPushToken(userId: string): Promise<boolean> {
     const token = (await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)).data;
     await apiRequest(`/notifications/user/${userId}/devices`, {
       method: 'POST',
-      body: JSON.stringify({ token, platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID' }),
+      body: JSON.stringify({
+        token,
+        platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
+        // Lets the server tell which phones are behind when a new version is published.
+        appVersion: CURRENT_APP_VERSION,
+      }),
     });
     await AsyncStorage.multiSet([[PUSH_TOKEN_KEY, token], [SERVER_PUSH_KEY, '1']]);
     return true;
   } catch (e) {
     console.log('[Notifications] Push registration skipped:', e);
     return false;
+  }
+}
+
+/**
+ * Calls back when the user taps the server's "update available" push notification, so the app can open its update
+ * popup. Returns a function that stops listening, or null where notifications are unavailable (Expo Go).
+ */
+export function registerAppUpdateTapListener(onTap: () => void): (() => void) | null {
+  if (isExpoGo || !Notifications) return null;
+  try {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
+      if (response?.notification?.request?.content?.data?.route === APP_UPDATE_ROUTE) {
+        onTap();
+      }
+    });
+    return () => subscription.remove();
+  } catch {
+    return null;
   }
 }
 

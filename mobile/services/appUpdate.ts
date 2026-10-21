@@ -4,6 +4,7 @@
  * in-app APK downloading with live progress tracking and native installation.
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
@@ -20,7 +21,15 @@ export interface AppReleaseInfo {
   apkName?: string | null;
   releaseNotes: string;
   publishedAt: string;
+  /** True when GitHub could not be reached, so the other fields are placeholders and not a real answer. */
+  checkFailed?: boolean;
 }
+
+/** The `route` the server puts on its "update available" push notification. */
+export const APP_UPDATE_ROUTE = 'app-update';
+
+const UPDATE_CACHE_KEY = '@expense_tracker/app_update_cache';
+const FALLBACK_RELEASES_URL = 'https://github.com/Yoge-2004/expense-tracker/releases';
 
 export interface DownloadProgress {
   totalBytes: number;
@@ -48,8 +57,38 @@ export function isNewerVersion(current: string, candidate: string): boolean {
   return tPatch > cPatch;
 }
 
+/** Turns a GitHub "latest release" response into update info, judged against the installed version. */
+export function releaseInfoFromGitHub(data: any, currentVersion: string): AppReleaseInfo {
+  const latestTag: string = typeof data?.tag_name === 'string' ? data.tag_name : '';
+  const apkAsset = Array.isArray(data?.assets)
+    ? data.assets.find((a: any) => typeof a?.name === 'string' && a.name.endsWith('.apk'))
+    : null;
+  const unfinished = data?.draft === true || data?.prerelease === true;
+
+  return {
+    hasUpdate: !!latestTag && !unfinished && isNewerVersion(currentVersion, latestTag),
+    currentVersion,
+    latestVersion: latestTag || currentVersion,
+    releaseName: data?.name || latestTag || 'Latest Release',
+    releaseUrl: data?.html_url || FALLBACK_RELEASES_URL,
+    apkDownloadUrl: apkAsset?.browser_download_url || null,
+    apkSize: apkAsset?.size || null,
+    apkName: apkAsset?.name || 'expense-tracker.apk',
+    releaseNotes: (data?.body || '').trim(),
+    publishedAt: data?.published_at || '',
+  };
+}
+
+/** Re-judges stored update info against the installed version, e.g. after the app itself was updated. */
+export function withCurrentVersion(info: AppReleaseInfo, currentVersion: string): AppReleaseInfo {
+  return {
+    ...info,
+    currentVersion,
+    hasUpdate: !info.checkFailed && !!info.latestVersion && isNewerVersion(currentVersion, info.latestVersion),
+  };
+}
+
 export async function checkForAppUpdate(): Promise<AppReleaseInfo> {
-  const fallbackUrl = 'https://github.com/Yoge-2004/expense-tracker/releases';
   try {
     const response = await fetch(
       'https://api.github.com/repos/Yoge-2004/expense-tracker/releases/latest',
@@ -65,48 +104,59 @@ export async function checkForAppUpdate(): Promise<AppReleaseInfo> {
       throw new Error(`GitHub releases returned HTTP ${response.status}`);
     }
 
-    const data = await response.json();
-    const latestTag = data.tag_name || 'v1.0.4';
-    const releaseName = data.name || latestTag;
-    const releaseUrl = data.html_url || fallbackUrl;
-    const releaseNotes = (data.body || '').trim();
-    const publishedAt = data.published_at || '';
-
-    const apkAsset = Array.isArray(data.assets)
-      ? data.assets.find((a: any) => typeof a.name === 'string' && a.name.endsWith('.apk'))
-      : null;
-    const apkDownloadUrl = apkAsset?.browser_download_url || null;
-    const apkSize = apkAsset?.size || null;
-    const apkName = apkAsset?.name || 'expense-tracker.apk';
-
-    const hasUpdate = isNewerVersion(CURRENT_APP_VERSION, latestTag);
-
-    return {
-      hasUpdate,
-      currentVersion: CURRENT_APP_VERSION,
-      latestVersion: latestTag,
-      releaseName,
-      releaseUrl,
-      apkDownloadUrl,
-      apkSize,
-      apkName,
-      releaseNotes,
-      publishedAt,
-    };
+    return releaseInfoFromGitHub(await response.json(), CURRENT_APP_VERSION);
   } catch (error) {
     return {
       hasUpdate: false,
       currentVersion: CURRENT_APP_VERSION,
       latestVersion: CURRENT_APP_VERSION,
       releaseName: 'Latest Release',
-      releaseUrl: fallbackUrl,
+      releaseUrl: FALLBACK_RELEASES_URL,
       apkDownloadUrl: null,
       apkSize: null,
       apkName: null,
       releaseNotes: '',
       publishedAt: '',
+      checkFailed: true,
     };
   }
+}
+
+/** The last successful check, so a known update still shows when the phone is offline. */
+export async function loadCachedUpdate(): Promise<AppReleaseInfo | null> {
+  try {
+    const raw = await AsyncStorage.getItem(UPDATE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed.latestVersion === 'string' ? (parsed as AppReleaseInfo) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveCachedUpdate(info: AppReleaseInfo): Promise<void> {
+  try {
+    await AsyncStorage.setItem(UPDATE_CACHE_KEY, JSON.stringify(info));
+  } catch {
+    // The cache only helps offline starts; a failed write is harmless.
+  }
+}
+
+/** A few readable lines of release notes for the popup: headings, bullets and links reduced to plain text. */
+export function summariseReleaseNotes(notes: string, maxLines = 6): string {
+  return (notes || '')
+    .split(/\r?\n/)
+    .map((line) =>
+      line
+        .replace(/^\s{0,3}#{1,6}\s*/, '')
+        .replace(/^\s*[-*+]\s+/, '\u2022 ')
+        .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/[*_`]/g, '')
+        .trim()
+    )
+    .filter((line) => line.length > 0)
+    .slice(0, maxLines)
+    .join('\n');
 }
 
 /**
