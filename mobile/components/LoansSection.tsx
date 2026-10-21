@@ -359,10 +359,10 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
             <Ionicons name="arrow-down-circle" size={16} color="#10B981" />
           </View>
           <Text style={[styles.metricValue, { color: '#10B981' }]} numberOfLines={1}>
-            {formatAmount(lentPending, '+')}
+            {loanMetrics == null && loans.length === 0 ? '--' : formatAmount(lentPending, '+')}
           </Text>
           <Text style={[styles.metricSub, { color: isLight ? '#4B5563' : c.textMuted }]}>
-            {formatAmount(loanMetrics?.totalLent ?? 0)} total lent
+            {loanMetrics == null && loans.length === 0 ? '-- total lent' : `${formatAmount(loanMetrics?.totalLent ?? 0)} total lent`}
           </Text>
         </AnimatedCard>
 
@@ -384,10 +384,10 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
             <Ionicons name="arrow-up-circle" size={16} color="#EF4444" />
           </View>
           <Text style={[styles.metricValue, { color: '#EF4444' }]} numberOfLines={1}>
-            {formatAmount(borrowedPending, '-')}
+            {loanMetrics == null && loans.length === 0 ? '--' : formatAmount(borrowedPending, '-')}
           </Text>
           <Text style={[styles.metricSub, { color: isLight ? '#4B5563' : c.textMuted }]}>
-            {formatAmount(loanMetrics?.totalBorrowed ?? 0)} borrowed
+            {loanMetrics == null && loans.length === 0 ? '-- borrowed' : `${formatAmount(loanMetrics?.totalBorrowed ?? 0)} borrowed`}
           </Text>
         </AnimatedCard>
 
@@ -409,14 +409,14 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
           <Text
             style={[
               styles.metricValue,
-              { color: netPosition >= 0 ? '#10B981' : '#EF4444' },
+              { color: loanMetrics == null && loans.length === 0 ? c.textMuted : netPosition >= 0 ? '#10B981' : '#EF4444' },
             ]}
             numberOfLines={1}
           >
-            {formatAmount(Math.abs(netPosition), netPosition >= 0 ? '+' : '-')}
+            {loanMetrics == null && loans.length === 0 ? '--' : formatAmount(Math.abs(netPosition), netPosition >= 0 ? '+' : '-')}
           </Text>
           <Text style={[styles.metricSub, { color: c.textMuted }]}>
-            {loanMetrics?.pendingCount ?? 0} pending • {loanMetrics?.settledCount ?? 0} settled
+            {loanMetrics == null && loans.length === 0 ? '-- pending • -- settled' : `${loanMetrics?.pendingCount ?? 0} pending • ${loanMetrics?.settledCount ?? 0} settled`}
           </Text>
         </AnimatedCard>
       </View>

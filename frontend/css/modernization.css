@@ -1437,9 +1437,39 @@
     overflow: hidden;
 }
 
+.loans-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 8px 2px;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    max-width: 100%;
+    width: 100%;
+}
+
+.loans-filter-bar::-webkit-scrollbar {
+    display: none !important;
+    width: 0;
+    height: 0;
+}
+
 .loan-tab-btn {
-    padding: 6px 14px;
-    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: max-content;
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
     cursor: var(--cursor-pointer, pointer);
@@ -1447,7 +1477,6 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-    white-space: nowrap;
 }
 
 .loan-tab-btn:hover {

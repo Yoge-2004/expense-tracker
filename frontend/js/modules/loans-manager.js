@@ -128,6 +128,19 @@
             checkAndTriggerDueReminders();
         } catch (err) {
             console.warn("[LoansManager] Failed to fetch loans:", err);
+            renderMetrics();
+            const container = document.getElementById("loansListContainer");
+            if (container && (!loansList || loansList.length === 0)) {
+                container.innerHTML = `
+                    <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                        <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
+                        <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
+                        <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
+                        <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
+                            <span>Retry Connection</span>
+                        </button>
+                    </div>`;
+            }
         } finally {
             isLoading = false;
         }
@@ -217,6 +230,31 @@
     }
 
     function renderMetrics() {
+        const isOffline = document.body.classList.contains("server-offline");
+        const lentEl = document.getElementById("loansTotalLent");
+        const borrowedEl = document.getElementById("loansTotalBorrowed");
+        const netEl = document.getElementById("loansNetBalance");
+        const netStatusEl = document.getElementById("loansNetStatus");
+        const pendingCountEl = document.getElementById("loansPendingCount");
+        const settledCountEl = document.getElementById("loansSettledCount");
+        const lentPendingSubEl = document.getElementById("loansLentPendingCount");
+        const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
+
+        if (isOffline || (!currentMetrics && (!loansList || loansList.length === 0))) {
+            if (lentEl) lentEl.textContent = "--";
+            if (borrowedEl) borrowedEl.textContent = "--";
+            if (netEl) {
+                netEl.textContent = "--";
+                netEl.style.color = "var(--text-muted)";
+            }
+            if (netStatusEl) netStatusEl.textContent = isOffline ? "Offline" : "--";
+            if (pendingCountEl) pendingCountEl.textContent = "--";
+            if (settledCountEl) settledCountEl.textContent = "--";
+            if (lentPendingSubEl) lentPendingSubEl.textContent = "--";
+            if (borrowedPendingSubEl) borrowedPendingSubEl.textContent = "--";
+            return;
+        }
+
         const sym = getCurrencySymbol();
         const m = currentMetrics || {
             totalLent: 0,
@@ -228,15 +266,6 @@
             pendingCount: 0,
             settledCount: 0
         };
-
-        const lentEl = document.getElementById("loansTotalLent");
-        const borrowedEl = document.getElementById("loansTotalBorrowed");
-        const netEl = document.getElementById("loansNetBalance");
-        const netStatusEl = document.getElementById("loansNetStatus");
-        const pendingCountEl = document.getElementById("loansPendingCount");
-        const settledCountEl = document.getElementById("loansSettledCount");
-        const lentPendingSubEl = document.getElementById("loansLentPendingCount");
-        const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
 
         if (lentEl) lentEl.textContent = `${sym}${formatAmount(m.lentPending)}`;
         if (borrowedEl) borrowedEl.textContent = `${sym}${formatAmount(m.borrowedPending)}`;
@@ -479,7 +508,7 @@
         let html = '<option value="">-- None / Standalone Adjustment --</option>';
 
         if (loanCatExpenses.length > 0) {
-            html += '<optgroup label="⭐ Expenses Tagged as 'Loan' Category">';
+            html += '<optgroup label="⭐ Expenses Tagged as \'Loan\' Category">';
             loanCatExpenses.forEach(exp => {
                 const isSel = currentVal && String(exp.id) === String(currentVal) ? 'selected' : '';
                 html += `<option value="${exp.id}" ${isSel}>${exp.expenseDate} · ${escapeHtml(exp.description || 'Loan')} (${sym}${formatAmount(exp.amount)})</option>`;

@@ -2674,6 +2674,15 @@ function renderIncomes(incomes) {
 }
 window.renderIncomes = renderIncomes;
 
+function renderSavingsSkeleton() {
+    const container = document.getElementById("savingsGoalsList");
+    if (!container) return;
+    container.innerHTML = Array.from({ length: 3 }, () =>
+        `<div class="skeleton skeleton-card"></div>`
+    ).join('');
+}
+window.renderSavingsSkeleton = renderSavingsSkeleton;
+
 function renderSavingsGoals(goals) {
     allSavingsGoals = Array.isArray(goals) ? goals : [];
     const container = document.getElementById("savingsGoalsList");

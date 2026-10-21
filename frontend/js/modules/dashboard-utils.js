@@ -52,7 +52,8 @@
         return `${symbol} ${Number(amount || 0).toFixed(2)}`;
     }
 
-    const CATEGORY_PALETTE = [\n        { bg: "rgba(199,154,62,0.12)", color: "#C79A3E" }, // 1. Imperial Gold
+    const CATEGORY_PALETTE = [
+        { bg: "rgba(199,154,62,0.12)", color: "#C79A3E" }, // 1. Imperial Gold
         { bg: "rgba(162,62,50,0.12)", color: "#A23E32" },  // 2. Oxblood Crimson
         { bg: "rgba(76,122,120,0.12)", color: "#4C7A78" }, // 3. Emerald Teal
         { bg: "rgba(91,140,90,0.12)", color: "#5B8C5A" },  // 4. Sage Olive

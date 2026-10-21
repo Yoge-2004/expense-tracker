@@ -1159,3 +1159,34 @@
         content: none;
     }
 }
+
+/* Loans Section Responsive - Scrollable Chip Ribbon on Mobile */
+@media (max-width: 768px) {
+    .loans-filter-bar {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 8px !important;
+        scrollbar-width: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .loans-filter-bar::-webkit-scrollbar {
+        display: none !important;
+    }
+    .loan-tab-btn {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        border-radius: 999px !important;
+    }
+    .loans-metrics-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .loans-metrics-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

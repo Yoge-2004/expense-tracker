@@ -227,6 +227,25 @@
                     if (healthBadge) {
                         healthBadge.textContent = "Offline";
                     }
+                    const lentEl = document.getElementById("loansTotalLent");
+                    if (lentEl) lentEl.textContent = "--";
+                    const borrowedEl = document.getElementById("loansTotalBorrowed");
+                    if (borrowedEl) borrowedEl.textContent = "--";
+                    const netEl = document.getElementById("loansNetBalance");
+                    if (netEl) {
+                        netEl.textContent = "--";
+                        netEl.style.color = "var(--text-muted)";
+                    }
+                    const netStatusEl = document.getElementById("loansNetStatus");
+                    if (netStatusEl) netStatusEl.textContent = "Offline";
+                    const pendingCountEl = document.getElementById("loansPendingCount");
+                    if (pendingCountEl) pendingCountEl.textContent = "--";
+                    const settledCountEl = document.getElementById("loansSettledCount");
+                    if (settledCountEl) settledCountEl.textContent = "--";
+                    const lentPendingSubEl = document.getElementById("loansLentPendingCount");
+                    if (lentPendingSubEl) lentPendingSubEl.textContent = "--";
+                    const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
+                    if (borrowedPendingSubEl) borrowedPendingSubEl.textContent = "--";
                     const streakCountEl = document.getElementById("noSpendStreakCount");
                     if (streakCountEl) streakCountEl.textContent = "--";
                     const streakBadge = document.getElementById("noSpendStreakBadge");

@@ -23,8 +23,20 @@
             setCachedBudgets
         } = deps;
 
+        function renderBudgetSkeleton() {
+            if (!elements.budgetList) return;
+            elements.budgetList.innerHTML = Array.from({ length: 3 }, () =>
+                `<div class="skeleton skeleton-card"></div>`
+            ).join('');
+        }
+        window.renderBudgetSkeleton = renderBudgetSkeleton;
+
         async function loadBudgets() {
             const usageBadge = document.getElementById("budgetUsageBadge");
+            const cached = typeof getCachedBudgets === "function" ? getCachedBudgets() : null;
+            if ((!cached || !cached.length) && elements.budgetList && !elements.budgetList.querySelector('.skeleton')) {
+                renderBudgetSkeleton();
+            }
             try {
                 const budgets = await apiRequest(`/expenses/budget/status/user/${userId}`);
                 const normalizedBudgets = Array.isArray(budgets) ? budgets : [];

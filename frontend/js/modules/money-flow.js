@@ -100,7 +100,8 @@
             .filter((i) => effectiveMonth(i) === month && monthKey(i.incomeDate) !== month)
             .map((i) => ({ amount: num(i.amount), fromMonth: monthKey(i.incomeDate) }));
 
-        return {\n            month,
+        return {
+            month,
             salary,
             otherIncome,
             earned,
