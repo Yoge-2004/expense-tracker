@@ -107,6 +107,9 @@
                 });
 
                 renderDashboardData(expenses, categories);
+                if (window.LoansManager && typeof window.LoansManager.fetchLoans === "function") {
+                    window.LoansManager.fetchLoans();
+                }
 
                 if (incomes === null) {
                     const incomeListEl = document.getElementById("incomeList");
@@ -323,6 +326,22 @@
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
+                    }
+                    if (window.LoansManager && typeof window.LoansManager.renderOfflineState === "function") {
+                        window.LoansManager.renderOfflineState();
+                    } else {
+                        const loansContainer = document.getElementById("loansListContainer");
+                        if (loansContainer) {
+                            loansContainer.innerHTML = `
+                                <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                                    <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
+                                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
+                                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
+                                    <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
+                                        <span>Retry Connection</span>
+                                    </button>
+                                </div>`;
+                        }
                     }
                     if (typeof window.renderChartEmptyStates === "function") {
                         window.renderChartEmptyStates(true);

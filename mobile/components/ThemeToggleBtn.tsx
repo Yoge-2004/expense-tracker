@@ -5,7 +5,7 @@
  */
 
 import React, { useRef } from 'react';
-import { Animated, TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { Animated, TouchableOpacity, StyleSheet, StyleProp, ViewStyle, InteractionManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
@@ -46,7 +46,11 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
     ]).start(() => {
       rotateAnim.setValue(0);
     });
-    toggleTheme();
+    // Run theme transition after touch interactions and button rotation complete
+    // so frame rate remains silky smooth even with hundreds of transaction items
+    InteractionManager.runAfterInteractions(() => {
+      toggleTheme();
+    });
   };
 
   const spin = rotateAnim.interpolate({

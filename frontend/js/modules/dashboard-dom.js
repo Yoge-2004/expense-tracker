@@ -120,6 +120,37 @@
             `<div class="skeleton skeleton-card"></div>`
         ).join('');
     }
+    // Loans metric cards & list skeleton
+    document.querySelectorAll(".loans-metrics-grid .loan-metric-card").forEach(card => {
+        card.classList.add("is-loading");
+    });
+    const lentVal = document.getElementById("loansTotalLent");
+    if (lentVal) lentVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+    const borrowedVal = document.getElementById("loansTotalBorrowed");
+    if (borrowedVal) borrowedVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+    const netVal = document.getElementById("loansNetBalance");
+    if (netVal) netVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+    const pendingCountEl = document.getElementById("loansPendingCount");
+    const settledCountEl = document.getElementById("loansSettledCount");
+    if (pendingCountEl && pendingCountEl.parentElement) {
+        pendingCountEl.parentElement.innerHTML = "<span id=\"loansPendingCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:var(--text-muted);\">open / </span><span id=\"loansSettledCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:#10B981;\">done</span>";
+    }
+    const lentPendingSubEl = document.getElementById("loansLentPendingCount");
+    if (lentPendingSubEl) lentPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+    const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
+    if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+    const netStatusEl = document.getElementById("loansNetStatus");
+    if (netStatusEl) netStatusEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+
+    const loansList = document.getElementById("loansListContainer");
+    if (loansList) {
+        loansList.innerHTML = `
+            <div class="loans-skeleton-loader" style="padding:16px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:10px;">
+                <div class="skeleton" style="width:35%; height:20px; border-radius:6px;"></div>
+                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+            </div>`;
+    }
     // Financial insights skeleton
     const insightsGrid = document.getElementById("insightsCardsGrid");
     if (insightsGrid && !insightsGrid.children.length) {

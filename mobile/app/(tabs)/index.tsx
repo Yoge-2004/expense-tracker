@@ -206,6 +206,29 @@ function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) 
   );
 }
 
+const rowThemeStyles = {
+  dark: StyleSheet.create({
+    trough: { backgroundColor: "rgba(18, 20, 16, 0.95)", borderColor: Colors.dark.border },
+    editAction: { backgroundColor: "#C79A3E" },
+    deleteAction: { backgroundColor: "#991B1B" },
+    card: { backgroundColor: Colors.dark.inputBg, borderColor: Colors.dark.border },
+    descText: { color: Colors.dark.text },
+    mutedText: { color: Colors.dark.textMuted },
+    miniBtn: { backgroundColor: Colors.dark.card },
+    amountText: { color: Colors.dark.text },
+  }),
+  light: StyleSheet.create({
+    trough: { backgroundColor: "#EAEFF5", borderColor: Colors.light.border },
+    editAction: { backgroundColor: "#D4AF37" },
+    deleteAction: { backgroundColor: "#BE123C" },
+    card: { backgroundColor: Colors.light.inputBg, borderColor: Colors.light.border },
+    descText: { color: Colors.light.text },
+    mutedText: { color: Colors.light.textMuted },
+    miniBtn: { backgroundColor: Colors.light.card },
+    amountText: { color: Colors.light.text },
+  }),
+};
+
 const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, isStealth, onPress, onEdit, onDelete }: TransactionRowProps) {
   const isIncome = tx.type === "income";
   const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
@@ -289,20 +312,18 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
   const { bgOpacity, deleteOpacity, deleteScale, editOpacity, editScale } = animatedNodes;
 
   const isLight = colors.bg === '#F8F9FA';
-  const troughBg = isLight ? '#EAEFF5' : 'rgba(18, 20, 16, 0.95)';
-  const editBg = isLight ? '#D4AF37' : '#C79A3E';
+  const tStyles = isLight ? rowThemeStyles.light : rowThemeStyles.dark;
   const editColorHex = isLight ? '#0F172A' : '#10120E';
-  const deleteBg = isLight ? '#BE123C' : '#991B1B';
   const deleteColorHex = '#FFFFFF';
 
   return (
     <View style={styles.swipeRowWrapper}>
-      <Animated.View style={[styles.swipeRowBg, { backgroundColor: troughBg, borderColor: colors.border, opacity: bgOpacity }]}>
-        <Animated.View style={[styles.swipeActionLeft, { backgroundColor: editBg, opacity: editOpacity, transform: [{ scale: editScale }] }]}>
+      <Animated.View style={[styles.swipeRowBg, tStyles.trough, { opacity: bgOpacity }]}>
+        <Animated.View style={[styles.swipeActionLeft, tStyles.editAction, { opacity: editOpacity, transform: [{ scale: editScale }] }]}>
           <Ionicons name="pencil" size={14} color={editColorHex} />
           <Text style={[styles.swipeActionText, { color: editColorHex }]}>Edit</Text>
         </Animated.View>
-        <Animated.View style={[styles.swipeActionRight, { backgroundColor: deleteBg, opacity: deleteOpacity, transform: [{ scale: deleteScale }] }]}>
+        <Animated.View style={[styles.swipeActionRight, tStyles.deleteAction, { opacity: deleteOpacity, transform: [{ scale: deleteScale }] }]}>
           <Text style={[styles.swipeActionText, { color: deleteColorHex }]}>Delete</Text>
           <Ionicons name="trash" size={14} color={deleteColorHex} />
         </Animated.View>
@@ -315,7 +336,7 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
             if (!isSwiping.current) onPress(tx);
           }}
           onLongPress={() => onPress(tx)}
-          style={[styles.txCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+          style={[styles.txCard, tStyles.card]}
         >
           <View style={styles.txLeft}>
             <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
@@ -326,15 +347,15 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
               )}
             </View>
             <View style={styles.txMeta}>
-              <Text style={[styles.txDesc, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[styles.txDesc, tStyles.descText]} numberOfLines={1}>
                 {tx.title}
               </Text>
               <View style={styles.txSubRow}>
                 <Text style={[styles.txCatName, { color: catColor }]}>
                   {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
                 </Text>
-                <Text style={[styles.txDot, { color: colors.textMuted }]}>•</Text>
-                <Text style={[styles.txDate, { color: colors.textMuted }]}>{tx.date}</Text>
+                <Text style={[styles.txDot, tStyles.mutedText]}>•</Text>
+                <Text style={[styles.txDate, tStyles.mutedText]}>{tx.date}</Text>
                 {tx.isRecurring && (
                   <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : colors.primary) + "18" }]}>
                     <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : colors.primary} />
@@ -348,7 +369,7 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
           </View>
 
           <View style={styles.txRight}>
-            <Text style={[styles.txAmount, { color: isIncome ? "#10B981" : colors.text, fontWeight: "800" }]}>
+            <Text style={[styles.txAmount, isIncome ? { color: "#10B981", fontWeight: "800" } : tStyles.amountText, { fontWeight: "800" }]}>
               {isStealth
                 ? `${isIncome ? "+" : "-"}${currSymbol}••••••`
                 : `${isIncome ? "+" : "-"}${currSymbol}${Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
@@ -361,7 +382,7 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
                   onEdit(tx);
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+                style={[styles.txMiniActionBtn, tStyles.miniBtn]}
                 accessibilityLabel="Edit transaction"
               >
                 <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : colors.primary} />
@@ -373,7 +394,7 @@ const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymb
                   onDelete(tx);
                 }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.txMiniActionBtn, { backgroundColor: colors.card }]}
+                style={[styles.txMiniActionBtn, tStyles.miniBtn]}
                 accessibilityLabel="Delete transaction"
               >
                 <Ionicons name="trash-outline" size={12} color={colors.accent} />
@@ -1192,7 +1213,7 @@ export default function DashboardScreen() {
   const ledgerScrollY = useRef(new Animated.Value(0)).current;
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
-  const [ledgerDisplayLimit, setLedgerDisplayLimit] = useState(40);
+  const [ledgerDisplayLimit, setLedgerDisplayLimit] = useState(20);
   const onLedgerScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => ledgerScrollY.setValue(e.nativeEvent.contentOffset.y),
     [ledgerScrollY]
@@ -1216,7 +1237,7 @@ export default function DashboardScreen() {
   // Changing the filters or sort order starts the list from the top again.
   useEffect(() => {
     ledgerScrollRef.current?.scrollTo({ y: 0, animated: false });
-    setLedgerDisplayLimit(40);
+    setLedgerDisplayLimit(20);
   }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
 
   // The search text is typed in SearchField; applying it to the list is a non-urgent update.
@@ -1899,7 +1920,7 @@ export default function DashboardScreen() {
                     {unifiedTransactions.length > ledgerDisplayLimit && (
                       <TouchableOpacity
                         activeOpacity={0.7}
-                        onPress={() => setLedgerDisplayLimit((prev) => prev + 40)}
+                        onPress={() => setLedgerDisplayLimit((prev) => prev + 20)}
                         style={[styles.loadMoreRowBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
                       >
                         <Text style={[styles.loadMoreRowText, { color: c.primary }]}>

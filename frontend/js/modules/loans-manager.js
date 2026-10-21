@@ -89,6 +89,27 @@
     }
 
     function renderSkeleton() {
+        document.querySelectorAll(".loans-metrics-grid .loan-metric-card").forEach(card => {
+            card.classList.add("is-loading");
+        });
+        const lentVal = document.getElementById("loansTotalLent");
+        if (lentVal) lentVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+        const borrowedVal = document.getElementById("loansTotalBorrowed");
+        if (borrowedVal) borrowedVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+        const netVal = document.getElementById("loansNetBalance");
+        if (netVal) netVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
+        const pendingCountEl = document.getElementById("loansPendingCount");
+        const settledCountEl = document.getElementById("loansSettledCount");
+        if (pendingCountEl && pendingCountEl.parentElement) {
+            pendingCountEl.parentElement.innerHTML = "<span id=\"loansPendingCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:var(--text-muted);\">open / </span><span id=\"loansSettledCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:#10B981;\">done</span>";
+        }
+        const lentPendingSubEl = document.getElementById("loansLentPendingCount");
+        if (lentPendingSubEl) lentPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
+        if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+        const netStatusEl = document.getElementById("loansNetStatus");
+        if (netStatusEl) netStatusEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
+
         const container = document.getElementById("loansListContainer");
         if (!container) return;
         container.innerHTML = `
@@ -98,6 +119,44 @@
                 <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
             </div>
         `;
+    }
+
+    function renderOfflineState() {
+        document.querySelectorAll(".loans-metrics-grid .loan-metric-card").forEach(card => {
+            card.classList.remove("is-loading");
+        });
+        const lentEl = document.getElementById("loansTotalLent");
+        if (lentEl) lentEl.textContent = "--";
+        const borrowedEl = document.getElementById("loansTotalBorrowed");
+        if (borrowedEl) borrowedEl.textContent = "--";
+        const netEl = document.getElementById("loansNetBalance");
+        if (netEl) {
+            netEl.textContent = "--";
+            netEl.style.color = "var(--text-muted)";
+        }
+        const netStatusEl = document.getElementById("loansNetStatus");
+        if (netStatusEl) netStatusEl.textContent = "Offline";
+        const pendingCountEl = document.getElementById("loansPendingCount");
+        if (pendingCountEl) pendingCountEl.textContent = "--";
+        const settledCountEl = document.getElementById("loansSettledCount");
+        if (settledCountEl) settledCountEl.textContent = "--";
+        const lentPendingSubEl = document.getElementById("loansLentPendingCount");
+        if (lentPendingSubEl) lentPendingSubEl.textContent = "--";
+        const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
+        if (borrowedPendingSubEl) borrowedPendingSubEl.textContent = "--";
+
+        const container = document.getElementById("loansListContainer");
+        if (container && (!loansList || loansList.length === 0)) {
+            container.innerHTML = `
+                <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
+                    <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
+                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
+                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
+                    <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
+                        <span>Retry Connection</span>
+                    </button>
+                </div>`;
+        }
     }
 
     async function fetchLoans() {
@@ -110,17 +169,17 @@
         isLoading = true;
 
         try {
+            const fetchFn = (typeof window !== "undefined" && typeof window.apiRequest === "function")
+                ? (endpoint) => window.apiRequest(endpoint)
+                : (endpoint) => fetch(`${getApiBase()}${endpoint}`, { headers: getAuthHeaders() }).then(r => r.ok ? r.json() : Promise.reject(r));
+
             const [loansRes, metricsRes] = await Promise.all([
-                fetch(`${getApiBase()}/loans/user/${userId}`, { headers: getAuthHeaders() }),
-                fetch(`${getApiBase()}/loans/metrics/user/${userId}`, { headers: getAuthHeaders() })
+                fetchFn(`/loans/user/${userId}`),
+                fetchFn(`/loans/metrics/user/${userId}`)
             ]);
 
-            if (loansRes.ok) {
-                loansList = await loansRes.json();
-            }
-            if (metricsRes.ok) {
-                currentMetrics = await metricsRes.json();
-            }
+            loansList = Array.isArray(loansRes) ? loansRes : [];
+            currentMetrics = metricsRes || null;
 
             renderMetrics();
             renderLoanCategoryNotice();
@@ -128,19 +187,7 @@
             checkAndTriggerDueReminders();
         } catch (err) {
             console.warn("[LoansManager] Failed to fetch loans:", err);
-            renderMetrics();
-            const container = document.getElementById("loansListContainer");
-            if (container && (!loansList || loansList.length === 0)) {
-                container.innerHTML = `
-                    <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                        <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                        <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                        <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
-                        <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
-                            <span>Retry Connection</span>
-                        </button>
-                    </div>`;
-            }
+            renderOfflineState();
         } finally {
             isLoading = false;
         }
@@ -255,6 +302,7 @@
             return;
         }
 
+        document.querySelectorAll(".loans-metrics-grid .loan-metric-card").forEach(c => c.classList.remove("is-loading"));
         const sym = getCurrencySymbol();
         const m = currentMetrics || {
             totalLent: 0,
@@ -826,6 +874,8 @@
         toggleSettle,
         deleteLoan,
         renderMetrics,
+        renderSkeleton,
+        renderOfflineState,
         renderList,
         populateExpenseDropdown,
         openWithExpense,

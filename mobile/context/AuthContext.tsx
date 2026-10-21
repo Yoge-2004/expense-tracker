@@ -4,7 +4,7 @@
  * global currency preference, UI theme switching (Dark / Light), and Biometrics (Face ID / Fingerprint).
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react';
 import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -359,12 +359,14 @@ export function AuthProvider({
 
   const toggleTheme = useCallback(async (): Promise<void> => {
     userToggledThemeRef.current = true;
-    setTheme((prevTheme) => {
-      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-      persistSavedTheme(nextTheme).catch((e) => {
-        console.warn('[AuthContext] Failed to persist theme preference:', e);
+    startTransition(() => {
+      setTheme((prevTheme) => {
+        const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
+        persistSavedTheme(nextTheme).catch((e) => {
+          console.warn('[AuthContext] Failed to persist theme preference:', e);
+        });
+        return nextTheme;
       });
-      return nextTheme;
     });
   }, []);
 

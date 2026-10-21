@@ -473,39 +473,39 @@
 
             <!-- Dedicated Metric Cards Ribbon -->
             <div class="loans-metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:18px;">
-                <div class="loan-metric-card" style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.22); border-radius:12px; padding:14px;">
+                <div class="loan-metric-card is-loading" style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.22); border-radius:12px; padding:14px;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                         <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#10B981; letter-spacing:0.04em;">Owed to You (Lent)</span>
                         <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(16,185,129,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg></span>
                     </div>
-                    <div class="loan-metric-value stealth-sensitive" id="loansTotalLent" style="font-size:20px; font-weight:800; color:var(--text-main);">--</div>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;"><span id="loansLentPendingCount">--</span> pending receivables</div>
+                    <div class="loan-metric-value stealth-sensitive" id="loansTotalLent" style="font-size:20px; font-weight:800; color:var(--text-main);"><span class="skeleton skeleton-value" style="width:95px; height:24px; display:inline-block; margin-bottom:0;"></span></div>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;"><span id="loansLentPendingCount"><span class="skeleton skeleton-text short" style="width:28px; height:12px; display:inline-block; margin-bottom:0;"></span></span> pending receivables</div>
                 </div>
 
-                <div class="loan-metric-card" style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.22); border-radius:12px; padding:14px;">
+                <div class="loan-metric-card is-loading" style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.22); border-radius:12px; padding:14px;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                         <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#EF4444; letter-spacing:0.04em;">You Owe (Borrowed)</span>
                         <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(239,68,68,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg></span>
                     </div>
-                    <div class="loan-metric-value stealth-sensitive" id="loansTotalBorrowed" style="font-size:20px; font-weight:800; color:var(--text-main);">--</div>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;"><span id="loansBorrowedPendingCount">--</span> pending payables</div>
+                    <div class="loan-metric-value stealth-sensitive" id="loansTotalBorrowed" style="font-size:20px; font-weight:800; color:var(--text-main);"><span class="skeleton skeleton-value" style="width:95px; height:24px; display:inline-block; margin-bottom:0;"></span></div>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;"><span id="loansBorrowedPendingCount"><span class="skeleton skeleton-text short" style="width:28px; height:12px; display:inline-block; margin-bottom:0;"></span></span> pending payables</div>
                 </div>
 
-                <div class="loan-metric-card" style="background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.22); border-radius:12px; padding:14px;">
+                <div class="loan-metric-card is-loading" style="background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.22); border-radius:12px; padding:14px;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                         <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#8B5CF6; letter-spacing:0.04em;">Net Peer Balance</span>
                         <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(139,92,246,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 8l9-5 9 5M6 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0zM18 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0z"/></svg></span>
                     </div>
-                    <div class="loan-metric-value stealth-sensitive" id="loansNetBalance" style="font-size:20px; font-weight:800; color:var(--text-main);">--</div>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;" id="loansNetStatus">--</div>
+                    <div class="loan-metric-value stealth-sensitive" id="loansNetBalance" style="font-size:20px; font-weight:800; color:var(--text-main);"><span class="skeleton skeleton-value" style="width:95px; height:24px; display:inline-block; margin-bottom:0;"></span></div>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;" id="loansNetStatus"><span class="skeleton skeleton-text short" style="width:65px; height:12px; display:inline-block; margin-bottom:0;"></span></div>
                 </div>
 
-                <div class="loan-metric-card" style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.22); border-radius:12px; padding:14px;">
+                <div class="loan-metric-card is-loading" style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.22); border-radius:12px; padding:14px;">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
                         <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#F59E0B; letter-spacing:0.04em;">Settlements</span>
                         <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(245,158,11,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
                     </div>
-                    <div class="loan-metric-value" style="font-size:20px; font-weight:800; color:var(--text-main);"><span id="loansPendingCount">--</span> <span style="font-size:12px; font-weight:600; color:var(--text-muted);">open / </span><span id="loansSettledCount">--</span> <span style="font-size:12px; font-weight:600; color:#10B981;">done</span></div>
+                    <div class="loan-metric-value" style="font-size:20px; font-weight:800; color:var(--text-main);"><span id="loansPendingCount"><span class="skeleton skeleton-value" style="width:36px; height:22px; display:inline-block; margin-bottom:0;"></span></span> <span style="font-size:12px; font-weight:600; color:var(--text-muted);">open / </span><span id="loansSettledCount"><span class="skeleton skeleton-value" style="width:36px; height:22px; display:inline-block; margin-bottom:0;"></span></span> <span style="font-size:12px; font-weight:600; color:#10B981;">done</span></div>
                     <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">1-click settlement ledger</div>
                 </div>
             </div>
