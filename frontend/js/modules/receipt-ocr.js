@@ -322,6 +322,8 @@
         const dropZone = document.getElementById("receiptDropZone");
         const fileInput = document.getElementById("receiptFileInput");
         const triggerBtn = document.getElementById("triggerReceiptScanBtn");
+        const cameraInput = document.getElementById("receiptCameraInput");
+        const cameraBtn = document.getElementById("triggerReceiptCameraBtn");
         const progressBox = document.getElementById("receiptOcrProgress");
         const stageEl = document.getElementById("receiptOcrStage");
         const pctEl = document.getElementById("receiptOcrPct");
@@ -466,6 +468,21 @@
         triggerBtn?.addEventListener("click", (e) => {
             e.stopPropagation();
             fileInput.click();
+        });
+
+        cameraBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (cameraInput) {
+                cameraInput.click();
+            } else {
+                fileInput.click();
+            }
+        });
+
+        cameraInput?.addEventListener("change", (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (file) handleFile(file);
+            cameraInput.value = "";
         });
 
         dropZone.addEventListener("click", () => {

@@ -762,17 +762,24 @@
                                 <input type="hidden" id="expenseId">
                 <!-- Receipt OCR Scanner Widget -->
                 <div class="receipt-ocr-widget" id="receiptOcrWidget">
-                    <input type="file" id="receiptFileInput" accept="image/*" capture="environment" style="display:none;">
+                    <input type="file" id="receiptFileInput" accept="image/*" style="display:none;">
+                    <input type="file" id="receiptCameraInput" accept="image/*" capture="environment" style="display:none;">
                     <div class="receipt-ocr-dropzone" id="receiptDropZone" title="Click or drop a receipt image to auto-fill details">
                         <div class="receipt-ocr-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
                         <div class="receipt-ocr-text">
                             <span class="receipt-ocr-title">Scan Receipt / Bill (Tesseract OCR)</span>
-                            <span class="receipt-ocr-sub">Drop receipt or photo to auto-extract amount & merchant</span>
+                            <span class="receipt-ocr-sub">Browse image file, gallery photo, or capture live camera</span>
                         </div>
-                        <button type="button" class="btn-scan-receipt" id="triggerReceiptScanBtn">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                            Scan
-                        </button>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button type="button" class="btn-scan-receipt" id="triggerReceiptScanBtn" title="Browse image files or photo gallery">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Browse
+                            </button>
+                            <button type="button" class="btn-scan-receipt" id="triggerReceiptCameraBtn" title="Snap live picture using device camera" style="background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.3); color:var(--text-main);">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                Camera
+                            </button>
+                        </div>
                     </div>
                     <div class="receipt-ocr-progress" id="receiptOcrProgress" style="display:none;">
                         <div class="receipt-ocr-progress-header">

@@ -182,6 +182,9 @@ public class UserController {
         userSecurity.validateUserAccess(userId);
 
         userService.updateName(userId, request.name());
+        if (request.profilePictureUrl() != null && !request.profilePictureUrl().isBlank()) {
+            userService.updateProfilePicture(userId, request.profilePictureUrl().trim());
+        }
         User updated = userService.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

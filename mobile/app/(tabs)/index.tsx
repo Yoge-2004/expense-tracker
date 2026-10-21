@@ -459,7 +459,7 @@ const SearchField = React.memo(function SearchField({ onSearch, colors }: { onSe
 });
 
 export default function DashboardScreen() {
-  const { userId, userName, theme, toggleTheme, currency, profilePicture, isStealthMode, toggleStealthMode } = useAuth();
+  const { userId, userName, theme, toggleTheme, currency, profilePicture, isStealthMode, toggleStealthMode, refreshUserProfile } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
 
@@ -467,10 +467,11 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!userId) return;
+      refreshUserProfile?.().catch(() => {});
       apiRequest(`/notifications/user/${userId}?limit=1`)
         .then((inbox) => setUnreadNotifications(inbox?.unreadCount || 0))
         .catch(() => {});
-    }, [userId])
+    }, [userId, refreshUserProfile])
   );
   const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
@@ -692,7 +693,10 @@ export default function DashboardScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    fetchData(true);
+    Promise.all([
+      fetchData(true),
+      refreshUserProfile?.().catch(() => {}),
+    ]);
   };
 
   const toggleFilterPanel = () => {

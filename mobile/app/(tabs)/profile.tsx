@@ -2,7 +2,7 @@
  * @file profile.tsx
  * @description Settings, preferences, and account management screen.
  * Handles:
- * - Nickname customization.
+ * - Nickname and profile avatar customization.
  * - Global ledger currency selection (65+ world currencies).
  * - Theme switching (light / dark).
  * - Custom category manager modal.
@@ -48,11 +48,37 @@ import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { checkForAppUpdate, AppReleaseInfo, DISPLAY_VERSION } from '../../services/appUpdate';
-import { enableSmartReminders, disableSmartReminders, getSmartRemindersEnabled, getTransactionAlertsEnabled, setTransactionAlertsEnabled, getInstantDebitAlertsEnabled, setInstantDebitAlertsEnabled } from '../../services/notifications';
-import { scheduleDailyExpenseReminders, cancelDailyExpenseReminders, getDailyRemindersEnabled, processIncomingMessageForDebitNotification, detectAndAddExpenseFromMessage } from '../../services/notifications';
+import {
+  enableSmartReminders,
+  disableSmartReminders,
+  getSmartRemindersEnabled,
+  getTransactionAlertsEnabled,
+  setTransactionAlertsEnabled,
+  getInstantDebitAlertsEnabled,
+  setInstantDebitAlertsEnabled,
+  scheduleDailyExpenseReminders,
+  cancelDailyExpenseReminders,
+  getDailyRemindersEnabled,
+  processIncomingMessageForDebitNotification,
+  detectAndAddExpenseFromMessage,
+} from '../../services/notifications';
 
 export default function ProfileScreen() {
-  const { userId, userName, theme, toggleTheme, currency, updateCurrency, logout, updateUserName, isBiometricsAvailable, isBiometricEnabled, toggleBiometrics, profilePicture } = useAuth();
+  const {
+    userId,
+    userName,
+    theme,
+    toggleTheme,
+    currency,
+    updateCurrency,
+    logout,
+    updateUserName,
+    isBiometricsAvailable,
+    isBiometricEnabled,
+    toggleBiometrics,
+    profilePicture,
+    updateUserProfile,
+  } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
   const isLight = theme === 'light';
@@ -71,6 +97,11 @@ export default function ProfileScreen() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
+
+  // Profile Avatar Modal State
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [avatarUrlInput, setAvatarUrlInput] = useState(profilePicture || '');
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
   const [updateInfo, setUpdateInfo] = useState<AppReleaseInfo | null>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
@@ -152,7 +183,9 @@ export default function ProfileScreen() {
     setTransactionAlertsOn(next);
     showAlert(
       next ? 'Confirmations On' : 'Confirmations Off',
-      next ? 'You will get a notification each time you record a debit or a credit.' : 'You will no longer get a notification when you record a transaction.',
+      next
+        ? 'You will get a notification each time you record a debit or a credit.'
+        : 'You will no longer get a notification when you record a transaction.',
       undefined,
       next ? 'success' : 'info'
     );
@@ -163,18 +196,32 @@ export default function ProfileScreen() {
     if (smartRemindersEnabled) {
       await disableSmartReminders();
       setSmartRemindersEnabled(false);
-      showAlert('Reminders Paused', 'Bill, salary, weekly and monthly reminders have been turned off.', undefined, 'info');
+      showAlert(
+        'Reminders Paused',
+        'Bill, salary, weekly and monthly reminders have been turned off.',
+        undefined,
+        'info'
+      );
     } else {
       const success = await enableSmartReminders();
       if (success) {
         setSmartRemindersEnabled(true);
-        showAlert('Reminders Active ⏰', 'You will get a morning plan, bill and salary reminders, a Sunday-evening review, and month-start and month-end check-ins.', undefined, 'success');
+        showAlert(
+          'Reminders Active ⏰',
+          'You will get a morning plan, bill and salary reminders, a Sunday-evening review, and month-start and month-end check-ins.',
+          undefined,
+          'success'
+        );
       } else {
-        showAlert('Permission Needed', 'Please allow notification permissions in your device settings to receive reminders.', undefined, 'warning');
+        showAlert(
+          'Permission Needed',
+          'Please allow notification permissions in your device settings to receive reminders.',
+          undefined,
+          'warning'
+        );
       }
     }
   };
-
 
   const [instantDebitEnabled, setInstantDebitEnabled] = useState(true);
 
@@ -184,41 +231,42 @@ export default function ProfileScreen() {
     await setInstantDebitAlertsEnabled(next);
     setInstantDebitEnabled(next);
     showAlert(
-      next ? "Debit Detection Active ⚡" : "Debit Detection Paused",
+      next ? 'Debit Detection Active ⚡' : 'Debit Detection Paused',
       next
-        ? "Bank debit SMS and transaction notifications will be automatically detected and added to your ledger."
-        : "Automatic expense creation from debit alerts is paused.",
+        ? 'Bank debit SMS and transaction notifications will be automatically detected and added to your ledger.'
+        : 'Automatic expense creation from debit alerts is paused.',
       undefined,
-      next ? "success" : "info"
+      next ? 'success' : 'info'
     );
   };
 
   const handleSimulateDebit = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    const sampleSms = "Alert: Your A/c ending 4589 debited by INR 350.00 on 24-Sep-26 at Starbucks Coffee ref txn882910.";
+    const sampleSms =
+      'Alert: Your A/c ending 4589 debited by INR 350.00 on 24-Sep-26 at Starbucks Coffee ref txn882910.';
     const result = await detectAndAddExpenseFromMessage(sampleSms, userId);
     if (result) {
       if (result.duplicate) {
         showAlert(
-          "Duplicate Suppressed 🛡️",
+          'Duplicate Suppressed 🛡️',
           `This debit (${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}) was already recorded recently and was suppressed to prevent duplicates.`,
           undefined,
-          "info"
+          'info'
         );
       } else {
         showAlert(
-          "Instant Debit Triggered 💸",
+          'Instant Debit Triggered 💸',
           `Parsed & added expense to ledger: ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}.`,
           undefined,
-          "success"
+          'success'
         );
       }
     } else {
       showAlert(
-        "Simulation Result",
-        "Debit detection is currently disabled in your preferences, or message could not be parsed.",
+        'Simulation Result',
+        'Debit detection is currently disabled in your preferences, or message could not be parsed.',
         undefined,
-        "info"
+        'info'
       );
     }
   };
@@ -228,14 +276,29 @@ export default function ProfileScreen() {
     if (remindersEnabled) {
       await cancelDailyExpenseReminders();
       setRemindersEnabled(false);
-      showAlert('Reminders Paused', 'Daily 2x expense notifications have been turned off.', undefined, 'info');
+      showAlert(
+        'Reminders Paused',
+        'Daily 2x expense notifications have been turned off.',
+        undefined,
+        'info'
+      );
     } else {
       const success = await scheduleDailyExpenseReminders();
       if (success) {
         setRemindersEnabled(true);
-        showAlert('Reminders Active ⏰', 'You will receive reminders twice daily at 1:30 PM (lunch) and 8:30 PM (evening wrap-up) to log your expenses.', undefined, 'success');
+        showAlert(
+          'Reminders Active ⏰',
+          'You will receive reminders twice daily at 1:30 PM (lunch) and 8:30 PM (evening wrap-up) to log your expenses.',
+          undefined,
+          'success'
+        );
       } else {
-        showAlert('Permission Needed', 'Please allow notification permissions in your device settings to receive expense reminders.', undefined, 'warning');
+        showAlert(
+          'Permission Needed',
+          'Please allow notification permissions in your device settings to receive expense reminders.',
+          undefined,
+          'warning'
+        );
       }
     }
   };
@@ -259,14 +322,14 @@ export default function ProfileScreen() {
         if (u && u.hasSecurityPin) setHasSecurityPin(true);
         if (u && u.email) {
           setAccountEmail(u.email);
-          savedPinEmail().then((saved) => setFingerprintResetEnabled(!!saved && saved === String(u.email).trim().toLowerCase()));
+          savedPinEmail().then((saved) =>
+            setFingerprintResetEnabled(!!saved && saved === String(u.email).trim().toLowerCase())
+          );
         }
       })
       .catch(() => {});
   }, [userId]);
 
-  // Dismissing the dialog cancels a pending "store behind the fingerprint" request, so it can never
-  // apply to some later, unrelated PIN change.
   const closePinModal = () => {
     setShowPinModal(false);
     setEnableFingerprintOnSave(false);
@@ -294,7 +357,6 @@ export default function ProfileScreen() {
       setConfirmPin('');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
-      // Keep the fingerprint copy in step with the PIN, or create it when the switch asked for it.
       let fingerprintNote = '';
       if ((fingerprintResetEnabled || enableFingerprintOnSave) && accountEmail) {
         const stored = await savePinForFingerprint(accountEmail, savedPin);
@@ -304,12 +366,80 @@ export default function ProfileScreen() {
           : ' Your fingerprint could not be linked on this device.';
       }
       setEnableFingerprintOnSave(false);
-      showAlert('Security PIN Saved 🔒', `Your 6-digit recovery PIN has been configured successfully.${fingerprintNote}`, undefined, 'success');
+      showAlert(
+        'Security PIN Saved 🔒',
+        `Your 6-digit recovery PIN has been configured successfully.${fingerprintNote}`,
+        undefined,
+        'success'
+      );
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not save Security PIN.';
       showAlert('Save Failed', msg, undefined, 'error');
     } finally {
       setIsSavingPin(false);
+    }
+  };
+
+  // Avatar Management
+  const handleOpenAvatarModal = () => {
+    setAvatarUrlInput(profilePicture || '');
+    setShowAvatarModal(true);
+  };
+
+  const handleSaveAvatar = async () => {
+    const cleanUrl = avatarUrlInput.trim();
+    if (cleanUrl && !cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      showAlert(
+        'Invalid URL',
+        'Please enter a valid web image URL (starting with https:// or http://).',
+        undefined,
+        'warning'
+      );
+      return;
+    }
+    if (cleanUrl.length > 512) {
+      showAlert('URL Too Long', 'Profile image URL cannot exceed 512 characters.', undefined, 'warning');
+      return;
+    }
+    setIsSavingAvatar(true);
+    try {
+      await updateUserProfile({ profilePictureUrl: cleanUrl });
+      setShowAvatarModal(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert(
+        'Profile Picture Updated',
+        cleanUrl
+          ? 'Your new profile picture has been synced and applied.'
+          : 'Profile picture has been reset to default monogram.',
+        undefined,
+        'success'
+      );
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : 'Could not save profile picture.';
+      showAlert('Update Failed', msg, undefined, 'error');
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
+  const handleClearAvatar = async () => {
+    setIsSavingAvatar(true);
+    try {
+      await updateUserProfile({ profilePictureUrl: '' });
+      setAvatarUrlInput('');
+      setShowAvatarModal(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert(
+        'Avatar Removed',
+        'Your profile picture has been reset to the default monogram.',
+        undefined,
+        'info'
+      );
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : 'Could not reset avatar.';
+      showAlert('Reset Failed', msg, undefined, 'error');
+    } finally {
+      setIsSavingAvatar(false);
     }
   };
 
@@ -388,54 +518,74 @@ export default function ProfileScreen() {
           styles.scrollContent,
           {
             paddingTop: Math.max(insets.top + 10, 48),
-            maxWidth: 900,
-            width: '100%',
-            alignSelf: 'center',
-            paddingHorizontal: isDesktopOrTV ? 36 : (isLargeScreen ? 24 : 16),
+            maxWidth: isDesktopOrTV ? 960 : isLargeScreen ? 720 : undefined,
+            alignSelf: isLargeScreen ? 'center' : undefined,
+            width: isLargeScreen ? '100%' : undefined,
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Offline Banner */}
         {isOffline && (
           <OfflineBanner
-            message="Server offline · Operating with local secure cache"
-            retrying={retryingProfile}
             onRetry={handleRetryProfile}
+            retrying={retryingProfile}
+            style={{ marginBottom: 16 }}
           />
         )}
 
         {/* Header */}
-        <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }]}>
-          <View style={{ flex: 1, paddingRight: 12 }}>
-            <Text style={[styles.pageTitle, { color: c.text }]}>Settings & Account</Text>
-            <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>Personalize preferences, themes, and global currency</Text>
-          </View>
-          <ThemeToggleBtn />
+        <View style={styles.header}>
+          <Text style={[styles.pageTitle, { color: c.text }]}>Settings & Profile</Text>
+          <Text style={[styles.pageSubtitle, { color: c.textMuted }]}>
+            Preferences, categories, currency, and security
+          </Text>
         </View>
 
-        {/* User Card (Without User ID) */}
+        {/* User Card */}
         <StaggeredView delay={100} direction="up">
           <View style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <View style={styles.userCardTop}>
-              <View style={[styles.bigAvatar, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleOpenAvatarModal}
+                style={[styles.bigAvatar, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}
+              >
                 {profilePicture ? (
                   <Image source={{ uri: profilePicture }} style={styles.bigAvatarImg} />
                 ) : (
                   <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
                 )}
-              </View>
+                <View style={[styles.avatarEditBadge, { backgroundColor: c.card, borderColor: c.border }]}>
+                  <Ionicons name="camera" size={11} color={c.primary} />
+                </View>
+              </TouchableOpacity>
               <View style={styles.userMeta}>
                 {isEditing ? (
                   <View style={styles.editRow}>
-                    <TextInput style={[styles.editInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]} value={nickname} onChangeText={setNickname} maxLength={50} autoFocus />
-                    <TouchableOpacity onPress={handleSaveNickname} style={[styles.saveNickBtn, { backgroundColor: c.primary }]}>
+                    <TextInput
+                      style={[
+                        styles.editInput,
+                        { backgroundColor: c.inputBg, borderColor: c.border, color: c.text },
+                      ]}
+                      value={nickname}
+                      onChangeText={setNickname}
+                      maxLength={50}
+                      autoFocus
+                    />
+                    <TouchableOpacity
+                      onPress={handleSaveNickname}
+                      style={[styles.saveNickBtn, { backgroundColor: c.primary }]}
+                    >
                       <Ionicons name="checkmark" size={16} color={isLight ? '#FFF' : '#10120E'} />
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.nameRow}>
                     <Text style={[styles.userNameText, { color: c.text }]}>{userName || 'User'}</Text>
-                    <TouchableOpacity onPress={() => setIsEditing(true)}><Ionicons name="pencil" size={16} color={c.textMuted} /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => setIsEditing(true)}>
+                      <Ionicons name="pencil" size={16} color={c.textMuted} />
+                    </TouchableOpacity>
                   </View>
                 )}
                 <Text style={[styles.memberBadgeText, { color: c.primary }]}>Active Account</Text>
@@ -448,74 +598,194 @@ export default function ProfileScreen() {
         <StaggeredView delay={150} direction="up">
           <Text style={[styles.sectionTitle, { color: c.textMuted }]}>PREFERENCES</Text>
           <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); toggleTheme(); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                toggleTheme();
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
               <View style={styles.menuRowLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name={isLight ? 'sunny' : 'moon'} size={18} color={c.primary} /></View>
-                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Appearance Theme</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>Currently: {isLight ? 'Light Elegance' : 'Dark Obsidian'}</Text></View>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name={isLight ? 'sunny' : 'moon'} size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Appearance Theme</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Currently: {isLight ? 'Light Elegance' : 'Dark Obsidian'}
+                  </Text>
+                </View>
+              </View>
+              <ThemeToggleBtn size={20} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowCurrencyModal(true);
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.teal + '18' }]}>
+                  <Text style={[styles.menuCurrencySymbol, { color: c.teal }]}>
+                    {currItem?.symbol || '₹'}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Primary Currency</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    {currItem ? `${currItem.code} (${currItem.name})` : currency}
+                  </Text>
+                </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setShowCurrencyModal(true)} style={[styles.menuRow, { borderBottomColor: c.border }]}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowCategoryModal(true);
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
               <View style={styles.menuRowLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: c.teal + '18' }]}><Text style={[styles.menuCurrencySymbol, { color: c.teal }]}>{currItem?.symbol || '$'}</Text></View>
-                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Ledger Currency</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{currItem?.flag} {currItem?.name || 'Indian Rupee'} ({currItem?.code || 'INR'})</Text></View>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="pricetags-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Manage Categories</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Create, rename, or color custom categories
+                  </Text>
+                </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleReminders} style={[styles.menuRow, { borderBottomColor: c.border }]}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowReportModal(true);
+              }}
+              style={styles.menuRow}
+            >
               <View style={styles.menuRowLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="notifications-outline" size={18} color={c.primary} /></View>
-                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Daily Reminders (2x Daily)</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{remindersEnabled ? 'Enabled: 1:30 PM & 8:30 PM check-ins' : 'Disabled'}</Text></View>
-              </View>
-              <Ionicons name={remindersEnabled ? 'checkbox' : 'square-outline'} size={22} color={remindersEnabled ? c.primary : c.textMuted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleSmartReminders} style={[styles.menuRow, { borderBottomColor: c.border }]}>
-              <View style={styles.menuRowLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="calendar-outline" size={18} color={c.primary} /></View>
-                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Bills, Salary & Reviews</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{smartRemindersEnabled ? 'Morning plan, due dates, weekly & monthly check-ins' : 'Paused'}</Text></View>
-              </View>
-              <Ionicons name={smartRemindersEnabled ? 'checkbox' : 'square-outline'} size={22} color={smartRemindersEnabled ? c.primary : c.textMuted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleTransactionAlerts} style={[styles.menuRow, { borderBottomColor: c.border }]}>
-              <View style={styles.menuRowLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="receipt-outline" size={18} color={c.primary} /></View>
-                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Transaction Confirmations</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{transactionAlertsEnabled ? 'Notify me for every debit and credit I record' : 'Off'}</Text></View>
-              </View>
-              <Ionicons name={transactionAlertsEnabled ? 'checkbox' : 'square-outline'} size={22} color={transactionAlertsEnabled ? c.primary : c.textMuted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity activeOpacity={0.8} onPress={handleToggleInstantDebit} style={[styles.menuRow, { borderBottomColor: c.border }]}>
-              <View style={styles.menuRowLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}><Ionicons name="flash-outline" size={18} color={c.accent} /></View>
-                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Real-time Debit Alerts</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{instantDebitEnabled ? 'Active: Instant push then & there on debit' : 'Disabled'}</Text></View>
-              </View>
-              <Ionicons name={instantDebitEnabled ? 'checkbox' : 'square-outline'} size={22} color={instantDebitEnabled ? c.accent : c.textMuted} />
-            </TouchableOpacity>
-
-            <TouchableOpacity activeOpacity={0.8} onPress={handleSimulateDebit} style={styles.menuRow}>
-              <View style={styles.menuRowLeft}>
-                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="paper-plane-outline" size={18} color={c.primary} /></View>
-                <View><Text style={[styles.menuRowTitle, { color: c.text }]}>Test Instant Debit Alert</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>Simulate receiving a bank debit notification</Text></View>
+                <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
+                  <Ionicons name="document-text-outline" size={18} color={c.accent} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Monthly Financial Report</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Generate, share, and email executive statements
+                  </Text>
+                </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
           </View>
         </StaggeredView>
 
-        {/* Management Section */}
+        {/* Notifications & Reminders */}
         <StaggeredView delay={200} direction="up">
-          <Text style={[styles.sectionTitle, { color: c.textMuted }]}>MANAGEMENT</Text>
+          <Text style={[styles.sectionTitle, { color: c.textMuted }]}>NOTIFICATIONS & AUTOMATION</Text>
           <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setShowCategoryModal(true)} style={[styles.menuRow, { borderBottomColor: c.border }]}>
-              <View style={styles.menuRowLeft}><View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="pricetags-outline" size={18} color={c.primary} /></View><View><Text style={[styles.menuRowTitle, { color: c.text }]}>Manage Categories</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>Create and delete custom categories</Text></View></View>
-              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-            </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); setShowReportModal(true); }} style={styles.menuRow}>
-              <View style={styles.menuRowLeft}><View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}><Ionicons name="document-text-outline" size={18} color={c.accent} /></View><View><Text style={[styles.menuRowTitle, { color: c.text }]}>Financial Summary Reports</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>Select month/year, view HTML statement, or send email</Text></View></View>
+            <View style={[styles.menuRow, { borderBottomColor: c.border }]}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="notifications-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Daily Reminders</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Twice-daily check-ins (1:30 PM & 8:30 PM)
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={remindersEnabled}
+                onValueChange={handleToggleReminders}
+                trackColor={{ false: c.border, true: c.primary }}
+              />
+            </View>
+
+            <View style={[styles.menuRow, { borderBottomColor: c.border }]}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.teal + '18' }]}>
+                  <Ionicons name="sparkles-outline" size={18} color={c.teal} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Smart Insights & Schedule</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Morning plan, bills, weekend & monthly reviews
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={smartRemindersEnabled}
+                onValueChange={handleToggleSmartReminders}
+                trackColor={{ false: c.border, true: c.primary }}
+              />
+            </View>
+
+            <View style={[styles.menuRow, { borderBottomColor: c.border }]}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="checkmark-done-circle-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Transaction Confirmations</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    In-app notification upon recording debits or credits
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={transactionAlertsEnabled}
+                onValueChange={handleToggleTransactionAlerts}
+                trackColor={{ false: c.border, true: c.primary }}
+              />
+            </View>
+
+            <View style={[styles.menuRow, { borderBottomColor: c.border }]}>
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
+                  <Ionicons name="flash-outline" size={18} color={c.accent} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Instant Bank Debit Detection</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Auto-capture expenses from SMS alerts
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={instantDebitEnabled}
+                onValueChange={handleToggleInstantDebit}
+                trackColor={{ false: c.border, true: c.primary }}
+              />
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleSimulateDebit}
+              style={styles.menuRow}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
+                  <Ionicons name="play-outline" size={18} color={c.accent} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Test Debit Simulation</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Simulate receiving a bank debit SMS
+                  </Text>
+                </View>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
           </View>
@@ -539,7 +809,9 @@ export default function ProfileScreen() {
                 </View>
                 <View>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>User Guide & Help</Text>
-                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>How to use features, logging, and shortcuts</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    How to use features, logging, and shortcuts
+                  </Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -560,8 +832,8 @@ export default function ProfileScreen() {
                     {checkingUpdate
                       ? 'Checking GitHub releases...'
                       : updateInfo?.hasUpdate
-                      ? ('New release available (' + updateInfo.latestVersion + ')')
-                      : ('Version ' + DISPLAY_VERSION + ' • Latest')}
+                      ? 'New release available (' + updateInfo.latestVersion + ')'
+                      : 'Version ' + DISPLAY_VERSION + ' • Latest'}
                   </Text>
                 </View>
               </View>
@@ -590,7 +862,9 @@ export default function ProfileScreen() {
                 </View>
                 <View>
                   <Text style={[styles.menuRowTitle, { color: c.text }]}>About ExpenseTracker</Text>
-                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>Executive Edition • {DISPLAY_VERSION}</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Executive Edition • {DISPLAY_VERSION}
+                  </Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -603,19 +877,53 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: c.textMuted }]}>ACCOUNT</Text>
           <View style={[styles.menuBlock, { backgroundColor: c.card, borderColor: c.border }]}>
             {isBiometricsAvailable && (
-              <View style={[styles.menuRow, { borderBottomColor: c.border, justifyContent: 'space-between' }]}>
-                <View style={styles.menuRowLeft}><View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="finger-print-outline" size={18} color={c.primary} /></View><View><Text style={[styles.menuRowTitle, { color: c.text }]}>Biometric Unlock</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{isBiometricEnabled ? 'Enabled (Face ID / Fingerprint active)' : 'Disabled (Tap to enable)'}</Text></View></View>
-                <Switch value={isBiometricEnabled} onValueChange={async (val) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); const ok = await toggleBiometrics(val); if (!ok) showAlert('Biometrics', 'Biometric authentication failed or was cancelled.'); }} trackColor={{ false: c.border, true: c.primary }} />
+              <View
+                style={[
+                  styles.menuRow,
+                  { borderBottomColor: c.border, justifyContent: 'space-between' },
+                ]}
+              >
+                <View style={styles.menuRowLeft}>
+                  <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                    <Ionicons name="finger-print-outline" size={18} color={c.primary} />
+                  </View>
+                  <View>
+                    <Text style={[styles.menuRowTitle, { color: c.text }]}>Biometric Unlock</Text>
+                    <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                      {isBiometricEnabled
+                        ? 'Enabled (Face ID / Fingerprint active)'
+                        : 'Disabled (Tap to enable)'}
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={isBiometricEnabled}
+                  onValueChange={async (val) => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                    const ok = await toggleBiometrics(val);
+                    if (!ok) showAlert('Biometrics', 'Biometric authentication failed or was cancelled.');
+                  }}
+                  trackColor={{ false: c.border, true: c.primary }}
+                />
               </View>
             )}
 
             {isBiometricsAvailable && hasSecurityPin && (
-              <View style={[styles.menuRow, { borderBottomColor: c.border, justifyContent: 'space-between' }]}>
+              <View
+                style={[
+                  styles.menuRow,
+                  { borderBottomColor: c.border, justifyContent: 'space-between' },
+                ]}
+              >
                 <View style={styles.menuRowLeft}>
-                  <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="finger-print-outline" size={18} color={c.primary} /></View>
+                  <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                    <Ionicons name="finger-print-outline" size={18} color={c.primary} />
+                  </View>
                   <View>
                     <Text style={[styles.menuRowTitle, { color: c.text }]}>Fingerprint password reset</Text>
-                    <Text style={[styles.menuRowSub, { color: c.textMuted }]}>Fill in your PIN with your fingerprint</Text>
+                    <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                      Fill in your PIN with your fingerprint
+                    </Text>
                   </View>
                 </View>
                 <Switch
@@ -623,7 +931,6 @@ export default function ProfileScreen() {
                   onValueChange={async (on) => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
                     if (on) {
-                      // The PIN is never readable from the server, so ask for it again to store it behind the fingerprint.
                       setEnableFingerprintOnSave(true);
                       setShowPinModal(true);
                     } else {
@@ -636,18 +943,70 @@ export default function ProfileScreen() {
               </View>
             )}
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); setShowPinModal(true); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>
-              <View style={styles.menuRowLeft}><View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}><Ionicons name="shield-checkmark-outline" size={18} color={c.primary} /></View><View><Text style={[styles.menuRowTitle, { color: c.text }]}>6-Digit Security PIN</Text><Text style={[styles.menuRowSub, { color: c.textMuted }]}>{hasSecurityPin ? 'Active (Zero-email recovery enabled)' : 'Not configured (Tap to setup)'}</Text></View></View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowPinModal(true);
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="shield-checkmark-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>6-Digit Security PIN</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    {hasSecurityPin
+                      ? 'Active (Zero-email recovery enabled)'
+                      : 'Not configured (Tap to setup)'}
+                  </Text>
+                </View>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => { showAlert('Sign Out', 'Are you sure you want to sign out of your account?', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign Out', style: 'default', onPress: () => logout() }], 'info'); }} style={[styles.menuRow, { borderBottomColor: c.border }]}>
-              <View style={styles.menuRowLeft}><View style={[styles.menuIconBox, { backgroundColor: c.textMuted + '18' }]}><Ionicons name="log-out-outline" size={18} color={c.textMuted} /></View><Text style={[styles.menuRowTitle, { color: c.text }]}>Sign Out</Text></View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                showAlert(
+                  'Sign Out',
+                  'Are you sure you want to sign out of your account?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Sign Out', style: 'default', onPress: () => logout() },
+                  ],
+                  'info'
+                );
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.textMuted + '18' }]}>
+                  <Ionicons name="log-out-outline" size={18} color={c.textMuted} />
+                </View>
+                <Text style={[styles.menuRowTitle, { color: c.text }]}>Sign Out</Text>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => { setDeleteConfirmText(''); setShowDeleteModal(true); }} style={styles.menuRow}>
-              <View style={styles.menuRowLeft}><View style={[styles.menuIconBox, { backgroundColor: c.accent + '20' }]}><Ionicons name="trash-outline" size={18} color={c.accent} /></View><Text style={[styles.menuRowTitle, { color: c.accent, fontWeight: '700' }]}>Delete Account Permanently</Text></View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                setDeleteConfirmText('');
+                setShowDeleteModal(true);
+              }}
+              style={styles.menuRow}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.accent + '20' }]}>
+                  <Ionicons name="trash-outline" size={18} color={c.accent} />
+                </View>
+                <Text style={[styles.menuRowTitle, { color: c.accent, fontWeight: '700' }]}>
+                  Delete Account Permanently
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
         </StaggeredView>
@@ -655,17 +1014,159 @@ export default function ProfileScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
+      {/* Profile Picture Customization Modal */}
+      <Modal
+        visible={showAvatarModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowAvatarModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ width: '100%', maxWidth: 420 }}
+          >
+            <View style={[styles.pinModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.pinHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="image-outline" size={20} color={c.primary} />
+                  <Text style={[styles.pinModalTitle, { color: c.text }]}>Profile Picture</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowAvatarModal(false)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }]}
+                >
+                  <Ionicons name="close" size={18} color={c.text} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.pinModalDesc, { color: c.textMuted }]}>
+                Set your public profile avatar URL (e.g. Google, Gravatar, Cloudinary). It syncs across both mobile and web automatically.
+              </Text>
+
+              {/* Preview */}
+              <View style={{ alignItems: 'center', marginVertical: 12 }}>
+                <View
+                  style={[
+                    styles.bigAvatar,
+                    {
+                      width: 72,
+                      height: 72,
+                      borderRadius: 36,
+                      backgroundColor: c.primary,
+                      borderColor: c.primary + '60',
+                    },
+                  ]}
+                >
+                  {avatarUrlInput.trim() ? (
+                    <Image
+                      source={{ uri: avatarUrlInput.trim() }}
+                      style={[styles.bigAvatarImg, { borderRadius: 36 }]}
+                    />
+                  ) : (
+                    <Text style={[styles.avatarLetter, { fontSize: 28 }]}>
+                      {(userName || 'U').charAt(0).toUpperCase()}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.pinFieldWrap}>
+                <Text style={[styles.pinFieldLabel, { color: c.textMuted }]}>IMAGE URL</Text>
+                <TextInput
+                  style={[
+                    styles.pinTextInput,
+                    {
+                      backgroundColor: c.inputBg,
+                      borderColor: c.border,
+                      color: c.text,
+                      fontSize: 13,
+                    },
+                  ]}
+                  placeholder="https://example.com/avatar.jpg"
+                  placeholderTextColor={c.textMuted}
+                  value={avatarUrlInput}
+                  onChangeText={setAvatarUrlInput}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleSaveAvatar}
+                disabled={isSavingAvatar}
+                style={[
+                  styles.savePinBtn,
+                  { backgroundColor: c.primary, opacity: isSavingAvatar ? 0.7 : 1 },
+                ]}
+              >
+                {isSavingAvatar ? (
+                  <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                ) : (
+                  <Text style={[styles.savePinBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                    Save Avatar
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              {profilePicture ? (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={handleClearAvatar}
+                  disabled={isSavingAvatar}
+                  style={[
+                    styles.savePinBtn,
+                    {
+                      backgroundColor: 'transparent',
+                      borderWidth: 1,
+                      borderColor: c.accent,
+                      marginTop: 8,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.savePinBtnText, { color: c.accent }]}>
+                    Remove Current Avatar
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
       {/* Currency Picker Modal */}
-      <Modal visible={showCurrencyModal} animationType="slide" transparent={true} onRequestClose={() => setShowCurrencyModal(false)}>
+      <Modal
+        visible={showCurrencyModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCurrencyModal(false)}
+      >
         <View style={styles.modalBackdrop}>
           <View style={[styles.currModalContent, { backgroundColor: c.card, borderColor: c.border }]}>
             <View style={styles.currModalHeader}>
-              <Text style={[styles.currModalTitle, { color: c.text }]}>Select Currency ({WORLD_CURRENCIES.length})</Text>
-              <TouchableOpacity onPress={() => setShowCurrencyModal(false)}><Ionicons name="close-circle" size={24} color={c.textMuted} /></TouchableOpacity>
+              <Text style={[styles.currModalTitle, { color: c.text }]}>
+                Select Currency ({WORLD_CURRENCIES.length})
+              </Text>
+              <TouchableOpacity onPress={() => setShowCurrencyModal(false)}>
+                <Ionicons name="close-circle" size={24} color={c.textMuted} />
+              </TouchableOpacity>
             </View>
-            <View style={[styles.currSearchBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+            <View
+              style={[
+                styles.currSearchBox,
+                { backgroundColor: c.inputBg, borderColor: c.border },
+              ]}
+            >
               <Ionicons name="search" size={16} color={c.textMuted} style={{ marginRight: 8 }} />
-              <TextInput style={[styles.currSearchInput, { color: c.text }]} placeholder="Search by code, symbol, or country..." placeholderTextColor={c.textMuted} value={currencySearch} onChangeText={setCurrencySearch} />
+              <TextInput
+                style={[styles.currSearchInput, { color: c.text }]}
+                placeholder="Search by code, symbol, or country..."
+                placeholderTextColor={c.textMuted}
+                value={currencySearch}
+                onChangeText={setCurrencySearch}
+              />
               {currencySearch.length > 0 && (
                 <TouchableOpacity
                   onPress={() => setCurrencySearch('')}
@@ -686,20 +1187,45 @@ export default function ProfileScreen() {
                 const isSelected = item.code === currency;
                 return (
                   <TouchableOpacity
-                    style={[styles.currItemRow, { borderBottomColor: c.border }, isSelected && { backgroundColor: c.primary + '18' }]}
+                    style={[
+                      styles.currItemRow,
+                      { borderBottomColor: c.border },
+                      isSelected && { backgroundColor: c.primary + '18' },
+                    ]}
                     onPress={async () => {
                       try {
                         await updateCurrency(item.code);
                         setShowCurrencyModal(false);
                         Haptics.selectionAsync().catch(() => {});
                       } catch (e: any) {
-                        const msg = e instanceof ApiError ? e.message : 'Could not update your currency.';
+                        const msg =
+                          e instanceof ApiError ? e.message : 'Could not update your currency.';
                         showAlert('Currency Update Failed', msg, undefined, 'error');
                       }
                     }}
                   >
-                    <View style={styles.currItemLeft}><Text style={styles.currFlag}>{item.flag}</Text><View><Text style={[styles.currCodeText, { color: c.text }]}>{item.code}</Text><Text style={[styles.currNameText, { color: c.textMuted }]}>{item.name}</Text></View></View>
-                    <View style={styles.currItemRight}><Text style={[styles.currSymbolText, { color: isSelected ? c.primary : c.textMuted }]}>{item.symbol}</Text>{isSelected && <Ionicons name="checkmark-circle" size={20} color={c.primary} />}</View>
+                    <View style={styles.currItemLeft}>
+                      <Text style={styles.currFlag}>{item.flag}</Text>
+                      <View>
+                        <Text style={[styles.currCodeText, { color: c.text }]}>{item.code}</Text>
+                        <Text style={[styles.currNameText, { color: c.textMuted }]}>
+                          {item.name}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.currItemRight}>
+                      <Text
+                        style={[
+                          styles.currSymbolText,
+                          { color: isSelected ? c.primary : c.textMuted },
+                        ]}
+                      >
+                        {item.symbol}
+                      </Text>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={20} color={c.primary} />
+                      )}
+                    </View>
                   </TouchableOpacity>
                 );
               }}
@@ -709,11 +1235,18 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* Security PIN Setup Modal */}
-      <Modal visible={showPinModal} transparent={true} animationType="fade" onRequestClose={closePinModal}>
+      <Modal
+        visible={showPinModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closePinModal}
+      >
         <View style={styles.modalBackdrop}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxWidth: 420 }}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ width: '100%', maxWidth: 420 }}
+          >
             <View style={[styles.pinModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              {/* Header with Title and Corner Close Icon */}
               <View style={styles.pinHeaderRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Ionicons name="shield-checkmark" size={20} color={c.primary} />
@@ -722,7 +1255,7 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   onPress={closePinModal}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }]}
+                  style={[styles.pinCloseBtn, { backgroundColor: c.inputBg }] customer-facing}
                 >
                   <Ionicons name="close" size={18} color={c.text} />
                 </TouchableOpacity>
@@ -783,7 +1316,10 @@ export default function ProfileScreen() {
                 activeOpacity={0.85}
                 onPress={handleSavePin}
                 disabled={isSavingPin}
-                style={[styles.savePinBtn, { backgroundColor: c.primary, opacity: isSavingPin ? 0.7 : 1 }]}
+                style={[
+                  styles.savePinBtn,
+                  { backgroundColor: c.primary, opacity: isSavingPin ? 0.7 : 1 },
+                ]}
               >
                 {isSavingPin ? (
                   <ActivityIndicator size="small" color="#10120E" />
@@ -798,27 +1334,103 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Delete Account Modal (Requires Password & Typing "DELETE") */}
-      <Modal visible={showDeleteModal} animationType="fade" transparent={true} onRequestClose={() => { setShowDeleteModal(false); setDeleteConfirmText(''); setDeletePassword(''); }}>
+      {/* Delete Account Modal */}
+      <Modal
+        visible={showDeleteModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {
+          setShowDeleteModal(false);
+          setDeleteConfirmText('');
+          setDeletePassword('');
+        }}
+      >
         <View style={styles.modalBackdrop}>
           <View style={[styles.deleteModalCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <View style={[styles.deleteIconBox, { backgroundColor: c.accent + '20' }]}><Ionicons name="warning" size={32} color={c.accent} /></View>
+            <View style={[styles.deleteIconBox, { backgroundColor: c.accent + '20' }]}>
+              <Ionicons name="warning" size={32} color={c.accent} />
+            </View>
             <Text style={[styles.deleteModalTitle, { color: c.text }]}>Permanently Delete Account?</Text>
-            <Text style={[styles.deleteModalDesc, { color: c.textMuted }]}>This action cannot be undone. All your expenses, budgets, recurring subscriptions, and categories will be permanently erased.</Text>
-            <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>Enter your current account password:</Text>
-            <TextInput style={[styles.deleteInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, marginBottom: 12 }]} placeholder="Current Password" placeholderTextColor={c.textMuted} secureTextEntry={true} value={deletePassword} onChangeText={setDeletePassword} />
-            <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>To confirm, type <Text style={{ color: c.accent, fontWeight: '900' }}>DELETE</Text> below:</Text>
-            <TextInput style={[styles.deleteInput, { backgroundColor: c.inputBg, borderColor: c.border, color: c.text }]} placeholder="Type DELETE" placeholderTextColor={c.textMuted} autoCapitalize="characters" value={deleteConfirmText} onChangeText={setDeleteConfirmText} />
+            <Text style={[styles.deleteModalDesc, { color: c.textMuted }]}>
+              This action cannot be undone. All your expenses, budgets, recurring subscriptions, and categories will be permanently erased.
+            </Text>
+            <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>
+              Enter your current account password:
+            </Text>
+            <TextInput
+              style={[
+                styles.deleteInput,
+                { backgroundColor: c.inputBg, borderColor: c.border, color: c.text, marginBottom: 12 },
+              ]}
+              placeholder="Current Password"
+              placeholderTextColor={c.textMuted}
+              secureTextEntry={true}
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+            />
+            <Text style={[styles.deleteConfirmLabel, { color: c.text }]}>
+              To confirm, type <Text style={{ color: c.accent, fontWeight: '900' }}>DELETE</Text> below:
+            </Text>
+            <TextInput
+              style={[
+                styles.deleteInput,
+                { backgroundColor: c.inputBg, borderColor: c.border, color: c.text },
+              ]}
+              placeholder="Type DELETE"
+              placeholderTextColor={c.textMuted}
+              autoCapitalize="characters"
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+            />
             <View style={styles.deleteBtnRow}>
-              <TouchableOpacity activeOpacity={0.8} onPress={() => { setShowDeleteModal(false); setDeleteConfirmText(''); setDeletePassword(''); }} style={[styles.cancelBtn, { borderColor: c.border }]}><Text style={[styles.cancelBtnText, { color: c.text }]}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity activeOpacity={0.8} disabled={deleteConfirmText.trim() !== 'DELETE' || !deletePassword.trim() || isDeletingAccount} onPress={handleExecuteDeleteAccount} style={[styles.confirmDeleteBtn, { backgroundColor: (deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0) ? c.accent : c.inputBg, opacity: (deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0) ? 1 : 0.45 }]}>{isDeletingAccount ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.confirmDeleteBtnText}>Delete Account</Text>}</TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                  setDeletePassword('');
+                }}
+                style={[styles.cancelBtn, { borderColor: c.border }]}
+              >
+                <Text style={[styles.cancelBtnText, { color: c.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={
+                  deleteConfirmText.trim() !== 'DELETE' || !deletePassword.trim() || isDeletingAccount
+                }
+                onPress={handleExecuteDeleteAccount}
+                style={[
+                  styles.confirmDeleteBtn,
+                  {
+                    backgroundColor:
+                      deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0
+                        ? c.accent
+                        : c.inputBg,
+                    opacity:
+                      deleteConfirmText.trim() === 'DELETE' && deletePassword.trim().length > 0
+                        ? 1
+                        : 0.45,
+                  },
+                ]}
+              >
+                {isDeletingAccount ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.confirmDeleteBtnText}>Delete Account</Text>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
       <MonthlyReportModal visible={showReportModal} onClose={() => setShowReportModal(false)} />
-      <ManageCategoriesModal visible={showCategoryModal} onClose={() => setShowCategoryModal(false)} onCategoriesUpdated={() => {}} />
+      <ManageCategoriesModal
+        visible={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onCategoriesUpdated={() => {}}
+      />
       <HelpGuideModal visible={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <AboutModal visible={showAboutModal} onClose={() => setShowAboutModal(false)} />
     </View>
@@ -832,33 +1444,111 @@ const styles = StyleSheet.create({
   header: { marginBottom: 20 },
   pageTitle: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 13, marginTop: 4 },
-  userCard: { padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  userCard: {
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
   userCardTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  bigAvatar: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center', borderWidth: 2, overflow: 'hidden' },
+  bigAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    overflow: 'hidden',
+    position: 'relative',
+  },
   bigAvatarImg: { width: '100%', height: '100%', borderRadius: 26 },
   avatarLetter: { color: '#10120E', fontSize: 22, fontWeight: '900' },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   userMeta: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   userNameText: { fontSize: 18, fontWeight: '800' },
   memberBadgeText: { fontSize: 12, fontWeight: '800', marginTop: 2 },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  editInput: { flex: 1, height: 36, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, fontSize: 14 },
+  editInput: {
+    flex: 1,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    fontSize: 14,
+  },
   saveNickBtn: { width: 36, height: 36, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  sectionTitle: { fontSize: 11.5, fontWeight: '800', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 },
+  sectionTitle: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
   menuBlock: { borderRadius: 18, borderWidth: 1, marginBottom: 20, overflow: 'hidden' },
-  menuRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: 'transparent' },
+  menuRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+  },
   menuRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   menuIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   menuCurrencySymbol: { fontSize: 16, fontWeight: '800' },
   menuRowTitle: { fontSize: 14, fontWeight: '700' },
   menuRowSub: { fontSize: 11.5, marginTop: 2 },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.65)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
   currModalContent: { width: '100%', maxHeight: '75%', borderRadius: 24, borderWidth: 1, padding: 16 },
-  currModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  currModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   currModalTitle: { fontSize: 17, fontWeight: '800' },
-  currSearchBox: { flexDirection: 'row', alignItems: 'center', height: 40, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, marginBottom: 12 },
+  currSearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+  },
   currSearchInput: { flex: 1, fontSize: 13, height: '100%' },
-  currItemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderBottomWidth: 0.5, borderRadius: 10 },
+  currItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 0.5,
+    borderRadius: 10,
+  },
   currItemLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   currFlag: { fontSize: 22 },
   currCodeText: { fontSize: 14, fontWeight: '800' },
@@ -866,11 +1556,28 @@ const styles = StyleSheet.create({
   currItemRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   currSymbolText: { fontSize: 16, fontWeight: '700' },
   deleteModalCard: { width: '100%', borderRadius: 24, borderWidth: 1, padding: 24, alignItems: 'center' },
-  deleteIconBox: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 14 },
+  deleteIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
   deleteModalTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
   deleteModalDesc: { fontSize: 13, textAlign: 'center', lineHeight: 18, marginBottom: 16 },
   deleteConfirmLabel: { fontSize: 13, marginBottom: 8, textAlign: 'center' },
-  deleteInput: { width: '100%', height: 44, borderRadius: 12, borderWidth: 1, textAlign: 'center', fontSize: 15, fontWeight: '800', letterSpacing: 2, marginBottom: 18 },
+  deleteInput: {
+    width: '100%',
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 18,
+  },
   deleteBtnRow: { flexDirection: 'row', gap: 10, width: '100%' },
   cancelBtn: { flex: 1, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   cancelBtnText: { fontSize: 14, fontWeight: '700' },

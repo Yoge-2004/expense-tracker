@@ -5,7 +5,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react';
-import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme } from '../services/api';
+import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet, safeStorageDelete, readSavedTheme, persistSavedTheme } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useColorScheme } from 'react-native';
@@ -21,6 +21,8 @@ interface AuthContextType {
   theme: 'dark' | 'light';
   toggleTheme: () => Promise<void>;
   updateUserName: (name: string) => Promise<void>;
+  updateUserProfile: (params: { name?: string; profilePictureUrl?: string }) => Promise<void>;
+  refreshUserProfile: (targetUserId?: string) => Promise<void>;
   updateCurrency: (currency: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
@@ -106,6 +108,9 @@ export function AuthProvider({
           setUserId(session.userId);
           setUserName(session.name);
           setProfilePicture(session.photo || null);
+
+          // Proactively sync latest profile picture and profile info from server (matches website behavior)
+          refreshUserProfile(session.userId).catch(() => {});
         }
 
         if (savedCurrency) {
@@ -370,6 +375,64 @@ export function AuthProvider({
     });
   }, []);
 
+  const refreshUserProfile = useCallback(async (targetUserId?: string): Promise<void> => {
+    const uid = targetUserId || userId;
+    if (!uid) return;
+    try {
+      const profile = await apiRequest(`/users/${uid}`, { skipCache: true });
+      if (profile) {
+        if (profile.profilePictureUrl !== undefined) {
+          const photo = profile.profilePictureUrl || null;
+          setProfilePicture(photo);
+          if (photo) {
+            await safeStorageSet('user_photo', photo);
+          } else {
+            await safeStorageDelete('user_photo');
+          }
+        }
+        if (profile.name) {
+          setUserName(profile.name);
+          await safeStorageSet('user_name', profile.name);
+        }
+        if (profile.currency) {
+          setCurrency(profile.currency);
+          await safeStorageSet('user_currency', profile.currency);
+        }
+      }
+    } catch (e) {
+      console.warn('[AuthContext] Could not refresh user profile:', e);
+    }
+  }, [userId]);
+
+  const updateUserProfile = useCallback(async ({ name, profilePictureUrl }: { name?: string; profilePictureUrl?: string }): Promise<void> => {
+    if (!userId) return;
+    const body: Record<string, any> = {
+      name: (name ?? userName ?? 'User').trim(),
+    };
+    if (profilePictureUrl !== undefined) {
+      body.profilePictureUrl = profilePictureUrl.trim();
+    }
+    const updated = await apiRequest(`/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    if (updated) {
+      if (updated.name) {
+        setUserName(updated.name);
+        await safeStorageSet('user_name', updated.name);
+      }
+      if (updated.profilePictureUrl !== undefined) {
+        const photo = updated.profilePictureUrl || null;
+        setProfilePicture(photo);
+        if (photo) {
+          await safeStorageSet('user_photo', photo);
+        } else {
+          await safeStorageDelete('user_photo');
+        }
+      }
+    }
+  }, [userId, userName]);
+
   const updateUserName = async (newName: string): Promise<void> => {
     const cleanName = newName.trim();
     if (!cleanName) return;
@@ -420,6 +483,8 @@ export function AuthProvider({
     theme,
     toggleTheme,
     updateUserName,
+    updateUserProfile,
+    refreshUserProfile,
     updateCurrency,
     login,
     loginWithGoogle,
@@ -442,6 +507,8 @@ export function AuthProvider({
     theme,
     toggleTheme,
     updateUserName,
+    updateUserProfile,
+    refreshUserProfile,
     updateCurrency,
     login,
     loginWithGoogle,
