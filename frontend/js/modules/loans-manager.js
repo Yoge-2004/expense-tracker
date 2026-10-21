@@ -92,10 +92,10 @@
         const container = document.getElementById("loansListContainer");
         if (!container) return;
         container.innerHTML = `
-            <div class="loans-skeleton-loader" style="padding:20px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02);">
-                <div style="height:20px; width:35%; border-radius:6px; margin-bottom:16px; background:linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(212,175,55,0.1) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation:skeletonShimmer 1.5s infinite linear;"></div>
-                <div style="height:44px; border-radius:8px; margin-bottom:12px; background:linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(212,175,55,0.08) 50%, rgba(255,255,255,0.03) 75%); background-size:200% 100%; animation:skeletonShimmer 1.5s infinite linear;"></div>
-                <div style="height:44px; border-radius:8px; margin-bottom:12px; background:linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(212,175,55,0.08) 50%, rgba(255,255,255,0.03) 75%); background-size:200% 100%; animation:skeletonShimmer 1.5s infinite linear;"></div>
+            <div class="loans-skeleton-loader" style="padding:16px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:10px;">
+                <div class="skeleton" style="width:35%; height:20px; border-radius:6px;"></div>
+                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
             </div>
         `;
     }
