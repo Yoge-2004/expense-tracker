@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expense Tracker",
     "slug": "expense-tracker-mobile",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
       "icon": "./assets/icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "com.yoge.expensetracker",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -25,7 +25,7 @@
     },
     "android": {
       "package": "com.yoge.expensetracker",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F9F6EF"
@@ -38,34 +38,24 @@
       "expo-router",
       "expo-web-browser",
       [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.487469737581-p826efhglp29u44vvo2cl4focntjg8e6"
-        }
-      ],
-      "expo-font",
-      "expo-secure-store",
-      "expo-sharing",
-      "expo-status-bar",
-      [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/icon.png",
           "color": "#D4AF37",
-          "defaultChannel": "expense-reminders",
-          "sounds": [
-            "./assets/custom_chime.wav"
-          ]
+          "sounds": []
         }
       ]
     ],
-    "scheme": "expensetracker",
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "1f8a984c-edd6-455d-9ba1-1832827887ac"
-      }
+    "experiments": {
+      "typedRoutes": true
     },
-    "owner": "yoge-2004"
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "8b9db8d7-b353-4dd2-8eb4-d13ba8ad5bb0"
+      }
+    }
   }
 }

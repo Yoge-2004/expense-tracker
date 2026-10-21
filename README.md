@@ -36,7 +36,7 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 | Area | What you can do |
 |---|---|
 | **Expenses** | Record, review, update, and organize spending with category tagging. |
-| **Receipt OCR** | Client-side Tesseract.js scanner extracting multi-tax breakdowns (CGST, SGST, IGST, VAT, Tips, Discounts) with 1-click auto-fill. |
+| **Receipt OCR** | Dual-mode Tesseract.js scanner accepting browsed files (gallery/storage) or live camera capture, extracting multi-tax breakdowns (CGST, SGST, IGST, VAT, Tips, Discounts) with 1-click auto-fill. |
 | **Recurring finance** | Track recurring monthly commitments, subscriptions, and recurring income streams. |
 | **Income** | Monitor independent incoming cash flows, salary, dividends, and freelance retainers. |
 | **Unified Ledger** | Synchronized chronological cash flow ledger combining outflows and inflows with real-time filtering and sorting. |
@@ -46,7 +46,7 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 | **Power BI Excel & Reports** | Download Power BI-grade formatted Excel dashboards and PDF statements, plus full Excel import/export data hub. |
 | **Theme & UI** | Diffused golden aura elevation across Dark & Light modes, custom HUD cursor, and `Ctrl`/`Cmd` + `K` Command Palette. |
 | **Authentication** | JWT-based authentication, Google sign-in, WebAuthn/passkeys, and biometric unlock (Face ID / Fingerprint). |
-| **Profile & Settings** | Display name sync across web/app, 6-digit security PIN for instant recovery, and multi-currency selection. |
+| **Profile & Settings** | Cross-surface display name and profile avatar synchronization, in-app mobile avatar editor, 6-digit security PIN for instant recovery, and multi-currency selection. |
 | **Notifications** | Real-time push alerts, financial event digest, per-type preferences, and one-click bulk inbox clearing on web and mobile. |
 | **Machine Learning** | Dual-engine ML categorization (TF-IDF + Transformer), automated SMS financial alert listener, interactive tester, and continuous retraining feedback loop. |
 | **Floating Calculator & FX Converter** | Draggable & dockable quick calculator on web and mobile with precision-safe math, bill splitting (÷2 to ÷5), 1-tap auto-insert, and daily multi-currency live conversions (USD, EUR, GBP, AED ➔ INR) via `open.er-api.com` with 24-hr device caching. |
@@ -54,7 +54,7 @@ The same backend powers the web and mobile clients, keeping finance data and bus
 | **Safe-to-Spend Allowance** | Real-time daily spending guardrail based on remaining monthly budget, scheduled subscriptions, and days left in the month. |
 | **No-Spend Day Streak** | Habit-building tracker celebrating consecutive ₹0 non-recurring expense days with dashboard fire badges and interactive calendar milestone markers. |
 | **Persistence** | H2 for development, SQLite client-encrypted fallback, and PostgreSQL / Neon for production. |
-| **Data resilience** | Zero-downtime offline caching, network retry fallbacks, and Hugging Face Hub snapshot sync. |
+| **Data resilience** | Zero-downtime offline caching, network retry fallbacks, low-power background task state persistence for bulk export/import (up to 50MB / 500k+ rows) with chunked memory streaming, and Hugging Face Hub snapshot sync. |
 
 ---
 
@@ -372,12 +372,12 @@ The reporting layer supports generated financial documents, including PDF and Ex
 | Security | Spring Security, JWT (JJWT 0.13.0), Google OAuth 2.0, WebAuthn / Passkeys |
 | Persistence | Spring Data JPA / Hibernate |
 | Databases | H2, SQLite (encrypted client-side fallback), PostgreSQL / Neon |
-| Reporting & Excel | Apache POI 5.5.1, OpenPDF 3.0.5, SheetJS (xlsx.full.min.js) |
+| Reporting & Excel | Apache POI 5.5.1, OpenPDF 3.0.5, SheetJS (xlsx.full.min.js), 50MB multipart limit |
 | Client-Side OCR | Tesseract.js (WebAssembly / multi-tax parser) |
 | API documentation | SpringDoc OpenAPI 3.1.0 / Swagger UI |
 | Web Frontend | Modern HTML5, Modular JavaScript (ES6+), CSS Custom Properties, Chart.js |
 | Web UX & Theme | Custom HUD Pointer, Command Palette (`Ctrl+K`), Golden Aura elevation |
-| Mobile Framework | React Native 0.86.3, Expo 57.0.25, Expo Router 57.0.23 |
+| Mobile Framework | React Native 0.86.3, Expo 57.0.31, Expo Router 57.0.23, requestIdleCallback scheduler |
 | Mobile Optimization | Memoized React Context & Hooks (`useMemo`, `useCallback`), Native Driver animations |
 | Mobile Auth & Bio | `@react-native-google-signin/google-signin` 16.1.5, `expo-local-authentication` |
 | Machine Learning | Python 3.14, Scikit-learn, TF-IDF Dual-Gram, Transformer Classifier, FastAPI |

@@ -1,5 +1,51 @@
 # Expense Tracker Release Notes
 
+## Version 1.0.5 (Android Version Code: 7)
+
+A major release focused on **profile picture synchronization across web & mobile, dual-mode OCR receipt scanning (file browsing + live camera), resilient low-power background export/import processing, 50MB multipart limits, and modernized 2026 asynchronous scheduling**.
+
+---
+
+### Key Highlights
+
+#### 1. Profile Picture Synchronization & Management
+- **Cross-Surface Avatar Parity**: Mobile app now fetches and displays user avatars directly from `GET /api/users/{userId}` (synced with Google OAuth and custom web profiles).
+- **Proactive Lifecycle Syncing**: User profile pictures update automatically on app launch, dashboard focus (`useFocusEffect`), and pull-to-refresh actions.
+- **In-App Mobile Avatar Editor**: Added an interactive camera badge and avatar editor modal in the mobile Settings screen allowing users to preview, set, update, or remove profile image URLs.
+- **Backend Persistence**: Updated `UpdateProfileRequest` and `UserController` to validate and persist `profilePictureUrl` in the database.
+
+#### 2. Dual-Mode Tesseract OCR Receipt Ingestion
+- **Device File Browsing**: Removed hardcoded `capture="environment"` attribute, enabling users on mobile and desktop to browse photos and documents from device storage and galleries.
+- **Dedicated Actions**: Provided distinct **"Browse Receipt"** and **"Take Photo"** buttons in the receipt scan interface for clear user intent.
+- **Multi-Tax Extraction**: Preserved client-side WebAssembly OCR extraction for line items, amounts, merchants, and tax structures (CGST, SGST, IGST, VAT).
+
+#### 3. Resilient Bulk Export/Import for Large Ledgers
+- **Low-Power Task Persistence**: In-flight export and import job states are continuously persisted to `AsyncStorage` (`@expense_tracker_active_transfer_job`).
+- **OS Suspension & Wake Recovery**: Added `AppState` listeners to seamlessly restore transfer cards and progress percentages when the device resumes from background suspension, screen lock, or OS low-power modes.
+- **Chunked Memory Processing**: Replaced monolithic joins with chunked row serialization (`CHUNK_SIZE = 2500`) and event-loop yielding (`await new Promise(r => setTimeout(r, 0))`), preventing JavaScript heap spikes (OOM) and OS watchdog kills when exporting thousands or lakhs of transactions.
+
+#### 4. File Upload Limits
+- **50MB Multipart Threshold**: Increased Spring Boot multipart file upload limits (`spring.servlet.multipart.max-file-size=50MB`, `spring.servlet.multipart.max-request-size=60MB`) to accommodate high-volume ledgers exceeding 500,000+ transaction rows.
+
+#### 5. 2026 Runtime Standards & Modernized Scheduling
+- **`requestIdleCallback` Scheduler**: Completely replaced deprecated `InteractionManager.runAfterInteractions` with a standard cooperative idle task scheduler pattern and asynchronous fallbacks.
+- **Clean Deprecation Log**: Fully resolved all deprecation warnings under React Native 0.86+ and Expo SDK 57.
+
+---
+
+### Release Artifacts & Specifications (v1.0.5)
+
+| Attribute | Details |
+| :--- | :--- |
+| **Mobile App Version** | `1.0.5` |
+| **Android Version Code** | `7` |
+| **iOS Build Number** | `6` |
+| **Package ID** | `com.yoge.expensetracker` |
+| **Backend Framework** | Spring Boot 4.1.1 (Java 27 preview / 21) |
+| **ML Engine** | PyTorch / scikit-learn / Hugging Face Hub |
+
+---
+
 ## Version 1.0.4 (Android Version Code: 6)
 
 A major release focused on **bulk notification clearing, instant touch search responsiveness, verified ML model retraining loops & Hugging Face Hub synchronization, theme transition perfection, and executive financial reporting**.
@@ -31,7 +77,7 @@ A major release focused on **bulk notification clearing, instant touch search re
 
 ---
 
-### Release Artifacts & Specifications
+### Release Artifacts & Specifications (v1.0.4)
 
 | Attribute | Details |
 | :--- | :--- |
