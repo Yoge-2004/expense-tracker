@@ -1,10 +1,3 @@
-/* ==========================================================================
-   EXPENSE TRACKER — LUXURY AESTHETICS & MOTION ENHANCEMENTS
-   High-end glassmorphism, dynamic glowing progress tracks, ambient radial
-   under-glows, tabular numeral alignments, and refined pill badges.
-   ========================================================================== */
-
-/* LAYERED FROSTED GLASS & DYNAMIC AMBIENT RADIANT BACKDROP */
 @keyframes ambientGlowDrift {
     0% { transform: scale(1) translate3d(0, 0, 0); opacity: 0.85; }
     50% { transform: scale(1.05) translate3d(-12px, 14px, 0); opacity: 1; }
@@ -12,42 +5,45 @@
 }
 
 .hero-bg {
-    position: fixed;
-    inset: -30px;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-    animation: ambientGlowDrift 20s ease-in-out infinite alternate;
-    background:
-        radial-gradient(circle at 14% 16%, rgba(var(--primary-rgb, 212, 175, 55), 0.16) 0%, transparent 46%),
+  position: fixed;
+  inset: -30px;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  animation: ambientGlowDrift 20s ease-in-out infinite alternate;
+  background: radial-gradient(circle at 14% 16%, rgba(var(--primary-rgb, 212, 175, 55), 0.16) 0%, transparent 46%),
         radial-gradient(circle at 86% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
         radial-gradient(circle at 46% 86%, rgba(16, 185, 129, 0.10) 0%, transparent 54%),
         radial-gradient(circle at 80% 78%, rgba(212, 175, 55, 0.09) 0%, transparent 42%);
 }
 
 [data-theme="light"] .hero-bg {
-    background:
-        radial-gradient(circle at 12% 14%, rgba(212, 175, 55, 0.20) 0%, transparent 48%),
+  background: radial-gradient(circle at 12% 14%, rgba(212, 175, 55, 0.20) 0%, transparent 48%),
         radial-gradient(circle at 88% 18%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
         radial-gradient(circle at 50% 82%, rgba(16, 185, 129, 0.12) 0%, transparent 54%),
         radial-gradient(circle at 78% 76%, rgba(212, 175, 55, 0.14) 0%, transparent 44%);
 }
 
-/* CARD ELEVATION & FROSTED GLASS EFFECT */
-.card,
+.card {
+  background: rgba(23, 26, 20, 0.78);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(236, 231, 216, 0.10);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  position: relative;
+}
+
 .metric-card,
 .unified-ledger-card,
 .insight-card-item,
 .savings-goal-card,
 .budget-item {
-    background: rgba(23, 26, 20, 0.78);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid rgba(236, 231, 216, 0.10);
-    box-shadow:
-        0 10px 30px -10px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-    position: relative;
+  background: rgba(23, 26, 20, 0.78);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(236, 231, 216, 0.10);
+  position: relative;
 }
 
 [data-theme="light"] .card,
@@ -56,131 +52,121 @@
 [data-theme="light"] .insight-card-item,
 [data-theme="light"] .savings-goal-card,
 [data-theme="light"] .budget-item {
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid rgba(212, 175, 55, 0.22);
-    box-shadow:
-        0 14px 34px -10px rgba(180, 140, 60, 0.14),
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  box-shadow: 0 14px 34px -10px rgba(180, 140, 60, 0.14),
         0 0 0 1px rgba(255, 255, 255, 0.6) inset;
 }
 
-/* Subtle top edge specular highlight */
 .card::before,
 .metric-card::before,
 .savings-goal-card::before,
 .budget-item::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 12px;
-    right: 12px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-    pointer-events: none;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  pointer-events: none;
 }
 
 [data-theme="light"] .card::before,
 [data-theme="light"] .metric-card::before,
 [data-theme="light"] .savings-goal-card::before,
 [data-theme="light"] .budget-item::before {
-    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
 }
 
-/* METRIC VALUES TYPOGRAPHY & TABULAR NUMERALS */
 .metric-value,
 .stat-value,
 .budget-status-value,
 .expense-amount,
 .income-amount-text {
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
-/* REFINED METRIC CARD ACCENT UNDERGLOWS: Soft diffused glow without rectangular harsh lines */
 .metric-card.metric-card-inflow:hover {
-    transform: translateY(-3px);
-    border-color: rgba(16, 185, 129, 0.28);
-    box-shadow:
-        0 18px 42px -10px var(--metric-inflow-glow),
+  transform: translateY(-3px);
+  border-color: rgba(16, 185, 129, 0.28);
+  box-shadow: 0 18px 42px -10px var(--metric-inflow-glow),
         0 0 32px 3px rgba(16, 185, 129, 0.22),
         0 0 55px 8px rgba(16, 185, 129, 0.12);
 }
 
 .metric-card.metric-card-outflow:hover {
-    transform: translateY(-3px);
-    border-color: rgba(239, 68, 68, 0.28);
-    box-shadow:
-        0 18px 42px -10px var(--metric-outflow-glow),
+  transform: translateY(-3px);
+  border-color: rgba(239, 68, 68, 0.28);
+  box-shadow: 0 18px 42px -10px var(--metric-outflow-glow),
         0 0 32px 3px rgba(239, 68, 68, 0.22),
         0 0 55px 8px rgba(239, 68, 68, 0.12);
 }
 
 .metric-card.metric-card-netflow:hover {
-    transform: translateY(-3px);
-    border-color: rgba(212, 175, 55, 0.28);
-    box-shadow:
-        0 18px 42px -10px var(--metric-netflow-glow),
+  transform: translateY(-3px);
+  border-color: rgba(212, 175, 55, 0.28);
+  box-shadow: 0 18px 42px -10px var(--metric-netflow-glow),
         0 0 32px 3px rgba(212, 175, 55, 0.25),
         0 0 58px 8px rgba(212, 175, 55, 0.14);
 }
 
 .metric-card.metric-card-savings:hover {
-    transform: translateY(-3px);
-    border-color: rgba(139, 92, 246, 0.28);
-    box-shadow:
-        0 18px 42px -10px var(--metric-savings-glow),
+  transform: translateY(-3px);
+  border-color: rgba(139, 92, 246, 0.28);
+  box-shadow: 0 18px 42px -10px var(--metric-savings-glow),
         0 0 32px 3px rgba(139, 92, 246, 0.22),
         0 0 55px 8px rgba(139, 92, 246, 0.12);
 }
 
 .metric-card.metric-card-subs:hover {
-    transform: translateY(-3px);
-    border-color: rgba(59, 130, 246, 0.28);
-    box-shadow:
-        0 18px 42px -10px var(--metric-subs-glow),
+  transform: translateY(-3px);
+  border-color: rgba(59, 130, 246, 0.28);
+  box-shadow: 0 18px 42px -10px var(--metric-subs-glow),
         0 0 32px 3px rgba(59, 130, 246, 0.22),
         0 0 55px 8px rgba(59, 130, 246, 0.12);
 }
 
-/* DYNAMIC SHIMMERING PROGRESS BARS */
 .budget-bar-track,
 .progress-track {
-    background: rgba(0, 0, 0, 0.28);
-    border-radius: 999px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) inset;
-    position: relative;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) inset;
+  position: relative;
 }
 
 [data-theme="light"] .budget-bar-track,
 [data-theme="light"] .progress-track {
-    background: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) inset;
+  background: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) inset;
 }
 
 .budget-bar-fill,
 .goal-progress-fill {
-    position: relative;
-    border-radius: 999px;
-    box-shadow: 0 0 12px currentColor;
+  position: relative;
+  border-radius: 999px;
+  box-shadow: 0 0 12px currentColor;
 }
 
 .budget-bar-fill::after,
 .goal-progress-fill::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
         90deg,
         rgba(255, 255, 255, 0) 0%,
         rgba(255, 255, 255, 0.35) 50%,
         rgba(255, 255, 255, 0) 100%
     );
-    background-size: 200% 100%;
-    animation: barShimmer 2.4s infinite linear;
-    border-radius: inherit;
-    pointer-events: none;
+  background-size: 200% 100%;
+  animation: barShimmer 2.4s infinite linear;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 @keyframes barShimmer {
@@ -188,81 +174,76 @@
     100% { background-position: 200% 0; }
 }
 
-/* STATUS PILL BADGES & CHIPS REFINEMENT */
-.status-badge,
+.status-badge {
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .pill-chip {
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s ease;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s ease;
 }
 
 .status-badge.badge-success {
-    background: rgba(16, 185, 129, 0.14);
-    color: #10B981;
-    border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.14);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .status-badge.badge-warning {
-    background: rgba(245, 158, 11, 0.14);
-    color: #F59E0B;
-    border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.14);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .status-badge.badge-outflow,
 .status-badge.badge-danger {
-    background: rgba(239, 68, 68, 0.14);
-    color: #EF4444;
-    border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.14);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .status-badge.badge-netflow {
-    background: rgba(59, 130, 246, 0.14);
-    color: #3B82F6;
-    border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.14);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.35);
 }
 
 .status-badge.badge-subs {
-    background: rgba(192, 86, 94, 0.14);
-    color: #E06C75;
-    border: 1px solid rgba(192, 86, 94, 0.35);
+  background: rgba(192, 86, 94, 0.14);
+  color: #E06C75;
+  border: 1px solid rgba(192, 86, 94, 0.35);
 }
 
-/* EMPTY STATE LUXURY ELEVATION */
 .empty-state-compact {
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed rgba(var(--primary-rgb), 0.28);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    transition: border-color 0.25s ease, background-color 0.25s ease;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(var(--primary-rgb), 0.28);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
 }
 
 .empty-state-compact:hover {
-    background: rgba(var(--primary-rgb), 0.03);
-    border-color: rgba(var(--primary-rgb), 0.45);
+  background: rgba(var(--primary-rgb), 0.03);
+  border-color: rgba(var(--primary-rgb), 0.45);
 }
 
 [data-theme="light"] .empty-state-compact {
-    background: rgba(255, 255, 255, 0.6);
-    border-color: rgba(212, 175, 55, 0.3);
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(212, 175, 55, 0.3);
 }
 
-/* TOP COMMAND BAR BLUR & RADIANT BORDER */
 .top-bar {
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-}
-
-/* ==========================================================================
-   STEALTH / PRIVACY MODE (Mask financial numbers from shoulder-surfers)
-   ========================================================================== */
-.stealth-toggle-btn.is-active {
-    color: var(--primary, #C79A3E);
-    background: rgba(var(--primary-rgb, 199, 154, 62), 0.15);
-    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.35);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
 }
 
 body.stealth-mode .metric-value,
@@ -292,10 +273,10 @@ body.stealth-mode .insight-card div[style*="font-size:18px"],
 body.stealth-mode .subs-monthly-total,
 body.stealth-mode .subs-summary-val,
 body.stealth-mode .insight-stat-num {
-    filter: blur(7px);
-    user-select: none;
-    -webkit-user-select: none;
-    transition: filter 0.18s ease;
+  filter: blur(7px);
+  user-select: none;
+  -webkit-user-select: none;
+  transition: filter 0.18s ease;
 }
 
 body.stealth-mode .metric-card:hover .metric-value,
@@ -315,5 +296,5 @@ body.stealth-mode .savings-goal-card:hover strong,
 body.stealth-mode .money-flow-row:hover dd,
 body.stealth-mode .insight-card:hover strong,
 body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
-    filter: none;
+  filter: none;
 }

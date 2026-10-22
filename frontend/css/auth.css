@@ -1,10 +1,9 @@
-/* ==========================================================================
-   EXPENSE TRACKER — AUTH.CSS
-   Ordered entry point for authentication page modules.
-   ========================================================================== */
-
 @import url("auth/core.css");
+
 @import url("auth/layout.css");
+
 @import url("auth/hero.css");
+
 @import url("auth/forms.css");
+
 @import url("auth/dashboard-support.css");

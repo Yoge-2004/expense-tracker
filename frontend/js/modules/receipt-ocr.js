@@ -388,13 +388,13 @@
                             if (bd.cgst && bd.sgst) taxTag = `CGST+SGST (₹${bd.cgst} + ₹${bd.sgst})`;
                             else if (bd.igst) taxTag = `IGST (₹${bd.igst})`;
                             else if (bd.vat) taxTag = `VAT (₹${bd.vat})`;
-                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Identified tax breakdown">🏛️ ${taxTag}: ₹${bd.totalTax.toFixed(2)}</span>`;
+                            pillsHtml += `<span class="receipt-breakdown-pill u-inl-b1aca7e" title="Identified tax breakdown">🏛️ ${taxTag}: ₹${bd.totalTax.toFixed(2)}</span>`;
                         }
                         if (bd.discount) {
-                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Discount deducted">🏷️ Discount: -₹${bd.discount.toFixed(2)}</span>`;
+                            pillsHtml += `<span class="receipt-breakdown-pill u-inl-b1aca7e" title="Discount deducted">🏷️ Discount: -₹${bd.discount.toFixed(2)}</span>`;
                         }
                         if (bd.charges) {
-                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Fees and charges">🚚 Charges: ₹${bd.charges.toFixed(2)}</span>`;
+                            pillsHtml += `<span class="receipt-breakdown-pill u-inl-b1aca7e" title="Fees and charges">🚚 Charges: ₹${bd.charges.toFixed(2)}</span>`;
                         }
 
                         if (pillsHtml) {

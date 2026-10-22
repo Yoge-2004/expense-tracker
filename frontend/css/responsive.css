@@ -1,80 +1,72 @@
-/* ==========================================================================
-   EXPENSE TRACKER — RESPONSIVE.CSS
-   Module: Responsive Breakpoints & Mobile Optimization
-   ========================================================================== */
-
-/* ================== 8. MOBILE RESPONSIVE ================== */
 @media (max-width: 900px) {
-    body {
-        height: auto;
-        overflow-y: auto;
-        background: var(--bg-dark);
-    }
+  body {
+    height: auto;
+    overflow-y: auto;
+    background: var(--bg-dark);
+  }
 
-    /* Legacy auth-page selectors were removed because the current HTML no longer uses them. */
+  .dashboard-container {
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
 
-    .dashboard-container {
-        height: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        padding: 20px;
-    }
+  .card {
+    justify-content: flex-start;
+    min-height: 180px;
+  }
 
-    .card {
-        justify-content: flex-start;
-        min-height: 180px;
-    }
+  .card canvas {
+    width: 100%;
+    max-height: 250px;
+  }
 
-    .card canvas {
-        width: 100% !important;
-        max-height: 250px;
-    }
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 
-    .list-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
+  .list-header-actions {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+  }
 
-    .list-header-actions {
-        width: 100%;
-        display: flex;
-        gap: 10px;
-    }
+  .command-search-wrapper {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
 
-    .command-search-wrapper {
-        flex: 1;
-        min-width: 0;
-        width: auto;
-    }
+  .btn-icon {
+    flex: 0 0 36px;
+  }
 
-    .btn-icon {
-        flex: 0 0 36px;
-    }
+  .filter-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-    .filter-toolbar {
-        flex-direction: column;
-        align-items: stretch;
-    }
+  .filter-select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
 
-    .filter-select {
-        width: 100%;
-        min-width: 0;
-        max-width: 100%;
-    }
+  .recent-transactions {
+    height: auto;
+    overflow: visible;
+  }
 
-    .recent-transactions {
-        height: auto;
-        overflow: visible;
-    }
-
-    .scroll-area {
-        overflow: visible;
-        height: auto;
-        max-height: 320px;
-        overflow-y: auto;
-    }
+  .scroll-area {
+    overflow: visible;
+    height: auto;
+    max-height: 320px;
+    overflow-y: auto;
+  }
 }
 
 @keyframes fadeUp {
@@ -98,1095 +90,1169 @@
     to { transform: rotate(360deg); }
 }
 
-
-/* ================== RESPONSIVE ENHANCEMENTS (DASHBOARD) ================== */
-
-/* ── Dashboard top-bar: prevent export buttons from overflowing ── */
 @media (max-width: 768px) {
-    .list-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 
-    .list-header > div:first-child {
-        width: 100%;
-    }
+  .list-header > div:first-child {
+    width: 100%;
+  }
 
-    .list-header-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-    }
+  .list-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
 
-    .btn-text-icon {
-        font-size: 11px;
-        padding: 0 12px;
-        height: 34px;
-        width: auto;
-        min-width: fit-content;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
+  .btn-text-icon {
+    font-size: 11px;
+    padding: 0 12px;
+    height: 34px;
+    width: auto;
+    min-width: fit-content;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-    /* Budget grid single column */
-    .budget-grid-matrix {
-        grid-template-columns: 1fr;
-    }
+  .budget-grid-matrix {
+    grid-template-columns: 1fr;
+  }
 
-    /* Modal: full-width on small screens */
-    .modal-overlay {
-        padding: 10px 8px;
-        overflow: hidden;
-    }
+  .modal-overlay {
+    padding: 10px 8px;
+    overflow: hidden;
+  }
 
-    .modal {
-        width: 95%;
-        max-width: 440px;
-        max-height: min(calc(100dvh - 20px), calc(100vh - 20px), 90vh);
-        padding: 22px 18px;
-        border-radius: 20px;
-        overflow-x: hidden;
-    }
+  .modal {
+    width: 95%;
+    max-width: 440px;
+    max-height: min(calc(100dvh - 20px), calc(100vh - 20px), 90vh);
+    padding: 22px 18px;
+    border-radius: 20px;
+    overflow-x: hidden;
+  }
 
-    .modal::-webkit-scrollbar {
-        width: 4px;
-    }
+  .modal::-webkit-scrollbar {
+    width: 4px;
+  }
 
-    .modal::-webkit-scrollbar-button:single-button:vertical:decrement {
-        height: 20px;
-        display: block;
-        background: transparent;
-        border: none;
-    }
-    .modal::-webkit-scrollbar-button:single-button:vertical:increment {
-        height: 20px;
-        display: block;
-        background: transparent;
-        border: none;
-    }
+  .modal::-webkit-scrollbar-button:single-button:vertical:decrement {
+    height: 20px;
+    display: block;
+    background: transparent;
+    border: none;
+  }
 
-    .modal::-webkit-scrollbar-track {
-        background: transparent;
-        margin-block: 20px;
-        margin-top: 20px;
-        margin-bottom: 20px;
-        border-radius: 999px;
-    }
+  .modal::-webkit-scrollbar-button:single-button:vertical:increment {
+    height: 20px;
+    display: block;
+    background: transparent;
+    border: none;
+  }
 
-    .modal::-webkit-scrollbar-thumb {
-        background: rgba(var(--primary-rgb), 0.45);
-        border-radius: 999px;
-        border: 1px solid transparent;
-        background-clip: padding-box;
-    }
+  .modal::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 999px;
+  }
 
-    .modal-large {
-        width: 95%;
-        max-height: 85vh;
-    }
+  .modal::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
 
-    /* Switch label: always show text before toggle, with space between */
-    .switch-label {
-        width: 100%;
-        justify-content: space-between;
-    }
+  .modal-large {
+    width: 95%;
+    max-height: 85vh;
+  }
 
-    /* Section heading meta hide */
-    .section-meta {
-        display: none;
-    }
+  .switch-label {
+    width: 100%;
+    justify-content: space-between;
+  }
 
-    /* Reduce card padding */
-    .card {
-        padding: 16px;
-    }
+  .section-meta {
+    display: none;
+  }
 
-    /* Chart heights */
-    .chart-wrapper {
-        height: 180px;
-    }
+  .card {
+    padding: 16px;
+  }
 
-    .trend-chart-wrapper {
-        height: 180px;
-    }
+  .chart-wrapper {
+    height: 180px;
+  }
 
-    /* Expense items: wrap gracefully without truncating full expense name */
-    .expense-item {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 14px 12px;
-    }
+  .trend-chart-wrapper {
+    height: 180px;
+  }
 
-    .expense-emoji-box {
-        width: 38px;
-        height: 38px;
-        flex-shrink: 0;
-    }
+  .expense-item {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 12px;
+  }
 
-    .expense-info {
-        flex: 1 1 auto;
-        min-width: 0;
-    }
+  .expense-emoji-box {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
 
-    .expense-title {
-        font-size: 14px;
-        font-weight: 700;
-        white-space: normal;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-        line-height: 1.35;
-        margin: 0 0 4px 0;
-    }
+  .expense-info {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 
-    .expense-meta {
-        flex-wrap: wrap;
-        gap: 6px;
-        font-size: 11px;
-    }
+  .expense-title {
+    font-size: 14px;
+    font-weight: 700;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+    margin: 0 0 4px 0;
+  }
 
-    .expense-actions-col {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 6px;
-        flex-shrink: 0;
-        margin-left: 6px;
-    }
+  .expense-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+  }
 
-    .expense-amount {
-        font-size: 15px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
+  .expense-actions-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 6px;
+  }
 
-    .expense-actions-col .btn-edit,
-    .expense-actions-col .btn-delete {
-        width: 28px;
-        height: 28px;
-        padding: 0;
-    }
+  .expense-amount {
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .expense-actions-col .btn-edit,
+  .expense-actions-col .btn-delete {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
 }
 
-/* ── Extra small screens (phones < 480px) ── */
 @media (max-width: 480px) {
-    .dashboard-container {
-        /* Keep 20px horizontal padding on narrow screens for consistent edge spacing. */
-        padding: 20px 20px 40px;
-        gap: 14px;
-    }
+  .dashboard-container {
+    padding: 20px 20px 40px;
+    gap: 14px;
+  }
 
-    .top-bar-actions {
-        /* Keep narrow-screen spacing aligned with the wider responsive tier. */
-        gap: 14px;
-    }
+  .top-bar-actions {
+    gap: 14px;
+  }
 
-    .metric-value {
-        font-size: 20px;
-    }
+  .metric-value {
+    font-size: 20px;
+  }
 
-    .category-pills-bar {
-        gap: 8px;
-    }
+  .category-pills-bar {
+    gap: 8px;
+  }
 
-    .pill-chip {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
+  .pill-chip {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 
-    .command-search-wrapper {
-        height: 42px;
-        padding: 0 10px;
-        gap: 8px;
-        border-radius: 12px;
-    }
+  .command-search-wrapper {
+    height: 42px;
+    padding: 0 10px;
+    gap: 8px;
+    border-radius: 12px;
+  }
 
-    .command-search-input {
-        font-size: 14px;
-        padding: 0 4px;
-    }
+  .command-search-input {
+    font-size: 14px;
+    padding: 0 4px;
+  }
 
-    .modal-overlay {
-        padding: 8px 6px;
-        overflow: hidden;
-    }
+  .modal-overlay {
+    padding: 8px 6px;
+    overflow: hidden;
+  }
 
-    .modal {
-        padding: 18px 14px;
-        width: 96%;
-        max-width: 420px;
-        max-height: min(calc(100dvh - 16px), calc(100vh - 16px), 92vh);
-        border-radius: 18px;
-        overflow-x: hidden;
-    }
+  .modal {
+    padding: 18px 14px;
+    width: 96%;
+    max-width: 420px;
+    max-height: min(calc(100dvh - 16px), calc(100vh - 16px), 92vh);
+    border-radius: 18px;
+    overflow-x: hidden;
+  }
 
-    .budget-date-row {
-        flex-direction: column;
-        gap: 10px;
-    }
+  .budget-date-row {
+    flex-direction: column;
+    gap: 10px;
+  }
 
-    .budget-date-col {
-        width: 100%;
-        flex: none;
-    }
+  .budget-date-col {
+    width: 100%;
+    flex: none;
+  }
 
-    .modal::-webkit-scrollbar {
-        width: 4px;
-    }
+  .modal::-webkit-scrollbar {
+    width: 4px;
+  }
 
-    .modal::-webkit-scrollbar-button:single-button:vertical:decrement {
-        height: 18px;
-        display: block;
-        background: transparent;
-        border: none;
-    }
-    .modal::-webkit-scrollbar-button:single-button:vertical:increment {
-        height: 18px;
-        display: block;
-        background: transparent;
-        border: none;
-    }
+  .modal::-webkit-scrollbar-button:single-button:vertical:decrement {
+    height: 18px;
+    display: block;
+    background: transparent;
+    border: none;
+  }
 
-    .modal::-webkit-scrollbar-track {
-        background: transparent;
-        margin-block: 18px;
-        margin-top: 18px;
-        margin-bottom: 18px;
-        border-radius: 999px;
-    }
+  .modal::-webkit-scrollbar-button:single-button:vertical:increment {
+    height: 18px;
+    display: block;
+    background: transparent;
+    border: none;
+  }
 
-    .modal::-webkit-scrollbar-thumb {
-        background: rgba(var(--primary-rgb), 0.45);
-        border-radius: 999px;
-        border: 1px solid transparent;
-        background-clip: padding-box;
-    }
+  .modal::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 18px;
+    margin-top: 18px;
+    margin-bottom: 18px;
+    border-radius: 999px;
+  }
 
-    .section-title {
-        font-size: 15px;
-    }
+  .modal::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
 
-    .card-label {
-        font-size: 10px;
-    }
+  .section-title {
+    font-size: 15px;
+  }
 
-    .btn-text-icon {
-        min-width: fit-content;
-        width: auto;
-        padding: 0 10px;
-        white-space: nowrap;
-    }
+  .card-label {
+    font-size: 10px;
+  }
+
+  .btn-text-icon {
+    min-width: fit-content;
+    width: auto;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
 }
 
-/* ── Auth pages: compact layout on very small screens (<= 400px) ── */
 @media (max-width: 400px) {
-    .hero-float-cards {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
-        width: 100%;
-        margin-bottom: 4px;
-        padding: 0;
-    }
+  .hero-float-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    margin-bottom: 4px;
+    padding: 0;
+  }
 
-    .perks-grid {
-        margin-bottom: 4px;
-    }
+  .perks-grid {
+    margin-bottom: 4px;
+  }
 
-    .hero-float-cards .float-card:nth-child(3):last-child {
-        grid-column: 1 / -1;
-        max-width: 220px;
-        margin: 0 auto;
-    }
+  .hero-float-cards .float-card:nth-child(3):last-child {
+    grid-column: 1 / -1;
+    max-width: 220px;
+    margin: 0 auto;
+  }
 
-    .float-card, .perk-item {
-        padding: 6px 8px;
-        min-width: 0;
-        gap: 6px;
-        border-radius: 10px;
-        overflow: hidden;
-    }
+  .float-card,
+  .perk-item {
+    padding: 6px 8px;
+    min-width: 0;
+    gap: 6px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
 
-    .float-card > div:not(.float-card-icon):not(.perk-icon),
-    .perk-item > div:not(.float-card-icon):not(.perk-icon) {
-        min-width: 0;
-        flex: 1 1 auto;
-        overflow: hidden;
-    }
+  .float-card > div:not(.float-card-icon):not(.perk-icon),
+  .perk-item > div:not(.float-card-icon):not(.perk-icon) {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
 
-    .float-card-icon, .perk-icon {
-        width: 22px;
-        height: 22px;
-        min-width: 22px;
-        border-radius: 6px;
-        flex-shrink: 0;
-    }
+  .float-card-icon,
+  .perk-icon {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
 
-    .float-card-icon svg, .perk-icon svg {
-        width: 12px;
-        height: 12px;
-    }
+  .float-card-icon svg,
+  .perk-icon svg {
+    width: 12px;
+    height: 12px;
+  }
 
-    .float-card-value, .perk-title {
-        font-size: 10px;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-        display: block;
-    }
+  .float-card-value,
+  .perk-title {
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+  }
 
-    .float-card-label, .perk-sub {
-        font-size: 8.5px;
-        line-height: 1.25;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-    }
+  .float-card-label,
+  .perk-sub {
+    font-size: 8.5px;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
 
-    .hero-features {
-        display: none;
-    }
+  .hero-features {
+    display: none;
+  }
 
-    .auth-hero {
-        position: relative;
-        top: auto;
-        height: auto;
-        min-height: 0;
-        padding: 14px 10px 4px;
-    }
+  .auth-hero {
+    position: relative;
+    top: auto;
+    height: auto;
+    min-height: 0;
+    padding: 14px 10px 4px;
+  }
 
-    .auth-form-section {
-        padding: 8px 10px 24px;
-    }
+  .auth-form-section {
+    padding: 8px 10px 24px;
+  }
 
-    .auth-card {
-        padding: 18px 12px 20px;
-    }
+  .auth-card {
+    padding: 18px 12px 20px;
+  }
 
-    .auth-card-header {
-        margin-bottom: 12px;
-    }
+  .auth-card-header {
+    margin-bottom: 12px;
+  }
 
-    .hero-headline {
-        font-size: 20px;
-    }
+  .hero-headline {
+    font-size: 20px;
+  }
 }
 
-/* ── Tablet Portrait & Stacked Layout (481px–768px): Responsive 3-col or 2-col ── */
 @media (min-width: 481px) and (max-width: 768px) {
-    /* Hero takes full width across the tablet: all 3 cards arranged in a sleek 3-column row */
-    .hero-float-cards:not(.perks-grid) {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        width: 100%;
-        margin-bottom: 8px;
-        padding-bottom: 0;
-    }
+  .hero-float-cards:not(.perks-grid) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 8px;
+    padding-bottom: 0;
+  }
 
-    .hero-float-cards:not(.perks-grid) .float-card-1,
-    .hero-float-cards:not(.perks-grid) .float-card-2,
-    .hero-float-cards:not(.perks-grid) .float-card-3 {
-        grid-column: auto;
-        width: 100%;
-        margin: 0;
-    }
+  .hero-float-cards:not(.perks-grid) .float-card-1,
+  .hero-float-cards:not(.perks-grid) .float-card-2,
+  .hero-float-cards:not(.perks-grid) .float-card-3 {
+    grid-column: auto;
+    width: 100%;
+    margin: 0;
+  }
 
-    .perks-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        width: 100%;
-        margin-bottom: 8px;
-        padding-bottom: 0;
-    }
+  .perks-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 8px;
+    padding-bottom: 0;
+  }
 
-    .auth-hero {
-        position: relative;
-        top: auto;
-        height: auto;
-        min-height: 0;
-        padding-bottom: 8px;
-    }
+  .auth-hero {
+    position: relative;
+    top: auto;
+    height: auto;
+    min-height: 0;
+    padding-bottom: 8px;
+  }
 
-    .auth-form-section {
-        padding-top: 14px;
-    }
+  .auth-form-section {
+    padding-top: 14px;
+  }
 
-    .float-card, .perk-item {
-        margin: 0;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        padding: 10px 12px;
-        border-radius: 12px;
-        gap: 10px;
-    }
+  .float-card,
+  .perk-item {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    gap: 10px;
+  }
 
-    .float-card-icon, .perk-icon {
-        width: 30px;
-        height: 30px;
-        min-width: 30px;
-        border-radius: 8px;
-    }
-    .float-card-icon svg, .perk-icon svg {
-        width: 14px;
-        height: 14px;
-    }
+  .float-card-icon,
+  .perk-icon {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 8px;
+  }
 
-    .float-card-value, .perk-title {
-        font-size: 12px;
-    }
-    .float-card-label, .perk-sub {
-        font-size: 10px;
-    }
+  .float-card-icon svg,
+  .perk-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .float-card-value,
+  .perk-title {
+    font-size: 12px;
+  }
+
+  .float-card-label,
+  .perk-sub {
+    font-size: 10px;
+  }
 }
 
-/* ── Medium Desktop & Tablet Landscape (769px–1024px): Proportional compact dashboard layout ── */
 @media (min-width: 769px) and (max-width: 1024px) {
-    .auth-hero-content {
-        max-width: 440px;
-    }
+  .auth-hero-content {
+    max-width: 440px;
+  }
 
-    .hero-float-cards {
-        gap: 10px;
-        margin-bottom: 16px;
-        width: 100%;
-    }
+  .hero-float-cards {
+    gap: 10px;
+    margin-bottom: 16px;
+    width: 100%;
+  }
 
-    .float-card, .perk-item {
-        padding: 11px 14px;
-        border-radius: 14px;
-        gap: 11px;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        margin: 0;
-    }
+  .float-card,
+  .perk-item {
+    padding: 11px 14px;
+    border-radius: 14px;
+    gap: 11px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
 
-    .float-card-icon, .perk-icon {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        border-radius: 9px;
-    }
-    .float-card-icon svg, .perk-icon svg {
-        width: 14px;
-        height: 14px;
-    }
+  .float-card-icon,
+  .perk-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 9px;
+  }
 
-    .float-card-value, .perk-title {
-        font-size: 13px;
-    }
-    .float-card-label, .perk-sub {
-        font-size: 10.5px;
-    }
+  .float-card-icon svg,
+  .perk-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .float-card-value,
+  .perk-title {
+    font-size: 13px;
+  }
+
+  .float-card-label,
+  .perk-sub {
+    font-size: 10.5px;
+  }
 }
 
-/* ── Standard Desktop (1025px–1399px): Spacious 2-col dashboard cards ── */
 @media (min-width: 1025px) and (max-width: 1399px) {
-    .auth-hero-content {
-        max-width: 500px;
-    }
+  .auth-hero-content {
+    max-width: 500px;
+  }
 
-    .hero-float-cards {
-        gap: 12px;
-        margin-bottom: 20px;
-        width: 100%;
-    }
+  .hero-float-cards {
+    gap: 12px;
+    margin-bottom: 20px;
+    width: 100%;
+  }
 
-    .float-card, .perk-item {
-        padding: 13px 18px;
-        border-radius: 16px;
-        gap: 13px;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        margin: 0;
-    }
+  .float-card,
+  .perk-item {
+    padding: 13px 18px;
+    border-radius: 16px;
+    gap: 13px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
 
-    .hero-float-cards:not(.perks-grid) .float-card-1 {
-        padding: 15px 20px;
-    }
+  .hero-float-cards:not(.perks-grid) .float-card-1 {
+    padding: 15px 20px;
+  }
 
-    .float-card-icon, .perk-icon {
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
-        border-radius: 10px;
-    }
-    .float-card-icon svg, .perk-icon svg {
-        width: 17px;
-        height: 17px;
-    }
+  .float-card-icon,
+  .perk-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 10px;
+  }
 
-    .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-value {
-        font-size: 16px;
-    }
+  .float-card-icon svg,
+  .perk-icon svg {
+    width: 17px;
+    height: 17px;
+  }
 
-    .float-card-value, .perk-title {
-        font-size: 14px;
-    }
-    .float-card-label, .perk-sub {
-        font-size: 11.5px;
-    }
+  .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-value {
+    font-size: 16px;
+  }
+
+  .float-card-value,
+  .perk-title {
+    font-size: 14px;
+  }
+
+  .float-card-label,
+  .perk-sub {
+    font-size: 11.5px;
+  }
 }
 
-/* ── Large & Ultra-Wide Displays (>= 1400px): Generous Card Scale & Dashboard Showcase ── */
 @media (min-width: 1400px) {
-    .auth-hero-content {
-        max-width: 580px;
-    }
+  .auth-hero-content {
+    max-width: 580px;
+  }
 
-    .hero-float-cards {
-        gap: 16px;
-        margin-bottom: 26px;
-        width: 100%;
-    }
+  .hero-float-cards {
+    gap: 16px;
+    margin-bottom: 26px;
+    width: 100%;
+  }
 
-    .float-card, .perk-item {
-        padding: 16px 22px;
-        border-radius: 20px;
-        gap: 16px;
-        box-shadow: 0 16px 42px -8px rgba(0, 0, 0, 0.42);
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        margin: 0;
-    }
+  .float-card,
+  .perk-item {
+    padding: 16px 22px;
+    border-radius: 20px;
+    gap: 16px;
+    box-shadow: 0 16px 42px -8px rgba(0, 0, 0, 0.42);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
 
-    /* On index.html, Card 1 is the prominent hero savings banner */
-    .hero-float-cards:not(.perks-grid) .float-card-1 {
-        padding: 18px 24px;
-    }
+  .hero-float-cards:not(.perks-grid) .float-card-1 {
+    padding: 18px 24px;
+  }
 
-    .float-card-icon, .perk-icon {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        border-radius: 12px;
-    }
-    .float-card-icon svg, .perk-icon svg {
-        width: 20px;
-        height: 20px;
-    }
+  .float-card-icon,
+  .perk-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+  }
 
-    .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-value {
-        font-size: 18px;
-    }
-    .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-label {
-        font-size: 13.5px;
-    }
+  .float-card-icon svg,
+  .perk-icon svg {
+    width: 20px;
+    height: 20px;
+  }
 
-    .float-card-value, .perk-title {
-        font-size: 15px;
-    }
-    .float-card-label, .perk-sub {
-        font-size: 12px;
-    }
+  .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-value {
+    font-size: 18px;
+  }
+
+  .hero-float-cards:not(.perks-grid) .float-card-1 .float-card-label {
+    font-size: 13.5px;
+  }
+
+  .float-card-value,
+  .perk-title {
+    font-size: 15px;
+  }
+
+  .float-card-label,
+  .perk-sub {
+    font-size: 12px;
+  }
 }
 
-/* ── Large Screens (>= 1400px) ── */
 @media (min-width: 1400px) {
-    .budget-section .card-header,
-    .savings-section .card-header {
-        margin-bottom: 20px;
-    }
-    .budget-section .card-header #addBudgetBtn,
-    .savings-section .card-header #addGoalBtn {
-        height: 38px;
-        padding: 8px 18px;
-        font-size: 13.5px;
-        font-weight: 700;
-        border-radius: 11px;
-        gap: 8px;
-    }
-    .budget-section .card-header #addBudgetBtn svg,
-    .savings-section .card-header #addGoalBtn svg {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
-    }
+  .budget-section .card-header,
+  .savings-section .card-header {
+    margin-bottom: 20px;
+  }
+
+  .budget-section .card-header #addBudgetBtn,
+  .savings-section .card-header #addGoalBtn {
+    height: 38px;
+    padding: 8px 18px;
+    font-size: 13.5px;
+    font-weight: 700;
+    border-radius: 11px;
+    gap: 8px;
+  }
+
+  .budget-section .card-header #addBudgetBtn svg,
+  .savings-section .card-header #addGoalBtn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
 }
 
 @media (min-width: 1920px) {
-    .budget-section .card-header #addBudgetBtn,
-    .savings-section .card-header #addGoalBtn {
-        height: 40px;
-        padding: 8px 20px;
-        font-size: 14px;
-    }
+  .budget-section .card-header #addBudgetBtn,
+  .savings-section .card-header #addGoalBtn {
+    height: 40px;
+    padding: 8px 20px;
+    font-size: 14px;
+  }
 }
 
-/* ── Tablet & Small Desktop (901px–1280px) ── */
 @media (min-width: 901px) and (max-width: 1280px) {
-    .dashboard-container {
-        max-width: 100%;
-        padding: 24px 20px;
-    }
+  .dashboard-container {
+    max-width: 100%;
+    padding: 24px 20px;
+  }
 
-    .top-bar {
-        display: flex;
-        flex-wrap: nowrap;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        box-sizing: border-box;
-    }
+  .top-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    box-sizing: border-box;
+  }
 
-    .dashboard-heading {
-        flex: 0 0 auto;
-        min-width: max-content;
-        white-space: nowrap;
-    }
+  .dashboard-heading {
+    flex: 0 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
+  }
 
-    .dashboard-heading h2 {
-        font-size: 26px;
-        white-space: nowrap;
-    }
+  .dashboard-heading h2 {
+    font-size: 26px;
+    white-space: nowrap;
+  }
 
-    .top-bar-actions {
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: flex-end;
-        flex: 1 1 auto;
-        min-width: 0;
-        gap: 8px;
-    }
+  .top-bar-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 8px;
+  }
 
-    .top-bar-actions .command-search-wrapper {
-        flex: 1 1 200px;
-        min-width: 160px;
-        max-width: 320px;
-        width: auto;
-        padding: 0 12px;
-        gap: 8px;
-    }
+  .top-bar-actions .command-search-wrapper {
+    flex: 1 1 200px;
+    min-width: 160px;
+    max-width: 320px;
+    width: auto;
+    padding: 0 12px;
+    gap: 8px;
+  }
 
-    .top-bar-actions .command-search-input {
-        padding: 0 4px;
-        font-size: 13px;
-        min-width: 0;
-        width: 100%;
-        flex: 1 1 auto;
-    }
+  .top-bar-actions .command-search-input {
+    padding: 0 4px;
+    font-size: 13px;
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 auto;
+  }
 
-    .top-bar .add-expense-button,
-    .top-bar .add-income-button {
-        padding: 0 14px;
-        height: 38px;
-        font-size: 13px;
-        font-weight: 700;
-        gap: 6px;
-        flex-shrink: 0;
-        white-space: nowrap;
-    }
+  .top-bar .add-expense-button,
+  .top-bar .add-income-button {
+    padding: 0 14px;
+    height: 38px;
+    font-size: 13px;
+    font-weight: 700;
+    gap: 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 
-    .top-bar .add-expense-button > span,
-    .top-bar .add-income-button > span {
-        white-space: nowrap;
-        overflow: visible;
-        text-overflow: clip;
-    }
+  .top-bar .add-expense-button > span,
+  .top-bar .add-income-button > span {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+  }
 
-    .top-bar-utility-group {
-        gap: 6px;
-        flex-shrink: 0;
-    }
+  .top-bar-utility-group {
+    gap: 6px;
+    flex-shrink: 0;
+  }
 
-    .user-profile {
-        flex-shrink: 0;
-    }
+  .user-profile {
+    flex-shrink: 0;
+  }
 
-    .grid-4-metrics {
-        gap: 14px;
-    }
+  .grid-4-metrics {
+    gap: 14px;
+  }
 
-    .metric-card {
-        padding: 18px;
-    }
+  .metric-card {
+    padding: 18px;
+  }
 
-    .metric-value {
-        font-size: 22px;
-    }
+  .metric-value {
+    font-size: 22px;
+  }
 }
 
-/* ── Tablet Portrait & Medium Screens (521px–900px) ── */
 @media (min-width: 521px) and (max-width: 900px) {
-    .command-kbd { display: none; }
-    .top-bar {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-        padding: 14px 16px 16px;
-        border-radius: 14px;
-        box-sizing: border-box;
-    }
-    .top-bar-actions {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-rows: auto auto auto;
-        grid-auto-flow: row;
-        align-items: center;
-        justify-items: stretch;
-        column-gap: 12px;
-        row-gap: 10px;
-        width: 100%;
-        min-width: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-    .top-bar-actions .command-search-wrapper {
-        grid-column: 1 / -1;
-        grid-row: 1;
-        width: 100%;
-        min-width: 0;
-        max-width: none;
-        margin: 0;
-    }
-    .top-bar-actions > #openModalBtn {
-        grid-column: 1;
-        grid-row: 2;
-        width: 100%;
-        height: 42px;
-        box-sizing: border-box;
-    }
-    .top-bar-actions > #openIncomeModalBtn {
-        grid-column: 2;
-        grid-row: 2;
-        width: 100%;
-        height: 42px;
-        box-sizing: border-box;
-    }
-    .top-bar-actions > #openModalBtn:hover,
-    .top-bar-actions > #openIncomeModalBtn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    }
-    .top-bar .add-expense-button > span,
-    .top-bar .add-income-button > span {
-        white-space: nowrap;
-        overflow: visible;
-        text-overflow: clip;
-        font-size: 13px;
-        font-weight: 700;
-        text-align: center;
-    }
-    .top-bar-actions > .top-bar-utility-group {
-        grid-column: 1;
-        grid-row: 3;
-        justify-self: start;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .top-bar-actions > .user-profile {
-        grid-column: 2;
-        grid-row: 3;
-        justify-self: end;
-        min-width: 0;
-    }
-    .profile-menu {
-        left: auto;
-        right: 0;
-        width: min(320px, calc(100vw - 24px));
-        box-sizing: border-box;
-    }
-    .insights-intelligence-panel {
-        padding: 18px 16px;
-        border-radius: 16px;
-        box-sizing: border-box;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        overflow-x: clip;
-    }
-    .insights-cards-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-    .savings-grid-matrix {
-        grid-template-columns: 1fr;
-        gap: 12px;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-    .savings-section .card-header {
-        flex-wrap: wrap;
-        gap: 12px;
-    }
+  .command-kbd {
+    display: none;
+  }
+
+  .top-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px 16px;
+    border-radius: 14px;
+    box-sizing: border-box;
+  }
+
+  .top-bar-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-auto-flow: row;
+    align-items: center;
+    justify-items: stretch;
+    column-gap: 12px;
+    row-gap: 10px;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .top-bar-actions .command-search-wrapper {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .top-bar-actions > #openModalBtn {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    height: 42px;
+    box-sizing: border-box;
+  }
+
+  .top-bar-actions > #openIncomeModalBtn {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    height: 42px;
+    box-sizing: border-box;
+  }
+
+  .top-bar-actions > #openModalBtn:hover,
+  .top-bar-actions > #openIncomeModalBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  .top-bar .add-expense-button > span,
+  .top-bar .add-income-button > span {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .top-bar-actions > .top-bar-utility-group {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .top-bar-actions > .user-profile {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: end;
+    min-width: 0;
+  }
+
+  .profile-menu {
+    left: auto;
+    right: 0;
+    width: min(320px, calc(100vw - 24px));
+    box-sizing: border-box;
+  }
+
+  .insights-intelligence-panel {
+    padding: 18px 16px;
+    border-radius: 16px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .insights-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .savings-grid-matrix {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .savings-section .card-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 }
 
-/* ── Mobile Screens & Handhelds (<= 520px, includes 320px) ── */
 @media (max-width: 520px) {
-    .command-kbd { display: none; }
-    .top-bar {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-        padding: 14px 14px 16px;
-        border-radius: 14px;
-        box-sizing: border-box;
-    }
-    .dashboard-heading {
-        width: 100%;
-        padding: 0;
-        margin: 0;
-    }
-    .brand-title,
-    .dashboard-heading h2 {
-        font-size: 22px;
-        letter-spacing: -0.4px;
-    }
-    .brand-badge {
-        gap: 8px;
-    }
-    .top-bar-actions {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto;
-        row-gap: 8px;
-        width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-        padding: 0;
-    }
-    .top-bar-actions .command-search-wrapper {
-        grid-column: 1;
-        grid-row: 1;
-        width: 100%;
-        min-width: 0;
-        max-width: none;
-        margin: 0;
-    }
-    .top-bar-actions > #openModalBtn {
-        grid-column: 1;
-        grid-row: 2;
-        width: 100%;
-        height: 42px;
-        font-size: 13px;
-        font-weight: 700;
-        border-radius: 10px;
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        box-sizing: border-box;
-    }
-    .top-bar-actions > #openIncomeModalBtn {
-        grid-column: 1;
-        grid-row: 3;
-        width: 100%;
-        height: 42px;
-        font-size: 13px;
-        font-weight: 700;
-        border-radius: 10px;
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        box-sizing: border-box;
-    }
-    .top-bar-actions > #openModalBtn:hover,
-    .top-bar-actions > #openIncomeModalBtn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    }
-    .top-bar-actions > #openModalBtn > span,
-    .top-bar-actions > #openIncomeModalBtn > span {
-        white-space: nowrap;
-        overflow: visible;
-        text-overflow: clip;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: -0.01em;
-        text-align: center;
-    }
-    .top-bar-actions > .top-bar-utility-group {
-        grid-column: 1;
-        grid-row: 4;
-        justify-self: start;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 4px;
-    }
-    .top-bar-actions > .user-profile {
-        grid-column: 1;
-        grid-row: 4;
-        justify-self: end;
-        margin-top: 4px;
-    }
-    .profile-menu {
-        width: calc(100vw - 20px);
-        max-width: calc(100vw - 20px);
-        right: -2px;
-    }
-    .insights-intelligence-panel {
-        padding: 14px 12px;
-        border-radius: 14px;
-        box-sizing: border-box;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        overflow-x: clip;
-    }
-    .insights-cards-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-    .insights-metric-triplet {
-        grid-template-columns: 1fr;
-        gap: 8px;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-    .savings-grid-matrix {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-    }
-    .savings-section .card-header {
-        flex-wrap: wrap;
-        gap: 10px;
-    }
+  .command-kbd {
+    display: none;
+  }
+
+  .top-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 14px 16px;
+    border-radius: 14px;
+    box-sizing: border-box;
+  }
+
+  .dashboard-heading {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .brand-title,
+  .dashboard-heading h2 {
+    font-size: 22px;
+    letter-spacing: -0.4px;
+  }
+
+  .brand-badge {
+    gap: 8px;
+  }
+
+  .top-bar-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    row-gap: 8px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0;
+  }
+
+  .top-bar-actions .command-search-wrapper {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .top-bar-actions > #openModalBtn {
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    height: 42px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
+  .top-bar-actions > #openIncomeModalBtn {
+    grid-column: 1;
+    grid-row: 3;
+    width: 100%;
+    height: 42px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+
+  .top-bar-actions > #openModalBtn:hover,
+  .top-bar-actions > #openIncomeModalBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  .top-bar-actions > #openModalBtn > span,
+  .top-bar-actions > #openIncomeModalBtn > span {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-align: center;
+  }
+
+  .top-bar-actions > .top-bar-utility-group {
+    grid-column: 1;
+    grid-row: 4;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .top-bar-actions > .user-profile {
+    grid-column: 1;
+    grid-row: 4;
+    justify-self: end;
+    margin-top: 4px;
+  }
+
+  .profile-menu {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    right: -2px;
+  }
+
+  .insights-intelligence-panel {
+    padding: 14px 12px;
+    border-radius: 14px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .insights-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .insights-metric-triplet {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .savings-grid-matrix {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .savings-section .card-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 }
 
-/* ── Mobile Ledger & Controls (<= 760px) ── */
 @media (max-width: 760px) {
-    #ledgerStreamTabs, .ledger-stream-tabs {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        overflow-y: hidden;
-        min-width: 0;
-        width: 100%;
-        scrollbar-width: none;
-    }
-    #ledgerStreamTabs::-webkit-scrollbar, .ledger-stream-tabs::-webkit-scrollbar { display: none; }
-    #ledgerStreamTabs .stream-pill-btn, .ledger-stream-tabs .stream-pill-btn {
-        flex: 0 0 auto;
-        min-width: max-content;
-        white-space: nowrap;
-    }
-    #incomeList .btn-edit, #incomeList .btn-delete {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        min-height: 34px;
-        padding: 0;
-        border-radius: 10px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 34px;
-        box-sizing: border-box;
-    }
-    #incomeList .btn-edit svg, #incomeList .btn-delete svg {
-        width: 14px;
-        height: 14px;
-        display: block;
-    }
+  #ledgerStreamTabs,
+  .ledger-stream-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    width: 100%;
+    scrollbar-width: none;
+  }
+
+  #ledgerStreamTabs::-webkit-scrollbar,
+  .ledger-stream-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  #ledgerStreamTabs .stream-pill-btn,
+  .ledger-stream-tabs .stream-pill-btn {
+    flex: 0 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
+  }
+
+  #incomeList .btn-edit,
+  #incomeList .btn-delete {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+    box-sizing: border-box;
+  }
+
+  #incomeList .btn-edit svg,
+  #incomeList .btn-delete svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+  }
 }
 
-/* ── Mobile Compact (<= 700px) ── */
 @media (max-width: 700px) {
-    .budget-status-row { gap: 8px; font-size: 10.5px; }
-    .budget-item { padding: 13px; }
-    .budget-item .budget-bar-track { height: 7px; margin-top: 9px; }
-    #incomeList tbody tr { width: 100%; }
+  .budget-status-row {
+    gap: 8px;
+    font-size: 10.5px;
+  }
+
+  .budget-item {
+    padding: 13px;
+  }
+
+  .budget-item .budget-bar-track {
+    height: 7px;
+    margin-top: 9px;
+  }
+
+  #incomeList tbody tr {
+    width: 100%;
+  }
 }
 
-/* ── Extra-Small Screens (<= 360px) ── */
 @media (max-width: 360px) {
-    .brand-title,
-    .dashboard-heading h2 {
-        font-size: 19px;
-        letter-spacing: -0.3px;
-    }
-    .brand-badge {
-        gap: 6px;
-    }
-    .input-wrapper > .input-icon {
-        left: 10px;
-        width: 14px;
-        height: 14px;
-    }
-    .input-wrapper > input:not([type="hidden"]),
-    .input-wrapper > .form-input,
-    .form-group .input-wrapper > input:not([type="hidden"]),
-    .form-group .input-wrapper > .form-input,
-    .auth-form .input-wrapper > input:not([type="hidden"]),
-    .auth-form .input-wrapper > .form-input,
-    .input-wrapper > .custom-select-trigger,
-    .form-group .input-wrapper > .custom-select-trigger {
-        padding-left: 48px;
-        box-sizing: border-box;
-    }
+  .brand-title,
+  .dashboard-heading h2 {
+    font-size: 19px;
+    letter-spacing: -0.3px;
+  }
+
+  .brand-badge {
+    gap: 6px;
+  }
+
+  .input-wrapper > .input-icon {
+    left: 10px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .input-wrapper > input:not([type="hidden"]),
+  .input-wrapper > .form-input,
+  .form-group .input-wrapper > input:not([type="hidden"]),
+  .form-group .input-wrapper > .form-input,
+  .auth-form .input-wrapper > input:not([type="hidden"]),
+  .auth-form .input-wrapper > .form-input,
+  .input-wrapper > .custom-select-trigger,
+  .form-group .input-wrapper > .custom-select-trigger {
+    padding-left: 48px;
+    box-sizing: border-box;
+  }
 }
 
-/* Touch layouts: the shimmer sweep on the record buttons is decorative and leaves an artifact on narrow screens. */
 @media (max-width: 900px) {
-    .top-bar-actions > #openModalBtn::before,
-    .top-bar-actions > #openModalBtn::after,
-    .top-bar-actions > #openIncomeModalBtn::before,
-    .top-bar-actions > #openIncomeModalBtn::after {
-        display: none;
-        content: none;
-    }
+  .top-bar-actions > #openModalBtn::before,
+  .top-bar-actions > #openModalBtn::after,
+  .top-bar-actions > #openIncomeModalBtn::before,
+  .top-bar-actions > #openIncomeModalBtn::after {
+    display: none;
+    content: none;
+  }
 }
 
-/* Loans Section Responsive - Scrollable Chip Ribbon on Mobile */
 @media (max-width: 768px) {
-    .loans-filter-bar {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        padding-bottom: 8px !important;
-        scrollbar-width: none !important;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    .loans-filter-bar::-webkit-scrollbar {
-        display: none !important;
-    }
-    .loan-tab-btn {
-        flex-shrink: 0 !important;
-        white-space: nowrap !important;
-        border-radius: 999px !important;
-    }
-    .loans-metrics-grid {
-        grid-template-columns: 1fr 1fr !important;
-    }
+  .loans-filter-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .loans-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .loan-tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-radius: 999px;
+  }
+
+  .loans-metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 480px) {
-    .loans-metrics-grid {
-        grid-template-columns: 1fr !important;
-    }
+  .loans-metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }

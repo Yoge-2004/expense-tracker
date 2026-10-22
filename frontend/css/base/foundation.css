@@ -1,17 +1,7 @@
-/* ==========================================================================
-   EXPENSE TRACKER — BASE.CSS
-   Module: Foundation (Reset, Base Typography, Global Scrollbars)
-   ========================================================================== */
-
-/* ================== 2. FOUNDATION ================== */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: var(--font-body);
+  font-family: var(--font-body);
 }
 
-/* Strict hidden rule to prevent class display rules from overriding hidden attribute */
 [hidden],
 .form-group-box[hidden],
 .form-group-box .form-group[hidden],
@@ -20,74 +10,71 @@
 #incomeRecurringOptions[hidden],
 #incomeCustomIntervalWrap[hidden],
 #editSubCustomIntervalWrap[hidden] {
-    display: none !important;
+  display: none !important;
 }
-
-/* Theme changes are intentionally instantaneous. A populated expense ledger
-   should never interpolate hundreds of color-bearing elements at once. */
 
 input::-ms-reveal,
 input::-ms-clear {
-    display: none;
+  display: none;
 }
 
 input[type="number"] {
-    appearance: textfield;
+  appearance: textfield;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-/* Theme switching performance safeguard */
 html.theme-switching,
 html.theme-switching *,
 html.theme-switching *::before,
 html.theme-switching *::after {
-    transition: none !important;
-    animation: none !important;
+  transition: none !important;
+  animation: none !important;
 }
 
-/* Base Input Icon & Wrapper Layout */
 .input-wrapper {
-    position: relative;
-    min-width: 0;
+  min-width: 0;
 }
+
 .input-wrapper > .input-icon,
 .input-wrapper > svg.input-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    width: 16px;
-    height: 16px;
-    transform: translateY(-50%);
-    display: block;
-    visibility: visible;
-    opacity: 1;
-    color: var(--text-muted);
-    stroke: currentColor;
-    fill: none;
-    pointer-events: none;
-    z-index: 5;
-    flex: 0 0 16px;
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  color: var(--text-muted);
+  stroke: currentColor;
+  fill: none;
+  pointer-events: none;
+  z-index: 5;
+  flex: 0 0 16px;
 }
-.input-wrapper:focus-within > .input-icon,
-.input-wrapper:focus-within > svg.input-icon {
-    color: var(--primary);
+
+.input-wrapper:focus-within > .input-icon {
+  color: var(--primary);
 }
+
 .input-wrapper > .form-input,
 .input-wrapper > input,
 .input-wrapper > textarea,
 .input-wrapper > select {
-    min-width: 0;
+  min-width: 0;
 }
+
 .input-wrapper:has(> .input-icon) > input.form-input,
 .input-wrapper:has(> .input-icon) > textarea.form-input,
 .input-wrapper:has(> .input-icon) > select.form-input,
 .input-wrapper:has(> svg.input-icon) > input.form-input,
 .input-wrapper:has(> svg.input-icon) > textarea.form-input,
 .input-wrapper:has(> svg.input-icon) > select.form-input {
-    padding-left: 42px;
+  padding-left: 42px;
 }

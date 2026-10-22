@@ -1,296 +1,292 @@
-/* ── Dashboard Enhancements ── */
-.top-bar {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
 .user-profile:hover .avatar {
-    box-shadow: 0 0 0 3px var(--primary), 0 6px 20px rgba(var(--primary-rgb),0.4);
+  box-shadow: 0 0 0 3px var(--primary), 0 6px 20px rgba(var(--primary-rgb),0.4);
 }
 
-/* Top action bar for auth pages (Theme toggle, etc) */
 .auth-top-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 24px;
 }
 
-/* Username suggestion chips */
 .username-suggestions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    padding: 8px 12px;
-    background: rgba(var(--primary-rgb), 0.05);
-    border: 1px dashed rgba(var(--primary-rgb), 0.3);
-    border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(var(--primary-rgb), 0.05);
+  border: 1px dashed rgba(var(--primary-rgb), 0.3);
+  border-radius: 10px;
 }
 
 .suggestion-title {
-    width: 100%;
-    color: var(--text-muted);
-    font-size: 11.5px;
-    font-weight: 600;
-    margin-bottom: 2px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  width: 100%;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .suggestion-chip {
-    background: rgba(var(--primary-rgb), 0.12);
-    border: 1px solid rgba(var(--primary-rgb), 0.4);
-    color: var(--primary);
-    padding: 3px 10px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: var(--cursor-pointer, pointer);
-    transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  background: rgba(var(--primary-rgb), 0.12);
+  border: 1px solid rgba(var(--primary-rgb), 0.4);
+  color: var(--primary);
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: var(--cursor-pointer, pointer);
 }
 
 .suggestion-chip:hover {
-    background: var(--primary);
-    color: var(--on-primary);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
-/* Responsive — Auth pages & Dashboard mobile layout */
 @media (max-width: 900px) {
-    .auth-page {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        height: auto;
-        overflow-y: visible;
-        overflow: visible;
-        scrollbar-width: none;
-    }
+  .auth-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    height: auto;
+    overflow-y: visible;
+    overflow: visible;
+    scrollbar-width: none;
+  }
 
-    .auth-hero {
-        position: relative;
-        top: auto;
-        height: auto;
-        min-height: 0;
-        max-height: none;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 24px 16px 8px;
-        width: 100%;
-        box-sizing: border-box;
-        border-bottom: 1px solid var(--border);
-        overflow: visible;
-    }
+  .auth-hero {
+    position: relative;
+    top: auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+  }
 
-    .auth-hero-content {
-        width: 100%;
-        max-width: 520px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow: visible;
-        height: auto;
-        min-height: 0;
-    }
+  .auth-hero-content {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: visible;
+    height: auto;
+    min-height: 0;
+  }
 
-    .hero-brand {
-        justify-content: center;
-        margin-bottom: 12px;
-    }
+  .hero-brand {
+    justify-content: center;
+    margin-bottom: 12px;
+  }
 
-    .hero-headline {
-        font-size: 24px;
-        line-height: 1.25;
-        margin-top: 6px;
-        margin-bottom: 6px;
-    }
+  .hero-headline {
+    font-size: 24px;
+    line-height: 1.25;
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
 
-    .hero-subline {
-        font-size: 13px;
-        margin-bottom: 14px;
-        max-width: 100%;
-    }
+  .hero-subline {
+    font-size: 13px;
+    margin-bottom: 14px;
+    max-width: 100%;
+  }
 
-    .hero-float-cards {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        width: 100%;
-        margin-bottom: 8px;
-        padding: 2px 0 0;
-    }
+  .hero-float-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 2px 0 0;
+  }
 
-    .float-card {
-        margin-left: 0;
-        min-width: 0;
-        flex: 1 1 auto;
-        align-items: center;
-        box-sizing: border-box;
-        padding: 10px 14px;
-    }
+  .float-card {
+    margin-left: 0;
+    min-width: 0;
+    flex: 1 1 auto;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 10px 14px;
+  }
 
-    .float-card > div:not(.float-card-icon):not(.perk-icon),
-    .perk-item > div:not(.float-card-icon):not(.perk-icon) {
-        min-width: 0;
-        flex: 1 1 auto;
-        overflow: hidden;
-    }
+  .float-card > div:not(.float-card-icon):not(.perk-icon),
+  .perk-item > div:not(.float-card-icon):not(.perk-icon) {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
 
-    .float-card-value, .perk-title {
-        font-size: 13px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-        display: block;
-    }
+  .float-card-value,
+  .perk-title {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+  }
 
-    .float-card-label, .perk-sub {
-        font-size: 10.5px;
-        line-height: 1.3;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-    }
+  .float-card-label,
+  .perk-sub {
+    font-size: 10.5px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
 
-    .float-card-icon {
-        width: 30px;
-        height: 30px;
-    }
+  .float-card-icon {
+    width: 30px;
+    height: 30px;
+  }
 
-    .float-card:nth-child(3) {
-        grid-column: auto;
-    }
+  .float-card:nth-child(3) {
+    grid-column: auto;
+  }
 
-    .perks-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        width: 100%;
-        margin-top: 12px;
-        margin-bottom: 8px;
-    }
+  .perks-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-top: 12px;
+    margin-bottom: 8px;
+  }
 
-    .perk-item {
-        padding: 10px 14px;
-        border-radius: 14px;
-        background: rgba(23, 26, 20, 0.52);
-        border: 1px solid rgba(236, 231, 216, 0.12);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        box-sizing: border-box;
-    }
+  .perk-item {
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(23, 26, 20, 0.52);
+    border: 1px solid rgba(236, 231, 216, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
 
-    .hero-features {
-        display: none;
-    }
+  .hero-features {
+    display: none;
+  }
 
-    .dashboard-container {
-        padding: 24px 20px 48px;
-        gap: 20px;
-    }
+  .auth-form-section {
+    width: 100%;
+    padding: 16px 18px 40px;
+    box-sizing: border-box;
+    min-height: auto;
+    height: auto;
+    overflow-y: visible;
+  }
 
-    .auth-form-section {
-        width: 100%;
-        padding: 16px 18px 40px;
-        box-sizing: border-box;
-        min-height: auto;
-        height: auto;
-        overflow-y: visible;
-    }
+  .auth-card {
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+    padding: 32px 24px;
+    border-radius: 20px;
+  }
 
-    .auth-card {
-        max-width: 100%;
-        width: 100%;
-        margin: 0 auto;
-        padding: 32px 24px;
-        border-radius: 20px;
-    }
-
-    .form-input, select.form-input {
-        font-size: 14px;
-        height: 48px;
-        box-sizing: border-box;
-    }
-
-
+  .form-input,
+  select.form-input {
+    font-size: 14px;
+    height: 48px;
+    box-sizing: border-box;
+  }
 }
 
 @media (max-width: 480px) {
-    .perks-grid {
-        grid-template-columns: 1fr 1fr;
-        margin-bottom: 6px;
-    }
-    .hero-headline { font-size: 22px; }
-    .auth-title { font-size: 22px; }
-    .auth-hero {
-        position: relative;
-        top: auto;
-        height: auto;
-        min-height: 0;
-        padding: 20px 14px 6px;
-    }
-    .auth-form-section { padding: 12px 12px 30px; }
+  .perks-grid {
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 6px;
+  }
 
-    .auth-card {
-        padding: 22px 16px 26px;
-    }
+  .hero-headline {
+    font-size: 22px;
+  }
 
-    .auth-card-header {
-        margin-bottom: 16px;
-    }
+  .auth-title {
+    font-size: 22px;
+  }
 
-    .hero-float-cards {
-        gap: 8px;
-        margin-bottom: 6px;
-        padding: 0;
-    }
+  .auth-hero {
+    position: relative;
+    top: auto;
+    height: auto;
+    min-height: 0;
+    padding: 20px 14px 6px;
+  }
 
-    .float-card, .perk-item {
-        padding: 8px 10px;
-        gap: 8px;
-    }
+  .auth-form-section {
+    padding: 12px 12px 30px;
+  }
 
-    .float-card-icon, .perk-icon {
-        width: 26px;
-        height: 26px;
-        min-width: 26px;
-        border-radius: 8px;
-        flex-shrink: 0;
-    }
+  .auth-card {
+    padding: 22px 16px 26px;
+  }
 
-    .float-card-icon svg, .perk-icon svg {
-        width: 14px;
-        height: 14px;
-    }
+  .auth-card-header {
+    margin-bottom: 16px;
+  }
 
-    .float-card-value, .perk-title {
-        font-size: 11px;
-        line-height: 1.25;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+  .hero-float-cards {
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 0;
+  }
 
-    .float-card-label, .perk-sub {
-        font-size: 9px;
-        line-height: 1.25;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
+  .float-card,
+  .perk-item {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .float-card-icon,
+  .perk-icon {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .float-card-icon svg,
+  .perk-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .float-card-value,
+  .perk-title {
+    font-size: 11px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .float-card-label,
+  .perk-sub {
+    font-size: 9px;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }

@@ -115,13 +115,13 @@
                     const incomeListEl = document.getElementById("incomeList");
                     if (incomeListEl) {
                         incomeListEl.innerHTML = `
-                            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                                <div class="empty-state-icon" style="font-size:32px; margin-bottom:8px;">⚠️</div>
-                                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
-                                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
+                            <div class="empty-state connection-error u-inl-c0f9ec1">
+                                <div class="empty-state-icon u-inl-b1aba35">⚠️</div>
+                                <div class="empty-state-title u-inl-1e985a6">Server Connection Failed</div>
+                                <div class="empty-state-sub u-inl-b7c2ff7">
                                     Could not reach the server to load your income records.
                                 </div>
-                                <button type="button" class="btn-primary btn-sm" onclick="location.reload()" style="padding:8px 18px; font-size:13px; border-radius:8px;">
+                                <button type="button" class="btn-primary btn-sm u-inl-4fd77ee" onclick="location.reload()">
                                     Retry Connection
                                 </button>
                             </div>`;
@@ -134,11 +134,11 @@
                     const budgetListEl = document.getElementById("budgetList");
                     if (budgetListEl) {
                         budgetListEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                            <div class="empty-state-compact connection-error u-inl-ebb486a">
+                                <div class="u-inl-4d84691">⚠️</div>
+                                <p class="u-inl-67e1f85">Server Connection Failed</p>
+                                <span class="u-inl-a4edebd">Could not reach the server to load your budget limits.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-48cfbfc" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()">
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
@@ -146,11 +146,11 @@
                     const savingsGoalsEl = document.getElementById("savingsGoalsList");
                     if (savingsGoalsEl) {
                         savingsGoalsEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your savings goals.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                            <div class="empty-state-compact connection-error u-inl-ebb486a">
+                                <div class="u-inl-4d84691">⚠️</div>
+                                <p class="u-inl-67e1f85">Server Connection Failed</p>
+                                <span class="u-inl-a4edebd">Could not reach the server to load your savings goals.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-bae9083" onclick="location.reload()">
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
@@ -186,7 +186,7 @@
                     document.querySelectorAll(".metric-card, .grid-4-metrics .metric-card").forEach(c => {
                         c.classList.remove("is-loading");
                         const val = c.querySelector(".metric-value");
-                        if (val) val.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
+                        if (val) val.innerHTML = '<span class="u-inl-9b30ab5">Unavailable</span>';
                         const badge = c.querySelector(".status-badge");
                         if (badge) {
                             badge.textContent = "Offline";
@@ -207,16 +207,16 @@
                         });
                     });
                     const subsTotal = document.getElementById("subsMonthlyTotal");
-                    if (subsTotal) subsTotal.innerHTML = '<span style="font-size:15px; color:var(--text-muted); font-weight:500;">Unavailable</span>';
+                    if (subsTotal) subsTotal.innerHTML = '<span class="u-inl-9b30ab5">Unavailable</span>';
 
                     const budgetListEl = document.getElementById("budgetList");
                     if (budgetListEl) {
                         budgetListEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                            <div class="empty-state-compact connection-error u-inl-ebb486a">
+                                <div class="u-inl-4d84691">⚠️</div>
+                                <p class="u-inl-67e1f85">Server Connection Failed</p>
+                                <span class="u-inl-a4edebd">Could not reach the server to load your budget limits.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-48cfbfc" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()">
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
@@ -266,13 +266,13 @@
                     const expenseListEl = document.getElementById("expenseList");
                     if (expenseListEl) {
                         expenseListEl.innerHTML = `
-                            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                                <div class="empty-state-icon" style="font-size:32px; margin-bottom:8px;">⚠️</div>
-                                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
-                                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
+                            <div class="empty-state connection-error u-inl-c0f9ec1">
+                                <div class="empty-state-icon u-inl-b1aba35">⚠️</div>
+                                <div class="empty-state-title u-inl-1e985a6">Server Connection Failed</div>
+                                <div class="empty-state-sub u-inl-b7c2ff7">
                                     Could not reach the server to load your transactions.
                                 </div>
-                                <button type="button" class="btn-primary btn-sm" onclick="location.reload()" style="padding:8px 18px; font-size:13px; border-radius:8px;">
+                                <button type="button" class="btn-primary btn-sm u-inl-4fd77ee" onclick="location.reload()">
                                     Retry Connection
                                 </button>
                             </div>`;
@@ -280,13 +280,13 @@
                     const incomeListEl = document.getElementById("incomeList");
                     if (incomeListEl) {
                         incomeListEl.innerHTML = `
-                            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                                <div class="empty-state-icon" style="font-size:32px; margin-bottom:8px;">⚠️</div>
-                                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
-                                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
+                            <div class="empty-state connection-error u-inl-c0f9ec1">
+                                <div class="empty-state-icon u-inl-b1aba35">⚠️</div>
+                                <div class="empty-state-title u-inl-1e985a6">Server Connection Failed</div>
+                                <div class="empty-state-sub u-inl-b7c2ff7">
                                     Could not reach the server to load your income records.
                                 </div>
-                                <button type="button" class="btn-primary btn-sm" onclick="location.reload()" style="padding:8px 18px; font-size:13px; border-radius:8px;">
+                                <button type="button" class="btn-primary btn-sm u-inl-4fd77ee" onclick="location.reload()">
                                     Retry Connection
                                 </button>
                             </div>`;
@@ -294,11 +294,11 @@
                     const savingsGoalsEl = document.getElementById("savingsGoalsList");
                     if (savingsGoalsEl) {
                         savingsGoalsEl.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your savings goals.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                            <div class="empty-state-compact connection-error u-inl-ebb486a">
+                                <div class="u-inl-4d84691">⚠️</div>
+                                <p class="u-inl-67e1f85">Server Connection Failed</p>
+                                <span class="u-inl-a4edebd">Could not reach the server to load your savings goals.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-bae9083" onclick="location.reload()">
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
@@ -306,11 +306,11 @@
                     const moneyFlowBody = document.getElementById("moneyFlowBody");
                     if (moneyFlowBody) {
                         moneyFlowBody.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="text-align:center; padding:24px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div style="font-size:20px; margin-bottom:4px;">⚠️</div>
-                                <p style="font-size:13px; font-weight:600; margin:0 0 4px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:11.5px; display:block; margin-bottom:10px;">Could not reach the server to compute monthly cash flow.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:6px 14px; font-size:12px;">
+                            <div class="empty-state-compact connection-error u-inl-d5d946e">
+                                <div class="u-inl-b9a5d20">⚠️</div>
+                                <p class="u-inl-44a3b59">Server Connection Failed</p>
+                                <span class="u-inl-645da22">Could not reach the server to compute monthly cash flow.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-8de4337" onclick="location.reload()">
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
@@ -318,11 +318,11 @@
                     const insightsGrid = document.getElementById("insightsCardsGrid");
                     if (insightsGrid) {
                         insightsGrid.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:24px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div style="font-size:20px; margin-bottom:4px;">⚠️</div>
-                                <p style="font-size:13px; font-weight:600; margin:0 0 4px; color:var(--text-main);">Smart Intelligence Unavailable</p>
-                                <span style="font-size:11.5px; display:block; margin-bottom:10px;">Financial intelligence requires connection to your ledger.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:6px 14px; font-size:12px;">
+                            <div class="empty-state-compact connection-error u-inl-56f6f3f">
+                                <div class="u-inl-b9a5d20">⚠️</div>
+                                <p class="u-inl-44a3b59">Smart Intelligence Unavailable</p>
+                                <span class="u-inl-645da22">Financial intelligence requires connection to your ledger.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-8de4337" onclick="location.reload()">
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
@@ -333,11 +333,11 @@
                         const loansContainer = document.getElementById("loansListContainer");
                         if (loansContainer) {
                             loansContainer.innerHTML = `
-                                <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                    <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
-                                    <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
+                                <div class="empty-state-compact connection-error u-inl-489cf43">
+                                    <div class="u-inl-4d84691">⚠️</div>
+                                    <p class="u-inl-67e1f85">Server Connection Failed</p>
+                                    <span class="u-inl-a4edebd">Could not reach the server to load your peer loan adjustments.</span>
+                                    <button type="button" class="btn-primary btn-small u-inl-c16a4e7" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()">
                                         <span>Retry Connection</span>
                                     </button>
                                 </div>`;

@@ -1,5 +1,5 @@
-/* EXPENSE TRACKER — VARIABLES.CSS */
-/* Design tokens and theme layers are split into focused modules. */
 @import url("variables/tokens.css");
+
 @import url("variables/theme.css");
+
 @import url("variables/surfaces.css");

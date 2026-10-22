@@ -278,7 +278,7 @@
     function renderResults() {
         if (!resultsEl) return;
         if (filteredCommands.length === 0) {
-            resultsEl.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">No commands matching your search.</div>`;
+            resultsEl.innerHTML = `<div class="u-inl-4c30e6b">No commands matching your search.</div>`;
             return;
         }
 

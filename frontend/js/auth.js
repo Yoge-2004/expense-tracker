@@ -271,3 +271,5 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.warn("Biometrics check failed:", e);
     }
 });
+
+document.getElementById("googleOAuthBtn")?.addEventListener("click", () => { if (typeof handleGoogleOAuth === "function") handleGoogleOAuth(); });

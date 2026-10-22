@@ -1,7 +1,3 @@
-/* ==========================================================================
-   AUTH DASHBOARD SUPPORT
-   Focused compatibility styles for shared dashboard elements on auth views.
-   ========================================================================== */
-
 @import url("dashboard/layout.css");
+
 @import url("dashboard/motion.css");

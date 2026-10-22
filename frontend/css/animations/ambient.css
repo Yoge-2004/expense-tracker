@@ -1,27 +1,7 @@
-/* =============================================================================
-   11. AMBIENT ANIMATED BACKGROUND & MICRO-ANIMATIONS
-============================================================================= */
-.hero-bg {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-    background: radial-gradient(circle at 10% 20%, rgba(var(--primary-rgb), 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(76, 122, 120, 0.06) 0%, transparent 50%);
-}
-
-
-
-
-
-/* Button & Interactive Micro-Animations */
-.btn-primary:active,
-.btn-secondary:active,
 .btn-icon:active {
-    transform: scale(0.97) !important;
+  transform: scale(0.97);
 }
 
 .pill-chip:active {
-    transform: translateY(-2px) scale(1.03) !important;
+  transform: translateY(-2px) scale(1.03);
 }

@@ -1,4 +1,5 @@
-/* EXPENSE TRACKER — DASHBOARD.CSS */
-/* Dashboard layout and enhancement styles are intentionally separated into domain modules. */
 @import url("dashboard/core.css");
+
 @import url("dashboard/enhancements.css");
+
+@import url("dashboard/wealth-simulator.css");

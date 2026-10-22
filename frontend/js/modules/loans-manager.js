@@ -113,10 +113,10 @@
         const container = document.getElementById("loansListContainer");
         if (!container) return;
         container.innerHTML = `
-            <div class="loans-skeleton-loader" style="padding:16px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:10px;">
-                <div class="skeleton" style="width:35%; height:20px; border-radius:6px;"></div>
-                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
-                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+            <div class="loans-skeleton-loader u-inl-5c3d2b7">
+                <div class="skeleton u-inl-0a2a868"></div>
+                <div class="skeleton u-inl-ced01e1"></div>
+                <div class="skeleton u-inl-ced01e1"></div>
             </div>
         `;
     }
@@ -148,11 +148,11 @@
         const container = document.getElementById("loansListContainer");
         if (container && (!loansList || loansList.length === 0)) {
             container.innerHTML = `
-                <div class="empty-state-compact connection-error" style="text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                    <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                    <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your peer loan adjustments.</span>
-                    <button type="button" class="btn-primary btn-small" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#8B5CF6; border-color:#8B5CF6; color:#fff;">
+                <div class="empty-state-compact connection-error u-inl-489cf43">
+                    <div class="u-inl-4d84691">⚠️</div>
+                    <p class="u-inl-67e1f85">Server Connection Failed</p>
+                    <span class="u-inl-a4edebd">Could not reach the server to load your peer loan adjustments.</span>
+                    <button type="button" class="btn-primary btn-small u-inl-c16a4e7" onclick="window.LoansManager ? window.LoansManager.fetchLoans() : location.reload()">
                         <span>Retry Connection</span>
                     </button>
                 </div>`;
@@ -219,16 +219,16 @@
 
         noticeBox.style.display = "flex";
         noticeBox.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:rgba(212,175,55,0.18); color:#D4AF37;">
+            <div class="u-inl-8e160d0">
+                <span class="u-inl-f4b03e0">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
                 </span>
                 <div>
-                    <strong style="font-size:12.5px; color:var(--text-main);">Found ${loanExpenses.length} transaction(s) categorized under "Loan"</strong>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:1px;">Convert them into dedicated Peer Loans to keep your living expenses accurate.</div>
+                    <strong class="u-inl-400bbf8">Found ${loanExpenses.length} transaction(s) categorized under "Loan"</strong>
+                    <div class="u-inl-b398beb">Convert them into dedicated Peer Loans to keep your living expenses accurate.</div>
                 </div>
             </div>
-            <button type="button" class="btn-small" onclick="window.LoansManager.convertFirstLoanCategoryExpense()" style="padding:5px 12px; font-size:11.5px; font-weight:700; border-radius:7px; background:#D4AF37; color:#10120E; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+            <button type="button" class="btn-small u-inl-7b02231" onclick="window.LoansManager.convertFirstLoanCategoryExpense()">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                 <span>Track as Peer Loan</span>
             </button>
@@ -324,19 +324,19 @@
                 netEl.textContent = `+${sym}${formatAmount(net)}`;
                 netEl.style.color = "#10B981";
                 if (netStatusEl) {
-                    netStatusEl.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px; color:#10B981;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Friends owe you net ${sym}${formatAmount(net)}</span>`;
+                    netStatusEl.innerHTML = `<span class="u-inl-f5ea94d"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Friends owe you net ${sym}${formatAmount(net)}</span>`;
                 }
             } else if (net < 0) {
                 netEl.textContent = `-${sym}${formatAmount(Math.abs(net))}`;
                 netEl.style.color = "#EF4444";
                 if (netStatusEl) {
-                    netStatusEl.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px; color:#EF4444;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg> You owe lenders net ${sym}${formatAmount(Math.abs(net))}</span>`;
+                    netStatusEl.innerHTML = `<span class="u-inl-128b856"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg> You owe lenders net ${sym}${formatAmount(Math.abs(net))}</span>`;
                 }
             } else {
                 netEl.textContent = `${sym}0.00`;
                 netEl.style.color = "var(--text-main)";
                 if (netStatusEl) {
-                    netStatusEl.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px; color:var(--text-muted);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 8l9-5 9 5M6 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0zM18 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0z"/></svg> All peer balances settled</span>`;
+                    netStatusEl.innerHTML = `<span class="u-inl-5d67723"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 8l9-5 9 5M6 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0zM18 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0z"/></svg> All peer balances settled</span>`;
                 }
             }
         }
@@ -391,23 +391,23 @@
         if (filtered.length === 0) {
             const loanExpenses = getLoanCategoryExpenses();
             const loanConvertCta = loanExpenses.length > 0
-                ? `<button type="button" class="btn-secondary btn-small" onclick="window.LoansManager.convertFirstLoanCategoryExpense()" style="display:inline-flex; align-items:center; gap:6px; border-color:rgba(212,175,55,0.4); color:#D4AF37;">
+                ? `<button type="button" class="btn-secondary btn-small u-inl-2f6adb5" onclick="window.LoansManager.convertFirstLoanCategoryExpense()">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                     <span>Convert "${escapeHtml(loanExpenses[0].description || 'Loan')}" (${getCurrencySymbol()}${formatAmount(loanExpenses[0].amount)})</span>
                    </button>`
                 : "";
 
             container.innerHTML = `
-                <div class="empty-state-luxury" style="text-align:center; padding:36px 20px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); transition:all 0.3s ease;">
-                    <div style="display:inline-flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:14px; background:rgba(212,175,55,0.12); color:#D4AF37; margin-bottom:12px;">
+                <div class="empty-state-luxury u-inl-b6d1e43">
+                    <div class="u-inl-26ba4a6">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     </div>
-                    <p style="font-size:15px; font-weight:700; margin:0 0 6px; color:var(--text-main);">No peer loans recorded in this view</p>
-                    <span style="font-size:12.5px; display:block; max-width:440px; margin:0 auto 16px; line-height:1.5; color:var(--text-muted);">
+                    <p class="u-inl-e2381fb">No peer loans recorded in this view</p>
+                    <span class="u-inl-c861cac">
                         Track casual bill splits, borrowed cash, or peer loans without distorting your personal living expense budget.
                     </span>
-                    <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                        <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addLoanBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; background:#8B5CF6; border-color:#8B5CF6; color:#fff; box-shadow:0 4px 14px rgba(139,92,246,0.35);">
+                    <div class="u-inl-057b099">
+                        <button type="button" class="btn-primary btn-small u-inl-5e2da71" onclick="document.getElementById('addLoanBtn')?.click()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             <span>Add New Adjustment</span>
                         </button>
@@ -421,17 +421,17 @@
         const sym = getCurrencySymbol();
 
         let html = `
-            <div class="loans-table-container" style="overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,0.01);">
-                <table class="data-table loans-table" style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
+            <div class="loans-table-container u-inl-7f1d8cb">
+                <table class="data-table loans-table u-inl-c656b1d">
                     <thead>
-                        <tr style="background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border);">
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Date & Reminders</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Person / Friend</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Direction</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Notes & Linked Expense</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); text-align:right;">Amount</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); text-align:center;">Status</th>
-                            <th style="padding:12px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); text-align:right;">Actions</th>
+                        <tr class="u-inl-6d27f1b">
+                            <th class="u-inl-98e0c34">Date & Reminders</th>
+                            <th class="u-inl-98e0c34">Person / Friend</th>
+                            <th class="u-inl-98e0c34">Direction</th>
+                            <th class="u-inl-98e0c34">Notes & Linked Expense</th>
+                            <th class="u-inl-bc577ab">Amount</th>
+                            <th class="u-inl-2be3c97">Status</th>
+                            <th class="u-inl-bc577ab">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -449,61 +449,61 @@
                 : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg>`;
 
             const statusBadge = item.isSettled
-                ? `<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Settled</span>`
-                : `<span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; background:rgba(245,158,11,0.15); color:#F59E0B; border:1px solid rgba(245,158,11,0.3);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pending</span>`;
+                ? `<span class="u-inl-916cc2d"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Settled</span>`
+                : `<span class="u-inl-dd19d1d"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pending</span>`;
 
             const settleActionText = item.isSettled ? "Reopen" : "Mark Settled";
             const settleBtnColor = item.isSettled ? "var(--text-muted)" : "#10B981";
 
             const dueDateTag = item.dueDate
-                ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Due: ${item.dueDate}</div>`
+                ? `<div class="u-inl-e0e3853">Due: ${item.dueDate}</div>`
                 : "";
 
             const reminderTag = item.reminderEnabled && !item.isSettled
-                ? `<div style="font-size:10.5px; color:#8B5CF6; font-weight:600; margin-top:4px; display:inline-flex; align-items:center; gap:4px; background:rgba(139,92,246,0.08); padding:2px 6px; border-radius:4px; border:1px solid rgba(139,92,246,0.2);">
+                ? `<div class="u-inl-5162c2a">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                     <span>${escapeHtml(item.reminderFrequency || 'DAILY')} @ ${escapeHtml(item.reminderTime || '10:00')}</span>
                    </div>`
                 : "";
 
             const linkedExpenseTag = (item.expenseId || item.expenseDescription)
-                ? `<div style="margin-top:4px; font-size:11px; color:#8B5CF6; display:inline-flex; align-items:center; gap:4px; background:rgba(139,92,246,0.1); padding:2px 7px; border-radius:4px; border:1px solid rgba(139,92,246,0.25);">
+                ? `<div class="u-inl-98b6a78">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                     <span>Split from: <strong>${escapeHtml(item.expenseDescription || ('Expense #' + item.expenseId))}</strong> (${sym}${formatAmount(item.expenseAmount || 0)})</span>
                    </div>`
                 : "";
 
             html += `
-                <tr style="border-bottom:1px solid var(--border); transition:background 0.15s ease;">
-                    <td style="padding:12px 14px; white-space:nowrap; color:var(--text-muted);">
+                <tr class="u-inl-61e02c2">
+                    <td class="u-inl-f4f1286">
                         <div>${item.adjustmentDate}</div>
                         ${dueDateTag}
                         ${reminderTag}
                     </td>
-                    <td style="padding:12px 14px; font-weight:700; color:var(--text-main);">
+                    <td class="u-inl-d8310f2">
                         ${escapeHtml(item.counterparty)}
                     </td>
-                    <td style="padding:12px 14px; white-space:nowrap;">
+                    <td class="u-inl-6740942">
                         <span style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; background:${dirBg}; color:${dirColor};">
                             ${dirIcon}
                             ${dirLabel}
                         </span>
                     </td>
-                    <td style="padding:12px 14px; color:var(--text-muted); max-width:260px;">
-                        <div>${item.notes ? escapeHtml(item.notes) : "<span style='opacity:0.4;'>—</span>"}</div>
+                    <td class="u-inl-7cb6277">
+                        <div>${item.notes ? escapeHtml(item.notes) : "<span class='u-inl-73148a9'>—</span>"}</div>
                         ${linkedExpenseTag}
                     </td>
                     <td style="padding:12px 14px; text-align:right; font-weight:800; font-size:14px; color:${amtColor}; white-space:nowrap;">
                         <span class="stealth-sensitive">${amtSign}${sym}${formatAmount(item.amount)}</span>
                     </td>
-                    <td style="padding:12px 14px; text-align:center; white-space:nowrap;">
+                    <td class="u-inl-11498e6">
                         ${statusBadge}
                     </td>
-                    <td style="padding:12px 14px; text-align:right; white-space:nowrap;">
+                    <td class="u-inl-22a6ff0">
                         <button type="button" class="btn-text-icon" onclick="window.LoansManager.toggleSettle(${item.id})" style="padding:4px 8px; font-size:11.5px; font-weight:600; color:${settleBtnColor}; border:1px solid var(--border); border-radius:6px; margin-right:6px;" title="${item.isSettled ? 'Mark pending again' : 'Mark fully repaid'}">
                             ${settleActionText}
                         </button>
-                        <button type="button" class="btn-text-icon btn-text-icon--danger" onclick="window.LoansManager.deleteLoan(${item.id})" style="padding:4px 8px; font-size:11.5px; border-radius:6px; color:#EF4444;" title="Delete this record">
+                        <button type="button" class="btn-text-icon btn-text-icon--danger u-inl-37259f6" onclick="window.LoansManager.deleteLoan(${item.id})" title="Delete this record">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </td>

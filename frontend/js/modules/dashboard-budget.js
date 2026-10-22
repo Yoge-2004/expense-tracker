@@ -45,10 +45,10 @@
                 if (!normalizedBudgets.length) {
                     if (elements.budgetList) {
                         elements.budgetList.innerHTML = `
-                            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No budget limits configured</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Establish category spending ceilings to monitor outflows effectively.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addBudgetBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                            <div class="empty-state-compact u-inl-ebb486a">
+                                <p class="u-inl-67e1f85">No budget limits configured</p>
+                                <span class="u-inl-a4edebd">Establish category spending ceilings to monitor outflows effectively.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-48cfbfc" onclick="document.getElementById('addBudgetBtn')?.click()">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     <span>Configure Budget</span>
                                 </button>
@@ -84,25 +84,25 @@
 
                         return `
                         <div class="budget-item">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; gap:8px;">
-                                <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+                            <div class="u-inl-52003ac">
+                                <div class="u-inl-f090d9f">
                                     <div style="width:36px; height:36px; border-radius:10px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${getCategoryEmoji(b.categoryName)}</div>
-                                    <div style="min-width:0; flex:1;">
-                                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                            <span style="font-size:14px; font-weight:700; color:var(--text-main); line-height:1.2;">${escapeHtml(b.categoryName)}</span>
-                                            <span class="status-badge badge-neutral" style="font-size:9px; padding:2px 7px; font-weight:700; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase;">${periodLabel}</span>
+                                    <div class="u-inl-4475a64">
+                                        <div class="u-inl-9aded71">
+                                            <span class="u-inl-69bf7cd">${escapeHtml(b.categoryName)}</span>
+                                            <span class="status-badge badge-neutral u-inl-30299e8">${periodLabel}</span>
                                         </div>
-                                        <div style="font-size:12px; color:var(--text-muted); margin-top:4px; font-variant-numeric:tabular-nums; line-height:1.3;">
-                                            ${formatCurrency(b.spent)} <span style="opacity:0.7;">of</span> ${formatCurrency(b.limit)}
+                                        <div class="u-inl-8443f26">
+                                            ${formatCurrency(b.spent)} <span class="u-inl-72cd808">of</span> ${formatCurrency(b.limit)}
                                         </div>
                                     </div>
                                 </div>
-                                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                                <div class="u-inl-7a1f644">
                                     <span style="font-size:13px; font-weight:800; color:${barColor}; margin-right:2px;">${usage.toFixed(0)}%</span>
-                                    <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${safeName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}', ${b.intervalDays || 30})" class="btn-edit" title="Edit Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                                    <button onclick="openEditBudget(${b.budgetId || 0}, ${b.categoryId || 0}, '${safeName}', ${b.limit || 0}, '${periodLabel}', '${startStr}', '${endStr}', ${b.intervalDays || 30})" class="btn-edit u-inl-7bd8847" title="Edit Budget Limit">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     </button>
-                                    <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0}, event)" class="btn-delete" title="Delete Budget Limit" style="height:28px; width:28px; padding:0; flex-shrink:0;">
+                                    <button onclick="deleteBudgetLimit(${b.budgetId || 0}, ${b.categoryId || 0}, event)" class="btn-delete u-inl-7bd8847" title="Delete Budget Limit">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                     </button>
                                 </div>
@@ -128,11 +128,11 @@
                 console.error("Budget Error", error);
                 if (elements.budgetList) {
                     elements.budgetList.innerHTML = `
-                            <div class="empty-state-compact connection-error" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; box-sizing:border-box;">
-                                <div style="font-size:24px; margin-bottom:6px;">⚠️</div>
-                                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">Server Connection Failed</p>
-                                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Could not reach the server to load your budget limits.</span>
-                                <button type="button" class="btn-primary btn-small" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto;">
+                            <div class="empty-state-compact connection-error u-inl-ebb486a">
+                                <div class="u-inl-4d84691">⚠️</div>
+                                <p class="u-inl-67e1f85">Server Connection Failed</p>
+                                <span class="u-inl-a4edebd">Could not reach the server to load your budget limits.</span>
+                                <button type="button" class="btn-primary btn-small u-inl-48cfbfc" onclick="window.loadBudgets ? window.loadBudgets() : location.reload()">
                                     <span>Retry Connection</span>
                                 </button>
                             </div>`;
