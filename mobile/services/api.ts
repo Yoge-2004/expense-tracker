@@ -16,6 +16,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const REMOTE_API_URL = 'https://yoge-2004-expense-tracker-backend.hf.space/api';
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || REMOTE_API_URL;
 
+/**
+ * Resolves an avatar URL into a fully-qualified URI usable by React Native <Image />.
+ * Handles relative paths (e.g. /api/users/3/avatar) by prefixing the backend origin.
+ */
+export function resolveAvatarUrl(url?: string | null): string | null {
+  if (!url) return null;
+  const clean = url.trim();
+  if (!clean) return null;
+  if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("data:")) return clean;
+  const base = API_BASE_URL.replace(/\/api\/?$/, "");
+  const path = clean.startsWith("/") ? clean : "/" + clean;
+  return `${base}${path}`;
+}
+
 const TOKEN_KEY = 'auth_token';
 const USER_ID_KEY = 'user_id';
 const NAME_KEY = 'user_name';
@@ -306,11 +320,11 @@ function waitForRetry(ms: number, signal: AbortSignal | null | undefined, endpoi
   });
 }
 
-export async function apiRequest(
+export async function apiRequest<T = any>(
   endpoint: string,
   options: ApiRequestOptions = {},
   attempt = 0
-): Promise<any> {
+): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
 
   if (method !== 'GET') {
@@ -325,10 +339,11 @@ export async function apiRequest(
   const session = await getSession();
   const token = session.token;
 
-  const headers = new Headers({
-    'Content-Type': 'application/json',
-    ...options.headers,
-  });
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  const headers = new Headers(options.headers);
+  if (!isFormData && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
@@ -390,7 +405,7 @@ export async function apiRequest(
     return apiRequest(endpoint, options, attempt + 1);
   }
 
-  if (response.status === 204) return null;
+  if (response.status === 204) return null as unknown as T;
 
   const text = await response.text();
 
@@ -426,7 +441,7 @@ export async function apiRequest(
     apiCache.set(endpoint, { data: responseData, timestamp: Date.now() });
   }
 
-  return responseData;
+  return responseData as T;
 }
 
 /**

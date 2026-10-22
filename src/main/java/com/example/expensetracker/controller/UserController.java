@@ -375,4 +375,142 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Currency preference updated successfully",
                 "currency", currency.trim().toUpperCase(Locale.ROOT)));
     }
+
+    // ─── POST /api/users/{userId}/avatar ─────────────────────────────────────
+
+    @Operation(
+        summary = "Upload user avatar image",
+        description = "Uploads a profile picture image (JPEG, PNG, WebP, GIF) directly from device files."
+    )
+    @PostMapping(value = "/{userId}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> uploadAvatar(
+            @PathVariable Long userId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        log.info("Received request to upload avatar for userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Avatar file must not be empty");
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("Avatar file size must not exceed 5MB");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files (JPEG, PNG, WebP, GIF) are supported");
+        }
+
+        try {
+            java.nio.file.Path avatarDir = java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
+            String dataDir = System.getenv("DATA_DIR");
+            if (dataDir != null && !dataDir.isBlank()) {
+                avatarDir = java.nio.file.Path.of(dataDir, "avatars");
+            }
+            java.nio.file.Files.createDirectories(avatarDir);
+
+            String ext = ".jpg";
+            String lower = contentType.toLowerCase(Locale.ROOT);
+            if (lower.contains("png")) ext = ".png";
+            else if (lower.contains("webp")) ext = ".webp";
+            else if (lower.contains("gif")) ext = ".gif";
+
+            // Remove any existing avatar files for this user
+            for (String e : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
+                try {
+                    java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + e));
+                } catch (Exception ignored) {}
+            }
+
+            java.nio.file.Path targetFile = avatarDir.resolve("user_" + userId + ext);
+            java.nio.file.Files.write(targetFile, file.getBytes());
+
+            java.nio.file.Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
+            java.nio.file.Files.writeString(metaFile, contentType);
+
+            String avatarUrl = "/api/users/" + userId + "/avatar?v=" + System.currentTimeMillis();
+            userService.updateProfilePicture(userId, avatarUrl);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("profilePictureUrl", avatarUrl);
+            response.put("message", "Profile picture updated successfully");
+            return ResponseEntity.ok(response);
+        } catch (java.io.IOException e) {
+            log.error("Failed to store avatar file for userId={}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Could not store avatar image", e);
+        }
+    }
+
+    // ─── GET /api/users/{userId}/avatar ──────────────────────────────────────
+
+    @Operation(
+        summary = "Get user avatar image",
+        description = "Streams the user avatar image binary directly."
+    )
+    @GetMapping("/{userId}/avatar")
+    public ResponseEntity<byte[]> getAvatar(@PathVariable Long userId) {
+        java.nio.file.Path avatarDir = java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
+        String dataDir = System.getenv("DATA_DIR");
+        if (dataDir != null && !dataDir.isBlank()) {
+            avatarDir = java.nio.file.Path.of(dataDir, "avatars");
+        }
+
+        for (String ext : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
+            java.nio.file.Path file = avatarDir.resolve("user_" + userId + ext);
+            if (java.nio.file.Files.exists(file)) {
+                try {
+                    byte[] data = java.nio.file.Files.readAllBytes(file);
+                    java.nio.file.Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
+                    String contentType = "image/jpeg";
+                    if (java.nio.file.Files.exists(metaFile)) {
+                        contentType = java.nio.file.Files.readString(metaFile).trim();
+                    } else if (ext.equals(".png")) {
+                        contentType = "image/png";
+                    } else if (ext.equals(".webp")) {
+                        contentType = "image/webp";
+                    } else if (ext.equals(".gif")) {
+                        contentType = "image/gif";
+                    }
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.parseMediaType(contentType))
+                            .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                            .body(data);
+                } catch (java.io.IOException ignored) {}
+            }
+        }
+
+        User user = userService.findById(userId).orElse(null);
+        if (user != null && user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isBlank()
+                && !user.getProfilePictureUrl().contains("/avatar")) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                    .location(java.net.URI.create(user.getProfilePictureUrl()))
+                    .build();
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    // ─── DELETE /api/users/{userId}/avatar ───────────────────────────────────
+
+    @Operation(
+        summary = "Delete user avatar image",
+        description = "Removes uploaded user avatar and resets to default."
+    )
+    @DeleteMapping("/{userId}/avatar")
+    public ResponseEntity<Void> deleteAvatar(@PathVariable Long userId) {
+        log.info("Received request to delete avatar for userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+
+        java.nio.file.Path avatarDir = java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
+        String dataDir = System.getenv("DATA_DIR");
+        if (dataDir != null && !dataDir.isBlank()) {
+            avatarDir = java.nio.file.Path.of(dataDir, "avatars");
+        }
+        for (String ext : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img", ".meta")) {
+            try {
+                java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + ext));
+            } catch (Exception ignored) {}
+        }
+        userService.updateProfilePicture(userId, null);
+        return ResponseEntity.noContent().build();
+    }
 }

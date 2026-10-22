@@ -37,7 +37,7 @@ export interface DownloadProgress {
   percent: number;
 }
 
-export const CURRENT_APP_VERSION = Constants.expoConfig?.version || '1.0.4';
+export const CURRENT_APP_VERSION = Constants.expoConfig?.version || '1.0.7';
 export const DISPLAY_VERSION = `v${CURRENT_APP_VERSION}`;
 
 /**

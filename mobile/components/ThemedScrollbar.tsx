@@ -216,7 +216,7 @@ export const ThemedScrollView = React.forwardRef<ScrollView, ThemedScrollViewPro
       trackColor,
       thumbColor,
       scrollbarInset = 8,
-      hideScrollbar = false,
+      hideScrollbar = true,
       onScroll: userOnScroll,
       onContentSizeChange: userOnContentSizeChange,
       onLayout: userOnLayout,

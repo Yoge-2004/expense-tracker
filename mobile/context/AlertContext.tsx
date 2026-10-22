@@ -23,7 +23,7 @@ export type AlertType = 'default' | 'success' | 'error' | 'warning' | 'info' | '
 
 export interface AlertButton {
   text: string;
-  style?: 'default' | 'cancel' | 'destructive';
+  style?: 'default' | 'cancel' | 'destructive' | 'secondary' | 'teal' | 'accent';
   onPress?: () => void;
 }
 
@@ -199,15 +199,27 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     const isDestructive = btn.style === 'destructive';
                     let btnBg = c.inputBg;
                     let textColor = c.text;
+                    let borderColor = 'transparent';
+                    let borderWidth = 0;
 
-                    if (isDestructive) {
+                    if (isDestructive || btn.style === 'accent') {
                       btnBg = c.accent;
                       textColor = '#FFFFFF';
+                    } else if (btn.style === 'teal') {
+                      btnBg = c.teal;
+                      textColor = '#FFFFFF';
+                    } else if (btn.style === 'secondary') {
+                      btnBg = c.inputBg;
+                      borderColor = c.border;
+                      borderWidth = 1;
+                      textColor = c.text;
                     } else if (!isCancel) {
                       btnBg = c.primary;
                       textColor = theme === 'light' ? '#FFFFFF' : '#10120E';
                     } else {
                       btnBg = c.inputBg;
+                      borderColor = c.border;
+                      borderWidth = 1;
                       textColor = c.textMuted;
                     }
 
@@ -220,8 +232,8 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                           styles.actionBtn,
                           {
                             backgroundColor: btnBg,
-                            borderColor: isCancel ? c.border : 'transparent',
-                            borderWidth: isCancel ? 1 : 0,
+                            borderColor,
+                            borderWidth,
                             flex: (config.buttons?.length || 1) <= 2 ? 1 : undefined,
                           },
                         ]}

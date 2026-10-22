@@ -10,11 +10,22 @@ if (!token || !userId) {
 // UI Setup (guarded against missing elements)
 const topBarP = document.querySelector(".top-bar p");
 if (topBarP) topBarP.textContent = `Welcome back, ${userName}`;
+function resolveAvatarUrl(photoUrl) {
+    if (!photoUrl) return "";
+    const clean = photoUrl.trim();
+    if (!clean) return "";
+    if (clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("data:")) return clean;
+    const base = (window.API_BASE_URL || "").replace(/\/api\/?$/, "");
+    const path = clean.startsWith("/") ? clean : "/" + clean;
+    return `${base}${path}`;
+}
+
 function renderDashboardAvatar(name, photoUrl) {
     const avatarEl = document.querySelector(".avatar");
     if (!avatarEl) return;
     const initial = (name || "U").charAt(0).toUpperCase();
-    const photo = photoUrl || localStorage.getItem("userProfilePicture");
+    const rawPhoto = photoUrl !== undefined ? photoUrl : localStorage.getItem("userProfilePicture");
+    const photo = resolveAvatarUrl(rawPhoto);
     if (photo && photo.trim().length > 0) {
         avatarEl.innerHTML = `<img src="${photo}" alt="${initial}" class="avatar-img" onerror="this.onerror=null; this.parentElement.textContent='${initial}';" />`;
     } else {
@@ -2178,6 +2189,88 @@ const cancelEditProfileBtn = document.getElementById("cancelEditProfileBtn");
 const editProfileForm = document.getElementById("editProfileForm");
 const editProfileNameInput = document.getElementById("editProfileNameInput");
 
+function updateModalAvatarPreview(name, photoUrl) {
+    const previewEl = document.getElementById("modalAvatarPreview");
+    const removeBtn = document.getElementById("removeAvatarBtn");
+    if (!previewEl) return;
+    const initial = (name || localStorage.getItem("userName") || "U").charAt(0).toUpperCase();
+    const rawPhoto = photoUrl !== undefined ? photoUrl : localStorage.getItem("userProfilePicture");
+    const photo = resolveAvatarUrl(rawPhoto);
+    if (photo && photo.trim().length > 0) {
+        previewEl.innerHTML = `<img src="${photo}" alt="${initial}" style="width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;" onerror="this.onerror=null; this.parentElement.textContent='${initial}';" />`;
+        if (removeBtn) removeBtn.style.display = "inline-flex";
+    } else {
+        previewEl.textContent = initial;
+        if (removeBtn) removeBtn.style.display = "none";
+    }
+}
+
+const webAvatarFileInput = document.getElementById("webAvatarFileInput");
+const modalAvatarBrowseBtn = document.getElementById("modalAvatarBrowseBtn");
+const triggerAvatarUploadBtn = document.getElementById("triggerAvatarUploadBtn");
+const removeAvatarBtn = document.getElementById("removeAvatarBtn");
+const avatarUploadStatus = document.getElementById("avatarUploadStatus");
+
+if (webAvatarFileInput) {
+    const handleFileSelect = async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (!file.type || !file.type.toLowerCase().startsWith("image/")) {
+            showToast("Please select a valid image file (JPEG, PNG, WebP, GIF).", "warning");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("Avatar image must be smaller than 5MB.", "warning");
+            return;
+        }
+        if (avatarUploadStatus) avatarUploadStatus.textContent = "Uploading image...";
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await apiRequest(`/users/${userId}/avatar`, {
+                method: "POST",
+                body: formData,
+            });
+            const newUrl = res && res.profilePictureUrl ? res.profilePictureUrl : "";
+            if (newUrl) {
+                localStorage.setItem("userProfilePicture", newUrl);
+            }
+            const currentName = localStorage.getItem("userName") || "User";
+            renderDashboardAvatar(currentName, newUrl);
+            updateModalAvatarPreview(currentName, newUrl);
+            showToast("Profile picture updated successfully! 📸", "success");
+            if (avatarUploadStatus) avatarUploadStatus.textContent = "";
+        } catch (err) {
+            showToast(err.message || "Failed to upload profile picture.", "error");
+            if (avatarUploadStatus) avatarUploadStatus.textContent = "Upload failed.";
+        } finally {
+            webAvatarFileInput.value = "";
+        }
+    };
+
+    webAvatarFileInput.addEventListener("change", handleFileSelect);
+    modalAvatarBrowseBtn?.addEventListener("click", () => webAvatarFileInput.click());
+    triggerAvatarUploadBtn?.addEventListener("click", () => webAvatarFileInput.click());
+
+    removeAvatarBtn?.addEventListener("click", async () => {
+        try {
+            await apiRequest(`/users/${userId}/avatar`, { method: "DELETE" }).catch(async () => {
+                await apiRequest(`/users/${userId}`, {
+                    method: "PUT",
+                    body: JSON.stringify({ profilePictureUrl: "" })
+                });
+            });
+            localStorage.removeItem("userProfilePicture");
+            const currentName = localStorage.getItem("userName") || "User";
+            renderDashboardAvatar(currentName, "");
+            updateModalAvatarPreview(currentName, "");
+            showToast("Profile picture removed.", "info");
+        } catch (err) {
+            showToast(err.message || "Could not remove avatar.", "error");
+        }
+    });
+}
+
 if (editProfileBtn && editProfileModal) {
     editProfileBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -2186,6 +2279,7 @@ if (editProfileBtn && editProfileModal) {
         if (editProfileNameInput) {
             editProfileNameInput.value = currentName;
         }
+        updateModalAvatarPreview(currentName, localStorage.getItem("userProfilePicture"));
         openModal(editProfileModal);
         setTimeout(() => editProfileNameInput?.focus(), 50);
     });

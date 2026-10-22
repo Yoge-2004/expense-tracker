@@ -32,12 +32,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
-import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
+import { apiRequest, ApiError, checkServerHealth, resolveAvatarUrl } from '../../services/api';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { WORLD_CURRENCIES } from '../../services/currency';
 import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as DocumentPicker from 'expo-document-picker';
 import { clearSavedPin, savedPinEmail, savePinForFingerprint } from '../../utils/pinVault';
 
 import { AmbientAura } from '../../components/AmbientAura';
@@ -79,6 +80,7 @@ export default function ProfileScreen() {
     toggleBiometrics,
     profilePicture,
     updateUserProfile,
+    refreshUserProfile,
   } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
@@ -381,43 +383,93 @@ export default function ProfileScreen() {
     }
   };
 
-  // Avatar Management
+    // Avatar Management
   const handleOpenAvatarModal = () => {
-    setAvatarUrlInput(profilePicture || '');
+    setAvatarUrlInput(profilePicture || "");
     setShowAvatarModal(true);
+  };
+
+  const handlePickLocalAvatar = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ["image/*"],
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled || !res.assets || res.assets.length === 0) {
+        return;
+      }
+      const asset = res.assets[0];
+      if (asset.size && asset.size > 5 * 1024 * 1024) {
+        showAlert("File Too Large", "Please select an image smaller than 5MB.", undefined, "warning");
+        return;
+      }
+      setIsSavingAvatar(true);
+      const formData = new FormData();
+      if (Platform.OS === "web" && (asset as any).file) {
+        formData.append("file", (asset as any).file);
+      } else {
+        formData.append("file", {
+          uri: asset.uri,
+          name: asset.name || "avatar.jpg",
+          type: asset.mimeType || "image/jpeg",
+        } as any);
+      }
+      await apiRequest<{ profilePictureUrl: string; message: string }>(
+        `/users/${userId}/avatar`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      await refreshUserProfile();
+      setShowAvatarModal(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      showAlert(
+        "Profile Picture Updated 📸",
+        "Your profile picture has been updated from your device and synced.",
+        undefined,
+        "success"
+      );
+    } catch (e: any) {
+      const msg = e instanceof ApiError ? e.message : "Could not upload photo from device.";
+      showAlert("Upload Failed", msg, undefined, "error");
+    } finally {
+      setIsSavingAvatar(false);
+    }
   };
 
   const handleSaveAvatar = async () => {
     const cleanUrl = avatarUrlInput.trim();
-    if (cleanUrl && !cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+    if (cleanUrl && !cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
       showAlert(
-        'Invalid URL',
-        'Please enter a valid web image URL (starting with https:// or http://).',
+        "Invalid URL",
+        "Please enter a valid web image URL (starting with https:// or http://).",
         undefined,
-        'warning'
+        "warning"
       );
       return;
     }
     if (cleanUrl.length > 512) {
-      showAlert('URL Too Long', 'Profile image URL cannot exceed 512 characters.', undefined, 'warning');
+      showAlert("URL Too Long", "Profile image URL cannot exceed 512 characters.", undefined, "warning");
       return;
     }
     setIsSavingAvatar(true);
     try {
       await updateUserProfile({ profilePictureUrl: cleanUrl });
+      await refreshUserProfile();
       setShowAvatarModal(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert(
-        'Profile Picture Updated',
+        "Profile Picture Updated",
         cleanUrl
-          ? 'Your new profile picture has been synced and applied.'
-          : 'Profile picture has been reset to default monogram.',
+          ? "Your new profile picture has been synced and applied."
+          : "Profile picture has been reset to default monogram.",
         undefined,
-        'success'
+        "success"
       );
     } catch (e: any) {
-      const msg = e instanceof ApiError ? e.message : 'Could not save profile picture.';
-      showAlert('Update Failed', msg, undefined, 'error');
+      const msg = e instanceof ApiError ? e.message : "Could not save profile picture.";
+      showAlert("Update Failed", msg, undefined, "error");
     } finally {
       setIsSavingAvatar(false);
     }
@@ -426,19 +478,28 @@ export default function ProfileScreen() {
   const handleClearAvatar = async () => {
     setIsSavingAvatar(true);
     try {
-      await updateUserProfile({ profilePictureUrl: '' });
-      setAvatarUrlInput('');
+      if (userId) {
+        try {
+          await apiRequest(`/users/${userId}/avatar`, { method: "DELETE" });
+        } catch {
+          await updateUserProfile({ profilePictureUrl: "" });
+        }
+      } else {
+        await updateUserProfile({ profilePictureUrl: "" });
+      }
+      await refreshUserProfile();
+      setAvatarUrlInput("");
       setShowAvatarModal(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert(
-        'Avatar Removed',
-        'Your profile picture has been reset to the default monogram.',
+        "Avatar Removed",
+        "Your profile picture has been reset to the default monogram.",
         undefined,
-        'info'
+        "info"
       );
     } catch (e: any) {
-      const msg = e instanceof ApiError ? e.message : 'Could not reset avatar.';
-      showAlert('Reset Failed', msg, undefined, 'error');
+      const msg = e instanceof ApiError ? e.message : "Could not reset avatar.";
+      showAlert("Reset Failed", msg, undefined, "error");
     } finally {
       setIsSavingAvatar(false);
     }
@@ -555,15 +616,19 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={handleOpenAvatarModal}
-                style={[styles.bigAvatar, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}
+                style={styles.avatarWrapper}
+                accessibilityRole="button"
+                accessibilityLabel="Update profile picture"
               >
-                {profilePicture ? (
-                  <Image source={{ uri: profilePicture }} style={styles.bigAvatarImg} />
-                ) : (
-                  <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
-                )}
+                <View style={[styles.bigAvatar, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}>
+                  {profilePicture ? (
+                    <Image source={{ uri: resolveAvatarUrl(profilePicture) || undefined }} style={styles.bigAvatarImg} />
+                  ) : (
+                    <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+                  )}
+                </View>
                 <View style={[styles.avatarEditBadge, { backgroundColor: c.card, borderColor: c.border }]}>
-                  <Ionicons name="camera" size={11} color={c.primary} />
+                  <Ionicons name="camera" size={12} color={c.primary} />
                 </View>
               </TouchableOpacity>
               <View style={styles.userMeta}>
@@ -1048,7 +1113,7 @@ export default function ProfileScreen() {
               </View>
 
               <Text style={[styles.pinModalDesc, { color: c.textMuted }]}>
-                Set your public profile avatar URL (e.g. Google, Gravatar, Cloudinary). It syncs across both mobile and web automatically.
+                Update your profile picture by browsing your device files or entering a web image URL.
               </Text>
 
               {/* Preview */}
@@ -1057,25 +1122,63 @@ export default function ProfileScreen() {
                   style={[
                     styles.bigAvatar,
                     {
-                      width: 72,
-                      height: 72,
-                      borderRadius: 36,
+                      width: 80,
+                      height: 80,
+                      borderRadius: 40,
                       backgroundColor: c.primary,
                       borderColor: c.primary + '60',
                     },
                   ]}
                 >
-                  {avatarUrlInput.trim() ? (
+                  {resolveAvatarUrl(avatarUrlInput.trim() || profilePicture) ? (
                     <Image
-                      source={{ uri: avatarUrlInput.trim() }}
-                      style={[styles.bigAvatarImg, { borderRadius: 36 }]}
+                      source={{ uri: resolveAvatarUrl(avatarUrlInput.trim() || profilePicture)! }}
+                      style={[styles.bigAvatarImg, { borderRadius: 40 }]}
                     />
                   ) : (
-                    <Text style={[styles.avatarLetter, { fontSize: 28 }]}>
+                    <Text style={[styles.avatarLetter, { fontSize: 32 }]}>
                       {(userName || 'U').charAt(0).toUpperCase()}
                     </Text>
                   )}
                 </View>
+              </View>
+
+              {/* Local File Browser Button */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handlePickLocalAvatar}
+                disabled={isSavingAvatar}
+                style={[
+                  styles.savePinBtn,
+                  {
+                    backgroundColor: c.primary,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    marginBottom: 16,
+                    opacity: isSavingAvatar ? 0.7 : 1,
+                  },
+                ]}
+              >
+                {isSavingAvatar ? (
+                  <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                ) : (
+                  <>
+                    <Ionicons name="images-outline" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                    <Text style={[styles.savePinBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                      Browse Files & Photos
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: c.border }} />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Or paste image URL
+                </Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: c.border }} />
               </View>
 
               <View style={styles.pinFieldWrap}>
@@ -1105,16 +1208,12 @@ export default function ProfileScreen() {
                 disabled={isSavingAvatar}
                 style={[
                   styles.savePinBtn,
-                  { backgroundColor: c.primary, opacity: isSavingAvatar ? 0.7 : 1 },
+                  { backgroundColor: c.inputBg, borderColor: c.border, borderWidth: 1, opacity: isSavingAvatar ? 0.7 : 1 },
                 ]}
               >
-                {isSavingAvatar ? (
-                  <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
-                ) : (
-                  <Text style={[styles.savePinBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
-                    Save Avatar
-                  </Text>
-                )}
+                <Text style={[styles.savePinBtnText, { color: c.text }]}>
+                  Save URL
+                </Text>
               </TouchableOpacity>
 
               {profilePicture ? (
@@ -1462,6 +1561,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userCardTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  avatarWrapper: {
+    position: 'relative',
+    width: 54,
+    height: 54,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   bigAvatar: {
     width: 52,
     height: 52,
@@ -1470,20 +1576,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     overflow: 'hidden',
-    position: 'relative',
   },
   bigAvatarImg: { width: '100%', height: '100%', borderRadius: 26 },
   avatarLetter: { color: '#10120E', fontSize: 22, fontWeight: '900' },
   avatarEditBadge: {
     position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2.5,
+    elevation: 4,
+    zIndex: 10,
   },
   userMeta: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

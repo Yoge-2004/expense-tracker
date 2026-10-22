@@ -332,9 +332,10 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
         if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) return cached.data;
     }
 
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
     const token = localStorage.getItem("token");
     const headers = {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers
     };

@@ -42,7 +42,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedScrollbar, ThemedScrollView } from '../../components/ThemedScrollbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
-import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
+import { apiRequest, ApiError, checkServerHealth, resolveAvatarUrl } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
 import { scheduleSmartReminders } from '../../services/notifications';
 import { Colors, getCategoryColor, getCategoryEmoji, ThemeColors } from '../../constants/theme';
@@ -790,15 +790,17 @@ export default function DashboardScreen() {
         { text: "Cancel", style: "cancel" },
         ...(!isIncome && userId ? [
           {
-            text: "Split / Link to Peer Loan",
+            text: "Split / Link to Loan",
+            style: "teal" as any,
             onPress: () => {
               showAlert(
-                "Convert / Link to Peer Loan",
-                `Convert "${tx.title}" (${currSymbol}${tx.amount}) into a friend loan / split record?`,
+                "Convert / Link to Loan",
+                `Convert "${tx.title}" (${currSymbol}${tx.amount}) into a loan / split record (peer, personal, or bank)?`,
                 [
                   { text: "Cancel", style: "cancel" },
                   {
                     text: "Create Loan",
+                    style: "teal" as any,
                     onPress: async () => {
                       try {
                         const { createLoan, getLoanMetrics } = await import('../../services/loans');
@@ -1286,6 +1288,7 @@ export default function DashboardScreen() {
       <AmbientAura />
 
       <ThemedScrollView
+        hideScrollbar={true}
         style={styles.scrollView}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
@@ -1310,7 +1313,7 @@ export default function DashboardScreen() {
           <View style={styles.userCol}>
             <View style={[styles.avatarCircle, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}>
               {profilePicture ? (
-                <Image source={{ uri: profilePicture }} style={styles.avatarImg} />
+                <Image source={{ uri: resolveAvatarUrl(profilePicture) || undefined }} style={styles.avatarImg} />
               ) : (
                 <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
               )}
