@@ -24,18 +24,12 @@
                 document.documentElement.setAttribute("data-theme", t);
                 var m = document.querySelector('meta[name="theme-color"]');
                 if (m) m.setAttribute("content", t === "light" ? "#F8F9FA" : "#10120E");
-                var p = new URLSearchParams(window.location.search);
-                var ijt = p.get("_ijt");
-                if (ijt) {
-                    var ml = document.querySelector('link[rel="manifest"]');
-                    if (ml) ml.href = "manifest.json?_ijt=" + encodeURIComponent(ijt);
-                }
             } catch (e) {}
         })();
     </script>
     <meta name="description" content="Your private ExpenseTracker Pro dashboard — track spending, manage budgets, and monitor recurring subscriptions.">
     <meta name="robots" content="noindex, nofollow">
-    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -1786,9 +1780,9 @@
     <script src="js/modules/floating-calculator.js"></script>
     <script src="js/modules/loans-manager.js"></script>
     <script src="js/modules/wealth-simulator.js"></script>
+    <script src="js/dashboard.js"></script>
     <script src="js/modules/dashboard-transfers-subs.js"></script>
     <script src="js/modules/dashboard-incomes-goals.js"></script>
-    <script src="js/dashboard.js"></script>
     <script src="js/modules/dashboard-reports-streams.js"></script>
     <script src="js/motion.js"></script>
     <!-- Executive Precision HUD Reticle -->

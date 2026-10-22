@@ -100,10 +100,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:frontend/favicon.ico", "classpath:/frontend/favicon.ico")
                 .setCacheControl(staticCache);
 
-        registry.addResourceHandler("/manifest.json")
-                .addResourceLocations("file:frontend/manifest.json", "classpath:/frontend/manifest.json")
-                .setCacheControl(staticCache);
-
         // Service Worker script handlers for root and frontend subpaths
         registry.addResourceHandler("/sw.js")
                 .addResourceLocations("file:frontend/sw.js", "classpath:/frontend/sw.js")

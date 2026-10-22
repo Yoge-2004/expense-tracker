@@ -686,41 +686,7 @@
         wireClassifierCard(card);
     }
 
-    // Wrap DashboardInsights.renderFinancialInsights if available
-    function setupInsightsIntegration() {
-        if (window.DashboardInsights && typeof window.DashboardInsights.renderFinancialInsights === "function") {
-            const original = window.DashboardInsights.renderFinancialInsights;
-            window.DashboardInsights = Object.freeze({
-                renderFinancialInsights: function () {
-                    const res = original.apply(this, arguments);
-                    try {
-                        renderMlIntelligenceCard();
-                    } catch (e) {
-                        console.error("[DashboardML] Failed rendering insight card:", e);
-                    }
-                    return res;
-                }
-            });
-        }
-    }
-
-    const appendMlInsightsCard = renderMlIntelligenceCard;
-    window.DashboardMlInsights = Object.freeze({
-        appendMlInsightsCard,
-        renderMlIntelligenceCard
-    });
-
-    // 9. PUBLIC API & DOM READY INITIALIZATION
-    window.DashboardML = Object.freeze({
-        classifyDescription,
-        submitFeedbackRecord,
-        resolveToCanonical,
-        getTaxonomyItem,
-        checkDuplicateExpense,
-        onExpenseSaved,
-        resetActiveSession,
-        CANONICAL_TAXONOMY
-    });
+    window.DashboardMlInsights = Object.freeze({ appendMlInsightsCard });
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
