@@ -53,8 +53,8 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
     @org.springframework.beans.factory.annotation.Value("${app.fallback-db.password:}")
     private String fallbackDbPassword = "";
 
-    @org.springframework.beans.factory.annotation.Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:yogeshwaranmuthuraman56@gmail.com}}")
-    private String adminEmail = "yogeshwaranmuthuraman56@gmail.com";
+    @org.springframework.beans.factory.annotation.Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:}}")
+    private String adminEmail = "";
 
     public DatabaseSnapshotServiceImpl(
             DataSource dataSource,

@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
  * {@link Role#ROLE_SUPER_ADMIN} clearance on application startup.
  *
  * <p>Configurable via the {@code ADMIN_EMAIL} environment variable (defaulting
- * to {@code yogeshwaranmuthurmana56@gmail.com} for Hugging Face and production).</p>
  *
  * @author Yogeshwaran
  */
@@ -35,7 +34,7 @@ public class AdminBootstrapRunner implements CommandLineRunner {
     @Value("${app.admin.bootstrap.enabled:true}")
     private boolean bootstrapEnabled;
 
-    @Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:yogeshwaranmuthuraman56@gmail.com}}")
+    @Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:}}")
     private String bootstrapEmail;
 
     @Value("${app.admin.bootstrap.username:${ADMIN_USERNAME:yogeshwaran}}")

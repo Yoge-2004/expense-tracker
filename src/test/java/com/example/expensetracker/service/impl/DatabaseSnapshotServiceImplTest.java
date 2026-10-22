@@ -151,7 +151,7 @@ class DatabaseSnapshotServiceImplTest {
         try (Connection sqConn = java.sql.DriverManager.getConnection("jdbc:sqlite:" + sqlitePath.toAbsolutePath());
              Statement stmt = sqConn.createStatement()) {
             stmt.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)");
-            stmt.execute("INSERT INTO users VALUES (1, 'Admin User', 'yogeshwaranmuthuraman56@gmail.com')");
+            stmt.execute("INSERT INTO users VALUES (1, 'Admin User', 'admin@test.com')");
             stmt.execute("INSERT INTO users VALUES (2, 'Normal User', 'member@example.com')");
         }
 
@@ -163,6 +163,7 @@ class DatabaseSnapshotServiceImplTest {
         }
 
         DatabaseSnapshotServiceImpl testService = new DatabaseSnapshotServiceImpl(dataSource, fallbackDbPath.toString());
+        org.springframework.test.util.ReflectionTestUtils.setField(testService, "adminEmail", "admin@test.com");
         int imported = testService.importIntoFallback(sqlitePath);
         assertEquals(2, imported);
 
