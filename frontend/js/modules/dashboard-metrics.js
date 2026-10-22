@@ -132,7 +132,7 @@
                 if (safeBadge) {
                     if (safeDaily <= 0) {
                         safeBadge.className = "status-badge badge-danger";
-                        safeBadge.title = "Monthly budget exhausted! $0 safe allowance";
+                        safeBadge.title = `Monthly budget exhausted! ${formatCurrency(0)} safe allowance`;
                     } else if (safeDaily < dailyBurn) {
                         safeBadge.className = "status-badge badge-warning";
                         safeBadge.title = "Pacing high - lower daily spend recommended";
@@ -204,7 +204,7 @@
             }
             if (streakBadge) {
                 streakBadge.className = "status-badge badge-warning";
-                streakBadge.title = `${streak} consecutive day${streak === 1 ? '' : 's'} with $0 recorded non-recurring expenses`;
+                streakBadge.title = `${streak} consecutive day${streak === 1 ? '' : 's'} with ${formatCurrency(0)} recorded non-recurring expenses`;
             }
 
             const noSpendSet = new Set();
