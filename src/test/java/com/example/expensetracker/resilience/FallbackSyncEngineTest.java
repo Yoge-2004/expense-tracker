@@ -245,6 +245,17 @@ class FallbackSyncEngineTest {
         assertFalse(engine.pendingChanges(fallback) > 0, "adding a column must not register as row edits");
     }
 
+    @Test
+    @DisplayName("repairSchema converts INTEGER request_json in WEBAUTHN_CHALLENGES to TEXT")
+    void repairsWebAuthnColumnTypes() throws Exception {
+        exec(fallback, "CREATE TABLE IF NOT EXISTS WEBAUTHN_CHALLENGES (ID VARCHAR(64) PRIMARY KEY, REQUEST_JSON INTEGER NOT NULL)");
+        engine.ensureSupportTables(fallback);
+
+        // Inserting a JSON string should now succeed because the column was altered to TEXT
+        exec(fallback, "INSERT INTO WEBAUTHN_CHALLENGES (ID, REQUEST_JSON) VALUES ('c1', '{\"challenge\":\"test\"}')");
+        assertEquals("{\"challenge\":\"test\"}", string(fallback, "SELECT REQUEST_JSON FROM WEBAUTHN_CHALLENGES WHERE ID = 'c1'"));
+    }
+
     // ------------------------------------------------------------ helpers
 
     private static void exec(Connection c, String sql) throws SQLException {

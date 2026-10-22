@@ -142,8 +142,35 @@ public final class FallbackSyncEngine {
                     + "\"row_key\" VARCHAR(1000), \"operation\" VARCHAR(16), \"reason\" VARCHAR(1000), "
                     + "\"row_json\" VARCHAR(100000), \"recorded_at\" TIMESTAMP)");
         }
+        repairSchema(h2);
         if (!h2.getAutoCommit()) {
             h2.commit();
+        }
+    }
+
+    private void repairSchema(Connection h2) {
+        repairColumnType(h2, "WEBAUTHN_CHALLENGES", "REQUEST_JSON");
+        repairColumnType(h2, "webauthn_challenges", "request_json");
+        repairColumnType(h2, "WEBAUTHN_CREDENTIALS", "PUBLIC_KEY_COSE");
+        repairColumnType(h2, "webauthn_credentials", "public_key_cose");
+    }
+
+    private void repairColumnType(Connection h2, String table, String col) {
+        try {
+            DatabaseMetaData md = h2.getMetaData();
+            try (ResultSet rs = md.getColumns(h2.getCatalog(), h2.getSchema(), table, col)) {
+                if (rs.next()) {
+                    int dataType = rs.getInt("DATA_TYPE");
+                    if (dataType != Types.VARCHAR && dataType != Types.CLOB && dataType != Types.LONGVARCHAR) {
+                        try (Statement s = h2.createStatement()) {
+                            s.execute("ALTER TABLE " + q(rs.getString("TABLE_NAME")) + " ALTER COLUMN " + q(rs.getString("COLUMN_NAME")) + " SET DATA TYPE TEXT");
+                            log.info("Repaired fallback column {}.{} from type {} to TEXT", rs.getString("TABLE_NAME"), rs.getString("COLUMN_NAME"), dataType);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not repair fallback column {}.{}: {}", table, col, e.getMessage());
         }
     }
 
@@ -222,8 +249,8 @@ public final class FallbackSyncEngine {
     private static String h2Type(Col c, boolean identity) {
         String base;
         switch (c.type()) {
-            case Types.BIGINT -> base = "BIGINT";
-            case Types.INTEGER -> base = "INTEGER";
+            case Types.BIGINT -> base = "oid".equalsIgnoreCase(c.typeName()) ? "TEXT" : "BIGINT";
+            case Types.INTEGER -> base = "oid".equalsIgnoreCase(c.typeName()) ? "TEXT" : "INTEGER";
             case Types.SMALLINT -> base = "SMALLINT";
             case Types.TINYINT -> base = "TINYINT";
             case Types.BIT, Types.BOOLEAN -> base = "BOOLEAN";
@@ -239,14 +266,22 @@ public final class FallbackSyncEngine {
             case Types.TIME, Types.TIME_WITH_TIMEZONE -> base = "TIME";
             case Types.TIMESTAMP -> base = "TIMESTAMP";
             case Types.TIMESTAMP_WITH_TIMEZONE -> base = "TIMESTAMP WITH TIME ZONE";
+            case Types.CLOB, Types.NCLOB, Types.LONGVARCHAR, Types.LONGNVARCHAR -> base = "TEXT";
             case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB -> base = "VARBINARY";
             case Types.VARCHAR, Types.CHAR, Types.NVARCHAR, Types.NCHAR -> {
-                boolean bounded = c.size() > 0 && c.size() < 100_000_000;
-                base = bounded ? "VARCHAR(" + c.size() + ")" : "VARCHAR";
+                if ("text".equalsIgnoreCase(c.typeName())) {
+                    base = "TEXT";
+                } else {
+                    boolean bounded = c.size() > 0 && c.size() < 100_000_000;
+                    base = bounded ? "VARCHAR(" + c.size() + ")" : "VARCHAR";
+                }
             }
             default -> {
                 if ("uuid".equalsIgnoreCase(c.typeName())) {
                     base = "UUID";
+                } else if ("oid".equalsIgnoreCase(c.typeName()) || "text".equalsIgnoreCase(c.typeName())
+                        || "json".equalsIgnoreCase(c.typeName()) || "jsonb".equalsIgnoreCase(c.typeName())) {
+                    base = "TEXT";
                 } else {
                     base = "VARCHAR";
                 }

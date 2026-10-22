@@ -76,6 +76,7 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
             boolean primaryUp = routing.mode() == ResilientRoutingDataSource.Mode.PRIMARY;
             if (primaryUp) {
                 try (Connection primary = routing.primaryDataSource().getConnection()) {
+                    repairPostgresSchema(primary);
                     engine.ensureSchema(primary, fallback);
                 }
             }
@@ -291,5 +292,34 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
     private static String message(Exception e) {
         String m = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage().replaceAll("[\\r\\n]+", " ");
         return m.length() > 300 ? m.substring(0, 300) : m;
+    }
+
+    private void repairPostgresSchema(Connection pg) {
+        try {
+            java.sql.DatabaseMetaData md = pg.getMetaData();
+            repairPgColumn(pg, md, "webauthn_challenges", "request_json", true);
+            repairPgColumn(pg, md, "webauthn_credentials", "public_key_cose", false);
+        } catch (Exception e) {
+            log.debug("PostgreSQL WebAuthn schema check skipped: {}", e.getMessage());
+        }
+    }
+
+    private void repairPgColumn(Connection pg, java.sql.DatabaseMetaData md, String table, String col, boolean clearEphemeral) {
+        try (java.sql.ResultSet rs = md.getColumns(pg.getCatalog(), pg.getSchema(), table, col)) {
+            if (rs.next()) {
+                String typeName = rs.getString("TYPE_NAME");
+                if ("oid".equalsIgnoreCase(typeName)) {
+                    try (java.sql.Statement s = pg.createStatement()) {
+                        if (clearEphemeral) {
+                            s.execute("DELETE FROM \"" + table + "\"");
+                        }
+                        s.execute("ALTER TABLE \"" + table + "\" ALTER COLUMN \"" + col + "\" TYPE TEXT USING \"" + col + "\"::text");
+                        log.info("Migrated PostgreSQL column {}.{} from oid to TEXT", table, col);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not alter PostgreSQL column {}.{}: {}", table, col, e.getMessage());
+        }
     }
 }

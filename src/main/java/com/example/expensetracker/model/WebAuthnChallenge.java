@@ -25,8 +25,7 @@ public class WebAuthnChallenge {
     @Column(name = "ceremony", nullable = false, length = 20)
     private String ceremony;
 
-    @Lob
-    @Column(name = "request_json", nullable = false)
+    @Column(name = "request_json", nullable = false, columnDefinition = "TEXT")
     private String requestJson;
 
     @Column(name = "expires_at", nullable = false)
