@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -14,73 +15,31 @@ import java.util.Optional;
 /**
  * Spring Data JPA repository for {@link Expense} entities.
  *
- * <p>Extends {@link JpaRepository} to provide standard CRUD operations
- * alongside custom query methods for user-scoped expense retrieval and
- * date-range filtering used in budget status calculations.</p>
- *
- * <p>Used by {@link com.example.expensetracker.service.impl.ExpenseServiceImpl}
- * for business-layer queries and by
- * {@link com.example.expensetracker.controller.ExpenseController}
- * for budget utilisation calculations.</p>
- *
  * @author Yogeshwaran
  * @version 1.0
  * @see Expense
  */
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-    /**
-     * Retrieves all expenses belonging to the specified user.
-     *
-     * @param user the {@link User} whose expenses are to be retrieved
-     * @return a list of {@link Expense} records owned by the user;
-     *         empty list if the user has no expenses
-     */
     @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user "
             + "ORDER BY e.expenseDate DESC, e.id DESC")
     List<Expense> findByUser(@Param("user") User user);
 
-    /**
-     * Finds a single expense by ID and owning user.
-     *
-     * @param id the expense ID
-     * @param user the owning user
-     * @return Optional containing the expense if found and owned by the user
-     */
     Optional<Expense> findByIdAndUser(Long id, User user);
 
-    /**
-     * Retrieves all expenses for a user that fall within a given date range (inclusive).
-     *
-     * <p>Used primarily in budget status calculations to sum spending within
-     * the current calendar month for each category.</p>
-     *
-     * @param user      the {@link User} whose expenses are being filtered
-     * @param startDate the start of the date range (inclusive), typically the first
-     *                  day of the current month
-     * @param endDate   the end of the date range (inclusive), typically the last
-     *                  day of the current month
-     * @return a list of {@link Expense} records within the specified date range;
-     *         empty list if no matching expenses exist
-     */
     List<Expense> findByUserAndExpenseDateBetween(User user, LocalDate startDate, LocalDate endDate);
 
-    /**
-     * Checks whether any expense (for any user) currently references the given
-     * category. Used to guard category deletion — a category that's in use
-     * must not be deleted, since doing so would orphan those expense records.
-     *
-     * @param categoryId the ID of the category to check
-     * @return {@code true} if at least one expense references this category
-     */
     boolean existsByCategory_Id(Long categoryId);
 
-    /**
-     * Deletes all expenses owned by the specified user.
-     *
-     * @param userId the ID of the owning user
-     */
     @Modifying
     @Query("DELETE FROM Expense e WHERE e.user.id = :userId")
     void deleteByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e")
+    BigDecimal sumTotalExpensesAmount();
+
+    long countByUser(User user);
+
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user = :user")
+    BigDecimal sumTotalExpensesAmountByUser(@Param("user") User user);
 }

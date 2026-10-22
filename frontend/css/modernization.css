@@ -1152,6 +1152,23 @@
         cursor: var(--cursor-pointer);
     }
 
+    /* High-Precision Interactive Click Override */
+    :active,
+    a:active,
+    button:active,
+    [role="button"]:active,
+    .btn:active,
+    .btn-primary:active,
+    .btn-secondary:active,
+    .stream-pill-btn:active,
+    .custom-select-trigger:active,
+    .custom-option:active,
+    .modal-close:active,
+    .clickable:active,
+    tr:active {
+        cursor: var(--cursor-clicked, var(--cursor-pointer)) !important;
+    }
+
     /* Propagate pointer cursor to nested elements */
     a *,
     button *,
@@ -1276,6 +1293,12 @@
 }
 
 /* Clicking State */
+@keyframes reticleBurst {
+    0% { transform: scale(0.6); opacity: 1; border-color: #FFFFFF; }
+    50% { border-color: var(--primary); }
+    100% { transform: scale(4.8); opacity: 0; border-color: transparent; }
+}
+
 .executive-reticle.is-down {
     filter: drop-shadow(0 0 8px #D4AF37);
 }

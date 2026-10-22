@@ -356,7 +356,7 @@
         });
 
         // Also catch any other selects in modals or filters
-        document.querySelectorAll(".modal select, .filter-toolbar select").forEach(sel => {
+        document.querySelectorAll("select:not(.no-custom-select)").forEach(sel => {
             if (!enhancedSelects.has(sel) && !sel.dataset.customEnhanced) {
                 enhanceSelect(sel);
             }

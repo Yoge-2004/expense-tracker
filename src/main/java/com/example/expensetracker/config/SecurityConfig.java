@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,6 +22,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 @Slf4j
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private static final String CSP_POLICY =
@@ -44,7 +46,7 @@ public class SecurityConfig {
     @Bean
     @SuppressWarnings("java:S4502")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-        log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication and security headers");
+        log.info("Configuring Spring SecurityFilterChain with stateless JWT authentication, RBAC, and security headers");
 
         http
                 .cors(Customizer.withDefaults())
@@ -82,6 +84,8 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
+                        .requestMatchers("/api/admin/users/*/role", "/api/admin/resilience/hf-backup").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SUPPORT")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -91,9 +95,6 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers
                         .contentTypeOptions(Customizer.withDefaults())
-                        // NOTE: X-XSS-Protection is intentionally not sent. The header is
-                        // obsolete (ignored by modern browsers) and known to *introduce*
-                        // reflected-XSS issues in legacy engines when set to "1; mode=block".
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                         .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                         .referrerPolicy(referrer -> referrer.policy(

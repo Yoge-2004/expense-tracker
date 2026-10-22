@@ -77,9 +77,19 @@
             isMoving = true;
         });
 
+        // Tactical Click Shockwave Effect
+        function triggerClickRipple(x, y) {
+            const ripple = document.createElement("div");
+            ripple.className = "reticle-click-shockwave";
+            ripple.style.cssText = "position:fixed; left:" + x + "px; top:" + y + "px; width:12px; height:12px; margin-left:-6px; margin-top:-6px; border-radius:50%; border:2px solid var(--primary, #D4AF37); pointer-events:none; z-index:99998; box-shadow:0 0 14px var(--primary, #D4AF37); animation:reticleBurst 0.35s cubic-bezier(0.16,1,0.3,1) forwards;";
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 380);
+        }
+
         // Mouse Down / Up
-        document.addEventListener("mousedown", () => {
+        document.addEventListener("mousedown", (e) => {
             reticleEl.classList.add("is-down");
+            triggerClickRipple(e.clientX, e.clientY);
         }, { passive: true });
 
         document.addEventListener("mouseup", () => {

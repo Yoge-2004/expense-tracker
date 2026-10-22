@@ -7,6 +7,7 @@ import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.service.PasswordResetService;
 import com.example.expensetracker.service.UserService;
+import com.example.expensetracker.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ class AuthControllerTest {
     @MockitoBean GoogleIdTokenVerifier googleIdTokenVerifier;
     @MockitoBean PasswordResetService passwordResetService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
+    @MockitoBean UserRepository userRepository;
 
     private User user;
 
@@ -51,6 +53,7 @@ class AuthControllerTest {
         user.setEmail("jane@example.com");
         user.setCurrency("INR");
         user.setEnabled(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test

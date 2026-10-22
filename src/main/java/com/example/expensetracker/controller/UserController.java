@@ -158,6 +158,7 @@ public class UserController {
         map.put("currency", user.getCurrency());
         map.put("hasSecurityPin", user.hasSecurityPin());
         map.put("profilePictureUrl", user.getProfilePictureUrl());
+        map.put("role", user.getRole().name());
         return ResponseEntity.ok(map);
     }
 

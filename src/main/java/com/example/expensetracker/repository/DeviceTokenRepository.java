@@ -16,9 +16,14 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, Long> 
 
     Optional<DeviceToken> findByToken(String token);
 
+    long countByUser(User user);
+
     @Transactional
     void deleteByToken(String token);
 
     @Transactional
     void deleteByTokenAndUser(String token, User user);
+
+    @Transactional
+    void deleteByUser(User user);
 }

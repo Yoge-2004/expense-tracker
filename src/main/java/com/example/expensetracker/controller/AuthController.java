@@ -3,7 +3,9 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.dto.*;
 import com.example.expensetracker.logging.LoggingUtils;
 import com.example.expensetracker.mapper.UserMapper;
+import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.security.CustomUserDetails;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
@@ -57,9 +59,30 @@ public class AuthController {
     private final JwtService jwtService;
     private final PasswordResetService passwordResetService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final UserRepository userRepository;
 
     @Value("${app.auth.email-verification-enabled:false}")
     private boolean emailVerificationEnabled;
+
+    @Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:}}")
+    private String adminEmail;
+
+    private User ensureAdminRole(User user) {
+        if (user == null || user.getEmail() == null || adminEmail == null || adminEmail.isBlank()) {
+            return user;
+        }
+        if (user.getEmail().equalsIgnoreCase(adminEmail.trim())) {
+            if (user.getRole() != Role.ROLE_SUPER_ADMIN || !user.isEnabled() || user.isAccountLocked()) {
+                user.setRole(Role.ROLE_SUPER_ADMIN);
+                user.setEnabled(true);
+                user.setAccountLocked(false);
+                User saved = userRepository.save(user);
+                log.info("Ensured ROLE_SUPER_ADMIN clearance for admin email={}", user.getEmail());
+                return saved;
+            }
+        }
+        return user;
+    }
 
 
     @Operation(summary = "Get auth configuration",
@@ -116,6 +139,7 @@ public class AuthController {
                     .or(() -> userService.findByEmail(auth.getName()))
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
         }
+        user = ensureAdminRole(user);
         String token = jwtService.generateToken(user.getEmail());
         log.info("User successfully authenticated; userId={}", user.getId());
         return ResponseEntity.ok(new AuthResponse(
@@ -126,7 +150,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getCurrency(),
                 user.hasSecurityPin(),
-                user.getProfilePictureUrl()
+                user.getProfilePictureUrl(),
+                user.getRole().name()
         ));
     }
 
@@ -333,6 +358,7 @@ public class AuthController {
         // standard Spring Security authentication path that checks these flags).
         // Now we explicitly reject disabled/locked accounts with 401 Unauthorized,
         // matching the standard login flow's behavior.
+        user = ensureAdminRole(user);
         if (!user.isEnabled() || user.isAccountLocked()) {
             log.warn("Google OAuth login rejected for disabled/locked account email={}",
                     LoggingUtils.maskEmail(identity.email()));
@@ -350,7 +376,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getCurrency(),
                 user.hasSecurityPin(),
-                user.getProfilePictureUrl()
+                user.getProfilePictureUrl(),
+                user.getRole().name()
         ));
     }
 

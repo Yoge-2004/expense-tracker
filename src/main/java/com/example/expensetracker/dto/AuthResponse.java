@@ -35,9 +35,16 @@ public record AuthResponse(
 
         @Schema(description = "URL of the user profile avatar picture (e.g. from Google OAuth)",
                 example = "https://lh3.googleusercontent.com/a/...")
-        String profilePictureUrl
+        String profilePictureUrl,
+
+        @Schema(description = "Role-based access authority assigned to the user", example = "ROLE_USER")
+        String role
 ) {
     public AuthResponse(String token, Long userId, String name, String username, String email, String currency, Boolean hasSecurityPin) {
-        this(token, userId, name, username, email, currency, hasSecurityPin, null);
+        this(token, userId, name, username, email, currency, hasSecurityPin, null, "ROLE_USER");
+    }
+
+    public AuthResponse(String token, Long userId, String name, String username, String email, String currency, Boolean hasSecurityPin, String profilePictureUrl) {
+        this(token, userId, name, username, email, currency, hasSecurityPin, profilePictureUrl, "ROLE_USER");
     }
 }

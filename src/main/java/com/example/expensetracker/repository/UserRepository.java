@@ -1,7 +1,12 @@
 package com.example.expensetracker.repository;
 
+import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
@@ -13,14 +18,6 @@ import java.util.Optional;
  * which is the primary identifier used during authentication and
  * password reset flows.</p>
  *
- * <p>Used by:</p>
- * <ul>
- *   <li>{@link com.example.expensetracker.security.CustomUserDetailsService} —
- *       to load a user by email during Spring Security authentication.</li>
- *   <li>{@link com.example.expensetracker.service.impl.UserServiceImpl} —
- *       for registration, password updates, and account deletion.</li>
- * </ul>
- *
  * @author Yogeshwaran
  * @version 1.0
  * @see User
@@ -31,10 +28,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     /**
      * Retrieves a user by their unique email address.
      *
-     * <p>Used during authentication (login), password reset, and post-login
-     * user detail lookups. Email addresses are stored as unique values,
-     * so at most one result is returned.</p>
-     *
      * @param email the email address to search for (case-sensitive)
      * @return an {@link Optional} containing the matching {@link User},
      *         or {@link Optional#empty()} if no user exists with that email
@@ -43,10 +36,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Checks whether a user with the given email address already exists in the database.
-     *
-     * <p>Used during registration in
-     * {@link com.example.expensetracker.service.impl.UserServiceImpl#registerUser}
-     * to prevent duplicate account creation for the same email.</p>
      *
      * @param email the email address to check (case-sensitive)
      * @return {@code true} if a user with this email already exists;
@@ -78,8 +67,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByNameIgnoreCase(String name);
 
     /**
-     * Retrieves a user by their unique login handle (case-insensitive). Distinct
-     * from {@link #findByNameIgnoreCase}, which matches the display name field.
+     * Retrieves a user by their unique login handle (case-insensitive).
      */
     Optional<User> findByUsernameIgnoreCase(String username);
 
@@ -87,4 +75,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Checks whether a user with the given username already exists (case-insensitive).
      */
     boolean existsByUsernameIgnoreCase(String username);
+
+    /**
+     * Paginated search for users across name, email, and username with optional role filter.
+     */
+    @Query("SELECT u FROM User u WHERE " +
+           "(:query IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "AND (:role IS NULL OR u.role = :role) " +
+           "ORDER BY u.id DESC")
+    Page<User> searchUsers(@Param("query") String query, @Param("role") Role role, Pageable pageable);
+
+    long countByRole(Role role);
+
+    long countByAccountLocked(boolean accountLocked);
 }

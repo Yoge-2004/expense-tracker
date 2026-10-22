@@ -19,6 +19,7 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
 
         localStorage.setItem("token", response.token);
         localStorage.setItem("userId", response.userId);
+        localStorage.setItem("userRole", response.role || "ROLE_USER");
         localStorage.setItem("userName", response.name || "User");
         localStorage.setItem("userEmail", response.email || email);
         if (response.username) localStorage.setItem("userUsername", response.username);
@@ -116,6 +117,7 @@ async function handleCredentialResponse(credentialResponse) {
 
         localStorage.setItem("token", response.token);
         localStorage.setItem("userId", response.userId);
+        localStorage.setItem("userRole", response.role || "ROLE_USER");
         localStorage.setItem("userName", response.name || (payload?.name) || "Google User");
         localStorage.setItem("userEmail", response.email || (payload?.email) || "");
         if (response.username) localStorage.setItem("userUsername", response.username);

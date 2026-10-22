@@ -23,7 +23,7 @@
 
 .custom-select-wrapper.custom-select-compact {
     width: auto;
-    min-width: 135px;
+    min-width: 145px;
     flex-shrink: 0;
 }
 
@@ -111,7 +111,10 @@
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
-    right: 0;
+    right: auto;
+    min-width: 100%;
+    width: max-content;
+    max-width: min(380px, 92vw);
     background: var(--card-bg);
     border: 1.5px solid var(--border);
     border-radius: 14px;
@@ -201,9 +204,17 @@
 }
 
 .custom-option-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    flex: 1 1 auto;
+}
+
+.admin-top-select-wrapper .custom-select-options,
+.top-bar-actions .custom-select-options,
+.custom-select-wrapper.align-right .custom-select-options {
+    left: auto;
+    right: 0;
 }
 
 .custom-option-check {

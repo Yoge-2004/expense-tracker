@@ -1,6 +1,7 @@
 package com.example.expensetracker.repository;
 
 import com.example.expensetracker.model.MlFeedback;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,6 +15,8 @@ public interface MlFeedbackRepository extends JpaRepository<MlFeedback, Long> {
             String trainingStatus, Long id, Pageable pageable);
 
     List<MlFeedback> findByTrainingStatusOrderByIdAsc(String trainingStatus, Pageable pageable);
+
+    Page<MlFeedback> findAllByOrderByIdDesc(Pageable pageable);
 
     Optional<MlFeedback> findByFeedbackId(String feedbackId);
 }

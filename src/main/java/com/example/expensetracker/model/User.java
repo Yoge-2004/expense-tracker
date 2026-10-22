@@ -127,12 +127,37 @@ public class User {
     private String profilePictureUrl;
 
     /**
+     * Role-based access control authority for the user.
+     * Defaults to {@link Role#ROLE_USER}.
+     */
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 20)
+    private Role role = Role.ROLE_USER;
+
+    /**
+     * The timestamp at which this user registered or was provisioned.
+     */
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    /**
      * The list of all expense records owned by this user.
      * Mapped via the {@code user} field on {@link Expense}.
      * Fetched lazily to avoid unintended bulk loading.
      */
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Expense> expenses;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (role == null) {
+            role = Role.ROLE_USER;
+        }
+    }
 
     /**
      * Helper to verify if user has set a Security PIN.
@@ -147,5 +172,18 @@ public class User {
 
     public void setFailedPinAttempts(int failedPinAttempts) {
         this.failedPinAttempts = failedPinAttempts;
+    }
+
+    public Role getRole() {
+        return role != null ? role : Role.ROLE_USER;
+    }
+
+    public boolean isAdmin() {
+        Role r = getRole();
+        return r == Role.ROLE_ADMIN || r == Role.ROLE_SUPER_ADMIN;
+    }
+
+    public boolean isSuperAdmin() {
+        return getRole() == Role.ROLE_SUPER_ADMIN;
     }
 }

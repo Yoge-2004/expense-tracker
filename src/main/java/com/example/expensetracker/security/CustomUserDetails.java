@@ -1,13 +1,15 @@
 package com.example.expensetracker.security;
 
+import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * Spring Security {@link UserDetails} implementation wrapping a {@link User} entity.
@@ -18,10 +20,8 @@ import java.util.Collections;
  * authentication and authorisation checks.</p>
  *
  * <p>Account status flags ({@code enabled}, {@code accountNonLocked}) are derived
- * directly from the underlying {@link User} entity. The current implementation
- * grants no specific roles or authorities — all authenticated users are treated
- * equally. Role-based access control can be added by populating the
- * {@link #getAuthorities()} method.</p>
+ * directly from the underlying {@link User} entity. Authorities are populated from
+ * the user's assigned {@link Role}.</p>
  *
  * @author Yogeshwaran
  * @version 1.0
@@ -56,20 +56,18 @@ public class CustomUserDetails implements UserDetails {
         this.user = user;
     }
 
-
-
     /**
-     * Returns the granted authorities for this user.
+     * Returns the granted authorities for this user based on their {@link Role}.
      *
-     * <p>Currently returns an empty collection, meaning no role-based
-     * restrictions are enforced. Extend this method to add roles such as
-     * {@code ROLE_USER} or {@code ROLE_ADMIN} as needed.</p>
-     *
-     * @return an empty, unmodifiable collection of {@link GrantedAuthority}
+     * @return an unmodifiable collection containing the user's role authority
      */
     @Override
     public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+        Role role = user != null ? user.getRole() : Role.ROLE_USER;
+        if (role == null) {
+            role = Role.ROLE_USER;
+        }
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
     /**

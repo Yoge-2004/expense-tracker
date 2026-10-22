@@ -53,12 +53,13 @@ POST /api/v1/classify
 POST /api/v1/analyze
 ```
 
-The active model is identified explicitly through Space variables:
+The active model and administration variables are identified explicitly through Space variables:
 
 ```text
-MODEL_ID
-MODEL_REVISION
-MODEL_TYPE
+ADMIN_EMAIL           # Platform Super Admin login email configured in Space Secrets/Variables
+MODEL_ID              # Hugging Face model repository ID
+MODEL_REVISION        # Model tag / branch (e.g. production)
+MODEL_TYPE            # Model architecture (e.g. tfidf)
 ```
 
 The serving process fails clearly when a configured model cannot be loaded; it does not silently choose an unknown artifact.

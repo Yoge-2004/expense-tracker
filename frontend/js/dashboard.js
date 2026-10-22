@@ -22,12 +22,25 @@ function renderDashboardAvatar(name, photoUrl) {
     }
 }
 renderDashboardAvatar(userName, localStorage.getItem("userProfilePicture"));
+function checkAdminLink() {
+    const role = localStorage.getItem("userRole");
+    const link = document.getElementById("adminConsoleMenuLink");
+    if (!link) return;
+    if (role === "ROLE_ADMIN" || role === "ROLE_SUPER_ADMIN") {
+        link.style.display = "flex";
+    } else {
+        link.style.display = "none";
+    }
+}
+checkAdminLink();
 if (userId && typeof apiRequest === "function") {
     apiRequest(`/users/${userId}`).then(profile => {
         if (profile?.profilePictureUrl) {
             localStorage.setItem("userProfilePicture", profile.profilePictureUrl);
             renderDashboardAvatar(profile.name || userName, profile.profilePictureUrl);
         }
+        localStorage.setItem("userRole", profile?.role || "ROLE_USER");
+        checkAdminLink();
     }).catch(() => {});
 }
 
