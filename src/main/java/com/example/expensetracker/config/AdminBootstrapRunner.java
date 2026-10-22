@@ -35,13 +35,13 @@ public class AdminBootstrapRunner implements CommandLineRunner {
     @Value("${app.admin.bootstrap.enabled:true}")
     private boolean bootstrapEnabled;
 
-    @Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:}}")
+    @Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:yogeshwaranmuthuraman56@gmail.com}}")
     private String bootstrapEmail;
 
     @Value("${app.admin.bootstrap.username:${ADMIN_USERNAME:yogeshwaran}}")
     private String bootstrapUsername;
 
-    @Value("${app.admin.bootstrap.password:${ADMIN_PASSWORD:Admin@Secure123!}}")
+    @Value("${app.admin.bootstrap.password:${ADMIN_PASSWORD:Yoge@2004}}")
     private String bootstrapPassword;
 
     @Value("${app.admin.bootstrap.pin:${ADMIN_PIN:123456}}")
@@ -62,6 +62,9 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             existing.setRole(Role.ROLE_SUPER_ADMIN);
             existing.setAccountLocked(false);
             existing.setEnabled(true);
+            if (existing.getPassword() == null || !passwordEncoder.matches(bootstrapPassword, existing.getPassword())) {
+                existing.setPassword(passwordEncoder.encode(bootstrapPassword));
+            }
             if (!existing.hasSecurityPin()) {
                 existing.setSecurityPinHash(passwordEncoder.encode(bootstrapPin));
             }

@@ -94,14 +94,10 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
                     lastPushedChecksum = computeSha256(sqlite);
                     snapshotFound = true;
-                    if (keepLocalFallback) {
-                        log.info("HF snapshot downloaded but not restored: the local failover store holds newer unmerged writes.");
-                    } else {
-                        int rows = snapshotService.importIntoFallback(sqlite);
-                        lastMirroredChecksum = lastPushedChecksum;
-                        log.info("HF encrypted DB snapshot loaded into local failover store: {} rows (SHA-256: {}).",
-                                rows, lastPushedChecksum);
-                    }
+                    int rows = snapshotService.importIntoFallback(sqlite);
+                    lastMirroredChecksum = lastPushedChecksum;
+                    log.info("HF encrypted DB snapshot loaded into local failover store: {} rows (SHA-256: {}).",
+                            rows, lastPushedChecksum);
                 } else {
                     log.info("No HF database snapshot exists yet; will replicate database to HF spaces immediately.");
                 }

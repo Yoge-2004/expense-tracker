@@ -122,7 +122,8 @@ public class ResilientRoutingDataSource implements DataSource {
                 return connection;
             }
         } else if (current == Mode.FALLBACK && primaryDs != null && System.currentTimeMillis() >= nextProbeAt) {
-            probePrimary();
+            nextProbeAt = System.currentTimeMillis() + retryIntervalMs;
+            Thread.ofVirtual().name("neon-primary-probe").start(this::probePrimary);
         }
         awaitGate();
         log.debug("Serving the emergency local datastore. This is only a recovery store and may be stale.");
@@ -157,7 +158,6 @@ public class ResilientRoutingDataSource implements DataSource {
     }
 
     private void probePrimary() {
-        nextProbeAt = System.currentTimeMillis() + retryIntervalMs;
         try (Connection probe = primaryDs.getConnection()) {
             if (probe == null || !probe.isValid(5)) {
                 return;
