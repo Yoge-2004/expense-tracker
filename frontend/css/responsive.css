@@ -3,6 +3,33 @@
    Module: Responsive Breakpoints & Mobile Optimization
    ========================================================================== */
 
+/* ================== GLOBAL ROOT SCROLLABILITY (ALL DEVICES & SCREENS) ================== */
+html {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: auto !important;
+    scrollbar-gutter: auto !important;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100% !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    position: relative !important;
+}
+
+.dashboard-container {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
 /* ================== 8. MOBILE RESPONSIVE & GLOBAL SCROLLABILITY ================== */
 @media (max-width: 900px) {
     html {

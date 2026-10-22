@@ -35,6 +35,7 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY app.jar /app/app.jar
+COPY frontend /app/frontend
 COPY ml /app/ml
 COPY docker/supervisord.conf /etc/supervisor/conf.d/expense-tracker.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf

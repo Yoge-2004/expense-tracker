@@ -16,10 +16,13 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     overflow-x: hidden;
+    overflow-y: visible;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     margin: 0;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
 }
 
 [data-theme="light"] body::before {

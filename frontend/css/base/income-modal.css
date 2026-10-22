@@ -271,12 +271,12 @@
 
 html {
     overflow-x: hidden;
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
+    overflow-y: auto;
     width: 100%;
     max-width: 100%;
     color-scheme: dark;
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--primary-rgb), 0.45) rgba(0, 0, 0, 0.2);
 }
