@@ -185,11 +185,20 @@ jobs:
           set -euo pipefail
           node scripts/generate-release-notes.js
 
+      - name: Resolve app version
+        id: app_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Publish APK & IPA to GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: v1.0.4
-          name: "Expense Tracker Mobile v1.0.4"
+          tag_name: ${{ steps.app_version.outputs.tag }}
+          name: "Expense Tracker Mobile v${{ steps.app_version.outputs.version }}"
           body_path: mobile/release-notes.md
           files: |
             mobile/expense-tracker.apk
