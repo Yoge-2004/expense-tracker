@@ -1,128 +1,155 @@
+/* ==========================================================================
+   EXPENSE TRACKER — AUTH.CSS
+   Module: Auth Pages & Systems (Login, Register, Forgot Password, PIN, OTP)
+   ========================================================================== */
+
+/* ================== 5. AUTH PAGES ================== */
 .split-screen {
-  height: 100dvh;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    overflow: hidden;
 }
 
 .hero-section {
-  position: relative;
-  overflow: hidden;
-  background-color: #10120E;
-  background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2600&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: flex-end;
-  padding: 80px;
+    position: relative;
+    overflow: hidden;
+    background-color: #10120E;
+    background-image: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2600&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    padding: 80px;
 }
 
 .hero-section::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(45deg, rgba(16, 18, 14, 0.95) 0%, rgba(16, 18, 14, 0.3) 100%);
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, rgba(16, 18, 14, 0.95) 0%, rgba(16, 18, 14, 0.3) 100%);
 }
 
 .hero-content {
-  position: relative;
-  z-index: 2;
-  animation: fadeUp 1s var(--ease);
+    position: relative;
+    z-index: 2;
+    animation: fadeUp 1s var(--ease);
 }
 
 .hero-content h1 {
-  font-size: 42px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  color: #fff;
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    color: #fff;
 }
 
 .hero-content p {
-  font-size: 16px;
-  color: #ccc;
-  max-width: 450px;
-  line-height: 1.6;
+    font-size: 16px;
+    color: #ccc;
+    max-width: 450px;
+    line-height: 1.6;
 }
 
 .auth-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-dark);
-  padding: 20px;
-  height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-dark);
+    padding: 20px;
+    height: 100%;
 }
 
 .auth-card {
-  width: 100%;
-  max-width: 480px;
-  padding: 48px 40px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
-  box-sizing: border-box;
-  animation: slideUpFade 0.7s var(--ease) 0.1s both;
+    width: 100%;
+    max-width: 480px;
+    padding: 48px 40px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(var(--primary-rgb), 0.06);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    box-sizing: border-box;
+    animation: slideUpFade 0.7s var(--ease) 0.1s both;
 }
 
 .auth-card h2 {
-  font-size: 28px;
-  margin-bottom: 8px;
-  color: var(--text-main);
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: var(--text-main);
 }
 
 .muted {
-  color: var(--text-muted);
-  font-size: 14px;
-  margin-bottom: 24px;
-  display: block;
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+    display: block;
 }
 
+/* ================== ∞ NEW AUTH PAGE SYSTEM ================== */
+
+/* ── Keyframes ── */
 @keyframes orbFloat {
     0%, 100% { transform: translate(0, 0) scale(1); filter: blur(60px); }
     33% { transform: translate(35px, -25px) scale(1.1); filter: blur(50px); }
     66% { transform: translate(-25px, 20px) scale(0.95); filter: blur(55px); }
 }
 
-.btn-primary,
-button[type="submit"] {
-  background: var(--primary-gradient);
-  box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb), 0.35);
+/* Restrained gold gradient — single hue, no shimmer animation */
+.btn-primary, button[type="submit"] {
+    background: var(--primary-gradient);
+    transition:
+        background-color 0.35s var(--ease),
+        background-position 0.35s var(--ease),
+        transform 0.35s var(--ease),
+        box-shadow 0.35s var(--ease);
+    box-shadow: 0 8px 24px -4px rgba(var(--primary-rgb), 0.35);
 }
 
-.btn-primary:hover,
-button[type="submit"]:hover {
-  background-position: right center;
+.btn-primary:hover, button[type="submit"]:hover {
+    background-position: right center;
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 12px 32px -4px rgba(var(--primary-rgb), 0.5), 0 0 20px rgba(var(--accent-rgb), 0.25);
 }
 
-.suggestion-chip:active,
-.card:active {
-  transform: scale(0.97);
+.btn-icon:active, .suggestion-chip:active, .card:active {
+    transform: scale(0.97);
 }
 
+/* Card Elevation & Glowing Hover Interactions */
+.card, .float-card, .perk-item {
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
+}
+
+.card:hover, .float-card:hover {
+    transform: translateY(-3px) scale(1.01);
+    border-color: rgba(var(--primary-rgb), 0.45);
+    box-shadow: 0 14px 36px -10px rgba(var(--primary-rgb), 0.22), 0 0 18px rgba(var(--accent-rgb), 0.12);
+}
+
+/* Runtime-authored loading indicator: layout belongs to CSS, state belongs to JS. */
 .spinner-sm--oauth {
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 8px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
 }
 
 @keyframes cardFloat1 {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-6px); }
 }
-
 @keyframes cardFloat2 {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-8px); }
 }
-
 @keyframes cardFloat3 {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-5px); }
 }
-
 @keyframes cardFloat4 {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-7px); }

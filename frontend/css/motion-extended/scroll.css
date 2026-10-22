@@ -1,69 +1,81 @@
+/* ==========================================================================
+   MOTION SUITE — PART 2: SCROLL, TOUCH & AMBIENT DEPTH 
+   Continues the numbered animation suite from style.css .
+   Paired with js/motion.js, which applies these classes/attributes at runtime.
+   Organized in five groups:
+     A. Scroll-triggered reveal system      
+     B. Touch & gesture feedback             
+     C. Pointer / hover micro-interactions   
+     D. Ambient background depth             
+     E. Loading & micro-feedback states      
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   A. SCROLL-TRIGGERED REVEAL SYSTEM
+   Elements get [data-reveal] from motion.js; motion.js's IntersectionObserver
+   toggles .is-revealed when they cross into the viewport. One shared
+   transition engine driven by the data-reveal value keeps this to a single
+   rule set instead of ten near-duplicate blocks.
+   ------------------------------------------------------------------------- */
+
+/* Reveal: base hidden state + shared transition (desktop fine-pointer) */
 [data-reveal] {
-  --reveal-delay: 0ms;
-  opacity: 0;
-  transition: opacity 0.7s var(--ease),
+    --reveal-delay: 0ms;
+    opacity: 0;
+    transition:
+        opacity 0.7s var(--ease),
         transform 0.75s var(--ease),
         filter 0.7s var(--ease);
-  will-change: opacity, transform;
+    will-change: opacity, transform;
 }
 
-[data-reveal="fade-up"] {
-  transform: translateY(38px);
-}
+/* Reveal: fade-up */
+[data-reveal="fade-up"] { transform: translateY(38px); }
 
-[data-reveal="fade-down"] {
-  transform: translateY(-34px);
-}
+/* Reveal: fade-down */
+[data-reveal="fade-down"] { transform: translateY(-34px); }
 
-[data-reveal="fade-left"] {
-  transform: translateX(-44px);
-}
+/* Reveal: fade-left */
+[data-reveal="fade-left"] { transform: translateX(-44px); }
 
-[data-reveal="fade-right"] {
-  transform: translateX(44px);
-}
+/* Reveal: fade-right */
+[data-reveal="fade-right"] { transform: translateX(44px); }
 
-[data-reveal="zoom"] {
-  transform: scale(0.88);
-}
+/* Reveal: zoom-in */
+[data-reveal="zoom"] { transform: scale(0.88); }
 
-[data-reveal="blur"] {
-  filter: blur(10px);
-  transform: scale(0.97);
-}
+/* Reveal: blur-in */
+[data-reveal="blur"] { filter: blur(10px); transform: scale(0.97); }
 
-[data-reveal="flip-x"] {
-  transform: perspective(900px) rotateX(28deg) translateY(20px);
-  transform-origin: bottom center;
-}
+/* Reveal: flip-x (tips forward, hinges on bottom edge) */
+[data-reveal="flip-x"] { transform: perspective(900px) rotateX(28deg) translateY(20px); transform-origin: bottom center; }
 
-[data-reveal="flip-y"] {
-  transform: perspective(900px) rotateY(32deg) translateX(20px);
-  transform-origin: left center;
-}
+/* Reveal: flip-y (swings in from the side) */
+[data-reveal="flip-y"] { transform: perspective(900px) rotateY(32deg) translateX(20px); transform-origin: left center; }
 
-[data-reveal="rotate"] {
-  transform: rotate(-6deg) scale(0.92) translateY(24px);
-}
+/* Reveal: rotate-in */
+[data-reveal="rotate"] { transform: rotate(-6deg) scale(0.92) translateY(24px); }
 
-[data-reveal="skew"] {
-  transform: skewY(4deg) translateY(30px);
-}
+/* Reveal: skew-in */
+[data-reveal="skew"] { transform: skewY(4deg) translateY(30px); }
 
+/* Use :where() so revealed-state styles do not outrank component hover rules. */
 :where([data-reveal]).is-revealed {
-  opacity: 1;
-  filter: blur(0);
-  transform: none;
-  transition-delay: var(--reveal-delay, 0ms);
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+    transition-delay: var(--reveal-delay, 0ms);
 }
 
+/* Mobile & Touch Zero-Lag Optimization:
+   Instantly present elements without 3D rotation, blur filter, or compositor thrashing */
 @media (max-width: 768px), (pointer: coarse) {
-  [data-reveal],
-  :where([data-reveal]).is-revealed {
-    opacity: 1;
-    transform: none;
-    filter: none;
-    transition: none;
-    will-change: auto;
-  }
+    [data-reveal],
+    :where([data-reveal]).is-revealed {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+        will-change: auto !important;
+    }
 }

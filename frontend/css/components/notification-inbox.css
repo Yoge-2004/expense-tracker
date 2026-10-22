@@ -1,330 +1,332 @@
+/* Notification inbox: bell, unread badge and dropdown panel. Single owner of every .inbox* selector. */
 .inbox {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  overflow: visible;
-  z-index: 1000;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    z-index: 1000;
 }
 
 .inbox:has(.inbox-panel:not([hidden])) {
-  z-index: 1500;
+    z-index: 1500;
 }
 
 .inbox-bell {
-  position: relative;
-  overflow: visible;
+    position: relative;
+    overflow: visible;
 }
 
 .inbox-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  border: 2px solid var(--card-bg, #10120E);
-  pointer-events: none;
-  z-index: 10;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 2px solid var(--card-bg, #10120E);
+    pointer-events: none;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
 }
 
 [data-theme="light"] .inbox-badge {
-  border-color: #FFFFFF;
+    border-color: #FFFFFF;
 }
 
 .inbox-panel {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 1500;
-  width: min(380px, calc(100vw - 24px));
-  max-height: min(560px, 80vh);
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--card-bg);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 1500;
+    width: min(380px, calc(100vw - 24px));
+    max-height: min(560px, 80vh);
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card-bg);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
 }
 
 .inbox-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px 10px;
-  border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
 }
 
 .inbox-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .inbox-header .modal-close {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  cursor: var(--cursor-pointer, pointer);
-  transition: all 0.15s ease;
-  padding: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: var(--cursor-pointer, pointer);
+    transition: all 0.15s ease;
+    padding: 0;
 }
 
 .inbox-header .modal-close:hover {
-  background: rgba(231, 76, 60, 0.15);
-  border-color: rgba(231, 76, 60, 0.4);
-  color: #E74C3C;
-  transform: translateY(-1px);
+    background: rgba(231, 76, 60, 0.15);
+    border-color: rgba(231, 76, 60, 0.4);
+    color: #E74C3C;
+    transform: translateY(-1px);
 }
 
 .inbox-header h2 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-main);
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
 }
 
 .inbox-link {
-  padding: 4px 2px;
-  border: 0;
-  background: none;
-  color: var(--primary);
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: var(--cursor-pointer, pointer);
-  transition: color 0.15s ease;
+    padding: 4px 2px;
+    border: 0;
+    background: none;
+    color: var(--primary);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: var(--cursor-pointer, pointer);
+    transition: color 0.15s ease;
 }
 
 .inbox-link--danger {
-  color: var(--danger, #ef4444);
+    color: var(--danger, #ef4444);
 }
 
 .inbox-link--danger:hover {
-  color: #dc2626;
+    color: #dc2626;
 }
 
 .inbox-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .inbox-item {
-  position: relative;
-  border-top: 1px solid var(--border);
-  overflow: hidden;
-  background: #BE123C;
-  touch-action: pan-y;
-  max-height: 180px;
-  box-sizing: border-box;
-  transition: background-color 0.15s ease;
+    position: relative;
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    background: #BE123C;
+    touch-action: pan-y;
+    max-height: 180px;
+    box-sizing: border-box;
+    transition: background-color 0.15s ease;
 }
 
 .inbox-item-swipe-bg {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 16px;
-  background: linear-gradient(90deg, #BE123C, #991B1B);
-  color: #ffffff;
-  pointer-events: none;
-  z-index: 1;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    background: linear-gradient(90deg, #BE123C, #991B1B);
+    color: #ffffff;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .inbox-swipe-action {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: #ffffff;
-  opacity: 0.5;
-  transform: scale(0.9);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #ffffff;
+    opacity: 0.5;
+    transform: scale(0.9);
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .inbox-swipe-action svg {
-  width: 15px;
-  height: 15px;
-  stroke: #ffffff;
+    width: 15px;
+    height: 15px;
+    stroke: #ffffff;
 }
 
 .inbox-item-foreground {
-  position: relative;
-  z-index: 2;
-  background: var(--card-bg);
-  width: 100%;
-  will-change: transform;
-  user-select: none;
-  -webkit-user-select: none;
+    position: relative;
+    z-index: 2;
+    background: var(--card-bg);
+    width: 100%;
+    will-change: transform;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 [data-theme="light"] .inbox-item-foreground {
-  background: #ffffff;
+    background: #ffffff;
 }
 
 [data-theme="light"] .inbox-item-swipe-bg {
-  background: linear-gradient(90deg, #DC2626, #B91C1C);
+    background: linear-gradient(90deg, #DC2626, #B91C1C);
 }
 
 .inbox-item-button {
-  display: grid;
-  gap: 2px;
-  width: 100%;
-  padding: 12px 42px 12px 16px;
-  border: 0;
-  background: none;
-  text-align: left;
-  cursor: var(--cursor-pointer, pointer);
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    padding: 12px 42px 12px 16px;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: var(--cursor-pointer, pointer);
 }
 
 .inbox-item-delete {
-  position: absolute;
-  right: 12px;
-  top: 14px;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(var(--ink-rgb, 255, 255, 255), 0.06);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  cursor: var(--cursor-pointer, pointer);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-  z-index: 5;
-  padding: 0;
+    position: absolute;
+    right: 12px;
+    top: 14px;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--ink-rgb, 255, 255, 255), 0.06);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: var(--cursor-pointer, pointer);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    z-index: 5;
+    padding: 0;
 }
 
 .inbox-item:hover .inbox-item-delete,
 .inbox-item:focus-within .inbox-item-delete {
-  opacity: 0.85;
-  pointer-events: auto;
+    opacity: 0.85;
+    pointer-events: auto;
 }
 
 .inbox-item-delete:hover {
-  opacity: 1;
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.12);
-  transform: scale(1.1);
+    opacity: 1;
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.12);
+    transform: scale(1.1);
 }
 
 @media (hover: none) {
-  .inbox-item-delete {
-    opacity: 0.7;
-    pointer-events: auto;
-  }
+    .inbox-item-delete {
+        opacity: 0.7;
+        pointer-events: auto;
+    }
 }
 
 .inbox-item-button:hover {
-  background: var(--input-bg);
+    background: var(--input-bg);
 }
 
 .inbox-item--unread .inbox-item-button {
-  box-shadow: inset 3px 0 0 var(--primary);
+    box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .inbox-item-title {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text-main);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-main);
 }
 
 .inbox-item-body {
-  font-size: 12.5px;
-  color: var(--text-muted);
+    font-size: 12.5px;
+    color: var(--text-muted);
 }
 
 .inbox-item-time {
-  font-size: 11px;
-  color: var(--text-muted);
+    font-size: 11px;
+    color: var(--text-muted);
 }
 
 .inbox-empty {
-  padding: 22px 16px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--text-muted);
+    padding: 22px 16px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
 }
 
 .inbox-settings {
-  border-top: 1px solid var(--border);
-  padding: 10px 16px 14px;
+    border-top: 1px solid var(--border);
+    padding: 10px 16px 14px;
 }
 
 .inbox-settings summary {
-  cursor: var(--cursor-pointer, pointer);
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
+    cursor: var(--cursor-pointer, pointer);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-muted);
 }
 
 .inbox-toggle {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
 }
 
 .inbox-toggle-text {
-  display: grid;
+    display: grid;
 }
 
 .inbox-toggle-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
 }
 
 .inbox-toggle-hint {
-  font-size: 11.5px;
-  color: var(--text-muted);
+    font-size: 11.5px;
+    color: var(--text-muted);
 }
 
+/* Responsive positioning guard: prevent panel from overflowing on tablets & mobile screens */
 @media (max-width: 1024px) {
-  .inbox-panel {
-    position: fixed;
-    top: 72px;
-    right: 16px;
-    left: auto;
-    width: min(380px, calc(100vw - 32px));
-    max-width: calc(100vw - 32px);
-    max-height: calc(85vh - 70px);
-    z-index: 1500;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75);
-  }
+    .inbox-panel {
+        position: fixed;
+        top: 72px;
+        right: 16px;
+        left: auto;
+        width: min(380px, calc(100vw - 32px));
+        max-width: calc(100vw - 32px);
+        max-height: calc(85vh - 70px);
+        z-index: 1500;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75);
+    }
 }
 
 @media (max-width: 480px) {
-  .inbox-panel {
-    top: 68px;
-    left: 12px;
-    right: 12px;
-    width: auto;
-    max-width: calc(100vw - 24px);
-  }
+    .inbox-panel {
+        top: 68px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: calc(100vw - 24px);
+    }
 }

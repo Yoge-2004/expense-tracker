@@ -1,11 +1,11 @@
+/* ==========================================================================
+   EXPENSE TRACKER — ADVANCED ANIMATIONS
+   Ordered entry point for focused advanced motion modules.
+   ========================================================================== */
+
 @import url("advanced/core.css");
-
 @import url("advanced/feedback.css");
-
 @import url("advanced/interaction.css");
-
 @import url("advanced/controls.css");
-
 @import url("advanced/data-viz.css");
-
 @import url("advanced/specialty.css");

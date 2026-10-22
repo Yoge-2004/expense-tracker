@@ -16,8 +16,8 @@
     
         if (safeExpenses.length === 0 && safeIncomes.length === 0 && safeGoals.length === 0) {
             grid.innerHTML = `
-                <div class="insight-card-item u-inl-9f81b76">
-                    <p class="text-muted u-inl-5fd2075">No transactions, incomes, or savings goals recorded. Add entries to generate real-time financial intelligence.</p>
+                <div class="insight-card-item" style="grid-column: 1 / -1; width: 100%; max-width: 100%; box-sizing: border-box; text-align: center; padding: 20px 16px;">
+                    <p class="text-muted" style="margin: 0; font-size: 13.5px; line-height: 1.5; word-break: break-word;">No transactions, incomes, or savings goals recorded. Add entries to generate real-time financial intelligence.</p>
                 </div>
             `;
             if (healthBadge) healthBadge.textContent = "--% Financial Health";
@@ -240,47 +240,47 @@
         }
     
         grid.innerHTML = `
-            <div class="insight-card-item highlight-card u-inl-f00e6cc">
-                <div class="u-inl-34868ad">
-                    <div class="u-inl-8e160d0">
-                        <div class="insight-icon-box u-inl-2822796">📊</div>
+            <div class="insight-card-item highlight-card" style="grid-column: 1 / -1; background: var(--card-bg, rgba(255,255,255,0.04)); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981; font-size:18px;">📊</div>
                         <div>
-                            <span class="insight-card-label u-inl-4b4c223">Monthly Inflows & Outflows Summary</span>
-                            <div class="u-inl-ef10935">Net monthly liquidity balance & cash flow performance</div>
+                            <span class="insight-card-label" style="font-size:14px; font-weight:700; color:var(--text-main);">Monthly Inflows & Outflows Summary</span>
+                            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Net monthly liquidity balance & cash flow performance</div>
                         </div>
                     </div>
-                    <div class="u-inl-9586d08">
+                    <div style="display:flex; gap:8px; align-items:center;">
                         <span class="status-badge ${netCashflow >= 0 ? "badge-netflow" : "badge-danger"}" style="font-size:12px; padding:4px 10px; border-radius:6px; font-weight:700;">
                             ${netCashflow >= 0 ? "Surplus" : "Deficit"}: ${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}
                         </span>
-                        <span class="u-inl-584b291">(${savingsRate}% saved)</span>
+                        <span style="font-size:12px; color:var(--text-muted); font-weight:600;">(${savingsRate}% saved)</span>
                     </div>
                 </div>
                 <div class="insights-metric-triplet">
-                    <div class="u-inl-4eaae70">
-                        <div class="u-inl-4fadf08">${periodNoun} Inflow</div>
-                        <div class="u-inl-b3a642e">+${formatCurrency(activeInflow)}</div>
-                        <div class="u-inl-e0e3853">${inflowCount} inflow transaction${inflowCount === 1 ? "" : "s"}</div>
+                    <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:10px; padding:12px;">
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#10B981; font-weight:700;">${periodNoun} Inflow</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">+${formatCurrency(activeInflow)}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${inflowCount} inflow transaction${inflowCount === 1 ? "" : "s"}</div>
                     </div>
-                    <div class="u-inl-a7f0eb9">
-                        <div class="u-inl-e299b01">${periodNoun} Outflow</div>
-                        <div class="u-inl-b3a642e">-${formatCurrency(activeOutflow)}</div>
-                        <div class="u-inl-e0e3853">${outflowCount} expense transaction${outflowCount === 1 ? "" : "s"}</div>
+                    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:12px;">
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#EF4444; font-weight:700;">${periodNoun} Outflow</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--text-main); margin-top:4px;">-${formatCurrency(activeOutflow)}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${outflowCount} expense transaction${outflowCount === 1 ? "" : "s"}</div>
                     </div>
-                    <div class="u-inl-8839d34">
-                        <div class="u-inl-47bfb5c">Net Cash Flow</div>
+                    <div style="background:rgba(199,154,62,0.08); border:1px solid rgba(199,154,62,0.25); border-radius:10px; padding:12px;">
+                        <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:#C79A3E; font-weight:700;">Net Cash Flow</div>
                         <div style="font-size:18px; font-weight:800; color:${netCashflow >= 0 ? "#10B981" : "#EF4444"}; margin-top:4px;">${netCashflow >= 0 ? "+" : "-"}${formatCurrency(Math.abs(netCashflow))}</div>
-                        <div class="u-inl-e0e3853">${activeInflow > 0 ? `${savingsRate}% retention` : "No inflow logged"}</div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${activeInflow > 0 ? `${savingsRate}% retention` : "No inflow logged"}</div>
                     </div>
                 </div>
-                <div class="insight-card-content u-inl-78aae0b">
+                <div class="insight-card-content" style="font-size:13px; line-height:1.5; color:var(--text-muted);">
                     ${cashflowInsight}
                 </div>
             </div>
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box u-inl-f5bb029">🎯</div>
+                    <div class="insight-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">🎯</div>
                     <span class="insight-card-label">Savings Goals Trajectory</span>
                 </div>
                 <div class="insight-card-content">
@@ -290,7 +290,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box u-inl-1b0f3eb">💵</div>
+                    <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">💵</div>
                     <span class="insight-card-label">Salary Coverage & Stability</span>
                 </div>
                 <div class="insight-card-content">
@@ -300,7 +300,7 @@
 
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box u-inl-f5bb029">🛡️</div>
+                    <div class="insight-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">🛡️</div>
                     <span class="insight-card-label">Emergency Savings Runway</span>
                 </div>
                 <div class="insight-card-content">
@@ -310,7 +310,7 @@
 
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box u-inl-5307f58">🔄</div>
+                    <div class="insight-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;">🔄</div>
                     <span class="insight-card-label">Recurring Baseline Coverage</span>
                 </div>
                 <div class="insight-card-content">
@@ -320,7 +320,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box u-inl-51b4723">🔥</div>
+                    <div class="insight-icon-box" style="background: rgba(199, 154, 62, 0.15); color: #C79A3E;">🔥</div>
                     <span class="insight-card-label">Burn Velocity & Runway</span>
                 </div>
                 <div class="insight-card-content">
@@ -330,7 +330,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box u-inl-477f767">📊</div>
+                    <div class="insight-icon-box" style="background: rgba(76, 122, 120, 0.15); color: #4C7A78;">📊</div>
                     <span class="insight-card-label">Category Concentration</span>
                 </div>
                 <div class="insight-card-content">
@@ -340,7 +340,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box u-inl-d9519eb">🛡️</div>
+                    <div class="insight-icon-box" style="background: rgba(162, 62, 50, 0.15); color: #A23E32;">🛡️</div>
                     <span class="insight-card-label">Budget Governance</span>
                 </div>
                 <div class="insight-card-content">
@@ -350,17 +350,5 @@
         `;
     }
 
-    function renderUnifiedFinancialInsights(expenses, incomes, goals) {
-        renderFinancialInsights(expenses, incomes, goals);
-        if (window.DashboardInsightCards && typeof window.DashboardInsightCards.renderEngineCards === "function") {
-            window.DashboardInsightCards.renderEngineCards(expenses, incomes, goals);
-        }
-        if (window.DashboardMlInsights && typeof window.DashboardMlInsights.appendMlInsightsCard === "function") {
-            window.DashboardMlInsights.appendMlInsightsCard(expenses);
-        }
-        if (window.WealthSimulator && typeof window.WealthSimulator.refresh === "function") {
-            window.WealthSimulator.refresh(expenses, incomes, goals);
-        }
-    }
-    window.DashboardInsights = Object.freeze({ renderFinancialInsights: renderUnifiedFinancialInsights });
+    window.DashboardInsights = Object.freeze({ renderFinancialInsights });
 })();

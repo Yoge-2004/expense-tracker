@@ -1,3 +1,4 @@
+/* Gradient Angle Rotation */
 @keyframes gradientAngleRotate {
     0% { filter: hue-rotate(0deg); }
     50% { filter: hue-rotate(15deg); }
@@ -5,41 +6,44 @@
 }
 
 .btn-primary:hover {
-  animation: gradientAngleRotate 3s infinite alternate ease-in-out;
+    animation: gradientAngleRotate 3s infinite alternate ease-in-out;
 }
 
+/* Button Click Concentric Ripple */
 @keyframes rippleConcentric {
     0% { transform: scale(0); opacity: 0.6; }
     100% { transform: scale(3.5); opacity: 0; }
 }
 
 .btn-ripple-effect {
-  position: relative;
-  overflow: hidden;
+    position: relative;
+    overflow: hidden;
 }
 
 .btn-ripple-effect::after {
-  content: '';
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
-  transform: scale(0);
-  pointer-events: none;
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0);
+    pointer-events: none;
 }
 
 .btn-ripple-effect:active::after {
-  animation: rippleConcentric 0.5s ease-out;
+    animation: rippleConcentric 0.5s ease-out;
 }
 
+/* Button Press Spring Rebound */
 .btn-primary:active,
 .btn-secondary:active,
 .btn-oauth:active {
-  transform: scale(0.96) translateY(1px);
-  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.96) translateY(1px) !important;
+    transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+/* Submission Success Morph */
 @keyframes successMorphCheck {
     0% { transform: scale(0) rotate(-45deg); opacity: 0; }
     70% { transform: scale(1.2) rotate(5deg); opacity: 1; }
@@ -47,9 +51,10 @@
 }
 
 .success-icon-morph {
-  animation: successMorphCheck 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: successMorphCheck 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+/* Danger Action Shake Error */
 @keyframes shakeErrorAction {
     0%, 100% { transform: translateX(0); }
     20%, 60% { transform: translateX(-6px); }
@@ -57,18 +62,20 @@
 }
 
 .shake-error {
-  animation: shakeErrorAction 0.45s ease-in-out;
+    animation: shakeErrorAction 0.45s ease-in-out;
 }
 
+/* Button Underglow Floating Hover */
 @keyframes floatUnderglow {
     0%, 100% { box-shadow: 0 8px 20px -4px rgba(var(--primary-rgb), 0.35); }
     50% { box-shadow: 0 14px 30px -2px rgba(var(--primary-rgb), 0.55); }
 }
 
 .btn-floating-glow:hover {
-  animation: floatUnderglow 2s ease-in-out infinite;
+    animation: floatUnderglow 2s ease-in-out infinite;
 }
 
+/* Action Arrow Micro Nudge */
 @keyframes arrowNudgeRight {
     0%, 100% { transform: translateX(0); }
     50% { transform: translateX(5px); }
@@ -76,9 +83,10 @@
 
 .btn-primary:hover svg,
 button[type="submit"]:hover svg {
-  animation: arrowNudgeRight 1s ease-in-out infinite;
+    animation: arrowNudgeRight 1s ease-in-out infinite;
 }
 
+/* Laser Underline Expansion */
 @keyframes laserUnderlineExpand {
     0% { width: 0%; opacity: 0; }
     100% { width: 100%; opacity: 1; }
@@ -86,9 +94,10 @@ button[type="submit"]:hover svg {
 
 .nav-tab.active::after,
 .tab-btn.active::after {
-  animation: laserUnderlineExpand 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: laserUnderlineExpand 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Elastic Scale Chip Tap */
 @keyframes chipScaleTap {
     0% { transform: scale(0.92); }
     50% { transform: scale(1.08); }
@@ -97,45 +106,51 @@ button[type="submit"]:hover svg {
 
 .suggestion-chip:active,
 .currency-chip:active {
-  animation: chipScaleTap 0.3s ease;
+    animation: chipScaleTap 0.3s ease;
 }
 
-.btn-ghost {
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+/* Ghost Button Glass Fill Hover */
+.btn-ghost,
+.btn-secondary {
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease !important;
 }
 
 .btn-ghost:hover,
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(var(--primary-rgb), 0.4);
-  transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(var(--primary-rgb), 0.4) !important;
+    transform: translateY(-2px) !important;
 }
 
+/* Reload Sync Spinner */
 @keyframes spinReload360 {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
 .spin-action {
-  animation: spinReload360 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: spinReload360 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Input Focus Aura Halo */
 .form-input:focus,
 select:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22);
-  border-color: var(--primary);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22) !important;
+    border-color: var(--primary) !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
 
+/* Input Prefix Icon Bounce — Preserves vertical centering */
 .form-group:focus-within .input-icon,
 .input-wrapper:focus-within .input-icon,
 .input-wrapper:focus-within > svg.input-icon {
-  color: var(--primary);
-  transform: translateY(-50%) scale(1.05);
-  transition: transform 0.2s ease, color 0.2s ease;
+    color: var(--primary) !important;
+    transform: translateY(-50%) scale(1.05) !important;
+    transition: transform 0.2s ease, color 0.2s ease !important;
 }
 
+/* Form Input Jiggle on Invalid */
 @keyframes inputShakeInvalid {
     0%, 100% { transform: translateX(0); }
     20%, 60% { transform: translateX(-4px); }
@@ -143,20 +158,22 @@ select:focus {
 }
 
 .input-error {
-  animation: inputShakeInvalid 0.35s ease-in-out;
-  border-color: var(--danger);
+    animation: inputShakeInvalid 0.35s ease-in-out;
+    border-color: var(--danger) !important;
 }
 
+/* Input Emerald Verification Glow */
 @keyframes emeraldGlowSuccess {
     0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.5); }
     100% { box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.2); }
 }
 
 .input-valid {
-  animation: emeraldGlowSuccess 0.4s ease-out forwards;
-  border-color: #27ae60;
+    animation: emeraldGlowSuccess 0.4s ease-out forwards;
+    border-color: #27ae60 !important;
 }
 
+/* Dropdown Spring Unfold */
 @keyframes dropdownSpringUnroll {
     0% { opacity: 0; transform: translateY(-10px) scale(0.95); }
     70% { opacity: 1; transform: translateY(2px) scale(1.01); }
@@ -166,18 +183,20 @@ select:focus {
 .custom-select-wrapper.open .custom-select-options,
 .dropdown-menu.open,
 .dropdown-menu.active {
-  animation: dropdownSpringUnroll 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: dropdownSpringUnroll 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Dropdown Option Item Cascade */
 @keyframes optionCascadeSlide {
     from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
 }
 
 .custom-select-option {
-  animation: optionCascadeSlide 0.2s ease forwards;
+    animation: optionCascadeSlide 0.2s ease forwards;
 }
 
+/* Checkbox Elastic Tick Pop */
 @keyframes checkmarkDrawPop {
     0% { transform: scale(0) rotate(-45deg); }
     70% { transform: scale(1.25) rotate(5deg); }
@@ -185,52 +204,58 @@ select:focus {
 }
 
 input[type="checkbox"]:checked {
-  animation: checkmarkDrawPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: checkmarkDrawPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+/* Radio Selection Expanding Ring */
 @keyframes radioRingPulse {
     0% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.6); }
     100% { box-shadow: 0 0 0 8px rgba(var(--primary-rgb), 0); }
 }
 
 input[type="radio"]:checked {
-  animation: radioRingPulse 0.4s ease-out;
+    animation: radioRingPulse 0.4s ease-out;
 }
 
+/* Toggle Switch Glide */
 .theme-switch-slider,
 .toggle-slider {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease !important;
 }
 
+/* Slider Range Thumb Scale Pop */
 input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.3);
-  box-shadow: 0 0 12px var(--primary);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transform: scale(1.3) !important;
+    box-shadow: 0 0 12px var(--primary) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
+/* OTP Box Active Golden Pulse */
 @keyframes otpBoxPulse {
     0%, 100% { box-shadow: 0 0 0 2px var(--primary), 0 0 10px rgba(var(--primary-rgb), 0.2); }
     50% { box-shadow: 0 0 0 3.5px var(--primary), 0 0 18px rgba(var(--primary-rgb), 0.45); }
 }
 
 .otp-input:focus {
-  animation: otpBoxPulse 1.8s ease-in-out infinite;
+    animation: otpBoxPulse 1.8s ease-in-out infinite !important;
 }
 
+/* Password Eye Blink Micro-Action */
 @keyframes eyeBlink {
     0%, 100% { transform: scaleY(1); }
     50% { transform: scaleY(0.1); }
 }
 
 .password-toggle:active svg {
-  animation: eyeBlink 0.2s ease;
+    animation: eyeBlink 0.2s ease;
 }
 
+/* Clear Search Input Spin */
 @keyframes clearBtnSpin {
     0% { transform: scale(0) rotate(-90deg); opacity: 0; }
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 .search-clear-btn {
-  animation: clearBtnSpin 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: clearBtnSpin 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }

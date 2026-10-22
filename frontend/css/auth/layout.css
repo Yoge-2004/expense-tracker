@@ -1,20 +1,21 @@
+/* ── Auth Page Layout ── */
 .auth-page {
-  min-height: 100vh;
-  height: auto;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  overflow: visible;
-  overflow-x: visible;
-  overflow-y: visible;
-  scrollbar-width: none;
-  background: transparent;
-  position: relative;
-  z-index: 1;
+    min-height: 100vh;
+    height: auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    overflow: visible;
+    overflow-x: visible;
+    overflow-y: visible;
+    scrollbar-width: none;
+    background: transparent;
+    position: relative;
+    z-index: 1;
 }
 
 .auth-page::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+    display: none;
+    width: 0;
+    height: 0;
 }

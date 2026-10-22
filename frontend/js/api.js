@@ -45,11 +45,11 @@ function ensureFeedbackUi() {
                         </svg>
                     </div>
                 </div>
-                <div class="loading-body u-inl-81ff85a">
+                <div class="loading-body" style="display:flex; flex-direction:column; align-items:center; gap:6px; min-width:200px; text-align:center;">
                     <span id="loadingText" class="immersive-loading-text">Connecting to the server…</span>
                     <span class="immersive-loading-sub">Secured Ledger Synchronization</span>
-                    <div id="loadingProgressTrack" class="loading-progress-track u-inl-219bc5f">
-                        <div id="loadingProgressBar" class="loading-progress-bar u-inl-11ff7ba"></div>
+                    <div id="loadingProgressTrack" class="loading-progress-track" style="display:none; width:100%; height:4px; background:rgba(255,255,255,0.12); border-radius:2px; overflow:hidden; margin-top:4px;">
+                        <div id="loadingProgressBar" class="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
                     </div>
                 </div>
             </div>

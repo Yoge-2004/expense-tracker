@@ -86,8 +86,8 @@
                 wrapper.appendChild(overlay);
             }
             overlay.innerHTML = `
-                <div class="u-inl-86c923f">📊</div>
-                <span class="u-inl-fe5df62">${emptyText}</span>`;
+                <div style="font-size:20px; opacity:0.6;">📊</div>
+                <span style="font-size:12px; font-weight:600; color:var(--text-muted); max-width:200px; line-height:1.3;">${emptyText}</span>`;
         } else {
             canvas.style.opacity = "1";
             if (overlay) overlay.remove();

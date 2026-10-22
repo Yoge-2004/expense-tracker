@@ -1,29 +1,17 @@
+/* Expense Tracker stylesheet manifest. Import order defines the cascade. */
+/* Fonts are loaded explicitly by each HTML document to avoid nested @import latency. */
 @import url("variables.css");
-
 @import url("base.css");
-
 @import url("components.css");
-
 @import url("auth.css");
-
 @import url("dashboard.css");
-
 @import url("metrics.css");
-
 @import url("tables.css");
-
 @import url("charts.css");
-
 @import url("modals.css");
-
 @import url("reports.css");
-
 @import url("animations.css");
-
 @import url("responsive.css");
-
 @import url("modernization.css");
-
 @import url("motion-system.css");
-
 @import url("aesthetics.css");

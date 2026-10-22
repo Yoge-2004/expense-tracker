@@ -1,5 +1,8 @@
+/* ==========================================================================
+   EXPENSE TRACKER — METRICS.CSS
+   Focused entry point for dashboard metrics styles.
+   ========================================================================== */
+
 @import url("metrics/core.css");
-
 @import url("metrics/semantic.css");
-
 @import url("metrics/responsive.css");

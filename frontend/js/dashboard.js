@@ -94,9 +94,9 @@ const dashboardDataController = window.DashboardData.createController({
         renderCategoryPills(categories);
         applyFilters();
     },
-    renderIncomes: (...args) => window.renderIncomes && window.renderIncomes(...args),
-    renderSavingsGoals: (...args) => window.renderSavingsGoals && window.renderSavingsGoals(...args),
-    updateCashFlowMetrics: (...args) => window.updateCashFlowMetrics && window.updateCashFlowMetrics(...args),
+    renderIncomes,
+    renderSavingsGoals,
+    updateCashFlowMetrics,
     renderFinancialData: (expenses) => {
         loadBudgets();
         updateProMetrics(expenses, allIncomes);
@@ -336,19 +336,19 @@ function renderList(expenses) {
         return `
         <div class="expense-item" style="animation-delay: ${delay}s;">
             <div class="expense-emoji-box" style="width:40px; height:40px; border-radius:12px; background:${catColor.bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                <span class="u-inl-bf83cf1">${getCategoryEmoji(catName)}</span>
+                <span style="font-size:18px;">${getCategoryEmoji(catName)}</span>
             </div>
-            <div class="expense-info u-inl-bbf7159">
+            <div class="expense-info" style="flex:1; min-width:0;">
                 <h4 class="expense-title">${escapeHtml(exp.description || "")}</h4>
-                <div class="expense-meta u-inl-73df694">
+                <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
                     <span>${formatDate(exp.expenseDate)}</span>
                     <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${escapeHtml(catName)}</span>
-                    ${isRecurring ? '<span class="u-inl-ad1b491">⟳ RECURRING</span>' : ''}
+                    ${isRecurring ? '<span style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; font-weight:600; color:var(--accent); background:rgba(162,62,50,0.08); padding:2px 8px; border-radius:3px; border:1px solid rgba(162,62,50,0.35);">⟳ RECURRING</span>' : ''}
                 </div>
             </div>
-            <div class="expense-actions-col u-inl-8b23579">
-                <div class="expense-amount u-inl-81b7189">${formatCurrency(exp.amount)}</div>
-                <button class="btn-text-icon btn-split-loan u-inl-a54fd17" onclick="window.LoansManager && window.LoansManager.openWithExpense(${exp.id}, '${jsAttrEscape(exp.description || '')}', ${exp.amount}, '${exp.expenseDate}')" title="Split / Link to Peer Loan">
+            <div class="expense-actions-col" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <div class="expense-amount" style="font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--text-main); font-size:15px; font-weight:600;">${formatCurrency(exp.amount)}</div>
+                <button class="btn-text-icon btn-split-loan" onclick="window.LoansManager && window.LoansManager.openWithExpense(${exp.id}, '${jsAttrEscape(exp.description || '')}', ${exp.amount}, '${exp.expenseDate}')" title="Split / Link to Peer Loan" style="padding:4px 7px; border-radius:6px; color:#8B5CF6; border:1px solid rgba(139,92,246,0.35); background:rgba(139,92,246,0.08); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                     <span>Split</span>
                 </button>
@@ -651,11 +651,11 @@ async function renderManageCategoriesList() {
     if (!listEl) return;
 
     if (userOnlyCategories.length === 0) {
-        listEl.innerHTML = `<p class="u-inl-fa52e02">You haven't created any custom categories yet.</p>`;
+        listEl.innerHTML = `<p style="font-size:13px; color:var(--text-muted); padding:8px 0;">You haven't created any custom categories yet.</p>`;
         return;
     }
 
-    listEl.innerHTML = `<p class="u-inl-1bfcff7">Checking usage...</p>`;
+    listEl.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">Checking usage...</p>`;
 
     // Determine usage: one-off expenses are already loaded client-side
     // (allExpenses); recurring subscriptions need a fresh fetch since they
@@ -677,8 +677,8 @@ async function renderManageCategoriesList() {
     listEl.innerHTML = userOnlyCategories.map(cat => {
         const inUse = usedCategoryIds.has(cat.id);
         return `
-            <div class="u-inl-7154ce7">
-                <span class="u-inl-5684edc">${escapeHtml(cat.name)}</span>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px;">
+                <span style="font-size:14px; color:var(--text-main);">${escapeHtml(cat.name)}</span>
                 <button type="button" class="btn-icon" data-delete-category="${cat.id}" data-category-name="${escapeHtml(cat.name)}"
                     ${inUse ? 'disabled title="This category is used by one or more expenses and can\'t be deleted"' : 'title="Delete category"'}
                     style="${inUse ? 'opacity:0.4; cursor:not-allowed;' : 'color:var(--danger, #C0392B);'}">
@@ -1308,7 +1308,7 @@ const TransferDock = (() => {
             </div>
             <div class="transfer-dock-footer">
                 <span id="transferDockDetail">Connecting...</span>
-                <span class="u-inl-83e4487" id="transferDockPct">0%</span>
+                <span id="transferDockPct" style="font-weight:700;">0%</span>
             </div>
         `;
         document.body.appendChild(dockEl);
@@ -1415,3 +1415,2766 @@ const TransferDock = (() => {
     };
 })();
 window.TransferDock = TransferDock;
+
+function uploadFileWithProgress(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", url);
+        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
+        if (currentToken) {
+            xhr.setRequestHeader("Authorization", `Bearer ${currentToken}`);
+        }
+        if (xhr.upload && typeof onProgress === "function") {
+            xhr.upload.onprogress = (evt) => {
+                if (evt.lengthComputable && evt.total > 0) {
+                    const percent = Math.round((evt.loaded / evt.total) * 100);
+                    onProgress(percent, evt.loaded, evt.total);
+                }
+            };
+        }
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const json = JSON.parse(xhr.responseText);
+                    resolve(json);
+                } catch (_) {
+                    resolve({ message: xhr.responseText || "Import completed successfully" });
+                }
+            } else {
+                let errMsg = `Upload failed with status ${xhr.status}`;
+                try {
+                    const errObj = JSON.parse(xhr.responseText);
+                    errMsg = errObj.message || errObj.error || errMsg;
+                } catch (_) {
+                    if (xhr.responseText) errMsg = xhr.responseText;
+                }
+                reject(new Error(errMsg));
+            }
+        };
+        xhr.onerror = () => reject(new Error("Network failure during file upload. Please check connection."));
+        xhr.send(formData);
+    });
+}
+
+// Fetching with streaming chunks keeps the token safe and displays download progress.
+async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fallbackFn = null) {
+    TransferDock.show({
+        filename: fallbackFilename,
+        mode: "export",
+        status: loadingMessage || "Preparing document..."
+    });
+    try {
+        const currentToken = localStorage.getItem("token") || (typeof authToken !== "undefined" ? authToken : "") || (typeof token !== "undefined" ? token : "");
+        const activeCurr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : (localStorage.getItem("userCurrency") || "INR"));
+        const sep = url.includes("?") ? "&" : "?";
+        const finalUrl = `${url}${sep}currency=${encodeURIComponent(activeCurr)}`;
+        
+        const reqHeaders = {};
+        if (currentToken) {
+            reqHeaders["Authorization"] = `Bearer ${currentToken}`;
+        }
+        if (activeCurr) {
+            reqHeaders["X-Currency"] = activeCurr;
+        }
+
+        TransferDock.updateProgress(15, "Connecting to reporting engine...", "Compiling ledger records");
+        const res = await fetch(finalUrl, { headers: reqHeaders });
+        if (!res.ok) {
+            if (res.status === 401) {
+                throw new Error("Authentication session expired. Please log in again.");
+            }
+            throw new Error(`Export server responded with status ${res.status}`);
+        }
+        const disposition = res.headers.get("Content-Disposition") || "";
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        const filename = match ? match[1] : fallbackFilename;
+
+        let blob;
+        const contentLength = res.headers.get("Content-Length");
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        if (res.body && typeof res.body.getReader === "function") {
+            const reader = res.body.getReader();
+            const chunks = [];
+            let received = 0;
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                received += value.length;
+                if (total > 0) {
+                    const pct = Math.round((received / total) * 100);
+                    TransferDock.updateProgress(
+                        pct,
+                        `Downloading ${filename}`,
+                        `${Math.round(received / 1024)} KB / ${Math.round(total / 1024)} KB`
+                    );
+                } else {
+                    const kb = Math.round(received / 1024);
+                    TransferDock.updateProgress(
+                        null,
+                        `Downloading ${filename}`,
+                        `${kb} KB received`
+                    );
+                }
+            }
+            blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
+        } else {
+            TransferDock.updateProgress(85, `Downloading ${filename}`, "Receiving payload...");
+            blob = await res.blob();
+        }
+        triggerFileDownload(blob, filename);
+        TransferDock.complete(`${filename} downloaded`);
+        showToast(`${filename} downloaded successfully.`, "success");
+    } catch (err) {
+        console.warn("downloadAuthenticated backend call failed, attempting fallback:", err);
+        if (typeof fallbackFn === "function") {
+            try {
+                TransferDock.updateProgress(90, "Using client generator fallback...", "Formatting file");
+                fallbackFn();
+                TransferDock.complete(`${fallbackFilename} generated`);
+                showToast(`${fallbackFilename} generated and downloaded.`, "success");
+                return;
+            } catch (fbErr) {
+                console.error("Client fallback generation failed:", fbErr);
+            }
+        }
+        TransferDock.fail(err.message || "Export failed");
+        showToast(err.message || "Export failed", "error");
+    }
+}
+
+document.getElementById("exportExcelBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(
+        `${API_BASE_URL}/expenses/user/${userId}/export/excel`,
+        "expenses.xlsx",
+        "Generating Expenses Excel Workbook...",
+        () => exportExpensesClientSideExcel()
+    );
+});
+
+document.getElementById("exportReportExcelBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(
+        `${API_BASE_URL}/reports/user/${userId}/export/excel`,
+        "executive_financial_statement.xlsx",
+        "Generating Complete Executive Financial Workbook (Excel)..."
+    );
+});
+
+document.getElementById("exportCsvBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/csv`, "expenses.csv", "Exporting CSV...");
+});
+
+document.getElementById("exportJsonBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/json`, "expenses.json", "Exporting JSON...");
+});
+
+document.getElementById("exportPdfBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/pdf`, "expenses.pdf", "Generating PDF report...");
+});
+
+const importBtn = document.getElementById("importBtn");
+const importFileInput = document.getElementById("importFileInput");
+
+importBtn?.addEventListener("click", () => importFileInput?.click());
+
+importFileInput?.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const fname = file.name.toLowerCase();
+    let endpoint = `/expenses/user/${userId}/import/csv`;
+    if (fname.endsWith(".json")) {
+        endpoint = `/expenses/user/${userId}/import/json`;
+    } else if (fname.endsWith(".xlsx") || fname.endsWith(".xls")) {
+        endpoint = `/expenses/user/${userId}/import/excel`;
+    }
+
+    try {
+        TransferDock.show({
+            filename: fname,
+            mode: "import",
+            status: "Uploading spreadsheet payload..."
+        });
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
+            const loadedKb = Math.round(loaded / 1024);
+            const totalKb = Math.round(total / 1024);
+            TransferDock.updateProgress(
+                pct,
+                `Uploading ${fname}`,
+                `${pct}% · ${loadedKb} / ${totalKb} KB`
+            );
+        });
+        TransferDock.updateProgress(98, "Parsing and committing rows...", "Database sync");
+        if (data.failedRows > 0) {
+            TransferDock.complete(`Imported ${data.imported || 0} (${data.failedRows} skipped)`);
+            showToast(`${data.imported} imported, ${data.failedRows} row(s) skipped — see console for details.`, data.imported > 0 ? "info" : "error");
+            console.warn("Import row errors:", data.errors);
+        } else {
+            TransferDock.complete(`Imported ${data.imported || 0} records`);
+            showToast(data.message || "Expenses imported successfully!", "success");
+        }
+        if (typeof window.clearApiCache === "function") window.clearApiCache();
+        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+        await loadDashboard(true);
+    } catch (err) {
+        TransferDock.fail(err.message || "Import failed");
+        showToast(err.message, "error");
+    } finally {
+        importFileInput.value = "";
+    }
+});
+
+// --- 7. SUBSCRIPTION MANAGER (View, Edit, Delete) ---
+
+// Open Modal
+elements.manageSubsBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    toggleProfileMenu(false);
+    openModal(elements.subsModal);
+    loadSubscriptions();
+});
+
+// Also handle the "Manage Subscriptions →" link in the metrics card
+document.getElementById("manageSubsLink")?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    openModal(elements.subsModal);
+    loadSubscriptions();
+});
+
+// Close Modal
+elements.closeSubsBtn?.addEventListener("click", () => {
+    closeModal(elements.subsModal);
+});
+elements.subsModal?.addEventListener("click", (e) => {
+    if (e.target === elements.subsModal) closeModal(elements.subsModal);
+});
+
+let currentSubsModalTab = 'expenses';
+let cachedSubsExpenses = [];
+let cachedSubsIncomes = [];
+let isSubsOffline = false;
+
+async function loadSubscriptions() {
+    if (elements.subsList) {
+        elements.subsList.innerHTML = '<p class="text-muted" style="text-align:center; padding:20px 0;">Loading active recurring commitments & inflows...</p>';
+    }
+
+    try {
+        const activeExpenses = allExpenses || [];
+        const activeIncomes = allIncomes || [];
+
+        let subsFailed = false;
+        let incsFailed = false;
+        let savsFailed = false;
+
+        const isFileOrOffline = window.location.protocol === "file:" || !navigator.onLine || window.location.search.includes("test_mock_auth") || !userId;
+        const [subs, incs, savs] = await Promise.all([
+            (activeExpenses && activeExpenses.length > 0)
+                ? Promise.resolve(activeExpenses.filter(e => !!(e.isRecurring || e.recurring)))
+                : (isFileOrOffline ? Promise.resolve([]) : apiRequest(`/expenses/recurring/user/${userId}`).catch(err => {
+                    console.warn("Failed to load recurring expenses:", err);
+                    subsFailed = true;
+                    return null;
+                })),
+            (activeIncomes && activeIncomes.length > 0)
+                ? Promise.resolve(activeIncomes)
+                : (isFileOrOffline ? Promise.resolve([]) : apiRequest(`/incomes/user/${userId}`).catch(err => {
+                    console.warn("Failed to load incomes for recurring modal:", err);
+                    incsFailed = true;
+                    return null;
+                })),
+            (allSavingsGoals && allSavingsGoals.length > 0)
+                ? Promise.resolve(allSavingsGoals)
+                : (isFileOrOffline ? Promise.resolve([]) : apiRequest(`/savings/goals/user/${userId}`).catch(err => {
+                    console.warn("Failed to load savings goals for recurring modal:", err);
+                    savsFailed = true;
+                    return null;
+                }))
+        ]);
+
+        isSubsOffline = (subsFailed && incsFailed && savsFailed) || (subs === null && incs === null && savs === null);
+
+        if (isSubsOffline) {
+            const summaryEl = document.getElementById("subsCashflowSummary");
+            if (summaryEl) {
+                summaryEl.innerHTML = `
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                    <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                        <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
+                        <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                    </div>
+                `;
+            }
+            renderSubsModalContent();
+            return;
+        }
+
+        cachedSubsExpenses = Array.isArray(subs) ? subs : [];
+        cachedSubsIncomes = (Array.isArray(incs) ? incs : []).filter(i => !!(i.isRecurring || i.recurring));
+        cachedSubsSavings = (Array.isArray(savs) ? savs : []).filter(s => !!(s.isRecurring || (s.recurringAmount != null && Number(s.recurringAmount) > 0)));
+
+        const monthlyOutflow = cachedSubsExpenses.reduce((acc, sub) => {
+            const amt = Number(sub.amount || 0);
+            const freq = (sub.frequency || "MONTHLY").toUpperCase();
+            if (freq === "WEEKLY") return acc + (amt * 52 / 12);
+            if (freq === "DAILY") return acc + (amt * 365 / 12);
+            return acc + amt;
+        }, 0);
+
+        const monthlyInflow = cachedSubsIncomes.reduce((acc, inc) => {
+            const amt = Number(inc.amount || 0);
+            const freq = (inc.frequency || "MONTHLY").toUpperCase();
+            if (freq === "WEEKLY") return acc + (amt * 52 / 12);
+            if (freq === "DAILY") return acc + (amt * 365 / 12);
+            return acc + amt;
+        }, 0);
+
+        const monthlySavings = cachedSubsSavings.reduce((acc, sav) => {
+            const amt = Number(sav.recurringAmount || 0);
+            const freq = (sav.frequency || "MONTHLY").toUpperCase();
+            if (freq === "WEEKLY") return acc + (amt * 52 / 12);
+            if (freq === "DAILY") return acc + (amt * 365 / 12);
+            if (freq === "BI_WEEKLY" || freq === "BIWEEKLY") return acc + (amt * 26 / 12);
+            if (freq === "YEARLY") return acc + (amt / 12);
+            if (freq === "CUSTOM" && sav.intervalDays && sav.intervalDays > 0) return acc + (amt * 30 / sav.intervalDays);
+            return acc + amt;
+        }, 0);
+
+        const netRecurring = monthlyInflow - (monthlyOutflow + monthlySavings);
+
+        const summaryEl = document.getElementById("subsCashflowSummary");
+        if (summaryEl) {
+            summaryEl.innerHTML = `
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
+                    <div style="font-size:14.5px; font-weight:700; color:#10B981; margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">+${formatCurrency(monthlyInflow)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
+                    <div style="font-size:14.5px; font-weight:700; color:var(--accent); margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">-${formatCurrency(monthlyOutflow)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
+                    <div style="font-size:14.5px; font-weight:700; color:#F59E0B; margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">${formatCurrency(monthlySavings)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
+                    <div style="font-size:14.5px; font-weight:700; color:${netRecurring >= 0 ? '#10B981' : 'var(--danger)'}; margin-top:2px; font-family:var(--font-mono); font-variant-numeric:tabular-nums;">${netRecurring >= 0 ? '+' : ''}${formatCurrency(netRecurring)}<span style="font-size:10.5px; font-weight:500; opacity:0.8;">/mo</span></div>
+                </div>
+            `;
+        }
+
+        renderSubsModalContent();
+
+    } catch (error) {
+        isSubsOffline = true;
+        const summaryEl = document.getElementById("subsCashflowSummary");
+        if (summaryEl) {
+            summaryEl.innerHTML = `
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Inflows</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Recurring Subscriptions</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Chits & Recurring Savings</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; text-align:center;">
+                    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:700;">Net Autonomy Flow</div>
+                    <div style="font-size:13.5px; font-weight:700; color:var(--text-muted); margin-top:2px;">Offline</div>
+                </div>
+            `;
+        }
+        renderSubsModalContent();
+    }
+}
+
+let cachedSubsSavings = [];
+function switchSubsModalTab(tab) {
+    currentSubsModalTab = tab;
+    const expBtn = document.getElementById("subsTabExpensesBtn");
+    const incBtn = document.getElementById("subsTabIncomesBtn");
+    const savBtn = document.getElementById("subsTabSavingsBtn");
+    if (expBtn) expBtn.classList.toggle("active", tab === 'expenses');
+    if (incBtn) {
+        incBtn.classList.toggle("active", tab === 'incomes');
+        if (tab === 'incomes') incBtn.classList.add("emerald");
+        else incBtn.classList.remove("emerald");
+    }
+    if (savBtn) savBtn.classList.toggle("active", tab === 'savings');
+    renderSubsModalContent();
+}
+window.switchSubsModalTab = switchSubsModalTab;
+
+function renderSubsModalContent() {
+    if (!elements.subsList) return;
+
+    if (isSubsOffline) {
+        elements.subsList.innerHTML = `
+            <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
+                <div class="empty-state-icon" style="font-size:32px; margin-bottom:8px;">⚠️</div>
+                <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
+                <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
+                    Could not reach the server to load your subscriptions and recurring cash flow.
+                </div>
+                <button type="button" class="btn-primary btn-sm" onclick="loadSubscriptions()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; padding:8px 18px; font-size:13px; border-radius:8px;">
+                    Retry Connection
+                </button>
+            </div>`;
+        return;
+    }
+
+    if (currentSubsModalTab === 'expenses') {
+        if (!cachedSubsExpenses || cachedSubsExpenses.length === 0) {
+            elements.subsList.innerHTML = `
+                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No active subscription expenses found</p>
+                    <span style="font-size:12px;">Mark expenses as <strong>Recurring</strong> to monitor renewals, software SaaS, and recurring bills.</span>
+                </div>`;
+            return;
+        }
+
+        elements.subsList.innerHTML = cachedSubsExpenses.map(sub => {
+            const freqLabel = formatFrequency(sub);
+            const freqColor = 'var(--text-muted)';
+            return `
+            <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
+                <div style="flex:1; min-width:0;">
+                    <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sub.description)}</div>
+                    <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <span>Next: <span style="color:var(--accent); font-weight:600;">${formatDate(sub.nextDueDate)}</span></span>
+                        <span style="opacity:0.4;">•</span>
+                        <span style="font-weight:600; color:var(--text-main);">${formatCurrency(sub.amount)}</span>
+                        <span style="opacity:0.4;">•</span>
+                        <span style="background:rgba(var(--ink-rgb),0.06); color:${freqColor}; border:1px solid var(--border); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">${freqLabel}</span>
+                        <span style="opacity:0.7; font-size:11px; color:var(--text-muted);">${escapeHtml(sub.categoryName || 'General')}</span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
+                    <button onclick="openEditSubscription(${sub.id}, '${jsAttrEscape(sub.description)}', '${sub.amount}', '${sub.nextDueDate}', '${sub.frequency || 'MONTHLY'}', ${sub.intervalDays || 1}, ${sub.categoryId || 'null'})" class="btn-edit" title="Edit Subscription" style="height:32px; width:32px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button onclick="cancelSubscription(${sub.id}, event)" class="btn-delete" title="Cancel Subscription" style="height:32px; width:32px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>`;
+        }).join("");
+
+    } else if (currentSubsModalTab === 'savings') {
+        if (!cachedSubsSavings || cachedSubsSavings.length === 0) {
+            elements.subsList.innerHTML = `
+                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No recurring chit funds or savings plans</p>
+                    <span style="font-size:12px;">Create a savings goal and check <strong>Recurring Contribution (Chit Fund / RD / SIP)</strong> to schedule automated contributions.</span>
+                </div>`;
+            return;
+        }
+
+        elements.subsList.innerHTML = cachedSubsSavings.map(goal => {
+            const current = Number(goal.currentAmount || 0);
+            const target = Number(goal.targetAmount || 0);
+            const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+            return `
+            <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
+                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); display:inline-flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;">
+                        🪙
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${escapeHtml(goal.name || "Chit / Savings Goal")}
+                        </div>
+                        <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:gap; gap:6px;">
+                            <span>Installment: <span style="color:#F59E0B; font-weight:700;">${formatCurrency(goal.recurringAmount || 0)}</span></span>
+                            <span style="opacity:0.4;">•</span>
+                            <span style="background:rgba(245,158,11,0.12); color:#F59E0B; border:1px solid rgba(245,158,11,0.3); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">
+                                🔁 ${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
+                            </span>
+                            ${goal.nextDueDate ? `<span style="opacity:0.4;">•</span><span>Next: <strong style="color:var(--text-main);">${formatDate(goal.nextDueDate)}</strong></span>` : ''}
+                        </div>
+                        <div style="margin-top:6px; font-size:11px; color:var(--text-muted);">
+                            Accumulated ${formatCurrency(current)} of ${formatCurrency(target)} (${pct}%)
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
+                    <button onclick="closeModal(elements.subsModal); document.getElementById('depositGoalId').value = '${goal.id}'; const dt = document.getElementById('savingsDepositTitle'); if(dt) dt.textContent='Contribute to ${jsAttrEscape(goal.name)}'; openModal(document.getElementById('savingsDepositModal'));" class="btn-primary btn-small" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:5px 12px; cursor:pointer;" title="Contribute Installment">
+                        + Deposit
+                    </button>
+                </div>
+            </div>`;
+        }).join("");
+
+    } else {
+        // 'incomes' tab
+        if (!cachedSubsIncomes || cachedSubsIncomes.length === 0) {
+            elements.subsList.innerHTML = `
+                <div class="empty-state-compact" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+                    <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No recurring income streams found</p>
+                    <span style="font-size:12px;">Mark salary, client retainers, or rental payments as <strong>Recurring</strong> in the Cash Inflow section to view them here.</span>
+                </div>`;
+            return;
+        }
+
+        elements.subsList.innerHTML = cachedSubsIncomes.map(inc => {
+            const freqLabel = formatIncomeFrequency(inc.frequency, inc.intervalDays);
+            return `
+            <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
+                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); display:inline-flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;">
+                        ${getIncomeSourceEmoji(inc.source)}
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${escapeHtml(inc.source || "Income")}
+                            ${inc.description ? `<span style="font-weight:400; font-size:12px; color:var(--text-muted); margin-left:6px;">— ${escapeHtml(inc.description)}</span>` : ''}
+                        </div>
+                        <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                            <span>Logged: <span style="color:#10B981; font-weight:600;">${inc.incomeDate || '—'}</span></span>
+                            <span style="opacity:0.4;">•</span>
+                            <span style="font-weight:600; color:#10B981;">+${formatCurrency(inc.amount)}</span>
+                            <span style="opacity:0.4;">•</span>
+                            <span style="background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.3); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">
+                                ⟳ ${freqLabel}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; flex-shrink:0; margin-left:12px;">
+                    <button onclick="editIncomeFromSubsModal(${inc.id})" class="btn-edit" title="Edit Recurring Income" style="height:32px; width:32px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button onclick="deleteIncomeFromSubsModal(${inc.id})" class="btn-delete" title="Delete Income" style="height:32px; width:32px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
+            </div>`;
+        }).join("");
+    }
+}
+
+window.editIncomeFromSubsModal = (incId) => {
+    closeModal(elements.subsModal);
+    const inc = (allIncomes || []).find(i => String(i.id) === String(incId));
+    if (!inc) return;
+    const modal = document.getElementById("incomeModal");
+    if (!modal) return;
+    document.getElementById("incomeId").value = inc.id || "";
+    document.getElementById("incomeSource").value = inc.source || "";
+    document.getElementById("incomeAmount").value = inc.amount || "";
+    document.getElementById("incomeDate").value = inc.incomeDate || new Date().toISOString().split("T")[0];
+    document.getElementById("incomeDesc").value = inc.description || "";
+    setIncomeClassification(inc.kind, inc.countsTowardMonth, inc.reimbursedCategoryId);
+
+    const isRec = !!(inc.isRecurring || inc.recurring);
+    const incRecEl = document.getElementById("incomeIsRecurring");
+    if (incRecEl) incRecEl.checked = isRec;
+
+    const freq = inc.frequency || "MONTHLY";
+    const interval = inc.intervalDays || 1;
+    const incFreqEl = document.getElementById("incomeRecurringFrequency");
+    if (incFreqEl) incFreqEl.value = freq;
+    const incIntervalEl = document.getElementById("incomeRecurringIntervalDays");
+    if (incIntervalEl) incIntervalEl.value = interval;
+
+    const incRecOptions = document.getElementById("incomeRecurringOptions");
+    if (incRecOptions) {
+        incRecOptions.hidden = !isRec;
+        incRecOptions.style.display = isRec ? "flex" : "none";
+    }
+    const titleEl = document.getElementById("incomeModalTitle");
+    if (titleEl) titleEl.textContent = "Edit Income Stream";
+    openModal(modal);
+};
+
+window.deleteIncomeFromSubsModal = async (incId) => {
+    if (!(await window.appConfirm("Are you sure you want to delete this recurring income stream?"))) return;
+    try {
+        setLoading(true, "Deleting income...");
+        await apiRequest(`/incomes/${incId}/user/${userId}`, { method: "DELETE" });
+        showToast("Income record deleted.", "success");
+        await loadDashboard(true);
+        loadSubscriptions();
+    } catch (err) {
+        showToast(err.message || "Failed to delete income", "error");
+    } finally {
+        setLoading(false);
+    }
+};
+
+const editSubModal = document.getElementById("editSubModal");
+const editSubForm = document.getElementById("editSubForm");
+
+window.openEditSubscription = (id, desc, amount, nextDueDate, frequency = 'MONTHLY', intervalDays = 1, categoryId = null) => {
+    const editSubCatSelect = document.getElementById("editSubCategory");
+    if (editSubCatSelect && allCategories && allCategories.length > 0) {
+        editSubCatSelect.innerHTML = allCategories.map(c => `<option value="${c.id}"${categoryId && String(c.id) === String(categoryId) ? ' selected' : ''}>${escapeHtml(c.name)}</option>`).join("");
+        if (categoryId) editSubCatSelect.value = categoryId;
+        if (window.syncCustomSelect) window.syncCustomSelect(editSubCatSelect);
+    }
+    document.getElementById("editSubId").value = id;
+    document.getElementById("editSubDesc").value = desc.trim();
+    document.getElementById("editSubAmount").value = amount;
+    document.getElementById("editSubNextDate").value = nextDueDate;
+    const freqSelect = document.getElementById("editSubFrequency");
+    if (freqSelect) freqSelect.value = frequency;
+    const intervalInput = document.getElementById("editSubIntervalDays");
+    if (intervalInput) intervalInput.value = intervalDays || 1;
+    const intervalWrap = document.getElementById("editSubCustomIntervalWrap") || document.getElementById("editSubIntervalWrap");
+    if (intervalWrap) intervalWrap.hidden = frequency !== "CUSTOM";
+    openModal(editSubModal);
+};
+
+// Toggle custom interval field inside edit subscription form
+document.getElementById("editSubFrequency")?.addEventListener("change", (e) => {
+    const wrap = document.getElementById("editSubCustomIntervalWrap") || document.getElementById("editSubIntervalWrap");
+    if (wrap) wrap.hidden = e.target.value !== "CUSTOM";
+});
+
+document.getElementById("closeEditSubModalBtn")?.addEventListener("click", () => {
+    closeModal(editSubModal);
+});
+editSubModal?.addEventListener("click", (e) => {
+    if (e.target === editSubModal) closeModal(editSubModal);
+});
+
+editSubForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = editSubForm.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return; // a submission is already in flight
+
+    const id = document.getElementById("editSubId").value;
+    const desc = document.getElementById("editSubDesc").value;
+    const amount = parseFloat(document.getElementById("editSubAmount").value);
+    const nextDueDate = document.getElementById("editSubNextDate").value;
+    const frequency = document.getElementById("editSubFrequency")?.value || "MONTHLY";
+    const intervalDaysRaw = parseInt(document.getElementById("editSubIntervalDays")?.value || "1");
+
+    if (isNaN(amount) || amount <= 0) return showToast("Amount must be greater than 0", "error");
+    if (frequency === "CUSTOM" && (isNaN(intervalDaysRaw) || intervalDaysRaw < 1)) {
+        return showToast("Custom interval must be at least 1 day", "error");
+    }
+
+    const categoryId = document.getElementById("editSubCategory")?.value;
+    const body = { description: desc, amount, nextDueDate, frequency };
+    if (categoryId) body.categoryId = parseInt(categoryId);
+    if (frequency === "CUSTOM") body.intervalDays = intervalDaysRaw;
+
+    submitBtn.disabled = true;
+    try {
+        await apiRequest(`/expenses/recurring/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(body)
+        });
+        showToast("Subscription updated successfully.", "success");
+        closeModal(editSubModal);
+        loadSubscriptions();
+    } catch (e) {
+        showToast(e.message, "error");
+    } finally {
+        submitBtn.disabled = false;
+    }
+});
+
+// Cancel Logic
+window.cancelSubscription = async (id, event) => {
+    if (!(await window.appConfirm("Are you sure you want to cancel this recurring subscription? Future auto-payments will stop."))) return;
+
+    try {
+        await apiRequest(`/expenses/recurring/${id}`, { method: "DELETE" });
+        showToast("Subscription cancelled.", "success");
+        loadSubscriptions();
+    } catch (err) {
+        showToast(err.message, "error");
+        const btn = event?.target?.closest(".btn-delete");
+        if (btn) {
+            btn.classList.add("shake");
+            setTimeout(() => btn.classList.remove("shake"), 400);
+        }
+    }
+};
+
+// --- 8. DELETE ACCOUNT ---
+
+function checkDeleteBtnState() {
+    const isTextValid = elements.deleteConfirmInput && elements.deleteConfirmInput.value.trim() === "DELETE";
+    const isPassValid = !elements.deletePasswordInput || elements.deletePasswordInput.value.length > 0;
+    const isValid = isTextValid && isPassValid;
+    elements.confirmDeleteAccountBtn.style.opacity = isValid ? "1" : "0.5";
+    elements.confirmDeleteAccountBtn.style.pointerEvents = isValid ? "auto" : "none";
+}
+
+// Open the delete account confirmation modal
+elements.deleteAccountBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleProfileMenu(false);
+    if (elements.deletePasswordInput) elements.deletePasswordInput.value = "";
+    elements.deleteConfirmInput.value = "";
+    elements.confirmDeleteAccountBtn.style.opacity = "0.5";
+    elements.confirmDeleteAccountBtn.style.pointerEvents = "none";
+    openModal(elements.deleteAccountModal);
+    setTimeout(() => {
+        if (elements.deletePasswordInput) {
+            elements.deletePasswordInput.focus();
+        } else {
+            elements.deleteConfirmInput.focus();
+        }
+    }, 150);
+});
+
+// Enable the confirm button only when user enters password and types "DELETE"
+elements.deleteConfirmInput.addEventListener("input", checkDeleteBtnState);
+if (elements.deletePasswordInput) {
+    elements.deletePasswordInput.addEventListener("input", checkDeleteBtnState);
+}
+
+// Close modal on cancel
+elements.cancelDeleteAccountBtn.addEventListener("click", () => {
+    closeModal(elements.deleteAccountModal);
+    if (elements.deletePasswordInput) elements.deletePasswordInput.value = "";
+    elements.deleteConfirmInput.value = "";
+});
+
+// --- EDIT PROFILE NAME ---
+const editProfileBtn = document.getElementById("editProfileBtn");
+const editProfileModal = document.getElementById("editProfileModal");
+const closeEditProfileModalBtn = document.getElementById("closeEditProfileModalBtn");
+const cancelEditProfileBtn = document.getElementById("cancelEditProfileBtn");
+const editProfileForm = document.getElementById("editProfileForm");
+const editProfileNameInput = document.getElementById("editProfileNameInput");
+
+if (editProfileBtn && editProfileModal) {
+    editProfileBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        toggleProfileMenu(false);
+        const currentName = localStorage.getItem("userName") || "";
+        if (editProfileNameInput) {
+            editProfileNameInput.value = currentName;
+        }
+        openModal(editProfileModal);
+        setTimeout(() => editProfileNameInput?.focus(), 50);
+    });
+
+    const closeEditModal = () => closeModal(editProfileModal);
+    closeEditProfileModalBtn?.addEventListener("click", closeEditModal);
+    cancelEditProfileBtn?.addEventListener("click", closeEditModal);
+    editProfileModal.addEventListener("click", (e) => {
+        if (e.target === editProfileModal) closeEditModal();
+    });
+
+    editProfileForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const newName = editProfileNameInput?.value?.trim();
+        if (!newName || newName.length < 2 || newName.length > 50) {
+            showToast("Display name must be between 2 and 50 characters.", "warning");
+            return;
+        }
+        const saveBtn = document.getElementById("saveEditProfileBtn");
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Saving...";
+        }
+        try {
+            const res = await apiRequest(`/users/${userId}`, {
+                method: "PUT",
+                body: JSON.stringify({ name: newName })
+            });
+            const updatedName = (res && res.name) ? res.name : newName;
+            localStorage.setItem("userName", updatedName);
+            const userWelcomeText = document.getElementById("userWelcomeText");
+            if (userWelcomeText) {
+                userWelcomeText.textContent = `Welcome back, ${updatedName}`;
+            }
+            renderDashboardAvatar(updatedName, localStorage.getItem("userProfilePicture"));
+            showToast("Profile name updated successfully!", "success");
+            closeEditModal();
+        } catch (err) {
+            showToast(err.message || "Failed to update profile name.", "error");
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save Changes";
+            }
+        }
+    });
+}
+
+// Close modal on overlay click
+elements.deleteAccountModal.addEventListener("click", (e) => {
+    if (e.target === elements.deleteAccountModal) {
+        closeModal(elements.deleteAccountModal);
+        if (elements.deletePasswordInput) elements.deletePasswordInput.value = "";
+        elements.deleteConfirmInput.value = "";
+    }
+});
+
+// Confirm deletion — calls DELETE /api/users/{userId} with password confirmation
+elements.confirmDeleteAccountBtn.addEventListener("click", async () => {
+    const password = elements.deletePasswordInput ? elements.deletePasswordInput.value : "";
+    if (!password) {
+        showToast("Please enter your current password to confirm deletion.", "warning");
+        elements.deletePasswordInput?.focus();
+        return;
+    }
+    if (elements.deleteConfirmInput.value.trim() !== "DELETE") return;
+
+    elements.confirmDeleteAccountBtn.classList.add("btn-loading");
+    elements.confirmDeleteAccountBtn.style.pointerEvents = "none";
+
+    try {
+        await apiRequest(`/users/${userId}`, {
+            method: "DELETE",
+            body: JSON.stringify({ password: password }),
+            skipAuthRedirect: true
+        });
+        localStorage.clear();
+        window.location.href = "index.html";
+    } catch (err) {
+        showToast(err.message, "error");
+        elements.confirmDeleteAccountBtn.classList.remove("btn-loading");
+        elements.confirmDeleteAccountBtn.style.opacity = "1";
+        elements.confirmDeleteAccountBtn.style.pointerEvents = "auto";
+        if (elements.deletePasswordInput) {
+            elements.deletePasswordInput.value = "";
+            elements.deletePasswordInput.focus();
+        }
+    }
+});
+
+// Start
+loadDashboard();
+
+function formatFrequency(subscription) {
+    return subscription.frequency === "CUSTOM"
+        ? `Every ${subscription.intervalDays} day${subscription.intervalDays === 1 ? "" : "s"}`
+        : (subscription.frequency || "MONTHLY").toLowerCase().replace(/^./, char => char.toUpperCase());
+}
+
+// --- RIPPLE EFFECT on primary / submit buttons ---
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-primary, button[type='submit']");
+    if (!btn) return;
+    const ripple = document.createElement("span");
+    ripple.className = "btn-ripple";
+    const rect = btn.getBoundingClientRect();
+    ripple.style.left = (e.clientX - rect.left - 4) + "px";
+    ripple.style.top  = (e.clientY - rect.top  - 4) + "px";
+    btn.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove());
+});
+
+
+// =========================================================================
+// EXECUTIVE CASH FLOW & INFLOW / SAVINGS GOVERNANCE
+// =========================================================================
+
+function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
+    document.querySelectorAll(".grid-4-metrics .metric-card").forEach(card => card.classList.remove("is-loading"));
+    // Income excludes reimbursements; money that came back reduces spending instead.
+    const totalSpent = window.MoneyFlow.netSpent(expenses || [], incomes || []);
+    const totalIncome = window.MoneyFlow.earnedTotal(incomes || []);
+    const netCashFlow = totalIncome - totalSpent;
+    // The monthly panel always reads the full data set, even when the cards show a filtered view.
+    window.DashboardMoneyFlow?.render(allExpenses, allIncomes, allSavingsGoals);
+    const recurringIncomes = (incomes || []).filter(i => i.isRecurring || i.recurring).length;
+    const savingsRate = totalIncome > 0 ? ((netCashFlow / totalIncome) * 100) : 0;
+    const totalSaved = (savingsGoals || []).reduce((acc, curr) => acc + Number(curr.currentAmount || 0), 0);
+
+    const totalIncomeEl = document.getElementById("totalIncomeAmount");
+    if (totalIncomeEl) animateNumber(totalIncomeEl, totalIncome, true);
+
+    const incomeCountBadge = document.getElementById("incomeCountBadge");
+    if (incomeCountBadge) incomeCountBadge.textContent = `${(incomes || []).length} Inflow${(incomes || []).length === 1 ? "" : "s"}`;
+
+    const recurringIncomeText = document.getElementById("recurringIncomeText");
+    if (recurringIncomeText) recurringIncomeText.textContent = `${recurringIncomes} recurring stream${recurringIncomes === 1 ? "" : "s"}`;
+
+    const netCashFlowEl = document.getElementById("netCashFlowAmount");
+    if (netCashFlowEl) {
+        animateNumber(netCashFlowEl, netCashFlow, true, true);
+        netCashFlowEl.style.color = "";
+    }
+
+    const netFlowBadge = document.getElementById("netFlowBadge");
+    if (netFlowBadge) {
+        if (netCashFlow > 0) {
+            netFlowBadge.textContent = "Surplus";
+            netFlowBadge.className = "status-badge badge-netflow";
+        } else if (netCashFlow < 0) {
+            netFlowBadge.textContent = "Deficit";
+            netFlowBadge.className = "status-badge badge-netflow";
+        } else {
+            netFlowBadge.textContent = "Balanced";
+            netFlowBadge.className = "status-badge badge-netflow";
+        }
+    }
+
+    const savingsRateEl = document.getElementById("savingsRateValue");
+    if (savingsRateEl) {
+        animatePercent(savingsRateEl, savingsRate);
+        savingsRateEl.style.color = "";
+    }
+
+    const savingsGoalBadge = document.getElementById("savingsGoalBadge");
+    if (savingsGoalBadge) {
+        savingsGoalBadge.textContent = `${(savingsGoals || []).length} Goal${(savingsGoals || []).length === 1 ? "" : "s"}`;
+    }
+
+    const totalSavedProgress = document.getElementById("totalSavedProgress");
+    if (totalSavedProgress) {
+        totalSavedProgress.textContent = `Saved: ${formatCurrency(totalSaved)}`;
+    }
+
+    let dailyBurnEl = document.getElementById("dailyBurnRate");
+    if (!dailyBurnEl) {
+        const burnBadge = document.getElementById("burnRateBadge");
+        if (burnBadge) {
+            burnBadge.innerHTML = 'Burn: <span id="dailyBurnRate"></span>';
+            dailyBurnEl = document.getElementById("dailyBurnRate");
+        }
+    }
+    if (dailyBurnEl && (dailyBurnEl.querySelector(".skeleton") || dailyBurnEl.textContent.trim() === "" || dailyBurnEl.textContent.includes("—"))) {
+        const now = new Date();
+        const currentDay = Math.max(now.getDate(), 1);
+        const currentMonthExpenses = (expenses || []).filter(e => {
+            const d = new Date(e.expenseDate);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+        const currentMonthSpent = currentMonthExpenses.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        const dailyBurn = currentMonthSpent / currentDay;
+        dailyBurnEl.textContent = `${formatCurrency(dailyBurn)} / day`;
+    }
+}
+
+function formatGoalFrequency(freq, interval) {
+    if (!freq) return "Monthly";
+    switch ((freq || "").toUpperCase()) {
+        case "DAILY": return "Daily";
+        case "WEEKLY": return "Weekly";
+        case "BI_WEEKLY":
+        case "BIWEEKLY": return "Bi-Weekly";
+        case "MONTHLY": return "Monthly";
+        case "YEARLY": return "Yearly";
+        case "CUSTOM": return interval ? `Every ${interval}d` : "Custom";
+        default: return "Monthly";
+    }
+}
+
+function formatIncomeFrequency(freq, interval) {
+    if (!freq) return "Monthly";
+    switch ((freq || "").toUpperCase()) {
+        case "DAILY": return "Daily";
+        case "WEEKLY": return "Weekly";
+        case "MONTHLY": return "Monthly";
+        case "YEARLY": return "Yearly";
+        case "CUSTOM": return interval ? `Every ${interval}d` : "Custom";
+        default: return "Monthly";
+    }
+}
+
+let currentIncomeFilter = 'all'; // 'all', 'recurring', 'one-time'
+
+function applyIncomeFilters() {
+    const listEl = document.getElementById("incomeList");
+    if (!listEl) return;
+
+    if (!allIncomes || allIncomes.length === 0) {
+        listEl.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">💰</div>
+                <div class="empty-state-title">No income records logged yet</div>
+                <div class="empty-state-sub">Click <strong>Record Income</strong> above to track your salary, investments, client retainers, or other inflows.</div>
+            </div>`;
+        return;
+    }
+
+    let filtered = [...allIncomes];
+    const search = (elements.filterSearch?.value || document.getElementById("incomeSearchInput")?.value || "").toLowerCase().trim();
+
+    const startDate = document.getElementById("incomeFilterStartDate")?.value || "";
+    const endDate = document.getElementById("incomeFilterEndDate")?.value || "";
+    const frequency = document.getElementById("incomeFilterFrequency")?.value || "all";
+    const sort = document.getElementById("incomeFilterSort")?.value || "date-desc";
+
+    if (startDate && endDate && startDate > endDate) {
+        showToast("Income start date cannot be after end date.", "error");
+        const endInput = document.getElementById("incomeFilterEndDate");
+        if (endInput) endInput.value = "";
+        return;
+    }
+
+    // 1. Search filter
+    if (search) {
+        filtered = filtered.filter(inc =>
+            (inc.source && inc.source.toLowerCase().includes(search)) ||
+            (inc.description && inc.description.toLowerCase().includes(search))
+        );
+    }
+
+    // 2. Type quick pill filter
+    if (currentIncomeFilter === 'recurring') {
+        filtered = filtered.filter(inc => inc.isRecurring || inc.recurring);
+    } else if (currentIncomeFilter === 'one-time') {
+        filtered = filtered.filter(inc => !(inc.isRecurring || inc.recurring));
+    }
+
+    // 3. Frequency filter
+    if (frequency !== 'all') {
+        filtered = filtered.filter(inc => {
+            if (!(inc.isRecurring || inc.recurring)) return false;
+            const incFreq = (inc.frequency || "MONTHLY").toUpperCase();
+            return incFreq === frequency;
+        });
+    }
+
+    // 4. Date range filter
+    if (startDate) {
+        filtered = filtered.filter(inc => (inc.incomeDate || '').split('T')[0] >= startDate);
+    }
+    if (endDate) {
+        filtered = filtered.filter(inc => (inc.incomeDate || '').split('T')[0] <= endDate);
+    }
+
+    // 5. Sorting
+    filtered.sort((a, b) => {
+        if (sort === 'date-desc') {
+            const dDiff = new Date(b.incomeDate) - new Date(a.incomeDate);
+            if (dDiff !== 0) return dDiff;
+            return (b.id || 0) - (a.id || 0);
+        }
+        if (sort === 'date-asc') {
+            const dDiff = new Date(a.incomeDate) - new Date(b.incomeDate);
+            if (dDiff !== 0) return dDiff;
+            return (a.id || 0) - (b.id || 0);
+        }
+        if (sort === 'amount-desc') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
+        if (sort === 'amount-asc') return (Number(a.amount) || 0) - (Number(b.amount) || 0);
+        return 0;
+    });
+
+    renderIncomesTableOnly(filtered);
+}
+window.applyIncomeFilters = applyIncomeFilters;
+
+function getIncomeSourceEmoji(source) {
+    const s = (source || '').toLowerCase();
+    if (s.includes('salary') || s.includes('paycheck') || s.includes('wage') || s.includes('job') || s.includes('employer')) return '💼';
+    if (s.includes('freelance') || s.includes('contract') || s.includes('consult') || s.includes('client') || s.includes('gig')) return '💻';
+    if (s.includes('invest') || s.includes('stock') || s.includes('equity') || s.includes('mutual') || s.includes('crypto') || s.includes('trading')) return '📈';
+    if (s.includes('dividend') || s.includes('interest') || s.includes('yield') || s.includes('capital gain')) return '💰';
+    if (s.includes('rental') || s.includes('rent') || s.includes('real estate') || s.includes('property') || s.includes('tenant') || s.includes('airbnb')) return '🏢';
+    if (s.includes('business') || s.includes('sales') || s.includes('revenue') || s.includes('store') || s.includes('commerce') || s.includes('shop')) return '🏬';
+    if (s.includes('bonus') || s.includes('commission') || s.includes('incentive') || s.includes('prize') || s.includes('reward')) return '🏆';
+    if (s.includes('gift') || s.includes('grant') || s.includes('allowance') || s.includes('scholarship') || s.includes('donation')) return '🎁';
+    if (s.includes('refund') || s.includes('reimburse') || s.includes('cashback') || s.includes('tax refund')) return '💳';
+    if (s.includes('pension') || s.includes('retirement') || s.includes('social security') || s.includes('401k') || s.includes('ira')) return '🏦';
+    return '💵';
+}
+window.getIncomeSourceEmoji = getIncomeSourceEmoji;
+
+function renderIncomesTableOnly(incomes) {
+    const listEl = document.getElementById("incomeList");
+    if (!listEl) return;
+
+    if (!incomes || incomes.length === 0) {
+        const isFiltered = (allIncomes && allIncomes.length > 0);
+        if (isFiltered) {
+            listEl.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <div class="empty-state-title">No matching incomes found</div>
+                    <div class="empty-state-sub">Try adjusting your search query, cadence filter, or date range.</div>
+                    <button type="button" class="btn-icon btn-text-icon" onclick="resetIncomeFilters()" style="display:inline-flex; align-items:center; gap:6px; margin:12px auto 0; cursor:pointer;">
+                        <span>Clear Income Filters</span>
+                    </button>
+                </div>`;
+        } else {
+            listEl.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">💰</div>
+                    <div class="empty-state-title">No income records logged yet</div>
+                    <div class="empty-state-sub">Click <strong>Record Income</strong> above to track your salary, investments, client retainers, or other inflows.</div>
+                </div>`;
+        }
+        return;
+    }
+
+    listEl.innerHTML = `
+        <div class="income-table-container">
+            <table class="data-table income-table" style="width:100%; border-collapse:collapse; margin-top:4px;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border); text-align:left; color:var(--text-muted); font-size:12px;">
+                        <th style="padding:10px 12px; white-space:nowrap;">Date</th>
+                        <th style="padding:10px 12px; white-space:nowrap;">Source</th>
+                        <th style="padding:10px 12px;">Description</th>
+                        <th style="padding:10px 12px; white-space:nowrap;">Type</th>
+                        <th style="padding:10px 12px; text-align:right; white-space:nowrap;">Amount</th>
+                        <th style="padding:10px 12px; text-align:center; white-space:nowrap;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${incomes.map((inc, idx) => {
+                        const isRec = !!(inc.isRecurring || inc.recurring);
+                        const freqLabel = formatIncomeFrequency(inc.frequency, inc.intervalDays);
+                        return `
+                        <tr class="table-row-stagger" style="animation-delay: ${Math.min(idx * 35, 350)}ms; border-bottom:1px solid var(--border); font-size:13.5px;">
+                            <td style="padding:12px 14px; white-space:nowrap; color:var(--text-muted);">${inc.incomeDate || "—"}</td>
+                            <td style="padding:12px 14px; font-weight:600;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div class="income-emoji-box" title="${escapeHtml(inc.source || 'Income')}">
+                                        <span>${getIncomeSourceEmoji(inc.source)}</span>
+                                    </div>
+                                    <span style="font-weight:600; color:var(--text-main); font-size:13.5px;">${escapeHtml(inc.source || "Income")}</span>
+                                    ${incomeClassificationTags(inc)}
+                                </div>
+                            </td>
+                            <td class="income-desc-cell" style="padding:10px 12px; color:var(--text-muted); font-size:13px; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(inc.description || "")}">${escapeHtml(inc.description || "—")}</td>
+                            <td style="padding:12px 14px;">
+                                ${isRec 
+                                    ? `<span class="status-badge badge-success" style="font-size:11px; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:5px;"><span style="font-size:12px;">⟳</span> Recurring (${freqLabel})</span>` 
+                                    : '<span class="status-badge badge-neutral" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;"><span style="font-size:11px;">⚡</span> One-Time</span>'}
+                            </td>
+                            <td style="padding:12px 14px; text-align:right; font-weight:700; color:#10B981; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:14px;">
+                                +${formatCurrency(inc.amount)}
+                            </td>
+                            <td style="padding:12px 14px; text-align:center;">
+                                <button class="btn-icon edit-income-btn" data-inc-id="${inc.id}" data-inc-source="${escapeHtml(inc.source || "")}" data-inc-amount="${inc.amount || 0}" data-inc-date="${inc.incomeDate || ""}" data-inc-desc="${escapeHtml(inc.description || "")}" data-inc-recurring="${isRec}" data-inc-freq="${escapeHtml(inc.frequency || "MONTHLY")}" data-inc-interval="${inc.intervalDays || 1}" data-inc-kind="${escapeHtml(inc.kind || "")}" data-inc-month="${escapeHtml(inc.countsTowardMonth || "")}" data-inc-cat="${inc.reimbursedCategoryId || ""}" title="Edit Income" style="color:var(--text-muted); margin-right:4px;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </button>
+                                <button class="btn-icon delete-income-btn" data-income-id="${inc.id}" title="Delete Income" style="color:var(--text-muted);">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </td>
+                        </tr>
+                    `;}).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    listEl.querySelectorAll(".edit-income-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const modal = document.getElementById("incomeModal");
+            if (!modal) return;
+            document.getElementById("incomeId").value = btn.getAttribute("data-inc-id") || "";
+            document.getElementById("incomeSource").value = btn.getAttribute("data-inc-source") || "";
+            document.getElementById("incomeAmount").value = btn.getAttribute("data-inc-amount") || "";
+            document.getElementById("incomeDate").value = btn.getAttribute("data-inc-date") || new Date().toISOString().split("T")[0];
+            document.getElementById("incomeDesc").value = btn.getAttribute("data-inc-desc") || "";
+            setIncomeClassification(btn.getAttribute("data-inc-kind"), btn.getAttribute("data-inc-month"), btn.getAttribute("data-inc-cat"));
+
+            const isRec = btn.getAttribute("data-inc-recurring") === "true";
+            const incRecEl = document.getElementById("incomeIsRecurring");
+            if (incRecEl) incRecEl.checked = isRec;
+
+            const freq = btn.getAttribute("data-inc-freq") || "MONTHLY";
+            const interval = btn.getAttribute("data-inc-interval") || "1";
+            const incFreqEl = document.getElementById("incomeRecurringFrequency");
+            if (incFreqEl) incFreqEl.value = freq;
+            const incIntervalEl = document.getElementById("incomeRecurringIntervalDays");
+            if (incIntervalEl) incIntervalEl.value = interval;
+
+            const incRecOptions = document.getElementById("incomeRecurringOptions");
+            if (incRecOptions) {
+                incRecOptions.hidden = !isRec;
+                incRecOptions.style.display = isRec ? "flex" : "none";
+            }
+            const incCustomWrap = document.getElementById("incomeCustomIntervalWrap");
+            if (incCustomWrap) {
+                const isCustom = freq === "CUSTOM";
+                incCustomWrap.hidden = !(isRec && isCustom);
+                incCustomWrap.style.display = (isRec && isCustom) ? "flex" : "none";
+            }
+
+            const titleEl = document.getElementById("incomeModalTitle");
+            if (titleEl) titleEl.textContent = "Edit Income Stream";
+            openModal(modal);
+        });
+    });
+
+    listEl.querySelectorAll(".delete-income-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const incId = btn.getAttribute("data-income-id");
+            if (!(await window.appConfirm("Are you sure you want to delete this income stream?"))) return;
+            try {
+                setLoading(true, "Deleting income...");
+                await apiRequest(`/incomes/${incId}/user/${userId}`, { method: "DELETE" });
+                showToast("Income record deleted.", "success");
+                await loadDashboard(true);
+            } catch (err) {
+                showToast(err.message || "Failed to delete income", "error");
+            } finally {
+                setLoading(false);
+            }
+        });
+    });
+}
+
+function openEditSavingsGoal(goalId) {
+    const goal = (allSavingsGoals || []).find(g => String(g.id) === String(goalId));
+    if (!goal || !savingsGoalModal) return;
+    document.getElementById("goalId").value = goal.id;
+    document.getElementById("goalName").value = goal.name || "";
+    document.getElementById("goalTargetAmount").value = goal.targetAmount || "";
+    document.getElementById("goalCurrentAmount").value = goal.currentAmount || "0";
+    document.getElementById("goalTargetDate").value = goal.targetDate || "";
+    
+    const recCheck = document.getElementById("goalIsRecurring");
+    const recFields = document.getElementById("goalRecurringFields");
+    const isRec = !!goal.isRecurring;
+    if (recCheck) recCheck.checked = isRec;
+    if (recFields) {
+        recFields.style.display = isRec ? "block" : "none";
+        recFields.hidden = !isRec;
+    }
+    const recAmt = document.getElementById("goalRecurringAmount");
+    if (recAmt) recAmt.value = goal.recurringAmount || "";
+    const goalFreq = document.getElementById("goalFrequency");
+    if (goalFreq) {
+        goalFreq.value = goal.frequency || "MONTHLY";
+        if (window.syncCustomSelect) window.syncCustomSelect(goalFreq);
+    }
+    const customWrap = document.getElementById("goalCustomIntervalWrap");
+    if (customWrap) {
+        const isCustom = goal.frequency === "CUSTOM";
+        customWrap.style.display = isCustom ? "block" : "none";
+        customWrap.hidden = !isCustom;
+        const intervalInput = document.getElementById("goalRecurringIntervalDays");
+        if (intervalInput) intervalInput.value = goal.intervalDays || 30;
+    }
+    const title = document.getElementById("savingsGoalModalTitle");
+    if (title) title.textContent = "Edit Savings Goal";
+    openModal(savingsGoalModal);
+}
+window.openEditSavingsGoal = openEditSavingsGoal;
+
+function renderIncomes(incomes) {
+    allIncomes = Array.isArray(incomes) ? incomes : [];
+    applyIncomeFilters();
+    updateStreamBadges();
+}
+window.renderIncomes = renderIncomes;
+
+function renderSavingsSkeleton() {
+    const container = document.getElementById("savingsGoalsList");
+    if (!container) return;
+    container.innerHTML = Array.from({ length: 3 }, () =>
+        `<div class="skeleton skeleton-card"></div>`
+    ).join('');
+}
+window.renderSavingsSkeleton = renderSavingsSkeleton;
+
+function renderSavingsGoals(goals) {
+    allSavingsGoals = Array.isArray(goals) ? goals : [];
+    const container = document.getElementById("savingsGoalsList");
+    if (!container) return;
+    if (!allSavingsGoals || allSavingsGoals.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-compact" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--text-muted); border:1px dashed var(--border); border-radius:14px; background:rgba(255,255,255,0.02); width:100%; max-width:100%; box-sizing:border-box;">
+                <p style="font-size:14px; font-weight:600; margin:0 0 6px; color:var(--text-main);">No savings goals configured yet</p>
+                <span style="font-size:12.5px; display:block; margin-bottom:12px;">Set targets for emergency reserves, investments, or travel milestones.</span>
+                <button type="button" class="btn-primary btn-small" onclick="document.getElementById('addGoalBtn')?.click()" style="display:inline-flex; align-items:center; gap:6px; margin:0 auto; background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Create Savings Goal</span>
+                </button>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = goals.map((goal, idx) => {
+        const target = Number(goal.targetAmount || 0);
+        const current = Number(goal.currentAmount || 0);
+        const ratio = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+        const isCompleted = current >= target;
+
+        return `
+            <div class="card savings-goal-card hover-lift table-row-stagger" style="animation-delay: ${Math.min(idx * 45, 450)}ms; padding:18px; border:1px solid var(--border); border-radius:14px; background:var(--card-bg, rgba(255,255,255,0.03)); width:100%; max-width:100%; box-sizing:border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <div>
+                        <h4 style="margin:0; font-size:15px; font-weight:700;">${escapeHtml(goal.name || "Savings Goal")}</h4>
+                        <span style="font-size:11.5px; color:var(--text-muted);">Target: ${goal.targetDate || "Flexible"}</span>
+                        ${goal.isRecurring ? `
+                            <div style="margin-top:4px; font-size:11px; color:#F59E0B; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(245,158,11,0.25);">
+                                🔁 <strong>${formatCurrency(goal.recurringAmount)}</strong> / ${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
+                                ${goal.nextDueDate ? `• Next: ${formatDate(goal.nextDueDate)}` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${isCompleted 
+                        ? '<span class="status-badge badge-success badge-pulse-glow" style="font-size:11px;">Completed 🎯</span>'
+                        : `<span class="status-badge badge-warning" style="font-size:11px;">${ratio}% Achieved</span>`}
+                </div>
+                
+                <div style="margin: 12px 0 6px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:4px;">
+                        <span style="font-weight:700; color:#F59E0B;">${formatCurrency(current)}</span>
+                        <span style="color:var(--text-muted);">${formatCurrency(target)}</span>
+                    </div>
+                    <div style="height:8px; width:100%; background:var(--border); border-radius:4px; overflow:hidden;">
+                        <div class="goal-progress-fill" data-target-width="${ratio}%" style="height:100%; width:0%; background: linear-gradient(90deg, #F59E0B, #10B981); border-radius:4px;"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+                    <button class="btn-primary btn-small deposit-goal-btn" data-goal-id="${goal.id}" data-goal-name="${escapeHtml(goal.name)}" style="background:#F59E0B; border-color:#F59E0B; font-size:12px; padding:4px 12px; cursor:pointer;">
+                        + Deposit
+                    </button>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <button class="btn-icon btn-edit edit-goal-btn" data-goal-id="${goal.id}" title="Edit Goal" aria-label="Edit savings goal">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="btn-icon btn-delete delete-goal-btn" data-goal-id="${goal.id}" title="Delete Goal" aria-label="Delete savings goal">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    requestAnimationFrame(() => {
+        container.querySelectorAll(".goal-progress-fill").forEach(fill => {
+            const tw = fill.getAttribute("data-target-width");
+            if (tw) fill.style.width = tw;
+        });
+    });
+
+    container.querySelectorAll(".deposit-goal-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const goalId = btn.getAttribute("data-goal-id");
+            const goalName = btn.getAttribute("data-goal-name");
+            document.getElementById("depositGoalId").value = goalId;
+            const depositTitle = document.getElementById("savingsDepositTitle");
+            if (depositTitle) {
+                depositTitle.textContent = `Contribute to ${goalName}`;
+            }
+            document.getElementById("depositAmount").value = "";
+            openModal(document.getElementById("savingsDepositModal"));
+        });
+    });
+
+    container.querySelectorAll(".edit-goal-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const goalId = btn.getAttribute("data-goal-id");
+            openEditSavingsGoal(goalId);
+        });
+    });
+
+    container.querySelectorAll(".delete-goal-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const goalId = btn.getAttribute("data-goal-id");
+            if (!(await window.appConfirm("Are you sure you want to delete this savings goal?"))) return;
+            try {
+                setLoading(true, "Deleting savings goal...");
+                await apiRequest(`/savings/goals/${goalId}/user/${userId}`, { method: "DELETE" });
+                showToast("Savings goal deleted.", "success");
+                await loadDashboard(true);
+            } catch (err) {
+                showToast(err.message || "Failed to delete savings goal", "error");
+            } finally {
+                setLoading(false);
+            }
+        });
+    });
+}
+
+// Income Modal & Form
+const incomeModal = document.getElementById("incomeModal");
+const incomeForm = document.getElementById("incomeForm");
+const openIncomeModalBtn = document.getElementById("openIncomeModalBtn");
+const addIncomeTableBtn = document.getElementById("addIncomeTableBtn");
+const closeIncomeModalBtn = document.getElementById("closeIncomeModalBtn");
+
+function openNewIncomeModal() {
+    const modal = document.getElementById("incomeModal") || incomeModal;
+    if (!modal) return;
+    const form = document.getElementById("incomeForm") || incomeForm;
+    if (form) form.reset();
+    const idEl = document.getElementById("incomeId");
+    if (idEl) idEl.value = "";
+    const srcEl = document.getElementById("incomeSource");
+    if (srcEl) srcEl.value = "";
+    const amtEl = document.getElementById("incomeAmount");
+    if (amtEl) amtEl.value = "";
+    const dateEl = document.getElementById("incomeDate");
+    if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
+    const descEl = document.getElementById("incomeDesc");
+    if (descEl) descEl.value = "";
+    setIncomeClassification("", "", "");
+    const recEl = document.getElementById("incomeIsRecurring");
+    if (recEl) recEl.checked = false;
+    const incFreqEl = document.getElementById("incomeRecurringFrequency");
+    if (incFreqEl) incFreqEl.value = "MONTHLY";
+    const incIntervalEl = document.getElementById("incomeRecurringIntervalDays");
+    if (incIntervalEl) incIntervalEl.value = "1";
+    updateIncomeRecurrenceUI();
+    const titleEl = document.getElementById("incomeModalTitle");
+    if (titleEl) titleEl.textContent = "Record Income";
+    openModal(modal);
+}
+window.openNewIncomeModal = openNewIncomeModal;
+
+openIncomeModalBtn?.addEventListener("click", openNewIncomeModal);
+addIncomeTableBtn?.addEventListener("click", openNewIncomeModal);
+closeIncomeModalBtn?.addEventListener("click", () => closeModal(incomeModal));
+incomeModal?.addEventListener("click", (e) => {
+    if (e.target === incomeModal) closeModal(incomeModal);
+});
+
+// Income recurrence visibility toggles
+const incomeIsRecurringEl = document.getElementById("incomeIsRecurring");
+const incomeRecurringOptionsEl = document.getElementById("incomeRecurringOptions");
+const incomeRecurringFrequencyEl = document.getElementById("incomeRecurringFrequency");
+const incomeCustomIntervalWrapEl = document.getElementById("incomeCustomIntervalWrap");
+
+function syncIncomeRecurringIntervalVisibility() {
+    if (!incomeCustomIntervalWrapEl) return;
+    const isChecked = incomeIsRecurringEl ? incomeIsRecurringEl.checked : false;
+    const isCustom = incomeRecurringFrequencyEl ? (incomeRecurringFrequencyEl.value === "CUSTOM") : false;
+    const shouldShow = isChecked && isCustom;
+    incomeCustomIntervalWrapEl.hidden = !shouldShow;
+    incomeCustomIntervalWrapEl.style.display = shouldShow ? "flex" : "none";
+}
+
+function updateIncomeRecurrenceUI() {
+    const isChecked = incomeIsRecurringEl ? incomeIsRecurringEl.checked : false;
+    if (incomeRecurringOptionsEl) {
+        incomeRecurringOptionsEl.hidden = !isChecked;
+        incomeRecurringOptionsEl.style.display = isChecked ? "flex" : "none";
+    }
+    syncIncomeRecurringIntervalVisibility();
+}
+
+// ---- Income classification: type, which month it counts toward, and what a reimbursement pays back
+function refreshIncomeMonthOptions(selected) {
+    const select = document.getElementById("incomeCountsToward");
+    if (!select) return;
+    const MoneyFlow = window.MoneyFlow;
+    const base = MoneyFlow.monthKey(document.getElementById("incomeDate")?.value) || MoneyFlow.monthKey(new Date());
+    const keep = selected !== undefined ? selected : select.value;
+    const options = [
+        ["", `Same month it is received (${MoneyFlow.monthLabel(base)})`],
+        [MoneyFlow.shiftMonth(base, 1), `Next month (${MoneyFlow.monthLabel(MoneyFlow.shiftMonth(base, 1))})`],
+        [MoneyFlow.shiftMonth(base, -1), `Previous month (${MoneyFlow.monthLabel(MoneyFlow.shiftMonth(base, -1))})`]
+    ];
+    if (keep && !options.some(([value]) => value === keep)) options.push([keep, MoneyFlow.monthLabel(keep)]);
+    select.innerHTML = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+    select.value = options.some(([value]) => value === keep) ? keep : "";
+    if (window.syncCustomSelect) window.syncCustomSelect(select);
+}
+
+function populateReimbursedCategories(selectedId) {
+    const select = document.getElementById("incomeReimbursedCategory");
+    if (!select) return;
+    const options = (allCategories || [])
+        .map(c => `<option value="${c.id}">${escapeHtml(c.name || "")}</option>`)
+        .join("");
+    select.innerHTML = `<option value="">The month as a whole</option>${options}`;
+    select.value = selectedId ? String(selectedId) : "";
+    if (window.syncCustomSelect) window.syncCustomSelect(select);
+}
+
+function syncIncomeKindUI() {
+    const isReimbursement = document.getElementById("incomeKind")?.value === "REIMBURSEMENT";
+    const categoryGroup = document.getElementById("incomeReimbursedGroup");
+    if (categoryGroup) categoryGroup.hidden = !isReimbursement;
+    // Money coming back is a one-off, never a recurring stream.
+    const recurringWrap = incomeIsRecurringEl?.closest("label")?.parentElement;
+    if (recurringWrap) recurringWrap.hidden = isReimbursement;
+    if (isReimbursement && incomeIsRecurringEl?.checked) {
+        incomeIsRecurringEl.checked = false;
+        updateIncomeRecurrenceUI();
+    }
+}
+
+/** Fill the three classification fields. The API reports the month a record counts toward even when it
+ *  is simply the month of its date, so that case is shown as "same month". */
+function setIncomeClassification(kind, countsTowardMonth, reimbursedCategoryId) {
+    const kindEl = document.getElementById("incomeKind");
+    if (kindEl) {
+        kindEl.value = kind || "";
+        if (window.syncCustomSelect) window.syncCustomSelect(kindEl);
+    }
+    const dateMonth = window.MoneyFlow.monthKey(document.getElementById("incomeDate")?.value);
+    refreshIncomeMonthOptions(countsTowardMonth && countsTowardMonth !== dateMonth ? countsTowardMonth : "");
+    populateReimbursedCategories(reimbursedCategoryId);
+    syncIncomeKindUI();
+}
+
+/** Small tags on an income row: "Money back" and, when it was assigned elsewhere, the month it counts toward. */
+function incomeClassificationTags(inc) {
+    const MoneyFlow = window.MoneyFlow;
+    const tags = [];
+    if (MoneyFlow.kindOf(inc) === "REIMBURSEMENT") tags.push('<span class="income-tag income-tag--back">Money back</span>');
+    const counted = MoneyFlow.effectiveMonth(inc);
+    if (counted && counted !== MoneyFlow.monthKey(inc.incomeDate)) {
+        tags.push(`<span class="income-tag income-tag--moved">Counts toward ${MoneyFlow.monthLabel(counted)}</span>`);
+    }
+    return tags.length ? `<span class="income-tags">${tags.join("")}</span>` : "";
+}
+
+document.getElementById("incomeKind")?.addEventListener("change", syncIncomeKindUI);
+document.getElementById("incomeDate")?.addEventListener("change", () => refreshIncomeMonthOptions());
+
+incomeIsRecurringEl?.addEventListener("change", updateIncomeRecurrenceUI);
+incomeRecurringFrequencyEl?.addEventListener("change", syncIncomeRecurringIntervalVisibility);
+
+// Income filters UI listeners
+const toggleIncomeFiltersBtn = document.getElementById("toggleIncomeFiltersBtn");
+const incomeFilterPanel = document.getElementById("incomeFilterPanel");
+toggleIncomeFiltersBtn?.addEventListener("click", () => {
+    if (!incomeFilterPanel) return;
+    const isOpen = incomeFilterPanel.classList.toggle("active");
+    toggleIncomeFiltersBtn.style.color = isOpen ? "#10B981" : "";
+    toggleIncomeFiltersBtn.style.borderColor = isOpen ? "rgba(16, 185, 129, 0.4)" : "";
+});
+
+const incomePillsBar = document.getElementById("incomePillsBar");
+incomePillsBar?.querySelectorAll(".pill-chip").forEach(pill => {
+    pill.addEventListener("click", () => {
+        incomePillsBar.querySelectorAll(".pill-chip").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentIncomeFilter = pill.getAttribute("data-income-filter") || "all";
+        applyIncomeFilters();
+    });
+});
+
+document.getElementById("incomeSearchInput")?.addEventListener("input", debounce(applyIncomeFilters, 250));
+document.getElementById("incomeFilterStartDate")?.addEventListener("change", applyIncomeFilters);
+document.getElementById("incomeFilterEndDate")?.addEventListener("change", applyIncomeFilters);
+document.getElementById("incomeFilterFrequency")?.addEventListener("change", applyIncomeFilters);
+document.getElementById("incomeFilterSort")?.addEventListener("change", applyIncomeFilters);
+
+function resetIncomeFilters() {
+    const searchInput = document.getElementById("incomeSearchInput");
+    if (searchInput) searchInput.value = "";
+    const startDate = document.getElementById("incomeFilterStartDate");
+    if (startDate) startDate.value = "";
+    const endDate = document.getElementById("incomeFilterEndDate");
+    if (endDate) endDate.value = "";
+    const freq = document.getElementById("incomeFilterFrequency");
+    if (freq) {
+        freq.value = "all";
+        if (window.syncCustomSelect) window.syncCustomSelect(freq);
+    }
+    const sort = document.getElementById("incomeFilterSort");
+    if (sort) {
+        sort.value = "date-desc";
+        if (window.syncCustomSelect) window.syncCustomSelect(sort);
+    }
+
+    incomePillsBar?.querySelectorAll(".pill-chip").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-income-filter") === "all");
+    });
+    currentIncomeFilter = "all";
+    applyIncomeFilters();
+}
+window.resetIncomeFilters = resetIncomeFilters;
+document.getElementById("resetIncomeFiltersBtn")?.addEventListener("click", resetIncomeFilters);
+
+incomeForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    // FIXED: previously these getElementById calls had no null guards. If any form field
+    // was missing (e.g. a future refactor removes one), the handler would throw and the
+    // form would silently fail to submit. Now we cache the element references once and
+    // null-guard each one. We also validate amount is a positive number before sending.
+    const idEl = document.getElementById("incomeId");
+    const isRecurringEl = document.getElementById("incomeIsRecurring");
+    const sourceEl = document.getElementById("incomeSource");
+    const amountEl = document.getElementById("incomeAmount");
+    const dateEl = document.getElementById("incomeDate");
+    const descEl = document.getElementById("incomeDesc");
+    if (!sourceEl || !amountEl || !dateEl) {
+        showToast("Income form is missing required fields. Please reload the page.", "error");
+        return;
+    }
+    const id = idEl?.value || "";
+    const isRecurring = isRecurringEl?.checked || false;
+    const frequency = isRecurring ? (document.getElementById("incomeRecurringFrequency")?.value || "MONTHLY") : null;
+    const intervalDays = (isRecurring && frequency === "CUSTOM")
+        ? (parseInt(document.getElementById("incomeRecurringIntervalDays")?.value, 10) || 1)
+        : null;
+
+    const amountVal = parseFloat(amountEl.value);
+    if (!Number.isFinite(amountVal) || amountVal <= 0) {
+        showToast("Please enter a valid positive amount.", "error");
+        amountEl.classList.add("is-invalid");
+        return;
+    }
+    const dateVal = dateEl.value;
+    if (!dateVal) {
+        showToast("Please pick an income date.", "error");
+        dateEl.classList.add("is-invalid");
+        return;
+    }
+    const sourceVal = sourceEl.value.trim();
+    if (!sourceVal) {
+        showToast("Please enter an income source.", "error");
+        sourceEl.classList.add("is-invalid");
+        return;
+    }
+
+    const payload = {
+        source: sourceVal,
+        amount: amountVal,
+        incomeDate: dateVal,
+        description: (descEl?.value || "").trim(),
+        isRecurring: isRecurring,
+        frequency: frequency,
+        intervalDays: intervalDays,
+        kind: document.getElementById("incomeKind")?.value || "",
+        countsTowardMonth: document.getElementById("incomeCountsToward")?.value || "",
+        reimbursedCategoryId: document.getElementById("incomeKind")?.value === "REIMBURSEMENT"
+            ? (Number(document.getElementById("incomeReimbursedCategory")?.value) || 0)
+            : 0
+    };
+
+    try {
+        setLoading(true, id ? "Updating income..." : "Recording income...");
+        if (id) {
+            await apiRequest(`/incomes/${id}/user/${userId}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            showToast("Income updated successfully.", "success");
+        } else {
+            await apiRequest(`/incomes/user/${userId}`, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            celebrateSuccess(e.clientX, e.clientY);
+            showToast("Income recorded successfully!", "success");
+            // Confirm every NEW credit with its amount (edits do not notify).
+            window.DashboardNotifications?.notifyTransactionRecorded({
+                kind: "CREDIT",
+                amount: payload.amount,
+                label: payload.source,
+                detail: payload.description
+            });
+        }
+        closeModal(incomeModal);
+        await loadDashboard(true);
+    } catch (err) {
+        showToast(err.message || "Failed to save income", "error");
+    } finally {
+        setLoading(false);
+    }
+});
+
+// Savings Goal Modal & Form
+const savingsGoalModal = document.getElementById("savingsGoalModal");
+const savingsGoalForm = document.getElementById("savingsGoalForm");
+const addGoalBtn = document.getElementById("addGoalBtn");
+const closeSavingsGoalModalBtn = document.getElementById("closeSavingsGoalModalBtn");
+
+addGoalBtn?.addEventListener("click", () => {
+    if (!savingsGoalModal) return;
+    document.getElementById("goalId").value = "";
+    document.getElementById("goalName").value = "";
+    document.getElementById("goalTargetAmount").value = "";
+    document.getElementById("goalCurrentAmount").value = "0";
+    const targetD = new Date();
+    targetD.setMonth(targetD.getMonth() + 6);
+    document.getElementById("goalTargetDate").value = targetD.toISOString().split("T")[0];
+    const recCheck = document.getElementById("goalIsRecurring");
+    if (recCheck) recCheck.checked = false;
+    const recFields = document.getElementById("goalRecurringFields");
+    if (recFields) {
+        recFields.style.display = "none";
+        recFields.hidden = true;
+    }
+    const recAmt = document.getElementById("goalRecurringAmount");
+    if (recAmt) recAmt.value = "";
+    const goalFreq = document.getElementById("goalFrequency");
+    if (goalFreq) {
+        goalFreq.value = "MONTHLY";
+        if (window.syncCustomSelect) window.syncCustomSelect(goalFreq);
+    }
+    const customWrap = document.getElementById("goalCustomIntervalWrap");
+    if (customWrap) {
+        customWrap.style.display = "none";
+        customWrap.hidden = true;
+    }
+    const intervalInput = document.getElementById("goalRecurringIntervalDays");
+    if (intervalInput) intervalInput.value = "30";
+    document.getElementById("savingsGoalModalTitle").textContent = "New Savings Goal";
+    openModal(savingsGoalModal);
+});
+
+document.getElementById("goalIsRecurring")?.addEventListener("change", (e) => {
+    const fields = document.getElementById("goalRecurringFields");
+    if (fields) {
+        fields.style.display = e.target.checked ? "block" : "none";
+        fields.hidden = !e.target.checked;
+        if (e.target.checked) {
+            const targetVal = parseFloat(document.getElementById("goalTargetAmount")?.value || 0);
+            const recAmt = document.getElementById("goalRecurringAmount");
+            if (recAmt && !recAmt.value && targetVal > 0) {
+                recAmt.value = Math.round(targetVal / 12);
+            }
+            const freqVal = document.getElementById("goalFrequency")?.value;
+            const customWrap = document.getElementById("goalCustomIntervalWrap");
+            if (customWrap) {
+                const isCustom = freqVal === "CUSTOM";
+                customWrap.style.display = isCustom ? "block" : "none";
+                customWrap.hidden = !isCustom;
+            }
+        }
+    }
+});
+
+document.getElementById("goalFrequency")?.addEventListener("change", (e) => {
+    const wrap = document.getElementById("goalCustomIntervalWrap");
+    if (wrap) {
+        const isCustom = e.target.value === "CUSTOM";
+        wrap.style.display = isCustom ? "block" : "none";
+        wrap.hidden = !isCustom;
+    }
+});
+
+closeSavingsGoalModalBtn?.addEventListener("click", () => closeModal(savingsGoalModal));
+
+savingsGoalForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("goalId").value;
+    const isRec = document.getElementById("goalIsRecurring")?.checked || false;
+    const recAmount = isRec ? parseFloat(document.getElementById("goalRecurringAmount")?.value || 0) : null;
+    const recFreq = isRec ? (document.getElementById("goalFrequency")?.value || "MONTHLY") : null;
+    const intervalDays = (isRec && recFreq === "CUSTOM")
+        ? (parseInt(document.getElementById("goalRecurringIntervalDays")?.value, 10) || 30)
+        : null;
+
+    const payload = {
+        name: document.getElementById("goalName").value.trim(),
+        targetAmount: parseFloat(document.getElementById("goalTargetAmount").value),
+        currentAmount: parseFloat(document.getElementById("goalCurrentAmount").value || 0),
+        targetDate: document.getElementById("goalTargetDate").value,
+        isRecurring: isRec,
+        recurringAmount: recAmount,
+        frequency: recFreq,
+        intervalDays: intervalDays,
+        nextDueDate: isRec ? new Date().toISOString().split("T")[0] : null
+    };
+
+    try {
+        setLoading(true, id ? "Updating goal..." : "Creating savings goal...");
+        if (id) {
+            await apiRequest(`/savings/goals/${id}/user/${userId}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            showToast("Savings goal updated.", "success");
+        } else {
+            await apiRequest(`/savings/goals/user/${userId}`, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            celebrateSuccess(e.clientX, e.clientY);
+            showToast("Savings goal created!", "success");
+        }
+        closeModal(savingsGoalModal);
+        await loadDashboard(true);
+    } catch (err) {
+        showToast(err.message || "Failed to save savings goal", "error");
+    } finally {
+        setLoading(false);
+    }
+});
+
+// Savings Deposit Modal & Form
+const savingsDepositModal = document.getElementById("savingsDepositModal");
+const savingsDepositForm = document.getElementById("savingsDepositForm");
+const closeDepositModalBtn = document.getElementById("closeSavingsDepositModalBtn") || document.getElementById("closeDepositModalBtn");
+
+closeDepositModalBtn?.addEventListener("click", () => closeModal(savingsDepositModal));
+savingsDepositModal?.addEventListener("click", (e) => {
+    if (e.target === savingsDepositModal) closeModal(savingsDepositModal);
+});
+savingsGoalModal?.addEventListener("click", (e) => {
+    if (e.target === savingsGoalModal) closeModal(savingsGoalModal);
+});
+
+savingsDepositForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const goalId = document.getElementById("depositGoalId").value;
+    const amount = parseFloat(document.getElementById("depositAmount").value);
+
+    try {
+        setLoading(true, "Recording contribution...");
+        await apiRequest(`/savings/goals/${goalId}/deposit/user/${userId}`, {
+            method: "POST",
+            body: JSON.stringify({ amount })
+        });
+        celebrateSuccess(e.clientX, e.clientY);
+        showToast("Deposit contributed successfully! 🎯", "success");
+        closeModal(savingsDepositModal);
+        await loadDashboard(true);
+    } catch (err) {
+        showToast(err.message || "Deposit failed", "error");
+    } finally {
+        setLoading(false);
+    }
+});
+
+// Initialize luxury custom calendar picker and custom select controls
+function bindDatePickerAutoPopups() {
+    if (window.initCustomCalendarDatePicker) {
+        window.initCustomCalendarDatePicker();
+    }
+    if (window.initAllCustomSelects) {
+        window.initAllCustomSelects();
+    }
+}
+document.addEventListener("DOMContentLoaded", bindDatePickerAutoPopups);
+bindDatePickerAutoPopups();
+
+// --- EXECUTIVE STATEMENT & INCOMES EXPORT / IMPORT CONTROLS ---
+document.getElementById("exportReportPdfBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/reports/user/${userId}/export/pdf`, "executive_financial_statement.pdf", "Generating Complete Executive Financial Statement PDF...");
+});
+
+document.getElementById("exportIncomeExcelBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(
+        `${API_BASE_URL}/incomes/user/${userId}/export/excel`,
+        "incomes.xlsx",
+        "Generating Incomes Excel Workbook...",
+        () => exportIncomesClientSideExcel()
+    );
+});
+
+document.getElementById("exportIncomeCsvBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/csv`, "incomes.csv", "Exporting Incomes CSV...");
+});
+
+document.getElementById("exportIncomeJsonBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/json`, "incomes.json", "Exporting Incomes JSON...");
+});
+
+document.getElementById("exportIncomePdfBtn")?.addEventListener("click", () => {
+    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/pdf`, "incomes_report.pdf", "Generating Incomes PDF Report...");
+});
+
+const importIncomeBtn = document.getElementById("importIncomeBtn");
+const importIncomeFileInput = document.getElementById("importIncomeFileInput");
+
+importIncomeBtn?.addEventListener("click", () => importIncomeFileInput?.click());
+
+importIncomeFileInput?.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const fname = file.name.toLowerCase();
+    let endpoint = `/incomes/user/${userId}/import/csv`;
+    if (fname.endsWith(".xlsx") || fname.endsWith(".xls")) {
+        endpoint = `/incomes/user/${userId}/import/excel`;
+    }
+
+    try {
+        TransferDock.show({
+            filename: fname,
+            mode: "import",
+            status: "Uploading income spreadsheet..."
+        });
+        const data = await uploadFileWithProgress(`${API_BASE_URL}${endpoint}`, formData, (pct, loaded, total) => {
+            const loadedKb = Math.round(loaded / 1024);
+            const totalKb = Math.round(total / 1024);
+            TransferDock.updateProgress(
+                pct,
+                `Uploading ${fname}`,
+                `${pct}% · ${loadedKb} / ${totalKb} KB`
+            );
+        });
+        TransferDock.updateProgress(98, "Parsing and committing income records...", "Database sync");
+        TransferDock.complete(`Imported ${data.imported || 0} incomes`);
+        showToast(data.message || "Incomes imported successfully!", "success");
+        if (typeof window.clearApiCache === "function") window.clearApiCache();
+        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+        await loadDashboard(true);
+    } catch (err) {
+        TransferDock.fail(err.message || "Import failed");
+        showToast(err.message, "error");
+    } finally {
+        importIncomeFileInput.value = "";
+    }
+});
+
+// --- MONTHLY FINANCIAL STATEMENT & PERIOD SELECTION SYSTEM ---
+const ALL_REPORT_MONTHS = [
+    { num: 1, name: "Jan", full: "January" },
+    { num: 2, name: "Feb", full: "February" },
+    { num: 3, name: "Mar", full: "March" },
+    { num: 4, name: "Apr", full: "April" },
+    { num: 5, name: "May", full: "May" },
+    { num: 6, name: "Jun", full: "June" },
+    { num: 7, name: "Jul", full: "July" },
+    { num: 8, name: "Aug", full: "August" },
+    { num: 9, name: "Sep", full: "September" },
+    { num: 10, name: "Oct", full: "October" },
+    { num: 11, name: "Nov", full: "November" },
+    { num: 12, name: "Dec", full: "December" },
+];
+
+const reportDateNow = new Date();
+const currentSystemYear = reportDateNow.getFullYear();
+const currentSystemMonth = reportDateNow.getMonth() + 1; // 1-indexed
+
+let periodStartYear = currentSystemYear;
+let periodStartMonth = currentSystemMonth;
+let periodAvailableYears = [currentSystemYear];
+
+let selectedReportYear = currentSystemYear;
+let selectedReportMonth = currentSystemMonth;
+let viewedReportYear = currentSystemYear;
+let viewedReportMonth = currentSystemMonth;
+let cachedReportHtml = "";
+
+const monthlyReportPeriodModal = document.getElementById("monthlyReportPeriodModal");
+const closePeriodModalBtn = document.getElementById("closePeriodModalBtn");
+const reportYearChips = document.getElementById("reportYearChips");
+const reportMonthGrid = document.getElementById("reportMonthGrid");
+const reportPeriodBanner = document.getElementById("reportPeriodBanner");
+const reportSelectedPeriodText = document.getElementById("reportSelectedPeriodText");
+const reportInceptionVal = document.getElementById("reportInceptionVal");
+
+const periodViewReportBtn = document.getElementById("periodViewReportBtn");
+const periodDownloadReportBtn = document.getElementById("periodDownloadReportBtn");
+const periodEmailReportBtn = document.getElementById("periodEmailReportBtn");
+
+const monthlyReportModal = document.getElementById("monthlyReportModal");
+const viewMonthlyReportBtn = document.getElementById("viewMonthlyReportBtn");
+const closeMonthlyReportModalBtn = document.getElementById("closeMonthlyReportModalBtn");
+const changeReportPeriodBtn = document.getElementById("changeReportPeriodBtn");
+const changeReportPeriodBtnLabel = document.getElementById("changeReportPeriodBtnLabel");
+const monthlyReportMeta = document.getElementById("monthlyReportMeta");
+const printReportBtn = document.getElementById("printReportBtn");
+const downloadHtmlReportBtn = document.getElementById("downloadHtmlReportBtn");
+const emailReportBtn = document.getElementById("emailReportBtn");
+const monthlyReportFrame = document.getElementById("monthlyReportFrame");
+
+function determineAccountInception() {
+    const dates = [];
+    if (Array.isArray(allExpenses)) {
+        allExpenses.forEach(e => {
+            const d = e.expenseDate || e.date;
+            if (d) dates.push(d);
+        });
+    }
+    if (Array.isArray(allIncomes)) {
+        allIncomes.forEach(i => {
+            const d = i.incomeDate || i.date;
+            if (d) dates.push(d);
+        });
+    }
+    dates.sort();
+    if (dates.length > 0) {
+        const earliest = new Date(dates[0]);
+        const eYear = earliest.getFullYear();
+        const eMonth = earliest.getMonth() + 1;
+        if (!isNaN(eYear) && eYear >= 2020 && eYear <= currentSystemYear) {
+            periodStartYear = eYear;
+            periodStartMonth = eMonth;
+            const years = [];
+            for (let y = eYear; y <= currentSystemYear; y++) {
+                years.push(y);
+            }
+            periodAvailableYears = years.reverse();
+            return;
+        }
+    }
+    periodStartYear = currentSystemYear;
+    periodStartMonth = 1;
+    periodAvailableYears = [currentSystemYear];
+}
+
+function isPeriodMonthValid(monthNum, year) {
+    if (year === currentSystemYear && monthNum > currentSystemMonth) {
+        return false; // Future month
+    }
+    if (year === periodStartYear && monthNum < periodStartMonth) {
+        return false; // Prior to inception
+    }
+    return true;
+}
+
+function renderPeriodPickerUI() {
+    if (!reportYearChips || !reportMonthGrid) return;
+
+    // Render Year Chips
+    reportYearChips.replaceChildren();
+    periodAvailableYears.forEach(y => {
+        const isSelected = y === selectedReportYear;
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `period-chip ${isSelected ? "active" : ""}`;
+        chip.textContent = y;
+        chip.addEventListener("click", () => {
+            selectedReportYear = y;
+            // Adjust selected month if invalid in new year
+            if (selectedReportYear === currentSystemYear && selectedReportMonth > currentSystemMonth) {
+                selectedReportMonth = currentSystemMonth;
+            } else if (selectedReportYear === periodStartYear && selectedReportMonth < periodStartMonth) {
+                selectedReportMonth = periodStartMonth;
+            }
+            renderPeriodPickerUI();
+        });
+        reportYearChips.appendChild(chip);
+    });
+
+    // Render Month Grid
+    reportMonthGrid.replaceChildren();
+    ALL_REPORT_MONTHS.forEach(m => {
+        const isValid = isPeriodMonthValid(m.num, selectedReportYear);
+        const isSelected = m.num === selectedReportMonth;
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `period-month-chip ${isSelected ? "active" : ""} ${!isValid ? "disabled" : ""}`;
+        chip.textContent = m.name;
+        chip.title = m.full;
+        if (!isValid) {
+            chip.disabled = true;
+        } else {
+            chip.addEventListener("click", () => {
+                selectedReportMonth = m.num;
+                renderPeriodPickerUI();
+            });
+        }
+        reportMonthGrid.appendChild(chip);
+    });
+
+    // Update Banner & Inception text
+    const selectedMonthObj = ALL_REPORT_MONTHS.find(m => m.num === selectedReportMonth);
+    const startMonthObj = ALL_REPORT_MONTHS.find(m => m.num === periodStartMonth);
+    if (reportSelectedPeriodText && selectedMonthObj) {
+        reportSelectedPeriodText.textContent = `${selectedMonthObj.full} ${selectedReportYear}`;
+    }
+    if (reportInceptionVal && startMonthObj) {
+        reportInceptionVal.textContent = `${startMonthObj.full} ${periodStartYear}`;
+    }
+}
+
+let currentPeriodModalMode = "view"; // "view" | "export"
+
+function setPeriodModalMode(mode) {
+    currentPeriodModalMode = mode;
+    const modalIcon = document.getElementById("periodModalIcon");
+    const modalTitle = document.getElementById("periodModalTitle");
+    const modalSubtitle = document.getElementById("periodModalSubtitle");
+    const viewActions = document.getElementById("periodViewModeActions");
+    const exportActions = document.getElementById("periodExportModeActions");
+
+    if (mode === "export") {
+        if (modalIcon) modalIcon.textContent = "📥";
+        if (modalTitle) modalTitle.textContent = "Export Monthly Summary";
+        if (modalSubtitle) modalSubtitle.textContent = "Select statement period & format to download your financial records.";
+        if (viewActions) viewActions.style.display = "none";
+        if (exportActions) exportActions.style.display = "block";
+    } else {
+        if (modalIcon) modalIcon.textContent = "📊";
+        if (modalTitle) modalTitle.textContent = "View Monthly Report";
+        if (modalSubtitle) modalSubtitle.textContent = "Account inception:";
+        if (viewActions) viewActions.style.display = "block";
+        if (exportActions) exportActions.style.display = "none";
+    }
+}
+
+function openMonthlyReportPeriodModal(initialAction = "view") {
+    if (!monthlyReportPeriodModal) return;
+    determineAccountInception();
+    // Default to current year and month if selected is invalid
+    if (!isPeriodMonthValid(selectedReportMonth, selectedReportYear)) {
+        selectedReportYear = currentSystemYear;
+        selectedReportMonth = currentSystemMonth;
+    }
+    renderPeriodPickerUI();
+    setPeriodModalMode(initialAction === "export" ? "export" : "view");
+    openModal(monthlyReportPeriodModal);
+
+    if (initialAction === "export") {
+        setTimeout(() => periodDownloadReportBtn?.focus(), 50);
+    } else {
+        setTimeout(() => periodViewReportBtn?.focus(), 50);
+    }
+}
+
+document.getElementById("periodSwitchToExportBtn")?.addEventListener("click", () => {
+    setPeriodModalMode("export");
+});
+
+document.getElementById("periodSwitchToViewBtn")?.addEventListener("click", () => {
+    setPeriodModalMode("view");
+});
+
+closePeriodModalBtn?.addEventListener("click", () => {
+    closeModal(monthlyReportPeriodModal);
+});
+
+function applyLuxuryScrollbarToReportFrame(frame) {
+    if (!frame) return;
+    try {
+        const doc = frame.contentDocument || frame.contentWindow?.document;
+        if (!doc || !doc.head) return;
+        let styleEl = doc.getElementById("custom-report-preview-scrollbars");
+        if (!styleEl) {
+            styleEl = doc.createElement("style");
+            styleEl.id = "custom-report-preview-scrollbars";
+            doc.head.appendChild(styleEl);
+        }
+        styleEl.textContent = `
+            html, body {
+                scrollbar-width: thin !important;
+                scrollbar-color: rgba(199, 154, 62, 0.5) rgba(11, 13, 9, 0.9) !important;
+            }
+            html::-webkit-scrollbar,
+            body::-webkit-scrollbar,
+            ::-webkit-scrollbar {
+                width: 7px !important;
+                height: 7px !important;
+            }
+            html::-webkit-scrollbar-track,
+            body::-webkit-scrollbar-track,
+            ::-webkit-scrollbar-track {
+                background: #0b0d09 !important;
+                border-radius: 999px !important;
+            }
+            html::-webkit-scrollbar-thumb,
+            body::-webkit-scrollbar-thumb,
+            ::-webkit-scrollbar-thumb {
+                background: rgba(199, 154, 62, 0.5) !important;
+                border-radius: 999px !important;
+                border: 1px solid transparent !important;
+                background-clip: padding-box !important;
+            }
+            html::-webkit-scrollbar-thumb:hover,
+            body::-webkit-scrollbar-thumb:hover,
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(199, 154, 62, 0.85) !important;
+            }
+            * {
+                scrollbar-width: thin !important;
+                scrollbar-color: rgba(199, 154, 62, 0.5) rgba(11, 13, 9, 0.9) !important;
+            }
+        `;
+    } catch (e) {
+        // Cross-origin safety
+    }
+}
+
+async function openMonthlyReportPreview(year = selectedReportYear, month = selectedReportMonth) {
+    if (!monthlyReportModal) return;
+    try {
+        viewedReportYear = year;
+        viewedReportMonth = month;
+        const monthObj = ALL_REPORT_MONTHS.find(m => m.num === viewedReportMonth) || { name: `M${month}`, full: `Month ${month}` };
+
+        setLoading(true, `Compiling financial report for ${monthObj.full} ${viewedReportYear}...`);
+        const res = await fetch(`${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${viewedReportYear}&month=${viewedReportMonth}`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token") || token}` }
+        });
+        if (!res.ok) throw new Error(`Failed to load monthly report (${res.status})`);
+        cachedReportHtml = await res.text();
+        if (monthlyReportFrame) {
+            monthlyReportFrame.onload = () => applyLuxuryScrollbarToReportFrame(monthlyReportFrame);
+            monthlyReportFrame.srcdoc = cachedReportHtml;
+            setTimeout(() => applyLuxuryScrollbarToReportFrame(monthlyReportFrame), 50);
+            setTimeout(() => applyLuxuryScrollbarToReportFrame(monthlyReportFrame), 250);
+        }
+        if (monthlyReportMeta) {
+            monthlyReportMeta.innerHTML = `<span class="meta-label">Executive Statement</span> <span class="meta-dot">•</span> <strong class="meta-period">${monthObj.full} ${viewedReportYear}</strong>`;
+        }
+        if (changeReportPeriodBtnLabel) {
+            changeReportPeriodBtnLabel.textContent = `${monthObj.name} ${viewedReportYear}`;
+        }
+        openModal(monthlyReportModal);
+    } catch (err) {
+        showToast(err.message || "Unable to preview monthly report", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function downloadMonthlyReport(year = selectedReportYear, month = selectedReportMonth) {
+    const monthObj = ALL_REPORT_MONTHS.find(m => m.num === month) || { full: `Month ${month}` };
+    try {
+        setLoading(true, `Preparing ${monthObj.full} ${year} statement download...`);
+        let htmlContent = cachedReportHtml;
+        if (!htmlContent || viewedReportYear !== year || viewedReportMonth !== month) {
+            const res = await fetch(`${API_BASE_URL}/reports/monthly/user/${userId}/html?year=${year}&month=${month}`, {
+                headers: { "Authorization": `Bearer ${localStorage.getItem("token") || token}` }
+            });
+            if (!res.ok) throw new Error(`Failed to generate report download (${res.status})`);
+            htmlContent = await res.text();
+        }
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `financial-statement-${year}-${String(month).padStart(2, "0")}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Financial statement for ${monthObj.full} ${year} saved.`, "success");
+    } catch (err) {
+        showToast(err.message || "Failed to download report", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function emailMonthlyReport(year = selectedReportYear, month = selectedReportMonth) {
+    const monthObj = ALL_REPORT_MONTHS.find(m => m.num === month) || { full: `Month ${month}` };
+    try {
+        setLoading(true, `Dispatching ${monthObj.full} ${year} report to your email...`);
+        const res = await apiRequest(`/reports/monthly/user/${userId}/send-email?year=${year}&month=${month}`, { method: "POST" });
+        showToast(res?.message || `Financial statement for ${monthObj.full} ${year} emailed successfully!`, "success");
+    } catch (err) {
+        showToast("Email is not configured. Starting report download instead...", "warning");
+        await downloadMonthlyReport(year, month);
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function exportMonthlyCsv(year = selectedReportYear, month = selectedReportMonth) {
+    const monthObj = ALL_REPORT_MONTHS.find(m => m.num === month) || { full: `Month ${month}` };
+    try {
+        setLoading(true, `Exporting CSV transactions for ${monthObj.full} ${year}...`);
+        const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+        const monthlyExpenses = (allExpenses || []).filter(e => {
+            const d = e.expenseDate || e.date;
+            return d && d >= startDate && d <= endDate;
+        });
+        const monthlyIncomes = (allIncomes || []).filter(i => {
+            const d = i.incomeDate || i.date;
+            return d && d >= startDate && d <= endDate;
+        });
+
+        const sanitizeCsvCell = (val) => {
+            if (val === null || val === undefined) return '""';
+            let str = String(val);
+            if (/^[=+\-@\t\r%]/.test(str)) {
+                str = "'" + str;
+            }
+            return '"' + str.replace(/"/g, '""') + '"';
+        };
+
+        let csv = "Type,Date,Description,Category/Source,Amount,Payment Method\n";
+        monthlyExpenses.forEach(e => {
+            const catName = getCategoryName(e.categoryId) || "Uncategorized";
+            csv += `Expense,${e.expenseDate || e.date || ""},${sanitizeCsvCell(e.description || "")},${sanitizeCsvCell(catName)},${e.amount || 0},${sanitizeCsvCell(e.paymentMethod || "CASH")}\n`;
+        });
+        monthlyIncomes.forEach(i => {
+            const catName = i.source || "Income";
+            csv += `Income,${i.incomeDate || i.date || ""},${sanitizeCsvCell(i.description || i.source || "")},${sanitizeCsvCell(catName)},${i.amount || 0},${sanitizeCsvCell(i.paymentMethod || "CASH")}\n`;
+        });
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `financial-ledger-${year}-${String(month).padStart(2, "0")}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Monthly transactions CSV downloaded for ${monthObj.full} ${year}.`, "success");
+    } catch (err) {
+        showToast(err.message || "Failed to export CSV", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function exportMonthlyJson(year = selectedReportYear, month = selectedReportMonth) {
+    const monthObj = ALL_REPORT_MONTHS.find(m => m.num === month) || { full: `Month ${month}` };
+    try {
+        setLoading(true, `Exporting JSON analytics for ${monthObj.full} ${year}...`);
+        const report = await apiRequest(`/reports/monthly/user/${userId}?year=${year}&month=${month}`, { method: "GET" });
+        const jsonStr = JSON.stringify(report, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `monthly-analytics-${year}-${String(month).padStart(2, "0")}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Monthly JSON analytics downloaded for ${monthObj.full} ${year}.`, "success");
+    } catch (err) {
+        showToast(err.message || "Failed to export JSON analytics", "error");
+    } finally {
+        setLoading(false);
+    }
+}
+
+// Action button listeners in Period Picker Modal
+periodViewReportBtn?.addEventListener("click", () => {
+    closeModal(monthlyReportPeriodModal);
+    openMonthlyReportPreview(selectedReportYear, selectedReportMonth);
+});
+
+async function downloadMonthlyPdf(year = selectedReportYear, month = selectedReportMonth) {
+    if (!userId) {
+        showToast("Session expired, please sign in again.", "error");
+        return;
+    }
+    try {
+        const targetYear = year || selectedReportYear || new Date().getFullYear();
+        const targetMonth = month || selectedReportMonth || (new Date().getMonth() + 1);
+        const padMonth = String(targetMonth).padStart(2, "0");
+        const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+        const from = `${targetYear}-${padMonth}-01`;
+        const to = `${targetYear}-${padMonth}-${String(lastDay).padStart(2, "0")}`;
+        const curr = (typeof userCurrency !== "undefined" && userCurrency) ? userCurrency : (localStorage.getItem("preferredCurrency") || "INR");
+        const url = `${API_BASE_URL}/reports/user/${userId}/export/range/pdf?from=${from}&to=${to}&currency=${encodeURIComponent(curr)}`;
+        const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
+            ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
+            : { name: `Month_${padMonth}` };
+        downloadAuthenticated(
+            url,
+            `ExpenseTracker_Statement_${monthObj.name}_${targetYear}.pdf`,
+            `Generating ${monthObj.name} ${targetYear} Executive PDF Statement...`
+        );
+    } catch (err) {
+        showToast(err.message || "Failed to download PDF report", "error");
+    }
+}
+
+async function downloadMonthlyExcel(year = selectedReportYear, month = selectedReportMonth) {
+    if (!userId) {
+        showToast("Session expired, please sign in again.", "error");
+        return;
+    }
+    try {
+        const targetYear = year || selectedReportYear || new Date().getFullYear();
+        const targetMonth = month || selectedReportMonth || (new Date().getMonth() + 1);
+        const padMonth = String(targetMonth).padStart(2, "0");
+        const lastDay = new Date(targetYear, targetMonth, 0).getDate();
+        const from = `${targetYear}-${padMonth}-01`;
+        const to = `${targetYear}-${padMonth}-${String(lastDay).padStart(2, "0")}`;
+        const curr = (typeof userCurrency !== "undefined" && userCurrency) ? userCurrency : (localStorage.getItem("preferredCurrency") || "INR");
+        const url = `${API_BASE_URL}/reports/user/${userId}/export/range/excel?from=${from}&to=${to}&currency=${encodeURIComponent(curr)}`;
+        const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
+            ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
+            : { name: `Month_${padMonth}` };
+        downloadAuthenticated(
+            url,
+            `ExpenseTracker_Workbook_${monthObj.name}_${targetYear}.xlsx`,
+            `Generating ${monthObj.name} ${targetYear} PowerBI Excel Workbook...`
+        );
+    } catch (err) {
+        showToast(err.message || "Failed to download Excel workbook", "error");
+    }
+}
+
+periodDownloadReportBtn?.addEventListener("click", () => {
+    downloadMonthlyReport(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodDownloadPdfBtn")?.addEventListener("click", () => {
+    downloadMonthlyPdf(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodDownloadExcelBtn")?.addEventListener("click", () => {
+    downloadMonthlyExcel(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodExportCsvBtn")?.addEventListener("click", () => {
+    exportMonthlyCsv(selectedReportYear, selectedReportMonth);
+});
+
+document.getElementById("periodExportJsonBtn")?.addEventListener("click", () => {
+    exportMonthlyJson(selectedReportYear, selectedReportMonth);
+});
+
+periodEmailReportBtn?.addEventListener("click", () => {
+    emailMonthlyReport(selectedReportYear, selectedReportMonth);
+});
+
+// Profile avatar menu triggers -> open Period Picker Modal
+viewMonthlyReportBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleProfileMenu(false);
+    openMonthlyReportPeriodModal("view");
+});
+
+// Toolbar buttons inside Preview Modal
+changeReportPeriodBtn?.addEventListener("click", () => {
+    closeModal(monthlyReportModal);
+    selectedReportYear = viewedReportYear;
+    selectedReportMonth = viewedReportMonth;
+    openMonthlyReportPeriodModal("view");
+});
+
+closeMonthlyReportModalBtn?.addEventListener("click", () => closeModal(monthlyReportModal));
+
+printReportBtn?.addEventListener("click", () => {
+    if (monthlyReportFrame && monthlyReportFrame.contentWindow) {
+        monthlyReportFrame.contentWindow.focus();
+        monthlyReportFrame.contentWindow.print();
+    }
+});
+
+downloadHtmlReportBtn?.addEventListener("click", () => {
+    downloadMonthlyReport(viewedReportYear, viewedReportMonth);
+});
+
+emailReportBtn?.addEventListener("click", () => {
+    emailMonthlyReport(viewedReportYear, viewedReportMonth);
+});
+
+
+// Dashboard refreshes are event-driven; tab visibility alone does not reset state or clear caches.
+// Throttled focus refresh: at most once per 60 seconds to avoid hammering the API on every alt-tab.
+let lastFocusRefresh = 0;
+window.addEventListener("focus", () => {
+    const now = Date.now();
+    if (now - lastFocusRefresh < 60000) return;
+    lastFocusRefresh = now;
+    loadDashboard(true);
+});
+
+// Dashboard refreshes are event-driven; idle pages are not re-rendered.
+// --- CATEGORY PILLS HORIZONTAL OVERFLOW INDICATOR & SCROLL SYSTEM ---
+function bindCategoryPillsScrollCues() {
+    const configs = [
+        { barId: "categoryPillsBar", wrapperId: "categoryPillsWrapper", cueId: "expensePillsScrollCue" },
+        { barId: "incomePillsBar", wrapperId: "incomePillsWrapper", cueId: "incomePillsScrollCue" }
+    ];
+
+    configs.forEach(({ barId, wrapperId, cueId }) => {
+        const bar = document.getElementById(barId);
+        const wrapper = document.getElementById(wrapperId) || (bar ? bar.closest(".category-pills-wrapper") : null);
+        const cue = document.getElementById(cueId);
+        if (!bar || !wrapper || !cue) return;
+
+        function updateCue() {
+            const maxScrollLeft = bar.scrollWidth - bar.clientWidth;
+            const hasOverflow = maxScrollLeft > 8;
+            if (hasOverflow) {
+                wrapper.classList.add("has-overflow-right");
+                const atEnd = (maxScrollLeft - bar.scrollLeft) <= 10;
+                const cueText = cue.querySelector(".cue-text");
+                const cueArrow = cue.querySelector(".cue-arrow");
+                if (atEnd) {
+                    if (cueText) cueText.textContent = "Start";
+                    if (cueArrow) cueArrow.style.transform = "rotate(180deg)";
+                    cue.title = "Scroll back to start";
+                    cue.setAttribute("aria-label", "Scroll back to start");
+                } else {
+                    if (cueText) cueText.textContent = "More";
+                    if (cueArrow) cueArrow.style.transform = "rotate(0deg)";
+                    cue.title = "Scroll to see more";
+                    cue.setAttribute("aria-label", "Scroll to see more");
+                }
+            } else {
+                wrapper.classList.remove("has-overflow-right");
+            }
+        }
+
+        bar.addEventListener("scroll", updateCue, { passive: true });
+        window.addEventListener("resize", updateCue, { passive: true });
+
+        if (!cue.dataset.bound) {
+            cue.dataset.bound = "true";
+            cue.addEventListener("click", () => {
+                const maxScrollLeft = bar.scrollWidth - bar.clientWidth;
+                if ((maxScrollLeft - bar.scrollLeft) <= 10) {
+                    bar.scrollTo({ left: 0, behavior: "smooth" });
+                } else {
+                    bar.scrollBy({ left: 180, behavior: "smooth" });
+                }
+            });
+        }
+
+        updateCue();
+        setTimeout(updateCue, 100);
+        setTimeout(updateCue, 400);
+
+        if (!bar.dataset.observed) {
+            bar.dataset.observed = "true";
+            const obs = new MutationObserver(() => {
+                setTimeout(updateCue, 50);
+            });
+            obs.observe(bar, { childList: true, subtree: true });
+        }
+    });
+}
+// Use the standard ready() pattern — dashboard.js is loaded at the end of <body>, so
+// readyState is usually already "interactive" or "complete". Running both branches would
+// attach MutationObserver twice in some timing scenarios.
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCategoryPillsScrollCues, { once: true });
+} else {
+    bindCategoryPillsScrollCues();
+}
+
+function updateStreamBadges() {
+    const expCount = (allExpenses || []).length;
+    const incCount = (allIncomes || []).length;
+    const totalCount = expCount + incCount;
+    
+    const bAll = document.getElementById("badgeAllCount");
+    const bExp = document.getElementById("badgeExpensesCount");
+    const bInc = document.getElementById("badgeIncomesCount");
+    const colExp = document.getElementById("colExpenseCount");
+    const colInc = document.getElementById("colIncomeCount");
+    
+    if (bAll) bAll.textContent = totalCount;
+    if (bExp) bExp.textContent = expCount;
+    if (bInc) bInc.textContent = incCount;
+    if (colExp) colExp.textContent = `${expCount} item${expCount === 1 ? "" : "s"}`;
+    if (colInc) colInc.textContent = `${incCount} item${incCount === 1 ? "" : "s"}`;
+}
+window.updateStreamBadges = updateStreamBadges;
+
+function initLedgerStreamTabs() {
+    const tabs = document.querySelectorAll("#ledgerStreamTabs .stream-pill-btn");
+    const grid = document.getElementById("unifiedLedgerGrid");
+    const incPills = document.getElementById("incomePillsWrapper");
+    const expPills = document.getElementById("categoryPillsWrapper");
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            tabs.forEach(t => {
+                t.classList.remove("active");
+                t.style.background = "transparent";
+                t.style.color = "var(--text-muted)";
+                t.style.borderColor = "transparent";
+            });
+            tab.classList.add("active");
+            tab.style.background = "var(--card-bg, rgba(255,255,255,0.08))";
+            tab.style.color = "var(--text-main)";
+            tab.style.borderColor = "var(--border)";
+
+            const mode = tab.getAttribute("data-tab");
+            if (grid) {
+                grid.classList.remove("view-expenses", "view-incomes");
+                if (mode === "expenses") {
+                    grid.classList.add("view-expenses");
+                    if (expPills) expPills.style.display = "flex";
+                    if (incPills) incPills.style.display = "none";
+                } else if (mode === "incomes") {
+                    grid.classList.add("view-incomes");
+                    if (expPills) expPills.style.display = "none";
+                    if (incPills) incPills.style.display = "flex";
+                } else {
+                    if (expPills) expPills.style.display = "flex";
+                    if (incPills) incPills.style.display = "none";
+                }
+            }
+        });
+    });
+    // Touch gesture swipe support for cycling between stream tabs (All <-> Expenses <-> Incomes)
+    const targetSwipeElements = [
+        document.getElementById("ledgerStreamTabs"),
+        document.getElementById("unifiedLedgerCard"),
+        grid,
+        document.getElementById("recentTransactionsTable")
+    ].filter(Boolean);
+
+    targetSwipeElements.forEach(el => {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let swiped = false;
+
+        el.addEventListener("touchstart", (e) => {
+            if (e.touches.length !== 1 || window._isGlobalRowSwiping) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            swiped = false;
+        }, { passive: true });
+
+        el.addEventListener("touchend", (e) => {
+            if (swiped || e.changedTouches.length !== 1 || window._isGlobalRowSwiping) return;
+            const diffX = e.changedTouches[0].clientX - touchStartX;
+            const diffY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+                swiped = true;
+                const modes = ["all", "expenses", "incomes"];
+                const activeTab = document.querySelector("#ledgerStreamTabs .stream-pill-btn.active");
+                const currentMode = activeTab ? activeTab.getAttribute("data-tab") : "all";
+                const currentIndex = modes.indexOf(currentMode);
+                if (currentIndex !== -1) {
+                    if (diffX < 0 && currentIndex < modes.length - 1) {
+                        navigator.vibrate?.(15);
+                        const nextTab = document.querySelector(`#ledgerStreamTabs .stream-pill-btn[data-tab="${modes[currentIndex + 1]}"]`);
+                        if (nextTab) nextTab.click();
+                    } else if (diffX > 0 && currentIndex > 0) {
+                        navigator.vibrate?.(15);
+                        const prevTab = document.querySelector(`#ledgerStreamTabs .stream-pill-btn[data-tab="${modes[currentIndex - 1]}"]`);
+                        if (prevTab) prevTab.click();
+                    }
+                }
+            }
+        }, { passive: true });
+    });
+
+    updateStreamBadges();
+}
+window.initLedgerStreamTabs = initLedgerStreamTabs;
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initLedgerStreamTabs);
+} else {
+    initLedgerStreamTabs();
+}
+
+
+// Security PIN Modal & Account Recovery Management
+const securityPinModal = document.getElementById("securityPinModal");
+const securityPinBtn = document.getElementById("securityPinBtn");
+const closeSecurityPinModalBtn = document.getElementById("closeSecurityPinModalBtn");
+const securityPinForm = document.getElementById("securityPinForm");
+const pinStatusIndicator = document.getElementById("pinStatusIndicator");
+
+async function openSecurityPinDialog() {
+    toggleProfileMenu(false);
+    if (!securityPinModal) return;
+    try {
+        const userProf = await apiRequest(`/users/${userId}`);
+        const hasPin = !!(userProf && userProf.hasSecurityPin);
+        if (pinStatusIndicator) {
+            pinStatusIndicator.style.background = hasPin ? "rgba(76, 122, 120, 0.15)" : "rgba(230, 162, 60, 0.15)";
+            pinStatusIndicator.style.border = `1px solid ${hasPin ? "#4C7A78" : "#E6A23C"}`;
+            pinStatusIndicator.style.color = hasPin ? "#4C7A78" : "#E6A23C";
+            pinStatusIndicator.innerHTML = hasPin
+                ? `<span>🔒 <strong>Active:</strong> 6-Digit PIN is set. Enter a new PIN below if you want to update it.</span>`
+                : `<span>⚠️ <strong>Not Configured:</strong> Set a 6-digit PIN below for zero-email instant recovery.</span>`;
+        }
+    } catch (err) {
+        console.warn("Could not fetch user security status:", err);
+    }
+    const newPinEl = document.getElementById("newSecurityPin");
+    const confirmPinEl = document.getElementById("confirmSecurityPin");
+    if (newPinEl) newPinEl.value = "";
+    if (confirmPinEl) confirmPinEl.value = "";
+    openModal(securityPinModal);
+}
+
+securityPinBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    openSecurityPinDialog();
+});
+
+closeSecurityPinModalBtn?.addEventListener("click", () => {
+    closeModal(securityPinModal);
+});
+
+securityPinModal?.addEventListener("click", (e) => {
+    if (e.target === securityPinModal) closeModal(securityPinModal);
+});
+
+securityPinForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const newPin = (document.getElementById("newSecurityPin")?.value || "").trim();
+    const confirmPin = (document.getElementById("confirmSecurityPin")?.value || "").trim();
+
+    if (!/^[0-9]{6}$/.test(newPin)) {
+        return showToast("PIN must be exactly 6 numeric digits.", "error");
+    }
+    if (newPin !== confirmPin) {
+        return showToast("PINs do not match.", "error");
+    }
+
+    const submitBtn = securityPinForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+        await apiRequest(`/users/${userId}/security-pin`, {
+            method: "PUT",
+            body: JSON.stringify({ securityPin: newPin })
+        });
+        showToast("Security PIN updated successfully! 🔒", "success");
+        closeModal(securityPinModal);
+    } catch (err) {
+        showToast(err.message || "Failed to update Security PIN", "error");
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+    }
+});
+
+// ─── Biometric Authentication (Touch ID / Face ID / Windows Hello) ─────────
+const biometricAuthBtn = document.getElementById("biometricAuthBtn");
+biometricAuthBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (!window.WebBiometrics) {
+        showToast("Biometric module not initialized.", "error");
+        return;
+    }
+    const isAvail = await WebBiometrics.isAvailable();
+    if (!isAvail) {
+        showToast("Biometric hardware (Touch ID / Face ID / Windows Hello) is not detected or supported on this browser.", "warning");
+        return;
+    }
+    const token = localStorage.getItem("token");
+    const userEmail = localStorage.getItem("userEmail") || (window.currentUser && window.currentUser.email) || "user";
+    try {
+        await WebBiometrics.enroll(userEmail, token);
+        showToast("Biometric authentication (Touch ID / Face ID) activated successfully for this device! 🧬", "success");
+    } catch (err) {
+        showToast(err.message || "Biometric registration was cancelled.", "info");
+    }
+});
+
+// ─── Proactive Server Reconnection Auto-Refresh ──────────────────────
+document.addEventListener("serverreconnected", () => {
+    console.log("[Dashboard] Server reconnected proactively. Refreshing dashboard data...");
+    showToast("Server reconnected. Live data restored.", "success");
+    if (typeof loadDashboard === "function") {
+        loadDashboard(true);
+    }
+});
+
+// Help Guide & About Modals
+const helpGuideModal = document.getElementById("helpGuideModal");
+const aboutSystemModal = document.getElementById("aboutSystemModal");
+
+function openHelpModal() {
+    if (typeof toggleProfileMenu === "function") toggleProfileMenu(false);
+    if (typeof openModal === "function" && helpGuideModal) openModal(helpGuideModal);
+}
+function openAboutModal() {
+    if (typeof toggleProfileMenu === "function") toggleProfileMenu(false);
+    if (typeof openModal === "function" && aboutSystemModal) openModal(aboutSystemModal);
+}
+
+document.getElementById("headerHelpBtn")?.addEventListener("click", openHelpModal);
+document.getElementById("helpGuideModalBtn")?.addEventListener("click", (e) => { e.preventDefault(); openHelpModal(); });
+document.getElementById("closeHelpGuideModal")?.addEventListener("click", () => { if (typeof closeModal === "function" && helpGuideModal) closeModal(helpGuideModal); });
+document.getElementById("gotItHelpBtn")?.addEventListener("click", () => { if (typeof closeModal === "function" && helpGuideModal) closeModal(helpGuideModal); });
+helpGuideModal?.addEventListener("click", (e) => { if (e.target === helpGuideModal && typeof closeModal === "function") closeModal(helpGuideModal); });
+
+document.getElementById("aboutSystemModalBtn")?.addEventListener("click", (e) => { e.preventDefault(); openAboutModal(); });
+document.getElementById("closeAboutModal")?.addEventListener("click", () => { if (typeof closeModal === "function" && aboutSystemModal) closeModal(aboutSystemModal); });
+document.getElementById("closeAboutBtn")?.addEventListener("click", () => { if (typeof closeModal === "function" && aboutSystemModal) closeModal(aboutSystemModal); });
+aboutSystemModal?.addEventListener("click", (e) => { if (e.target === aboutSystemModal && typeof closeModal === "function") closeModal(aboutSystemModal); });
+
+window.openHelpModal = openHelpModal;
+window.openAboutModal = openAboutModal;

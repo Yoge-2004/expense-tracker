@@ -1,89 +1,82 @@
 @media (min-width: 901px) {
-  .auth-hero {
-    background: transparent;
-    position: relative;
-    top: auto;
-    align-self: stretch;
-    overflow: visible;
-    overscroll-behavior: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: clamp(28px, 4vh, 48px) clamp(32px, 3.5vw, 48px)
+    .auth-hero {
+        background: transparent;
+        position: relative;
+        top: auto;
+        align-self: stretch;
+        overflow: visible;
+        overscroll-behavior: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: clamp(28px, 4vh, 48px) clamp(32px, 3.5vw, 48px)
             clamp(24px, 3vh, 40px) clamp(40px, 5vw, 80px);
-    min-height: 100vh;
-    height: auto;
-    box-sizing: border-box;
-  }
-
-  .auth-hero::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-
-  .auth-hero::before {
-    content: "";
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: radial-gradient(
+        min-height: 100vh;
+        height: auto;
+        box-sizing: border-box;
+    }
+    .auth-hero::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+    .auth-hero::before {
+        content: "";
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        border-radius: 50%;
+        background: radial-gradient(
             circle,
             rgba(var(--primary-rgb), 0.08) 0%,
             transparent 70%
         );
-    top: 0;
-    right: 0;
-    pointer-events: none;
-  }
-
-  .auth-hero::after {
-    content: "";
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(
+        top: 0;
+        right: 0;
+        pointer-events: none;
+    }
+    .auth-hero::after {
+        content: "";
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: radial-gradient(
             circle,
             rgba(var(--highlight-rgb), 0.06) 0%,
             transparent 70%
         );
-    bottom: 0;
-    left: 0;
-    pointer-events: none;
-  }
+        bottom: 0;
+        left: 0;
+        pointer-events: none;
+    }
 }
-
 [data-theme="light"] .auth-card {
-  background: var(--card-bg);
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.08),
+    background: var(--card-bg);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow:
+        0 20px 50px -10px rgba(0, 0, 0, 0.08),
         0 0 0 1px rgba(0, 0, 0, 0.04);
-  padding: 48px 40px;
-  box-sizing: border-box;
+    padding: 48px 40px;
+    box-sizing: border-box;
 }
-
-.float-card {
-  background: rgba(23, 26, 20, 0.52);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(236, 231, 216, 0.12);
-}
-
+.float-card,
 .perk-item {
-  background: rgba(23, 26, 20, 0.52);
-  border-radius: 18px;
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(236, 231, 216, 0.12);
-  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.38);
+    background: rgba(23, 26, 20, 0.52);
+    border-radius: 18px;
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(236, 231, 216, 0.12);
+    box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.38);
+    transition:
+        transform 0.3s var(--ease),
+        box-shadow 0.3s,
+        border-color 0.3s;
 }
-
 .float-card:hover,
 .perk-item:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.5);
-  border-color: rgba(199, 154, 62, 0.35);
+    transform: translateY(-6px);
+    box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.5);
+    border-color: rgba(199, 154, 62, 0.35);
 }

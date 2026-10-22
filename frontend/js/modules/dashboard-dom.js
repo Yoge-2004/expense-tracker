@@ -78,19 +78,19 @@
         card.classList.add("is-loading");
         const val = card.querySelector(".metric-value");
         if (val) {
-            val.innerHTML = "<span class='skeleton skeleton-value u-inl-fecf809'></span>";
+            val.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:115px; height:28px; display:inline-block; margin-bottom:0;\"></span>";
         }
         const badge = card.querySelector(".status-badge");
         if (badge) {
-            badge.innerHTML = "<span class='skeleton skeleton-text short u-inl-fdd03f2'></span>";
+            badge.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:48px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;\"></span>";
         }
         const dailyBurn = card.querySelector("#dailyBurnRate");
         if (dailyBurn) {
-            dailyBurn.innerHTML = "<span class='skeleton skeleton-text short u-inl-7b439f0'></span>";
+            dailyBurn.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
         } else {
             const footerSpan = card.querySelector(".metric-footer span");
             if (footerSpan && !footerSpan.querySelector(".skeleton")) {
-                footerSpan.innerHTML = "<span class='skeleton skeleton-text short u-inl-0eaf717'></span>";
+                footerSpan.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:85px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
             }
         }
     });
@@ -125,48 +125,48 @@
         card.classList.add("is-loading");
     });
     const lentVal = document.getElementById("loansTotalLent");
-    if (lentVal) lentVal.innerHTML = "<span class='skeleton skeleton-value u-inl-37f90ee'></span>";
+    if (lentVal) lentVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
     const borrowedVal = document.getElementById("loansTotalBorrowed");
-    if (borrowedVal) borrowedVal.innerHTML = "<span class='skeleton skeleton-value u-inl-37f90ee'></span>";
+    if (borrowedVal) borrowedVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
     const netVal = document.getElementById("loansNetBalance");
-    if (netVal) netVal.innerHTML = "<span class='skeleton skeleton-value u-inl-37f90ee'></span>";
+    if (netVal) netVal.innerHTML = "<span class=\"skeleton skeleton-value\" style=\"width:95px; height:24px; display:inline-block; margin-bottom:0;\"></span>";
     const pendingCountEl = document.getElementById("loansPendingCount");
     const settledCountEl = document.getElementById("loansSettledCount");
     if (pendingCountEl && pendingCountEl.parentElement) {
-        pendingCountEl.parentElement.innerHTML = "<span id='loansPendingCount'><span class='skeleton skeleton-value u-inl-d6591c9'></span></span> <span class='u-inl-d7930ba'>open / </span><span id='loansSettledCount'><span class='skeleton skeleton-value u-inl-d6591c9'></span></span> <span class='u-inl-b61e5de'>done</span>";
+        pendingCountEl.parentElement.innerHTML = "<span id=\"loansPendingCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:var(--text-muted);\">open / </span><span id=\"loansSettledCount\"><span class=\"skeleton skeleton-value\" style=\"width:36px; height:22px; display:inline-block; margin-bottom:0;\"></span></span> <span style=\"font-size:12px; font-weight:600; color:#10B981;\">done</span>";
     }
     const lentPendingSubEl = document.getElementById("loansLentPendingCount");
-    if (lentPendingSubEl) lentPendingSubEl.innerHTML = "<span class='skeleton skeleton-text short u-inl-60bcdfa'></span>";
+    if (lentPendingSubEl) lentPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
     const borrowedPendingSubEl = document.getElementById("loansBorrowedPendingCount");
-    if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = "<span class='skeleton skeleton-text short u-inl-60bcdfa'></span>";
+    if (borrowedPendingSubEl) borrowedPendingSubEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:28px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
     const netStatusEl = document.getElementById("loansNetStatus");
-    if (netStatusEl) netStatusEl.innerHTML = "<span class='skeleton skeleton-text short u-inl-7b439f0'></span>";
+    if (netStatusEl) netStatusEl.innerHTML = "<span class=\"skeleton skeleton-text short\" style=\"width:65px; height:12px; display:inline-block; margin-bottom:0;\"></span>";
 
     const loansList = document.getElementById("loansListContainer");
     if (loansList) {
         loansList.innerHTML = `
-            <div class="loans-skeleton-loader u-inl-5c3d2b7">
-                <div class="skeleton u-inl-0a2a868"></div>
-                <div class="skeleton u-inl-ced01e1"></div>
-                <div class="skeleton u-inl-ced01e1"></div>
+            <div class="loans-skeleton-loader" style="padding:16px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:10px;">
+                <div class="skeleton" style="width:35%; height:20px; border-radius:6px;"></div>
+                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+                <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
             </div>`;
     }
     // Financial insights skeleton
     const insightsGrid = document.getElementById("insightsCardsGrid");
     if (insightsGrid && !insightsGrid.children.length) {
         insightsGrid.innerHTML = Array.from({ length: 3 }, () =>
-            `<div class="skeleton skeleton-card u-inl-22bddb4"></div>`
+            `<div class="skeleton skeleton-card" style="min-height:110px;"></div>`
         ).join('');
     }
     // Money flow skeleton
     const moneyFlowBody = document.getElementById("moneyFlowBody");
     if (moneyFlowBody && !moneyFlowBody.children.length) {
         moneyFlowBody.innerHTML = `
-            <div class="money-flow-skeleton u-inl-f10199d">
-                <div class="skeleton skeleton-row u-inl-aac7ab4"></div>
-                <div class="skeleton skeleton-row u-inl-aac7ab4"></div>
-                <div class="skeleton skeleton-row u-inl-aac7ab4"></div>
-                <div class="skeleton skeleton-row u-inl-aac7ab4"></div>
+            <div class="money-flow-skeleton" style="display:flex; flex-direction:column; gap:8px; padding:6px 0;">
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
+                <div class="skeleton skeleton-row" style="height:28px;"></div>
             </div>`;
     }
 }

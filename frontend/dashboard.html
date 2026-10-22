@@ -64,7 +64,7 @@
                     </svg>
                     <span>Record Expense</span>
                 </button>
-                <button type="button" class="btn-primary add-income-button" id="openIncomeModalBtn" title="Record Income Stream">
+                <button type="button" class="btn-primary add-income-button" id="openIncomeModalBtn" onclick="openNewIncomeModal()" title="Record Income Stream">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -85,7 +85,7 @@
                             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                         </svg>
-                        <svg class="moon-icon u-inl-cb45893" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
@@ -148,12 +148,12 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="u-inl-2531343">
-                            <label class="u-inl-5e6c872">PREFERRED CURRENCY</label>
-                            <p class="u-inl-3bdbaaa">Changes the symbol shown — amounts aren't converted between currencies.</p>
+                        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border);">
+                            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">PREFERRED CURRENCY</label>
+                            <p style="font-size: 10.5px; color: var(--text-muted); margin: -2px 0 8px; line-height: 1.4;">Changes the symbol shown — amounts aren't converted between currencies.</p>
                             <input type="hidden" id="currencySelector" value="INR">
                             <div class="custom-select-wrapper" id="dashCurrencyWrapper">
-                                <div class="custom-select-trigger u-inl-dea1090" id="dashCurrencyTrigger">
+                                <div class="custom-select-trigger" id="dashCurrencyTrigger" style="padding: 8px 12px; font-size: 12px; height: 36px;">
                                     <span id="dashCurrencyLabel">🇮🇳 INR (₹)</span>
                                     <svg class="custom-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
@@ -163,7 +163,7 @@
                         <a href="#" id="editProfileBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> <span>Edit Profile Name</span></a>
                         <a href="#" id="viewMonthlyReportBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> <span>View Monthly Report</span></a>
                         <a href="#" id="exportMonthlySummaryBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span>Export Monthly Summary</span></a>
-                        <a class="u-inl-9c76635" href="#" id="sendMonthlyReportBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <span>Email Monthly Report</span></a>
+                        <a href="#" id="sendMonthlyReportBtn" style="display: none;"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <span>Email Monthly Report</span></a>
                         <a href="#" id="manageSubsBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>Subscriptions</span></a>
                         <a href="#" id="securityPinBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> <span>Security PIN</span></a>
                         <a href="#" id="enableInstantDebitAlertsBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> <span>Real-Time Debit Alerts</span></a>
@@ -171,7 +171,7 @@
                         <a href="#" id="helpGuideModalBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> <span>User Guide & Help</span></a>
                         <a href="#" id="aboutSystemModalBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <span>About ExpenseTracker</span></a>
                         <a href="#" id="logoutBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> <span>Logout</span></a>
-                        <a class="u-inl-1337040" href="#" id="deleteAccountBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span>Delete Account</span></a>
+                        <a href="#" id="deleteAccountBtn" style="color: #A23E32;"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span>Delete Account</span></a>
                     </div>
                 </div>
             </div>
@@ -183,13 +183,13 @@
             <div class="metric-card metric-card-inflow is-loading" id="metricCardInflow">
                 <div class="metric-header">
                     <span class="card-label">Total Inflow</span>
-                    <span class="status-badge badge-success" id="incomeCountBadge"><span class="skeleton skeleton-text short u-inl-fdd03f2"></span></span>
+                    <span class="status-badge badge-success" id="incomeCountBadge"><span class="skeleton skeleton-text short" style="width:48px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="totalIncomeAmount"><span class="skeleton skeleton-value u-inl-fecf809"></span></span>
+                    <span class="metric-value" id="totalIncomeAmount"><span class="skeleton skeleton-value" style="width:115px; height:28px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-footer">
-                    <span class="text-muted" id="recurringIncomeText"><span class="skeleton skeleton-text short u-inl-6af7070"></span></span>
+                    <span class="text-muted" id="recurringIncomeText"><span class="skeleton skeleton-text short" style="width:90px; height:12px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
             </div>
 
@@ -197,18 +197,18 @@
             <div class="metric-card metric-card-outflow is-loading" id="metricCardOutflow">
                 <div class="metric-header">
                     <span class="card-label">Total Outflow</span>
-                    <span class="status-badge badge-outflow" id="budgetUsageBadge"><span class="skeleton skeleton-text short u-inl-fdd03f2"></span></span>
+                    <span class="status-badge badge-outflow" id="budgetUsageBadge"><span class="skeleton skeleton-text short" style="width:48px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="totalAmount"><span class="skeleton skeleton-value u-inl-fecf809"></span></span>
+                    <span class="metric-value" id="totalAmount"><span class="skeleton skeleton-value" style="width:115px; height:28px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
-                <div class="metric-footer u-inl-e26abd3">
+                <div class="metric-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
                     <div>
-                        <span class="text-muted" id="expenseCountText"><span class="skeleton skeleton-text short u-inl-71c568f"></span></span>
+                        <span class="text-muted" id="expenseCountText"><span class="skeleton skeleton-text short" style="width:110px; height:12px; display:inline-block; margin-bottom:0;"></span></span>
                         <span class="text-muted" id="topCategoryDetail"> &bull; Top: <strong id="topCategoryName">—</strong> (<span id="topCategoryAmount">$0.00 spent</span>)</span>
                     </div>
-                    <span class="status-badge badge-warning u-inl-33285c3" id="noSpendStreakBadge" title="Consecutive zero-spend days">
-                        <svg class="u-inl-365500a" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg><span id="noSpendStreakCount">--</span> streak
+                    <span class="status-badge badge-warning" id="noSpendStreakBadge" title="Consecutive zero-spend days" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; font-weight:700;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg><span id="noSpendStreakCount">--</span> streak
                     </span>
                 </div>
             </div>
@@ -217,35 +217,35 @@
             <div class="metric-card metric-card-netflow is-loading" id="metricCardNetflow">
                 <div class="metric-header">
                     <span class="card-label">Net Cash Flow</span>
-                    <span class="status-badge badge-netflow" id="netFlowBadge"><span class="skeleton skeleton-text short u-inl-fdd03f2"></span></span>
+                    <span class="status-badge badge-netflow" id="netFlowBadge"><span class="skeleton skeleton-text short" style="width:48px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="netCashFlowAmount"><span class="skeleton skeleton-value u-inl-fecf809"></span></span>
+                    <span class="metric-value" id="netCashFlowAmount"><span class="skeleton skeleton-value" style="width:115px; height:28px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
-                <div class="metric-footer u-inl-e26abd3">
-                    <span class="text-muted" id="burnRateBadge">Burn: <span id="dailyBurnRate"><span class="skeleton skeleton-text short u-inl-7b439f0"></span></span></span>
-                    <span class="status-badge badge-success u-inl-33285c3" id="safeDailySpendBadge" title="Safe daily spending limit based on remaining monthly budget and scheduled expenses">
+                <div class="metric-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                    <span class="text-muted" id="burnRateBadge">Burn: <span id="dailyBurnRate"><span class="skeleton skeleton-text short" style="width:65px; height:12px; display:inline-block; margin-bottom:0;"></span></span></span>
+                    <span class="status-badge badge-success" id="safeDailySpendBadge" title="Safe daily spending limit based on remaining monthly budget and scheduled expenses" style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; font-weight:700;">
                         Safe: <span id="safeDailySpend">--</span>/day
                     </span>
                 </div>
             </div>
 
             <!-- Hidden projection anchor to preserve script compatibility -->
-            <span class="u-inl-cb45893" id="monthForecast">Projected: $0.00</span>
+            <span id="monthForecast" style="display:none;">Projected: $0.00</span>
 
-            <span class="u-inl-cb45893" id="topCatBadge"></span>
+            <span id="topCatBadge" style="display:none;"></span>
 
             <!-- Metric 4: Savings Rate & Goals Progress -->
             <div class="metric-card metric-card-savings is-loading" id="metricCardSavings">
                 <div class="metric-header">
                     <span class="card-label">Savings Rate</span>
-                    <span class="status-badge badge-warning" id="savingsGoalBadge"><span class="skeleton skeleton-text short u-inl-42db801"></span></span>
+                    <span class="status-badge badge-warning" id="savingsGoalBadge"><span class="skeleton skeleton-text short" style="width:44px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="savingsRateValue"><span class="skeleton skeleton-value u-inl-d61990f"></span></span>
+                    <span class="metric-value" id="savingsRateValue"><span class="skeleton skeleton-value" style="width:80px; height:28px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-footer">
-                    <span class="text-muted" id="totalSavedProgress"><span class="skeleton skeleton-text short u-inl-0eaf717"></span></span>
+                    <span class="text-muted" id="totalSavedProgress"><span class="skeleton skeleton-text short" style="width:85px; height:12px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
             </div>
 
@@ -253,10 +253,10 @@
             <div class="metric-card metric-card-subs is-loading" id="metricCardSubs">
                 <div class="metric-header">
                     <span class="card-label">Subscriptions</span>
-                    <span class="status-badge badge-subs" id="subsCountBadge"><span class="skeleton skeleton-text short u-inl-42db801"></span></span>
+                    <span class="status-badge badge-subs" id="subsCountBadge"><span class="skeleton skeleton-text short" style="width:44px; height:14px; display:inline-block; border-radius:99px; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-value-row">
-                    <span class="metric-value" id="subsMonthlyTotal"><span class="skeleton skeleton-value u-inl-92b2107"></span></span>
+                    <span class="metric-value" id="subsMonthlyTotal"><span class="skeleton skeleton-value" style="width:95px; height:28px; display:inline-block; margin-bottom:0;"></span></span>
                 </div>
                 <div class="metric-footer">
                     <a href="#" id="manageSubsLink" class="link-action subs-link-action">Manage Subscriptions &rarr;</a>
@@ -288,75 +288,13 @@
                     </div>
                     <h2 class="insights-panel-heading">Financial Pulse & Insights</h2>
                 </div>
-                <div class="insights-panel-actions">
-                    <button type="button" class="wealth-sim-toggle-btn" id="openWealthSimulatorBtn" aria-expanded="false" title="Launch Interactive What-If Wealth & Runway Simulator">
-                        <span>⚡ What-If Wealth Simulator</span>
-                    </button>
-                    <div class="insights-panel-meta" id="insightsHealthBadge">
-                        <span class="pulse-dot"></span>
-                        <span id="insightsHealthScoreText">--% Budget Health</span>
-                    </div>
+                <div class="insights-panel-meta" id="insightsHealthBadge">
+                    <span class="pulse-dot"></span>
+                    <span id="insightsHealthScoreText">--% Budget Health</span>
                 </div>
             </div>
-            <div class="health-telemetry-strip" id="healthTelemetryStrip" aria-label="Financial Health Sub-Scores"></div>
             <div class="insights-cards-grid" id="insightsCardsGrid">
                 <!-- Dynamically generated via renderFinancialInsights() in dashboard.js -->
-            </div>
-            <div class="wealth-simulator-drawer" id="wealthSimulatorPanel" hidden>
-                <div class="insights-panel-header">
-                    <div>
-                        <h3 class="insights-panel-heading">Interactive Wealth &amp; Goal Runway Simulator</h3>
-                        <p class="text-muted">Model how monthly spending cuts, side income, and recurring SIP boosts compound over time.</p>
-                    </div>
-                    <select id="simHorizonSelect" class="filter-select" aria-label="Simulation Horizon">
-                        <option value="6">6-Month Horizon</option>
-                        <option value="12" selected>12-Month Horizon</option>
-                        <option value="24">24-Month Horizon</option>
-                        <option value="36">36-Month Horizon</option>
-                    </select>
-                </div>
-                <div class="wealth-sim-grid">
-                    <div class="wealth-sim-control">
-                        <div class="wealth-sim-control-head">
-                            <label for="simExpenseCutSlider">Trim Discretionary Spend / mo</label>
-                            <span class="wealth-sim-val" id="simExpenseCutVal">₹0</span>
-                        </div>
-                        <input type="range" id="simExpenseCutSlider" class="wealth-sim-slider" min="0" max="50000" step="500" value="3000">
-                    </div>
-                    <div class="wealth-sim-control">
-                        <div class="wealth-sim-control-head">
-                            <label for="simExtraIncomeSlider">Extra Monthly Inflow / Freelance</label>
-                            <span class="wealth-sim-val" id="simExtraIncomeVal">₹0</span>
-                        </div>
-                        <input type="range" id="simExtraIncomeSlider" class="wealth-sim-slider" min="0" max="100000" step="1000" value="5000">
-                    </div>
-                    <div class="wealth-sim-control">
-                        <div class="wealth-sim-control-head">
-                            <label for="simExtraSipSlider">Boost Automated SIP / Goal Deposit</label>
-                            <span class="wealth-sim-val" id="simExtraSipVal">₹0</span>
-                        </div>
-                        <input type="range" id="simExtraSipSlider" class="wealth-sim-slider" min="0" max="50000" step="500" value="2000">
-                    </div>
-                </div>
-                <div class="wealth-sim-outcomes">
-                    <div class="wealth-sim-kpi">
-                        <div class="wealth-sim-kpi-label">Simulated Monthly Surplus</div>
-                        <div class="wealth-sim-kpi-value stealth-sensitive" id="simKpiMonthlySurplus">₹0/mo</div>
-                    </div>
-                    <div class="wealth-sim-kpi">
-                        <div class="wealth-sim-kpi-label">Projected Horizon Wealth</div>
-                        <div class="wealth-sim-kpi-value stealth-sensitive" id="simKpiHorizonWealth">₹0</div>
-                    </div>
-                    <div class="wealth-sim-kpi">
-                        <div class="wealth-sim-kpi-label">Net Incremental Gain</div>
-                        <div class="wealth-sim-kpi-value stealth-sensitive" id="simKpiDeltaGain">+₹0</div>
-                    </div>
-                    <div class="wealth-sim-kpi">
-                        <div class="wealth-sim-kpi-label">Simulated Retention Rate</div>
-                        <div class="wealth-sim-kpi-value" id="simKpiSavingsRate">0%</div>
-                    </div>
-                </div>
-                <div class="wealth-sim-narrative" id="simNarrativeBox">Adjust the sliders above to model your custom wealth trajectory.</div>
             </div>
         </section>
 
@@ -419,7 +357,7 @@
             </div>
 
             <!-- Bar Chart: Budget vs Actual -->
-            <div class="card insight-card u-inl-493b1c8">
+            <div class="card insight-card" style="grid-column: 1 / -1;">
                 <div class="section-heading">
                     <div>
                         <span class="card-label">Budget Governance</span>
@@ -427,7 +365,7 @@
                     </div>
                     <span class="section-meta">This period</span>
                 </div>
-                <div class="chart-wrapper u-inl-b367f33">
+                <div class="chart-wrapper" style="height:240px;">
                     <canvas id="budgetVsActualChart"></canvas>
                 </div>
             </div>
@@ -449,39 +387,39 @@
                 </button>
             </div>
             <div id="budgetList" class="budget-grid-matrix">
-                <div class="skeleton-budget-card u-inl-324caf2">
-                    <div class="u-inl-ed3a493">
-                        <div class="skeleton u-inl-d929d2a"></div>
-                        <div class="skeleton u-inl-bc74005"></div>
+                <div class="skeleton-budget-card" style="padding:18px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); min-height:104px; box-sizing:border-box;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div class="skeleton" style="width:110px; height:16px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:50px; height:18px; border-radius:99px;"></div>
                     </div>
-                    <div class="skeleton u-inl-0355d13"></div>
-                    <div class="u-inl-7299231">
-                        <div class="skeleton u-inl-37a5a81"></div>
-                        <div class="skeleton u-inl-37a5a81"></div>
+                    <div class="skeleton" style="width:100%; height:8px; border-radius:4px; margin-bottom:12px;"></div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div class="skeleton" style="width:70px; height:13px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:70px; height:13px; border-radius:4px;"></div>
                     </div>
                 </div>
-                <div class="skeleton-budget-card u-inl-324caf2">
-                    <div class="u-inl-ed3a493">
-                        <div class="skeleton u-inl-6e721a5"></div>
-                        <div class="skeleton u-inl-bc74005"></div>
+                <div class="skeleton-budget-card" style="padding:18px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); min-height:104px; box-sizing:border-box;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div class="skeleton" style="width:130px; height:16px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:50px; height:18px; border-radius:99px;"></div>
                     </div>
-                    <div class="skeleton u-inl-0355d13"></div>
-                    <div class="u-inl-7299231">
-                        <div class="skeleton u-inl-37a5a81"></div>
-                        <div class="skeleton u-inl-37a5a81"></div>
+                    <div class="skeleton" style="width:100%; height:8px; border-radius:4px; margin-bottom:12px;"></div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div class="skeleton" style="width:70px; height:13px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:70px; height:13px; border-radius:4px;"></div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- SAVINGS GOALS & MILESTONES -->
-        <section class="card savings-section animate-cascade delay-5 u-inl-062d4a8">
-            <div class="card-header u-inl-bdce62c">
+        <section class="card savings-section animate-cascade delay-5" style="margin-top:24px;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <div>
-                    <span class="card-label u-inl-4033a66">Wealth Accumulation</span>
-                    <h3 class="section-title u-inl-c4ee138">Savings Goals & Milestones</h3>
+                    <span class="card-label" style="color:#F59E0B; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Wealth Accumulation</span>
+                    <h3 class="section-title" style="margin:4px 0 0; font-size:18px;">Savings Goals & Milestones</h3>
                 </div>
-                <button id="addGoalBtn" class="btn-primary btn-small u-inl-2867d45" title="Create a New Savings Goal">
+                <button id="addGoalBtn" class="btn-primary btn-small" title="Create a New Savings Goal" style="background:#F59E0B; border-color:#F59E0B; color:#fff;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -490,26 +428,26 @@
                 </button>
             </div>
             <div id="savingsGoalsList" class="savings-grid-matrix">
-                <div class="skeleton-goal-card u-inl-6173647">
-                    <div class="u-inl-ed3a493">
-                        <div class="skeleton u-inl-e427608"></div>
-                        <div class="skeleton u-inl-969a154"></div>
+                <div class="skeleton-goal-card" style="padding:18px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); min-height:110px; box-sizing:border-box;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div class="skeleton" style="width:120px; height:16px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:65px; height:18px; border-radius:99px;"></div>
                     </div>
-                    <div class="skeleton u-inl-0355d13"></div>
-                    <div class="u-inl-7299231">
-                        <div class="skeleton u-inl-9a4612b"></div>
-                        <div class="skeleton u-inl-5ce474a"></div>
+                    <div class="skeleton" style="width:100%; height:8px; border-radius:4px; margin-bottom:12px;"></div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div class="skeleton" style="width:80px; height:13px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:75px; height:13px; border-radius:4px;"></div>
                     </div>
                 </div>
-                <div class="skeleton-goal-card u-inl-6173647">
-                    <div class="u-inl-ed3a493">
-                        <div class="skeleton u-inl-0e3f45f"></div>
-                        <div class="skeleton u-inl-969a154"></div>
+                <div class="skeleton-goal-card" style="padding:18px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); min-height:110px; box-sizing:border-box;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div class="skeleton" style="width:140px; height:16px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:65px; height:18px; border-radius:99px;"></div>
                     </div>
-                    <div class="skeleton u-inl-0355d13"></div>
-                    <div class="u-inl-7299231">
-                        <div class="skeleton u-inl-9a4612b"></div>
-                        <div class="skeleton u-inl-5ce474a"></div>
+                    <div class="skeleton" style="width:100%; height:8px; border-radius:4px; margin-bottom:12px;"></div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div class="skeleton" style="width:80px; height:13px; border-radius:4px;"></div>
+                        <div class="skeleton" style="width:75px; height:13px; border-radius:4px;"></div>
                     </div>
                 </div>
             </div>
@@ -517,14 +455,14 @@
 
         
         <!-- LOANS & CASUAL FRIEND ADJUSTMENTS -->
-        <section class="card loans-section animate-cascade delay-5 u-inl-062d4a8" id="loansSection">
-            <div class="card-header u-inl-aeea0f8">
+        <section class="card loans-section animate-cascade delay-5" id="loansSection" style="margin-top:24px;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
                 <div>
-                    <span class="card-label u-inl-78d76dd">Peer Debt &amp; Friend IOUs</span>
-                    <h3 class="section-title u-inl-18d2784">Loans &amp; Casual Adjustments</h3>
-                    <p class="u-inl-32fd41b">Track money lent, casual bill splits, and loans borrowed separately from personal living expenses.</p>
+                    <span class="card-label" style="color:#8B5CF6; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Peer Debt &amp; Friend IOUs</span>
+                    <h3 class="section-title" style="margin:4px 0 2px; font-size:18px;">Loans &amp; Casual Adjustments</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Track money lent, casual bill splits, and loans borrowed separately from personal living expenses.</p>
                 </div>
-                <button id="addLoanBtn" class="btn-primary btn-small u-inl-4619822" title="Record a Peer Loan or Friend Adjustment">
+                <button id="addLoanBtn" class="btn-primary btn-small" title="Record a Peer Loan or Friend Adjustment" style="background:#8B5CF6; border-color:#8B5CF6; color:#fff; display:inline-flex; align-items:center; gap:6px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -534,46 +472,46 @@
             </div>
 
             <!-- Dedicated Metric Cards Ribbon -->
-            <div class="loans-metrics-grid u-inl-7530e11">
-                <div class="loan-metric-card is-loading u-inl-203011b">
-                    <div class="u-inl-8b284cf">
-                        <span class="u-inl-85b8a38">Owed to You (Lent)</span>
-                        <span class="u-inl-ce17020"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg></span>
+            <div class="loans-metrics-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:18px;">
+                <div class="loan-metric-card is-loading" style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.22); border-radius:12px; padding:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#10B981; letter-spacing:0.04em;">Owed to You (Lent)</span>
+                        <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(16,185,129,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg></span>
                     </div>
-                    <div class="loan-metric-value stealth-sensitive u-inl-f917915" id="loansTotalLent"><span class="skeleton skeleton-value u-inl-37f90ee"></span></div>
-                    <div class="u-inl-e7ff712"><span id="loansLentPendingCount"><span class="skeleton skeleton-text short u-inl-60bcdfa"></span></span> pending receivables</div>
+                    <div class="loan-metric-value stealth-sensitive" id="loansTotalLent" style="font-size:20px; font-weight:800; color:var(--text-main);"><span class="skeleton skeleton-value" style="width:95px; height:24px; display:inline-block; margin-bottom:0;"></span></div>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;"><span id="loansLentPendingCount"><span class="skeleton skeleton-text short" style="width:28px; height:12px; display:inline-block; margin-bottom:0;"></span></span> pending receivables</div>
                 </div>
 
-                <div class="loan-metric-card is-loading u-inl-cd83b93">
-                    <div class="u-inl-8b284cf">
-                        <span class="u-inl-5a60b44">You Owe (Borrowed)</span>
-                        <span class="u-inl-11d31ee"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg></span>
+                <div class="loan-metric-card is-loading" style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.22); border-radius:12px; padding:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#EF4444; letter-spacing:0.04em;">You Owe (Borrowed)</span>
+                        <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(239,68,68,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg></span>
                     </div>
-                    <div class="loan-metric-value stealth-sensitive u-inl-f917915" id="loansTotalBorrowed"><span class="skeleton skeleton-value u-inl-37f90ee"></span></div>
-                    <div class="u-inl-e7ff712"><span id="loansBorrowedPendingCount"><span class="skeleton skeleton-text short u-inl-60bcdfa"></span></span> pending payables</div>
+                    <div class="loan-metric-value stealth-sensitive" id="loansTotalBorrowed" style="font-size:20px; font-weight:800; color:var(--text-main);"><span class="skeleton skeleton-value" style="width:95px; height:24px; display:inline-block; margin-bottom:0;"></span></div>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;"><span id="loansBorrowedPendingCount"><span class="skeleton skeleton-text short" style="width:28px; height:12px; display:inline-block; margin-bottom:0;"></span></span> pending payables</div>
                 </div>
 
-                <div class="loan-metric-card is-loading u-inl-22b2170">
-                    <div class="u-inl-8b284cf">
-                        <span class="u-inl-cbc9369">Net Peer Balance</span>
-                        <span class="u-inl-fd6e548"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 8l9-5 9 5M6 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0zM18 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0z"/></svg></span>
+                <div class="loan-metric-card is-loading" style="background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.22); border-radius:12px; padding:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#8B5CF6; letter-spacing:0.04em;">Net Peer Balance</span>
+                        <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(139,92,246,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 8l9-5 9 5M6 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0zM18 14l-3-6h6l-3 6a3 3 0 0 1-6 0v0z"/></svg></span>
                     </div>
-                    <div class="loan-metric-value stealth-sensitive u-inl-f917915" id="loansNetBalance"><span class="skeleton skeleton-value u-inl-37f90ee"></span></div>
-                    <div class="u-inl-e7ff712" id="loansNetStatus"><span class="skeleton skeleton-text short u-inl-7b439f0"></span></div>
+                    <div class="loan-metric-value stealth-sensitive" id="loansNetBalance" style="font-size:20px; font-weight:800; color:var(--text-main);"><span class="skeleton skeleton-value" style="width:95px; height:24px; display:inline-block; margin-bottom:0;"></span></div>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;" id="loansNetStatus"><span class="skeleton skeleton-text short" style="width:65px; height:12px; display:inline-block; margin-bottom:0;"></span></div>
                 </div>
 
-                <div class="loan-metric-card is-loading u-inl-1120461">
-                    <div class="u-inl-8b284cf">
-                        <span class="u-inl-f009429">Settlements</span>
-                        <span class="u-inl-284187a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+                <div class="loan-metric-card is-loading" style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.22); border-radius:12px; padding:14px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:#F59E0B; letter-spacing:0.04em;">Settlements</span>
+                        <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:rgba(245,158,11,0.12);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
                     </div>
-                    <div class="loan-metric-value u-inl-f917915"><span id="loansPendingCount"><span class="skeleton skeleton-value u-inl-d6591c9"></span></span> <span class="u-inl-d7930ba">open / </span><span id="loansSettledCount"><span class="skeleton skeleton-value u-inl-d6591c9"></span></span> <span class="u-inl-b61e5de">done</span></div>
-                    <div class="u-inl-e7ff712">1-click settlement ledger</div>
+                    <div class="loan-metric-value" style="font-size:20px; font-weight:800; color:var(--text-main);"><span id="loansPendingCount"><span class="skeleton skeleton-value" style="width:36px; height:22px; display:inline-block; margin-bottom:0;"></span></span> <span style="font-size:12px; font-weight:600; color:var(--text-muted);">open / </span><span id="loansSettledCount"><span class="skeleton skeleton-value" style="width:36px; height:22px; display:inline-block; margin-bottom:0;"></span></span> <span style="font-size:12px; font-weight:600; color:#10B981;">done</span></div>
+                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">1-click settlement ledger</div>
                 </div>
             </div>
 
             <!-- Filter Tabs -->
-            <div class="loans-filter-bar u-inl-787d99d">
+            <div class="loans-filter-bar" style="display:flex; gap:8px; margin-bottom:14px; overflow-x:auto; padding-bottom:4px;">
                 <button type="button" class="loan-tab-btn active" data-filter="ALL">All (<span id="tabCountAll">0</span>)</button>
                 <button type="button" class="loan-tab-btn" data-filter="LENT">Owed to You (<span id="tabCountLent">0</span>)</button>
                 <button type="button" class="loan-tab-btn" data-filter="BORROWED">You Owe (<span id="tabCountBorrowed">0</span>)</button>
@@ -583,43 +521,43 @@
 
             <!-- List / Table Container -->
             <div id="loansListContainer" class="loans-list-wrapper">
-                <div class="loans-skeleton-loader u-inl-5c3d2b7">
-                    <div class="skeleton u-inl-0a2a868"></div>
-                    <div class="skeleton u-inl-ced01e1"></div>
-                    <div class="skeleton u-inl-ced01e1"></div>
+                <div class="loans-skeleton-loader" style="padding:16px; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:10px;">
+                    <div class="skeleton" style="width:35%; height:20px; border-radius:6px;"></div>
+                    <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
+                    <div class="skeleton" style="width:100%; height:52px; border-radius:10px;"></div>
                 </div>
             </div>
         </section>
 
         <!-- UNIFIED AUDIT TRAIL & CASH FLOW LEDGER CONTAINER -->
         <section class="card recent-transactions unified-ledger-card animate-cascade delay-6" id="unifiedLedgerCard">
-            <div class="list-header u-inl-1797dd2">
+            <div class="list-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div>
                     <span class="card-label">Audit Trail & Cash Flow</span>
                     <h2 class="section-title">Transactions & Inflows Ledger</h2>
                 </div>
                 
-                <div class="list-header-actions u-inl-d76f1c0">
-                    <input class="u-inl-cb45893" type="file" id="importFileInput" accept=".csv,.json,.xlsx,.xls">
-                    <input class="u-inl-cb45893" type="file" id="importIncomeFileInput" accept=".csv,.json,.xlsx,.xls">
-                    <button id="importBtn" class="btn-icon btn-text-icon u-inl-959bb52" title="Import transactions from .csv, .json, or .xlsx file">
+                <div class="list-header-actions" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                    <input type="file" id="importFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
+                    <input type="file" id="importIncomeFileInput" accept=".csv,.json,.xlsx,.xls" style="display:none">
+                    <button id="importBtn" class="btn-icon btn-text-icon" title="Import transactions from .csv, .json, or .xlsx file" style="gap:6px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import <span class="u-inl-42a090e">(.csv/.xlsx)</span>
+                        Import <span style="opacity:0.65; font-weight:400; font-size:0.85em;">(.csv/.xlsx)</span>
                     </button>
-                    <button id="importIncomeBtn" class="btn-icon btn-text-icon u-inl-b86fa46" title="Import Incomes from .csv, .json, or .xlsx file">
+                    <button id="importIncomeBtn" class="btn-icon btn-text-icon" title="Import Incomes from .csv, .json, or .xlsx file" style="gap:6px; display:none;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         Import Incomes
                     </button>
-                    <button id="exportExcelBtn" class="btn-icon btn-text-icon u-inl-1efc656" title="Export Expenses Excel Workbook (.xlsx)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Excel</span></button>
-                    <button id="exportIncomeExcelBtn" class="btn-icon btn-text-icon u-inl-a7d4aec" title="Export Incomes Excel Workbook (.xlsx)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Incomes Excel</span></button>
-                    <button id="exportReportExcelBtn" class="btn-icon btn-text-icon u-inl-45341ac" title="Export Executive Financial Report (Excel Workbook)"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> <span>Executive Report</span></button>
-                    <button id="exportReportPdfBtn" class="btn-icon btn-text-icon u-inl-85bb628" title="Export Complete Executive Financial Statement (PDF)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span>Statement</span></button>
+                    <button id="exportExcelBtn" class="btn-icon btn-text-icon" title="Export Expenses Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Excel</span></button>
+                    <button id="exportIncomeExcelBtn" class="btn-icon btn-text-icon" title="Export Incomes Excel Workbook (.xlsx)" style="font-weight:700; color:#107C41; border:1px solid rgba(16,124,65,0.4); display:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Incomes Excel</span></button>
+                    <button id="exportReportExcelBtn" class="btn-icon btn-text-icon" title="Export Executive Financial Report (Excel Workbook)" style="font-weight:700; color:#10B981; border:1px solid rgba(16,185,129,0.4);"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> <span>Executive Report</span></button>
+                    <button id="exportReportPdfBtn" class="btn-icon btn-text-icon" title="Export Complete Executive Financial Statement (PDF)" style="font-weight:700; color:#3B82F6; border:1px solid rgba(59,130,246,0.4);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span>Statement</span></button>
                     <button id="exportCsvBtn" class="btn-icon btn-text-icon" title="Export Expenses CSV">CSV</button>
-                    <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon u-inl-cb45893" title="Export Incomes CSV">Income CSV</button>
+                    <button id="exportIncomeCsvBtn" class="btn-icon btn-text-icon" title="Export Incomes CSV" style="display:none;">Income CSV</button>
                     <button id="exportJsonBtn" class="btn-icon btn-text-icon" title="Export Expenses JSON">JSON</button>
-                    <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon u-inl-cb45893" title="Export Incomes JSON">Income JSON</button>
+                    <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon" title="Export Incomes JSON" style="display:none;">Income JSON</button>
                     <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export Expenses PDF Report">PDF</button>
-                    <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon u-inl-cb45893" title="Export Incomes PDF Report">Income PDF</button>
+                    <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon" title="Export Incomes PDF Report" style="display:none;">Income PDF</button>
                     <button id="toggleFiltersBtn" class="btn-icon" title="Show Advanced Filters" aria-label="Show advanced filters">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -631,14 +569,14 @@
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                         </svg>
                     </button>
-                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small u-inl-6bd6e56" title="Record Income Stream">
+                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:#10B981; border-color:#10B981; color:#fff;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                         <span>Inflow</span>
                     </button>
-                    <button type="button" id="addExpenseTableBtn" class="btn-primary btn-small" title="Record Expense">
+                    <button type="button" id="addExpenseTableBtn" class="btn-primary btn-small" onclick="openNewExpenseModal()" title="Record Expense">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -649,18 +587,18 @@
             </div>
 
             <!-- Stream Selection Tabs (Like the Mobile App) -->
-            <div class="ledger-stream-tabs u-inl-a00ddf2" id="ledgerStreamTabs">
-                <button type="button" class="stream-pill-btn active u-inl-858ea1a" data-tab="all" id="tabBtnAll">
+            <div class="ledger-stream-tabs" id="ledgerStreamTabs" style="display:flex; gap:6px; background:var(--input-bg, rgba(255,255,255,0.03)); border:1px solid var(--border); border-radius:12px; padding:4px; margin: 10px 0 16px; width:fit-content; max-width:100%; overflow-x:auto;">
+                <button type="button" class="stream-pill-btn active" data-tab="all" id="tabBtnAll" style="padding:7px 16px; border-radius:8px; border:none; background:var(--card-bg, rgba(255,255,255,0.08)); color:var(--text-main); font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
                     <span>All Activity</span>
-                    <span class="stream-badge-count u-inl-2c1303f" id="badgeAllCount">0</span>
+                    <span class="stream-badge-count" id="badgeAllCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(199,154,62,0.2); color:var(--primary);">0</span>
                 </button>
-                <button type="button" class="stream-pill-btn u-inl-74ff28d" data-tab="expenses" id="tabBtnExpenses">
+                <button type="button" class="stream-pill-btn" data-tab="expenses" id="tabBtnExpenses" style="padding:7px 16px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
                     <span>Outflows</span>
-                    <span class="stream-badge-count u-inl-7e588d3" id="badgeExpensesCount">0</span>
+                    <span class="stream-badge-count" id="badgeExpensesCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(255,255,255,0.06); color:var(--text-muted);">0</span>
                 </button>
-                <button type="button" class="stream-pill-btn u-inl-74ff28d" data-tab="incomes" id="tabBtnIncomes">
+                <button type="button" class="stream-pill-btn" data-tab="incomes" id="tabBtnIncomes" style="padding:7px 16px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
                     <span>Inflows</span>
-                    <span class="stream-badge-count u-inl-d58d818" id="badgeIncomesCount">0</span>
+                    <span class="stream-badge-count" id="badgeIncomesCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(16,185,129,0.15); color:#10B981;">0</span>
                 </button>
             </div>
 
@@ -734,7 +672,7 @@
             </div>
 
             <!-- Quick Filter Pills for Incomes (shown in Inflows tab) -->
-            <div class="category-pills-wrapper u-inl-425d0e8" id="incomePillsWrapper">
+            <div class="category-pills-wrapper" id="incomePillsWrapper" style="display:none; margin-top:8px;">
                 <div class="category-pills-bar" id="incomePillsBar">
                     <button class="pill-chip active" data-income-filter="all">All Inflows</button>
                     <button class="pill-chip" data-income-filter="recurring">Recurring</button>
@@ -743,7 +681,7 @@
             </div>
 
             <!-- Filter Toolbar Drawer for Incomes -->
-            <div class="filter-toolbar u-inl-cb45893" id="incomeFilterPanel">
+            <div class="filter-toolbar" id="incomeFilterPanel" style="display:none;">
                 <div class="filter-date-group">
                     <div class="date-input-wrap">
                         <span class="filter-label">From</span>
@@ -782,8 +720,8 @@
                 <!-- Outflows Column -->
                 <div class="ledger-column" id="ledgerColExpenses">
                     <div class="ledger-col-header">
-                        <span class="u-inl-5719b44">Outflows (Expenses)</span>
-                        <span class="u-inl-f658aee" id="colExpenseCount"></span>
+                        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">Outflows (Expenses)</span>
+                        <span id="colExpenseCount" style="font-size:11.5px; font-weight:700; color:var(--primary);"></span>
                     </div>
                     <div class="scroll-area" id="expenseList">
                         <div class="skeleton skeleton-row"></div>
@@ -795,8 +733,8 @@
                 <!-- Inflows Column -->
                 <div class="ledger-column" id="ledgerColIncomes">
                     <div class="ledger-col-header">
-                        <span class="u-inl-ebc372f">Inflows (Earnings)</span>
-                        <span class="u-inl-73cfa28" id="colIncomeCount"></span>
+                        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#10B981;">Inflows (Earnings)</span>
+                        <span id="colIncomeCount" style="font-size:11.5px; font-weight:700; color:#10B981;"></span>
                     </div>
                     <div class="scroll-area" id="incomeList">
                         <div class="skeleton skeleton-row"></div>
@@ -812,11 +750,11 @@
     <div class="modal-overlay" id="expenseModal">
         <div class="modal">
             <div class="modal-header">
-                <div class="u-inl-8e160d0">
-                    <div class="u-inl-fcce608">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(var(--primary-rgb), 0.15); display:flex; align-items:center; justify-content:center; color:var(--primary); border:1px solid rgba(var(--primary-rgb), 0.3); box-shadow:0 0 12px rgba(var(--primary-rgb), 0.25);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </div>
-                    <h3 class="u-inl-e09306b" id="expenseModalTitle">Record Expense <span class="ai-active-pill" title="AI auto-categorization active">⚡ AI Ready</span></h3>
+                    <h3 id="expenseModalTitle" style="margin:0; display:flex; align-items:center;">Record Expense <span class="ai-active-pill" title="AI auto-categorization active">⚡ AI Ready</span></h3>
                 </div>
                 <button class="modal-close" id="closeExpenseModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
@@ -824,26 +762,26 @@
                                 <input type="hidden" id="expenseId">
                 <!-- Receipt OCR Scanner Widget -->
                 <div class="receipt-ocr-widget" id="receiptOcrWidget">
-                    <input class="u-inl-cb45893" type="file" id="receiptFileInput" accept="image/*">
-                    <input class="u-inl-cb45893" type="file" id="receiptCameraInput" accept="image/*" capture="environment">
+                    <input type="file" id="receiptFileInput" accept="image/*" style="display:none;">
+                    <input type="file" id="receiptCameraInput" accept="image/*" capture="environment" style="display:none;">
                     <div class="receipt-ocr-dropzone" id="receiptDropZone" title="Click or drop a receipt image to auto-fill details">
                         <div class="receipt-ocr-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
                         <div class="receipt-ocr-text">
                             <span class="receipt-ocr-title">Scan Receipt / Bill (Tesseract OCR)</span>
                             <span class="receipt-ocr-sub">Browse image file, gallery photo, or capture live camera</span>
                         </div>
-                        <div class="u-inl-07b8131">
+                        <div style="display:flex; gap:6px; align-items:center;">
                             <button type="button" class="btn-scan-receipt" id="triggerReceiptScanBtn" title="Browse image files or photo gallery">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                 Browse
                             </button>
-                            <button type="button" class="btn-scan-receipt u-inl-22dedc5" id="triggerReceiptCameraBtn" title="Snap live picture using device camera">
+                            <button type="button" class="btn-scan-receipt" id="triggerReceiptCameraBtn" title="Snap live picture using device camera" style="background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.3); color:var(--text-main);">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                                 Camera
                             </button>
                         </div>
                     </div>
-                    <div class="receipt-ocr-progress u-inl-cb45893" id="receiptOcrProgress">
+                    <div class="receipt-ocr-progress" id="receiptOcrProgress" style="display:none;">
                         <div class="receipt-ocr-progress-header">
                             <span id="receiptOcrStage">Initializing OCR worker...</span>
                             <span id="receiptOcrPct">0%</span>
@@ -852,26 +790,26 @@
                             <div class="receipt-ocr-bar-fill" id="receiptOcrFill"></div>
                         </div>
                     </div>
-                    <div class="receipt-ocr-success u-inl-2244140" id="receiptOcrSuccess">
-                        <div class="u-inl-3390deb">
+                    <div class="receipt-ocr-success" id="receiptOcrSuccess" style="display:none; flex-direction:column; align-items:stretch; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span id="receiptOcrSummaryText">✨ Receipt data extracted and pre-filled!</span>
                             <button type="button" id="dismissReceiptOcrBtn" class="receipt-ocr-dismiss">&times;</button>
                         </div>
-                        <div class="receipt-ocr-breakdown u-inl-cb45893" id="receiptOcrBreakdown"></div>
+                        <div class="receipt-ocr-breakdown" id="receiptOcrBreakdown" style="display:none;"></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <div class="u-inl-836496d">
-                        <label class="u-inl-e7ec540" for="desc">Description</label>
-                        <span id="aiAssistBadge" class="ai-active-pill u-inl-d8afc94">✨ Smart Assist</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label for="desc" style="margin-bottom:0;">Description</label>
+                        <span id="aiAssistBadge" class="ai-active-pill" style="font-size:9px; padding:2px 6px;">✨ Smart Assist</span>
                     </div>
                     <div class="input-with-ai-wrap">
                         <input type="text" id="desc" required placeholder="e.g. Uber ride home, AWS Cloud, Whole Foods" autocomplete="off">
-                        <span id="descAiLoading" class="desc-ai-spinner u-inl-9c76635" title="Analyzing with AI..."></span>
+                        <span id="descAiLoading" class="desc-ai-spinner" style="display: none;" title="Analyzing with AI..."></span>
                     </div>
 
                     <!-- AI Suggestion Box -->
-                    <div id="aiSuggestionBox" class="ai-suggestion-box u-inl-9c76635">
+                    <div id="aiSuggestionBox" class="ai-suggestion-box" style="display: none;">
                         <div class="ai-suggestion-header">
                             <div class="ai-suggestion-title">
                                 <span class="ai-badge-icon">⚡</span>
@@ -881,17 +819,17 @@
                             </div>
                             <button type="button" id="aiApplyBtn" class="ai-apply-btn" title="Select this category">Apply</button>
                         </div>
-                        <div id="aiAlternativePills" class="ai-alternative-pills u-inl-9c76635">
+                        <div id="aiAlternativePills" class="ai-alternative-pills" style="display: none;">
                             <span class="ai-alt-label">Alternatives:</span>
                             <div id="aiPillsList" class="ai-pills-list"></div>
                         </div>
-                        <div id="aiAutoAppliedNotice" class="ai-auto-notice u-inl-9c76635">
+                        <div id="aiAutoAppliedNotice" class="ai-auto-notice" style="display: none;">
                             <span>✨ Category auto-selected by AI. Change anytime below.</span>
                         </div>
                     </div>
 
                     <!-- Duplicate Detection Box -->
-                    <div id="duplicateWarningBox" class="duplicate-warning-box u-inl-9c76635">
+                    <div id="duplicateWarningBox" class="duplicate-warning-box" style="display: none;">
                         <span class="dup-icon">⚠️</span>
                         <div class="dup-content">
                             <span class="dup-title">Similar transaction detected</span>
@@ -925,7 +863,7 @@
                 <div class="form-group flex-row switch-group">
                     <label class="switch-label" for="isRecurring">
                         <span class="switch-text">
-                            <svg class="u-inl-307bd51" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--primary); flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                             <span>Make Recurring Subscription</span>
                         </span>
                         <input type="checkbox" id="isRecurring">
@@ -949,7 +887,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary u-inl-b0043ef">Save Expense</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Save Expense</button>
             </form>
         </div>
     </div>
@@ -980,50 +918,50 @@
                         <option value="CUSTOM">Custom Interval (Days)</option>
                     </select>
                 </div>
-                <div class="form-group u-inl-cb45893" id="customBudgetDates">
-                    <div class="u-inl-273e413">
+                <div class="form-group" id="customBudgetDates" style="display:none;">
+                    <div style="margin-bottom: 10px;">
                         <label>Number of Days</label>
                         <input type="number" id="budgetIntervalDays" min="1" value="30" placeholder="e.g. 30">
                     </div>
-                    <div class="budget-date-row u-inl-a1658ce">
-                        <div class="budget-date-col u-inl-d26bc06">
-                            <label class="u-inl-6b9c179">Start Date (Optional)</label>
+                    <div class="budget-date-row" style="display:flex; gap:12px; width:100%; box-sizing:border-box;">
+                        <div class="budget-date-col" style="flex:1; min-width:0; box-sizing:border-box;">
+                            <label style="font-size:12px;">Start Date (Optional)</label>
                             <input type="date" id="budgetStartDate" class="dark-date">
                         </div>
-                        <div class="budget-date-col u-inl-d26bc06">
-                            <label class="u-inl-6b9c179">End Date (Optional)</label>
+                        <div class="budget-date-col" style="flex:1; min-width:0; box-sizing:border-box;">
+                            <label style="font-size:12px;">End Date (Optional)</label>
                             <input type="date" id="budgetEndDate" class="dark-date">
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary u-inl-b0043ef">Save Budget</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Save Budget</button>
             </form>
         </div>
     </div>
 
     <!-- MODAL DIALOG: SECURITY PIN SETUP & RECOVERY -->
     <div class="modal-overlay" id="securityPinModal">
-        <div class="modal u-inl-4e9ec4b">
+        <div class="modal" style="max-width: 420px;">
             <div class="modal-header">
                 <h3>Security PIN</h3>
                 <button class="modal-close" id="closeSecurityPinModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
-            <p class="u-inl-d4b7a6e">
+            <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
                 Your 6-digit numeric Security PIN enables <strong>instant account recovery</strong> without requiring email OTP.
             </p>
-            <div class="u-inl-b1ee56b" id="pinStatusIndicator">
+            <div id="pinStatusIndicator" style="margin-bottom: 14px; padding: 8px 12px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                 <!-- Injected dynamically -->
             </div>
             <form id="securityPinForm">
                 <div class="form-group">
                     <label>New 6-Digit PIN</label>
-                    <input class="u-inl-4093a5b" type="password" id="newSecurityPin" maxlength="6" inputmode="numeric" placeholder="••••••" required>
+                    <input type="password" id="newSecurityPin" maxlength="6" inputmode="numeric" placeholder="••••••" required style="letter-spacing: 4px; font-size: 16px;">
                 </div>
                 <div class="form-group">
                     <label>Confirm 6-Digit PIN</label>
-                    <input class="u-inl-4093a5b" type="password" id="confirmSecurityPin" maxlength="6" inputmode="numeric" placeholder="••••••" required>
+                    <input type="password" id="confirmSecurityPin" maxlength="6" inputmode="numeric" placeholder="••••••" required style="letter-spacing: 4px; font-size: 16px;">
                 </div>
-                <button type="submit" class="btn-primary u-inl-675a468">Save Security PIN</button>
+                <button type="submit" class="btn-primary" style="margin-top: 14px; width: 100%;">Save Security PIN</button>
             </form>
         </div>
     </div>
@@ -1033,22 +971,22 @@
         <div class="modal modal-wide">
             <div class="modal-header">
                 <div>
-                    <h3 class="u-inl-e974c66">Recurring Cashflow & Subscriptions</h3>
-                    <p class="u-inl-32fd41b">Active subscriptions and recurring income streams that renew automatically</p>
+                    <h3 style="margin-bottom:2px;">Recurring Cashflow & Subscriptions</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Active subscriptions and recurring income streams that renew automatically</p>
                 </div>
                 <button class="modal-close" id="closeSubsModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
-            <div class="u-inl-9b93ee6" id="subsCashflowSummary">
+            <div id="subsCashflowSummary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:16px;">
                 <!-- Injected via loadSubscriptions() -->
             </div>
             <div class="subs-tab-bar">
-                <button type="button" id="subsTabExpensesBtn" class="subs-tab-btn active">
+                <button type="button" id="subsTabExpensesBtn" class="subs-tab-btn active" onclick="switchSubsModalTab('expenses')">
                     Outflows (Subscriptions)
                 </button>
-                <button type="button" id="subsTabIncomesBtn" class="subs-tab-btn">
+                <button type="button" id="subsTabIncomesBtn" class="subs-tab-btn" onclick="switchSubsModalTab('incomes')">
                     Inflows (Recurring Income)
                 </button>
-                <button type="button" id="subsTabSavingsBtn" class="subs-tab-btn">
+                <button type="button" id="subsTabSavingsBtn" class="subs-tab-btn" onclick="switchSubsModalTab('savings')">
                     Chits & Recurring Savings
                 </button>
             </div>
@@ -1066,7 +1004,7 @@
                 <button class="modal-close" id="closeManageCategoriesModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <div class="manage-categories-body">
-                <p class="text-muted u-inl-bfa88d6">
+                <p class="text-muted" style="font-size:12.5px; margin-bottom:14px;">
                     Create custom categories or delete your personal ones. Built-in system categories are permanent.
                 </p>
                 <div id="categoriesList" class="categories-chip-list">
@@ -1080,11 +1018,11 @@
     <div class="modal-overlay" id="editSubModal">
         <div class="modal">
             <div class="modal-header">
-                <div class="u-inl-2761a6a">
-                    <div class="u-inl-4160a1d">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:28px; height:28px; border-radius:8px; background:rgba(var(--primary-rgb),0.15); display:flex; align-items:center; justify-content:center; color:var(--primary);">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                     </div>
-                    <h3 class="u-inl-1386d50">Edit Subscription</h3>
+                    <h3 style="margin:0;">Edit Subscription</h3>
                 </div>
                 <button class="modal-close" id="closeEditSubModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
@@ -1119,9 +1057,9 @@
                 <div class="form-group">
                     <label>Next Billing Date</label>
                     <input type="date" id="editSubNextDate" class="dark-date">
-                    <span class="u-inl-6a37243">Leave as-is to advance automatically based on cadence.</span>
+                    <span style="font-size:11px; color:var(--text-muted); margin-top:3px; display:block;">Leave as-is to advance automatically based on cadence.</span>
                 </div>
-                <button type="submit" class="btn-primary u-inl-b0043ef">Save Changes</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px;">Save Changes</button>
             </form>
         </div>
     </div>
@@ -1131,11 +1069,11 @@
     <div class="modal-overlay" id="incomeModal">
         <div class="modal">
             <div class="modal-header">
-                <div class="u-inl-8e160d0">
-                    <div class="u-inl-cf30e9f">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(16, 185, 129, 0.15); display:flex; align-items:center; justify-content:center; color:#10B981; border:1px solid rgba(16, 185, 129, 0.3); box-shadow:0 0 12px rgba(16, 185, 129, 0.25);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </div>
-                    <h3 class="u-inl-1386d50" id="incomeModalTitle">Record Income</h3>
+                    <h3 id="incomeModalTitle" style="margin:0;">Record Income</h3>
                 </div>
                 <button class="modal-close" id="closeIncomeModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
@@ -1180,14 +1118,14 @@
                 <div class="form-group flex-row switch-group">
                     <label class="switch-label" for="incomeIsRecurring">
                         <span class="switch-text">
-                            <svg class="u-inl-c0e7e20" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#10B981; flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                             <span>Recurring Income Stream</span>
                         </span>
                         <input type="checkbox" id="incomeIsRecurring">
                     </label>
                 </div>
 
-                <div id="incomeRecurringOptions" hidden class="form-group-box u-inl-9c76635">
+                <div id="incomeRecurringOptions" hidden class="form-group-box" style="display: none;">
                     <div class="form-group">
                         <label>Payment Frequency</label>
                         <select id="incomeRecurringFrequency">
@@ -1198,12 +1136,12 @@
                             <option value="CUSTOM">Custom Interval (Days)</option>
                         </select>
                     </div>
-                    <div class="form-group u-inl-9c76635" id="incomeCustomIntervalWrap" hidden>
+                    <div class="form-group" id="incomeCustomIntervalWrap" hidden style="display: none;">
                         <label>Interval (Days)</label>
                         <input type="number" id="incomeRecurringIntervalDays" min="1" value="1">
                     </div>
                 </div>
-                <button type="submit" class="btn-primary add-income-button u-inl-b0043ef">Save Income</button>
+                <button type="submit" class="btn-primary add-income-button" style="margin-top:16px;">Save Income</button>
             </form>
         </div>
     </div>
@@ -1234,23 +1172,23 @@
                     <input type="date" id="goalTargetDate" class="dark-date">
                 </div>
                 <!-- Recurring Chit / RD / SIP Options -->
-                <div class="form-group flex-row switch-group u-inl-0dc91c4">
+                <div class="form-group flex-row switch-group" style="margin-top: 14px;">
                     <label class="switch-label" for="goalIsRecurring">
                         <span class="switch-text">
-                            <svg class="u-inl-f3e4b04" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#F59E0B; flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                             <span>Recurring Contribution (Chit / RD / SIP)</span>
                         </span>
                         <input type="checkbox" id="goalIsRecurring">
                     </label>
                 </div>
 
-                <div id="goalRecurringFields" hidden class="form-group-box u-inl-9c76635">
-                    <div class="u-inl-3042955">
-                        <div class="form-group u-inl-e7ec540">
+                <div id="goalRecurringFields" hidden class="form-group-box" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group" style="margin-bottom:0;">
                             <label>Installment Amount</label>
                             <input type="number" id="goalRecurringAmount" placeholder="1000.00" step="0.01" min="0.01">
                         </div>
-                        <div class="form-group u-inl-e7ec540">
+                        <div class="form-group" style="margin-bottom:0;">
                             <label>Deposit Frequency</label>
                             <select id="goalFrequency">
                                 <option value="MONTHLY" selected>Monthly (e.g. Monthly Chit)</option>
@@ -1262,12 +1200,12 @@
                             </select>
                         </div>
                     </div>
-                    <div class="form-group u-inl-ffead37" id="goalCustomIntervalWrap" hidden>
+                    <div class="form-group" id="goalCustomIntervalWrap" hidden style="display: none; margin-top: 12px; margin-bottom: 0;">
                         <label>Interval (Days)</label>
                         <input type="number" id="goalRecurringIntervalDays" min="1" value="30" placeholder="e.g. 30">
                     </div>
                 </div>
-                <button type="submit" class="btn-primary u-inl-c78c589">Save Goal</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Save Goal</button>
             </form>
         </div>
     </div>
@@ -1285,7 +1223,7 @@
                     <label>Contribution Amount</label>
                     <input type="number" id="depositAmount" required placeholder="0.00" step="0.01" min="0.01" autofocus>
                 </div>
-                <button type="submit" class="btn-primary u-inl-c78c589">Add Deposit</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Add Deposit</button>
             </form>
         </div>
     </div>
@@ -1293,101 +1231,101 @@
     
     <!-- LOAN / FRIEND ADJUSTMENT MODAL -->
     <div class="modal-overlay" id="loanModal" role="dialog" aria-modal="true" aria-labelledby="loanModalTitle" hidden>
-        <div class="modal animate-pop u-inl-23a4f5b">
+        <div class="modal animate-pop" style="max-width:480px; width:95%;">
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title" id="loanModalTitle">Record Loan / Adjustment</h3>
-                    <p class="u-inl-43e9373">Track casual peer adjustments without impacting your monthly living expenses.</p>
+                    <p style="margin:2px 0 0; font-size:11.5px; color:var(--text-muted);">Track casual peer adjustments without impacting your monthly living expenses.</p>
                 </div>
                 <button class="modal-close" id="closeLoanModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
-            <form class="u-inl-47e2706" id="loanAdjustmentForm">
+            <form id="loanAdjustmentForm" style="padding:16px 20px 20px;">
                 <input type="hidden" id="loanId">
                 <div class="form-group">
-                    <label class="u-inl-846abef">Adjustment Direction</label>
-                    <div class="loan-type-toggle-group u-inl-45e771e">
+                    <label style="display:block; font-size:12px; font-weight:700; margin-bottom:8px;">Adjustment Direction</label>
+                    <div class="loan-type-toggle-group" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                         <button type="button" class="loan-type-btn active" id="loanTypeLentBtn" data-type="LENT">
-                            <span class="u-inl-7691c43"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Lent to Friend</span>
-                            <small class="u-inl-60fe3a7">They owe you money</small>
+                            <span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Lent to Friend</span>
+                            <small style="display:block; font-size:10.5px; opacity:0.8; margin-top:2px;">They owe you money</small>
                         </button>
                         <button type="button" class="loan-type-btn" id="loanTypeBorrowedBtn" data-type="BORROWED">
-                            <span class="u-inl-7691c43"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg> Borrowed</span>
-                            <small class="u-inl-60fe3a7">You owe them money</small>
+                            <span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l-9.2 9.2M7 7v10h10"/></svg> Borrowed</span>
+                            <small style="display:block; font-size:10.5px; opacity:0.8; margin-top:2px;">You owe them money</small>
                         </button>
                     </div>
                     <input type="hidden" id="loanType" value="LENT">
                 </div>
 
-                <div class="form-group u-inl-553a645">
+                <div class="form-group" style="margin-top:14px;">
                     <label for="loanCounterparty">Person / Friend / Lender Name</label>
                     <input type="text" id="loanCounterparty" required placeholder="e.g. Rahul Sharma, Priya, Bank Loan" autocomplete="off">
                 </div>
 
-                <div class="form-group u-inl-553a645">
-                    <label class="u-inl-3390deb" for="loanExpenseId">
-                        <span class="u-inl-7691c43"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Connect Previous Expense <span class="u-inl-6d92f21">(Optional)</span></span>
-                        <small class="u-inl-80fe071">Link bill split to existing expense</small>
+                <div class="form-group" style="margin-top:14px;">
+                    <label for="loanExpenseId" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="display:inline-flex; align-items:center; gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Connect Previous Expense <span style="font-weight:400; opacity:0.75; font-size:11px;">(Optional)</span></span>
+                        <small style="color:var(--text-muted); font-size:11px;">Link bill split to existing expense</small>
                     </label>
-                    <select class="u-inl-e7ee78b" id="loanExpenseId">
+                    <select id="loanExpenseId" style="width:100%; border-radius:8px; padding:9px 12px; background:var(--input-bg); border:1px solid var(--border); color:var(--text-main); font-size:13px;">
                         <option value="">-- None / Standalone Adjustment --</option>
                     </select>
                 </div>
 
-                <div class="form-group u-inl-553a645">
+                <div class="form-group" style="margin-top:14px;">
                     <label for="loanAmount">Amount</label>
                     <input type="number" id="loanAmount" required placeholder="0.00" step="0.01" min="0.01">
                 </div>
 
-                <div class="form-group u-inl-553a645">
+                <div class="form-group" style="margin-top:14px;">
                     <label for="loanDate">Date Incurred</label>
                     <input type="date" id="loanDate" required class="dark-date">
                 </div>
 
-                <div class="form-group u-inl-553a645">
+                <div class="form-group" style="margin-top:14px;">
                     <label for="loanDueDate">Expected Due Date (Optional)</label>
                     <input type="date" id="loanDueDate" class="dark-date">
                 </div>
 
-                <div class="form-group u-inl-553a645">
+                <div class="form-group" style="margin-top:14px;">
                     <label for="loanNotes">Notes / Occasion (Optional)</label>
                     <input type="text" id="loanNotes" placeholder="e.g. Dinner bill split, Emergency cash advance">
                 </div>
 
                 <!-- Custom Reminder Section -->
-                <div class="loan-reminder-box u-inl-92dc050">
-                    <div class="form-group flex-row switch-group u-inl-d49d4a5">
-                        <label class="switch-label u-inl-a2a163f" for="loanReminderEnabled">
-                            <input class="u-inl-1386d50" type="checkbox" id="loanReminderEnabled">
-                            <span class="switch-text u-inl-e6e4565">
+                <div class="loan-reminder-box" style="margin-top:16px; padding:12px 14px; border-radius:10px; background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.2);">
+                    <div class="form-group flex-row switch-group" style="margin:0; justify-content:space-between; display:flex; align-items:center;">
+                        <label class="switch-label" for="loanReminderEnabled" style="cursor:pointer; display:flex; align-items:center; gap:8px; margin:0; width:100%;">
+                            <input type="checkbox" id="loanReminderEnabled" style="margin:0;">
+                            <span class="switch-text" style="font-weight:600; font-size:13px; color:var(--text-main); display:flex; align-items:center; gap:6px;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                                 <span>Reminder to Collect / Repay</span>
                             </span>
                         </label>
                     </div>
-                    <div class="u-inl-887f101" id="loanReminderOptions">
-                        <div class="u-inl-45e771e">
-                            <div class="form-group u-inl-1386d50">
-                                <label class="u-inl-e3b48ef" for="loanReminderFrequency">Frequency</label>
-                                <select class="u-inl-278502b" id="loanReminderFrequency">
+                    <div id="loanReminderOptions" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed rgba(139,92,246,0.25);">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div class="form-group" style="margin:0;">
+                                <label for="loanReminderFrequency" style="font-size:11.5px; font-weight:600; margin-bottom:4px; display:block;">Frequency</label>
+                                <select id="loanReminderFrequency" style="width:100%; padding:7px 10px; border-radius:6px; background:var(--input-bg); border:1px solid var(--border); color:var(--text-main); font-size:12.5px;">
                                     <option value="DAILY">Daily</option>
                                     <option value="WEEKLY">Weekly</option>
                                     <option value="MONTHLY">Monthly</option>
                                     <option value="ONCE">Once (Target Date)</option>
                                 </select>
                             </div>
-                            <div class="form-group u-inl-1386d50">
-                                <label class="u-inl-e3b48ef" for="loanReminderTime">Time of Day</label>
-                                <input type="time" id="loanReminderTime" value="10:00" class="dark-date u-inl-3b5f78c">
+                            <div class="form-group" style="margin:0;">
+                                <label for="loanReminderTime" style="font-size:11.5px; font-weight:600; margin-bottom:4px; display:block;">Time of Day</label>
+                                <input type="time" id="loanReminderTime" value="10:00" class="dark-date" style="padding:6px 10px; font-size:12.5px;">
                             </div>
                         </div>
-                        <div class="form-group u-inl-06ed15a" id="loanReminderDateGroup">
-                            <label class="u-inl-e3b48ef" for="loanReminderDate">Target Reminder Date</label>
-                            <input type="date" id="loanReminderDate" class="dark-date u-inl-3b5f78c">
+                        <div class="form-group" id="loanReminderDateGroup" style="margin-top:10px; display:none;">
+                            <label for="loanReminderDate" style="font-size:11.5px; font-weight:600; margin-bottom:4px; display:block;">Target Reminder Date</label>
+                            <input type="date" id="loanReminderDate" class="dark-date" style="padding:6px 10px; font-size:12.5px;">
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group flex-row switch-group u-inl-b0043ef">
+                <div class="form-group flex-row switch-group" style="margin-top:16px;">
                     <label class="switch-label" for="loanIsSettled">
                         <span class="switch-text">
                             <span>Mark as already settled</span>
@@ -1396,9 +1334,9 @@
                     </label>
                 </div>
 
-                <div class="modal-footer u-inl-59a0cb1">
-                    <button type="button" class="btn btn-secondary u-inl-9e13e66" id="cancelLoanModalBtn">Cancel</button>
-                    <button type="submit" class="btn btn-primary u-inl-dc607ab" id="saveLoanBtn">Save Record</button>
+                <div class="modal-footer" style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+                    <button type="button" class="btn btn-secondary" id="cancelLoanModalBtn" style="padding:8px 16px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveLoanBtn" style="padding:8px 20px; background:#8B5CF6; border-color:#8B5CF6;">Save Record</button>
                 </div>
             </form>
         </div>
@@ -1406,76 +1344,76 @@
 
     <!-- MODAL DIALOG: SELECT MONTH & YEAR FOR FINANCIAL REPORT -->
     <div class="modal-overlay" id="monthlyReportPeriodModal">
-        <div class="modal period-picker-modal u-inl-4a15649">
+        <div class="modal period-picker-modal" style="max-width: 520px; width: 95%;">
             <div class="modal-header">
-                <div class="u-inl-133d27b">
-                    <span class="u-inl-4b23714" id="periodModalIcon"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="periodModalIcon" style="display:inline-flex; align-items:center;"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
                     <div>
-                        <h3 class="u-inl-4d95ddd" id="periodModalTitle">Financial Summary & Statement</h3>
-                        <p class="u-inl-383658a" id="reportInceptionText">
-                            <span id="periodModalSubtitle">Account inception:</span> <strong class="u-inl-3c6cda7" id="reportInceptionVal">Loading...</strong>
+                        <h3 id="periodModalTitle" style="margin:0; font-size: 17px; font-weight: 700;">Financial Summary & Statement</h3>
+                        <p id="reportInceptionText" style="margin: 2px 0 0; font-size: 11.5px; color: var(--text-muted);">
+                            <span id="periodModalSubtitle">Account inception:</span> <strong id="reportInceptionVal" style="color: var(--text); font-weight: 700;">Loading...</strong>
                         </p>
                     </div>
                 </div>
                 <button class="modal-close" id="closePeriodModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
 
-            <div class="period-picker-body u-inl-e7adba4">
+            <div class="period-picker-body" style="padding: 16px 20px 22px;">
                 <!-- Year Selection Chips -->
-                <div class="u-inl-efb699a">
+                <div style="margin-bottom: 16px;">
                     <label class="period-picker-label">ACTIVE YEARS</label>
                     <div class="period-chips-row" id="reportYearChips"></div>
                 </div>
 
                 <!-- Month Selection Grid -->
-                <div class="u-inl-efb699a">
+                <div style="margin-bottom: 16px;">
                     <label class="period-picker-label">SELECT MONTH</label>
                     <div class="period-months-grid" id="reportMonthGrid"></div>
                 </div>
 
                 <!-- Selected Period Banner -->
                 <div class="period-summary-banner" id="reportPeriodBanner">
-                    <span class="u-inl-4b23714"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-                    <span class="u-inl-ad9ed6f">Report Period: <strong class="u-inl-2ab7621" id="reportSelectedPeriodText">August 2026</strong></span>
+                    <span style="display:inline-flex; align-items:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+                    <span style="font-size: 13px; color: var(--text);">Report Period: <strong id="reportSelectedPeriodText" style="color: var(--primary); font-weight: 800;">August 2026</strong></span>
                 </div>
 
                 <!-- Action Buttons: Distinct View Mode vs Export Mode -->
                 <div class="period-picker-actions">
                     <!-- VIEW MODE ACTIONS -->
                     <div id="periodViewModeActions">
-                        <button type="button" id="periodViewReportBtn" class="btn-primary u-inl-702b85b">
+                        <button type="button" id="periodViewReportBtn" class="btn-primary" style="width: 100%; height: 42px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; border-radius: 10px;">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> <span>View Financial Statement</span>
                         </button>
-                        <button type="button" id="periodSwitchToExportBtn" class="btn-switch-mode u-inl-9b9343a">
+                        <button type="button" id="periodSwitchToExportBtn" class="btn-switch-mode" style="margin-top: 10px; width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--primary); background: transparent; border: 1px dashed var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
                             <svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span>Need to download files? Switch to Export Options</span>
                         </button>
                     </div>
 
                     <!-- EXPORT MODE ACTIONS -->
-                    <div class="u-inl-9c76635" id="periodExportModeActions">
-                        <button type="button" id="periodDownloadReportBtn" class="btn-primary u-inl-702b85b">
+                    <div id="periodExportModeActions" style="display: none;">
+                        <button type="button" id="periodDownloadReportBtn" class="btn-primary" style="width: 100%; height: 42px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13.5px; border-radius: 10px;">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span>Download HTML Statement</span>
                         </button>
-                        <div class="period-picker-secondary-actions u-inl-2d5f9d0">
-                            <button type="button" id="periodDownloadPdfBtn" class="btn-icon btn-text-icon u-inl-36517aa">
+                        <div class="period-picker-secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <button type="button" id="periodDownloadPdfBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span>Export PDF</span>
                             </button>
-                            <button type="button" id="periodDownloadExcelBtn" class="btn-icon btn-text-icon u-inl-36517aa">
+                            <button type="button" id="periodDownloadExcelBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Export Excel</span>
                             </button>
                         </div>
-                        <div class="period-picker-secondary-actions u-inl-2d5f9d0">
-                            <button type="button" id="periodExportCsvBtn" class="btn-icon btn-text-icon u-inl-36517aa">
+                        <div class="period-picker-secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <button type="button" id="periodExportCsvBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> <span>Export CSV</span>
                             </button>
-                            <button type="button" id="periodExportJsonBtn" class="btn-icon btn-text-icon u-inl-36517aa">
+                            <button type="button" id="periodExportJsonBtn" class="btn-icon btn-text-icon" style="height: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> <span>Export JSON</span>
                             </button>
                         </div>
-                        <button type="button" id="periodEmailReportBtn" class="btn-icon btn-text-icon u-inl-e76a3c0">
+                        <button type="button" id="periodEmailReportBtn" class="btn-icon btn-text-icon" style="margin-top: 10px; width: 100%; height: 38px; font-weight: 600; display: none; align-items: center; justify-content: center; gap: 6px; font-size: 13px; border-radius: 10px; border: 1px solid var(--border);">
                             <svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <span>Email Statement to Me</span>
                         </button>
-                        <button type="button" id="periodSwitchToViewBtn" class="btn-switch-mode u-inl-b7692d1">
+                        <button type="button" id="periodSwitchToViewBtn" class="btn-switch-mode" style="margin-top: 10px; width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--text-muted); background: transparent; border: 1px dashed var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> <span>Preview in browser instead</span>
                         </button>
                     </div>
@@ -1486,11 +1424,11 @@
 
     <!-- MODAL DIALOG: PREVIEW MONTHLY REPORT -->
     <div class="modal-overlay" id="monthlyReportModal">
-        <div class="modal monthly-report-modal u-inl-70ead86">
+        <div class="modal monthly-report-modal" style="max-width: 860px; width: 95%; max-height: 92vh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <div class="u-inl-598951f">
-                    <span class="u-inl-4b23714"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
-                    <h3 class="u-inl-1386d50">Monthly Financial Performance Report</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="display:inline-flex; align-items:center;"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
+                    <h3 style="margin:0;">Monthly Financial Performance Report</h3>
                 </div>
                 <button class="modal-close" id="closeMonthlyReportModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
@@ -1517,8 +1455,8 @@
                     </button>
                 </div>
             </div>
-            <div class="monthly-report-frame-container u-inl-97ac734">
-                <iframe class="u-inl-8b33635" id="monthlyReportFrame" title="Monthly Report Preview"></iframe>
+            <div class="monthly-report-frame-container" style="flex: 1 1 auto; min-height: 280px; position: relative;">
+                <iframe id="monthlyReportFrame" style="width: 100%; height: 100%; min-height: 280px; border: none; border-radius: 0 0 16px 16px; background: #080a07;" title="Monthly Report Preview"></iframe>
             </div>
         </div>
     </div>
@@ -1527,22 +1465,22 @@
     <div class="modal-overlay" id="editProfileModal">
         <div class="modal">
             <div class="modal-header">
-                <div class="u-inl-8e160d0">
-                    <div class="u-inl-da27a02">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:rgba(199, 154, 62, 0.15); display:flex; align-items:center; justify-content:center; color:var(--primary); border:1px solid rgba(199, 154, 62, 0.3);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     </div>
-                    <h3 class="u-inl-1386d50">Edit Profile Name</h3>
+                    <h3 style="margin:0;">Edit Profile Name</h3>
                 </div>
                 <button class="modal-close" id="closeEditProfileModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <form id="editProfileForm">
-                <div class="form-group u-inl-7cf07d6">
-                    <label class="u-inl-bd6730c" for="editProfileNameInput">Display Name</label>
+                <div class="form-group" style="margin-top:14px; text-align:left;">
+                    <label for="editProfileNameInput" style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px;">Display Name</label>
                     <input type="text" id="editProfileNameInput" class="field-input" placeholder="Enter your display name" minlength="2" maxlength="50" required>
                 </div>
-                <div class="u-inl-7377973">
-                    <button type="button" id="cancelEditProfileBtn" class="btn-secondary u-inl-da5cd67">Cancel</button>
-                    <button type="submit" id="saveEditProfileBtn" class="btn-primary u-inl-da5cd67">Save Changes</button>
+                <div style="display:flex; gap:12px; margin-top:20px;">
+                    <button type="button" id="cancelEditProfileBtn" class="btn-secondary" style="flex:1;">Cancel</button>
+                    <button type="submit" id="saveEditProfileBtn" class="btn-primary" style="flex:1;">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -1552,22 +1490,22 @@
     <div class="modal-overlay" id="deleteAccountModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 class="u-inl-334f629">Delete Account Permanently</h3>
+                <h3 style="color:#A23E32;">Delete Account Permanently</h3>
             </div>
-            <p class="u-inl-c26eea6">
+            <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">
                 This action is destructive and permanent. Enter your password and type <strong>DELETE</strong> below to confirm.
             </p>
-            <div class="form-group u-inl-99ca559">
-                <label class="u-inl-bd6730c" for="deletePasswordInput">Current Password</label>
+            <div class="form-group" style="margin-top: 14px; margin-bottom: 8px; text-align: left;">
+                <label for="deletePasswordInput" style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px;">Current Password</label>
                 <input type="password" id="deletePasswordInput" class="field-input" placeholder="Enter your current password" autocomplete="current-password">
             </div>
-            <div class="form-group u-inl-99ca559">
-                <label class="u-inl-bd6730c" for="deleteConfirmInput">Confirmation</label>
+            <div class="form-group" style="margin-top: 14px; margin-bottom: 8px; text-align: left;">
+                <label for="deleteConfirmInput" style="display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px;">Confirmation</label>
                 <input type="text" id="deleteConfirmInput" class="field-input delete-confirm-field" placeholder="Type DELETE to confirm" autocomplete="off" spellcheck="false" autocapitalize="characters">
             </div>
-            <div class="u-inl-7377973">
-                <button type="button" id="cancelDeleteAccountBtn" class="btn-secondary u-inl-da5cd67">Cancel</button>
-                <button type="button" id="confirmDeleteAccountBtn" class="btn-danger u-inl-3bb7027">Delete Account</button>
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button type="button" id="cancelDeleteAccountBtn" class="btn-secondary" style="flex:1;">Cancel</button>
+                <button type="button" id="confirmDeleteAccountBtn" class="btn-danger" style="flex:1; opacity:0.5; pointer-events:none;">Delete Account</button>
             </div>
         </div>
     </div>
@@ -1576,11 +1514,11 @@
     <div class="modal-overlay" id="helpGuideModal" role="dialog" aria-modal="true" aria-labelledby="helpGuideModalTitle">
         <div class="modal help-guide-modal">
             <div class="modal-header">
-                <div class="u-inl-8e160d0">
-                    <span class="u-inl-4b23714"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="display:inline-flex; align-items:center;"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
                     <div>
-                        <h2 class="u-inl-84ceca4" id="helpGuideModalTitle">ExpenseTracker User Guide</h2>
-                        <span class="u-inl-1bfcff7">Quick tour to mastering your financial ledger</span>
+                        <h2 id="helpGuideModalTitle" style="margin:0; font-size:18px;">ExpenseTracker User Guide</h2>
+                        <span style="font-size:12px; color:var(--text-muted);">Quick tour to mastering your financial ledger</span>
                     </div>
                 </div>
                 <button class="modal-close" id="closeHelpGuideModal" aria-label="Close user guide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -1695,17 +1633,17 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer u-inl-6df7d4e">
-                <button type="button" class="btn btn-primary u-inl-5c6e0cf" id="gotItHelpBtn">Got It!</button>
+            <div class="modal-footer" style="padding:12px 20px; display:flex; justify-content:flex-end;">
+                <button type="button" class="btn btn-primary" id="gotItHelpBtn" style="padding:8px 24px;">Got It!</button>
             </div>
         </div>
     </div>
 
     <!-- ABOUT SYSTEM MODAL -->
     <div class="modal-overlay" id="aboutSystemModal" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
-        <div class="modal u-inl-6188a4d">
+        <div class="modal" style="width: 580px; max-width: 95vw;">
             <div class="modal-header">
-                <h2 class="u-inl-84ceca4" id="aboutModalTitle">About ExpenseTracker</h2>
+                <h2 id="aboutModalTitle" style="margin:0; font-size:18px;">About ExpenseTracker</h2>
                 <button class="modal-close" id="closeAboutModal" aria-label="Close about dialog"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <div class="about-hero-box">
@@ -1741,9 +1679,9 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer u-inl-099983c">
-                <span class="u-inl-4b3791b">Spring Boot 4.1.1 &bull; Modern Web ES6+ &bull; Tesseract WebAssembly</span>
-                <button type="button" class="btn btn-secondary u-inl-dfcc54a" id="closeAboutBtn">Close</button>
+            <div class="modal-footer" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11.5px; color:var(--text-muted);">Spring Boot 4.1.1 &bull; Modern Web ES6+ &bull; Tesseract WebAssembly</span>
+                <button type="button" class="btn btn-secondary" id="closeAboutBtn" style="padding:8px 20px;">Close</button>
             </div>
         </div>
     </div>
@@ -1779,11 +1717,7 @@
     <script src="js/modules/command-palette.js"></script>
     <script src="js/modules/floating-calculator.js"></script>
     <script src="js/modules/loans-manager.js"></script>
-    <script src="js/modules/wealth-simulator.js"></script>
     <script src="js/dashboard.js"></script>
-    <script src="js/modules/dashboard-transfers-subs.js"></script>
-    <script src="js/modules/dashboard-incomes-goals.js"></script>
-    <script src="js/modules/dashboard-reports-streams.js"></script>
     <script src="js/motion.js"></script>
     <!-- Executive Precision HUD Reticle -->
     <div id="executiveReticle" class="executive-reticle" aria-hidden="true">

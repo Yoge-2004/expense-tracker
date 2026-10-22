@@ -1,608 +1,618 @@
+/* ==========================================================================
+   EXPENSE TRACKER — REPORTS.CSS
+   Module: Monthly Reports, Previews & Period Picker Modals
+   ========================================================================== */
+
+/* =========================================================================
+   MONTHLY REPORT MODAL, RESPONSIVE TOOLBAR & LUXURY SCROLLBAR
+   ========================================================================= */
 .modal.monthly-report-modal {
-  padding: 0;
-  overflow: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(var(--primary-rgb), 0.4) rgba(0, 0, 0, 0.2);
+    padding: 0;
+    overflow: hidden;
+    border-radius: 20px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb), 0.4) rgba(0, 0, 0, 0.2);
 }
 
 .monthly-report-modal .modal-header {
-  padding: 16px 20px;
-  margin-bottom: 0;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+    padding: 16px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .monthly-report-toolbar {
-  padding: 10px 18px;
-  background: rgba(var(--primary-rgb), 0.07);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  box-sizing: border-box;
-  width: 100%;
-  flex-shrink: 0;
+    padding: 10px 18px;
+    background: rgba(var(--primary-rgb), 0.07);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .monthly-report-meta-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  min-width: 0;
-  flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .monthly-report-meta {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  min-width: 0;
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  line-height: 1.35;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.35;
 }
 
 .monthly-report-meta .meta-period {
-  color: var(--primary, #c79a3e);
-  font-weight: 700;
+    color: var(--primary, #c79a3e);
+    font-weight: 700;
 }
 
 .monthly-report-meta .meta-dot {
-  opacity: 0.5;
+    opacity: 0.5;
 }
 
 .change-period-btn {
-  height: 30px;
-  padding: 0 10px;
-  font-size: 11.5px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-  white-space: nowrap;
+    height: 30px;
+    padding: 0 10px;
+    font-size: 11.5px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .monthly-report-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
 }
 
 .monthly-report-actions .btn-text-icon,
 .monthly-report-actions .monthly-report-email-btn {
-  height: 36px;
-  padding: 0 12px;
-  font-size: 12.5px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  white-space: nowrap;
-  border-radius: 10px;
-  box-sizing: border-box;
+    height: 36px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    border-radius: 10px;
+    box-sizing: border-box;
+    transition:
+        background-color 0.2s var(--ease),
+        border-color 0.2s var(--ease),
+        color 0.2s var(--ease),
+        box-shadow 0.2s var(--ease),
+        transform 0.2s var(--ease),
+        opacity 0.2s var(--ease);
 }
 
 .monthly-report-email-btn .btn-lbl-short {
-  display: none;
+    display: none;
 }
 
 .monthly-report-frame-container {
-  flex: 1 1 auto;
-  min-height: 480px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 0 0 20px 20px;
-  background: #080a07;
-  scrollbar-width: thin;
+    flex: 1 1 auto;
+    min-height: 480px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0 0 20px 20px;
+    background: #080a07;
+    scrollbar-width: thin;
 }
 
 @supports not selector(::-webkit-scrollbar) {
-  .monthly-report-frame-container {
-    scrollbar-color: rgba(var(--primary-rgb), 0.4) transparent;
-  }
+    .monthly-report-frame-container {
+        scrollbar-color: rgba(var(--primary-rgb), 0.4) transparent;
+    }
 }
 
 .monthly-report-frame-container::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
-
 .monthly-report-frame-container::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 16px 0;
-  margin-top: 16px;
-  margin-bottom: 16px;
-  border-radius: 999px;
+    background: transparent;
+    margin: 16px 0;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    border-radius: 999px;
 }
-
 .monthly-report-frame-container::-webkit-scrollbar-thumb {
-  background: rgba(var(--primary-rgb), 0.45);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
-
 .monthly-report-frame-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--primary-rgb), 0.65);
+    background: rgba(var(--primary-rgb), 0.65);
 }
 
 #monthlyReportFrame {
-  width: 100%;
-  height: 100%;
-  min-height: 480px;
-  border: none;
-  display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 480px;
+    border: none;
+    display: block;
 }
 
+/* Light theme overrides for monthly report modal scrollbars */
 @supports not selector(::-webkit-scrollbar) {
-  [data-theme="light"] .monthly-report-modal,
-  [data-theme="light"] .monthly-report-frame-container {
-    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
-  }
-
-  [data-theme="light"] .modal {
-    scrollbar-color: rgba(var(--primary-rgb), 0.5) transparent;
-  }
+    [data-theme="light"] .monthly-report-modal,
+    [data-theme="light"] .monthly-report-frame-container {
+        scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+    }
+    [data-theme="light"] .modal {
+        scrollbar-color: rgba(var(--primary-rgb), 0.5) transparent;
+    }
 }
-
 [data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 16px 0;
-  border-radius: 999px;
+    background: transparent;
+    margin: 16px 0;
+    border-radius: 999px;
 }
-
 [data-theme="light"] .modal::-webkit-scrollbar-button:single-button:vertical:decrement,
 [data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-button:single-button:vertical:decrement {
-  height: 24px;
-  display: block;
-  background: transparent;
-  border: none;
+    height: 24px;
+    display: block;
+    background: transparent;
+    border: none;
 }
-
 [data-theme="light"] .modal::-webkit-scrollbar-button:single-button:vertical:increment,
 [data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-button:single-button:vertical:increment {
-  height: 24px;
-  display: block;
-  background: transparent;
-  border: none;
+    height: 24px;
+    display: block;
+    background: transparent;
+    border: none;
 }
-
 [data-theme="light"] .modal::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 20px 0;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  border-radius: 999px;
+    background: transparent;
+    margin: 20px 0;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: 999px;
 }
-
 [data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-thumb {
-  background: rgba(199, 154, 62, 0.45);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+    background: rgba(199, 154, 62, 0.45);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
-
 [data-theme="light"] .modal::-webkit-scrollbar-thumb {
-  background: rgba(var(--primary-rgb), 0.5);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+    background: rgba(var(--primary-rgb), 0.5);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
-
 [data-theme="light"] .modal::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--primary-rgb), 0.8);
+    background: rgba(var(--primary-rgb), 0.8);
 }
 
+/* Smaller Devices & Mobile Optimization for Monthly Report */
 @media (max-width: 640px) {
-  .modal.monthly-report-modal {
-    max-height: 94vh;
-    width: 96%;
-    margin: auto;
-  }
+    .modal.monthly-report-modal {
+        max-height: 94vh;
+        width: 96%;
+        margin: auto;
+    }
 
-  .monthly-report-modal .modal-header {
-    padding: 12px 14px;
-  }
+    .monthly-report-modal .modal-header {
+        padding: 12px 14px;
+    }
 
-  .monthly-report-modal .modal-header h3 {
-    font-size: 15px;
-  }
+    .monthly-report-modal .modal-header h3 {
+        font-size: 15px;
+    }
 
-  .monthly-report-toolbar {
-    padding: 8px 10px;
-    gap: 8px;
-    flex-direction: column;
-    align-items: stretch;
-    overflow-x: hidden;
-  }
+    .monthly-report-toolbar {
+        padding: 8px 10px;
+        gap: 8px;
+        flex-direction: column;
+        align-items: stretch;
+        overflow-x: hidden;
+    }
 
-  .monthly-report-meta-group {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    min-width: 0;
-    box-sizing: border-box;
-  }
+    .monthly-report-meta-group {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        min-width: 0;
+        box-sizing: border-box;
+    }
 
-  .monthly-report-meta {
-    font-size: 12px;
-    line-height: 1.3;
-    flex: 1 1 auto;
-    min-width: 0;
-    text-align: left;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    word-break: break-word;
-  }
+    .monthly-report-meta {
+        font-size: 12px;
+        line-height: 1.3;
+        flex: 1 1 auto;
+        min-width: 0;
+        text-align: left;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        word-break: break-word;
+    }
 
-  .change-period-btn {
-    height: 28px;
-    padding: 0 8px;
-    font-size: 11px;
-    flex-shrink: 0;
-  }
+    .change-period-btn {
+        height: 28px;
+        padding: 0 8px;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
 
-  .monthly-report-actions {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1.2fr 1.1fr;
-    gap: 6px;
-  }
+    .monthly-report-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1.2fr 1.1fr;
+        gap: 6px;
+    }
 
-  .monthly-report-actions button {
-    width: 100%;
-    min-width: 0;
-    padding: 0 8px;
-    font-size: 11.5px;
-    height: 35px;
-    justify-content: center;
-    white-space: nowrap;
-    box-sizing: border-box;
-  }
+    .monthly-report-actions button {
+        width: 100%;
+        min-width: 0;
+        padding: 0 8px;
+        font-size: 11.5px;
+        height: 35px;
+        justify-content: center;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
 
-  .monthly-report-actions button .btn-lbl {
-    white-space: nowrap;
-  }
+    .monthly-report-actions button .btn-lbl {
+        white-space: nowrap;
+    }
 
-  .monthly-report-frame-container {
-    min-height: 380px;
-  }
+    .monthly-report-frame-container {
+        min-height: 380px;
+    }
 
-  #monthlyReportFrame {
-    min-height: 380px;
-  }
+    #monthlyReportFrame {
+        min-height: 380px;
+    }
 }
 
 @media (max-width: 440px) {
-  .monthly-report-meta {
-    font-size: 11px;
-    gap: 4px;
-  }
+    .monthly-report-meta {
+        font-size: 11px;
+        gap: 4px;
+    }
 
-  .monthly-report-meta .meta-label {
-    display: none;
-  }
+    .monthly-report-meta .meta-label {
+        display: none;
+    }
 
-  .monthly-report-meta .meta-dot {
-    display: none;
-  }
+    .monthly-report-meta .meta-dot {
+        display: none;
+    }
 
-  .monthly-report-meta .meta-period {
-    font-size: 12px;
-    font-weight: 700;
-  }
+    .monthly-report-meta .meta-period {
+        font-size: 12px;
+        font-weight: 700;
+    }
 
-  .monthly-report-email-btn .btn-lbl-full {
-    display: none;
-  }
+    .monthly-report-email-btn .btn-lbl-full {
+        display: none;
+    }
+    .monthly-report-email-btn .btn-lbl-short {
+        display: inline;
+    }
 
-  .monthly-report-email-btn .btn-lbl-short {
-    display: inline;
-  }
+    .monthly-report-actions {
+        grid-template-columns: 1fr 1.2fr 1fr;
+        gap: 5px;
+    }
 
-  .monthly-report-actions {
-    grid-template-columns: 1fr 1.2fr 1fr;
-    gap: 5px;
-  }
-
-  .monthly-report-actions button {
-    padding: 0 4px;
-    font-size: 11px;
-    gap: 4px;
-  }
+    .monthly-report-actions button {
+        padding: 0 4px;
+        font-size: 11px;
+        gap: 4px;
+    }
 }
 
+/* =========================================================================
+   MONTHLY REPORT PERIOD PICKER MODAL (MONTH & YEAR SELECTOR)
+   ========================================================================= */
 .period-picker-modal {
-  border-radius: 22px;
-  background: var(--card-bg, #161814);
-  border: 1px solid var(--border);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(var(--primary-rgb), 0.15);
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  scrollbar-width: thin;
+    border-radius: 22px;
+    background: var(--card-bg, #161814);
+    border: 1px solid var(--border);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(var(--primary-rgb), 0.15);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
 }
 
 @supports not selector(::-webkit-scrollbar) {
-  .period-picker-modal {
-    scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
-  }
+    .period-picker-modal {
+        scrollbar-color: rgba(var(--primary-rgb), 0.45) transparent;
+    }
 }
 
 .period-picker-modal .modal-header {
-  padding: 16px 20px;
-  margin-bottom: 0;
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  background: var(--card-bg, #161814);
-  z-index: 2;
-  flex-shrink: 0;
+    padding: 16px 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--card-bg, #161814);
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+    z-index: 2;
+    flex-shrink: 0;
 }
 
 .period-picker-modal::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
-
 .period-picker-modal::-webkit-scrollbar-button:single-button:vertical:decrement {
-  height: 20px;
-  display: block;
-  background: transparent;
-  border: none;
+    height: 20px;
+    display: block;
+    background: transparent;
+    border: none;
 }
-
 .period-picker-modal::-webkit-scrollbar-button:single-button:vertical:increment {
-  height: 20px;
-  display: block;
-  background: transparent;
-  border: none;
+    height: 20px;
+    display: block;
+    background: transparent;
+    border: none;
 }
-
 .period-picker-modal::-webkit-scrollbar-track {
-  background: transparent;
-  margin-block: 18px;
-  margin-top: 18px;
-  margin-bottom: 18px;
-  border-radius: 999px;
+    background: transparent;
+    margin-block: 18px;
+    margin-top: 18px;
+    margin-bottom: 18px;
+    border-radius: 999px;
 }
-
 .period-picker-modal::-webkit-scrollbar-thumb {
-  background: rgba(var(--primary-rgb), 0.45);
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background-clip: padding-box;
+    background: rgba(var(--primary-rgb), 0.45);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
 }
-
 .period-picker-modal::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--primary-rgb), 0.75);
+    background: rgba(var(--primary-rgb), 0.75);
 }
 
 .period-picker-body {
-  padding: 16px 20px 22px;
-  flex: 1 1 auto;
-  overflow-y: visible;
+    padding: 16px 20px 22px;
+    flex: 1 1 auto;
+    overflow-y: visible;
 }
 
 .period-picker-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  margin-bottom: 8px;
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
 .period-chips-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .period-chip {
-  padding: 8px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--input-bg, rgba(255, 255, 255, 0.04));
-  color: var(--text-main);
-  cursor: var(--cursor-pointer, pointer);
-  user-select: none;
-  font-family: inherit;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--input-bg, rgba(255, 255, 255, 0.04));
+    color: var(--text-main);
+    cursor: var(--cursor-pointer, pointer);
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease,
+        opacity 0.18s ease;
+    user-select: none;
+    font-family: inherit;
 }
 
 .period-chip:hover:not(.disabled) {
-  border-color: var(--primary);
-  color: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .period-chip.active {
-  background: var(--primary-gradient, var(--primary));
-  color: var(--on-primary, #10120E);
-  font-weight: 800;
-  border-color: var(--primary);
-  box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.35);
+    background: var(--primary-gradient, var(--primary));
+    color: var(--on-primary, #10120E);
+    font-weight: 800;
+    border-color: var(--primary);
+    box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.35);
 }
 
 .period-chip.disabled {
-  opacity: 0.32;
-  cursor: not-allowed;
-  pointer-events: none;
+    opacity: 0.32;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .period-months-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
 }
 
 .period-month-chip {
-  padding: 10px 4px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--input-bg, rgba(255, 255, 255, 0.04));
-  color: var(--text-main);
-  cursor: var(--cursor-pointer, pointer);
-  user-select: none;
-  font-family: inherit;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--input-bg, rgba(255, 255, 255, 0.04));
+    color: var(--text-main);
+    cursor: var(--cursor-pointer, pointer);
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease,
+        opacity 0.18s ease;
+    user-select: none;
+    font-family: inherit;
 }
 
 .period-month-chip:hover:not(.disabled) {
-  border-color: var(--primary);
-  color: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .period-month-chip.active {
-  background: var(--primary-gradient, var(--primary));
-  color: var(--on-primary, #10120E);
-  font-weight: 800;
-  border-color: var(--primary);
-  box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.35);
+    background: var(--primary-gradient, var(--primary));
+    color: var(--on-primary, #10120E);
+    font-weight: 800;
+    border-color: var(--primary);
+    box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.35);
 }
 
 .period-month-chip.disabled {
-  opacity: 0.28;
-  cursor: not-allowed;
-  pointer-events: none;
-  background: transparent;
-  border-color: rgba(150, 150, 150, 0.15);
+    opacity: 0.28;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: transparent;
+    border-color: rgba(150, 150, 150, 0.15);
 }
 
 .period-summary-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  border-radius: 12px;
-  background: rgba(var(--primary-rgb), 0.09);
-  border: 1px solid rgba(var(--primary-rgb), 0.24);
-  margin: 18px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    background: rgba(var(--primary-rgb), 0.09);
+    border: 1px solid rgba(var(--primary-rgb), 0.24);
+    margin: 18px 0;
 }
 
+/* Light theme overrides */
 [data-theme="light"] .period-picker-modal {
-  background: #FCFBF6;
-  border-color: rgba(26, 29, 23, 0.12);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.2);
+    background: #FCFBF6;
+    border-color: rgba(26, 29, 23, 0.12);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.2);
 }
-
 [data-theme="light"] .period-picker-modal .modal-header {
-  background: #FCFBF6;
+    background: #FCFBF6;
 }
-
 @supports not selector(::-webkit-scrollbar) {
-  [data-theme="light"] .period-picker-modal {
-    scrollbar-color: rgba(199, 154, 62, 0.5) transparent;
-  }
+    [data-theme="light"] .period-picker-modal {
+        scrollbar-color: rgba(199, 154, 62, 0.5) transparent;
+    }
 }
-
 [data-theme="light"] .period-picker-modal::-webkit-scrollbar-track {
-  background: transparent;
-  margin-block: 18px;
-  margin-top: 18px;
-  margin-bottom: 18px;
+    background: transparent;
+    margin-block: 18px;
+    margin-top: 18px;
+    margin-bottom: 18px;
 }
-
 [data-theme="light"] .period-picker-modal::-webkit-scrollbar-thumb {
-  background: rgba(199, 154, 62, 0.45);
+    background: rgba(199, 154, 62, 0.45);
 }
-
 [data-theme="light"] .period-chip,
 [data-theme="light"] .period-month-chip {
-  background: #F4F1EA;
-  border-color: rgba(26, 29, 23, 0.12);
-  color: #10120E;
+    background: #F4F1EA;
+    border-color: rgba(26, 29, 23, 0.12);
+    color: #10120E;
 }
-
 [data-theme="light"] .period-summary-banner {
-  background: rgba(199, 154, 62, 0.1);
-  border-color: rgba(199, 154, 62, 0.25);
+    background: rgba(199, 154, 62, 0.1);
+    border-color: rgba(199, 154, 62, 0.25);
 }
 
 @media (max-width: 640px) {
-  .period-picker-modal {
-    width: 95%;
-    max-height: calc(100dvh - 20px);
-    margin: auto;
-    border-radius: 18px;
-  }
-
-  .period-picker-modal .modal-header {
-    padding: 12px 14px;
-  }
-
-  .period-picker-modal .modal-header h3 {
-    font-size: 15px;
-  }
-
-  .period-picker-body {
-    padding: 12px 14px 18px;
-  }
-
-  .period-months-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }
-
-  .period-month-chip {
-    padding: 8px 3px;
-    font-size: 12px;
-  }
-
-  .period-chip {
-    padding: 6px 13px;
-    font-size: 12px;
-  }
-
-  .period-summary-banner {
-    margin: 12px 0;
-    padding: 8px 12px;
-  }
-
-  .period-picker-actions button {
-    height: 38px;
-    font-size: 12.5px;
-  }
-
-  .period-picker-secondary-actions {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    margin-top: 8px;
-  }
+    .period-picker-modal {
+        width: 95%;
+        max-height: calc(100dvh - 20px);
+        margin: auto;
+        border-radius: 18px;
+    }
+    .period-picker-modal .modal-header {
+        padding: 12px 14px;
+    }
+    .period-picker-modal .modal-header h3 {
+        font-size: 15px;
+    }
+    .period-picker-body {
+        padding: 12px 14px 18px;
+    }
+    .period-months-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    .period-month-chip {
+        padding: 8px 3px;
+        font-size: 12px;
+    }
+    .period-chip {
+        padding: 6px 13px;
+        font-size: 12px;
+    }
+    .period-summary-banner {
+        margin: 12px 0;
+        padding: 8px 12px;
+    }
+    .period-picker-actions button {
+        height: 38px;
+        font-size: 12.5px;
+    }
+    .period-picker-secondary-actions {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        margin-top: 8px;
+    }
 }
 
 @media (max-width: 480px) {
-  .period-picker-modal {
-    max-height: calc(100dvh - 16px);
-  }
+    .period-picker-modal {
+        max-height: calc(100dvh - 16px);
+    }
 }
 
+
+/* Switch Mode Links in Period Picker */
 .btn-switch-mode:hover {
-  border-color: var(--primary);
-  background: rgba(199, 154, 62, 0.08);
-  color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(199, 154, 62, 0.08);
+    color: var(--primary);
 }
 
 [data-theme="light"] .btn-switch-mode:hover {
-  background: rgba(162, 122, 42, 0.08);
-  border-color: var(--primary);
+    background: rgba(162, 122, 42, 0.08);
+    border-color: var(--primary);
 }

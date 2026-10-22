@@ -1,68 +1,68 @@
+/* Metric-card theme motion — CSS owns the visual transition. */
+
 .grid-4-metrics > .metric-card {
-  --theme-card-y: 0px;
-  --theme-card-scale: 1;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    --theme-card-y: 0px;
+    --theme-card-scale: 1;
+    transition:
+        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
         background-color 0.16s ease-out,
         border-color 0.16s ease-out,
         border-left-color 0.16s ease-out,
-        color 0.14s ease-out;
-  transform-origin: center;
+        color 0.14s ease-out !important;
+    transform-origin: center;
 }
 
 [data-theme="light"] .grid-4-metrics > .metric-card {
-  --theme-card-y: -3px;
-  --theme-card-scale: 1.008;
+    --theme-card-y: -3px;
+    --theme-card-scale: 1.008;
 }
 
 [data-theme="dark"] .grid-4-metrics > .metric-card {
-  --theme-card-y: 0px;
-  --theme-card-scale: 1;
+    --theme-card-y: 0px;
+    --theme-card-scale: 1;
 }
 
+/* Compose theme motion with the existing pointer/tilt transform. */
 .grid-4-metrics > .metric-card {
-  transform: perspective(800px)
+    transform:
+        perspective(800px)
         rotateX(var(--tilt-y, 0deg))
         rotateY(var(--tilt-x, 0deg))
         translateY(var(--theme-card-y, 0px))
         scale(var(--theme-card-scale, 1));
 }
 
-.grid-4-metrics > .metric-card :is(.card-label,
-.metric-value,
-.status-badge,
-.metric-footer,
-.text-muted,
-.link-action),
+.grid-4-metrics > .metric-card :is(.card-label, .metric-value, .status-badge, .metric-footer, .text-muted, .link-action),
 .grid-4-metrics > .metric-card .metric-footer * {
-  transition: color 0.14s ease-out,
+    transition:
+        color 0.14s ease-out,
         background-color 0.16s ease-out,
-        border-color 0.16s ease-out;
+        border-color 0.16s ease-out !important;
 }
 
+/* Theme toggles should not run the legacy shadow-pulse animation. */
 .theme-toggle-btn:active,
 #themeToggle:active {
-  animation: none;
+    animation: none !important;
 }
 
+/* The canvas already has its own JS render loop; do not stack a second
+   full-screen CSS transform/opacity animation on top of it. */
 .animated-mesh-canvas {
-  animation: none;
+    animation: none !important;
 }
 
+/* Keep the decorative dashboard wash static so theme switching does not
+   animate another full-viewport layer. */
 .dashboard-container::before {
-  animation: none;
+    animation: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .grid-4-metrics > .metric-card,
-  .grid-4-metrics > .metric-card :is(.card-label,
-  .metric-value,
-  .status-badge,
-  .metric-footer,
-  .metric-footer *,
-  .text-muted,
-  .link-action) {
-    transition-duration: 0.01ms !important;
-    transition-delay: 0s !important;
-  }
+    .grid-4-metrics > .metric-card,
+    .grid-4-metrics > .metric-card :is(.card-label, .metric-value, .status-badge, .metric-footer, .metric-footer *, .text-muted, .link-action) {
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
 }

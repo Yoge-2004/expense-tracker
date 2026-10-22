@@ -363,7 +363,7 @@
                     const altItem = getTaxonomyItem(alt.category);
                     const altConf = Math.round((alt.confidence || 0) * 100);
                     return `<button type="button" class="ai-pill-chip" data-canonical="${escapeHtml(alt.category)}">
-                        ${altItem.emoji} ${escapeHtml(altItem.name)} <span class="u-inl-98ed520">${altConf}%</span>
+                        ${altItem.emoji} ${escapeHtml(altItem.name)} <span style="opacity:0.75; font-size:10px;">${altConf}%</span>
                     </button>`;
                 }).join("");
 
@@ -512,13 +512,13 @@
             if (!text || !text.trim()) return;
             const query = text.trim();
             if (resultContainer) {
-                resultContainer.innerHTML = '<span class="u-inl-9ea51a8">Classifying with ML intelligence...</span>';
+                resultContainer.innerHTML = '<span style="color:var(--text-muted); font-size:12px;">Classifying with ML intelligence...</span>';
             }
             try {
                 const response = await classifyDescription(query, 3);
                 if (!response) {
                     if (resultContainer) {
-                        resultContainer.innerHTML = '<span class="u-inl-9ea51a8">No confident classification match found.</span>';
+                        resultContainer.innerHTML = '<span style="color:var(--text-muted); font-size:12px;">No confident classification match found.</span>';
                     }
                     return;
                 }
@@ -529,7 +529,7 @@
 
                 if (!top || !top.category) {
                     if (resultContainer) {
-                        resultContainer.innerHTML = '<span class="u-inl-9ea51a8">No confident classification match found.</span>';
+                        resultContainer.innerHTML = '<span style="color:var(--text-muted); font-size:12px;">No confident classification match found.</span>';
                     }
                     return;
                 }
@@ -548,25 +548,25 @@
                 const alternatives = rawTopK.map(p => {
                     const altItem = getTaxonomyItem(p.category);
                     const altConf = Math.round((p.confidence || 0) * 100);
-                    return `<span class="ml-alt-chip u-inl-83e93b3" data-cat="${escapeHtml(p.category)}">${altItem.emoji} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
+                    return `<span class="ml-alt-chip" data-cat="${escapeHtml(p.category)}" style="cursor:pointer; display:inline-block; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); font-size:11px; margin-right:4px;">${altItem.emoji} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
                 }).join("");
 
                 if (resultContainer) {
                     resultContainer.innerHTML = `
-                        <div class="u-inl-094daff">
-                            <div class="u-inl-8a7c82f">
+                        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-top:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                                 <div>
-                                    <span class="u-inl-f03c9b7">ML Predicted Category</span>
-                                    <div class="u-inl-b139d61">
+                                    <span style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">ML Predicted Category</span>
+                                    <div style="font-size:13.5px; font-weight:700; color:var(--primary, #D4AF37); margin-top:2px;">
                                         ${icon} ${escapeHtml(displayName)}
-                                        <span class="u-inl-96aa28a">(${pct}% Match)</span>
+                                        <span style="font-size:11px; font-weight:600; color:var(--text-muted); margin-left:4px;">(${pct}% Match)</span>
                                     </div>
                                 </div>
-                                <button type="button" id="mlApplyExpenseBtn" class="btn-primary btn-small u-inl-7245db8">
+                                <button type="button" id="mlApplyExpenseBtn" class="btn-primary btn-small" style="font-size:11.5px; height:28px; padding:0 10px; border-radius:6px;">
                                     + Add as Expense
                                 </button>
                             </div>
-                            ${alternatives ? `<div class="u-inl-958a6bb">Alternatives: ${alternatives}</div>` : ""}
+                            ${alternatives ? `<div style="margin-top:6px; font-size:11px; color:var(--text-muted);">Alternatives: ${alternatives}</div>` : ""}
                         </div>
                     `;
 
@@ -612,7 +612,7 @@
             } catch (err) {
                 console.error("[DashboardML] Classification error:", err);
                 if (resultContainer) {
-                    resultContainer.innerHTML = '<span class="u-inl-3ef7dda">Classification check failed.</span>';
+                    resultContainer.innerHTML = '<span style="color:var(--danger, #EF4444); font-size:12px;">Classification check failed.</span>';
                 }
             }
         }
@@ -655,29 +655,29 @@
         card.className = "insight-card-item";
         card.innerHTML = `
             <div class="insight-card-item-header">
-                <div class="u-inl-d939926">
-                    <div class="insight-icon-box u-inl-b9e4b70">⚡</div>
-                    <span class="insight-card-label u-inl-e9b24de">AI Smart Categorizer</span>
+                <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1 1 auto;">
+                    <div class="insight-icon-box" style="background: rgba(var(--primary-rgb, 199, 154, 62), 0.15); color: var(--primary, #C79A3E);">⚡</div>
+                    <span class="insight-card-label" style="min-width:0; overflow-wrap:break-word;">AI Smart Categorizer</span>
                 </div>
                 <span class="insight-confidence-tag" style="display:inline-flex; align-items:center; justify-content:center; gap:5px; line-height:1; background: ${statusBg}; color: ${statusColor}; border-color: ${statusBorder}; margin-left:auto; flex-shrink:0;">
-                    <span class="insight-status-dot u-inl-5abdf9d"></span><span class="insight-status-text u-inl-69b4653">${statusText}</span>
+                    <span class="insight-status-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; transform:translateY(-0.5px);"></span><span class="insight-status-text" style="display:inline-block; line-height:1;">${statusText}</span>
                 </span>
             </div>
-            <div class="insight-card-content u-inl-9e3c4cc">
-                <div class="u-inl-aaad8ed">
+            <div class="insight-card-content" style="margin-top:6px;">
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">
                     Dual-Gram ML classifier automatically predicts expense categories from merchant names & descriptions.
                 </div>
-                <div class="ml-classifier-input-row u-inl-07b8131">
-                    <input class="u-inl-b811776" type="text" id="mlClassifierInput" placeholder="Classify expense (e.g. Swiggy, Uber, Netflix)..." />
-                    <button type="button" id="mlClassifierBtn" class="btn-primary btn-small u-inl-c76f287">Classify</button>
+                <div class="ml-classifier-input-row" style="display:flex; gap:6px; align-items:center;">
+                    <input type="text" id="mlClassifierInput" placeholder="Classify expense (e.g. Swiggy, Uber, Netflix)..." style="flex:1; min-width:0; height:32px; font-size:12px; border-radius:8px; padding:0 10px; background:var(--card-bg, rgba(255,255,255,0.04)); border:1px solid var(--border); color:var(--text-main); outline:none;" />
+                    <button type="button" id="mlClassifierBtn" class="btn-primary btn-small" style="height:32px; padding:0 12px; font-size:11.5px; border-radius:8px; flex-shrink:0;">Classify</button>
                 </div>
-                <div class="u-inl-d431697" id="mlClassifierResult">
-                    <div class="u-inl-a90d5c5">
+                <div id="mlClassifierResult" style="margin-top:8px;">
+                    <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:11px; color:var(--text-muted);">
                         <span>Try:</span>
-                        <span class="ml-sample-chip u-inl-f772fd8" data-sample="Swiggy meal">🍔 Swiggy</span>
-                        <span class="ml-sample-chip u-inl-f772fd8" data-sample="Uber ride">🚗 Uber</span>
-                        <span class="ml-sample-chip u-inl-f772fd8" data-sample="Netflix 4K">🎬 Netflix</span>
-                        <span class="ml-sample-chip u-inl-f772fd8" data-sample="Electricity bill">⚡ Power</span>
+                        <span class="ml-sample-chip" data-sample="Swiggy meal" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">🍔 Swiggy</span>
+                        <span class="ml-sample-chip" data-sample="Uber ride" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">🚗 Uber</span>
+                        <span class="ml-sample-chip" data-sample="Netflix 4K" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">🎬 Netflix</span>
+                        <span class="ml-sample-chip" data-sample="Electricity bill" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">⚡ Power</span>
                     </div>
                 </div>
             </div>
@@ -686,7 +686,35 @@
         wireClassifierCard(card);
     }
 
-    window.DashboardMlInsights = Object.freeze({ appendMlInsightsCard });
+    // Wrap DashboardInsights.renderFinancialInsights if available
+    function setupInsightsIntegration() {
+        if (window.DashboardInsights && typeof window.DashboardInsights.renderFinancialInsights === "function") {
+            const original = window.DashboardInsights.renderFinancialInsights;
+            window.DashboardInsights = Object.freeze({
+                renderFinancialInsights: function () {
+                    const res = original.apply(this, arguments);
+                    try {
+                        renderMlIntelligenceCard();
+                    } catch (e) {
+                        console.error("[DashboardML] Failed rendering insight card:", e);
+                    }
+                    return res;
+                }
+            });
+        }
+    }
+
+    // 9. PUBLIC API & DOM READY INITIALIZATION
+    window.DashboardML = Object.freeze({
+        classifyDescription,
+        submitFeedbackRecord,
+        resolveToCanonical,
+        getTaxonomyItem,
+        checkDuplicateExpense,
+        onExpenseSaved,
+        resetActiveSession,
+        CANONICAL_TAXONOMY
+    });
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {

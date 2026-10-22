@@ -1,48 +1,53 @@
+/* ==========================================================================
+   EXPENSE TRACKER — METRICS RESPONSIVE
+   Narrow-screen protection for the smart financial insights panel.
+   ========================================================================== */
+
 @media (max-width: 768px) {
-  .insights-intelligence-panel {
-    padding: 16px 14px;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-    overflow: hidden;
-  }
+    .insights-intelligence-panel {
+        padding: 16px 14px;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
 
-  .insights-panel-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    width: 100%;
-  }
+    .insights-panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+    }
 
-  .insights-panel-title-wrap {
-    width: 100%;
-  }
+    .insights-panel-title-wrap {
+        width: 100%;
+    }
 
-  .insights-panel-heading {
-    font-size: 16px;
-    word-break: break-word;
-  }
+    .insights-panel-heading {
+        font-size: 16px;
+        word-break: break-word;
+    }
 
-  .insights-cards-grid {
-    grid-template-columns: 1fr;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    gap: 10px;
-    box-sizing: border-box;
-  }
+    .insights-cards-grid {
+        grid-template-columns: 1fr;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        gap: 10px;
+        box-sizing: border-box;
+    }
 
-  .insight-card-item {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    min-width: 0;
-    padding: 14px;
-  }
+    .insight-card-item {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
+        padding: 14px;
+    }
 
-  .savings-grid-matrix {
-    grid-template-columns: 1fr;
-  }
+    .savings-grid-matrix {
+        grid-template-columns: 1fr;
+    }
 }

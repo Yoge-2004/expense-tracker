@@ -1,27 +1,31 @@
+/* Step Progress Bar Gleam Stream */
 @keyframes stepBarGleam {
     0% { background-position: -200% center; }
     100% { background-position: 200% center; }
 }
 
 .step-progress-fill {
-  background: linear-gradient(90deg, var(--primary) 0%, #fff 50%, var(--primary) 100%);
-  background-size: 200% 100%;
-  animation: stepBarGleam 2.8s infinite linear;
+    background: linear-gradient(90deg, var(--primary) 0%, #fff 50%, var(--primary) 100%);
+    background-size: 200% 100%;
+    animation: stepBarGleam 2.8s infinite linear;
 }
 
+/* Chart Bar Vertical Growth */
 @keyframes chartBarGrowVertical {
     0% { transform: scaleY(0); transform-origin: bottom; }
     100% { transform: scaleY(1); transform-origin: bottom; }
 }
 
 .chart-bar-animated {
-  animation: chartBarGrowVertical 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: chartBarGrowVertical 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Chart Tooltip Elastic Glide */
 .chartjs-tooltip {
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+/* Stat Counter Ticker Flip */
 @keyframes counterNumberRoll {
     0% { transform: translateY(12px); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
@@ -29,19 +33,21 @@
 
 .metric-value,
 .stat-value {
-  animation: counterNumberRoll 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: counterNumberRoll 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Heatmap Calendar Day Cell Pop */
 .calendar-heatmap-day {
-  transition: transform 0.2s ease, filter 0.2s ease;
+    transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .calendar-heatmap-day:hover {
-  transform: scale(1.4);
-  z-index: 10;
-  filter: drop-shadow(0 2px 8px rgba(var(--primary-rgb), 0.5));
+    transform: scale(1.4) !important;
+    z-index: 10;
+    filter: drop-shadow(0 2px 8px rgba(var(--primary-rgb), 0.5));
 }
 
+/* Metric Number Micro Bounce */
 @keyframes metricUpdateBounce {
     0% { transform: scale(1); }
     30% { transform: scale(1.18); color: var(--primary); }
@@ -49,9 +55,10 @@
 }
 
 .metric-updated {
-  animation: metricUpdateBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: metricUpdateBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Live Radar Status Beacon Pulse */
 @keyframes radarBeaconPulse {
     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
     70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
@@ -59,9 +66,10 @@
 }
 
 .status-dot {
-  animation: radarBeaconPulse 2s infinite;
+    animation: radarBeaconPulse 2s infinite !important;
 }
 
+/* Category Filter Pill Click Bounce */
 @keyframes pillTapBounce {
     0% { transform: scale(0.92); }
     50% { transform: scale(1.06); }
@@ -70,16 +78,18 @@
 
 .category-pill:active,
 .filter-chip:active {
-  animation: pillTapBounce 0.25s ease;
+    animation: pillTapBounce 0.25s ease;
 }
 
+/* Filter Chip Selected Halo */
 .filter-chip.active,
 .category-pill.active {
-  box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.35);
-  transform: translateY(-1px) scale(1.02);
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
+    box-shadow: 0 0 14px rgba(var(--primary-rgb), 0.35) !important;
+    transform: translateY(-1px) scale(1.02) !important;
+    transition: box-shadow 0.25s ease, transform 0.25s ease !important;
 }
 
+/* Overdue Reminder Bell Wiggle */
 @keyframes bellWiggle {
     0%, 100% { transform: rotate(0deg); }
     20%, 60% { transform: rotate(14deg); }
@@ -87,25 +97,28 @@
 }
 
 .reminder-bell-active svg {
-  animation: bellWiggle 1.5s ease-in-out infinite;
-  transform-origin: top center;
+    animation: bellWiggle 1.5s ease-in-out infinite;
+    transform-origin: top center;
 }
 
+/* Currency Pill Glowing Ring */
 .currency-option:hover,
 .currency-option.selected {
-  box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.3);
-  border-color: var(--primary);
+    box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.3) !important;
+    border-color: var(--primary) !important;
 }
 
+/* Transaction Tag Slide-In */
 @keyframes tagSlideIn {
     0% { opacity: 0; transform: scale(0.8) translateX(10px); }
     100% { opacity: 1; transform: scale(1) translateX(0); }
 }
 
 .transaction-tag {
-  animation: tagSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: tagSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Notification Counter Pop-In */
 @keyframes badgePopIn {
     0% { transform: scale(0); opacity: 0; }
     80% { transform: scale(1.25); opacity: 1; }
@@ -113,28 +126,31 @@
 }
 
 .notification-badge {
-  animation: badgePopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: badgePopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Verified User Stroke Draw */
 @keyframes checkDrawStroke {
     0% { stroke-dashoffset: 50; }
     100% { stroke-dashoffset: 0; }
 }
 
 .verified-icon path {
-  stroke-dasharray: 50;
-  animation: checkDrawStroke 0.6s ease-out forwards;
+    stroke-dasharray: 50;
+    animation: checkDrawStroke 0.6s ease-out forwards;
 }
 
+/* Unread Alert Glowing Dot */
 @keyframes unreadDotPulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.4); opacity: 0.6; box-shadow: 0 0 8px #e74c3c; }
 }
 
 .unread-indicator {
-  animation: unreadDotPulse 1.8s ease-in-out infinite;
+    animation: unreadDotPulse 1.8s ease-in-out infinite;
 }
 
+/* Step Circle Ring Expansion */
 @keyframes stepRingGlow {
     0%, 100% { box-shadow: 0 0 0 2px var(--primary); }
     50% { box-shadow: 0 0 0 6px rgba(var(--primary-rgb), 0.35); }
@@ -142,5 +158,5 @@
 
 .step-number.active,
 .step-item.active .step-number {
-  animation: stepRingGlow 2s ease-in-out infinite;
+    animation: stepRingGlow 2s ease-in-out infinite;
 }

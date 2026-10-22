@@ -1,72 +1,106 @@
+/* Design tokens: typography, color palette, semantic metrics, and effects. */
 :root {
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --font-display: 'Fraunces', serif;
-  --font-body: 'Hanken Grotesk', sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
-  --bg-dark: #10120E;
-  --card-bg-hover: #1D2117;
-  --border-accent: rgba(199, 154, 62, 0.35);
-  --input-bg: rgba(23, 26, 20, 0.7);
-  --accent-rgb: 162, 62, 50;
-  --highlight-rgb: 76, 122, 120;
-  --success-rgb: 91, 140, 90;
-  --warning-rgb: 201, 147, 46;
-  --ink-rgb: 236, 231, 216;
-  --primary-gradient: linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%);
-  --primary-glow: rgba(199, 154, 62, 0.22);
-  --accent: #A23E32;
-  --accent-gradient: linear-gradient(135deg, #A23E32 0%, #832D23 100%);
-  --accent-glow: rgba(162, 62, 50, 0.25);
-  --highlight: #4C7A78;
-  --highlight-gradient: linear-gradient(135deg, #4C7A78 0%, #3A605E 100%);
-  --success: #5B8C5A;
-  --success-gradient: linear-gradient(135deg, #5B8C5A 0%, #4A7249 100%);
-  --success-glow: rgba(91, 140, 90, 0.2);
-  --warning: #C9932E;
-  --warning-gradient: linear-gradient(135deg, #C9932E 0%, #B37F22 100%);
-  --danger: #A23E32;
-  --danger-gradient: linear-gradient(135deg, #A23E32 0%, #832D23 100%);
-  --accent-text: #CB6256;
-  --danger-text: #CB6256;
-  --success-text: #5D8F5C;
-  --metric-subs-text: #C6656C;
-  --glass: none;
-  --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 10px 30px -5px rgba(199, 154, 62, 0.18);
-  --on-primary: #10120E;
-  --metric-inflow: #10B981;
-  --metric-inflow-rgb: 16, 185, 129;
-  --metric-inflow-glow: rgba(16, 185, 129, 0.18);
-  --metric-outflow: #EF4444;
-  --metric-outflow-rgb: 239, 68, 68;
-  --metric-outflow-glow: rgba(239, 68, 68, 0.18);
-  --metric-netflow: #3B82F6;
-  --metric-netflow-rgb: 59, 130, 246;
-  --metric-netflow-glow: rgba(59, 130, 246, 0.18);
-  --metric-savings: #F59E0B;
-  --metric-savings-rgb: 245, 158, 11;
-  --metric-savings-glow: rgba(245, 158, 11, 0.18);
-  --metric-subs: #C0565E;
-  --metric-subs-rgb: 192, 86, 94;
-  --metric-subs-glow: rgba(192, 86, 94, 0.18);
-  --z-base: 1;
-  --z-sticky: 100;
-  --z-topbar: 500;
-  --z-dropdown: 1000;
-  --z-inbox: 1200;
-  --z-profile: 1500;
-  --z-modal-backdrop: 2000;
-  --z-modal: 2100;
-  --z-dialog: 2500;
-  --z-toast: 3000;
-  --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cdefs%3E%3Cfilter id='tglow' x='-40%25' y='-40%25' width='200%25' height='200%25'%3E%3CfeDropShadow dx='0' dy='1.2' stdDeviation='2.2' flood-color='%23D4AF37' flood-opacity='0.75'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23tglow)'%3E%3Cline x1='14' y1='4' x2='14' y2='24' stroke='%23D4AF37' stroke-width='2.2' stroke-linecap='round'/%3E%3Cline x1='9' y1='4' x2='19' y2='4' stroke='%23D4AF37' stroke-width='1.6' stroke-linecap='round'/%3E%3Cline x1='9' y1='24' x2='19' y2='24' stroke='%23D4AF37' stroke-width='1.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 14 14, text;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Type system */
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Hanken Grotesk', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+
+    /* Dark theme foundation */
+    --bg-dark: #10120E;
+    --card-bg: #171A14;
+    --card-bg-hover: #1D2117;
+    --text-main: #ECE7D8;
+    --text-muted: #A8A395;
+    --border: rgba(236, 231, 216, 0.08);
+    --border-accent: rgba(199, 154, 62, 0.35);
+    --input-bg: rgba(23, 26, 20, 0.7);
+
+    /* RGB tokens for alpha-based color usage. */
+    --primary-rgb: 199, 154, 62;
+    --accent-rgb: 162, 62, 50;
+    --highlight-rgb: 76, 122, 120;
+    --success-rgb: 91, 140, 90;
+    --warning-rgb: 201, 147, 46;
+    --ink-rgb: 236, 231, 216;
+
+    --primary: #C79A3E;
+    --primary-gradient: linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%);
+    --primary-glow: rgba(199, 154, 62, 0.22);
+
+    --accent: #A23E32;
+    --accent-gradient: linear-gradient(135deg, #A23E32 0%, #832D23 100%);
+    --accent-glow: rgba(162, 62, 50, 0.25);
+
+    --highlight: #4C7A78;
+    --highlight-gradient: linear-gradient(135deg, #4C7A78 0%, #3A605E 100%);
+
+    --success: #5B8C5A;
+    --success-gradient: linear-gradient(135deg, #5B8C5A 0%, #4A7249 100%);
+    --success-glow: rgba(91, 140, 90, 0.2);
+
+    --warning: #C9932E;
+    --warning-gradient: linear-gradient(135deg, #C9932E 0%, #B37F22 100%);
+
+    --danger: #A23E32;
+    --danger-gradient: linear-gradient(135deg, #A23E32 0%, #832D23 100%);
+
+    /* Text/icon-safe variants: the base accent/danger/metric-subs tokens read
+       well as backgrounds, borders, and large metric numbers, but fall below
+       WCAG AA (4.5:1) when used as small text (badges, status labels, links)
+       on --card-bg. Lightness-only adjustments, hue/saturation preserved,
+       each tuned to just clear 4.5:1 against --card-bg (#171A14). */
+    --accent-text: #CB6256;
+    --danger-text: #CB6256;
+    --success-text: #5D8F5C;
+    --metric-subs-text: #C6656C;
+
+    --glass: none;
+    --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 10px 30px -5px rgba(199, 154, 62, 0.18);
+    --on-primary: #10120E;
+
+    /* Dashboard metric palette */
+    --metric-inflow: #10B981;
+    --metric-inflow-rgb: 16, 185, 129;
+    --metric-inflow-glow: rgba(16, 185, 129, 0.18);
+    --metric-outflow: #EF4444;
+    --metric-outflow-rgb: 239, 68, 68;
+    --metric-outflow-glow: rgba(239, 68, 68, 0.18);
+    --metric-netflow: #3B82F6;
+    --metric-netflow-rgb: 59, 130, 246;
+    --metric-netflow-glow: rgba(59, 130, 246, 0.18);
+    --metric-savings: #F59E0B;
+    --metric-savings-rgb: 245, 158, 11;
+    --metric-savings-glow: rgba(245, 158, 11, 0.18);
+    --metric-subs: #C0565E;
+    --metric-subs-rgb: 192, 86, 94;
+    --metric-subs-glow: rgba(192, 86, 94, 0.18);
+
+    /* Standardized Stacking Order (Z-Index scale) */
+    --z-base: 1;
+    --z-sticky: 100;
+    --z-topbar: 500;
+    --z-dropdown: 1000;
+    --z-inbox: 1200;
+    --z-profile: 1500;
+    --z-modal-backdrop: 2000;
+    --z-modal: 2100;
+    --z-dialog: 2500;
+    --z-toast: 3000;
+
+    /* Executive Precision Stealth Cursor Tokens with Guaranteed Radiant Drop-Shadows */
+    --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cdefs%3E%3Cfilter id='glow' x='-40%25' y='-40%25' width='200%25' height='200%25'%3E%3CfeDropShadow dx='0' dy='1.5' stdDeviation='2.2' flood-color='%23D4AF37' flood-opacity='0.75'/%3E%3CfeDropShadow dx='0' dy='1' stdDeviation='1' flood-color='%23000000' flood-opacity='0.5'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%230A0E17' fill-opacity='0.96' stroke='%23D4AF37' stroke-width='1.5' stroke-linejoin='round' filter='url(%23glow)'/%3E%3Cpath d='M4 3L12 14L9 22' stroke='%23F3D27A' stroke-width='0.9' stroke-linecap='round' fill='rgba(212,175,55,0.25)'/%3E%3Ccircle cx='4' cy='3' r='1.3' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, auto;
+    --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cdefs%3E%3Cfilter id='pglow' x='-40%25' y='-40%25' width='200%25' height='200%25'%3E%3CfeDropShadow dx='0' dy='2' stdDeviation='2.8' flood-color='%23D4AF37' flood-opacity='0.85'/%3E%3CfeDropShadow dx='0' dy='1' stdDeviation='1' flood-color='%23000000' flood-opacity='0.4'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%23D4AF37' fill-opacity='0.96' stroke='%23FFFFFF' stroke-width='1.3' stroke-linejoin='round' filter='url(%23pglow)'/%3E%3Ccircle cx='4' cy='3' r='1.6' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
+    --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cdefs%3E%3Cfilter id='tglow' x='-40%25' y='-40%25' width='200%25' height='200%25'%3E%3CfeDropShadow dx='0' dy='1.2' stdDeviation='2.2' flood-color='%23D4AF37' flood-opacity='0.75'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23tglow)'%3E%3Cline x1='14' y1='4' x2='14' y2='24' stroke='%23D4AF37' stroke-width='2.2' stroke-linecap='round'/%3E%3Cline x1='9' y1='4' x2='19' y2='4' stroke='%23D4AF37' stroke-width='1.6' stroke-linecap='round'/%3E%3Cline x1='9' y1='24' x2='19' y2='24' stroke='%23D4AF37' stroke-width='1.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 14 14, text;
 }
 
 @media (pointer: coarse) {
-  :root {
-    --cursor-default: auto;
-    --cursor-pointer: pointer;
-    --cursor-text: text;
-  }
+    :root {
+        --cursor-default: auto;
+        --cursor-pointer: pointer;
+        --cursor-text: text;
+    }
 }

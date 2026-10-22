@@ -119,7 +119,7 @@
 
             <div class="floating-calc-tools">
                 <div class="floating-calc-splits" id="floatingCalcSplits" title="Split total evenly">
-                    <span class="u-inl-9669fed">Split:</span>
+                    <span style="font-size:10px; color:var(--text-muted); margin-right:2px; font-weight:600;">Split:</span>
                     <button type="button" class="floating-calc-split-chip is-active" data-split="1">1x</button>
                     <button type="button" class="floating-calc-split-chip" data-split="2">÷2</button>
                     <button type="button" class="floating-calc-split-chip" data-split="3">÷3</button>

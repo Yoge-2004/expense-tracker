@@ -1,519 +1,537 @@
+/* ==========================================================================
+   EXPENSE TRACKER — FLOATING QUICK CALCULATOR
+   Luxury draggable & dockable calculator with bill splitting & expense insertion
+   ========================================================================== */
+
+/* 1. Minimized Floating Trigger Button */
 .floating-calc-trigger {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--card-bg, #171A14);
-  border: 1.5px solid var(--border-accent, rgba(199, 154, 62, 0.4));
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 18px var(--primary-glow, rgba(199, 154, 62, 0.25));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary, #C79A3E);
-  cursor: grab;
-  z-index: 9999;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--card-bg, #171A14);
+    border: 1.5px solid var(--border-accent, rgba(199, 154, 62, 0.4));
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 18px var(--primary-glow, rgba(199, 154, 62, 0.25));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary, #C79A3E);
+    cursor: grab;
+    z-index: 9999;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
 }
 
 .floating-calc-trigger:hover {
-  transform: scale(1.08);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 24px var(--primary-glow, rgba(199, 154, 62, 0.35));
-  border-color: var(--primary, #C79A3E);
+    transform: scale(1.08);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 24px var(--primary-glow, rgba(199, 154, 62, 0.35));
+    border-color: var(--primary, #C79A3E);
 }
 
 .floating-calc-trigger:active,
 .floating-calc-trigger.is-dragging {
-  cursor: grabbing;
-  transform: scale(0.96);
+    cursor: grabbing;
+    transform: scale(0.96);
 }
 
 .floating-calc-trigger svg {
-  width: 24px;
-  height: 24px;
-  pointer-events: none;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
 }
 
+/* Pulse badge indicator on minimized trigger */
 .floating-calc-trigger .calc-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--primary, #C79A3E);
-  border: 2px solid var(--bg-dark, #10120E);
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--primary, #C79A3E);
+    border: 2px solid var(--bg-dark, #10120E);
 }
 
+/* 2. Expanded Floating Calculator Panel */
 .floating-calc-panel {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 296px;
-  background: var(--card-bg, #171A14);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.38));
-  border-radius: 20px;
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6), 0 0 24px rgba(199, 154, 62, 0.16);
-  z-index: 10000;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
-  opacity: 0;
-  transform: scale(0.92) translateY(12px);
-  pointer-events: none;
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 296px;
+    background: var(--card-bg, #171A14);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.38));
+    border-radius: 20px;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6), 0 0 24px rgba(199, 154, 62, 0.16);
+    z-index: 10000;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+    pointer-events: none;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .floating-calc-panel.is-open {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
 }
 
+/* 3. Header & Drag Bar */
 .floating-calc-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px 8px;
-  cursor: grab;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 8px;
+    cursor: grab;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .floating-calc-header:active,
 .floating-calc-header.is-dragging {
-  cursor: grabbing;
+    cursor: grabbing;
 }
 
 .floating-calc-title {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--primary, #C79A3E);
-  pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--primary, #C79A3E);
+    pointer-events: none;
 }
 
 .floating-calc-title svg {
-  width: 14px;
-  height: 14px;
+    width: 14px;
+    height: 14px;
 }
 
 .floating-calc-controls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .floating-calc-controls .modal-close {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  font-size: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 12px;
 }
 
+/* 4. Digital Display Screen */
 .floating-calc-screen {
-  margin: 10px 12px 8px;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.32);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: flex-end;
-  min-height: 58px;
-  box-sizing: border-box;
+    margin: 10px 12px 8px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.32);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    min-height: 58px;
+    box-sizing: border-box;
 }
 
 .floating-calc-expr {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 11px;
-  color: var(--text-muted, #A8A395);
-  min-height: 16px;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
+    font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+    font-size: 11px;
+    color: var(--text-muted, #A8A395);
+    min-height: 16px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
 }
 
 .floating-calc-val {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-main, #ECE7D8);
-  line-height: 1.15;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: -0.02em;
+    font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-main, #ECE7D8);
+    line-height: 1.15;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: -0.02em;
 }
 
+/* 5. Quick Tools & Split Helper Row */
 .floating-calc-tools {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px 8px;
-  gap: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px 8px;
+    gap: 6px;
 }
 
 .floating-calc-splits {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .floating-calc-split-chip {
-  padding: 3px 6px;
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--font-mono, monospace);
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted, #A8A395);
-  cursor: pointer;
-  transition: all 0.12s ease;
+    padding: 3px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #A8A395);
+    cursor: pointer;
+    transition: all 0.12s ease;
 }
 
 .floating-calc-split-chip:hover {
-  background: rgba(var(--primary-rgb, 199, 154, 62), 0.12);
-  color: var(--primary, #C79A3E);
-  border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.3);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.12);
+    color: var(--primary, #C79A3E);
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.3);
 }
 
 .floating-calc-split-chip.is-active {
-  background: var(--primary, #C79A3E);
-  color: #10120E;
-  border-color: var(--primary, #C79A3E);
-  font-weight: 700;
+    background: var(--primary, #C79A3E);
+    color: #10120E;
+    border-color: var(--primary, #C79A3E);
+    font-weight: 700;
 }
 
 .floating-calc-use-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 9px;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 6px;
-  border: none;
-  background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
-  color: #10120E;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-  white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    border: none;
+    background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
+    color: #10120E;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    white-space: nowrap;
 }
 
 .floating-calc-use-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--primary-glow, rgba(199, 154, 62, 0.3));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--primary-glow, rgba(199, 154, 62, 0.3));
 }
 
 .floating-calc-use-btn:active {
-  transform: translateY(1px);
+    transform: translateY(1px);
 }
 
+/* 5.5 Currency Converter Row */
 .floating-calc-fx-bar {
-  display: flex;
-  flex-direction: column;
-  padding: 0 12px 8px;
-  gap: 6px;
+    display: flex;
+    flex-direction: column;
+    padding: 0 12px 8px;
+    gap: 6px;
 }
 
 .floating-calc-fx-controls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
 }
 
 .floating-calc-fx-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-muted, #A8A395);
-  margin-right: 2px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted, #A8A395);
+    margin-right: 2px;
 }
 
 .floating-calc-fx-select {
-  flex: 1;
-  min-width: 0;
-  height: 28px;
-  padding: 0 22px 0 8px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: var(--font-mono, monospace);
-  background-color: var(--input-bg, rgba(23, 26, 20, 0.88));
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C79A3E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 6px center;
-  background-size: 10px;
-  border: 1.5px solid rgba(212, 175, 55, 0.38);
-  border-radius: 8px;
-  color: var(--text-main, #ECE7D8);
-  cursor: pointer;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0 22px 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    background-color: var(--input-bg, rgba(23, 26, 20, 0.88));
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C79A3E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 10px;
+    border: 1.5px solid rgba(212, 175, 55, 0.38);
+    border-radius: 8px;
+    color: var(--text-main, #ECE7D8);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .floating-calc-fx-select:hover {
-  border-color: rgba(212, 175, 55, 0.7);
-  background-color: rgba(32, 36, 28, 0.95);
-  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.22);
+    border-color: rgba(212, 175, 55, 0.7);
+    background-color: rgba(32, 36, 28, 0.95);
+    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.22);
 }
 
 .floating-calc-fx-select:focus {
-  border-color: var(--primary, #C79A3E);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb, 199, 154, 62), 0.3);
+    border-color: var(--primary, #C79A3E);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb, 199, 154, 62), 0.3);
 }
 
 .floating-calc-fx-select option {
-  background: #171A14;
-  color: #ECE7D8;
-  padding: 6px;
-  font-size: 11px;
-  font-weight: 600;
+    background: #171A14;
+    color: #ECE7D8;
+    padding: 6px;
+    font-size: 11px;
+    font-weight: 600;
 }
 
 [data-theme="light"] .floating-calc-fx-select {
-  background-color: #FFFFFF;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23B8860B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  border-color: rgba(212, 175, 55, 0.45);
-  color: #0F172A;
-  box-shadow: 0 1px 4px rgba(180, 140, 60, 0.12);
+    background-color: #FFFFFF;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23B8860B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    border-color: rgba(212, 175, 55, 0.45);
+    color: #0F172A;
+    box-shadow: 0 1px 4px rgba(180, 140, 60, 0.12);
 }
 
 [data-theme="light"] .floating-calc-fx-select:hover {
-  border-color: #D4AF37;
-  background-color: #FAFAFA;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.24);
+    border-color: #D4AF37;
+    background-color: #FAFAFA;
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.24);
 }
 
 [data-theme="light"] .floating-calc-fx-select option {
-  background: #FFFFFF;
-  color: #0F172A;
+    background: #FFFFFF;
+    color: #0F172A;
 }
 
 .floating-calc-fx-swap {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 25px;
-  padding: 0;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--primary, #C79A3E);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 25px;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--primary, #C79A3E);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
 .floating-calc-fx-swap:hover {
-  background: rgba(var(--primary-rgb, 199, 154, 62), 0.2);
-  transform: scale(1.08);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.2);
+    transform: scale(1.08);
 }
 
 .floating-calc-fx-convert-btn {
-  height: 25px;
-  padding: 0 8px;
-  font-size: 10.5px;
-  font-weight: 700;
-  border-radius: 6px;
-  border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.35);
-  background: rgba(var(--primary-rgb, 199, 154, 62), 0.18);
-  color: var(--primary, #C79A3E);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
+    height: 25px;
+    padding: 0 8px;
+    font-size: 10.5px;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.35);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.18);
+    color: var(--primary, #C79A3E);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
 .floating-calc-fx-convert-btn:hover {
-  background: var(--primary, #C79A3E);
-  color: #10120E;
+    background: var(--primary, #C79A3E);
+    color: #10120E;
 }
 
 .floating-calc-fx-convert-btn.is-loading {
-  opacity: 0.6;
-  pointer-events: none;
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 .floating-calc-fx-quick-chips {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .floating-calc-fx-quick-chips::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 .floating-calc-fx-chip {
-  padding: 2.5px 6px;
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--font-mono, monospace);
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted, #A8A395);
-  cursor: pointer;
-  transition: all 0.12s ease;
-  white-space: nowrap;
+    padding: 2.5px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted, #A8A395);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
 }
 
 .floating-calc-fx-chip:hover {
-  background: rgba(var(--primary-rgb, 199, 154, 62), 0.15);
-  color: var(--primary, #C79A3E);
-  border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.35);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.15);
+    color: var(--primary, #C79A3E);
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.35);
 }
 
 .floating-calc-fx-chip.is-loading {
-  opacity: 0.6;
-  pointer-events: none;
+    opacity: 0.6;
+    pointer-events: none;
 }
 
+/* 6. Keypad Grid */
 .floating-calc-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  padding: 0 12px 12px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 0 12px 12px;
 }
 
 .floating-calc-key {
-  height: 38px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  outline: none;
-  transition: background 0.1s ease, transform 0.08s ease, border-color 0.1s ease;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main, #ECE7D8);
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    transition: background 0.1s ease, transform 0.08s ease, border-color 0.1s ease;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main, #ECE7D8);
 }
 
 .floating-calc-key:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .floating-calc-key:active {
-  transform: scale(0.93);
-  background: rgba(255, 255, 255, 0.14);
+    transform: scale(0.93);
+    background: rgba(255, 255, 255, 0.14);
 }
 
+/* Function keys (Clear, Sign, Modulo, Backspace) */
 .floating-calc-key.is-func {
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--text-muted, #A8A395);
-  font-size: 13.5px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-muted, #A8A395);
+    font-size: 13.5px;
 }
 
 .floating-calc-key.is-func:hover {
-  color: var(--text-main, #ECE7D8);
+    color: var(--text-main, #ECE7D8);
 }
 
+/* Operator keys (+, -, ×, ÷) */
 .floating-calc-key.is-op {
-  background: rgba(var(--primary-rgb, 199, 154, 62), 0.14);
-  color: var(--primary, #C79A3E);
-  border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.28);
-  font-size: 17px;
-  font-weight: 700;
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.14);
+    color: var(--primary, #C79A3E);
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.28);
+    font-size: 17px;
+    font-weight: 700;
 }
 
 .floating-calc-key.is-op:hover {
-  background: rgba(var(--primary-rgb, 199, 154, 62), 0.24);
-  border-color: var(--primary, #C79A3E);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.24);
+    border-color: var(--primary, #C79A3E);
 }
 
 .floating-calc-key.is-op.is-active {
-  background: var(--primary, #C79A3E);
-  color: #10120E;
+    background: var(--primary, #C79A3E);
+    color: #10120E;
 }
 
+/* Equal key */
 .floating-calc-key.is-eq {
-  background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
-  color: #10120E;
-  font-weight: 800;
-  font-size: 18px;
-  border: none;
-  box-shadow: 0 4px 12px var(--primary-glow, rgba(199, 154, 62, 0.28));
+    background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
+    color: #10120E;
+    font-weight: 800;
+    font-size: 18px;
+    border: none;
+    box-shadow: 0 4px 12px var(--primary-glow, rgba(199, 154, 62, 0.28));
 }
 
 .floating-calc-key.is-eq:hover {
-  filter: brightness(1.08);
+    filter: brightness(1.08);
 }
 
+/* Light Theme Overrides */
 [data-theme="light"] .floating-calc-trigger {
-  background: #FFFFFF;
-  border-color: rgba(212, 175, 55, 0.45);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 0 18px rgba(212, 175, 55, 0.2);
+    background: #FFFFFF;
+    border-color: rgba(212, 175, 55, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 0 18px rgba(212, 175, 55, 0.2);
 }
 
 [data-theme="light"] .floating-calc-panel {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(212, 175, 55, 0.35);
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.18), 0 0 20px rgba(212, 175, 55, 0.15);
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(212, 175, 55, 0.35);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.18), 0 0 20px rgba(212, 175, 55, 0.15);
 }
 
 [data-theme="light"] .floating-calc-screen {
-  background: #F1F5F9;
-  border-color: rgba(15, 23, 42, 0.08);
+    background: #F1F5F9;
+    border-color: rgba(15, 23, 42, 0.08);
 }
 
 [data-theme="light"] .floating-calc-key {
-  background: #F8FAFC;
-  border-color: rgba(15, 23, 42, 0.08);
-  color: #0F172A;
+    background: #F8FAFC;
+    border-color: rgba(15, 23, 42, 0.08);
+    color: #0F172A;
 }
 
 [data-theme="light"] .floating-calc-key:hover {
-  background: #E2E8F0;
+    background: #E2E8F0;
 }
 
 [data-theme="light"] .floating-calc-key.is-func {
-  background: #EDF2F7;
-  color: #475569;
+    background: #EDF2F7;
+    color: #475569;
 }
 
+/* Responsive adjustments for narrow screens */
 @media (max-width: 600px) {
-  .floating-calc-trigger {
-    bottom: 74px;
-    right: 18px;
-    width: 48px;
-    height: 48px;
-  }
+    .floating-calc-trigger {
+        bottom: 74px;
+        right: 18px;
+        width: 48px;
+        height: 48px;
+    }
 
-  .floating-calc-panel {
-    bottom: 74px;
-    right: 14px;
-    width: calc(100vw - 28px);
-    max-width: 320px;
-  }
+    .floating-calc-panel {
+        bottom: 74px;
+        right: 14px;
+        width: calc(100vw - 28px);
+        max-width: 320px;
+    }
 }
