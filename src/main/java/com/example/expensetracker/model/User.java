@@ -132,7 +132,7 @@ public class User {
      */
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
+    @Column(name = "role", nullable = false, length = 20, columnDefinition = "varchar(20) default 'ROLE_USER'")
     private Role role = Role.ROLE_USER;
 
     /**

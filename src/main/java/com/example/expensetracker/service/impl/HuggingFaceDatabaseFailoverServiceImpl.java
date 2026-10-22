@@ -73,6 +73,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     @Autowired(required = false)
     private FallbackRecoveryCoordinator fallbackCoordinator;
 
+    @Autowired(required = false)
+    private com.example.expensetracker.config.AdminBootstrapRunner adminBootstrapRunner;
+
     @Override
     @EventListener(ApplicationReadyEvent.class)
     public void initializeFailoverSnapshot() {
@@ -113,6 +116,14 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         }
         if (fallbackCoordinator != null) {
             fallbackCoordinator.afterSnapshotRestored();
+        }
+        if (adminBootstrapRunner != null) {
+            try {
+                adminBootstrapRunner.run();
+                log.info("Platform admin credentials and permissions verified after failover snapshot restore.");
+            } catch (Exception e) {
+                log.warn("Post-restore admin verification notice: {}", e.getMessage());
+            }
         }
         // If snapshot does not exist on HF space, immediately replicate the current database first!
         if (!snapshotFound) {

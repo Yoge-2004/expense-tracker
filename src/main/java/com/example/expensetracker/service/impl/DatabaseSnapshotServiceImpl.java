@@ -53,6 +53,9 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
     @org.springframework.beans.factory.annotation.Value("${app.fallback-db.password:}")
     private String fallbackDbPassword = "";
 
+    @org.springframework.beans.factory.annotation.Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:yogeshwaranmuthuraman56@gmail.com}}")
+    private String adminEmail = "yogeshwaranmuthuraman56@gmail.com";
+
     public DatabaseSnapshotServiceImpl(
             DataSource dataSource,
             @Value("${app.fallback-db-path:${DATA_DIR:/data}/expensetracker_fallback}") String fallbackDbPath) {
@@ -118,16 +121,17 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
                 String targetTable = actualTables.get(sourceTable.toLowerCase(Locale.ROOT));
                 if (targetTable != null) {
                     List<Column> sourceColumns = columns(source, sourceTable);
-                    Map<String, String> actualColumns = actualColumnNames(target, targetTable);
+                    Map<String, TargetColumn> targetCols = actualColumns(target, targetTable);
                     List<ColumnPair> common = sourceColumns.stream()
-                            .filter(c -> actualColumns.containsKey(c.name.toLowerCase(Locale.ROOT)))
-                            .map(c -> new ColumnPair(c.name, actualColumns.get(c.name.toLowerCase(Locale.ROOT))))
+                            .filter(c -> targetCols.containsKey(c.name.toLowerCase(Locale.ROOT)))
+                            .map(c -> new ColumnPair(c.name, targetCols.get(c.name.toLowerCase(Locale.ROOT)).name))
                             .toList();
                     if (!common.isEmpty()) {
+                        List<MissingColumnDefault> missingDefaults = determineMissingDefaults(targetTable, targetCols, common);
                         try (Statement s = target.createStatement()) {
                             s.executeUpdate(/* language=none */ "DELETE FROM " + q(targetTable));
                         }
-                        rows += insertRows(source, target, sourceTable, targetTable, common);
+                        rows += insertRows(source, target, sourceTable, targetTable, common, missingDefaults);
                     }
                 }
             }
@@ -142,9 +146,14 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
 
     @SuppressWarnings("java:S2077") // Dynamic DDL/DML safely uses validated identifiers from DatabaseMetaData
     private int insertRows(Connection source, Connection target, String sourceTable,
-                           String targetTable, List<ColumnPair> columns) throws SQLException {
-        String names = String.join(",", columns.stream().map(c -> q(c.target)).toList());
-        String placeholders = String.join(",", Collections.nCopies(columns.size(), "?"));
+                           String targetTable, List<ColumnPair> columns,
+                           List<MissingColumnDefault> missingDefaults) throws SQLException {
+        List<String> targetNames = new ArrayList<>(columns.stream().map(c -> q(c.target)).toList());
+        for (MissingColumnDefault md : missingDefaults) {
+            targetNames.add(q(md.targetName));
+        }
+        String names = String.join(",", targetNames);
+        String placeholders = String.join(",", Collections.nCopies(targetNames.size(), "?"));
         int rows = 0;
         String sql = /* language=none */ "INSERT INTO " + q(targetTable)
                 + " (" + names + ") VALUES (" + placeholders + ")";
@@ -153,8 +162,12 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
              ResultSet rs = s.executeQuery(/* language=none */ "SELECT * FROM " + q(sourceTable))) {
             int batchCount = 0;
             while (rs.next()) {
-                for (int i = 0; i < columns.size(); i++) {
-                    p.setObject(i + 1, normalize(rs.getObject(columns.get(i).source)));
+                int paramIdx = 1;
+                for (ColumnPair col : columns) {
+                    p.setObject(paramIdx++, normalize(rs.getObject(col.source)));
+                }
+                for (MissingColumnDefault md : missingDefaults) {
+                    p.setObject(paramIdx++, md.valueProvider.apply(rs));
                 }
                 p.addBatch();
                 batchCount++;
@@ -168,6 +181,66 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
             }
         }
         return rows;
+    }
+
+    private List<MissingColumnDefault> determineMissingDefaults(
+            String targetTable,
+            Map<String, TargetColumn> actualColumns,
+            List<ColumnPair> common) {
+        List<MissingColumnDefault> missing = new ArrayList<>();
+        Set<String> commonTargets = common.stream()
+                .map(c -> c.target.toLowerCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toSet());
+
+        for (TargetColumn tc : actualColumns.values()) {
+            String colLower = tc.name.toLowerCase(Locale.ROOT);
+            if (commonTargets.contains(colLower)) {
+                continue;
+            }
+            if (targetTable.equalsIgnoreCase("USERS") && colLower.equals("role")) {
+                missing.add(new MissingColumnDefault(tc.name, rs -> {
+                    try {
+                        String email = null;
+                        try {
+                            email = rs.getString("email");
+                        } catch (Exception ignored) {
+                            try {
+                                email = rs.getString("EMAIL");
+                            } catch (Exception ignored2) {}
+                        }
+                        if (email != null && adminEmail != null && email.trim().equalsIgnoreCase(adminEmail.trim())) {
+                            return "ROLE_SUPER_ADMIN";
+                        }
+                    } catch (Exception ignored) {}
+                    return "ROLE_USER";
+                }));
+            } else if (!tc.nullable && (tc.columnDef == null || tc.columnDef.isBlank())) {
+                missing.add(new MissingColumnDefault(tc.name, rs -> defaultForType(colLower, tc.jdbcType)));
+            }
+        }
+        return missing;
+    }
+
+    private Object defaultForType(String colName, int jdbcType) {
+        if (colName.equals("currency")) {
+            return "INR";
+        }
+        if (colName.contains("date") || colName.contains("time") || colName.equals("created_at") || colName.equals("updated_at")) {
+            return java.time.LocalDateTime.now().toString();
+        }
+        if (colName.equals("enabled")) {
+            return true;
+        }
+        if (colName.equals("account_locked") || colName.equals("is_settled") || colName.equals("reminder_enabled")
+                || colName.equals("is_recurring") || colName.equals("sent_successfully")) {
+            return false;
+        }
+        return switch (jdbcType) {
+            case Types.BOOLEAN, Types.BIT -> false;
+            case Types.INTEGER, Types.SMALLINT, Types.TINYINT, Types.BIGINT -> 0;
+            case Types.FLOAT, Types.REAL, Types.DOUBLE, Types.NUMERIC, Types.DECIMAL -> java.math.BigDecimal.ZERO;
+            default -> "";
+        };
     }
 
     /**
@@ -320,15 +393,18 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
         return map;
     }
 
-    private Map<String, String> actualColumnNames(Connection conn, String table) throws SQLException {
-        Map<String, String> result = new HashMap<>();
+    private Map<String, TargetColumn> actualColumns(Connection conn, String table) throws SQLException {
+        Map<String, TargetColumn> result = new HashMap<>();
         DatabaseMetaData md = conn.getMetaData();
         String currentSchema = conn.getSchema();
         try (ResultSet rs = md.getColumns(conn.getCatalog(), currentSchema, table, "%")) {
             while (rs.next()) {
                 String name = rs.getString(COLUMN_NAME);
                 if (name != null) {
-                    result.put(name.toLowerCase(Locale.ROOT), name);
+                    int dataType = rs.getInt("DATA_TYPE");
+                    boolean nullable = rs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls;
+                    String colDef = rs.getString("COLUMN_DEF");
+                    result.put(name.toLowerCase(Locale.ROOT), new TargetColumn(name, dataType, nullable, colDef));
                 }
             }
         }
@@ -352,6 +428,8 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
 
     private record Column(String name, int jdbcType, boolean pk) {}
     private record ColumnPair(String source, String target) {}
+    private record TargetColumn(String name, int jdbcType, boolean nullable, String columnDef) {}
+    private record MissingColumnDefault(String targetName, java.util.function.Function<ResultSet, Object> valueProvider) {}
 
     public static void encrypt(Path input, Path output, String password) throws IOException, GeneralSecurityException {
         if (input == null || output == null) {

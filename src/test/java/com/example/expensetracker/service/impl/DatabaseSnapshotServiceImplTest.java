@@ -144,6 +144,39 @@ class DatabaseSnapshotServiceImplTest {
     }
 
     @Test
+    @DisplayName("importIntoFallback: successfully supplies defaults when target has NOT NULL role column missing from SQLite snapshot")
+    void importIntoFallback_missingNotNullRoleColumn_succeedsWithDefaults() throws Exception {
+        Path sqlitePath = tempDir.resolve("legacy.sqlite");
+        Class.forName("org.sqlite.JDBC");
+        try (Connection sqConn = java.sql.DriverManager.getConnection("jdbc:sqlite:" + sqlitePath.toAbsolutePath());
+             Statement stmt = sqConn.createStatement()) {
+            stmt.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)");
+            stmt.execute("INSERT INTO users VALUES (1, 'Admin User', 'yogeshwaranmuthuraman56@gmail.com')");
+            stmt.execute("INSERT INTO users VALUES (2, 'Normal User', 'member@example.com')");
+        }
+
+        Path fallbackDbPath = tempDir.resolve("fallback_test_db");
+        String fallbackUrl = "jdbc:h2:file:" + fallbackDbPath.toAbsolutePath() + ";MODE=PostgreSQL";
+        try (Connection h2Conn = java.sql.DriverManager.getConnection(fallbackUrl, "sa", "");
+             Statement stmt = h2Conn.createStatement()) {
+            stmt.execute("CREATE TABLE users (id BIGINT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255), role VARCHAR(20) NOT NULL)");
+        }
+
+        DatabaseSnapshotServiceImpl testService = new DatabaseSnapshotServiceImpl(dataSource, fallbackDbPath.toString());
+        int imported = testService.importIntoFallback(sqlitePath);
+        assertEquals(2, imported);
+
+        try (Connection h2Conn = java.sql.DriverManager.getConnection(fallbackUrl, "sa", "");
+             Statement stmt = h2Conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT id, email, role FROM users ORDER BY id")) {
+            assertTrue(rs.next());
+            assertEquals("ROLE_SUPER_ADMIN", rs.getString("role"));
+            assertTrue(rs.next());
+            assertEquals("ROLE_USER", rs.getString("role"));
+        }
+    }
+
+    @Test
     @DisplayName("decrypt: null, non-existent, or blank password arguments throw IllegalArgumentException")
     void decrypt_invalidArgs_throwsException() {
         Path existing = tempDir.resolve("test_file.txt");
