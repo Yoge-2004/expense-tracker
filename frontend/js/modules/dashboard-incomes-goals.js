@@ -1,3 +1,5 @@
+var elements = window.elements || window.DashboardDom?.elements || {};
+var userId = window.userId || localStorage.getItem("userId");
 function updateCashFlowMetrics(expenses, incomes, savingsGoals) {
     document.querySelectorAll(".grid-4-metrics .metric-card").forEach(card => card.classList.remove("is-loading"));
     // Income excludes reimbursements; money that came back reduces spending instead.

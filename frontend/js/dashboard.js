@@ -1,6 +1,6 @@
-const token = localStorage.getItem("token");
-const userId = localStorage.getItem("userId");
-const userName = localStorage.getItem("userName") || "User";
+var token = localStorage.getItem("token");
+var userId = localStorage.getItem("userId");
+var userName = localStorage.getItem("userName") || "User";
 
 if (!token || !userId) {
     window.location.href = "index.html";
@@ -33,7 +33,38 @@ if (userId && typeof apiRequest === "function") {
 
 // Shared dashboard utilities are loaded from js/modules/dashboard-utils.js.
 const { getLocalDateString, parseLocalDate, escapeHtml, jsAttrEscape, formatCurrency, formatDate, getCategoryColor, getCategoryEmoji, debounce } = window.DashboardUtils;
-const elements = window.DashboardDom.elements;
+var elements = window.DashboardDom.elements;
+window.elements = elements;
+window.token = token;
+window.userId = userId;
+window.userName = userName;
+
+// Safe bridge functions to forward calls across sub-modules without TDZ, recursion or global shadow issues
+const updateCashFlowMetrics = (...args) => {
+    if (typeof window.updateCashFlowMetrics === "function") {
+        return window.updateCashFlowMetrics(...args);
+    }
+};
+const renderIncomes = (...args) => {
+    if (typeof window.renderIncomes === "function") {
+        return window.renderIncomes(...args);
+    }
+};
+const renderSavingsGoals = (...args) => {
+    if (typeof window.renderSavingsGoals === "function") {
+        return window.renderSavingsGoals(...args);
+    }
+};
+const loadBudgets = (...args) => {
+    if (typeof window.loadBudgets === "function") {
+        return window.loadBudgets(...args);
+    }
+};
+const applyFilters = (...args) => {
+    if (typeof window.applyFilters === "function") {
+        return window.applyFilters(...args);
+    }
+};
 const { animateNumber, animatePercent, celebrateSuccess, updateStats } = window.DashboardEffects;
 
 // Global State
@@ -149,8 +180,7 @@ const dashboardBudgetController = window.DashboardBudget.createController({
     }
 });
 
-const loadBudgets = dashboardBudgetController.loadBudgets;
-window.loadBudgets = loadBudgets;
+window.loadBudgets = dashboardBudgetController.loadBudgets;
 window.deleteBudgetLimit = dashboardBudgetController.deleteBudgetLimit;
 
 const setBudgetModal = document.getElementById("budgetModal");
@@ -298,7 +328,7 @@ const dashboardFilterController = window.DashboardFilters.createController({
     debounce,
     showToast,
     updateStats,
-    updateCashFlowMetrics,
+    updateCashFlowMetrics: (...args) => updateCashFlowMetrics(...args),
     renderPieChart,
     renderList,
     renderTrendChart,
@@ -306,11 +336,10 @@ const dashboardFilterController = window.DashboardFilters.createController({
     renderDayOfWeekChart,
     renderFinancialInsights,
     syncCategoryPillSelection,
-    applyIncomeFilters: () => typeof applyIncomeFilters === "function" && applyIncomeFilters()
+    applyIncomeFilters: () => typeof window.applyIncomeFilters === "function" && window.applyIncomeFilters()
 });
 
-const applyFilters = dashboardFilterController.applyFilters;
-window.applyFilters = applyFilters;
+window.applyFilters = dashboardFilterController.applyFilters;
 dashboardFilterController.wireControls();
 
 

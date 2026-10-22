@@ -1,3 +1,5 @@
+var elements = window.elements || window.DashboardDom?.elements || {};
+var userId = window.userId || localStorage.getItem("userId");
 // --- EXECUTIVE STATEMENT & INCOMES EXPORT / IMPORT CONTROLS ---
 document.getElementById("exportReportPdfBtn")?.addEventListener("click", () => {
     downloadAuthenticated(`${API_BASE_URL}/reports/user/${userId}/export/pdf`, "executive_financial_statement.pdf", "Generating Complete Executive Financial Statement PDF...");

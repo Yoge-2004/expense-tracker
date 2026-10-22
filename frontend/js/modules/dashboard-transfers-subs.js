@@ -1,3 +1,5 @@
+var elements = window.elements || window.DashboardDom?.elements || {};
+var userId = window.userId || localStorage.getItem("userId");
 function uploadFileWithProgress(url, formData, onProgress) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
