@@ -28,6 +28,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AnimatedCard } from './AnimatedCard';
+import { ThemedScrollView } from './ThemedScrollbar';
 import { ThemeColors } from '../constants/theme';
 import {
   LoanAdjustment,
@@ -709,7 +710,7 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ThemedScrollView>
               {/* Type Switcher */}
               <Text style={[styles.inputLabel, { color: c.textMuted }]}>ADJUSTMENT TYPE</Text>
               <View style={[styles.typeToggleWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
@@ -1048,7 +1049,7 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
                   )}
                 </TouchableOpacity>
               </View>
-            </ScrollView>
+            </ThemedScrollView>
           </View>
         </View>
       </Modal>
@@ -1161,10 +1162,9 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
             </View>
 
             {/* Expenses List */}
-            <ScrollView
+            <ThemedScrollView
               style={styles.pickerScroll}
               contentContainerStyle={{ paddingBottom: 20 }}
-              showsVerticalScrollIndicator={true}
             >
               {filteredExpensesList.length === 0 ? (
                 <View style={{ padding: 32, alignItems: 'center' }}>
@@ -1232,7 +1232,7 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
                   );
                 })
               )}
-            </ScrollView>
+            </ThemedScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>

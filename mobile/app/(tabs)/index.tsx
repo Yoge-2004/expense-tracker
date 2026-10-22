@@ -39,7 +39,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedScrollbar } from '../../components/ThemedScrollbar';
+import { ThemedScrollbar, ThemedScrollView } from '../../components/ThemedScrollbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError, checkServerHealth } from '../../services/api';
@@ -1285,7 +1285,7 @@ export default function DashboardScreen() {
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
       <AmbientAura />
 
-      <ScrollView
+      <ThemedScrollView
         style={styles.scrollView}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
@@ -1950,7 +1950,7 @@ export default function DashboardScreen() {
         </StaggeredView>
 
         <View style={{ height: 40 }} />
-      </ScrollView>
+      </ThemedScrollView>
 
       {/* Export / Import Modal */}
       <ExportImportModal

@@ -3,15 +3,113 @@
  * @description Bottom navigation tab bar layout with safe area handling and centered action button.
  * Uses native React Navigation tab bar labels and icons to ensure touch feedback and ripples
  * align symmetrically and encompass both icon and text on all screen sizes with WCAG-compliant contrast.
+ * Features spring-animated icon pops on tab switches for responsive, tactile feedback.
  */
 
-import React from "react";
-import { View, StyleSheet, Platform } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, StyleSheet, Platform, Animated } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
 import { Colors } from "../../constants/theme";
+
+interface AnimatedTabIconProps {
+  focused: boolean;
+  activeColor: string;
+  inactiveColor: string;
+  activePillBg: string;
+  iconNameFocused: keyof typeof Ionicons.glyphMap;
+  iconNameOutline: keyof typeof Ionicons.glyphMap;
+  size?: number;
+}
+
+function AnimatedTabIcon({
+  focused,
+  activeColor,
+  inactiveColor,
+  activePillBg,
+  iconNameFocused,
+  iconNameOutline,
+  size = 21,
+}: AnimatedTabIconProps) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const prevFocused = useRef(focused);
+
+  useEffect(() => {
+    if (focused && !prevFocused.current) {
+      scaleAnim.setValue(0.8);
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 110,
+        useNativeDriver: true,
+      }).start();
+    }
+    prevFocused.current = focused;
+  }, [focused, scaleAnim]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.iconWrap,
+        focused && { backgroundColor: activePillBg },
+        { transform: [{ scale: scaleAnim }] },
+      ]}
+    >
+      <Ionicons
+        name={focused ? iconNameFocused : iconNameOutline}
+        size={size}
+        color={focused ? activeColor : inactiveColor}
+      />
+    </Animated.View>
+  );
+}
+
+function AnimatedAddTabIcon({
+  focused,
+  activeColor,
+  isLight,
+}: {
+  focused: boolean;
+  activeColor: string;
+  isLight: boolean;
+}) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const prevFocused = useRef(focused);
+
+  useEffect(() => {
+    if (focused && !prevFocused.current) {
+      scaleAnim.setValue(0.85);
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 120,
+        useNativeDriver: true,
+      }).start();
+    }
+    prevFocused.current = focused;
+  }, [focused, scaleAnim]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.iconWrap,
+        {
+          backgroundColor: activeColor,
+          shadowColor: activeColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.35,
+          shadowRadius: 5,
+          elevation: 5,
+          transform: [{ scale: scaleAnim }],
+        },
+      ]}
+    >
+      <Ionicons name="add" size={22} color={isLight ? "#FFFFFF" : "#10120E"} />
+    </Animated.View>
+  );
+}
 
 export default function TabLayout() {
   const { theme } = useAuth();
@@ -82,13 +180,14 @@ export default function TabLayout() {
           tabBarLabel: "Home",
           tabBarAccessibilityLabel: "Dashboard",
           tabBarIcon: ({ focused }) => (
-            <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
-              <Ionicons
-                name={focused ? "grid" : "grid-outline"}
-                size={21}
-                color={focused ? activeColor : inactiveColor}
-              />
-            </View>
+            <AnimatedTabIcon
+              focused={focused}
+              activeColor={activeColor}
+              inactiveColor={inactiveColor}
+              activePillBg={activePillBg}
+              iconNameFocused="grid"
+              iconNameOutline="grid-outline"
+            />
           ),
         }}
       />
@@ -125,21 +224,11 @@ export default function TabLayout() {
           tabBarLabel: "Add",
           tabBarAccessibilityLabel: "Add record",
           tabBarIcon: ({ focused }) => (
-            <View
-              style={[
-                styles.iconWrap,
-                {
-                  backgroundColor: activeColor,
-                  shadowColor: activeColor,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 4,
-                },
-              ]}
-            >
-              <Ionicons name="add" size={22} color={isLight ? "#FFFFFF" : "#10120E"} />
-            </View>
+            <AnimatedAddTabIcon
+              focused={focused}
+              activeColor={activeColor}
+              isLight={isLight}
+            />
           ),
         }}
       />
@@ -151,13 +240,14 @@ export default function TabLayout() {
           tabBarLabel: "Subscriptions",
           tabBarAccessibilityLabel: "Subscriptions",
           tabBarIcon: ({ focused }) => (
-            <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
-              <Ionicons
-                name={focused ? "repeat" : "repeat-outline"}
-                size={21}
-                color={focused ? activeColor : inactiveColor}
-              />
-            </View>
+            <AnimatedTabIcon
+              focused={focused}
+              activeColor={activeColor}
+              inactiveColor={inactiveColor}
+              activePillBg={activePillBg}
+              iconNameFocused="repeat"
+              iconNameOutline="repeat-outline"
+            />
           ),
         }}
       />
@@ -169,13 +259,14 @@ export default function TabLayout() {
           tabBarLabel: "Profile",
           tabBarAccessibilityLabel: "Profile and settings",
           tabBarIcon: ({ focused }) => (
-            <View style={[styles.iconWrap, focused && { backgroundColor: activePillBg }]}>
-              <Ionicons
-                name={focused ? "person" : "person-outline"}
-                size={21}
-                color={focused ? activeColor : inactiveColor}
-              />
-            </View>
+            <AnimatedTabIcon
+              focused={focused}
+              activeColor={activeColor}
+              inactiveColor={inactiveColor}
+              activePillBg={activePillBg}
+              iconNameFocused="person"
+              iconNameOutline="person-outline"
+            />
           ),
         }}
       />

@@ -51,7 +51,6 @@
 }
 
 [data-theme="light"] .card,
-[data-theme="light"] .metric-card,
 [data-theme="light"] .unified-ledger-card,
 [data-theme="light"] .insight-card-item,
 [data-theme="light"] .savings-goal-card,
@@ -63,6 +62,52 @@
     box-shadow:
         0 14px 34px -10px rgba(180, 140, 60, 0.14),
         0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+}
+
+[data-theme="light"] .metric-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    box-shadow:
+        0 14px 34px -10px rgba(180, 140, 60, 0.14),
+        0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+}
+
+/* PRIMARY KPI CARDS: 4PX COLORED LEFT STRIPS (Light & Dark Themes, Idle & Hover) */
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-inflow,
+#metricCardInflow,
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-inflow:hover,
+#metricCardInflow:hover {
+    border-left: 4px solid var(--metric-inflow) !important;
+}
+
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-outflow,
+#metricCardOutflow,
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-outflow:hover,
+#metricCardOutflow:hover {
+    border-left: 4px solid var(--metric-outflow) !important;
+}
+
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-netflow,
+#metricCardNetflow,
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-netflow:hover,
+#metricCardNetflow:hover {
+    border-left: 4px solid var(--metric-netflow) !important;
+}
+
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-savings,
+#metricCardSavings,
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-savings:hover,
+#metricCardSavings:hover {
+    border-left: 4px solid var(--metric-savings) !important;
+}
+
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-subs,
+#metricCardSubs,
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card, body .metric-card).metric-card-subs:hover,
+#metricCardSubs:hover {
+    border-left: 4px solid var(--metric-subs) !important;
 }
 
 /* Subtle top edge specular highlight */
@@ -101,6 +146,7 @@
 .metric-card.metric-card-inflow:hover {
     transform: translateY(-3px);
     border-color: rgba(16, 185, 129, 0.28);
+    border-left: 4px solid var(--metric-inflow) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-inflow-glow),
         0 0 32px 3px rgba(16, 185, 129, 0.22),
@@ -110,6 +156,7 @@
 .metric-card.metric-card-outflow:hover {
     transform: translateY(-3px);
     border-color: rgba(239, 68, 68, 0.28);
+    border-left: 4px solid var(--metric-outflow) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-outflow-glow),
         0 0 32px 3px rgba(239, 68, 68, 0.22),
@@ -118,29 +165,32 @@
 
 .metric-card.metric-card-netflow:hover {
     transform: translateY(-3px);
-    border-color: rgba(212, 175, 55, 0.28);
+    border-color: rgba(59, 130, 246, 0.28);
+    border-left: 4px solid var(--metric-netflow) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-netflow-glow),
-        0 0 32px 3px rgba(212, 175, 55, 0.25),
-        0 0 58px 8px rgba(212, 175, 55, 0.14);
+        0 0 32px 3px rgba(59, 130, 246, 0.25),
+        0 0 58px 8px rgba(59, 130, 246, 0.14);
 }
 
 .metric-card.metric-card-savings:hover {
     transform: translateY(-3px);
-    border-color: rgba(139, 92, 246, 0.28);
+    border-color: rgba(245, 158, 11, 0.28);
+    border-left: 4px solid var(--metric-savings) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-savings-glow),
-        0 0 32px 3px rgba(139, 92, 246, 0.22),
-        0 0 55px 8px rgba(139, 92, 246, 0.12);
+        0 0 32px 3px rgba(245, 158, 11, 0.22),
+        0 0 55px 8px rgba(245, 158, 11, 0.12);
 }
 
 .metric-card.metric-card-subs:hover {
     transform: translateY(-3px);
-    border-color: rgba(59, 130, 246, 0.28);
+    border-color: rgba(192, 86, 94, 0.28);
+    border-left: 4px solid var(--metric-subs) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-subs-glow),
-        0 0 32px 3px rgba(59, 130, 246, 0.22),
-        0 0 55px 8px rgba(59, 130, 246, 0.12);
+        0 0 32px 3px rgba(192, 86, 94, 0.22),
+        0 0 55px 8px rgba(192, 86, 94, 0.12);
 }
 
 /* DYNAMIC SHIMMERING PROGRESS BARS */

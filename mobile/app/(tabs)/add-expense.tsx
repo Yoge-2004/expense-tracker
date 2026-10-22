@@ -40,6 +40,7 @@ import { ChoiceChips } from '../../components/ChoiceChips';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../../utils/moneyFlow';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
+import { ThemedScrollView } from '../../components/ThemedScrollbar';
 import * as DocumentPicker from 'expo-document-picker';
 import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../../services/receiptOcr';
 
@@ -918,7 +919,7 @@ export default function AddExpenseScreen() {
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
       <AmbientAura />
 
-      <ScrollView
+      <ThemedScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -2384,7 +2385,7 @@ export default function AddExpenseScreen() {
             )}
           </StaggeredView>
         )}
-      </ScrollView>
+      </ThemedScrollView>
 
       {/* Category Management Modal */}
       <ManageCategoriesModal

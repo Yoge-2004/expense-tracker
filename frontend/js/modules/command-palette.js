@@ -235,7 +235,15 @@
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
                     <input type="text" id="commandPaletteInput" class="command-palette-input" placeholder="Type an action or search... (↑↓ to select, Enter to run, Esc to close)" autocomplete="off" spellcheck="false">
-                    <kbd class="command-palette-kbd">ESC</kbd>
+                    <div class="command-palette-actions-wrap">
+                        <kbd class="command-palette-kbd" id="commandPaletteEscBadge" title="Click or press Esc to close">ESC</kbd>
+                        <button type="button" class="command-palette-close-btn" id="commandPaletteCloseBtn" aria-label="Close Command Palette" title="Close Command Palette (Esc)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="command-palette-results" id="commandPaletteResults"></div>
                 <div class="command-palette-footer">
@@ -254,6 +262,35 @@
         overlayEl.addEventListener("click", (e) => {
             if (e.target === overlayEl) close();
         });
+
+        document.getElementById("commandPaletteCloseBtn")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            close();
+        });
+
+        document.getElementById("commandPaletteEscBadge")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            close();
+        });
+
+        // Prevent wheel scrolling on results or overlay from chaining into background website
+        resultsEl?.addEventListener("wheel", (e) => {
+            const { scrollTop, scrollHeight, clientHeight } = resultsEl;
+            const deltaY = e.deltaY;
+            const isAtTop = scrollTop <= 0 && deltaY < 0;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1 && deltaY > 0;
+            if (isAtTop || isAtBottom) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        overlayEl.addEventListener("wheel", (e) => {
+            if (e.target === overlayEl) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         inputEl?.addEventListener("input", (e) => {
             filter(e.target.value);
@@ -355,6 +392,8 @@
         renderResults();
 
         if (overlayEl) {
+            document.body.classList.add("modal-open");
+            document.documentElement.classList.add("modal-open");
             overlayEl.style.display = "flex";
             requestAnimationFrame(() => {
                 overlayEl.classList.add("open");
@@ -372,6 +411,10 @@
     function close() {
         if (!overlayEl) return;
         overlayEl.classList.remove("open");
+        if (!document.querySelector(".modal-overlay.active")) {
+            document.body.classList.remove("modal-open");
+            document.documentElement.classList.remove("modal-open");
+        }
         setTimeout(() => {
             overlayEl.style.display = "none";
         }, 180);

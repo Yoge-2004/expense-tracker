@@ -391,9 +391,9 @@
     position: fixed;
     inset: 0;
     z-index: 10001;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.68);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -402,7 +402,10 @@
     padding-right: 16px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: none;
 }
 .command-palette-overlay.open {
     opacity: 1;
@@ -418,8 +421,10 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transform: scale(0.96) translateY(-10px);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.95) translateY(-12px);
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s ease;
+    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
 }
 .command-palette-overlay.open .command-palette-modal {
     transform: scale(1) translateY(0);
@@ -448,6 +453,36 @@
     color: var(--text-muted, #8E8D8A);
     font-size: 14px;
 }
+.command-palette-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.command-palette-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--text-muted, #8E8D8A);
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+}
+.command-palette-close-btn:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: var(--danger, #EF4444);
+    transform: scale(1.08) rotate(90deg);
+}
+.command-palette-close-btn:active {
+    transform: scale(0.92) rotate(90deg);
+}
 .command-palette-kbd {
     font-size: 11px;
     padding: 3px 6px;
@@ -455,11 +490,37 @@
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--text-muted, #8E8D8A);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.18s ease;
+}
+.command-palette-kbd:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--text-main, #FFF);
+    border-color: rgba(255, 255, 255, 0.28);
 }
 .command-palette-results {
     max-height: 340px;
     overflow-y: auto;
     padding: 8px;
+    overscroll-behavior: contain !important;
+    overscroll-behavior-y: contain !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb, 199, 154, 62), 0.45) transparent;
+}
+.command-palette-results::-webkit-scrollbar {
+    width: 6px;
+}
+.command-palette-results::-webkit-scrollbar-track {
+    background: transparent;
+}
+.command-palette-results::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.45);
+    border-radius: 999px;
+    transition: background 0.2s ease;
+}
+.command-palette-results::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.75);
 }
 .command-palette-item {
     display: flex;
@@ -564,10 +625,33 @@
 [data-theme="light"] .command-palette-input::placeholder {
     color: #64748B;
 }
+[data-theme="light"] .command-palette-close-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #64748B;
+}
+[data-theme="light"] .command-palette-close-btn:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #DC2626;
+}
 [data-theme="light"] .command-palette-kbd {
     background: #F1F5F9;
     border: 1px solid #CBD5E1;
     color: #475569;
+}
+[data-theme="light"] .command-palette-kbd:hover {
+    background: #E2E8F0;
+    color: #0F172A;
+}
+[data-theme="light"] .command-palette-results {
+    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] .command-palette-results::-webkit-scrollbar-thumb {
+    background: rgba(199, 154, 62, 0.45);
+}
+[data-theme="light"] .command-palette-results::-webkit-scrollbar-thumb:hover {
+    background: rgba(199, 154, 62, 0.75);
 }
 [data-theme="light"] .command-palette-results {
     background: #FFFFFF;

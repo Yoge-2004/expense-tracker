@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors, getCategoryEmoji } from '../constants/theme';
+import { ThemedScrollView } from './ThemedScrollbar';
 import { apiRequest } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -245,7 +246,7 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
               <ActivityIndicator size="large" color={c.primary} />
             </View>
           ) : (
-            <ScrollView style={styles.listWrap} showsVerticalScrollIndicator={false}>
+            <ThemedScrollView style={styles.listWrap}>
               {categories.length === 0 ? (
                 <Text style={[styles.emptyText, { color: c.textMuted }]}>
                   No custom categories yet. Create one above!
@@ -298,7 +299,7 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                   );
                 })
               )}
-            </ScrollView>
+            </ThemedScrollView>
           )}
         </View>
       </View>

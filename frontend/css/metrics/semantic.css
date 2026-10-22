@@ -3,11 +3,15 @@
    Financial metric colors, stripes, labels, values and badges.
    ========================================================================== */
 
-.metric-card.metric-card-inflow {
-    border-left: 4px solid var(--metric-inflow);
+/* 5 Primary KPI Cards - Signature 4px Left Color Strips (Guaranteed in Light & Dark Themes, Idle & Hover) */
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-inflow,
+#metricCardInflow {
+    border-left: 4px solid var(--metric-inflow) !important;
 }
 
-.metric-card.metric-card-inflow:hover {
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-inflow:hover,
+#metricCardInflow:hover {
+    border-left: 4px solid var(--metric-inflow) !important;
     box-shadow: 0 14px 34px -6px var(--metric-inflow-glow), 0 0 24px rgba(16, 185, 129, 0.15);
 }
 
@@ -20,11 +24,14 @@
     font-weight: 700;
 }
 
-.metric-card.metric-card-outflow {
-    border-left: 4px solid var(--metric-outflow);
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-outflow,
+#metricCardOutflow {
+    border-left: 4px solid var(--metric-outflow) !important;
 }
 
-.metric-card.metric-card-outflow:hover {
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-outflow:hover,
+#metricCardOutflow:hover {
+    border-left: 4px solid var(--metric-outflow) !important;
     box-shadow: 0 14px 34px -6px var(--metric-outflow-glow), 0 0 24px rgba(239, 68, 68, 0.15);
 }
 
@@ -37,12 +44,15 @@
     font-weight: 700;
 }
 
-.metric-card.metric-card-netflow {
-    border-left: 4px solid var(--metric-netflow);
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-netflow,
+#metricCardNetflow {
+    border-left: 4px solid var(--metric-netflow) !important;
 }
 
-.metric-card.metric-card-netflow:hover {
-    box-shadow: 0 14px 34px -6px var(--metric-netflow-glow), 0 0 24px rgba(212, 175, 55, 0.18);
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-netflow:hover,
+#metricCardNetflow:hover {
+    border-left: 4px solid var(--metric-netflow) !important;
+    box-shadow: 0 14px 34px -6px var(--metric-netflow-glow), 0 0 24px rgba(59, 130, 246, 0.18);
 }
 
 .metric-card.metric-card-netflow .card-label,
@@ -54,12 +64,15 @@
     font-weight: 700;
 }
 
-.metric-card.metric-card-savings {
-    border-left: 4px solid var(--metric-savings);
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-savings,
+#metricCardSavings {
+    border-left: 4px solid var(--metric-savings) !important;
 }
 
-.metric-card.metric-card-savings:hover {
-    box-shadow: 0 14px 34px -6px var(--metric-savings-glow), 0 0 24px rgba(139, 92, 246, 0.15);
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-savings:hover,
+#metricCardSavings:hover {
+    border-left: 4px solid var(--metric-savings) !important;
+    box-shadow: 0 14px 34px -6px var(--metric-savings-glow), 0 0 24px rgba(245, 158, 11, 0.15);
 }
 
 .metric-card.metric-card-savings .card-label,
@@ -71,12 +84,15 @@
     font-weight: 700;
 }
 
-.metric-card.metric-card-subs {
-    border-left: 4px solid var(--metric-subs);
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-subs,
+#metricCardSubs {
+    border-left: 4px solid var(--metric-subs) !important;
 }
 
-.metric-card.metric-card-subs:hover {
-    box-shadow: 0 14px 34px -6px var(--metric-subs-glow), 0 0 24px rgba(59, 130, 246, 0.15);
+:is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-subs:hover,
+#metricCardSubs:hover {
+    border-left: 4px solid var(--metric-subs) !important;
+    box-shadow: 0 14px 34px -6px var(--metric-subs-glow), 0 0 24px rgba(192, 86, 94, 0.15);
 }
 
 .metric-card.metric-card-subs .card-label {

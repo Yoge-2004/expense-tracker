@@ -29,6 +29,7 @@ import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { SwipeableCard } from '../../components/SwipeableCard';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
+import { ThemedScrollView } from '../../components/ThemedScrollbar';
 
 interface Subscription {
   id: number;
@@ -439,7 +440,7 @@ export default function SubscriptionsScreen() {
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
       <AmbientAura />
 
-      <ScrollView
+      <ThemedScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -1050,7 +1051,7 @@ export default function SubscriptionsScreen() {
             })}
           </View>
         )}
-      </ScrollView>
+      </ThemedScrollView>
 
       {/* Quick Deposit Modal for Chit / Savings */}
       <Modal

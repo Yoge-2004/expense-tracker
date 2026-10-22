@@ -558,16 +558,19 @@
                     <button id="exportIncomeJsonBtn" class="btn-icon btn-text-icon" title="Export Incomes JSON" style="display:none;">Income JSON</button>
                     <button id="exportPdfBtn" class="btn-icon btn-text-icon" title="Export Expenses PDF Report">PDF</button>
                     <button id="exportIncomePdfBtn" class="btn-icon btn-text-icon" title="Export Incomes PDF Report" style="display:none;">Income PDF</button>
-                    <button id="toggleFiltersBtn" class="btn-icon" title="Show Advanced Filters" aria-label="Show advanced filters">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <button id="toggleFiltersBtn" class="btn-icon btn-text-icon" title="Filter Outflows (Expenses, Categories, Dates)" aria-label="Show advanced filters">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                         </svg>
+                        <span>Outflow Filters</span>
                     </button>
-                    <button id="toggleIncomeFiltersBtn" class="btn-icon" title="Show Income Filters" aria-label="Show income filters">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button id="toggleIncomeFiltersBtn" class="btn-icon btn-text-icon" title="Filter Inflows (Salary, Cadence, Dates)" aria-label="Show income filters">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            <circle cx="19" cy="6" r="3" fill="#10B981" stroke="none"></circle>
                         </svg>
+                        <span>Inflow Filters</span>
                     </button>
                     <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:#10B981; border-color:#10B981; color:#fff;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -618,6 +621,12 @@
 
             <!-- Filter Toolbar Drawer -->
             <div class="filter-toolbar" id="filterPanel">
+                <div class="filter-toolbar-header">
+                    <span class="filter-stream-badge outflow-badge">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        Outflow &amp; Spending Filters
+                    </span>
+                </div>
                 <div class="filter-date-group">
                     <div class="date-input-wrap">
                         <span class="filter-label">From</span>
@@ -681,7 +690,13 @@
             </div>
 
             <!-- Filter Toolbar Drawer for Incomes -->
-            <div class="filter-toolbar" id="incomeFilterPanel" style="display:none;">
+            <div class="filter-toolbar" id="incomeFilterPanel">
+                <div class="filter-toolbar-header">
+                    <span class="filter-stream-badge inflow-badge">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        Inflow &amp; Earnings Filters
+                    </span>
+                </div>
                 <div class="filter-date-group">
                     <div class="date-input-wrap">
                         <span class="filter-label">From</span>

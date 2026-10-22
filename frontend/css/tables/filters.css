@@ -1,4 +1,5 @@
-/* Toolbar visibility uses max-height, opacity and pointer-events; display stays flex in both states. */
+/* Modern filter toolbar, custom dates, presets, and select elements */
+
 .filter-toolbar {
     gap: 10px;
     margin-bottom: 0;
@@ -26,6 +27,64 @@
     margin-bottom: 16px;
     overflow: visible;
     animation: filterSlide 0.25s var(--ease) both;
+}
+
+/* Differentiated Outflow & Inflow Filter Buttons */
+#toggleFiltersBtn {
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.35);
+    color: var(--text-main);
+    transition: all 0.2s var(--ease);
+}
+
+#toggleFiltersBtn:hover,
+#toggleFiltersBtn.active {
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.16);
+    border-color: var(--primary, #C79A3E);
+    color: var(--primary, #C79A3E);
+    box-shadow: 0 0 12px rgba(var(--primary-rgb, 199, 154, 62), 0.2);
+}
+
+#toggleIncomeFiltersBtn {
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.06);
+    transition: all 0.2s var(--ease);
+}
+
+#toggleIncomeFiltersBtn:hover,
+#toggleIncomeFiltersBtn.active {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: #10B981;
+    color: #10B981;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+}
+
+.filter-toolbar-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.filter-stream-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.filter-stream-badge.outflow-badge {
+    color: var(--primary, #C79A3E);
+}
+
+.filter-stream-badge.inflow-badge {
+    color: #10B981;
 }
 
 .filter-select {
@@ -59,11 +118,16 @@
 .date-input-wrap {
     display: flex;
     align-items: center;
-    gap: 6px;
     background: var(--input-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 2px 10px;
+    padding: 0 10px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.date-input-wrap:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(199, 154, 62, 0.15);
 }
 
 .filter-label {
@@ -71,17 +135,24 @@
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
+    margin-right: 6px;
 }
 
-.date-input-wrap input[type="date"] {
+.dark-date {
     background: transparent;
     border: none;
-    outline: none;
     color: var(--text-main);
-    font-size: 13px;
-    padding: 8px 4px;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 9px 0;
+    outline: none;
     cursor: var(--cursor-pointer, pointer);
+    color-scheme: dark;
+}
+
+[data-theme="light"] .dark-date {
+    color-scheme: light;
 }
 
 .filter-quick-presets {
@@ -121,7 +192,9 @@ select option {
     color: var(--text-main);
 }
 
+html.modal-open,
 body.modal-open {
     overflow: hidden !important;
     touch-action: none !important;
+    overscroll-behavior: none !important;
 }

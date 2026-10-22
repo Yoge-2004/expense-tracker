@@ -719,7 +719,10 @@ manageCategoriesModal?.addEventListener("click", (e) => {
     if (e.target === manageCategoriesModal) closeModal(manageCategoriesModal);
 });
 
-elements.toggleFiltersBtn.addEventListener("click", () => { elements.filterPanel.classList.toggle("active"); });
+elements.toggleFiltersBtn.addEventListener("click", () => {
+    const isActive = elements.filterPanel.classList.toggle("active");
+    elements.toggleFiltersBtn.classList.toggle("active", isActive);
+});
 
 // Theme Logic
 const savedTheme = localStorage.getItem("theme") || "dark";
@@ -2944,8 +2947,7 @@ const incomeFilterPanel = document.getElementById("incomeFilterPanel");
 toggleIncomeFiltersBtn?.addEventListener("click", () => {
     if (!incomeFilterPanel) return;
     const isOpen = incomeFilterPanel.classList.toggle("active");
-    toggleIncomeFiltersBtn.style.color = isOpen ? "#10B981" : "";
-    toggleIncomeFiltersBtn.style.borderColor = isOpen ? "rgba(16, 185, 129, 0.4)" : "";
+    toggleIncomeFiltersBtn.classList.toggle("active", isOpen);
 });
 
 const incomePillsBar = document.getElementById("incomePillsBar");

@@ -8,8 +8,30 @@
  * that the list updates from its onScroll handler, and ignores touches so it never blocks the list.
  */
 
-import React, { useMemo } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import React, { useMemo, useRef, useState, useCallback } from 'react';
+import {
+  Animated,
+  StyleSheet,
+  View,
+  ScrollView,
+  ScrollViewProps,
+  StyleProp,
+  ViewStyle,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  LayoutChangeEvent,
+} from 'react-native';
+import { Colors } from '../constants/theme';
+import { useAuth } from '../context/AuthContext';
+
+function useSafeTheme(): 'dark' | 'light' {
+  try {
+    const auth = useAuth();
+    return auth?.theme || 'dark';
+  } catch {
+    return 'dark';
+  }
+}
 
 export interface ScrollbarGeometry {
   /** False when the content fits, so no scrollbar is needed. */
@@ -48,7 +70,7 @@ export function computeScrollbarGeometry(
   };
 }
 
-interface ThemedScrollbarProps {
+export interface ThemedScrollbarProps {
   /** The list's vertical scroll offset, updated from onScroll. */
   scrollY: Animated.Value;
   contentHeight: number;
@@ -107,7 +129,169 @@ export const ThemedScrollbar = React.memo(function ThemedScrollbar({
   );
 });
 
+export interface UseThemedScrollbarOptions {
+  trackColor?: string;
+  thumbColor?: string;
+  inset?: number;
+}
+
+/**
+ * Reusable hook to effortlessly bind ThemedScrollbar to any ScrollView or FlatList.
+ */
+export function useThemedScrollbar(options: UseThemedScrollbarOptions = {}) {
+  const theme = useSafeTheme();
+  const c = Colors[theme];
+  const trackColor = options.trackColor || c.scrollTrack;
+  const thumbColor = options.thumbColor || c.scrollThumb;
+  const inset = options.inset ?? 8;
+
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [contentHeight, setContentHeight] = useState(0);
+  const [viewHeight, setViewHeight] = useState(0);
+
+  const onScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollY.setValue(e.nativeEvent.contentOffset.y);
+    },
+    [scrollY],
+  );
+
+  const onContentSizeChange = useCallback((_w: number, h: number) => {
+    setContentHeight(h);
+  }, []);
+
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    setViewHeight(e.nativeEvent.layout.height);
+  }, []);
+
+  const scrollbar = useMemo(
+    () => (
+      <ThemedScrollbar
+        scrollY={scrollY}
+        contentHeight={contentHeight}
+        viewHeight={viewHeight}
+        trackColor={trackColor}
+        thumbColor={thumbColor}
+        inset={inset}
+      />
+    ),
+    [scrollY, contentHeight, viewHeight, trackColor, thumbColor, inset],
+  );
+
+  return {
+    scrollY,
+    contentHeight,
+    viewHeight,
+    onScroll,
+    onContentSizeChange,
+    onLayout,
+    scrollbar,
+    scrollProps: {
+      onScroll,
+      scrollEventThrottle: 16,
+      onContentSizeChange,
+      onLayout,
+      showsVerticalScrollIndicator: false,
+    },
+  };
+}
+
+export interface ThemedScrollViewProps extends ScrollViewProps {
+  trackColor?: string;
+  thumbColor?: string;
+  scrollbarInset?: number;
+  containerStyle?: StyleProp<ViewStyle>;
+  hideScrollbar?: boolean;
+}
+
+/**
+ * A drop-in replacement for ScrollView that renders the custom website-style gold scrollbar.
+ */
+export const ThemedScrollView = React.forwardRef<ScrollView, ThemedScrollViewProps>(
+  function ThemedScrollView(
+    {
+      children,
+      style,
+      containerStyle,
+      trackColor,
+      thumbColor,
+      scrollbarInset = 8,
+      hideScrollbar = false,
+      onScroll: userOnScroll,
+      onContentSizeChange: userOnContentSizeChange,
+      onLayout: userOnLayout,
+      scrollEventThrottle = 16,
+      ...rest
+    },
+    ref,
+  ) {
+    const theme = useSafeTheme();
+    const c = Colors[theme];
+    const resolvedTrack = trackColor || c.scrollTrack;
+    const resolvedThumb = thumbColor || c.scrollThumb;
+
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const [contentHeight, setContentHeight] = useState(0);
+    const [viewHeight, setViewHeight] = useState(0);
+
+    const handleScroll = useCallback(
+      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        scrollY.setValue(e.nativeEvent.contentOffset.y);
+        userOnScroll?.(e);
+      },
+      [scrollY, userOnScroll],
+    );
+
+    const handleContentSizeChange = useCallback(
+      (w: number, h: number) => {
+        setContentHeight(h);
+        userOnContentSizeChange?.(w, h);
+      },
+      [userOnContentSizeChange],
+    );
+
+    const handleLayout = useCallback(
+      (e: LayoutChangeEvent) => {
+        setViewHeight(e.nativeEvent.layout.height);
+        userOnLayout?.(e);
+      },
+      [userOnLayout],
+    );
+
+    return (
+      <View style={[styles.scrollViewContainer, containerStyle]}>
+        <ScrollView
+          ref={ref}
+          style={style}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={scrollEventThrottle}
+          onScroll={handleScroll}
+          onContentSizeChange={handleContentSizeChange}
+          onLayout={handleLayout}
+          {...rest}
+        >
+          {children}
+        </ScrollView>
+        {!hideScrollbar && (
+          <ThemedScrollbar
+            scrollY={scrollY}
+            contentHeight={contentHeight}
+            viewHeight={viewHeight}
+            trackColor={resolvedTrack}
+            thumbColor={resolvedThumb}
+            inset={scrollbarInset}
+          />
+        )}
+      </View>
+    );
+  },
+);
+
 const styles = StyleSheet.create({
+  scrollViewContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   track: {
     position: 'absolute',
     right: 3,

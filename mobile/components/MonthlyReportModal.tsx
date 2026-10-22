@@ -25,6 +25,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { Colors, getCategoryColor } from '../constants/theme';
+import { ThemedScrollView } from './ThemedScrollbar';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError, API_BASE_URL, getSession } from '../services/api';
@@ -729,7 +730,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
             </View>
 
             {/* Scrollable Report Content */}
-            <ScrollView
+            <ThemedScrollView
               style={styles.previewScroll}
               contentContainerStyle={styles.previewScrollContent}
               showsVerticalScrollIndicator={true}
@@ -810,7 +811,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                   )}
                 </>
               )}
-            </ScrollView>
+            </ThemedScrollView>
 
             {/* Action Bar */}
             <View style={styles.previewActions}>

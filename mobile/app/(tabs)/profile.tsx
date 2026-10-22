@@ -43,6 +43,7 @@ import { clearSavedPin, savedPinEmail, savePinForFingerprint } from '../../utils
 import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
 import { ManageCategoriesModal } from '../../components/ManageCategoriesModal';
+import { ThemedScrollView } from '../../components/ThemedScrollbar';
 import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
@@ -512,7 +513,7 @@ export default function ProfileScreen() {
     <View style={[styles.screenWrapper, { backgroundColor: c.bg }]}>
       <AmbientAura />
 
-      <ScrollView
+      <ThemedScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -1017,7 +1018,7 @@ export default function ProfileScreen() {
         </StaggeredView>
 
         <View style={{ height: 40 }} />
-      </ScrollView>
+      </ThemedScrollView>
 
       {/* Profile Picture Customization Modal */}
       <Modal

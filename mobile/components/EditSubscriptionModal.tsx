@@ -21,6 +21,7 @@ import { useAlert } from '../context/AlertContext';
 import { Colors, getCategoryEmoji } from '../constants/theme';
 import { apiRequest } from '../services/api';
 import { getCurrencySymbol } from '../services/currency';
+import { ThemedScrollView } from './ThemedScrollbar';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -168,7 +169,7 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
+          <ThemedScrollView style={styles.scroll}>
             {/* Description */}
             <View style={styles.field}>
               <Text style={[styles.label, { color: c.textMuted }]}>Service / Description</Text>
@@ -306,7 +307,7 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
                 <Text style={styles.saveBtnText}>Update Subscription</Text>
               )}
             </TouchableOpacity>
-          </ScrollView>
+          </ThemedScrollView>
         </View>
       </View>
     </Modal>

@@ -88,6 +88,35 @@
         }
     }
 
+    /* --- Command palette entry & modal --------------------------------- */
+    .command-palette-overlay {
+        transition:
+            opacity var(--motion-base) var(--ease-spring-soft),
+            visibility var(--motion-base) var(--ease-spring-soft),
+            overlay var(--motion-base) allow-discrete,
+            display var(--motion-base) allow-discrete;
+    }
+
+    @starting-style {
+        .command-palette-overlay.open {
+            opacity: 0;
+        }
+    }
+
+    .command-palette-overlay.open .command-palette-modal {
+        transition:
+            transform var(--motion-slow) var(--ease-spring),
+            opacity var(--motion-base) var(--ease-spring-soft);
+        transform: translateY(0) scale(1);
+    }
+
+    @starting-style {
+        .command-palette-overlay.open .command-palette-modal {
+            transform: translateY(-16px) scale(0.95);
+            opacity: 0;
+        }
+    }
+
     /* --- Toast: spring in from the edge --------------------------------- */
     .toast {
         transition:
@@ -107,7 +136,9 @@
     /* --- Dropdowns / popovers / suggestion panels ------------------------ */
     .custom-select-options,
     .custom-calendar-popover,
-    .suggestion-chip {
+    .suggestion-chip,
+    .notification-dropdown,
+    .profile-dropdown-menu {
         transition:
             transform var(--motion-base) var(--ease-spring-snap),
             opacity var(--motion-fast) ease,
@@ -118,7 +149,9 @@
 
     @starting-style {
         .custom-select-options,
-        .custom-calendar-popover {
+        .custom-calendar-popover,
+        .notification-dropdown,
+        .profile-dropdown-menu {
             transform: translateY(-6px) scaleY(0.96);
             opacity: 0;
         }
@@ -193,7 +226,10 @@
     @media (hover: hover) and (pointer: fine) {
         .metric-card,
         .insight-card-item,
-        .savings-goal-card {
+        .savings-goal-card,
+        .chart-card,
+        .dashboard-card,
+        .feature-card {
             transition:
                 transform var(--motion-base) var(--ease-spring),
                 box-shadow var(--motion-base) var(--ease-spring-soft),
@@ -202,18 +238,80 @@
 
         .metric-card:hover,
         .insight-card-item:hover,
-        .savings-goal-card:hover {
+        .savings-goal-card:hover,
+        .chart-card:hover,
+        .dashboard-card:hover,
+        .feature-card:hover {
             transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(var(--primary-rgb, 199, 154, 62), 0.22);
+        }
+
+        /* Table & transaction row hover slide */
+        .expense-item,
+        .transaction-row,
+        .data-table tbody tr {
+            transition:
+                transform var(--motion-fast) var(--ease-spring-snap),
+                background-color var(--motion-fast) ease;
+        }
+
+        .expense-item:hover,
+        .transaction-row:hover,
+        .data-table tbody tr:hover {
+            transform: translateX(3px);
+        }
+
+        /* Command palette items hover glide */
+        .command-palette-item {
+            transition:
+                background-color var(--motion-fast) ease,
+                transform var(--motion-fast) var(--ease-spring-snap),
+                color var(--motion-fast) ease;
+        }
+
+        .command-palette-item:hover,
+        .command-palette-item.active {
+            transform: translateX(3px);
+        }
+
+        /* Action buttons subtle lift */
+        .btn:hover,
+        .btn-action:hover,
+        .filter-chip:hover,
+        .category-pill:hover,
+        .stream-pill-btn:hover {
+            transform: translateY(-1.5px);
+        }
+
+        .command-palette-close-btn:hover {
+            transform: scale(1.1);
         }
     }
 
-    /* Press feedback belongs on every input modality, not just touch. */
+    /* Tactile press feedback on buttons, chips, and pills */
+    .btn:active,
     .btn-primary:active,
     .btn-secondary:active,
     .btn-icon:active,
-    .stream-pill-btn:active {
-        transform: scale(0.97);
-        transition: transform 90ms var(--ease-spring-snap);
+    .btn-action:active,
+    .filter-chip:active,
+    .category-pill:active,
+    .stream-pill-btn:active,
+    .command-palette-close-btn:active {
+        transform: scale(0.96) translateY(0);
+        transition: transform 80ms var(--ease-spring-snap);
+    }
+
+    /* Tab transitions for streams and filter bars */
+    .stream-pill-btn,
+    .tab-btn,
+    .filter-tab {
+        transition:
+            background-color var(--motion-fast) ease,
+            color var(--motion-fast) ease,
+            border-color var(--motion-fast) ease,
+            box-shadow var(--motion-fast) ease,
+            transform var(--motion-fast) var(--ease-spring-snap);
     }
 
     /* Ledger rows stagger in on desktop only; on mobile handhelds rows appear
@@ -267,7 +365,8 @@
     @container card-grid (max-width: 420px) {
         @media (prefers-reduced-motion: no-preference) {
             .metric-card:hover,
-            .insight-card-item:hover {
+            .insight-card-item:hover,
+            .chart-card:hover {
                 /* Less travel in tight quarters — a 3px lift that reads as
                    depth at full width reads as jitter in a narrow column. */
                 transform: translateY(-1px);
@@ -285,6 +384,10 @@
 @media (prefers-reduced-motion: reduce) {
     .modal-overlay,
     .modal-overlay.active .modal,
+    .command-palette-overlay,
+    .command-palette-overlay.open .command-palette-modal,
+    .command-palette-item,
+    .command-palette-close-btn,
     .toast,
     .custom-select-options,
     .custom-calendar-popover,
@@ -292,7 +395,16 @@
     .metric-card,
     .insight-card-item,
     .savings-goal-card,
+    .chart-card,
+    .dashboard-card,
+    .feature-card,
     .expense-item,
+    .transaction-row,
+    .btn,
+    .btn-action,
+    .filter-chip,
+    .category-pill,
+    .stream-pill-btn,
     [data-reveal] {
         animation: none;
         transition-duration: 1ms;

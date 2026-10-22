@@ -19,10 +19,11 @@ export const StaggeredView: React.FC<StaggeredViewProps> = ({
   direction = 'up',
   scale = true,
 }) => {
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const translateAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
   const reducedMotion = useReducedMotion();
+  const initialTranslate = getInitialTranslate(direction);
+  const fadeAnim = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
+  const translateAnim = useRef(new Animated.Value(reducedMotion ? 0 : initialTranslate)).current;
+  const scaleAnim = useRef(new Animated.Value(reducedMotion || !scale ? 1 : 0.94)).current;
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
