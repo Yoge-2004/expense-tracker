@@ -145,7 +145,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             return false;
         }
         lastAttemptAt = Instant.now();
-        if (fallbackCoordinator != null && !fallbackCoordinator.safeToOverwriteSnapshot()) {
+        if (fallbackCoordinator != null && (!fallbackCoordinator.safeToOverwriteSnapshot() || fallbackCoordinator.mode() != com.example.expensetracker.resilience.ResilientRoutingDataSource.Mode.PRIMARY)) {
             // The fallback holds writes the primary has not accepted yet, and the stored snapshot is the only other copy.
             lastError = "Skipped: unmerged fallback writes exist, so the stored snapshot was kept.";
             log.warn("HF database backup skipped: unmerged fallback writes exist; keeping the existing snapshot.");

@@ -136,7 +136,7 @@ public class ResilientRoutingDataSource implements DataSource {
         Connection connection = null;
         try {
             connection = explicit ? primaryDs.getConnection(username, password) : primaryDs.getConnection();
-            if (connection != null && connection.isValid(2)) {
+            if (connection != null && connection.isValid(5)) {
                 return connection;
             }
             closeQuietly(connection);
@@ -159,7 +159,7 @@ public class ResilientRoutingDataSource implements DataSource {
     private void probePrimary() {
         nextProbeAt = System.currentTimeMillis() + retryIntervalMs;
         try (Connection probe = primaryDs.getConnection()) {
-            if (probe == null || !probe.isValid(2)) {
+            if (probe == null || !probe.isValid(5)) {
                 return;
             }
         } catch (Exception e) {

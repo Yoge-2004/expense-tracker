@@ -47,11 +47,20 @@ public class ResilientFallbackDataSourceConfig {
         primaryConfig.setDriverClassName(primaryDriver);
         primaryConfig.setUsername(primaryUsername);
         primaryConfig.setPassword(primaryPassword);
-        primaryConfig.setConnectionTimeout(5000);
+        primaryConfig.setConnectionTimeout(15000);
+        primaryConfig.setValidationTimeout(5000);
+        primaryConfig.setConnectionTestQuery("SELECT 1");
         primaryConfig.setInitializationFailTimeout(-1);
         primaryConfig.setMaximumPoolSize(10);
         primaryConfig.setMinimumIdle(0);
         primaryConfig.setPoolName("PrimaryHikariPool");
+
+        if (primaryUrl != null && (primaryUrl.contains("postgresql") || primaryUrl.contains("neon.tech"))) {
+            primaryConfig.addDataSourceProperty("sslmode", "require");
+            primaryConfig.addDataSourceProperty("connectTimeout", "15");
+            primaryConfig.addDataSourceProperty("socketTimeout", "30");
+            primaryConfig.addDataSourceProperty("ApplicationName", "ExpenseTrackerPro");
+        }
 
         HikariDataSource primaryDs;
         try {
