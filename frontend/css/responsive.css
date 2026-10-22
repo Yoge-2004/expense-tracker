@@ -3,22 +3,48 @@
    Module: Responsive Breakpoints & Mobile Optimization
    ========================================================================== */
 
-/* ================== 8. MOBILE RESPONSIVE ================== */
+/* ================== 8. MOBILE RESPONSIVE & GLOBAL SCROLLABILITY ================== */
 @media (max-width: 900px) {
+    html {
+        height: 100% !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: auto !important;
+        scrollbar-gutter: auto !important;
+    }
+
     body {
-        height: auto;
-        overflow-y: auto;
+        min-height: 100% !important;
+        height: auto !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
         background: var(--bg-dark);
+        position: relative !important;
     }
 
     /* Legacy auth-page selectors were removed because the current HTML no longer uses them. */
 
     .dashboard-container {
-        height: auto;
+        height: auto !important;
+        min-height: 100% !important;
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        padding: 20px;
+        gap: 14px;
+        padding: 14px 14px 36px !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        touch-action: pan-y !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .top-bar,
+    .admin-topbar-root {
+        position: relative !important;
+        top: auto !important;
+        z-index: 50 !important;
     }
 
     .card {
@@ -275,14 +301,12 @@
 /* ── Extra small screens (phones < 480px) ── */
 @media (max-width: 480px) {
     .dashboard-container {
-        /* Keep 20px horizontal padding on narrow screens for consistent edge spacing. */
-        padding: 20px 20px 40px;
-        gap: 14px;
+        padding: 10px 10px 32px !important;
+        gap: 12px !important;
     }
 
     .top-bar-actions {
-        /* Keep narrow-screen spacing aligned with the wider responsive tier. */
-        gap: 14px;
+        gap: 8px !important;
     }
 
     .metric-value {
@@ -825,11 +849,14 @@
 @media (min-width: 521px) and (max-width: 900px) {
     .command-kbd { display: none; }
     .top-bar {
+        position: relative !important;
+        top: auto !important;
+        z-index: 50 !important;
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
-        padding: 14px 16px 16px;
+        gap: 10px;
+        padding: 12px 14px;
         border-radius: 14px;
         box-sizing: border-box;
     }
@@ -840,8 +867,8 @@
         grid-auto-flow: row;
         align-items: center;
         justify-items: stretch;
-        column-gap: 12px;
-        row-gap: 10px;
+        column-gap: 10px;
+        row-gap: 8px;
         width: 100%;
         min-width: 0;
         padding: 0;
@@ -934,76 +961,108 @@
 
 /* ── Mobile Screens & Handhelds (<= 520px, includes 320px) ── */
 @media (max-width: 520px) {
-    .command-kbd { display: none; }
+    .command-kbd { display: none !important; }
     .top-bar {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-        padding: 14px 14px 16px;
-        border-radius: 14px;
-        box-sizing: border-box;
+        position: relative !important;
+        top: auto !important;
+        z-index: 50 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: 10px 12px !important;
+        margin-bottom: 8px !important;
+        border-radius: 14px !important;
+        box-sizing: border-box !important;
     }
     .dashboard-heading {
-        width: 100%;
-        padding: 0;
-        margin: 0;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
     .brand-title,
     .dashboard-heading h2 {
-        font-size: 22px;
-        letter-spacing: -0.4px;
+        font-size: 17px !important;
+        letter-spacing: -0.3px !important;
+        line-height: 1.2 !important;
     }
     .brand-badge {
-        gap: 8px;
+        gap: 6px !important;
+    }
+    #userWelcomeText {
+        font-size: 11px !important;
+        margin-top: 2px !important;
+        margin-bottom: 0 !important;
+        line-height: 1.2 !important;
     }
     .top-bar-actions {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto;
-        row-gap: 8px;
-        width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-        padding: 0;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        column-gap: 8px !important;
+        row-gap: 8px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
     }
     .top-bar-actions .command-search-wrapper {
-        grid-column: 1;
-        grid-row: 1;
-        width: 100%;
-        min-width: 0;
-        max-width: none;
-        margin: 0;
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0 10px !important;
+        gap: 6px !important;
+        border-radius: 9px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+    }
+    .top-bar-actions .command-search-input {
+        font-size: 12.5px !important;
+        padding: 0 4px !important;
     }
     .top-bar-actions > #openModalBtn {
-        grid-column: 1;
-        grid-row: 2;
-        width: 100%;
-        height: 42px;
-        font-size: 13px;
-        font-weight: 700;
-        border-radius: 10px;
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        box-sizing: border-box;
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        border-radius: 9px !important;
+        padding: 0 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        white-space: nowrap !important;
     }
     .top-bar-actions > #openIncomeModalBtn {
-        grid-column: 1;
-        grid-row: 3;
-        width: 100%;
-        height: 42px;
-        font-size: 13px;
-        font-weight: 700;
-        border-radius: 10px;
-        padding: 0 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        box-sizing: border-box;
+        grid-column: 2 !important;
+        grid-row: 2 !important;
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        border-radius: 9px !important;
+        padding: 0 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        white-space: nowrap !important;
+    }
+    .top-bar-actions > #openModalBtn svg,
+    .top-bar-actions > #openIncomeModalBtn svg {
+        width: 14px !important;
+        height: 14px !important;
+        flex-shrink: 0 !important;
     }
     .top-bar-actions > #openModalBtn:hover,
     .top-bar-actions > #openIncomeModalBtn:hover {
@@ -1012,33 +1071,61 @@
     }
     .top-bar-actions > #openModalBtn > span,
     .top-bar-actions > #openIncomeModalBtn > span {
-        white-space: nowrap;
-        overflow: visible;
-        text-overflow: clip;
-        font-size: 13px;
-        font-weight: 700;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
         letter-spacing: -0.01em;
         text-align: center;
     }
     .top-bar-actions > .top-bar-utility-group {
-        grid-column: 1;
-        grid-row: 4;
-        justify-self: start;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 4px;
+        grid-column: 1 !important;
+        grid-row: 3 !important;
+        justify-self: start !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        margin: 0 !important;
+    }
+    .top-bar-actions > .top-bar-utility-group .btn-icon,
+    .top-bar-actions > .top-bar-utility-group .header-action-btn {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    .top-bar-actions > .top-bar-utility-group svg {
+        width: 16px !important;
+        height: 16px !important;
     }
     .top-bar-actions > .user-profile {
-        grid-column: 1;
-        grid-row: 4;
-        justify-self: end;
-        margin-top: 4px;
+        grid-column: 2 !important;
+        grid-row: 3 !important;
+        justify-self: end !important;
+        margin: 0 !important;
+    }
+    .top-bar-actions > .user-profile .profile-trigger {
+        height: 32px !important;
+        min-height: 32px !important;
+        gap: 6px !important;
+        padding: 2px 6px 2px 2px !important;
+    }
+    .top-bar-actions > .user-profile .user-avatar {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 11px !important;
     }
     .profile-menu {
-        width: calc(100vw - 20px);
-        max-width: calc(100vw - 20px);
-        right: -2px;
+        width: min(300px, calc(100vw - 20px)) !important;
+        max-width: calc(100vw - 20px) !important;
+        right: 0 !important;
+        left: auto !important;
     }
     .insights-intelligence-panel {
         padding: 14px 12px;

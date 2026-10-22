@@ -621,24 +621,104 @@ h1, h2, h3, .brand-title, .section-title {
     }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 768px) {
     .dashboard-container {
-        padding: 10px 12px !important;
+        padding: 10px 12px 36px !important;
+        gap: 12px !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        touch-action: pan-y !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
-    .admin-topbar-root {
-        padding: 12px 14px !important;
+    .admin-topbar-root,
+    .top-bar {
+        position: relative !important;
+        top: auto !important;
+        z-index: 50 !important;
+        padding: 10px 12px !important;
+        gap: 8px !important;
+        margin-bottom: 8px !important;
+        border-radius: 14px !important;
+    }
+
+    .admin-heading-root {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        margin-bottom: 2px !important;
+    }
+
+    .admin-brand-title {
+        font-size: 17px !important;
+        gap: 4px !important;
+    }
+
+    .admin-welcome-subtitle,
+    #userWelcomeText {
+        font-size: 11px !important;
+        margin-top: 2px !important;
+        line-height: 1.25 !important;
     }
 
     .top-bar-actions {
-        flex-direction: column !important;
-        align-items: stretch !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         gap: 8px !important;
+        width: 100% !important;
+    }
+
+    .top-bar-actions > a.btn-secondary {
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+        border-radius: 8px !important;
+        flex: 1 1 auto !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    .admin-top-select-wrapper {
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
+    }
+
+    .admin-top-select-wrapper select,
+    #autoRefreshSelector {
+        height: 34px !important;
+        padding: 0 8px !important;
+        font-size: 11.5px !important;
+        border-radius: 8px !important;
     }
 
     .top-bar-utility-group {
-        justify-content: space-between !important;
-        width: 100% !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        width: auto !important;
+        justify-content: flex-end !important;
+        margin: 0 !important;
+    }
+
+    .top-bar-utility-group .btn-icon,
+    .top-bar-utility-group .header-action-btn {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .top-bar-utility-group svg {
+        width: 16px !important;
+        height: 16px !important;
     }
 
     .grid-4-metrics {
@@ -647,6 +727,6 @@ h1, h2, h3, .brand-title, .section-title {
     }
 
     .card {
-        padding: 14px !important;
+        padding: 12px !important;
     }
 }
