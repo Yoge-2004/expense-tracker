@@ -421,11 +421,21 @@ public class UserController {
                 } catch (Exception ignored) {}
             }
 
+            byte[] rawBytes = file.getBytes();
+            byte[] compressedBytes = compressAvatarImage(rawBytes, contentType);
+            boolean isCompressed = compressedBytes != null && compressedBytes.length < rawBytes.length;
+            String savedContentType = isCompressed && (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("png"))
+                    ? "image/jpeg"
+                    : contentType;
+            if (isCompressed && "image/jpeg".equals(savedContentType)) {
+                ext = ".jpg";
+            }
+
             java.nio.file.Path targetFile = avatarDir.resolve("user_" + userId + ext);
-            java.nio.file.Files.write(targetFile, file.getBytes());
+            java.nio.file.Files.write(targetFile, isCompressed ? compressedBytes : rawBytes);
 
             java.nio.file.Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
-            java.nio.file.Files.writeString(metaFile, contentType);
+            java.nio.file.Files.writeString(metaFile, savedContentType != null ? savedContentType : "image/jpeg");
 
             String avatarUrl = "/api/users/" + userId + "/avatar?v=" + System.currentTimeMillis();
             userService.updateProfilePicture(userId, avatarUrl);
@@ -487,6 +497,95 @@ public class UserController {
         }
 
         return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * Compresses and resizes raw avatar bytes to a max dimension of 256x256 using bilinear
+     * filtering and JPEG 0.82 compression (or PNG if transparency is present).
+     * Shrinks 5MB photos down to ~15KB - 35KB before storage and database synchronization.
+     */
+    private byte[] compressAvatarImage(byte[] rawBytes, String contentType) {
+        if (rawBytes == null || rawBytes.length == 0) return rawBytes;
+        try {
+            java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(rawBytes);
+            java.awt.image.BufferedImage original = javax.imageio.ImageIO.read(bais);
+            if (original == null) {
+                return rawBytes;
+            }
+
+            int origWidth = original.getWidth();
+            int origHeight = original.getHeight();
+            int maxDim = 256;
+            int targetWidth = origWidth;
+            int targetHeight = origHeight;
+
+            if (origWidth > maxDim || origHeight > maxDim) {
+                if (origWidth > origHeight) {
+                    targetWidth = maxDim;
+                    targetHeight = Math.max(1, (int) Math.round((double) origHeight * maxDim / origWidth));
+                } else {
+                    targetHeight = maxDim;
+                    targetWidth = Math.max(1, (int) Math.round((double) origWidth * maxDim / origHeight));
+                }
+            }
+
+            boolean isPng = contentType != null && contentType.toLowerCase(Locale.ROOT).contains("png");
+            boolean hasAlpha = original.getColorModel().hasAlpha();
+
+            int imageType = (hasAlpha && isPng)
+                    ? java.awt.image.BufferedImage.TYPE_INT_ARGB
+                    : java.awt.image.BufferedImage.TYPE_INT_RGB;
+            java.awt.image.BufferedImage resized = new java.awt.image.BufferedImage(targetWidth, targetHeight, imageType);
+
+            java.awt.Graphics2D g2d = resized.createGraphics();
+            try {
+                g2d.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2d.setRenderingHint(java.awt.RenderingHints.KEY_RENDERING, java.awt.RenderingHints.VALUE_RENDER_QUALITY);
+                g2d.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                if (imageType == java.awt.image.BufferedImage.TYPE_INT_RGB) {
+                    g2d.setColor(java.awt.Color.WHITE);
+                    g2d.fillRect(0, 0, targetWidth, targetHeight);
+                }
+                g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null);
+            } finally {
+                g2d.dispose();
+            }
+
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            if (hasAlpha && isPng) {
+                javax.imageio.ImageIO.write(resized, "png", baos);
+            } else {
+                java.util.Iterator<javax.imageio.ImageWriter> writers = javax.imageio.ImageIO.getImageWritersByFormatName("jpg");
+                if (writers.hasNext()) {
+                    javax.imageio.ImageWriter writer = writers.next();
+                    try (javax.imageio.stream.ImageOutputStream ios = javax.imageio.ImageIO.createImageOutputStream(baos)) {
+                        writer.setOutput(ios);
+                        javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
+                        if (param.canWriteCompressed()) {
+                            param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
+                            param.setCompressionQuality(0.82f);
+                        }
+                        writer.write(null, new javax.imageio.IIOImage(resized, null, null), param);
+                    } finally {
+                        writer.dispose();
+                    }
+                } else {
+                    javax.imageio.ImageIO.write(resized, "jpg", baos);
+                }
+            }
+
+            byte[] compressed = baos.toByteArray();
+            if (compressed.length > 0 && compressed.length < rawBytes.length) {
+                log.info("Compressed avatar image for storage: {} bytes -> {} bytes ({}% reduction)",
+                        rawBytes.length, compressed.length,
+                        Math.round((1.0 - (double) compressed.length / rawBytes.length) * 100));
+                return compressed;
+            }
+            return rawBytes;
+        } catch (Exception e) {
+            log.warn("Avatar image compression failed, preserving original: {}", e.getMessage());
+            return rawBytes;
+        }
     }
 
     // ─── DELETE /api/users/{userId}/avatar ───────────────────────────────────

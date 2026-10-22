@@ -2205,6 +2205,61 @@ function updateModalAvatarPreview(name, photoUrl) {
     }
 }
 
+function compressImageFile(file, maxDim = 256, quality = 0.82) {
+    return new Promise((resolve) => {
+        if (!file || !file.type || !file.type.toLowerCase().startsWith("image/")) {
+            return resolve(file);
+        }
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.onload = () => {
+                try {
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const mime = file.type === "image/png" ? "image/png" : "image/jpeg";
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob && blob.size < file.size) {
+                                const ext = mime === "image/png" ? ".png" : ".jpg";
+                                const compressedFile = new File([blob], (file.name || "avatar").replace(/\.[^.]+$/, ext), {
+                                    type: mime,
+                                    lastModified: Date.now(),
+                                });
+                                resolve(compressedFile);
+                            } else {
+                                resolve(file);
+                            }
+                        },
+                        mime,
+                        quality
+                    );
+                } catch {
+                    resolve(file);
+                }
+            };
+            img.onerror = () => resolve(file);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(file);
+        reader.readAsDataURL(file);
+    });
+}
+
 const webAvatarFileInput = document.getElementById("webAvatarFileInput");
 const modalAvatarBrowseBtn = document.getElementById("modalAvatarBrowseBtn");
 const triggerAvatarUploadBtn = document.getElementById("triggerAvatarUploadBtn");
@@ -2213,18 +2268,19 @@ const avatarUploadStatus = document.getElementById("avatarUploadStatus");
 
 if (webAvatarFileInput) {
     const handleFileSelect = async (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        if (!file.type || !file.type.toLowerCase().startsWith("image/")) {
+        const rawFile = e.target.files && e.target.files[0];
+        if (!rawFile) return;
+        if (!rawFile.type || !rawFile.type.toLowerCase().startsWith("image/")) {
             showToast("Please select a valid image file (JPEG, PNG, WebP, GIF).", "warning");
             return;
         }
-        if (file.size > 5 * 1024 * 1024) {
+        if (rawFile.size > 5 * 1024 * 1024) {
             showToast("Avatar image must be smaller than 5MB.", "warning");
             return;
         }
-        if (avatarUploadStatus) avatarUploadStatus.textContent = "Uploading image...";
+        if (avatarUploadStatus) avatarUploadStatus.textContent = "Compressing & uploading image...";
         try {
+            const file = await compressImageFile(rawFile, 256, 0.82);
             const formData = new FormData();
             formData.append("file", file);
             const res = await apiRequest(`/users/${userId}/avatar`, {

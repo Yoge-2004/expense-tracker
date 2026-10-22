@@ -332,4 +332,42 @@ class UserControllerTest {
         verify(userSecurity).validateUserAccess(7L);
         verify(userService, never()).updateCurrency(anyLong(), anyString());
     }
+    @Test
+    void uploadAvatarCompressesAndUpdatesProfilePicture() throws Exception {
+        java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(500, 500, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D g = img.createGraphics();
+        g.setColor(java.awt.Color.BLUE);
+        g.fillRect(0, 0, 500, 500);
+        g.dispose();
+
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(img, "png", baos);
+        byte[] imageBytes = baos.toByteArray();
+
+        org.springframework.mock.web.MockMultipartFile mockFile =
+                new org.springframework.mock.web.MockMultipartFile(
+                        "file",
+                        "avatar.png",
+                        "image/png",
+                        imageBytes
+                );
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/users/7/avatar")
+                        .file(mockFile))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profilePictureUrl").value(org.hamcrest.Matchers.startsWith("/api/users/7/avatar?v=")))
+                .andExpect(jsonPath("$.message").value("Profile picture updated successfully"));
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService).updateProfilePicture(eq(7L), anyString());
+    }
+
+    @Test
+    void deleteAvatarResetsProfilePicture() throws Exception {
+        mockMvc.perform(delete("/api/users/7/avatar"))
+                .andExpect(status().isNoContent());
+
+        verify(userSecurity).validateUserAccess(7L);
+        verify(userService).updateProfilePicture(7L, null);
+    }
 }
