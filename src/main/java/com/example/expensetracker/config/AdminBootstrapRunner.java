@@ -37,13 +37,13 @@ public class AdminBootstrapRunner implements CommandLineRunner {
     @Value("${app.admin.bootstrap.email:${ADMIN_EMAIL:}}")
     private String bootstrapEmail;
 
-    @Value("${app.admin.bootstrap.username:${ADMIN_USERNAME:yogeshwaran}}")
+    @Value("${app.admin.bootstrap.username:${ADMIN_USERNAME:}}")
     private String bootstrapUsername;
 
-    @Value("${app.admin.bootstrap.password:${ADMIN_PASSWORD:Yoge@2004}}")
+    @Value("${app.admin.bootstrap.password:${ADMIN_PASSWORD:}}")
     private String bootstrapPassword;
 
-    @Value("${app.admin.bootstrap.pin:${ADMIN_PIN:123456}}")
+    @Value("${app.admin.bootstrap.pin:${ADMIN_PIN:}}")
     private String bootstrapPin;
 
     @Override
@@ -61,31 +61,39 @@ public class AdminBootstrapRunner implements CommandLineRunner {
             existing.setRole(Role.ROLE_SUPER_ADMIN);
             existing.setAccountLocked(false);
             existing.setEnabled(true);
-            if (existing.getPassword() == null || !passwordEncoder.matches(bootstrapPassword, existing.getPassword())) {
+            if (existing.getPassword() == null && bootstrapPassword != null && !bootstrapPassword.isBlank()) {
                 existing.setPassword(passwordEncoder.encode(bootstrapPassword));
             }
-            if (!existing.hasSecurityPin()) {
+            if (!existing.hasSecurityPin() && bootstrapPin != null && !bootstrapPin.isBlank()) {
                 existing.setSecurityPinHash(passwordEncoder.encode(bootstrapPin));
             }
             userRepository.save(existing);
             log.info("Super Admin clearance verified and granted for '{}'", existing.getEmail());
         }, () -> {
+            if (bootstrapPassword == null || bootstrapPassword.isBlank()) {
+                log.warn("Cannot provision admin user '{}': ADMIN_PASSWORD is not set in environment.", targetEmail);
+                return;
+            }
+            String uname = (bootstrapUsername != null && !bootstrapUsername.isBlank())
+                    ? bootstrapUsername.trim()
+                    : targetEmail.split("@")[0];
             log.info("Provisioning platform Super Admin account for: {}", targetEmail);
-            User admin = User.builder()
-                    .name("Yogeshwaran (Admin)")
-                    .username(bootstrapUsername)
+            User.UserBuilder builder = User.builder()
+                    .name("Administrator")
+                    .username(uname)
                     .email(targetEmail)
                     .password(passwordEncoder.encode(bootstrapPassword))
-                    .securityPinHash(passwordEncoder.encode(bootstrapPin))
                     .role(Role.ROLE_SUPER_ADMIN)
                     .enabled(true)
                     .accountLocked(false)
                     .currency("INR")
-                    .createdAt(LocalDateTime.now())
-                    .build();
-            userRepository.save(admin);
+                    .createdAt(LocalDateTime.now());
+            if (bootstrapPin != null && !bootstrapPin.isBlank()) {
+                builder.securityPinHash(passwordEncoder.encode(bootstrapPin));
+            }
+            userRepository.save(builder.build());
             log.info("Super Admin successfully provisioned with username='{}' and email='{}'",
-                    bootstrapUsername, targetEmail);
+                    uname, targetEmail);
         });
     }
 }
