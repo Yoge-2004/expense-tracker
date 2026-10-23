@@ -42,6 +42,7 @@ import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
 import { ThemedScrollView } from '../../components/ThemedScrollbar';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Clipboard from 'expo-clipboard';
 import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../../services/receiptOcr';
 
 interface Category {
@@ -320,6 +321,48 @@ export default function AddExpenseScreen() {
       applyReceiptData(parsed);
       setIsScanningOcr(false);
     }, 400);
+  };
+
+  const handlePasteBankSms = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    try {
+      const hasStr = await Clipboard.hasStringAsync();
+      if (hasStr) {
+        const text = await Clipboard.getStringAsync();
+        if (text && text.trim().length > 0) {
+          const parsed = parseFinancialMessage(text);
+          if (parsed.isFinancial && parsed.amount && parsed.amount > 0) {
+            if (parsed.direction === "DEBIT") {
+              setActiveTab("expense");
+              setAmount(String(parsed.amount));
+              const desc = parsed.merchant
+                ? `${parsed.merchant}${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ""}`
+                : `Bank Debit${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ""}`;
+              setDescription(desc);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              showAlert("Bank SMS Parsed! ⚡", `Pre-filled ${parsed.currency} ${parsed.amount.toFixed(2)} at ${parsed.merchant || "Merchant"}.`, undefined, "success");
+              return;
+            } else if (parsed.direction === "CREDIT") {
+              setActiveTab("income");
+              setIncomeAmount(String(parsed.amount));
+              setIncomeSource(parsed.merchant || "Bank Credit");
+              setIncomeDesc(parsed.merchant ? `Credit from ${parsed.merchant}` : "Bank Inflow");
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              showAlert("Bank Credit Parsed! 💰", `Pre-filled ${parsed.currency} ${parsed.amount.toFixed(2)} from ${parsed.merchant || "Source"}.`, undefined, "success");
+              return;
+            }
+          }
+        }
+      }
+      showAlert(
+        "Paste Bank SMS",
+        "Copy a bank SMS alert from your SMS app or notification drawer, then tap here to auto-fill amount, merchant, and details.",
+        undefined,
+        "info"
+      );
+    } catch (err: any) {
+      showAlert("Could Not Read SMS", err?.message || "Please check clipboard permissions.");
+    }
   };
 
   /**
@@ -1637,6 +1680,27 @@ export default function AddExpenseScreen() {
                       }}
                     >
                       <Text style={{ fontSize: 11, fontWeight: '700', color: c.primary }}>Sample</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={handlePasteBankSms}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 5,
+                        paddingHorizontal: 11,
+                        paddingVertical: 7,
+                        borderRadius: 8,
+                        backgroundColor: isLight ? "rgba(212, 175, 55, 0.15)" : "rgba(245, 200, 66, 0.15)",
+                        borderWidth: 1,
+                        borderColor: isLight ? "rgba(212, 175, 55, 0.35)" : "rgba(245, 200, 66, 0.3)",
+                      }}
+                    >
+                      <Ionicons name="flash-outline" size={14} color={c.primary} />
+                      <Text style={{ fontSize: 11.5, fontWeight: "800", color: c.primary }}>
+                        Paste SMS
+                      </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

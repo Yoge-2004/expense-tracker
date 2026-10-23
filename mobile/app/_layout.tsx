@@ -6,11 +6,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { AlertProvider } from '../context/AlertContext';
+import { AlertProvider, useAlert } from '../context/AlertContext';
 import { UpdateProvider, useUpdate } from '../context/UpdateContext';
 import UpdateBanner from '../components/UpdateBanner';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, Animated, StyleSheet, StatusBar, Easing, useColorScheme } from 'react-native';
+import { View, Text, Animated, StyleSheet, StatusBar, Easing, useColorScheme, AppState, AppStateStatus } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useFonts } from 'expo-font';
@@ -34,6 +35,10 @@ import {
   getDailyRemindersEnabled,
   scheduleSmartReminders,
   registerIncomingNotificationListener,
+  getInstantDebitAlertsEnabled,
+  parseFinancialMessage,
+  detectAndAddExpenseFromMessage,
+  detectAndAddCreditFromMessage,
 } from '../services/notifications';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { readSavedTheme } from '../services/api';
@@ -332,11 +337,13 @@ const splashStyles = StyleSheet.create({
 
 function RootLayoutNav() {
   const { token, userId, isLoading, theme } = useAuth();
+  const { showAlert } = useAlert();
   const { hasUpdate } = useUpdate();
   const insets = useSafeAreaInsets();
   const segments = useSegments();
   const router = useRouter();
   const remindersInitialized = useRef(false);
+  const lastProcessedClipRef = useRef<string>('');
 
   useEffect(() => {
     if (isLoading) return;
@@ -370,6 +377,93 @@ function RootLayoutNav() {
       }
     };
   }, [isLoading, token, userId]);
+
+  useEffect(() => {
+    if (isLoading || !token || !userId) return;
+
+    const checkClipboardForSms = async () => {
+      try {
+        const enabled = await getInstantDebitAlertsEnabled();
+        if (!enabled) return;
+
+        const hasString = await Clipboard.hasStringAsync();
+        if (!hasString) return;
+
+        const text = await Clipboard.getStringAsync();
+        if (!text || text.length < 12 || text.length > 600) return;
+        if (text === lastProcessedClipRef.current) return;
+
+        const parsed = parseFinancialMessage(text);
+        if (parsed.isFinancial && parsed.amount != null && parsed.amount > 0) {
+          const amountVal = parsed.amount;
+          lastProcessedClipRef.current = text;
+
+          if (parsed.direction === 'DEBIT') {
+            const merchantStr = parsed.merchant ? ` at ${parsed.merchant}` : '';
+            const accStr = parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : '';
+            showAlert(
+              '⚡ Bank SMS Detected',
+              `Found bank debit of ${parsed.currency} ${amountVal.toFixed(2)}${merchantStr}${accStr}.\n\nWould you like to record this to your expense ledger?`,
+              [
+                { text: 'Dismiss', style: 'cancel' },
+                {
+                  text: 'Edit / Review',
+                  onPress: () => {
+                    router.push({
+                      pathname: '/(tabs)/add-expense',
+                      params: {
+                        amount: String(amountVal),
+                        description: parsed.merchant ? `${parsed.merchant}${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ''}` : `Bank Debit${parsed.accountTail ? ` xx${parsed.accountTail}` : ''}`,
+                        merchant: parsed.merchant || '',
+                      },
+                    });
+                  },
+                },
+                {
+                  text: 'Record Now',
+                  onPress: async () => {
+                    await detectAndAddExpenseFromMessage(text, userId);
+                    showAlert('Recorded! ✅', `Added ${parsed.currency} ${amountVal.toFixed(2)} to your expenses.`, undefined, 'success');
+                  },
+                },
+              ],
+              'info'
+            );
+          } else if (parsed.direction === 'CREDIT') {
+            const srcStr = parsed.merchant ? ` from ${parsed.merchant}` : '';
+            showAlert(
+              '💰 Bank Credit Detected',
+              `Found bank credit of ${parsed.currency} ${amountVal.toFixed(2)}${srcStr}.\n\nWould you like to record this to your incomes?`,
+              [
+                { text: 'Dismiss', style: 'cancel' },
+                {
+                  text: 'Record Now',
+                  onPress: async () => {
+                    await detectAndAddCreditFromMessage(text, userId);
+                    showAlert('Recorded! ✅', `Added ${parsed.currency} ${amountVal.toFixed(2)} to your incomes.`, undefined, 'success');
+                  },
+                },
+              ],
+              'info'
+            );
+          }
+        }
+      } catch (_) {}
+    };
+
+    const timer = setTimeout(checkClipboardForSms, 800);
+
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        checkClipboardForSms();
+      }
+    });
+
+    return () => {
+      clearTimeout(timer);
+      subscription.remove();
+    };
+  }, [isLoading, token, userId, showAlert, router]);
 
   if (isLoading) return <SplashLoader theme={theme} />;
 

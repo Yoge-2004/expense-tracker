@@ -178,6 +178,30 @@
             </div>
         </header>
 
+        <!-- Proactive Notification Permission Banner -->
+        <div id="notificationPermissionBanner" class="notification-permission-banner" hidden>
+            <div class="notif-banner-content">
+                <div class="notif-banner-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                </div>
+                <div class="notif-banner-text">
+                    <strong>Enable Real-Time Financial Notifications</strong>
+                    <span>Get instant alerts when bank debits occur, salary arrives, or category budgets run low.</span>
+                </div>
+            </div>
+            <div class="notif-banner-actions">
+                <button type="button" class="btn-primary notif-allow-btn" id="notifBannerAllowBtn">
+                    Allow Notifications
+                </button>
+                <button type="button" class="notif-dismiss-btn" id="notifBannerDismissBtn" title="Dismiss for now">
+                    Maybe Later
+                </button>
+            </div>
+        </div>
+
         <!-- FINANCIAL METRICS MATRIX (RESPONSIVE AUTO-FIT) -->
         <section class="grid-4-metrics animate-cascade delay-2">
             <!-- Metric 1: Total Inflow (Income) -->
@@ -790,6 +814,10 @@
                             <button type="button" class="btn-scan-receipt" id="triggerReceiptScanBtn" title="Browse image files or photo gallery">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                 Browse
+                            </button>
+                            <button type="button" class="btn-scan-receipt" id="triggerSmsPasteBtn" title="Paste bank SMS or transaction text to auto-fill" onclick="if(window.DashboardNotifications) window.DashboardNotifications.promptPasteBankSMS();" style="background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.3); color:var(--text-main);">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                                Paste SMS
                             </button>
                             <button type="button" class="btn-scan-receipt" id="triggerReceiptCameraBtn" title="Snap live picture using device camera" style="background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.3); color:var(--text-main);">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>

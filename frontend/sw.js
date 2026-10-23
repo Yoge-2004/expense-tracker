@@ -20,6 +20,17 @@ const ASSETS_TO_CACHE = [
     "/assets/custom_chime.wav"
 ];
 
+// Helper to guarantee fully-qualified absolute URLs for notification icons and badges
+function toAbsoluteUrl(path) {
+    try {
+        if (!path) return "";
+        if (path.startsWith("http://") || path.startsWith("https://")) return path;
+        return new URL(path, self.location.origin).href;
+    } catch (_) {
+        return path;
+    }
+}
+
 // Install event - Pre-cache core shell
 self.addEventListener("install", (event) => {
     event.waitUntil(
@@ -47,11 +58,14 @@ self.addEventListener("activate", (event) => {
 
 // Push event - Trigger instant system notification
 self.addEventListener("push", (event) => {
+    const defaultIcon = toAbsoluteUrl("/assets/icon-192.png");
+    const defaultBadge = toAbsoluteUrl("/assets/badge-72.png");
+
     let data = {
         title: "💸 Immediate Debit Alert",
         body: "A new debit transaction has occurred.",
-        icon: "/assets/icon-192.png",
-        badge: "/assets/badge-72.png",
+        icon: defaultIcon,
+        badge: defaultBadge,
         url: "/dashboard.html",
         data: {}
     };
@@ -67,8 +81,8 @@ self.addEventListener("push", (event) => {
 
     const options = {
         body: data.body,
-        icon: data.icon || "/assets/icon-192.png",
-        badge: data.badge || "/assets/badge-72.png",
+        icon: toAbsoluteUrl(data.icon) || defaultIcon,
+        badge: toAbsoluteUrl(data.badge) || defaultBadge,
         vibrate: [100, 50, 100],
         data: {
             url: data.url || "/dashboard.html",
