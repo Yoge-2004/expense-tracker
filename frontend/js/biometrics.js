@@ -234,7 +234,21 @@ const WebBiometrics = (() => {
         });
     };
 
-    return Object.freeze({ getDiagnostics, isAvailable, enroll, authenticate, recover });
+    /**
+     * Checks if biometric/passkey credentials are registered on the server for the current user.
+     */
+    const getStatus = async () => {
+        return await apiRequest("/webauthn/status");
+    };
+
+    /**
+     * Disables and removes all registered biometric/passkey credentials on the server for the current user.
+     */
+    const disable = async () => {
+        return await apiRequest("/webauthn/credentials", { method: "DELETE" });
+    };
+
+    return Object.freeze({ getDiagnostics, isAvailable, enroll, authenticate, recover, getStatus, disable });
 })();
 
 window.WebBiometrics = WebBiometrics;

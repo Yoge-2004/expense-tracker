@@ -4285,27 +4285,155 @@ securityPinForm?.addEventListener("submit", async (e) => {
     }
 });
 
-// ─── Biometric Authentication (Touch ID / Face ID / Windows Hello) ─────────
+// ─── Biometric Authentication & Passkey Management Modal ───────────────────
+const biometricsModal = document.getElementById("biometricsModal");
 const biometricAuthBtn = document.getElementById("biometricAuthBtn");
-biometricAuthBtn?.addEventListener("click", async (e) => {
-    e.preventDefault();
+const closeBiometricsModalBtn = document.getElementById("closeBiometricsModalBtn");
+const biometricsStatusIndicator = document.getElementById("biometricsStatusIndicator");
+const biometricsActionsContainer = document.getElementById("biometricsActionsContainer");
+
+const safeEscapeBio = (str) => String(str || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
+
+async function renderBiometricsModal() {
+    if (!biometricsStatusIndicator || !biometricsActionsContainer) return;
+
+    biometricsStatusIndicator.style.background = "rgba(100, 116, 139, 0.1)";
+    biometricsStatusIndicator.style.border = "1px solid rgba(100, 116, 139, 0.2)";
+    biometricsStatusIndicator.style.color = "var(--text-muted)";
+    biometricsStatusIndicator.innerHTML = `<span>⏳ Checking biometric authenticator & passkey status...</span>`;
+    biometricsActionsContainer.innerHTML = "";
+
     if (!window.WebBiometrics) {
-        showToast("Biometric module not initialized.", "error");
+        biometricsStatusIndicator.style.background = "rgba(230, 80, 60, 0.15)";
+        biometricsStatusIndicator.style.border = "1px solid #E6503C";
+        biometricsStatusIndicator.style.color = "#E6503C";
+        biometricsStatusIndicator.innerHTML = `<span>⚠️ <strong>Module Unavailable:</strong> Biometrics script could not be loaded.</span>`;
         return;
     }
-    const isAvail = await WebBiometrics.isAvailable();
-    if (!isAvail) {
-        showToast("Biometric hardware (Touch ID / Face ID / Windows Hello) is not detected or supported on this browser.", "warning");
+
+    let diagnostics = null;
+    try {
+        diagnostics = await window.WebBiometrics.getDiagnostics();
+    } catch (err) {
+        console.warn("Diagnostics check error:", err);
+    }
+
+    let isServerEnabled = false;
+    try {
+        const statusRes = await window.WebBiometrics.getStatus();
+        isServerEnabled = !!(statusRes && statusRes.enabled);
+    } catch (err) {
+        console.warn("Could not check WebAuthn status on server:", err);
+    }
+
+    if (!diagnostics || !diagnostics.available) {
+        let msg = "Biometric hardware is not detected or supported on this browser.";
+        if (diagnostics?.reason === "secure-context-required") {
+            msg = "WebAuthn requires an HTTPS connection or localhost origin.";
+        } else if (diagnostics?.reason === "platform-authenticator-unavailable") {
+            msg = "No platform biometric authenticator (Touch ID / Face ID / Windows Hello) was found on this device.";
+        }
+        biometricsStatusIndicator.style.background = "rgba(230, 162, 60, 0.15)";
+        biometricsStatusIndicator.style.border = "1px solid #E6A23C";
+        biometricsStatusIndicator.style.color = "#E6A23C";
+        biometricsStatusIndicator.innerHTML = `<span>⚠️ <strong>Device Unsupported:</strong> ${safeEscapeBio(msg)}</span>`;
+
+        if (isServerEnabled) {
+            biometricsActionsContainer.innerHTML = `
+                <p style="font-size:12px; color:var(--text-muted); margin:0;">Passkeys are currently registered on your account from another device.</p>
+                <button type="button" id="removePasskeyBtn" class="btn-danger" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Remove Passkeys / Disable Biometrics
+                </button>
+            `;
+            document.getElementById("removePasskeyBtn")?.addEventListener("click", handleDisableBiometrics);
+        }
         return;
     }
+
+    if (isServerEnabled) {
+        biometricsStatusIndicator.style.background = "rgba(76, 122, 120, 0.15)";
+        biometricsStatusIndicator.style.border = "1px solid #4C7A78";
+        biometricsStatusIndicator.style.color = "#4C7A78";
+        biometricsStatusIndicator.innerHTML = `<span>🔒 <strong>Passkey Active:</strong> Biometric sign-in is active for your account. You can sign in passwordless using Touch ID, Face ID, or Windows Hello.</span>`;
+
+        biometricsActionsContainer.innerHTML = `
+            <button type="button" id="registerAnotherPasskeyBtn" class="btn-secondary" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                🧬 Register / Update Passkey for This Device
+            </button>
+            <button type="button" id="removePasskeyBtn" class="btn-danger" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Remove Passkeys / Disable Biometrics
+            </button>
+        `;
+        document.getElementById("registerAnotherPasskeyBtn")?.addEventListener("click", handleEnrollBiometrics);
+        document.getElementById("removePasskeyBtn")?.addEventListener("click", handleDisableBiometrics);
+    } else {
+        biometricsStatusIndicator.style.background = "rgba(100, 116, 139, 0.12)";
+        biometricsStatusIndicator.style.border = "1px solid rgba(100, 116, 139, 0.25)";
+        biometricsStatusIndicator.style.color = "var(--text-muted)";
+        biometricsStatusIndicator.innerHTML = `<span>⚪ <strong>Not Configured:</strong> No biometric passkeys are linked to your account. Set up biometric unlock to sign in without passwords.</span>`;
+
+        biometricsActionsContainer.innerHTML = `
+            <button type="button" id="enablePasskeyBtn" class="btn-primary" style="width:100%; padding:10px 14px; font-size:13.5px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                🧬 Set Up Biometric Sign-In on This Device
+            </button>
+        `;
+        document.getElementById("enablePasskeyBtn")?.addEventListener("click", handleEnrollBiometrics);
+    }
+}
+
+async function handleEnrollBiometrics() {
+    const btn = document.getElementById("registerAnotherPasskeyBtn") || document.getElementById("enablePasskeyBtn");
+    if (btn) btn.disabled = true;
     const token = localStorage.getItem("token");
     const userEmail = localStorage.getItem("userEmail") || (window.currentUser && window.currentUser.email) || "user";
     try {
-        await WebBiometrics.enroll(userEmail, token);
-        showToast("Biometric authentication (Touch ID / Face ID) activated successfully for this device! 🧬", "success");
+        await window.WebBiometrics.enroll(userEmail, token);
+        showToast("Biometric passkey registered successfully! 🧬", "success");
+        await renderBiometricsModal();
     } catch (err) {
         showToast(err.message || "Biometric registration was cancelled.", "info");
+    } finally {
+        if (btn) btn.disabled = false;
     }
+}
+
+async function handleDisableBiometrics() {
+    const confirmed = window.confirm("Are you sure you want to remove all registered passkeys and disable biometric unlock for your account?");
+    if (!confirmed) return;
+
+    const btn = document.getElementById("removePasskeyBtn");
+    if (btn) btn.disabled = true;
+    try {
+        await window.WebBiometrics.disable();
+        showToast("Biometric passkeys removed. Biometric unlock is now disabled.", "success");
+        await renderBiometricsModal();
+    } catch (err) {
+        showToast(err.message || "Failed to remove biometric passkeys.", "error");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+function openBiometricsDialog() {
+    if (typeof toggleProfileMenu === "function") toggleProfileMenu(false);
+    if (!biometricsModal) return;
+    openModal(biometricsModal);
+    renderBiometricsModal();
+}
+
+biometricAuthBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    openBiometricsDialog();
+});
+
+closeBiometricsModalBtn?.addEventListener("click", () => {
+    if (biometricsModal) closeModal(biometricsModal);
+});
+
+biometricsModal?.addEventListener("click", (e) => {
+    if (e.target === biometricsModal) closeModal(biometricsModal);
 });
 
 // ─── Proactive Server Reconnection Auto-Refresh ──────────────────────
