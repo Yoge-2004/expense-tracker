@@ -2,6 +2,7 @@ package com.example.expensetracker.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -22,9 +23,12 @@ public record AdminBroadcastRequest(
         String message,
 
         @Schema(description = "Target audience: ALL, ACTIVE, or ADMINS", example = "ALL")
+        @Pattern(regexp = "(?i)ALL|ACTIVE|ADMINS", message = "Audience must be ALL, ACTIVE or ADMINS")
         String targetAudience,
 
         @Schema(description = "Optional deep link route in the web/mobile app", example = "/dashboard")
+        @Size(max = 100, message = "Route cannot exceed 100 characters")
+        @Pattern(regexp = "^/[A-Za-z0-9_/-]*$", message = "Route must be an in-app path such as /dashboard")
         String route,
 
         @Schema(description = "Step-up Security PIN of the dispatching operator", example = "123456")

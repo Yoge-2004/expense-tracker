@@ -15,6 +15,7 @@ import com.example.expensetracker.repository.DeviceTokenRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.repository.UserRepository;
+import com.example.expensetracker.security.StepUpPinVerifier;
 import com.example.expensetracker.service.AdminAuditService;
 import com.example.expensetracker.service.AdminMetricsService;
 import com.example.expensetracker.service.AdminUserService;
@@ -50,6 +51,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final AdminAuditService auditService;
     private final AdminMetricsService metricsService;
     private final PasswordEncoder passwordEncoder;
+    private final StepUpPinVerifier stepUpPinVerifier;
 
     @Override
     @Transactional(readOnly = true)
@@ -112,6 +114,9 @@ public class AdminUserServiceImpl implements AdminUserService {
     public AdminUserDto createUser(AdminUserCreateRequest request, User actor, String ipAddress, String userAgent) {
         verifyStepUpPin(actor, request.stepUpPin());
 
+        Role newRole = request.role() != null ? request.role() : Role.ROLE_USER;
+        requireSuperAdminForPrivilegedRole(actor, newRole);
+
         String email = request.email().trim().toLowerCase();
         String username = request.username().trim();
 
@@ -127,7 +132,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .username(username)
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))
-                .role(request.role() != null ? request.role() : Role.ROLE_USER)
+                .role(newRole)
                 .enabled(true)
                 .accountLocked(false)
                 .failedPinAttempts(0)
@@ -176,6 +181,11 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + targetUserId));
+
+        requireCanManage(actor, target);
+        if (request.role() != null && request.role() != target.getRole() && !actor.isSuperAdmin()) {
+            throw new BadRequestException("Only a Super Administrator can change a user's role");
+        }
 
         String email = request.email().trim().toLowerCase();
         String username = request.username().trim();
@@ -266,6 +276,8 @@ public class AdminUserServiceImpl implements AdminUserService {
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + targetUserId));
 
+        requireCanManage(actor, target);
+
         if (target.getRole() == Role.ROLE_SUPER_ADMIN) {
             long superCount = userRepository.countByRole(Role.ROLE_SUPER_ADMIN);
             if (superCount <= 1) {
@@ -301,14 +313,19 @@ public class AdminUserServiceImpl implements AdminUserService {
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + targetUserId));
 
-        if (Objects.equals(actor.getId(), targetUserId) && Boolean.TRUE.equals(request.accountLocked())) {
-            throw new BadRequestException("You cannot lock your own administrative account");
+        requireCanManage(actor, target);
+
+        boolean locking = Boolean.TRUE.equals(request.accountLocked());
+        boolean disabling = Boolean.FALSE.equals(request.enabled());
+
+        if (Objects.equals(actor.getId(), targetUserId) && (locking || disabling)) {
+            throw new BadRequestException("You cannot lock or disable your own administrative account");
         }
 
-        if (target.getRole() == Role.ROLE_SUPER_ADMIN && Boolean.TRUE.equals(request.accountLocked())) {
+        if (target.getRole() == Role.ROLE_SUPER_ADMIN && (locking || disabling)) {
             long superAdminCount = userRepository.countByRole(Role.ROLE_SUPER_ADMIN);
             if (superAdminCount <= 1) {
-                throw new BadRequestException("Cannot lock the last remaining Super Administrator account");
+                throw new BadRequestException("Cannot lock or disable the last remaining Super Administrator account");
             }
         }
 
@@ -411,6 +428,13 @@ public class AdminUserServiceImpl implements AdminUserService {
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + targetUserId));
 
+        if (Objects.equals(actor.getId(), targetUserId)) {
+            throw new BadRequestException("You cannot reset your own PIN lockout; ask another administrator");
+        }
+        if (!actor.isSuperAdmin() && rank(actor.getRole()) <= rank(target.getRole())) {
+            throw new BadRequestException("You can only reset the PIN lockout of accounts below your own role");
+        }
+
         target.setFailedPinAttempts(0);
         target.setPinLockedUntil(null);
         userRepository.save(target);
@@ -474,11 +498,33 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     private void verifyStepUpPin(User actor, String stepUpPin) {
-        if (actor.getSecurityPinHash() == null || actor.getSecurityPinHash().isBlank()) {
-            throw new BadRequestException("You must configure a Security PIN on your administrator account before executing high-privilege actions");
+        stepUpPinVerifier.verify(actor, stepUpPin);
+    }
+
+    private static int rank(Role role) {
+        if (role == null) return 0;
+        return switch (role) {
+            case ROLE_USER -> 0;
+            case ROLE_SUPPORT -> 1;
+            case ROLE_ADMIN -> 2;
+            case ROLE_SUPER_ADMIN -> 3;
+        };
+    }
+
+    /** Super admins manage everyone; anyone else only themselves or accounts ranked strictly below them. */
+    private void requireCanManage(User actor, User target) {
+        if (actor.isSuperAdmin() || Objects.equals(actor.getId(), target.getId())) {
+            return;
         }
-        if (stepUpPin == null || !passwordEncoder.matches(stepUpPin, actor.getSecurityPinHash())) {
-            throw new BadRequestException("Invalid step-up Security PIN. Verification failed.");
+        if (rank(actor.getRole()) <= rank(target.getRole())) {
+            throw new BadRequestException("You do not have permission to manage an account with the "
+                    + target.getRole().name().replace("ROLE_", "").toLowerCase().replace('_', ' ') + " role");
+        }
+    }
+
+    private void requireSuperAdminForPrivilegedRole(User actor, Role role) {
+        if (rank(role) >= rank(Role.ROLE_ADMIN) && !actor.isSuperAdmin()) {
+            throw new BadRequestException("Only a Super Administrator can create Administrator or Super Administrator accounts");
         }
     }
 }

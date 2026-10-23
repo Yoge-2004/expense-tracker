@@ -4,6 +4,7 @@ import com.example.expensetracker.dto.AdminDatabaseTopologyDto;
 import com.example.expensetracker.exception.BadRequestException;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.resilience.FallbackRecoveryCoordinator;
+import com.example.expensetracker.security.StepUpPinVerifier;
 import com.example.expensetracker.service.AdminAuditService;
 import com.example.expensetracker.service.AdminResilienceService;
 import com.example.expensetracker.service.HuggingFaceDatabaseFailoverService;
@@ -11,7 +12,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
@@ -33,7 +33,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
 
     private final HuggingFaceDatabaseFailoverService failoverService;
     private final AdminAuditService auditService;
-    private final PasswordEncoder passwordEncoder;
+    private final StepUpPinVerifier stepUpPinVerifier;
     private final DataSource dataSource;
 
     @Autowired(required = false)
@@ -48,11 +48,11 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
     public AdminResilienceServiceImpl(
             HuggingFaceDatabaseFailoverService failoverService,
             AdminAuditService auditService,
-            PasswordEncoder passwordEncoder,
+            StepUpPinVerifier stepUpPinVerifier,
             DataSource dataSource) {
         this.failoverService = failoverService;
         this.auditService = auditService;
-        this.passwordEncoder = passwordEncoder;
+        this.stepUpPinVerifier = stepUpPinVerifier;
         this.dataSource = dataSource;
     }
 
@@ -158,13 +158,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
             throw new BadRequestException("Only a Super Admin is authorized to trigger manual failover snapshots");
         }
 
-        if (actor.getSecurityPinHash() == null || actor.getSecurityPinHash().isBlank()) {
-            throw new BadRequestException("You must configure a Security PIN before triggering backup snapshots");
-        }
-
-        if (!passwordEncoder.matches(stepUpPin, actor.getSecurityPinHash())) {
-            throw new BadRequestException("Invalid step-up Security PIN. Verification failed.");
-        }
+        stepUpPinVerifier.verify(actor, stepUpPin);
 
         log.info("Admin actor={} triggered on-demand Hugging Face backup snapshot", actor.getEmail());
         boolean success = failoverService.backupCurrentDatabase();

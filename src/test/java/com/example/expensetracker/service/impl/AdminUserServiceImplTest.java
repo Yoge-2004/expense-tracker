@@ -1,9 +1,11 @@
 package com.example.expensetracker.service.impl;
 
 import com.example.expensetracker.dto.AdminPermissionsDto;
+import com.example.expensetracker.dto.AdminUserCreateRequest;
 import com.example.expensetracker.dto.AdminUserDetailDto;
 import com.example.expensetracker.dto.AdminUserRoleUpdateRequest;
 import com.example.expensetracker.dto.AdminUserStatusUpdateRequest;
+import com.example.expensetracker.dto.AdminUserUpdateRequest;
 import com.example.expensetracker.exception.BadRequestException;
 import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
@@ -11,6 +13,7 @@ import com.example.expensetracker.repository.DeviceTokenRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
 import com.example.expensetracker.repository.UserRepository;
+import com.example.expensetracker.security.StepUpPinVerifier;
 import com.example.expensetracker.service.AdminAuditService;
 import com.example.expensetracker.service.AdminMetricsService;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +41,7 @@ class AdminUserServiceImplTest {
     @Mock AdminAuditService auditService;
     @Mock AdminMetricsService metricsService;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock StepUpPinVerifier stepUpPinVerifier;
 
     @InjectMocks AdminUserServiceImpl adminUserService;
 
@@ -167,7 +171,8 @@ class AdminUserServiceImplTest {
 
     @Test
     void roleUpdateFailsWhenStepUpPinIsInvalid() {
-        when(passwordEncoder.matches("wrong", "hashedPin")).thenReturn(false);
+        doThrow(new BadRequestException("Invalid step-up Security PIN. Verification failed."))
+                .when(stepUpPinVerifier).verify(superAdmin, "wrong");
 
         AdminUserRoleUpdateRequest req = new AdminUserRoleUpdateRequest(Role.ROLE_ADMIN, "wrong", "Elevate");
         assertThrows(BadRequestException.class, () ->
@@ -176,7 +181,6 @@ class AdminUserServiceImplTest {
 
     @Test
     void roleUpdateSucceedsWhenSuperAdminProvidesValidPin() {
-        when(passwordEncoder.matches("123456", "hashedPin")).thenReturn(true);
         when(userRepository.findById(3L)).thenReturn(Optional.of(normalUser));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -189,12 +193,129 @@ class AdminUserServiceImplTest {
 
     @Test
     void cannotDemoteLastRemainingSuperAdmin() {
-        when(passwordEncoder.matches("123456", "hashedPin")).thenReturn(true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(superAdmin));
         when(userRepository.countByRole(Role.ROLE_SUPER_ADMIN)).thenReturn(1L);
 
         AdminUserRoleUpdateRequest req = new AdminUserRoleUpdateRequest(Role.ROLE_USER, "123456", "Self demote");
         assertThrows(BadRequestException.class, () ->
                 adminUserService.updateUserRole(1L, req, superAdmin, "127.0.0.1", "test-ua"));
+    }
+
+    // ----- privilege-escalation regressions -----
+
+    @Test
+    void adminCannotPromoteUserToSuperAdminThroughUpdateUser() {
+        when(userRepository.findById(3L)).thenReturn(Optional.of(normalUser));
+
+        AdminUserUpdateRequest req = new AdminUserUpdateRequest(
+                "Regular User", "reguser", "user@test.com", Role.ROLE_SUPER_ADMIN, null, null, null, "123456");
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.updateUser(3L, req, normalAdmin, "127.0.0.1", "test-ua"));
+
+        assertEquals(Role.ROLE_USER, normalUser.getRole());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void adminCannotPromoteThemselvesThroughUpdateUser() {
+        when(userRepository.findById(2L)).thenReturn(Optional.of(normalAdmin));
+
+        AdminUserUpdateRequest req = new AdminUserUpdateRequest(
+                "Standard Admin", "stdadmin", "admin@test.com", Role.ROLE_SUPER_ADMIN, null, null, null, "123456");
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.updateUser(2L, req, normalAdmin, "127.0.0.1", "test-ua"));
+
+        assertEquals(Role.ROLE_ADMIN, normalAdmin.getRole());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void adminCannotEditSuperAdminAccount() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(superAdmin));
+
+        AdminUserUpdateRequest req = new AdminUserUpdateRequest(
+                "Super Admin", "superadmin", "super@test.com", null, null, "NewPassw0rd!", null, "123456");
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.updateUser(1L, req, normalAdmin, "127.0.0.1", "test-ua"));
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(passwordEncoder, never()).encode(any());
+    }
+
+    @Test
+    void adminCannotCreateSuperAdminOrAdminAccounts() {
+        for (Role privileged : new Role[] {Role.ROLE_SUPER_ADMIN, Role.ROLE_ADMIN}) {
+            AdminUserCreateRequest req = new AdminUserCreateRequest(
+                    "New", "newbie", "new@test.com", "Passw0rd!x", privileged, null, "123456");
+            assertThrows(BadRequestException.class, () ->
+                    adminUserService.createUser(req, normalAdmin, "127.0.0.1", "test-ua"));
+        }
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void adminCannotDisableSuperAdminEvenWhenAnotherExists() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(superAdmin));
+
+        AdminUserStatusUpdateRequest req = new AdminUserStatusUpdateRequest(null, false, "Disable");
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.updateUserStatus(1L, req, normalAdmin, "127.0.0.1", "test-ua"));
+
+        assertTrue(superAdmin.isEnabled());
+    }
+
+    @Test
+    void cannotDisableLastRemainingSuperAdmin() {
+        User secondSuper = User.builder().id(9L).username("second").email("second@test.com")
+                .role(Role.ROLE_SUPER_ADMIN).enabled(true).accountLocked(false).build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(superAdmin));
+        when(userRepository.countByRole(Role.ROLE_SUPER_ADMIN)).thenReturn(1L);
+
+        AdminUserStatusUpdateRequest req = new AdminUserStatusUpdateRequest(null, false, "Disable");
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.updateUserStatus(1L, req, secondSuper, "127.0.0.1", "test-ua"));
+
+        assertTrue(superAdmin.isEnabled());
+    }
+
+    @Test
+    void cannotDisableOwnAccount() {
+        when(userRepository.findById(2L)).thenReturn(Optional.of(normalAdmin));
+
+        AdminUserStatusUpdateRequest req = new AdminUserStatusUpdateRequest(null, false, "Disable me");
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.updateUserStatus(2L, req, normalAdmin, "127.0.0.1", "test-ua"));
+    }
+
+    @Test
+    void adminCannotResetOwnPinLockout() {
+        when(userRepository.findById(2L)).thenReturn(Optional.of(normalAdmin));
+
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.resetPinLockout(2L, normalAdmin, "127.0.0.1", "test-ua"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void supportCannotResetAdminPinLockout() {
+        User support = User.builder().id(7L).username("support").email("support@test.com")
+                .role(Role.ROLE_SUPPORT).enabled(true).accountLocked(false).build();
+        when(userRepository.findById(2L)).thenReturn(Optional.of(normalAdmin));
+
+        assertThrows(BadRequestException.class, () ->
+                adminUserService.resetPinLockout(2L, support, "127.0.0.1", "test-ua"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void supportCanResetRegularUserPinLockout() {
+        User support = User.builder().id(7L).username("support").email("support@test.com")
+                .role(Role.ROLE_SUPPORT).enabled(true).accountLocked(false).build();
+        when(userRepository.findById(3L)).thenReturn(Optional.of(normalUser));
+
+        adminUserService.resetPinLockout(3L, support, "127.0.0.1", "test-ua");
+
+        assertEquals(0, normalUser.getFailedPinAttempts());
+        verify(userRepository).save(normalUser);
     }
 }

@@ -93,6 +93,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Deep inspect user profile", description = "Returns complete security state, failed PIN attempts, and financial summary for a user")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/users/{userId}/details")
     public ResponseEntity<AdminUserDetailDto> getUserDetails(@PathVariable Long userId) {
         return ResponseEntity.ok(adminUserService.getUserDetails(userId));
@@ -129,7 +130,7 @@ public class AdminController {
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<Map<String, String>> deleteUser(
             @PathVariable Long userId,
-            @RequestParam String stepUpPin,
+            @RequestHeader(value = "X-Step-Up-Pin", required = false) String stepUpPin,
             @AuthenticationPrincipal CustomUserDetails principal,
             HttpServletRequest httpRequest) {
         if (stepUpPin == null || stepUpPin.isBlank()) {
@@ -194,6 +195,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Query audit logs", description = "Returns immutable records of administrative actions taken")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/audit-logs")
     public ResponseEntity<Page<AdminAuditLogDto>> getAuditLogs(
             @RequestParam(required = false) String query,
@@ -205,6 +207,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Export audit logs CSV", description = "Streams immutable audit trail as a downloadable CSV for compliance")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/audit-logs/export")
     public ResponseEntity<byte[]> exportAuditLogsCsv() {
         String csv = systemOpsService.exportAuditLogsCsv();
@@ -267,12 +270,14 @@ public class AdminController {
     }
 
     @Operation(summary = "Resilience diagnostics", description = "Check database status and Hugging Face snapshot health")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/resilience/status")
     public ResponseEntity<Map<String, Object>> getResilienceStatus() {
         return ResponseEntity.ok(resilienceService.getResilienceStatus());
     }
 
     @Operation(summary = "Multi-cloud database cluster topology state", description = "Returns real-time health and connection metrics across Server Engine, Neon PostgreSQL, and Hugging Face Spaces")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/resilience/database-state")
     public ResponseEntity<AdminDatabaseTopologyDto> getDatabaseTopology() {
         return ResponseEntity.ok(resilienceService.getDatabaseTopology());
@@ -310,6 +315,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get system runtime telemetry", description = "Live JVM memory, thread pool, and HikariCP connection status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/system/telemetry")
     public ResponseEntity<AdminTelemetryDto> getTelemetry() {
         return ResponseEntity.ok(systemOpsService.getTelemetry());
