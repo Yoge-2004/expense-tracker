@@ -51,7 +51,11 @@
             "./assets/custom_chime.wav"
           ]
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true
@@ -64,10 +68,6 @@
         "projectId": "1f8a984c-edd6-455d-9ba1-1832827887ac"
       }
     },
-    "owner": "yoge-2004",
-    "notification": {
-      "icon": "./assets/notification-icon.png",
-      "color": "#D4AF37"
-    }
+    "owner": "yoge-2004"
   }
 }

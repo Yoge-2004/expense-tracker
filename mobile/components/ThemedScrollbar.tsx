@@ -207,7 +207,7 @@ export interface ThemedScrollViewProps extends ScrollViewProps {
 /**
  * A drop-in replacement for ScrollView that renders the custom website-style gold scrollbar.
  */
-export const ThemedScrollView = React.forwardRef<ScrollView, ThemedScrollViewProps>(
+export const ThemedScrollView = React.forwardRef<React.ElementRef<typeof ScrollView>, ThemedScrollViewProps>(
   function ThemedScrollView(
     {
       children,
@@ -261,7 +261,7 @@ export const ThemedScrollView = React.forwardRef<ScrollView, ThemedScrollViewPro
     return (
       <View style={[styles.scrollViewContainer, containerStyle]}>
         <ScrollView
-          ref={ref}
+          ref={ref as any}
           style={style}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={scrollEventThrottle}

@@ -112,7 +112,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <SafeAreaView style={styles.safeArea}>
-          <StatusBar barStyle="light-content" backgroundColor="#0D0F0C" />
+          <StatusBar barStyle="light-content" {...({ backgroundColor: "#0D0F0C" } as any)} />
           <View style={styles.container}>
             {/* Header Icon */}
             <View style={styles.iconBox}>

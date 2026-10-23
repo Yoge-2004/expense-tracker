@@ -162,7 +162,7 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
     <Animated.View style={[splashStyles.container, { opacity: fadeAnim, backgroundColor: c.bg }]}>
       <StatusBar
         barStyle={isLight ? 'dark-content' : 'light-content'}
-        backgroundColor={c.bg}
+        {...({ backgroundColor: c.bg } as any)}
       />
 
       {/* Bespoke animated brand aura & rotating orbital halo */}
