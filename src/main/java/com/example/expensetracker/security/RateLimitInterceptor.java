@@ -33,9 +33,10 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     private final ClientIpResolver clientIpResolver;
 
     public RateLimitInterceptor(@Autowired(required = false) RateLimiterService rateLimiterService,
-                                ClientIpResolver clientIpResolver) {
+                                @Autowired(required = false) ClientIpResolver clientIpResolver) {
         this.rateLimiterService = rateLimiterService;
-        this.clientIpResolver = clientIpResolver;
+        // Web slice tests do not load the resolver; without it requests are keyed by the TCP peer.
+        this.clientIpResolver = clientIpResolver != null ? clientIpResolver : new ClientIpResolver();
     }
 
     @Override
