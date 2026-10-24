@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expense Tracker",
     "slug": "expense-tracker-mobile",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -25,11 +25,16 @@
     },
     "android": {
       "package": "com.yoge.expensetracker",
-      "versionCode": 9,
+      "versionCode": 10,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F9F6EF"
-      }
+      },
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS",
+        "VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -40,11 +45,17 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/notification-icon.png",
           "color": "#D4AF37",
-          "sounds": []
+          "sounds": [
+            "./assets/custom_chime.wav"
+          ]
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

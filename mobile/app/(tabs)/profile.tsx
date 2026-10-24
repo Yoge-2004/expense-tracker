@@ -39,6 +39,8 @@ import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
+import * as IntentLauncher from 'expo-intent-launcher';
+import * as Clipboard from 'expo-clipboard';
 import { clearSavedPin, savedPinEmail, savePinForFingerprint } from '../../utils/pinVault';
 
 import { AmbientAura } from '../../components/AmbientAura';
@@ -271,6 +273,78 @@ export default function ProfileScreen() {
         undefined,
         'info'
       );
+    }
+  };
+
+  const handlePasteAndIngestSms = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    try {
+      const hasStr = await Clipboard.hasStringAsync();
+      if (!hasStr) {
+        showAlert(
+          'Clipboard Empty',
+          'Please copy a bank transaction SMS from your SMS app first, then tap here to ingest.',
+          undefined,
+          'info'
+        );
+        return;
+      }
+      const text = await Clipboard.getStringAsync();
+      if (!text || text.trim().length === 0) {
+        showAlert(
+          'Clipboard Empty',
+          'Please copy a bank transaction SMS from your SMS app first, then tap here to ingest.',
+          undefined,
+          'info'
+        );
+        return;
+      }
+      const result = await detectAndAddExpenseFromMessage(text, userId);
+      if (result) {
+        if (result.duplicate) {
+          showAlert(
+            'Duplicate Suppressed 🛡️',
+            `This transaction (${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant || 'merchant'}) was already recorded recently.`,
+            undefined,
+            'info'
+          );
+        } else {
+          showAlert(
+            'Expense Recorded! ⚡',
+            `Successfully captured ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant || 'merchant'} to your expense ledger.`,
+            undefined,
+            'success'
+          );
+        }
+      } else {
+        showAlert(
+          'No Debit Found',
+          'The copied text did not contain a recognizable bank debit message or amount.',
+          undefined,
+          'warning'
+        );
+      }
+    } catch (err: any) {
+      showAlert('Error Reading SMS', err?.message || 'Could not access clipboard.');
+    }
+  };
+
+  const handleOpenNotificationAccess = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (Platform.OS === 'android') {
+      try {
+        await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.NOTIFICATION_LISTENER_SETTINGS);
+      } catch (_) {
+        try {
+          await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.APP_NOTIFICATION_SETTINGS, {
+            data: 'package:com.expense.tracker',
+          });
+        } catch (e: any) {
+          showAlert('Notification Settings', 'Open your device Settings -> Apps -> ExpenseTracker -> Notifications.', undefined, 'info');
+        }
+      }
+    } else {
+      showAlert('Notification Settings', 'Please manage ExpenseTracker notification permissions in iOS Settings.', undefined, 'info');
     }
   };
 
@@ -844,7 +918,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleSimulateDebit}
-              style={styles.menuRow}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
             >
               <View style={styles.menuRowLeft}>
                 <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
@@ -859,6 +933,50 @@ export default function ProfileScreen() {
               </View>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handlePasteAndIngestSms}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + '18' }]}>
+                  <Ionicons name="clipboard-outline" size={18} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>Ingest Copied Bank SMS</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Parse & record SMS text currently on clipboard
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleOpenNotificationAccess}
+              style={styles.menuRow}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.accent + '18' }]}>
+                  <Ionicons name="notifications-outline" size={18} color={c.accent} />
+                </View>
+                <View>
+                  <Text style={[styles.menuRowTitle, { color: c.text }]}>System Notification Settings</Text>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Configure system notification & listener access
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+            </TouchableOpacity>
+
+            <View style={{ padding: 12, backgroundColor: isLight ? 'rgba(212, 175, 55, 0.08)' : 'rgba(245, 200, 66, 0.08)', borderRadius: 10, margin: 12, borderWidth: 1, borderColor: isLight ? 'rgba(212, 175, 55, 0.25)' : 'rgba(245, 200, 66, 0.2)' }}>
+              <Text style={{ fontSize: 11.5, lineHeight: 17, color: isLight ? '#78350F' : '#F5C842' }}>
+                💡 <Text style={{ fontWeight: '700' }}>How Bank SMS capture works:</Text> Whenever you receive a bank debit SMS, copy it. ExpenseTracker automatically parses the amount & merchant the moment you switch to the app or tap "Paste SMS" on the Record screen!
+              </Text>
+            </View>
           </View>
         </StaggeredView>
 

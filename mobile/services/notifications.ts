@@ -86,6 +86,48 @@ if (!isExpoGo) {
 }
 
 /**
+ * Ensures all Android notification channels are registered with system sound, vibration, and gold lightColor.
+ */
+export async function ensureNotificationChannels(): Promise<void> {
+  if (Platform.OS !== 'android' || isExpoGo || !Notifications) return;
+  try {
+    await Promise.all([
+      Notifications.setNotificationChannelAsync("expense-reminders", {
+        name: "Daily Expense Reminders",
+        description: "Twice-daily reminders to keep your expense ledger up to date.",
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: CUSTOM_NOTIFICATION_SOUND,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#D4AF37",
+        enableVibrate: true,
+        showBadge: true,
+      }).catch(() => {}),
+      Notifications.setNotificationChannelAsync(DEBIT_CHANNEL_ID, {
+        name: "Instant Debit & Transaction Alerts",
+        description: "Real-time alerts when debit/payment transactions occur.",
+        importance: Notifications.AndroidImportance.MAX,
+        sound: CUSTOM_NOTIFICATION_SOUND,
+        vibrationPattern: [0, 200, 100, 200],
+        lightColor: "#D4AF37",
+        enableVibrate: true,
+        showBadge: true,
+      }).catch(() => {}),
+      Notifications.setNotificationChannelAsync("default", {
+        name: "ExpenseTracker Alerts",
+        description: "General reminders, savings targets, and server notifications.",
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: CUSTOM_NOTIFICATION_SOUND,
+        lightColor: "#D4AF37",
+        enableVibrate: true,
+        showBadge: true,
+      }).catch(() => {}),
+    ]);
+  } catch (e) {
+    console.log("[Notifications] Channel initialization failed:", e);
+  }
+}
+
+/**
  * Requests local notification permissions.
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
@@ -108,16 +150,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync("expense-reminders", {
-        name: "Daily Expense Reminders",
-        description: "Twice-daily reminders to keep your expense ledger up to date.",
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: CUSTOM_NOTIFICATION_SOUND,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#D4AF37",
-        enableVibrate: true,
-        showBadge: true,
-      }).catch(() => {});
+      await ensureNotificationChannels().catch(() => {});
     }
 
     return Boolean(granted);
@@ -149,6 +182,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
         title: '☀️ Midday Expense Check',
         body: 'Did you grab lunch or make a morning purchase? Take 10 seconds to record it now!',
         sound: await resolveNotificationSound(),
+        color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)/add-expense' },
         ...(Platform.OS === 'android' ? { channelId: 'expense-reminders' } : {}),
       },
@@ -166,6 +200,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
         title: '🌙 Daily Ledger Wrap-up',
         body: "Wrap up today's ledger! Log any remaining transactions before heading to sleep.",
         sound: await resolveNotificationSound(),
+        color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)/add-expense' },
         ...(Platform.OS === 'android' ? { channelId: 'expense-reminders' } : {}),
       },
@@ -321,6 +356,7 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
         title,
         body,
         sound: await resolveNotificationSound(),
+        color: "#D4AF37",
         data: {
           appInternal: true,
           screen: "/(tabs)/index",
@@ -626,6 +662,7 @@ export async function notifySalaryCredit(amount: number, currency: string = '₹
         title: `💵 ${source} Credited: ${currency} ${amount.toLocaleString('en-IN')}`,
         body: 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!',
         sound: await resolveNotificationSound(),
+        color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)/index', tab: 'incomes' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -661,6 +698,7 @@ export async function notifyBudgetThresholdAlert(categoryName: string, percentSp
         title,
         body,
         sound: await resolveNotificationSound(),
+        color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)/index' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -688,6 +726,7 @@ export async function notifySubscriptionDue(subscriptionName: string, amount: nu
         title: `🔄 Upcoming Renewal: ${subscriptionName}`,
         body: `${subscriptionName} (${currency} ${amount.toFixed(2)}) is scheduled to renew on ${dueDate}. Review or ensure adequate balance.`,
         sound: await resolveNotificationSound(),
+        color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)/subscriptions' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -723,6 +762,7 @@ export async function notifySavingsGoalMilestone(goalName: string, progressPerce
         title,
         body,
         sound: await resolveNotificationSound(),
+        color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)/index' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -772,7 +812,7 @@ function fixedSmartReminders() {
 async function scheduleSmart(id: string, title: string, body: string, screen: string, trigger: Record<string, unknown>) {
   await Notifications.scheduleNotificationAsync({
     identifier: id, // a stable id: scheduling again replaces the reminder instead of duplicating it
-    content: { title, body, sound: await resolveNotificationSound(), data: { appInternal: true, screen } },
+    content: { title, body, sound: await resolveNotificationSound(), color: '#D4AF37', data: { appInternal: true, screen } },
     trigger: Platform.OS === 'android' ? { ...trigger, channelId: REMINDERS_CHANNEL_ID } : trigger,
   });
 }
@@ -920,6 +960,7 @@ export async function notifyTransactionRecorded(transaction: RecordedTransaction
         title: isDebit ? `💸 Debit recorded: ${amountText}` : `💵 Credit recorded: ${amountText}`,
         body: body || (isDebit ? 'Expense saved.' : 'Income saved.'),
         sound: await resolveNotificationSound(),
+        color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)' },
         ...(Platform.OS === 'android' ? { channelId: DEBIT_CHANNEL_ID } : {}),
       },
@@ -1045,7 +1086,9 @@ export async function scheduleLoanReminders(loans: any[], currSymbol: string = '
             title,
             body,
             sound: await resolveNotificationSound(),
+            color: '#D4AF37',
             data: { appInternal: true, screen: '/(tabs)' },
+            ...(Platform.OS === 'android' ? { channelId: REMINDERS_CHANNEL_ID } : {}),
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -1060,7 +1103,9 @@ export async function scheduleLoanReminders(loans: any[], currSymbol: string = '
             title,
             body,
             sound: await resolveNotificationSound(),
+            color: '#D4AF37',
             data: { appInternal: true, screen: '/(tabs)' },
+            ...(Platform.OS === 'android' ? { channelId: REMINDERS_CHANNEL_ID } : {}),
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
@@ -1076,7 +1121,9 @@ export async function scheduleLoanReminders(loans: any[], currSymbol: string = '
             title,
             body,
             sound: await resolveNotificationSound(),
+            color: '#D4AF37',
             data: { appInternal: true, screen: '/(tabs)' },
+            ...(Platform.OS === 'android' ? { channelId: REMINDERS_CHANNEL_ID } : {}),
           },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.MONTHLY,

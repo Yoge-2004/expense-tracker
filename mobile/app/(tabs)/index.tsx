@@ -1215,7 +1215,7 @@ export default function DashboardScreen() {
 
   // The ledger is a virtualised FlatList: only the rows on screen (plus a small buffer) exist, however many
   // transactions are loaded. A theme change therefore repaints a handful of rows, not every row scrolled past.
-  const ledgerScrollRef = useRef<ScrollView>(null);
+  const ledgerScrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const ledgerScrollY = useRef(new Animated.Value(0)).current;
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);

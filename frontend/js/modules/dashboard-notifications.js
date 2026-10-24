@@ -9,6 +9,21 @@
 (function () {
     "use strict";
 
+    // 0. ABSOLUTE URL RESOLVER FOR ASSETS ACROSS ALL DOMAINS / DEVICES
+    function toAbsoluteUrl(path) {
+        try {
+            if (!path) return "";
+            if (path.startsWith("http://") || path.startsWith("https://")) return path;
+            const clean = path.startsWith("/") ? path : `/${path}`;
+            return new URL(clean, window.location.origin).href;
+        } catch (_) {
+            return path;
+        }
+    }
+
+    const NOTIF_ICON_URL = toAbsoluteUrl("/assets/icon-192.png");
+    const NOTIF_BADGE_URL = toAbsoluteUrl("/assets/badge-72.png");
+
     // 1. DEBIT MESSAGE PARSER (Client-side mirror of financial extractor)
     const DEBIT_REGEX = /\b(debited|spent|paid|withdrawn|charged|purchase|txn of|sent|deducted|dr)\b/i;
     const CREDIT_REGEX = /\b(credited|received|refunded|deposited|reversal|cashback|cr)\b/i;
@@ -55,7 +70,7 @@
         let currency = "INR";
         if (/(\$|USD)/i.test(clean)) currency = "USD";
         else if (/(€|EUR)/i.test(clean)) currency = "EUR";
-        else if (/(£|GBP)/i.test(clean)) currency = "GBP";
+        else if /(£|GBP)/i.test(clean)) currency = "GBP";
 
         let merchant = null;
         for (const pattern of MERCHANT_PATTERNS) {
@@ -93,7 +108,6 @@
             timestamp: Date.now()
         };
     }
-
 
     // 1b. CUSTOM NOTIFICATION CHIME AUDIO SYSTEM
     const NOTIF_SOUND_STORAGE_KEY = "expense_tracker_notification_sound_enabled";
@@ -138,9 +152,9 @@
         if (!isNotificationSoundEnabled()) return;
         try {
             const candidatePaths = [
-                "/assets/custom_chime.wav",
+                toAbsoluteUrl("/assets/custom_chime.wav"),
                 "assets/custom_chime.wav",
-                "/frontend/assets/custom_chime.wav"
+                "/assets/custom_chime.wav"
             ];
             const audio = new Audio();
             let played = false;
@@ -191,7 +205,6 @@
 
         for (const candidate of candidatePaths) {
             try {
-                // Verify script availability before register() to prevent browser console 404
                 const headCheck = await fetch(candidate, { method: "HEAD", cache: "no-store" }).catch(() => null);
                 if (headCheck && headCheck.status === 404) {
                     continue;
@@ -226,7 +239,6 @@
     }
 
     // 3. INSTANT DEBIT NOTIFICATION DISPATCHER
-    // Dispatches notification immediately then-and-there
     async function notifyInstantDebit(parsed) {
         if (!parsed || parsed.direction !== "DEBIT") return false;
         playCustomNotificationSound();
@@ -236,14 +248,13 @@
         const accPart = parsed.accountTail ? ` (Card/A/c xx${parsed.accountTail})` : "";
         const body = `Spent ${parsed.currency} ${parsed.amount.toFixed(2)}${merchantPart}${accPart}. Tap to record or categorize now.`;
 
-        // Check if Notification permission is available
         if ("Notification" in window && Notification.permission === "granted") {
             try {
                 if (swRegistration && "showNotification" in swRegistration) {
                     await swRegistration.showNotification(title, {
                         body,
-                        icon: "/assets/icon-192.png",
-                        badge: "/assets/badge-72.png",
+                        icon: NOTIF_ICON_URL,
+                        badge: NOTIF_BADGE_URL,
                         vibrate: [150, 50, 150],
                         data: {
                             url: "/dashboard.html",
@@ -256,8 +267,8 @@
                 } else {
                     const notif = new Notification(title, {
                         body,
-                        icon: "/assets/icon-192.png",
-                        badge: "/assets/badge-72.png"
+                        icon: NOTIF_ICON_URL,
+                        badge: NOTIF_BADGE_URL
                     });
                     notif.onclick = () => {
                         window.focus();
@@ -281,19 +292,18 @@
     // 4. ACTION HANDLER WHEN NOTIFICATION IS CLICKED
     function handleNotificationAction(data) {
         if (!data) return;
-        const addBtn = document.getElementById("openAddExpenseModalBtn");
+        const addBtn = document.getElementById("openModalBtn") || document.getElementById("openAddExpenseModalBtn");
         if (addBtn) {
             addBtn.click();
-            // Pre-fill amount & description
             setTimeout(() => {
                 const amountInput = document.getElementById("amount");
-                const descInput = document.getElementById("desc");
+                const descInput = document.getElementById("desc") || document.getElementById("description");
                 if (amountInput && data.amount) {
                     amountInput.value = data.amount;
                     amountInput.dispatchEvent(new Event("input", { bubbles: true }));
                 }
-                if (descInput && data.merchant) {
-                    descInput.value = data.merchant;
+                if (descInput && (data.merchant || data.description)) {
+                    descInput.value = data.merchant || data.description;
                     descInput.dispatchEvent(new Event("input", { bubbles: true }));
                 }
             }, 300);
@@ -301,7 +311,6 @@
     }
 
     // 5. INCOMING MESSAGE INGESTION API
-    // Call this whenever an SMS or webhook or simulated debit is received
     async function ingestFinancialMessage(text) {
         const parsed = parseFinancialDebitText(text);
         if (parsed && parsed.direction === "DEBIT") {
@@ -311,7 +320,103 @@
         return null;
     }
 
-    // 6. UI TOGGLE IN PROFILE / MODAL SETTINGS
+    // 5b. INTERACTIVE BANK SMS PASTE HELPER FOR WEBSITE
+    async function promptPasteBankSMS() {
+        let pastedText = "";
+        try {
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                pastedText = await navigator.clipboard.readText();
+            }
+        } catch (_) {}
+
+        let parsed = pastedText ? parseFinancialDebitText(pastedText) : null;
+
+        if (!parsed || !parsed.amount) {
+            const userInput = window.prompt("Paste your bank SMS alert or debit message text here:");
+            if (!userInput) return;
+            parsed = parseFinancialDebitText(userInput);
+        }
+
+        if (parsed && parsed.amount) {
+            handleNotificationAction(parsed);
+            if (typeof window.showToast === "function") {
+                window.showToast(`Parsed ${parsed.currency} ${parsed.amount.toFixed(2)} from SMS!`, "success");
+            }
+        } else {
+            if (typeof window.showToast === "function") {
+                window.showToast("Could not detect a financial amount in the provided text.", "warning");
+            }
+        }
+    }
+
+    // 6. PROACTIVE NOTIFICATION PERMISSION BANNER FOR ALL DEVICES
+    const NOTIF_BANNER_SNOOZE_KEY = "expense_notif_banner_snoozed_until";
+
+    function setupNotificationBanner() {
+        const banner = document.getElementById("notificationPermissionBanner");
+        if (!banner) return;
+
+        // If Notification API is not supported in this browser
+        if (!("Notification" in window)) {
+            banner.setAttribute("hidden", "true");
+            banner.style.display = "none";
+            return;
+        }
+
+        // If user already granted or denied permission, do not display banner
+        if (Notification.permission !== "default") {
+            banner.setAttribute("hidden", "true");
+            banner.style.display = "none";
+            return;
+        }
+
+        // Check if snoozed
+        try {
+            const snoozedUntil = parseInt(localStorage.getItem(NOTIF_BANNER_SNOOZE_KEY) || "0", 10);
+            if (Date.now() < snoozedUntil) {
+                banner.setAttribute("hidden", "true");
+                banner.style.display = "none";
+                return;
+            }
+        } catch (_) {}
+
+        banner.removeAttribute("hidden");
+        banner.style.display = "flex";
+
+        const allowBtn = document.getElementById("notifBannerAllowBtn");
+        const dismissBtn = document.getElementById("notifBannerDismissBtn");
+
+        if (allowBtn) {
+            allowBtn.onclick = async () => {
+                const granted = await requestNotificationPermission();
+                banner.setAttribute("hidden", "true");
+                banner.style.display = "none";
+                if (granted) {
+                    playCustomNotificationSound();
+                    if (typeof window.showToast === "function") {
+                        window.showToast("Notifications enabled! You'll receive real-time debit and balance alerts.", "success");
+                    }
+                } else {
+                    if (typeof window.showToast === "function") {
+                        window.showToast("Notification permission was not granted.", "warning");
+                    }
+                }
+            };
+        }
+
+        if (dismissBtn) {
+            dismissBtn.onclick = () => {
+                banner.setAttribute("hidden", "true");
+                banner.style.display = "none";
+                try {
+                    // Snooze for 7 days
+                    localStorage.setItem(NOTIF_BANNER_SNOOZE_KEY, String(Date.now() + 7 * 86400000));
+                } catch (_) {}
+            };
+        }
+    }
+
+    // 7. UI TOGGLE IN PROFILE / MODAL SETTINGS
     function setupNotificationToggle() {
         const toggleBtn = document.getElementById("enableInstantDebitAlertsBtn");
         if (toggleBtn) {
@@ -330,15 +435,17 @@
         }
     }
 
-    // 7. INITIALIZE
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => {
-            registerServiceWorker();
-            setupNotificationToggle();
-        });
-    } else {
+    // 8. INITIALIZE
+    function init() {
         registerServiceWorker();
+        setupNotificationBanner();
         setupNotificationToggle();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        init();
     }
 
     async function notifySalaryCredit(amount, currency = '₹', source = 'Salary') {
@@ -350,12 +457,12 @@
                 if (swRegistration && 'showNotification' in swRegistration) {
                     await swRegistration.showNotification(title, {
                         body,
-                        icon: 'assets/icon-192.png',
-                        badge: 'assets/icon-192.png',
+                        icon: NOTIF_ICON_URL,
+                        badge: NOTIF_BADGE_URL,
                         tag: 'salary-inflow'
                     });
                 } else {
-                    new Notification(title, { body, icon: 'assets/icon-192.png' });
+                    new Notification(title, { body, icon: NOTIF_ICON_URL, badge: NOTIF_BADGE_URL });
                 }
             } catch (e) {
                 console.warn('[DashboardNotifications] Error:', e);
@@ -378,13 +485,17 @@
         const title = `${isDebit ? "💸 Debit" : "💰 Credit"} recorded: ${formatted}`;
         const body = [label, detail].filter((part) => part && String(part).trim()).join(" · ")
             || (isDebit ? "Expense saved." : "Income saved.");
-        // A unique tag so each entry gets its own notification instead of replacing the previous one.
         const tag = `transaction-${Date.now()}`;
         try {
             if (swRegistration && "showNotification" in swRegistration) {
-                await swRegistration.showNotification(title, { body, icon: "assets/icon-192.png", badge: "assets/icon-192.png", tag });
+                await swRegistration.showNotification(title, {
+                    body,
+                    icon: NOTIF_ICON_URL,
+                    badge: NOTIF_BADGE_URL,
+                    tag
+                });
             } else {
-                new Notification(title, { body, icon: "assets/icon-192.png", tag });
+                new Notification(title, { body, icon: NOTIF_ICON_URL, badge: NOTIF_BADGE_URL, tag });
             }
         } catch (e) {
             console.warn("[DashboardNotifications] Error:", e);
@@ -405,12 +516,12 @@
                 if (swRegistration && 'showNotification' in swRegistration) {
                     await swRegistration.showNotification(title, {
                         body,
-                        icon: 'assets/icon-192.png',
-                        badge: 'assets/icon-192.png',
+                        icon: NOTIF_ICON_URL,
+                        badge: NOTIF_BADGE_URL,
                         tag: `budget-${categoryName}`
                     });
                 } else {
-                    new Notification(title, { body, icon: 'assets/icon-192.png' });
+                    new Notification(title, { body, icon: NOTIF_ICON_URL, badge: NOTIF_BADGE_URL });
                 }
             } catch (e) {
                 console.warn('[DashboardNotifications] Error:', e);
@@ -426,6 +537,8 @@
         notifyTransactionRecorded,
         notifyBudgetThresholdAlert,
         ingestFinancialMessage,
+        promptPasteBankSMS,
+        setupNotificationBanner,
         handleNotificationAction,
         playCustomNotificationSound,
         isNotificationSoundEnabled,

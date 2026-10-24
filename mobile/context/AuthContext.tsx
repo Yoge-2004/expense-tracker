@@ -150,10 +150,10 @@ export function AuthProvider({
    */
   const clearBiometricCredentials = async () => {
     await Promise.all([
-      SecureStore.deleteItemAsync('biometric_saved_token').catch(() => {}),
-      SecureStore.deleteItemAsync('biometric_saved_userId').catch(() => {}),
-      SecureStore.deleteItemAsync('biometric_saved_name').catch(() => {}),
-      SecureStore.deleteItemAsync('biometric_enabled').catch(() => {}),
+      safeStorageDelete('biometric_saved_token'),
+      safeStorageDelete('biometric_saved_userId'),
+      safeStorageDelete('biometric_saved_name'),
+      safeStorageDelete('biometric_enabled'),
     ]);
     setIsBiometricEnabled(false);
   };
