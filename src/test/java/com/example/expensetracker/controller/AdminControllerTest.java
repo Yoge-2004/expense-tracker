@@ -253,4 +253,21 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].message").value("System online"));
     }
+
+    @Test
+    void deleteUserTakesTheStepUpPinFromTheHeaderNotTheUrl() throws Exception {
+        mockMvc.perform(delete("/api/admin/users/2").header("X-Step-Up-Pin", "123456"))
+                .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(adminUserService)
+                .deleteUser(eq(2L), eq("123456"), any(), any(), any());
+    }
+
+    @Test
+    void deleteUserWithoutThePinHeaderIsRejected() throws Exception {
+        mockMvc.perform(delete("/api/admin/users/2").queryParam("stepUpPin", "123456"))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verifyNoInteractions(adminUserService);
+    }
 }

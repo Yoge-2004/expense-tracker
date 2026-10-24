@@ -619,8 +619,9 @@
             title: `Permanently Delete User #${userId}`,
             desc: `Are you sure you want to permanently delete user "${userName}"? This purges all transactions, tokens, and records. Action cannot be undone. Requires 6-digit Security PIN.`,
             onConfirm: async (pin) => {
-                const res = await apiRequest(`/admin/users/${userId}?stepUpPin=${encodeURIComponent(pin)}`, {
-                    method: "DELETE"
+                const res = await apiRequest(`/admin/users/${userId}`, {
+                    method: "DELETE",
+                    headers: { "X-Step-Up-Pin": pin }
                 });
                 showToast(res.message || `User #${userId} deleted`, "success");
                 loadUsersDirectory();

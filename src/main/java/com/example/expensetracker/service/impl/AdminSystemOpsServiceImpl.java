@@ -96,7 +96,7 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
         String dbUrl = "";
         try (Connection conn = dataSource.getConnection()) {
             dbProduct = conn.getMetaData().getDatabaseProductName();
-            dbUrl = conn.getMetaData().getURL();
+            dbUrl = maskJdbcUrl(conn.getMetaData().getURL());
         } catch (Exception ignored) {}
 
         int activeConns = 1;
@@ -188,8 +188,30 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
         return csv.toString();
     }
 
-    private String escapeCsv(String val) {
+    /**
+     * Quotes a CSV cell and neutralises spreadsheet formula injection: a value that starts with
+     * {@code = + - @} or a tab is prefixed with an apostrophe so Excel/Sheets read it as text.
+     */
+    static String escapeCsv(String val) {
         if (val == null) return "\"\"";
-        return "\"" + val.replace("\"", "\"\"").replace("\n", " ") + "\"";
+        String cleaned = val.replace("\r", " ").replace("\n", " ");
+        if (!cleaned.isEmpty()) {
+            char first = cleaned.charAt(0);
+            if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t') {
+                cleaned = "'" + cleaned;
+            }
+        }
+        return "\"" + cleaned.replace("\"", "\"\"") + "\"";
+    }
+
+    /** Keeps only the driver, host and database of a JDBC URL; credentials and options are dropped. */
+    static String maskJdbcUrl(String raw) {
+        if (raw == null || raw.isBlank()) return "";
+        String masked = raw;
+        int query = masked.indexOf('?');
+        if (query >= 0) masked = masked.substring(0, query);
+        int options = masked.indexOf(';');
+        if (options >= 0) masked = masked.substring(0, options);
+        return masked.replaceFirst("(://)[^/@]*@", "$1");
     }
 }
