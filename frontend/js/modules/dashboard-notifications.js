@@ -70,7 +70,7 @@
         let currency = "INR";
         if (/(\$|USD)/i.test(clean)) currency = "USD";
         else if (/(€|EUR)/i.test(clean)) currency = "EUR";
-        else if /(£|GBP)/i.test(clean)) currency = "GBP";
+        else if (/(£|GBP)/i.test(clean)) currency = "GBP";
 
         let merchant = null;
         for (const pattern of MERCHANT_PATTERNS) {
