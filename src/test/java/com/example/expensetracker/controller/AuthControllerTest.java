@@ -5,6 +5,8 @@ import com.example.expensetracker.security.CustomUserDetails;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
+import com.example.expensetracker.security.LoginAttemptGuard;
+import com.example.expensetracker.exception.RateLimitExceededException;
 import com.example.expensetracker.service.PasswordResetService;
 import com.example.expensetracker.service.UserService;
 import com.example.expensetracker.repository.UserRepository;
@@ -41,6 +43,7 @@ class AuthControllerTest {
     @MockitoBean PasswordResetService passwordResetService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
     @MockitoBean UserRepository userRepository;
+    @MockitoBean LoginAttemptGuard loginAttemptGuard;
 
     private User user;
 
@@ -252,5 +255,58 @@ class AuthControllerTest {
                                 }
                                 """))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void wrongPasswordIsCountedAgainstTheAccount() throws Exception {
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new org.springframework.security.authentication.BadCredentialsException("bad"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"  jane@example.com  ","password":"wrong"}
+                                """))
+                .andExpect(status().isUnauthorized());
+
+        verify(loginAttemptGuard).checkAllowed("jane@example.com");
+        verify(loginAttemptGuard).recordFailure("jane@example.com");
+        verify(loginAttemptGuard, never()).recordSuccess(any());
+    }
+
+    @Test
+    void lockedAccountIsRefusedBeforeThePasswordIsChecked() throws Exception {
+        doThrow(new RateLimitExceededException("Too many failed sign-in attempts", 600))
+                .when(loginAttemptGuard).checkAllowed("jane@example.com");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"jane@example.com","password":"anything"}
+                                """))
+                .andExpect(status().isTooManyRequests());
+
+        verifyNoInteractions(authenticationManager);
+    }
+
+    @Test
+    void successfulLoginClearsTheFailureCounter() throws Exception {
+        Authentication authentication = mock(Authentication.class);
+        CustomUserDetails principal = mock(CustomUserDetails.class);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(principal);
+        when(principal.getUser()).thenReturn(user);
+        when(jwtService.generateToken("jane@example.com")).thenReturn("signed.jwt.token");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"jane@example.com","password":"secret123"}
+                                """))
+                .andExpect(status().isOk());
+
+        verify(loginAttemptGuard).recordSuccess("jane@example.com");
+        verify(loginAttemptGuard, never()).recordFailure(any());
     }
 }

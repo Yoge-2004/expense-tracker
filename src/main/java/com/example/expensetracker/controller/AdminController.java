@@ -3,6 +3,7 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.dto.*;
 import com.example.expensetracker.exception.BadRequestException;
 import com.example.expensetracker.model.Role;
+import com.example.expensetracker.security.ClientIpResolver;
 import com.example.expensetracker.security.CustomUserDetails;
 import com.example.expensetracker.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,6 +52,7 @@ public class AdminController {
     private final AdminNotificationBroadcastService broadcastService;
     private final AdminResilienceService resilienceService;
     private final AdminSystemOpsService systemOpsService;
+    private final ClientIpResolver clientIpResolver;
 
     @Operation(summary = "Get admin permissions matrix", description = "Returns dynamic RBAC authority permissions for the active operator")
     @GetMapping("/me/permissions")
@@ -334,10 +336,7 @@ public class AdminController {
     }
 
     private String extractClientIp(HttpServletRequest request) {
-        String xf = request.getHeader("X-Forwarded-For");
-        if (xf != null && !xf.isBlank()) {
-            return xf.split(",")[0].trim();
-        }
-        return request.getRemoteAddr() != null ? request.getRemoteAddr() : "127.0.0.1";
+        String ip = clientIpResolver.resolve(request);
+        return ip != null ? ip : "127.0.0.1";
     }
 }
