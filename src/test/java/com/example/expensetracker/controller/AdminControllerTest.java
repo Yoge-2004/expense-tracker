@@ -3,6 +3,7 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.dto.*;
 import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.security.ClientIpResolver;
 import com.example.expensetracker.security.CustomUserDetails;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.JwtService;
@@ -46,6 +47,7 @@ class AdminControllerTest {
     @MockitoBean AdminMlGovernanceService mlGovernanceService;
     @MockitoBean AdminNotificationBroadcastService broadcastService;
     @MockitoBean AdminSystemOpsService systemOpsService;
+    @MockitoBean ClientIpResolver clientIpResolver;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
 

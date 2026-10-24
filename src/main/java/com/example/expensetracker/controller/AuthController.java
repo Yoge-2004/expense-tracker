@@ -9,6 +9,7 @@ import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.security.CustomUserDetails;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.JwtService;
+import com.example.expensetracker.security.LoginAttemptGuard;
 import com.example.expensetracker.security.RateLimited;
 import com.example.expensetracker.service.PasswordResetService;
 import com.example.expensetracker.service.UserService;
@@ -60,6 +61,7 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     private final UserRepository userRepository;
+    private final LoginAttemptGuard loginAttemptGuard;
 
     @Value("${app.auth.email-verification-enabled:false}")
     private boolean emailVerificationEnabled;
@@ -125,8 +127,16 @@ public class AuthController {
             @Valid @org.springframework.web.bind.annotation.RequestBody LoginRequest request) {
         String identifier = request.email() != null ? request.email().trim() : "";
         log.info("Login attempt received for user identifier={}", LoggingUtils.maskEmail(identifier));
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(identifier, request.password()));
+        loginAttemptGuard.checkAllowed(identifier);
+        Authentication auth;
+        try {
+            auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(identifier, request.password()));
+        } catch (org.springframework.security.authentication.BadCredentialsException ex) {
+            loginAttemptGuard.recordFailure(identifier);
+            throw ex;
+        }
+        loginAttemptGuard.recordSuccess(identifier);
 
         User user = null;
         if (auth.getPrincipal() instanceof CustomUserDetails cud) {

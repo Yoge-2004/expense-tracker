@@ -11,6 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.MessageDigest;
@@ -69,6 +72,15 @@ public class SyncController {
         return "127.0.0.1".equals(addr) || "0:0:0:0:0:0:0:1".equals(addr) || "::1".equals(addr);
     }
 
+    /** True when the request carries a signed-in ADMIN or SUPER_ADMIN session (JWT filter ran before us). */
+    private boolean isAdministratorSession() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return false;
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> "ROLE_ADMIN".equals(a) || "ROLE_SUPER_ADMIN".equals(a));
+    }
+
     private boolean hasValidSyncToken(String syncToken) {
         if (syncSecretKey == null || syncSecretKey.isBlank()) return false;
         if (syncToken == null || syncToken.isBlank()) return false;
@@ -80,15 +92,21 @@ public class SyncController {
 
     private ResponseEntity<Map<String, Object>> validateLocalSyncAccess(String syncToken, HttpServletRequest request) {
         String clientIp = request != null ? request.getRemoteAddr() : "unknown";
-        if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
-            log.warn("Rate limit exceeded for sync operations from IP={}", clientIp);
+
+        if (isUnproxiedLoopbackRequest(request) || hasValidSyncToken(syncToken)) {
+            if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
+                log.warn("Rate limit exceeded for sync operations from IP={}", clientIp);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(Map.of("status", "error", "message", "Too many sync requests. Please try again later."));
+            }
+            return null;
+        }
+
+        // Unauthorised callers use their own bucket so they can never use up the one the real cron needs.
+        if (!rateLimiterService.tryAcquire("sync-fail:" + clientIp, 20, Duration.ofMinutes(1))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("status", "error", "message", "Too many sync requests. Please try again later."));
         }
-
-        if (isUnproxiedLoopbackRequest(request)) return null;
-        if (hasValidSyncToken(syncToken)) return null;
-
         log.warn("Unauthorized sync attempt from IP={}", clientIp);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("status", "error",
@@ -97,15 +115,22 @@ public class SyncController {
 
     private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {
         String clientIp = request != null ? request.getRemoteAddr() : "unknown";
-        if (!rateLimiterService.tryAcquire("sync-hf:" + clientIp, 5, Duration.ofMinutes(1))) {
-            log.warn("Rate limit exceeded for Hugging Face sync from IP={}", clientIp);
+
+        if (hasValidSyncToken(syncToken)) {
+            if (!rateLimiterService.tryAcquire("sync-hf:" + clientIp, 5, Duration.ofMinutes(1))) {
+                log.warn("Rate limit exceeded for Hugging Face sync from IP={}", clientIp);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(Map.of("status", "error",
+                                "message", "Too many Hugging Face sync requests. Please try again later."));
+            }
+            return null;
+        }
+
+        if (!rateLimiterService.tryAcquire("sync-fail:" + clientIp, 20, Duration.ofMinutes(1))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("status", "error",
                             "message", "Too many Hugging Face sync requests. Please try again later."));
         }
-
-        if (hasValidSyncToken(syncToken)) return null;
-
         log.warn("Unauthorized HF sync attempt");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("status", "error",
@@ -178,6 +203,15 @@ public class SyncController {
             @RequestHeader(value = "X-Sync-Token", required = false) String syncToken,
             HttpServletRequest request) {
         String clientIp = request != null ? request.getRemoteAddr() : "unknown";
+        if (!hasValidSyncToken(syncToken) && !isAdministratorSession()) {
+            if (!rateLimiterService.tryAcquire("sync-fail:" + clientIp, 20, Duration.ofMinutes(1))) {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body(Map.of("status", "error", "message", "Too many status requests. Please try again later."));
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("status", "error",
+                            "message", "Unauthorized: valid X-Sync-Token or an administrator session is required."));
+        }
         if (!rateLimiterService.tryAcquire("sync-status:" + clientIp, 30, Duration.ofMinutes(1))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("status", "error", "message", "Too many status requests. Please try again later."));

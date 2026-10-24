@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,6 +23,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -229,5 +231,52 @@ class SyncControllerTest {
                 .andExpect(jsonPath("$.status").value("error"));
 
         verify(syncService, never()).syncFileToDb();
+    }
+
+    @Test
+    void hfStatusRequiresSyncTokenOrAdministratorSession() throws Exception {
+        mockMvc.perform(get("/api/sync/hf-status"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("error"));
+
+        verifyNoInteractions(syncService);
+    }
+
+    @Test
+    void hfStatusIsServedForAValidSyncToken() throws Exception {
+        when(syncService.getHuggingFaceStatus()).thenReturn(Map.of("configured", true));
+
+        mockMvc.perform(get("/api/sync/hf-status").header("X-Sync-Token", "sync-secret"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.configured").value(true));
+    }
+
+    @Test
+    void hfStatusIsServedForAnAdministratorSession() throws Exception {
+        when(syncService.getHuggingFaceStatus()).thenReturn(Map.of("configured", true));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "admin@example.com", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+
+        mockMvc.perform(get("/api/sync/hf-status"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void hfStatusRejectsOrdinaryUserSession() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "jane@example.com", null, List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+
+        mockMvc.perform(get("/api/sync/hf-status"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void unauthorizedCallersCannotUseUpTheBucketTheCronNeeds() throws Exception {
+        mockMvc.perform(post("/api/sync/file-to-db")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/sync/hf-status")).andExpect(status().isUnauthorized());
+
+        verify(rateLimiterService, never()).tryAcquire(startsWith("sync:"), anyInt(), any(Duration.class));
+        verify(rateLimiterService, never()).tryAcquire(startsWith("sync-status:"), anyInt(), any(Duration.class));
+        verify(rateLimiterService, atLeastOnce()).tryAcquire(startsWith("sync-fail:"), eq(20), any(Duration.class));
     }
 }
