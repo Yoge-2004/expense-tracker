@@ -6,11 +6,28 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
-import { AppReleaseInfo, downloadAndInstallApk, summariseReleaseNotes } from '../services/appUpdate';
+import {
+  AppReleaseInfo,
+  downloadAndInstallApk,
+  formatReleaseNotes,
+  launchApkInstaller,
+  openInstallPermissionSettings,
+} from '../services/appUpdate';
 
 interface UpdatePromptProps {
   visible: boolean;
@@ -31,12 +48,15 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
   const [busy, setBusy] = useState(false);
   const [percent, setPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [installerFile, setInstallerFile] = useState<string | null>(null);
+  const { height: windowHeight } = useWindowDimensions();
 
   useEffect(() => {
     if (!visible) {
       setBusy(false);
       setPercent(0);
       setError(null);
+      setInstallerFile(null);
     }
   }, [visible]);
 
@@ -45,7 +65,7 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
   }
 
   const canInstallInApp = Platform.OS === 'android' && !!info.apkDownloadUrl;
-  const notes = summariseReleaseNotes(info.releaseNotes);
+  const notes = formatReleaseNotes(info.releaseNotes);
   const size = formatSize(info.apkSize);
 
   const openReleasePage = () => {
@@ -61,11 +81,37 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
     setBusy(true);
     setError(null);
     try {
-      await downloadAndInstallApk(info.apkDownloadUrl, (progress) => setPercent(progress.percent));
-      onClose();
+      const localFile = await downloadAndInstallApk(
+        info.apkDownloadUrl,
+        (progress) => setPercent(progress.percent),
+        info.apkSize
+      );
+      // Stay open: if Android did not show its installer the person needs the options below.
+      setInstallerFile(localFile);
+      setBusy(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The download did not finish.');
       setBusy(false);
+    }
+  };
+
+  const reopenInstaller = async () => {
+    if (!installerFile) return;
+    setError(null);
+    try {
+      await launchApkInstaller(installerFile);
+    } catch {
+      setError('Android could not open the installer. Use "Download in browser" instead.');
+    }
+  };
+
+  const allowInstalls = () => {
+    openInstallPermissionSettings().catch(() => undefined);
+  };
+
+  const downloadInBrowser = () => {
+    if (info.apkDownloadUrl) {
+      Linking.openURL(info.apkDownloadUrl).catch(() => undefined);
     }
   };
 
@@ -91,9 +137,17 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
 
           {notes ? (
             <View style={[styles.notes, { backgroundColor: c.bg, borderColor: c.border }]}>
-              <Text style={[styles.notesText, { color: c.inkDim }]} numberOfLines={8}>
-                {notes}
-              </Text>
+              <ScrollView
+                style={{ maxHeight: Math.max(120, Math.round(windowHeight * 0.32)) }}
+                nestedScrollEnabled
+                persistentScrollbar
+                showsVerticalScrollIndicator
+                accessibilityLabel="Release notes"
+              >
+                <Text style={[styles.notesText, { color: c.inkDim }]} selectable>
+                  {notes}
+                </Text>
+              </ScrollView>
             </View>
           ) : null}
 
@@ -107,6 +161,30 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
                 <View style={[styles.barFill, { backgroundColor: c.primary, width: `${Math.min(100, Math.max(0, percent))}%` }]} />
               </View>
             </View>
+          ) : installerFile ? (
+            <>
+              <Text style={[styles.hint, { color: c.ink }]}>
+                The installer should be open now. If nothing appeared, Android needs your permission
+                to install updates from this app.
+              </Text>
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+              <Pressable
+                onPress={reopenInstaller}
+                accessibilityRole="button"
+                style={[styles.primaryButton, { backgroundColor: c.primary }]}
+              >
+                <Text style={styles.primaryText}>Open installer again</Text>
+              </Pressable>
+              <Pressable onPress={allowInstalls} accessibilityRole="button" style={styles.secondaryButton}>
+                <Text style={[styles.secondaryText, { color: c.primary }]}>Allow installs from this app</Text>
+              </Pressable>
+              <Pressable onPress={downloadInBrowser} accessibilityRole="button" style={styles.secondaryButton}>
+                <Text style={[styles.secondaryText, { color: c.primary }]}>Download in browser</Text>
+              </Pressable>
+              <Pressable onPress={onClose} accessibilityRole="button" style={styles.secondaryButton}>
+                <Text style={[styles.secondaryText, { color: c.inkDim }]}>Close</Text>
+              </Pressable>
+            </>
           ) : (
             <>
               {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -120,9 +198,16 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
                 </Text>
               </Pressable>
               {error ? (
-                <Pressable onPress={openReleasePage} accessibilityRole="button" style={styles.secondaryButton}>
-                  <Text style={[styles.secondaryText, { color: c.primary }]}>Open the release page</Text>
-                </Pressable>
+                <>
+                  {canInstallInApp ? (
+                    <Pressable onPress={downloadInBrowser} accessibilityRole="button" style={styles.secondaryButton}>
+                      <Text style={[styles.secondaryText, { color: c.primary }]}>Download in browser</Text>
+                    </Pressable>
+                  ) : null}
+                  <Pressable onPress={openReleasePage} accessibilityRole="button" style={styles.secondaryButton}>
+                    <Text style={[styles.secondaryText, { color: c.primary }]}>Open the release page</Text>
+                  </Pressable>
+                </>
               ) : null}
               <Pressable onPress={onClose} accessibilityRole="button" style={styles.secondaryButton}>
                 <Text style={[styles.secondaryText, { color: c.inkDim }]}>Later</Text>
@@ -143,6 +228,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   card: {
+    maxHeight: '92%',
     borderRadius: 20,
     borderWidth: 1,
     padding: 22,
@@ -173,10 +259,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
+    overflow: 'hidden',
   },
   notesText: {
     fontSize: 13,
     lineHeight: 19,
+    flexShrink: 1,
+  },
+  hint: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginBottom: 12,
   },
   progress: {
     alignItems: 'center',

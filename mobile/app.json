@@ -33,6 +33,7 @@
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "POST_NOTIFICATIONS",
+        "REQUEST_INSTALL_PACKAGES",
         "VIBRATE"
       ]
     },
