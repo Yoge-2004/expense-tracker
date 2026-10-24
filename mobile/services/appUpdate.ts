@@ -160,14 +160,80 @@ export function summariseReleaseNotes(notes: string, maxLines = 6): string {
 }
 
 /**
- * Downloads the APK directly inside the app with a real-time progress callback,
- * and launches Android's package installer to apply the update.
+ * Lets long words (URLs, commit hashes, file paths) break onto the next line. React Native text
+ * only wraps at spaces, so a single long token would otherwise run off the right edge.
+ */
+export function softWrapLongWords(text: string, maxRun = 24): string {
+  const zwsp = '\u200B';
+  return (text || '').replace(new RegExp(`\\S{${maxRun + 1},}`, 'g'), (word) =>
+    word
+      .replace(/([/._\-?&=:#,])/g, `$1${zwsp}`)
+      .replace(new RegExp(`(\\S{${maxRun}})(?=\\S)`, 'g'), `$1${zwsp}`)
+  );
+}
+
+/** Plain-text release notes for the update popup: every line (it scrolls), long words made wrappable. */
+export function formatReleaseNotes(notes: string, maxLines = 80): string {
+  return softWrapLongWords(summariseReleaseNotes(notes, maxLines));
+}
+
+/** Smallest plausible size for the app package; anything below is an error page, not an APK. */
+const MIN_APK_BYTES = 1_000_000;
+
+async function assertDownloadedApk(localFileUri: string, expectedBytes?: number | null): Promise<void> {
+  const info = await FileSystem.getInfoAsync(localFileUri);
+  const size = info.exists && typeof (info as { size?: number }).size === 'number'
+    ? (info as { size: number }).size
+    : 0;
+  if (!info.exists || size < MIN_APK_BYTES) {
+    throw new Error('The downloaded update file is incomplete. Please try again.');
+  }
+  if (expectedBytes && expectedBytes > 0 && size !== expectedBytes) {
+    throw new Error('The download did not finish. Please check your connection and try again.');
+  }
+}
+
+/**
+ * Primes DNS, TLS and the CDN for the APK while the popup is still open, so the real download
+ * starts sooner when the person taps "Update now". Fetches a single byte and never throws.
+ */
+export function warmUpDownload(url: string): void {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = setTimeout(() => controller?.abort(), 8000);
+  fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' }, signal: controller?.signal })
+    .catch(() => undefined)
+    .finally(() => clearTimeout(timer));
+}
+
+/** Opens Android's package installer for a file that is already downloaded. */
+export async function launchApkInstaller(localFileUri: string): Promise<void> {
+  const contentUri = await FileSystem.getContentUriAsync(localFileUri);
+  await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+    data: contentUri,
+    flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+    type: 'application/vnd.android.package-archive',
+  });
+}
+
+/** Opens the system screen where the user allows this app to install updates ("Install unknown apps"). */
+export async function openInstallPermissionSettings(): Promise<void> {
+  const packageName = Constants.expoConfig?.android?.package;
+  if (Platform.OS !== 'android' || !packageName) return;
+  await IntentLauncher.startActivityAsync('android.settings.MANAGE_UNKNOWN_APP_SOURCES', {
+    data: `package:${packageName}`,
+  });
+}
+
+/**
+ * Downloads the release APK and opens the installer. Resolves with the local file so the caller
+ * can reopen the installer without downloading again.
  */
 export async function downloadAndInstallApk(
   downloadUrl: string,
-  onProgress?: (progress: DownloadProgress) => void
+  onProgress?: (progress: DownloadProgress) => void,
+  expectedBytes?: number | null
 ): Promise<string> {
-  const targetDir = FileSystem.documentDirectory || FileSystem.cacheDirectory || '';
+  const targetDir = FileSystem.cacheDirectory || FileSystem.documentDirectory || '';
   const localFileUri = `${targetDir}expense-tracker-update.apk`;
 
   try {
@@ -176,7 +242,7 @@ export async function downloadAndInstallApk(
       await FileSystem.deleteAsync(localFileUri, { idempotent: true });
     }
   } catch {
-    // Non-blocking cleanup
+    // a stale file that cannot be removed is overwritten by the download
   }
 
   const downloadResumable = FileSystem.createDownloadResumable(
@@ -201,12 +267,8 @@ export async function downloadAndInstallApk(
   }
 
   if (Platform.OS === 'android') {
-    const contentUri = await FileSystem.getContentUriAsync(localFileUri);
-    await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-      data: contentUri,
-      flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
-      type: 'application/vnd.android.package-archive',
-    });
+    await assertDownloadedApk(localFileUri, expectedBytes);
+    await launchApkInstaller(localFileUri);
   } else {
     await Linking.openURL(downloadUrl);
   }

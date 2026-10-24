@@ -19,6 +19,8 @@ import {
   releaseInfoFromGitHub,
   saveCachedUpdate,
   summariseReleaseNotes,
+  formatReleaseNotes,
+  softWrapLongWords,
   withCurrentVersion,
 } from '../services/appUpdate';
 
@@ -108,5 +110,26 @@ describe('summariseReleaseNotes', () => {
 describe('push route', () => {
   it('matches the route the server sends', () => {
     expect(APP_UPDATE_ROUTE).toBe('app-update');
+  });
+});
+
+describe('release notes layout', () => {
+  it('lets long unbroken words wrap instead of running off the screen', () => {
+    const url = 'https://github.com/Yoge-2004/expense-tracker/compare/v1.0.6...v1.0.7-with-a-very-long-suffix';
+    const wrapped = softWrapLongWords(`Full changelog: ${url}`);
+
+    expect(wrapped.replace(/\u200B/g, '')).toBe(`Full changelog: ${url}`);
+    wrapped.split(/\s+/).forEach((word) => {
+      word.split('\u200B').forEach((piece) => expect(piece.length).toBeLessThanOrEqual(25));
+    });
+  });
+
+  it('leaves ordinary text untouched', () => {
+    expect(softWrapLongWords('Faster ledger and smoother theme switch')).toBe('Faster ledger and smoother theme switch');
+  });
+
+  it('keeps every line of the notes so the popup can scroll', () => {
+    const many = Array.from({ length: 20 }, (_, i) => `- change ${i + 1}`).join('\n');
+    expect(formatReleaseNotes(many).split('\n')).toHaveLength(20);
   });
 });
