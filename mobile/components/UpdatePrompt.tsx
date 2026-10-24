@@ -27,6 +27,7 @@ import {
   formatReleaseNotes,
   launchApkInstaller,
   openInstallPermissionSettings,
+  warmUpDownload,
 } from '../services/appUpdate';
 
 interface UpdatePromptProps {
@@ -47,6 +48,7 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
   const c = Colors[theme];
   const [busy, setBusy] = useState(false);
   const [percent, setPercent] = useState(0);
+  const [bytes, setBytes] = useState({ done: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
   const [installerFile, setInstallerFile] = useState<string | null>(null);
   const { height: windowHeight } = useWindowDimensions();
@@ -55,10 +57,18 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
     if (!visible) {
       setBusy(false);
       setPercent(0);
+      setBytes({ done: 0, total: 0 });
       setError(null);
       setInstallerFile(null);
     }
   }, [visible]);
+
+  const apkUrl = info?.apkDownloadUrl;
+  useEffect(() => {
+    if (visible && apkUrl && Platform.OS === 'android') {
+      warmUpDownload(apkUrl);
+    }
+  }, [visible, apkUrl]);
 
   if (!info) {
     return null;
@@ -80,10 +90,15 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
     }
     setBusy(true);
     setError(null);
+    setPercent(0);
+    setBytes({ done: 0, total: 0 });
     try {
       const localFile = await downloadAndInstallApk(
         info.apkDownloadUrl,
-        (progress) => setPercent(progress.percent),
+        (progress) => {
+          setPercent(progress.percent);
+          setBytes({ done: progress.downloadedBytes, total: progress.totalBytes });
+        },
         info.apkSize
       );
       // Stay open: if Android did not show its installer the person needs the options below.
@@ -155,7 +170,9 @@ export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptPro
             <View style={styles.progress} accessibilityLiveRegion="polite">
               <ActivityIndicator color={c.primary} />
               <Text style={[styles.progressText, { color: c.ink }]}>
-                Downloading… {Math.round(percent)}%
+                {bytes.done > 0
+                  ? `Downloading… ${Math.round(percent)}%  ·  ${formatSize(bytes.done)}${bytes.total > 0 ? ` of ${formatSize(bytes.total)}` : ''}`
+                  : 'Connecting to GitHub…'}
               </Text>
               <View style={[styles.bar, { backgroundColor: c.border }]}>
                 <View style={[styles.barFill, { backgroundColor: c.primary, width: `${Math.min(100, Math.max(0, percent))}%` }]} />

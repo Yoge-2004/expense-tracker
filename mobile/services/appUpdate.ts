@@ -193,6 +193,18 @@ async function assertDownloadedApk(localFileUri: string, expectedBytes?: number 
   }
 }
 
+/**
+ * Primes DNS, TLS and the CDN for the APK while the popup is still open, so the real download
+ * starts sooner when the person taps "Update now". Fetches a single byte and never throws.
+ */
+export function warmUpDownload(url: string): void {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = setTimeout(() => controller?.abort(), 8000);
+  fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' }, signal: controller?.signal })
+    .catch(() => undefined)
+    .finally(() => clearTimeout(timer));
+}
+
 /** Opens Android's package installer for a file that is already downloaded. */
 export async function launchApkInstaller(localFileUri: string): Promise<void> {
   const contentUri = await FileSystem.getContentUriAsync(localFileUri);

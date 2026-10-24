@@ -25,7 +25,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: jest.fn(), setItem: jest.fn() },
 }));
 
-import { downloadAndInstallApk, openInstallPermissionSettings } from '../services/appUpdate';
+import { downloadAndInstallApk, openInstallPermissionSettings, warmUpDownload } from '../services/appUpdate';
 
 const APK_BYTES = 52_000_000;
 
@@ -88,5 +88,26 @@ describe('in-app APK install', () => {
     expect(mockStartActivity).toHaveBeenCalledWith('android.settings.MANAGE_UNKNOWN_APP_SOURCES', {
       data: 'package:com.example.expensetracker',
     });
+  });
+});
+
+describe('download warm-up', () => {
+  it('fetches a single byte so the real download starts sooner', () => {
+    const fetchMock = jest.fn().mockResolvedValue({});
+    (global as unknown as { fetch: unknown }).fetch = fetchMock;
+
+    warmUpDownload('https://x.test/app.apk');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://x.test/app.apk',
+      expect.objectContaining({ method: 'GET', headers: { Range: 'bytes=0-0' } })
+    );
+  });
+
+  it('never throws when the network is down', async () => {
+    (global as unknown as { fetch: unknown }).fetch = jest.fn().mockRejectedValue(new Error('offline'));
+
+    expect(() => warmUpDownload('https://x.test/app.apk')).not.toThrow();
+    await Promise.resolve();
   });
 });
