@@ -316,10 +316,12 @@ test.describe('Currency selector', () => {
   });
 
   test('has currency wrapper', async ({ page }) => {
+    await openProfileMenu(page);
     await expect(page.locator('#dashCurrencyWrapper')).toBeVisible();
   });
 
   test('has currency label', async ({ page }) => {
+    await openProfileMenu(page);
     await expect(page.locator('#dashCurrencyLabel')).toBeVisible();
   });
 });

@@ -17,7 +17,7 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * The tests assume:
  *   - The backend is running on API_URL (default :8080)
- *   - The frontend is served on BASE_URL (default :5500 — use `python -m http.server 5500` in frontend/)
+ *   - The frontend is served on BASE_URL (default :5500)
  *   - The demo user exists: demo@expensetracker.com / Demo1234!
  */
 export default defineConfig({
@@ -41,6 +41,12 @@ export default defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 10_000,
     navigationTimeout: 15_000,
+  },
+  webServer: {
+    command: 'python3 -m http.server 5500 --directory ../frontend',
+    url: 'http://localhost:5500/index.html',
+    reuseExistingServer: true,
+    timeout: 30_000,
   },
   projects: [
     {

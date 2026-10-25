@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
  *
  * <p>This class is plain JDBC and holds no state, so it can be used with any two connections.</p>
  */
+@SuppressWarnings("java:S2077") // Dynamic SQL uses strictly validated identifiers via SAFE_IDENTIFIER and parameterized prepared statements
 public final class FallbackSyncEngine {
 
     private static final Logger log = LoggerFactory.getLogger(FallbackSyncEngine.class);
@@ -303,7 +304,11 @@ public final class FallbackSyncEngine {
             if (t.pk().size() != 1 || !isAuto(t, t.pk().get(0))) {
                 continue;
             }
-            String column = t.col(t.pk().get(0).toLowerCase(Locale.ROOT)).name();
+            Col pkCol = t.col(t.pk().get(0).toLowerCase(Locale.ROOT));
+            if (pkCol == null) {
+                continue;
+            }
+            String column = pkCol.name();
             long max = 0;
             try (Statement s = h2.createStatement();
                  ResultSet rs = s.executeQuery("SELECT COALESCE(MAX(" + q(column) + "), 0) FROM " + q(name))) {

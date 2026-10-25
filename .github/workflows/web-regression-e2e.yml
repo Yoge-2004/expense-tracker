@@ -38,9 +38,10 @@ jobs:
 
       - name: Start static frontend server
         run: |
-          python3 -m http.server 5500 --directory frontend > /tmp/expense-tracker-frontend.log 2>&1 &
+          nohup python3 -m http.server 5500 --directory frontend > /tmp/expense-tracker-frontend.log 2>&1 &
           for i in $(seq 1 20); do
             if curl --silent --fail http://localhost:5500/index.html >/dev/null; then
+              echo "Frontend server successfully listening on http://localhost:5500"
               exit 0
             fi
             sleep 1
@@ -67,7 +68,7 @@ jobs:
         env:
           CI: true
           BASE_URL: http://localhost:5500
-        run: npx playwright test tests/dashboard.spec.ts tests/ui-regressions.spec.ts tests/login.spec.ts tests/expenses.spec.ts tests/budgets.spec.ts tests/incomes.spec.ts --project=chromium
+        run: npx playwright test tests/dashboard.spec.ts tests/powerbi-dashboard.spec.ts tests/ui-regressions.spec.ts tests/login.spec.ts tests/expenses.spec.ts tests/budgets.spec.ts tests/incomes.spec.ts --project=chromium
 
       - name: Run mobile UI regressions on Pixel 7
         working-directory: e2e

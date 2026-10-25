@@ -26,16 +26,51 @@
         return node;
     }
 
-    function timeAgo(value) {
-        const then = new Date(value);
+    /**
+     * Parses notification timestamps safely into client-local Date objects.
+     * If an ISO string without timezone or 'Z' is received, normalizes by appending 'Z'
+     * so JavaScript parses as UTC and displays in the user's local timezone.
+     */
+    function parseNotificationDate(value) {
+        if (!value) return new Date(NaN);
+        if (value instanceof Date) return value;
+        if (typeof value === "number") return new Date(value);
+        const str = String(value).trim();
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str) && !/[Zz]|[+-]\d{2}(?::?\d{2})?$/.test(str)) {
+            return new Date(str + "Z");
+        }
+        return new Date(str);
+    }
+
+    function formatNotificationTime(value) {
+        const then = parseNotificationDate(value);
         if (Number.isNaN(then.getTime())) return "";
-        const minutes = Math.round((Date.now() - then.getTime()) / 60000);
-        if (minutes < 1) return "just now";
-        if (minutes < 60) return `${minutes}m ago`;
+        const now = Date.now();
+        const diffMs = now - then.getTime();
+        const minutes = Math.round(diffMs / 60000);
+        const timeStr = then.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+        if (minutes < 1) return `just now · ${timeStr}`;
+        if (minutes < 60) return `${minutes}m ago · ${timeStr}`;
         const hours = Math.round(minutes / 60);
-        if (hours < 24) return `${hours}h ago`;
+        if (hours < 24) return `${hours}h ago · ${timeStr}`;
         const days = Math.round(hours / 24);
-        return days === 1 ? "yesterday" : then.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+        if (days === 1) return `yesterday · ${timeStr}`;
+        return `${then.toLocaleDateString(undefined, { day: "numeric", month: "short" })} · ${timeStr}`;
+    }
+
+    function formatNotificationTooltip(value) {
+        const then = parseNotificationDate(value);
+        if (Number.isNaN(then.getTime())) return "";
+        return then.toLocaleString(undefined, {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        });
     }
 
     function setBadge(count) {
@@ -65,10 +100,19 @@
             // Sliding foreground container
             const foreground = el("div", "inbox-item-foreground");
 
+            const timeSpan = el("span", "inbox-item-time", formatNotificationTime(item.createdAt));
+            const tooltip = formatNotificationTooltip(item.createdAt);
+            if (tooltip) {
+                timeSpan.setAttribute("title", tooltip);
+            }
+
             const button = el("button", "inbox-item-button");
             button.type = "button";
-            button.append(el("span", "inbox-item-title", item.title), el("span", "inbox-item-body", item.body),
-                el("span", "inbox-item-time", timeAgo(item.createdAt)));
+            button.append(
+                el("span", "inbox-item-title", item.title),
+                el("span", "inbox-item-body", item.body),
+                timeSpan
+            );
             button.addEventListener("click", () => openItem(item));
             foreground.append(button);
 

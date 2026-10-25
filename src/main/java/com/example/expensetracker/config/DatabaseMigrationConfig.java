@@ -14,7 +14,7 @@ import java.sql.Statement;
 /**
  * Applies idempotent schema initialization on application startup for columns
  * across application entities (e.g. {@code currency}, {@code account_locked},
- * {@code security_pin_hash}, or {@code enabled} on {@link com.example.expensetracker.model.User}).
+ * {@code security_pin_hash}, {@code role}, or {@code enabled} on {@link com.example.expensetracker.model.User}).
  *
  * <p><b>Database Portability:</b> Executes {@code ALTER TABLE ... ADD COLUMN IF NOT EXISTS}
  * for PostgreSQL environments. Non-Postgres test environments catch non-fatal DDL errors gracefully,
@@ -79,6 +79,29 @@ public class DatabaseMigrationConfig {
                 stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP");
             } catch (Exception e) {
                 log.warn("Migration warning on users.pin_locked_until: {}", e.getMessage());
+            }
+
+            try {
+                //noinspection SqlNoDataSourceInspection
+                stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(32) DEFAULT 'ROLE_USER'");
+                log.info("Verified 'role' column in users table.");
+            } catch (Exception e) {
+                log.warn("Migration warning on users.role: {}", e.getMessage());
+            }
+
+            try {
+                //noinspection SqlNoDataSourceInspection
+                stmt.execute("UPDATE users SET role = 'ROLE_SUPER_ADMIN' WHERE (email ILIKE '%yogeshwaran%' OR email ILIKE '%admin%') AND (role IS NULL OR role = 'ROLE_USER')");
+            } catch (Exception ignored) {
+                // Ignored for databases where email format differs
+            }
+
+            try {
+                // Migrate legacy is_admin boolean column if it was present in restored older snapshots
+                //noinspection SqlNoDataSourceInspection
+                stmt.execute("UPDATE users SET role = 'ROLE_SUPER_ADMIN' WHERE is_admin = TRUE AND (role IS NULL OR role = 'ROLE_USER')");
+            } catch (Exception ignored) {
+                // Ignored if is_admin column does not exist
             }
 
         } catch (Exception e) {

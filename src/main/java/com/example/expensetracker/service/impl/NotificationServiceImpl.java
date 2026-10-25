@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -72,7 +73,8 @@ public class NotificationServiceImpl implements NotificationService {
         List<NotificationDto> items = notificationRepository
                 .findByUserOrderByCreatedAtDesc(user, PageRequest.of(0, size)).stream()
                 .map(n -> new NotificationDto(n.getId(), n.getType(), n.getTitle(), n.getBody(), n.getRoute(),
-                        n.getReadAt() != null, n.getCreatedAt()))
+                        n.getReadAt() != null,
+                        n.getCreatedAt() != null ? n.getCreatedAt().toInstant(ZoneOffset.UTC) : null))
                 .toList();
         return new NotificationInboxDto(notificationRepository.countByUserAndReadAtIsNull(user), items);
     }
@@ -83,7 +85,7 @@ public class NotificationServiceImpl implements NotificationService {
         List<AppNotification> targets = ids == null || ids.isEmpty()
                 ? notificationRepository.findByUserAndReadAtIsNull(user)
                 : notificationRepository.findByUserAndIdIn(user, ids);
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         int changed = 0;
         for (AppNotification n : targets) {
             if (n.getReadAt() == null) {
@@ -157,7 +159,7 @@ public class NotificationServiceImpl implements NotificationService {
         device.setToken(token);
         device.setPlatform(normalisePlatform(platform));
         device.setAppVersion(cleanVersion(appVersion));
-        device.setLastSeenAt(LocalDateTime.now());
+        device.setLastSeenAt(LocalDateTime.now(ZoneOffset.UTC));
         deviceTokenRepository.save(device);
     }
 

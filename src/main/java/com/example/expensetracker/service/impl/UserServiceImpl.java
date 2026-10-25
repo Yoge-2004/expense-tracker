@@ -18,7 +18,6 @@ import java.util.Optional;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
@@ -32,6 +31,64 @@ public class UserServiceImpl implements UserService {
     private final SavingsGoalRepository savingsGoalRepository;
     private final MonthlyReportLogRepository reportLogRepository;
     private final WebAuthnCredentialRepository webAuthnCredentialRepository;
+    private final AppNotificationRepository appNotificationRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
+    private final LoanAdjustmentRepository loanAdjustmentRepository;
+    private final MlFeedbackRepository mlFeedbackRepository;
+    private final NotificationPreferenceRepository notificationPreferenceRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public UserServiceImpl(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            ExpenseRepository expenseRepository,
+            CategoryRepository categoryRepository,
+            BudgetRepository budgetRepository,
+            RecurringExpenseRepository recurringRepository,
+            IncomeRepository incomeRepository,
+            SavingsGoalRepository savingsGoalRepository,
+            MonthlyReportLogRepository reportLogRepository,
+            WebAuthnCredentialRepository webAuthnCredentialRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) AppNotificationRepository appNotificationRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) DeviceTokenRepository deviceTokenRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) LoanAdjustmentRepository loanAdjustmentRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) MlFeedbackRepository mlFeedbackRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) NotificationPreferenceRepository notificationPreferenceRepository) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.expenseRepository = expenseRepository;
+        this.categoryRepository = categoryRepository;
+        this.budgetRepository = budgetRepository;
+        this.recurringRepository = recurringRepository;
+        this.incomeRepository = incomeRepository;
+        this.savingsGoalRepository = savingsGoalRepository;
+        this.reportLogRepository = reportLogRepository;
+        this.webAuthnCredentialRepository = webAuthnCredentialRepository;
+        this.appNotificationRepository = appNotificationRepository;
+        this.deviceTokenRepository = deviceTokenRepository;
+        this.loanAdjustmentRepository = loanAdjustmentRepository;
+        this.mlFeedbackRepository = mlFeedbackRepository;
+        this.notificationPreferenceRepository = notificationPreferenceRepository;
+    }
+
+    /**
+     * Backward-compatible constructor for testing without auxiliary repositories.
+     */
+    public UserServiceImpl(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            ExpenseRepository expenseRepository,
+            CategoryRepository categoryRepository,
+            BudgetRepository budgetRepository,
+            RecurringExpenseRepository recurringRepository,
+            IncomeRepository incomeRepository,
+            SavingsGoalRepository savingsGoalRepository,
+            MonthlyReportLogRepository reportLogRepository,
+            WebAuthnCredentialRepository webAuthnCredentialRepository) {
+        this(userRepository, passwordEncoder, expenseRepository, categoryRepository,
+                budgetRepository, recurringRepository, incomeRepository, savingsGoalRepository,
+                reportLogRepository, webAuthnCredentialRepository, null, null, null, null, null);
+    }
 
     @Override
     @Transactional
@@ -221,6 +278,21 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         log.warn("Initiating full cascading account deletion for userId={}", userId);
+        if (appNotificationRepository != null) {
+            appNotificationRepository.deleteByUser(user);
+        }
+        if (deviceTokenRepository != null) {
+            deviceTokenRepository.deleteByUser(user);
+        }
+        if (loanAdjustmentRepository != null) {
+            loanAdjustmentRepository.deleteByUser(user);
+        }
+        if (mlFeedbackRepository != null) {
+            mlFeedbackRepository.deleteByUser(user);
+        }
+        if (notificationPreferenceRepository != null) {
+            notificationPreferenceRepository.deleteByUser(user);
+        }
         reportLogRepository.deleteByUserId(userId);
         webAuthnCredentialRepository.deleteByUserId(userId);
         expenseRepository.deleteByUserId(userId);

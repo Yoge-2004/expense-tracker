@@ -1654,6 +1654,51 @@ importFileInput?.addEventListener("change", async (e) => {
     }
 });
 
+// --- BANK STATEMENT RECONCILIATION CONTROLS ---
+const reconcileStatementBtn = document.getElementById("reconcileStatementBtn");
+const reconcileStatementInput = document.getElementById("reconcileStatementInput");
+
+reconcileStatementBtn?.addEventListener("click", () => reconcileStatementInput?.click());
+
+reconcileStatementInput?.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        TransferDock.start("Reconciling bank statement...", "import");
+        const token = getAuthToken();
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(`${API_BASE_URL}/expenses/user/${userId}/import/statement`, {
+            method: "POST",
+            headers,
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.message || "Failed to reconcile bank statement");
+        }
+
+        const data = await res.json();
+        TransferDock.complete(`Reconciled: ${data.reconciledCount || 0} matched, +${data.newExpensesCount || 0} debits, +${data.newIncomesCount || 0} credits`);
+        showToast(data.message || "Bank statement reconciled successfully!", "success");
+
+        if (typeof window.clearApiCache === "function") window.clearApiCache();
+        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+        await loadDashboard(true);
+    } catch (err) {
+        TransferDock.fail(err.message || "Reconciliation failed");
+        showToast(err.message, "error");
+    } finally {
+        reconcileStatementInput.value = "";
+    }
+});
+
 // --- 7. SUBSCRIPTION MANAGER (View, Edit, Delete) ---
 
 // Open Modal

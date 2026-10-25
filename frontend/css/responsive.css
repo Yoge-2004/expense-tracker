@@ -1101,10 +1101,26 @@ body {
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        font-size: 12px !important;
+        font-size: 11.5px !important;
         font-weight: 700 !important;
-        letter-spacing: -0.01em;
+        letter-spacing: -0.02em;
         text-align: center;
+    }
+
+    @media (max-width: 320px) {
+        .top-bar-actions {
+            column-gap: 6px !important;
+        }
+        .top-bar-actions > #openModalBtn,
+        .top-bar-actions > #openIncomeModalBtn {
+            padding: 0 4px !important;
+            gap: 3px !important;
+        }
+        .top-bar-actions > #openModalBtn > span,
+        .top-bar-actions > #openIncomeModalBtn > span {
+            font-size: 10px !important;
+            letter-spacing: -0.035em !important;
+        }
     }
     .top-bar-actions > .top-bar-utility-group {
         grid-column: 1 !important;

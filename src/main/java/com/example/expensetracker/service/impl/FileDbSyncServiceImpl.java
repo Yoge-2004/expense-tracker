@@ -68,7 +68,7 @@ public class FileDbSyncServiceImpl implements FileDbSyncService {
         Map<String, Object> result = new LinkedHashMap<>();
         // Back up first, then read diagnostics, so lastError/lastSuccessAt in the
         // response describe the attempt that was just made.
-        boolean success = failoverService.backupCurrentDatabase();
+        boolean success = failoverService.forceBackupCurrentDatabase();
         Map<String, Object> diag = failoverService.getDiagnostics();
         result.put("status", success ? "success" : "error");
         result.put("diagnostics", diag);

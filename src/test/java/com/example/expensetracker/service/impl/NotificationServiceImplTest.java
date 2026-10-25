@@ -1,5 +1,6 @@
 package com.example.expensetracker.service.impl;
 
+import com.example.expensetracker.dto.NotificationDto;
 import com.example.expensetracker.dto.NotificationInboxDto;
 import com.example.expensetracker.dto.NotificationPreferenceDto;
 import com.example.expensetracker.model.*;
@@ -19,6 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -139,6 +142,31 @@ class NotificationServiceImplTest {
 
             assertEquals(4L, inbox.unreadCount());
             assertTrue(inbox.items().isEmpty());
+        }
+
+        @Test
+        @DisplayName("converts entity createdAt LocalDateTime to UTC Instant in NotificationDto")
+        void mapsCreatedAtToUtcInstant() {
+            AppNotification n = new AppNotification();
+            n.setId(10L);
+            n.setType("SYSTEM");
+            n.setTitle("Title");
+            n.setBody("Body");
+            n.setRoute("dashboard");
+            LocalDateTime ldt = LocalDateTime.of(2026, 10, 24, 10, 30, 0);
+            n.setCreatedAt(ldt);
+
+            when(notificationRepository.findByUserOrderByCreatedAtDesc(user, PageRequest.of(0, 100)))
+                    .thenReturn(List.of(n));
+            when(notificationRepository.countByUserAndReadAtIsNull(user)).thenReturn(1L);
+
+            NotificationInboxDto inbox = service.getInbox(user, 100);
+
+            assertEquals(1, inbox.items().size());
+            NotificationDto item = inbox.items().get(0);
+            assertNotNull(item.createdAt());
+            assertEquals(ldt.toInstant(ZoneOffset.UTC), item.createdAt());
+            assertEquals("2026-10-24T10:30:00Z", item.createdAt().toString());
         }
 
         @Test

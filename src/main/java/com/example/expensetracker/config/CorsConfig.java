@@ -21,7 +21,7 @@ import java.util.Set;
  *
  * <p>Origin reflection is deliberately omitted to prevent unauthorized sites
  * from mounting authenticated credential theft or CSRF against local deployments.
- * Wildcard origin patterns are intentionally not used.</p>
+ * Wildcard origin patterns are intentionally not used for public cloud hosting domains.</p>
  */
 @Configuration
 public class CorsConfig {
@@ -62,8 +62,7 @@ public class CorsConfig {
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
-                "http://10.0.2.2:*",
-                "https://*.netlify.app"
+                "http://10.0.2.2:*"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of(

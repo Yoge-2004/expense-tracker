@@ -35,4 +35,10 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM Income i WHERE i.user = :user")
     BigDecimal sumTotalIncomesAmountByUser(@Param("user") User user);
+
+    @Query("SELECT i FROM Income i ORDER BY i.incomeDate DESC, i.id DESC")
+    org.springframework.data.domain.Page<Income> findAllIncomes(org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT i FROM Income i WHERE i.user = :user ORDER BY i.incomeDate DESC, i.id DESC")
+    org.springframework.data.domain.Page<Income> findByUserIncomes(@Param("user") User user, org.springframework.data.domain.Pageable pageable);
 }

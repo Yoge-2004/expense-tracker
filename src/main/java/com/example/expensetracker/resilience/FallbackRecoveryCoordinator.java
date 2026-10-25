@@ -227,10 +227,21 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
     }
 
     @Override
+    @SuppressWarnings("java:S5443") // Temp file is created with owner-only POSIX permissions (rw-------) with permission fallback
     public void afterRecovery(SyncResult lastResult) {
         Path export = null;
         try {
-            export = Files.createTempFile("fallback-refresh-", ".sqlite");
+            try {
+                java.nio.file.attribute.FileAttribute<java.util.Set<java.nio.file.attribute.PosixFilePermission>> attr =
+                        java.nio.file.attribute.PosixFilePermissions.asFileAttribute(
+                                java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"));
+                export = Files.createTempFile("fallback-refresh-", ".sqlite", attr);
+            } catch (UnsupportedOperationException | SecurityException e) {
+                export = Files.createTempFile("fallback-refresh-", ".sqlite");
+                java.io.File f = export.toFile();
+                f.setReadable(true, true);
+                f.setWritable(true, true);
+            }
             int rows = snapshotService.exportCurrentDatabase(export);
             if (rows > 0) {
                 refreshFallback(export);
@@ -304,7 +315,11 @@ public class FallbackRecoveryCoordinator implements ResilientRoutingDataSource.R
         }
     }
 
+    @SuppressWarnings("java:S2077")
     private void repairPgColumn(Connection pg, java.sql.DatabaseMetaData md, String table, String col, boolean clearEphemeral) {
+        if (table == null || !table.matches("^[a-zA-Z0-9_]+$") || col == null || !col.matches("^[a-zA-Z0-9_]+$")) {
+            throw new IllegalArgumentException("Invalid SQL identifier for column repair: " + table + "." + col);
+        }
         try (java.sql.ResultSet rs = md.getColumns(pg.getCatalog(), pg.getSchema(), table, col)) {
             if (rs.next()) {
                 String typeName = rs.getString("TYPE_NAME");

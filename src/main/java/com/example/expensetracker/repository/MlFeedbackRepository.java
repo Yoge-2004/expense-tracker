@@ -19,4 +19,6 @@ public interface MlFeedbackRepository extends JpaRepository<MlFeedback, Long> {
     Page<MlFeedback> findAllByOrderByIdDesc(Pageable pageable);
 
     Optional<MlFeedback> findByFeedbackId(String feedbackId);
+
+    void deleteByUser(com.example.expensetracker.model.User user);
 }

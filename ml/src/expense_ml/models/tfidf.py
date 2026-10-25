@@ -51,9 +51,10 @@ class TfidfCategoryModel:
         if len(classes) < 2:
             raise ValueError("TfidfCategoryModel.fit requires at least two distinct labels.")
         clf = LogisticRegression(
+            C=1.5,
             solver="saga",
-            max_iter=100,
-            tol=1e-3,
+            max_iter=400,
+            tol=1e-4,
             class_weight="balanced",
             random_state=seed,
         )

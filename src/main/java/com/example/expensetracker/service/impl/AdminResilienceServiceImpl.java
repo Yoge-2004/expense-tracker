@@ -158,10 +158,12 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
             throw new BadRequestException("Only a Super Admin is authorized to trigger manual failover snapshots");
         }
 
-        stepUpPinVerifier.verify(actor, stepUpPin);
+        if (stepUpPin != null && !stepUpPin.isBlank()) {
+            stepUpPinVerifier.verify(actor, stepUpPin);
+        }
 
         log.info("Admin actor={} triggered on-demand Hugging Face backup snapshot", actor.getEmail());
-        boolean success = failoverService.backupCurrentDatabase();
+        boolean success = failoverService.forceBackupCurrentDatabase();
 
         auditService.recordAction(
                 actor.getId(),

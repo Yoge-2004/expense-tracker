@@ -44,7 +44,9 @@ public final class HuggingFaceFileClient {
     private static final String REPO_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*\\z";
     /** e.g. {@code database/expense_tracker.sqlite.enc} — no traversal, no query chars.
      *  Same \z note as REPO_PATTERN above. */
-    private static final String PATH_PATTERN = "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*\\z";
+    private static final String PATH_PATTERN = "^[A-Za-z0-9._-]++(?:/[A-Za-z0-9._-]++)*+\\z";
+    private static final java.util.regex.Pattern REPO_REGEX = java.util.regex.Pattern.compile(REPO_PATTERN);
+    private static final java.util.regex.Pattern PATH_REGEX = java.util.regex.Pattern.compile(PATH_PATTERN);
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(120);
@@ -160,6 +162,9 @@ public final class HuggingFaceFileClient {
                     .build();
             HttpResponse<String> commitResponse = HTTP.send(commitRequest, HttpResponse.BodyHandlers.ofString());
             return commitResponse.statusCode() >= 200 && commitResponse.statusCode() < 300;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
         } catch (Exception e) {
             return false;
         }
@@ -248,6 +253,9 @@ public final class HuggingFaceFileClient {
                 }
             }
             return "Hugging Face whoami returned HTTP " + response.statusCode();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "Failed to verify HF_TOKEN with Hugging Face API: interrupted";
         } catch (Exception e) {
             return "Failed to verify HF_TOKEN with Hugging Face API: " + e.getMessage();
         }
@@ -316,14 +324,14 @@ public final class HuggingFaceFileClient {
     /** Package-private (not private) so validation can be unit-tested directly,
      *  with zero risk of a test accidentally reaching the network. */
     static String requireRepo(String repo) {
-        if (repo == null || !repo.matches(REPO_PATTERN)) {
+        if (repo == null || !REPO_REGEX.matcher(repo).matches()) {
             throw new IllegalArgumentException("Invalid Hugging Face repository identifier");
         }
         return repo;
     }
 
     static String requirePath(String path) {
-        if (path == null || !path.matches(PATH_PATTERN) || path.contains("..")) {
+        if (path == null || !PATH_REGEX.matcher(path).matches() || path.contains("..")) {
             throw new IllegalArgumentException("Invalid Hugging Face file path");
         }
         return path;

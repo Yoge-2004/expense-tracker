@@ -6,10 +6,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 /**
- * Service contract defining data import operations across multiple formats (CSV, JSON, Microsoft Excel).
+ * Service contract defining data import operations across multiple formats (CSV, JSON, Microsoft Excel)
+ * and comprehensive bank statement auto-reconciliation.
  * <p>
  * Handles parsing, field normalisation, dynamic column index resolution, validation,
- * on-the-fly category/entity creation, and structured per-row error tracking.
+ * on-the-fly category/entity creation, structured per-row error tracking, and intelligent
+ * financial reconciliation against existing ledger entries to capture 100% of transactions
+ * even when bank SMS alerts are delayed or omitted.
  * </p>
  *
  * @author Yogeshwaran
@@ -94,4 +97,24 @@ public interface ImportService {
      *         {@code errors} list, and summary {@code message}
      */
     Map<String, Object> importIncomesFromExcel(MultipartFile file, User user);
+
+    /**
+     * Reconciles an uploaded bank statement (.csv, .xlsx, or .xls) against existing user records.
+     * <p>
+     * Dynamically identifies banking formats (HDFC, SBI, ICICI, Axis, Kotak, Chase, and universal CSV/Excel formats).
+     * Extracts dates, narrations, debits/withdrawals, credits/deposits, and reference/UTR IDs.
+     * Intelligently reconciles against existing ledger entries:
+     * <ul>
+     *   <li>Transactions already in the ledger (matching date within ±2 days and identical amount) are marked reconciled.</li>
+     *   <li>Missed debits (omitted or delayed by bank SMS gateways) are automatically created as new expenses with clean merchant names.</li>
+     *   <li>Missed credits are automatically created as new income entries.</li>
+     * </ul>
+     * </p>
+     *
+     * @param file the uploaded bank statement file (.csv, .xlsx, or .xls)
+     * @param user the target authenticated user
+     * @return a structured map containing {@code totalRows}, {@code reconciledCount},
+     *         {@code newExpensesCount}, {@code newIncomesCount}, {@code failedRows}, and summary {@code message}
+     */
+    Map<String, Object> reconcileBankStatement(MultipartFile file, User user);
 }

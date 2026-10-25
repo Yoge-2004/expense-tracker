@@ -27,6 +27,7 @@ import { ImmersiveLoader } from '../components/ImmersiveLoader';
 import { getNotificationSoundEnabled, setNotificationSoundEnabled } from '../services/notifications';
 import { APP_UPDATE_ROUTE } from '../services/appUpdate';
 import { useUpdate } from '../context/UpdateContext';
+import { formatNotificationTime } from '../utils/notificationDate';
 
 interface NotificationItem {
   id: number;
@@ -47,23 +48,12 @@ interface Preference {
 }
 
 /** Where tapping a notification goes. Anything not listed is only marked as read. */
-const ROUTES: Record<string, string> = { budgets: '/(tabs)',
+const ROUTES: Record<string, string> = {
+  budgets: '/(tabs)',
   goals: '/(tabs)',
   dashboard: '/(tabs)',
   subscriptions: '/(tabs)/subscriptions',
 };
-
-function timeAgo(value: string): string {
-  const then = new Date(value);
-  if (Number.isNaN(then.getTime())) return '';
-  const minutes = Math.round((Date.now() - then.getTime()) / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.round(hours / 24);
-  return days === 1 ? 'yesterday' : then.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-}
 
 interface SwipeableItemProps {
   item: NotificationItem;
@@ -192,7 +182,7 @@ const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: 
             </View>
           </View>
           <Text style={[styles.itemBody, { color: c.textMuted }]}>{item.body}</Text>
-          <Text style={[styles.itemTime, { color: c.textMuted }]}>{timeAgo(item.createdAt)}</Text>
+          <Text style={[styles.itemTime, { color: c.textMuted }]}>{formatNotificationTime(item.createdAt)}</Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -352,7 +342,8 @@ export default function NotificationsScreen() {
           thumbColor={soundEnabled ? '#2563EB' : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
         />
       </View>
-      {prefs.map((pref) => (        <View key={pref.type} style={[styles.prefRow, { borderBottomColor: c.border }]}>
+      {prefs.map((pref) => (
+        <View key={pref.type} style={[styles.prefRow, { borderBottomColor: c.border }]}>
           <View style={styles.prefText}>
             <Text style={[styles.prefLabel, { color: c.text }]}>{pref.label}</Text>
             <Text style={[styles.prefHint, { color: c.textMuted }]}>{pref.description}</Text>

@@ -1,5 +1,6 @@
 package com.example.expensetracker.security;
 
+import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,9 +32,14 @@ class UserSecurityTest {
     }
 
     private void authenticateUser(Long userId, String email) {
+        authenticateUser(userId, email, Role.ROLE_USER);
+    }
+
+    private void authenticateUser(Long userId, String email, Role role) {
         User user = new User();
         user.setId(userId);
         user.setEmail(email);
+        user.setRole(role);
         CustomUserDetails cud = new CustomUserDetails(user);
 
         UsernamePasswordAuthenticationToken auth =
@@ -101,6 +107,22 @@ class UserSecurityTest {
                 userSecurity.validateUserAccess(99L)
         );
         assertEquals("Access denied.", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("validateUserAccess succeeds when caller is ROLE_ADMIN targeting another user")
+    void validateUserAccess_adminRole_succeedsForOtherUser() {
+        authenticateUser(1L, "admin@example.com", Role.ROLE_ADMIN);
+
+        assertDoesNotThrow(() -> userSecurity.validateUserAccess(99L));
+    }
+
+    @Test
+    @DisplayName("validateUserAccess succeeds when caller is ROLE_SUPER_ADMIN targeting another user")
+    void validateUserAccess_superAdminRole_succeedsForOtherUser() {
+        authenticateUser(1L, "superadmin@example.com", Role.ROLE_SUPER_ADMIN);
+
+        assertDoesNotThrow(() -> userSecurity.validateUserAccess(99L));
     }
 
     @Test

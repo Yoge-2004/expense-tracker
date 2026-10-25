@@ -26,6 +26,16 @@ public interface HuggingFaceDatabaseFailoverService {
     boolean backupCurrentDatabase();
 
     /**
+     * Forcefully creates and uploads an encrypted database snapshot to Hugging Face,
+     * overriding safety guards (e.g. unmerged fallback writes).
+     *
+     * @return {@code true} if successful, {@code false} otherwise
+     */
+    default boolean forceBackupCurrentDatabase() {
+        return backupCurrentDatabase();
+    }
+
+    /**
      * Diagnoses configuration status and token permissions.
      *
      * @return map with configuration status and diagnostic message

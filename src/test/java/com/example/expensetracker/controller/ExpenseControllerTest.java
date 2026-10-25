@@ -642,6 +642,30 @@ class ExpenseControllerTest {
         verify(importService, never()).importExpensesFromExcel(any(), any());
     }
 
+    @Test
+    void reconcileBankStatementDelegatesToService() throws Exception {
+        User user = new User();
+        user.setId(7L);
+        when(userService.findById(7L)).thenReturn(Optional.of(user));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalRows", 5);
+        result.put("reconciledCount", 3);
+        result.put("newExpensesCount", 2);
+        result.put("newIncomesCount", 0);
+        result.put("message", "Reconciliation complete");
+        when(importService.reconcileBankStatement(any(), same(user))).thenReturn(result);
+
+        MockMultipartFile file = new MockMultipartFile("file", "statement.csv", "text/csv", "test".getBytes());
+        mockMvc.perform(multipart("/api/expenses/user/7/import/statement").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalRows").value(5))
+                .andExpect(jsonPath("$.reconciledCount").value(3))
+                .andExpect(jsonPath("$.newExpensesCount").value(2));
+
+        verify(importService).reconcileBankStatement(any(), same(user));
+    }
+
     private static Expense expense(Long id, BigDecimal amount, String description,
                                    LocalDate date, Category category) {
         Expense expense = new Expense();

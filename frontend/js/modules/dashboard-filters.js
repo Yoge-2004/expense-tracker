@@ -68,6 +68,11 @@
                 }
             }
 
+            // PowerBI Slicers & Cross-Filtering Integration
+            if (window.DashboardPowerBI && typeof window.DashboardPowerBI.filterByPowerBI === "function") {
+                filtered = window.DashboardPowerBI.filterByPowerBI(filtered);
+            }
+
             const sort = elements.filterSort?.value;
             filtered.sort((a, b) => {
                 if (sort === "date-desc") {
@@ -93,10 +98,21 @@
             }
             renderPieChart(filtered);
             renderList(filtered);
-            renderTrendChart(filtered);
+
+            if (window.DashboardPowerBI && typeof window.DashboardPowerBI.renderActiveTrendChart === "function") {
+                window.DashboardPowerBI.renderActiveTrendChart();
+            } else {
+                renderTrendChart(filtered);
+            }
+
             renderRecurringSplitChart(filtered);
             renderDayOfWeekChart(filtered);
             renderFinancialInsights(filtered, filteredIncomes, rawGoals);
+
+            // PowerBI Micro-Sparklines & Budget Velocity Pacing
+            if (window.DashboardPowerBI && typeof window.DashboardPowerBI.renderSparklines === "function") {
+                window.DashboardPowerBI.renderSparklines(filtered, filteredIncomes);
+            }
         }
 
         function wireControls() {
@@ -161,7 +177,9 @@
             });
         }
 
-        return Object.freeze({ applyFilters, wireControls });
+        const controller = Object.freeze({ applyFilters, wireControls });
+        window.dashboardFiltersController = controller;
+        return controller;
     }
 
     window.DashboardFilters = Object.freeze({ createController });

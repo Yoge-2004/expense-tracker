@@ -21,6 +21,10 @@ import java.time.LocalDate;
  * @see com.example.expensetracker.repository.RecurringExpenseRepository
  */
 @Entity
+@Table(name = "recurring_expense", indexes = {
+    @Index(name = "idx_recurring_expense_user", columnList = "user_id"),
+    @Index(name = "idx_recurring_expense_due_date", columnList = "nextDueDate")
+})
 @Getter
 @Setter
 @NoArgsConstructor

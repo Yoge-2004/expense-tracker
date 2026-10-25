@@ -47,11 +47,19 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
 
     private volatile AdminSummaryMetricsDto cachedSummary;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private AdminMetricsService self;
+
     @PostConstruct
     public void init() {
         log.info("Initializing AdminMetricsService with initial pre-aggregation rollup");
         try {
-            refreshMetrics();
+            if (self != null) {
+                self.refreshMetrics();
+            } else {
+                refreshMetrics();
+            }
         } catch (Exception e) {
             log.warn("Deferred initial admin metrics aggregation: {}", e.getMessage());
         }
@@ -119,7 +127,11 @@ public class AdminMetricsServiceImpl implements AdminMetricsService {
     @Override
     public AdminSummaryMetricsDto getSummaryMetrics() {
         if (cachedSummary == null) {
-            refreshMetrics();
+            if (self != null) {
+                self.refreshMetrics();
+            } else {
+                refreshMetrics();
+            }
         }
         return cachedSummary;
     }

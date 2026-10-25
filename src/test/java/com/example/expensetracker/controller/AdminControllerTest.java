@@ -47,6 +47,7 @@ class AdminControllerTest {
     @MockitoBean AdminMlGovernanceService mlGovernanceService;
     @MockitoBean AdminNotificationBroadcastService broadcastService;
     @MockitoBean AdminSystemOpsService systemOpsService;
+    @MockitoBean AdminDataService adminDataService;
     @MockitoBean ClientIpResolver clientIpResolver;
     @MockitoBean JwtService jwtService;
     @MockitoBean CustomUserDetailsService customUserDetailsService;
@@ -271,5 +272,41 @@ class AdminControllerTest {
                 .andExpect(status().isBadRequest());
 
         org.mockito.Mockito.verifyNoInteractions(adminUserService);
+    }
+    @Test
+    void getAllExpensesReturnsPaginatedList() throws Exception {
+        when(adminDataService.getAllExpenses(any(), any())).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/admin/expenses"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+    }
+
+    @Test
+    void exportPlatformLedgerJsonReturnsDump() throws Exception {
+        when(adminDataService.exportPlatformLedger()).thenReturn(Map.of("totalUsers", 12));
+
+        mockMvc.perform(get("/api/admin/database/export/json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalUsers").value(12));
+    }
+
+    @Test
+    void downloadDatabaseSnapshotReturnsSqliteFile() throws Exception {
+        when(adminDataService.exportSqliteSnapshot()).thenReturn("SQLite format 3".getBytes());
+
+        mockMvc.perform(get("/api/admin/database/snapshot/download"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("expense_tracker_snapshot.sqlite")))
+                .andExpect(content().contentType("application/x-sqlite3"));
+    }
+
+    @Test
+    void triggerDatabaseSnapshotReturnsSuccess() throws Exception {
+        when(adminDataService.triggerManualBackup()).thenReturn(Map.of("status", "success", "success", true));
+
+        mockMvc.perform(post("/api/admin/database/snapshot/trigger"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

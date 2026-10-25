@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * Verifies the Security PIN an administrator supplies to confirm a high-privilege action.
@@ -52,7 +53,7 @@ public class StepUpPinVerifier {
         LocalDateTime lockedUntil = current.getPinLockedUntil();
         if (lockedUntil != null) {
             if (lockedUntil.isAfter(now)) {
-                long minutes = Math.max(1, Duration.between(now, lockedUntil).toMinutes() + 1);
+                long minutes = Math.max(1, Duration.between(now.atZone(ZoneId.systemDefault()), lockedUntil.atZone(ZoneId.systemDefault())).toMinutes() + 1);
                 throw new BadRequestException(
                         "Security PIN is temporarily locked after too many wrong attempts. Try again in about "
                                 + minutes + " minute(s).");

@@ -42,4 +42,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user = :user")
     BigDecimal sumTotalExpensesAmountByUser(@Param("user") User user);
+
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category ORDER BY e.expenseDate DESC, e.id DESC")
+    org.springframework.data.domain.Page<Expense> findAllWithCategory(org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user ORDER BY e.expenseDate DESC, e.id DESC")
+    org.springframework.data.domain.Page<Expense> findByUserWithCategory(@Param("user") User user, org.springframework.data.domain.Pageable pageable);
 }

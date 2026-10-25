@@ -1,5 +1,6 @@
 package com.example.expensetracker.service.impl;
 
+import jakarta.annotation.PreDestroy;
 import com.example.expensetracker.resilience.FallbackRecoveryCoordinator;
 import com.example.expensetracker.service.DatabaseSnapshotService;
 import com.example.expensetracker.service.HuggingFaceDatabaseFailoverService;
@@ -143,6 +144,16 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
 
     @Override
     public synchronized boolean backupCurrentDatabase() {
+        return backupCurrentDatabase(false);
+    }
+
+    @Override
+    public synchronized boolean forceBackupCurrentDatabase() {
+        log.info("Forcefully initiating Hugging Face database snapshot backup, overriding fallback lock guards.");
+        return backupCurrentDatabase(true);
+    }
+
+    public synchronized boolean backupCurrentDatabase(boolean force) {
         if (isNotConfigured()) {
             if (!notConfiguredWarned) {
                 notConfiguredWarned = true;
@@ -152,7 +163,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             return false;
         }
         lastAttemptAt = Instant.now();
-        if (fallbackCoordinator != null && (!fallbackCoordinator.safeToOverwriteSnapshot() || fallbackCoordinator.mode() != com.example.expensetracker.resilience.ResilientRoutingDataSource.Mode.PRIMARY)) {
+        if (!force && fallbackCoordinator != null && !fallbackCoordinator.safeToOverwriteSnapshot()) {
             // The fallback holds writes the primary has not accepted yet, and the stored snapshot is the only other copy.
             lastError = "Skipped: unmerged fallback writes exist, so the stored snapshot was kept.";
             log.warn("HF database backup skipped: unmerged fallback writes exist; keeping the existing snapshot.");
@@ -342,5 +353,14 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         }
         return diag;
     }
-}
 
+    @PreDestroy
+    public void onShutdown() {
+        log.info("Application shutting down: attempting graceful database snapshot push to Hugging Face...");
+        try {
+            backupCurrentDatabase();
+        } catch (Exception e) {
+            log.warn("Graceful shutdown snapshot push could not complete: {}", e.getMessage());
+        }
+    }
+}

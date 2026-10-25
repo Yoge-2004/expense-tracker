@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.*;
 
@@ -24,7 +25,10 @@ import java.time.LocalDateTime;
  * {@code "PASSWORD_RESET"} and {@code "SIGNUP"}.</p>
  */
 @Entity
-@Table(name = "password_reset_otp")
+@Table(name = "password_reset_otp", indexes = {
+    @Index(name = "idx_otp_email_purpose", columnList = "email, purpose"),
+    @Index(name = "idx_otp_expires_at", columnList = "expiresAt")
+})
 @Getter
 @Setter
 @NoArgsConstructor

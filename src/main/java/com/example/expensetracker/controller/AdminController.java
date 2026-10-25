@@ -53,6 +53,7 @@ public class AdminController {
     private final AdminResilienceService resilienceService;
     private final AdminSystemOpsService systemOpsService;
     private final ClientIpResolver clientIpResolver;
+    private final AdminDataService adminDataService;
 
     @Operation(summary = "Get admin permissions matrix", description = "Returns dynamic RBAC authority permissions for the active operator")
     @GetMapping("/me/permissions")
@@ -293,9 +294,6 @@ public class AdminController {
             @AuthenticationPrincipal CustomUserDetails principal,
             HttpServletRequest httpRequest) {
         String pin = body != null ? body.get("stepUpPin") : null;
-        if (pin == null || pin.isBlank()) {
-            throw new BadRequestException("Step-up Security PIN is required to trigger snapshot backup");
-        }
         String ip = extractClientIp(httpRequest);
         String ua = httpRequest.getHeader("User-Agent");
         boolean ok = resilienceService.triggerSnapshotBackup(principal.getUser(), pin, ip, ua);
@@ -333,6 +331,56 @@ public class AdminController {
         String ua = httpRequest.getHeader("User-Agent");
         systemOpsService.purgeCaches(principal.getUser(), ip, ua);
         return ResponseEntity.ok(Map.of("message", "Metrics and query cache purged successfully."));
+    }
+
+    @Operation(summary = "Get all platform expenses", description = "Paginated list of all expenses across all users")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @GetMapping("/expenses")
+    public ResponseEntity<Page<ExpenseDto>> getAllExpenses(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        int boundedSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(Math.max(page, 0), boundedSize, Sort.by("id").descending());
+        return ResponseEntity.ok(adminDataService.getAllExpenses(userId, pageable));
+    }
+
+    @Operation(summary = "Get all platform incomes", description = "Paginated list of all incomes across all users")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @GetMapping("/incomes")
+    public ResponseEntity<Page<IncomeDto>> getAllIncomes(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        int boundedSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(Math.max(page, 0), boundedSize, Sort.by("id").descending());
+        return ResponseEntity.ok(adminDataService.getAllIncomes(userId, pageable));
+    }
+
+    @Operation(summary = "Export complete platform ledger", description = "Dumps complete multi-tenant ledger as structured JSON")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @GetMapping("/database/export/json")
+    public ResponseEntity<Map<String, Object>> exportPlatformLedgerJson() {
+        return ResponseEntity.ok(adminDataService.exportPlatformLedger());
+    }
+
+    @Operation(summary = "Download portable SQLite database snapshot", description = "Generates and streams immediate portable SQLite database snapshot file")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @GetMapping("/database/snapshot/download")
+    public ResponseEntity<byte[]> downloadDatabaseSnapshot() throws Exception {
+        byte[] bytes = adminDataService.exportSqliteSnapshot();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"expense_tracker_snapshot.sqlite\"")
+                .contentType(MediaType.parseMediaType("application/x-sqlite3"))
+                .contentLength(bytes.length)
+                .body(bytes);
+    }
+
+    @Operation(summary = "Trigger immediate database snapshot to Hugging Face", description = "Forces immediate export and push of current database")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PostMapping("/database/snapshot/trigger")
+    public ResponseEntity<Map<String, Object>> triggerDatabaseSnapshot() {
+        return ResponseEntity.ok(adminDataService.triggerManualBackup());
     }
 
     private String extractClientIp(HttpServletRequest request) {

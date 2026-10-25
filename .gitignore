@@ -39,8 +39,17 @@ expenses_sync.json
 *.sqlite3
 logs/
 *.log
-# The encrypted production snapshot is intentionally NOT ignored:
-# database/expense_tracker.sqlite.enc
+# Local credentials, production snapshots, and exported customer data.
+.env
+/all_users_details.json
+/backend_current_state.json
+/backend_full_snapshot.json
+/categories.json
+/user3_*.json
+/expense_tracker.sqlite.enc
+/hf_downloaded_snapshot.enc
+/database/*.sqlite.enc
+/gemini_*review*.md
 .scannerwork/
 
 ### Node ###

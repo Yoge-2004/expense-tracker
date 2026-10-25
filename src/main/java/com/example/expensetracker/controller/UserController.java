@@ -50,6 +50,14 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
+    private java.nio.file.Path getAvatarDir() {
+        String dataDir = System.getenv("DATA_DIR");
+        if (dataDir != null && !dataDir.isBlank()) {
+            return java.nio.file.Path.of(dataDir, "avatars");
+        }
+        return java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
+    }
+
     // ─── GET /api/users/check-username ────────────────────────────────────────
 
     @Operation(
@@ -401,11 +409,7 @@ public class UserController {
         }
 
         try {
-            java.nio.file.Path avatarDir = java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
-            String dataDir = System.getenv("DATA_DIR");
-            if (dataDir != null && !dataDir.isBlank()) {
-                avatarDir = java.nio.file.Path.of(dataDir, "avatars");
-            }
+            java.nio.file.Path avatarDir = getAvatarDir();
             java.nio.file.Files.createDirectories(avatarDir);
 
             String ext = ".jpg";
@@ -424,7 +428,7 @@ public class UserController {
             byte[] rawBytes = file.getBytes();
             byte[] compressedBytes = compressAvatarImage(rawBytes, contentType);
             boolean isCompressed = compressedBytes != null && compressedBytes.length < rawBytes.length;
-            String savedContentType = isCompressed && (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("png"))
+            String savedContentType = isCompressed && !contentType.toLowerCase(Locale.ROOT).contains("png")
                     ? "image/jpeg"
                     : contentType;
             if (isCompressed && "image/jpeg".equals(savedContentType)) {
@@ -435,7 +439,7 @@ public class UserController {
             java.nio.file.Files.write(targetFile, isCompressed ? compressedBytes : rawBytes);
 
             java.nio.file.Path metaFile = avatarDir.resolve("user_" + userId + ".meta");
-            java.nio.file.Files.writeString(metaFile, savedContentType != null ? savedContentType : "image/jpeg");
+            java.nio.file.Files.writeString(metaFile, savedContentType);
 
             String avatarUrl = "/api/users/" + userId + "/avatar?v=" + System.currentTimeMillis();
             userService.updateProfilePicture(userId, avatarUrl);
@@ -458,11 +462,7 @@ public class UserController {
     )
     @GetMapping("/{userId}/avatar")
     public ResponseEntity<byte[]> getAvatar(@PathVariable Long userId) {
-        java.nio.file.Path avatarDir = java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
-        String dataDir = System.getenv("DATA_DIR");
-        if (dataDir != null && !dataDir.isBlank()) {
-            avatarDir = java.nio.file.Path.of(dataDir, "avatars");
-        }
+        java.nio.file.Path avatarDir = getAvatarDir();
 
         for (String ext : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
             java.nio.file.Path file = avatarDir.resolve("user_" + userId + ext);
@@ -491,9 +491,18 @@ public class UserController {
         User user = userService.findById(userId).orElse(null);
         if (user != null && user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isBlank()
                 && !user.getProfilePictureUrl().contains("/avatar")) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
-                    .location(java.net.URI.create(user.getProfilePictureUrl()))
-                    .build();
+            String profileUrl = user.getProfilePictureUrl().trim();
+            // Mitigate Open Redirect / SSRF: only allow HTTP redirects to trusted avatar/OAuth CDNs
+            boolean isSafeExternal = profileUrl.startsWith("https://lh3.googleusercontent.com/")
+                    || profileUrl.startsWith("https://avatars.githubusercontent.com/")
+                    || profileUrl.startsWith("https://secure.gravatar.com/")
+                    || profileUrl.startsWith("https://www.gravatar.com/");
+            if (isSafeExternal) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND)
+                        .location(java.net.URI.create(profileUrl))
+                        .build();
+            }
+            log.warn("Blocked untrusted external avatar redirect for userId={}: {}", userId, profileUrl);
         }
 
         return ResponseEntity.notFound().build();
@@ -599,11 +608,7 @@ public class UserController {
         log.info("Received request to delete avatar for userId={}", userId);
         userSecurity.validateUserAccess(userId);
 
-        java.nio.file.Path avatarDir = java.nio.file.Path.of(System.getProperty("user.home"), ".expensetracker", "avatars");
-        String dataDir = System.getenv("DATA_DIR");
-        if (dataDir != null && !dataDir.isBlank()) {
-            avatarDir = java.nio.file.Path.of(dataDir, "avatars");
-        }
+        java.nio.file.Path avatarDir = getAvatarDir();
         for (String ext : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img", ".meta")) {
             try {
                 java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + ext));

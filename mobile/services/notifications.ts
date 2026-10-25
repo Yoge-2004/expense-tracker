@@ -43,6 +43,29 @@ async function resolveNotificationSound(): Promise<string | boolean | undefined>
   return enabled ? CUSTOM_NOTIFICATION_SOUND : false;
 }
 
+/**
+ * Formats a monetary amount for notifications without awkward whitespace after currency symbols.
+ */
+export function formatNotificationAmount(
+  amount: number | string | null | undefined,
+  currency: string = "₹",
+  fixedDecimals?: number
+): string {
+  const num = typeof amount === "number" ? amount : parseFloat(String(amount || 0));
+  const safeNum = isNaN(num) ? 0 : num;
+  const rawCurr = (currency || "₹").trim();
+  const symbol = rawCurr === "INR" ? "₹" : rawCurr;
+  const isAlphaCode = /^[A-Z]{3}$/.test(symbol);
+  const minDecimals = fixedDecimals !== undefined ? fixedDecimals : (safeNum % 1 !== 0 ? 2 : 0);
+  const maxDecimals = fixedDecimals !== undefined ? fixedDecimals : 2;
+  const formatted = safeNum.toLocaleString("en-IN", {
+    minimumFractionDigits: minDecimals,
+    maximumFractionDigits: maxDecimals,
+  });
+  return isAlphaCode ? `${symbol} ${formatted}` : `${symbol}${formatted}`;
+}
+
+
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
@@ -340,16 +363,17 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
       }).catch(() => {});
     }
 
+    const formattedAmt = formatNotificationAmount(transaction.amount, transaction.currency, 2);
     const title = transaction.direction === "DEBIT"
-      ? (autoAdded ? `💸 Auto-Added Debit: ${transaction.currency} ${transaction.amount?.toFixed(2)}` : `💸 Debit Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`)
-      : `💰 Transaction Alert: ${transaction.currency} ${transaction.amount?.toFixed(2)}`;
+      ? (autoAdded ? `💸 Auto-Added Debit: ${formattedAmt}` : `💸 Debit Alert: ${formattedAmt}`)
+      : `💰 Transaction Alert: ${formattedAmt}`;
 
     const merchantStr = transaction.merchant ? ` at ${transaction.merchant}` : "";
     const accStr = transaction.accountTail ? ` (Card/A/c xx${transaction.accountTail})` : "";
     const suffix = autoAdded
       ? `Recorded to your expenses automatically. Tap to view ledger.`
       : `Tap to categorize or review now.`;
-    const body = `Spent ${transaction.currency} ${transaction.amount?.toFixed(2)}${merchantStr}${accStr}. ${suffix}`;
+    const body = `Spent ${formattedAmt}${merchantStr}${accStr}. ${suffix}`;
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -393,7 +417,7 @@ export async function detectAndAddExpenseFromMessage(
   }
 
   const parsed = parseFinancialMessage(rawText);
-  if (!parsed.isFinancial || parsed.direction !== 'DEBIT' || !parsed.amount || parsed.amount <= 0) {
+  if (!parsed.isFinancial || parsed.direction !== 'DEBIT' || !parsed.amount || parsed.amount <= 0 || !isFinite(parsed.amount) || parsed.amount > 10_000_000) {
     return null;
   }
 
@@ -433,7 +457,7 @@ export async function detectAndAddExpenseFromMessage(
             method: 'POST',
             body: JSON.stringify({ description: queryText, top_n: 3 }),
           });
-          if (mlRes?.category) {
+          if (mlRes?.category && (typeof mlRes.confidence !== 'number' || mlRes.confidence >= 0.40)) {
             const mlCatNormalized = String(mlRes.category).toLowerCase().replace(/[_-]/g, ' ');
             const matched = allCats.find((c: any) => {
               const name = (c.name || '').toLowerCase().replace(/[_-]/g, ' ');
@@ -504,7 +528,7 @@ export async function detectAndAddCreditFromMessage(
   }
 
   const parsed = parseFinancialMessage(rawText);
-  if (!parsed.isFinancial || parsed.direction !== 'CREDIT' || !parsed.amount || parsed.amount <= 0) {
+  if (!parsed.isFinancial || parsed.direction !== 'CREDIT' || !parsed.amount || parsed.amount <= 0 || !isFinite(parsed.amount) || parsed.amount > 10_000_000) {
     return null;
   }
 
@@ -659,7 +683,7 @@ export async function notifySalaryCredit(amount: number, currency: string = '₹
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `💵 ${source} Credited: ${currency} ${amount.toLocaleString('en-IN')}`,
+        title: `💵 ${source} Credited: ${formatNotificationAmount(amount, currency)}`,
         body: 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!',
         sound: await resolveNotificationSound(),
         color: '#D4AF37',
@@ -690,8 +714,8 @@ export async function notifyBudgetThresholdAlert(categoryName: string, percentSp
       ? `🚨 Budget Exceeded: ${categoryName}`
       : `⚠️ Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
     const body = isExceeded
-      ? `You have exceeded your limit for ${categoryName} by ${currency} ${Math.abs(remainingAmt).toLocaleString('en-IN')}.`
-      : `You have used ${Math.round(percentSpent)}% of your ${categoryName} budget. Remaining buffer: ${currency} ${remainingAmt.toLocaleString('en-IN')}.`;
+      ? `You have exceeded your limit for ${categoryName} by ${formatNotificationAmount(Math.abs(remainingAmt), currency)}.`
+      : `You have used ${Math.round(percentSpent)}% of your ${categoryName} budget. Remaining buffer: ${formatNotificationAmount(remainingAmt, currency)}.`;
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -724,7 +748,7 @@ export async function notifySubscriptionDue(subscriptionName: string, amount: nu
     await Notifications.scheduleNotificationAsync({
       content: {
         title: `🔄 Upcoming Renewal: ${subscriptionName}`,
-        body: `${subscriptionName} (${currency} ${amount.toFixed(2)}) is scheduled to renew on ${dueDate}. Review or ensure adequate balance.`,
+        body: `${subscriptionName} (${formatNotificationAmount(amount, currency, 2)}) is scheduled to renew on ${dueDate}. Review or ensure adequate balance.`,
         sound: await resolveNotificationSound(),
         color: '#D4AF37',
         data: { appInternal: true, screen: '/(tabs)/subscriptions' },
@@ -754,8 +778,8 @@ export async function notifySavingsGoalMilestone(goalName: string, progressPerce
       ? `🎉 Goal Accomplished: ${goalName}!`
       : `🎯 Milestone Reached: ${goalName} (${progressPercent}%)`;
     const body = isComplete
-      ? `Congratulations! You have reached 100% of your target: ${currency} ${savedAmount.toLocaleString('en-IN')}.`
-      : `Great progress! You have saved ${currency} ${savedAmount.toLocaleString('en-IN')} of ${currency} ${targetAmount.toLocaleString('en-IN')} (${progressPercent}%).`;
+      ? `Congratulations! You have reached 100% of your target: ${formatNotificationAmount(savedAmount, currency)}.`
+      : `Great progress! You have saved ${formatNotificationAmount(savedAmount, currency)} of ${formatNotificationAmount(targetAmount, currency)} (${progressPercent}%).`;
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -951,7 +975,7 @@ export async function notifyTransactionRecorded(transaction: RecordedTransaction
     }
 
     const currency = transaction.currency ?? '₹';
-    const amountText = `${currency} ${transaction.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+    const amountText = formatNotificationAmount(transaction.amount, currency);
     const isDebit = transaction.kind === 'DEBIT';
     const body = [transaction.label, transaction.detail].filter((part) => part && part.trim()).join(' · ');
 

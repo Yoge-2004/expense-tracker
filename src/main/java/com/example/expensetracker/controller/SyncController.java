@@ -93,7 +93,7 @@ public class SyncController {
     private ResponseEntity<Map<String, Object>> validateLocalSyncAccess(String syncToken, HttpServletRequest request) {
         String clientIp = request != null ? request.getRemoteAddr() : "unknown";
 
-        if (isUnproxiedLoopbackRequest(request) || hasValidSyncToken(syncToken)) {
+        if (isUnproxiedLoopbackRequest(request) || hasValidSyncToken(syncToken) || isAdministratorSession()) {
             if (!rateLimiterService.tryAcquire("sync:" + clientIp, 15, Duration.ofMinutes(1))) {
                 log.warn("Rate limit exceeded for sync operations from IP={}", clientIp);
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -116,7 +116,7 @@ public class SyncController {
     private ResponseEntity<Map<String, Object>> validateHfSyncAccess(String syncToken, HttpServletRequest request) {
         String clientIp = request != null ? request.getRemoteAddr() : "unknown";
 
-        if (hasValidSyncToken(syncToken)) {
+        if (hasValidSyncToken(syncToken) || isAdministratorSession()) {
             if (!rateLimiterService.tryAcquire("sync-hf:" + clientIp, 5, Duration.ofMinutes(1))) {
                 log.warn("Rate limit exceeded for Hugging Face sync from IP={}", clientIp);
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

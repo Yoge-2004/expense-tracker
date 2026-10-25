@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Abstract base entity that provides automatic audit timestamp fields
@@ -47,18 +48,20 @@ public abstract class BaseEntity {
 
     /**
      * JPA lifecycle callback invoked automatically before the entity is first persisted.
+     * Always anchors audit timestamps to UTC to avoid server-local timezone discrepancies.
      */
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     /**
      * JPA lifecycle callback invoked automatically before an existing entity is updated.
+     * Always anchors audit timestamps to UTC to avoid server-local timezone discrepancies.
      */
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 }

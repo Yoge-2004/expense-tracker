@@ -567,6 +567,11 @@ public class ExpenseController {
         List<Budget> budgets = budgetRepository.findByUser(user);
         LocalDate now = LocalDate.now();
 
+        // Memoize expense and income queries by date range to eliminate N+1 database queries
+        record DateRange(LocalDate start, LocalDate end) {}
+        Map<DateRange, List<Expense>> expenseCache = new HashMap<>();
+        Map<DateRange, List<com.example.expensetracker.model.Income>> incomeCache = new HashMap<>();
+
         List<BudgetStatusDto> statusList = budgets.stream().map(b -> {
             LocalDate start;
             LocalDate end;
@@ -602,20 +607,30 @@ public class ExpenseController {
                 }
             }
 
-            BigDecimal grossSpent = expenseRepository.findByUserAndExpenseDateBetween(user, start, end)
-                    .stream()
+            final LocalDate periodStart = start;
+            final LocalDate periodEnd = end;
+
+            List<Expense> periodExpenses = expenseCache.computeIfAbsent(
+                    new DateRange(start, end),
+                    r -> expenseRepository.findByUserAndExpenseDateBetween(user, r.start(), r.end())
+            );
+
+            BigDecimal grossSpent = periodExpenses.stream()
                     .filter(e -> e.getCategory() != null && e.getCategory().getId().equals(b.getCategory().getId()))
                     .map(Expense::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // Money handed back for this category (a friend repaying a bill, a refund) reduces what counts
             // against the budget. It is placed by the month it counts toward, like everywhere else.
-            final LocalDate periodStart = start;
-            final LocalDate periodEnd = end;
-            BigDecimal reimbursed = incomeRepository
-                    .findByUserAndIncomeDateBetween(user,
-                            start.minusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT),
-                            end.plusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT))
-                    .stream()
+            DateRange reimbursementRange = new DateRange(
+                    start.minusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT),
+                    end.plusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT)
+            );
+            List<com.example.expensetracker.model.Income> periodIncomes = incomeCache.computeIfAbsent(
+                    reimbursementRange,
+                    r -> incomeRepository.findByUserAndIncomeDateBetween(user, r.start(), r.end())
+            );
+
+            BigDecimal reimbursed = periodIncomes.stream()
                     .filter(i -> com.example.expensetracker.mapper.IncomeRules.effectiveKind(i)
                             == com.example.expensetracker.model.IncomeKind.REIMBURSEMENT)
                     .filter(i -> b.getCategory().getId().equals(i.getReimbursedCategoryId()))
@@ -1188,6 +1203,28 @@ public class ExpenseController {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Map<String, Object> result = importService.importExpensesFromExcel(file, user);
         log.info("Excel expense import completed for userId={}", userId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Reconciles an uploaded bank statement (.csv, .xlsx, .xls) against existing user records.
+     * Auto-detects and adds unrecorded debits and credits missed by SMS alerts.
+     */
+    @Operation(summary = "Reconcile bank statement (.csv, .xlsx, .xls)",
+            description = "Parses bank statements across major banks, matches existing entries, "
+                    + "and automatically captures 100% of missed debits and credits.")
+    @PostMapping(value = "/user/{userId}/import/statement",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> reconcileBankStatement(
+            @PathVariable Long userId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        userSecurity.validateUserAccess(userId);
+        log.info("Reconciling bank statement for userId={}, filename={}, size={}",
+                userId, file.getOriginalFilename(), file.getSize());
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Map<String, Object> result = importService.reconcileBankStatement(file, user);
+        log.info("Bank statement reconciliation completed for userId={}: {}", userId, result.get("message"));
         return ResponseEntity.ok(result);
     }
 

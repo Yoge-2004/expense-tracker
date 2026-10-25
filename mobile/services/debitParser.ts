@@ -49,8 +49,8 @@ const NUMBER_EXCLUSION_CONTEXT_REGEX =
 
 // Regex for merchant/vendor identification
 const MERCHANT_PATTERNS = [
-  /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9\s&\x27.-]{2,30}?)(?:\s+(?:on|using|via|ref|bal|avbl|avl|dated|through|card|ac|ending|\.|\,)|$)/i,
-  /(?:paid to|transferred to)\s+([A-Za-z0-9\s&\x27.-]{2,30}?)(?:\s+(?:on|via|ref|bal|\.|\,)|$)/i,
+  /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9\s&'.-]{2,30}?)(?:\s+(?:on|using|via|with|ref|bal|avbl|avl|dated|through|card|ac|ending|successfully|successful|\.|\,)|$)/i,
+  /(?:paid to|transferred to)\s+([A-Za-z0-9\s&'.-]{2,30}?)(?:\s+(?:on|via|with|using|ref|bal|successfully|successful|\.|\,)|$)/i,
   /(?:vpa\s+)([a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+)/i,
 ];
 
@@ -63,6 +63,10 @@ const ACCOUNT_PATTERNS = [
 
 // Regex for transaction reference or UTR
 const REF_REGEX = /(?:ref|utr|rrn|txn|id|reference)\s*(?:no\.?|id|:)?\s*([A-Za-z0-9]{6,22})/i;
+
+// Rejection filters: non-executed events (OTPs, declined transactions, bill reminders, payment requests, loan promos)
+const NON_FINANCIAL_EXCLUSION_REGEX =
+  /\b(otp|one[\s-]?time[\s-]?password|verification[\s-]?code|security[\s-]?code|auth[\s-]?code|secret[\s-]?code|declined|failed|unsuccessful|rejected|cancelled|reversed|could\s+not\s+be\s+processed|not\s+processed|bill\s+due|is\s+due|due\s+date|payment\s+due|requested\s+(?:money|payment|rs|inr|\$)|payment\s+request|mandate\s+created|scheduled\s+for|has\s+requested\s+you\s+to\s+pay|pay\s+before|minimum\s+amount\s+due|pre-?approved|apply\s+now|avail\s+loan|congratulations|win\s+(?:cash|rewards?)|special\s+offer|cashback\s+offer)\b/i;
 
 /**
  * Parses financial notification or SMS text into a structured transaction event.
@@ -85,6 +89,11 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
   }
 
   const cleanText = text.trim();
+
+  // Guard against non-financial, informational, OTP, or unexecuted alerts
+  if (NON_FINANCIAL_EXCLUSION_REGEX.test(cleanText)) {
+    return result;
+  }
 
   // 1. Determine direction
   const isDebit = DEBIT_REGEX.test(cleanText);
@@ -184,6 +193,7 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
     if (m && m[1]) {
       let candidate = m[1].trim();
       candidate = candidate.replace(/^(the|a|an)\s+/i, "");
+      candidate = candidate.replace(/\b(successfully|successful|with cred|using cred|with|using)\b/gi, "").trim();
       candidate = candidate.replace(/[.,;:]+$/, "").trim();
       if (candidate.length > 1 && !/^(your|my|account|bank|branch)$/i.test(candidate)) {
         result.merchant = candidate;

@@ -1,9 +1,12 @@
 package com.example.expensetracker;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import java.util.TimeZone;
 
 /**
  * Entry point for the Expense Tracker System application.
@@ -24,6 +27,17 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @SpringBootApplication
 public class ExpenseTrackerSystemApplication {
+
+    /**
+     * Anchors the entire JVM runtime timezone to UTC so all database timestamps,
+     * serialization, and scheduling base calculations remain consistent across
+     * all environments (local, Docker, and cloud).
+     */
+    @PostConstruct
+    void initTimeZone() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        log.info("JVM default timezone initialized to UTC.");
+    }
 
     /**
      * Main method that bootstraps and launches the Spring Boot application.

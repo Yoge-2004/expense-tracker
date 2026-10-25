@@ -73,4 +73,64 @@ describe("DebitParser", () => {
     expect(res.direction).toBe("UNKNOWN");
     expect(res.amount).toBeNull();
   });
+
+  test("rejects purchase OTP as non-executed transaction", () => {
+    const msg = "Dear SBI User, OTP for your purchase of Rs 450.00 at Swiggy is 987654. Do not share with anyone.";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(false);
+    expect(res.direction).toBe("UNKNOWN");
+    expect(res.amount).toBeNull();
+  });
+
+  test("rejects declined or failed transaction", () => {
+    const msg = "Alert: Txn of Rs 1,200 at Shell Petrol was declined due to card block.";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(false);
+    expect(res.direction).toBe("UNKNOWN");
+    expect(res.amount).toBeNull();
+  });
+
+  test("rejects credit card bill due reminder", () => {
+    const msg = "Your credit card bill of Rs 5,400 is due on 28-Oct. Pay now to avoid late charges.";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(false);
+    expect(res.direction).toBe("UNKNOWN");
+    expect(res.amount).toBeNull();
+  });
+
+  test("rejects payment request or mandate creation", () => {
+    const msg = "User Rahul has requested payment of Rs 500 via UPI. Click to approve.";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(false);
+    expect(res.direction).toBe("UNKNOWN");
+    expect(res.amount).toBeNull();
+  });
+
+  test("parses Google Pay UPI push notification", () => {
+    const msg = "Paid ₹150.00 to Chai Point using HDFC Bank A/c xx1234";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(true);
+    expect(res.direction).toBe("DEBIT");
+    expect(res.amount).toBe(150);
+    expect(res.merchant).toBe("Chai Point");
+    expect(res.accountTail).toBe("1234");
+  });
+
+  test("parses PhonePe UPI push notification", () => {
+    const msg = "Paid ₹340 to Fresh Fruits successfully";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(true);
+    expect(res.direction).toBe("DEBIT");
+    expect(res.amount).toBe(340);
+    expect(res.merchant).toBe("Fresh Fruits");
+  });
+
+  test("parses CRED UPI notification", () => {
+    const msg = "Paid ₹1,200 for Swiggy with CRED";
+    const res = parseFinancialMessage(msg);
+    expect(res.isFinancial).toBe(true);
+    expect(res.direction).toBe("DEBIT");
+    expect(res.amount).toBe(1200);
+    expect(res.merchant).toBe("Swiggy");
+  });
 });

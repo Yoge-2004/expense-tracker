@@ -25,4 +25,6 @@ public interface LoanAdjustmentRepository extends JpaRepository<LoanAdjustment, 
     long countByUser(User user);
 
     long countByUserAndIsSettled(User user, Boolean isSettled);
+
+    void deleteByUser(User user);
 }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ..data.normalize import normalize_text
 from .model_registry import ModelRegistry
 
 
@@ -8,7 +9,9 @@ class InferenceService:
         self.registry = registry
 
     def classify(self, description: str, top_n: int = 3) -> dict:
-        text = description.strip()
+        text = normalize_text(description)
+        if not text:
+            text = description.strip()
         if not text:
             raise ValueError("description must be non-empty")
         prediction = self.registry.loaded.model.predict([text], top_n=top_n)

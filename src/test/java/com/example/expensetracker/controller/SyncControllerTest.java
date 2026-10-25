@@ -132,6 +132,22 @@ class SyncControllerTest {
     }
 
     @Test
+    void hfPushAcceptsAdministratorSessionWithoutSyncToken() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("admin@example.com", null,
+                        List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))));
+
+        when(syncService.syncDbToFile()).thenReturn(Map.of("status", "success"));
+        when(syncService.pushJsonBackupToHuggingFace()).thenReturn(Map.of("status", "success", "pushed", true));
+
+        mockMvc.perform(post("/api/sync/push-to-hf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pushed").value(true));
+
+        verify(syncService).pushJsonBackupToHuggingFace();
+    }
+
+    @Test
     void hfPushGeneratesLocalBackupBeforeUploading() throws Exception {
         when(syncService.syncDbToFile()).thenReturn(Map.of("status", "success"));
         when(syncService.pushJsonBackupToHuggingFace()).thenReturn(Map.of("status", "success", "pushed", true));

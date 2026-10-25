@@ -5,15 +5,20 @@ import com.example.expensetracker.dto.MlClassificationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.ResourceAccessException;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Service
 public class MlInferenceClient {
+
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(6);
 
     private final RestClient client;
 
@@ -21,7 +26,15 @@ public class MlInferenceClient {
             @Autowired(required = false) RestClient.Builder builder,
             @Value("${ml.inference.url:http://127.0.0.1:8000}") String baseUrl) {
         RestClient.Builder effectiveBuilder = builder != null ? builder : RestClient.builder();
-        this.client = effectiveBuilder.baseUrl(baseUrl).build();
+        if (builder == null) {
+            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+            requestFactory.setConnectTimeout(CONNECT_TIMEOUT);
+            requestFactory.setReadTimeout(READ_TIMEOUT);
+            effectiveBuilder.requestFactory(requestFactory);
+        }
+        this.client = effectiveBuilder
+                .baseUrl(baseUrl)
+                .build();
     }
 
     public MlClassificationResponse classify(MlClassificationRequest request) {

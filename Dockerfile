@@ -17,7 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 COPY --from=ghcr.io/astral-sh/uv:0.12.15 /uv /uvx /usr/local/bin/
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends nginx supervisor ca-certificates curl \
+    && apt-get install -y --no-install-recommends nginx supervisor ca-certificates curl tesseract-ocr tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/* \
     && if id -u 1000 >/dev/null 2>&1; then \
         OLD_USER=$(getent passwd 1000 | cut -d: -f1); \
@@ -34,6 +34,10 @@ RUN apt-get update \
 
 WORKDIR /app
 
+# Pre-cache Python ML dependencies before copying full application code
+COPY ml/pyproject.toml ml/uv.lock /app/ml/
+RUN cd /app/ml && uv sync --frozen --no-dev --no-install-project --extra serve
+
 COPY app.jar /app/app.jar
 COPY ml /app/ml
 COPY docker/supervisord.conf /etc/supervisor/conf.d/expense-tracker.conf
@@ -42,7 +46,7 @@ COPY docker/entrypoint.sh /app/entrypoint.sh
 
 RUN chmod +x /app/entrypoint.sh \
     && cd /app/ml \
-    && if [ -f uv.lock ]; then uv sync --locked --no-dev --extra serve; else uv sync --no-dev --extra serve; fi \
+    && uv sync --frozen --no-dev --extra serve \
     && chown -R app:app /app /opt/uv /data
 
 EXPOSE 7860 8080 8000

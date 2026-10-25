@@ -2,6 +2,8 @@ package com.example.expensetracker.service.impl;
 
 import com.example.expensetracker.dto.ExpenseDto;
 import com.example.expensetracker.dto.IncomeDto;
+import com.example.expensetracker.dto.IncomeRequest;
+import java.util.Collections;
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.User;
@@ -234,5 +236,46 @@ class ImportServiceImplTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> importService.importIncomesFromJson(fileBlankSource, testUser));
+    }
+
+    @Test
+    @DisplayName("reconcileBankStatement: matches existing expenses/incomes and creates new records for missed ones")
+    void reconcileBankStatement_success() {
+        Expense existingExp = new Expense();
+        existingExp.setId(101L);
+        existingExp.setAmount(new BigDecimal("450.00"));
+        existingExp.setExpenseDate(LocalDate.of(2026, 9, 24));
+        existingExp.setDescription("Swiggy");
+
+        when(expenseService.getUserExpenses(testUser)).thenReturn(List.of(existingExp));
+        when(incomeService.getUserIncomes(testUser)).thenReturn(Collections.emptyList());
+        when(categoryRepository.findByUserIsNullAndNameIgnoreCase(anyString())).thenReturn(Optional.of(foodCategory));
+
+        String csv = """
+                Date,Narration,Withdrawal,Deposit,Ref No.
+                2026-09-24,UPI/324109823412/SWIGGY/paytm/SBI,450.00,,987654321012
+                2026-09-25,POS 401200XXXXXX STARBUCKS COFFEE,250.00,,123456789012
+                2026-09-26,NEFT CR-SALARY-TECHCORP,,50000.00,SAL20260926
+                """;
+        MockMultipartFile file = new MockMultipartFile("file", "statement.csv", "text/csv", csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        Map<String, Object> result = importService.reconcileBankStatement(file, testUser);
+
+        assertEquals(3, result.get("totalRows"));
+        assertEquals(1, result.get("reconciledCount"));
+        assertEquals(1, result.get("newExpensesCount"));
+        assertEquals(1, result.get("newIncomesCount"));
+
+        verify(expenseService, times(1)).createExpense(any(Expense.class), eq(testUser));
+        verify(incomeService, times(1)).createIncome(any(IncomeRequest.class), eq(testUser));
+    }
+
+    @Test
+    @DisplayName("cleanBankNarration: extracts clean entity/merchant names from banking noise")
+    void cleanBankNarration_formats() {
+        assertEquals("SWIGGY", ImportServiceImpl.cleanBankNarration("UPI/324109823412/SWIGGY/paytm/SBI"));
+        assertEquals("STARBUCKS COFFEE", ImportServiceImpl.cleanBankNarration("POS 401200XXXXXX STARBUCKS COFFEE"));
+        assertEquals("SALARY TECHCORP", ImportServiceImpl.cleanBankNarration("NEFT CR-SALARY-TECHCORP"));
+        assertEquals("Bank Transaction", ImportServiceImpl.cleanBankNarration("   "));
     }
 }
