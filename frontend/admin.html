@@ -60,7 +60,7 @@
 
                 <!-- Live Auto-Refresh Interval Selector -->
                 <div class="admin-top-select-wrapper" style="display:inline-flex; align-items:center;">
-                    <select id="autoRefreshSelector" class="form-select" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer;" title="Telemetry polling frequency">
+                    <select id="autoRefreshSelector" class="form-select" aria-label="Telemetry polling frequency" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer;" title="Telemetry polling frequency">
                         <option value="15000">Poll: 15s</option>
                         <option value="30000" selected>Poll: 30s</option>
                         <option value="60000">Poll: 60s</option>
@@ -340,11 +340,11 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" id="userDirectorySearch" placeholder="Search by name, @handle, or email..." class="command-search-input">
+                        <input type="text" id="userDirectorySearch" placeholder="Search by name, @handle, or email..." aria-label="Search user directory" class="command-search-input">
                     </div>
 
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <select id="userRoleFilterSelect" class="form-select" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
+                        <select id="userRoleFilterSelect" class="form-select" aria-label="Filter users by role" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
                             <option value="">All Privilege Levels</option>
                             <option value="ROLE_USER">Regular Users</option>
                             <option value="ROLE_SUPPORT">Support Staff</option>
@@ -406,11 +406,11 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" id="logFilterSearch" placeholder="Filter logs by keyword, exception, logger..." class="command-search-input">
+                        <input type="text" id="logFilterSearch" placeholder="Filter logs by keyword, exception, logger..." aria-label="Filter system logs" class="command-search-input">
                     </div>
 
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <select id="logLevelSelect" class="form-select" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
+                        <select id="logLevelSelect" class="form-select" aria-label="Filter logs by level" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
                             <option value="ALL" selected>All Levels</option>
                             <option value="ERROR">ERROR Only</option>
                             <option value="WARN">WARN & Above</option>
@@ -418,7 +418,7 @@
                             <option value="DEBUG">DEBUG Logs</option>
                         </select>
 
-                        <select id="logLinesSelect" class="form-select" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
+                        <select id="logLinesSelect" class="form-select" aria-label="Maximum log lines to display" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
                             <option value="50">50 Lines</option>
                             <option value="150" selected>150 Lines</option>
                             <option value="300">300 Lines</option>
@@ -426,7 +426,7 @@
                         </select>
 
                         <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer; user-select:none;">
-                            <input type="checkbox" id="logAutoScrollCheck" checked style="accent-color:var(--primary); cursor:pointer;">
+                            <input type="checkbox" id="logAutoScrollCheck" checked style="accent-color:var(--primary); cursor:pointer;" aria-label="Auto-scroll logs">
                             <span>Auto-Scroll</span>
                         </label>
 
@@ -777,7 +777,7 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" id="auditLogSearch" placeholder="Filter by actor email, action, or resource..." class="command-search-input">
+                        <input type="text" id="auditLogSearch" placeholder="Filter by actor email, action, or resource..." aria-label="Filter audit logs" class="command-search-input">
                     </div>
 
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -1072,7 +1072,7 @@
                     This administrative operation requires your 6-digit Security PIN to verify non-repudiation.
                 </p>
                 <div style="display:flex; justify-content:center;">
-                    <input type="password" id="stepUpModalPinInput" maxlength="6" inputmode="numeric" class="command-search-input" style="width:200px; text-align:center; font-family:var(--font-mono); letter-spacing:0.4em; font-size:22px; padding:10px 14px; border:1px solid var(--border-accent); border-radius:12px; background:var(--input-bg);" placeholder="••••••">
+                    <input type="password" id="stepUpModalPinInput" maxlength="6" inputmode="numeric" aria-label="Step-up security PIN" class="command-search-input" style="width:200px; text-align:center; font-family:var(--font-mono); letter-spacing:0.4em; font-size:22px; padding:10px 14px; border:1px solid var(--border-accent); border-radius:12px; background:var(--input-bg);" placeholder="••••••">
                 </div>
             </div>
             <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">

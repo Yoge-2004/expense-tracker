@@ -48,6 +48,7 @@ public interface RecurringExpenseRepository extends JpaRepository<RecurringExpen
 
     /**
      * Retrieves all recurring expense subscriptions belonging to a specific user.
+     * Uses LEFT JOIN FETCH to eagerly initialize category and avoid LazyInitializationException.
      *
      * <p>Used by the {@code GET /api/expenses/recurring/user/{userId}} endpoint
      * to display all active subscriptions in the user's dashboard.</p>
@@ -56,7 +57,8 @@ public interface RecurringExpenseRepository extends JpaRepository<RecurringExpen
      * @return a list of {@link RecurringExpense} records owned by the user;
      *         empty list if the user has no active subscriptions
      */
-    List<RecurringExpense> findByUser(User user);
+    @Query("SELECT r FROM RecurringExpense r LEFT JOIN FETCH r.category WHERE r.user = :user")
+    List<RecurringExpense> findByUser(@Param("user") User user);
 
     /**
      * Checks whether any recurring expense/subscription (for any user)

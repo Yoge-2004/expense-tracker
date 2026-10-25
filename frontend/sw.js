@@ -56,6 +56,54 @@ self.addEventListener("activate", (event) => {
     );
 });
 
+// Fetch event - Serve cached static assets with network fallback; bypass API/mutations
+self.addEventListener("fetch", (event) => {
+    const { request } = event;
+    if (request.method !== "GET") return;
+
+    const url = new URL(request.url);
+
+    // Bypass API calls, websockets, and browser extensions
+    if (url.pathname.startsWith("/api/") || !url.protocol.startsWith("http")) {
+        return;
+    }
+
+    // Navigation requests (HTML pages): Network-First with cache fallback
+    if (request.mode === "navigate") {
+        event.respondWith(
+            fetch(request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => { return cache.put(request, responseClone); }).catch(() => {});
+                }
+                return networkResponse;
+            }).catch(() => caches.match(request).then((cached) => cached || caches.match("/dashboard.html")))
+        );
+        return;
+    }
+
+    // Static assets (CSS, JS, images, fonts): Cache-First with network fallback & stale-while-revalidate
+    event.respondWith(
+        caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+                fetch(request).then((networkResponse) => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        caches.open(CACHE_NAME).then((cache) => { return cache.put(request, networkResponse); }).catch(() => {});
+                    }
+                }).catch(() => {});
+                return cachedResponse;
+            }
+            return fetch(request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => { return cache.put(request, responseClone); }).catch(() => {});
+                }
+                return networkResponse;
+            });
+        })
+    );
+});
+
 // Push event - Trigger instant system notification
 self.addEventListener("push", (event) => {
     const defaultIcon = toAbsoluteUrl("/assets/icon-192.png");

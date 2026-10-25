@@ -264,7 +264,7 @@ function checkPendingFlashToast() {
                 setTimeout(() => showToast(parsed.message, parsed.type || "success"), 200);
             }
         }
-    } catch (_) {}
+    } catch (_) { /* flash toast parse skipped */ }
 }
 
 // Check once on page load, then once per day. Regular API requests still wake
@@ -416,7 +416,7 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
         try {
             const parsed = JSON.parse(text);
             msg = parsed.message || parsed.error || null;
-        } catch (_) {}
+        } catch (_) { msg = null; }
 
         if (msg && msg.toLowerCase().includes("database")) {
             msg = "Unable to connect to the server. Please try again in a moment.";
@@ -666,7 +666,7 @@ async function detectClientLocationCurrency() {
             const code = (await res.text()).trim().toUpperCase();
             if (code && typeof WORLD_CURRENCIES !== 'undefined' && WORLD_CURRENCIES.some(c => c.code === code)) return code;
         }
-    } catch (e) {}
+    } catch (e) { console.debug("[CurrencyDetect] IP location fallback:", e.message); }
     return null;
 }
 

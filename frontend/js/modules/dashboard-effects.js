@@ -95,7 +95,7 @@
             }
 
             setTimeout(() => container.remove(), 950);
-        } catch (e) {}
+        } catch (e) { console.debug("[Effects] Particle fallback:", e.message); }
     }
 
     function updateStats(expenses) {

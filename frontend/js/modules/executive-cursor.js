@@ -112,7 +112,7 @@
                         if (comp && comp.cursor && comp.cursor.includes("pointer")) {
                             isClickable = true;
                         }
-                    } catch (_) {}
+                    } catch (err) { console.debug("[Cursor] Element check fallback:", err.message); }
                 }
                 if (isClickable) {
                     reticleEl.classList.add("is-hovering");

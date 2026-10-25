@@ -444,7 +444,7 @@
 
         function isNameValid(val) { return val.trim().length >= 2; }
         function isUserValid(val) { return val.trim().length >= 3 && /^[a-zA-Z0-9_.]+$/.test(val.trim()); }
-        function isEmailValid(val) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim()); }
+        function isEmailValid(val) { return /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(val.trim()); }
 
         function getPasswordStrength(v) {
             if (!v) return { level: 0, label: '', color: 'transparent' };
@@ -516,9 +516,11 @@
             if (prefix.length >= 2) {
                 const tags = ['pro', 'hq', 'dev', 'app', 'hub', 'zone', 'prime', 'lab', 'max', 'core', 'flow', 'star', 'vault'];
                 const adjs = ['cool', 'swift', 'hyper', 'super', 'smart', 'ultra', 'epic', 'bright', 'elite', 'nova', 'apex'];
-                const randomTag = tags[Math.floor(Math.random() * tags.length)];
-                const randomAdj = adjs[Math.floor(Math.random() * adjs.length)];
-                const randomNum = Math.floor(100 + Math.random() * 900);
+                const rnd = new Uint32Array(3);
+                (window.crypto || window.msCrypto).getRandomValues(rnd);
+                const randomTag = tags[rnd[0] % tags.length];
+                const randomAdj = adjs[rnd[1] % adjs.length];
+                const randomNum = 100 + (rnd[2] % 900);
 
                 let suggestions = [
                     `${prefix}_${randomNum}`,
@@ -582,7 +584,7 @@
 
             // Render options starting with 'None'
             optionsContainer.innerHTML = `
-                <input type="text" class="custom-select-search" placeholder="Search 100+ currencies (USD, EUR, ₹, Yen)...">
+                <input type="text" class="custom-select-search" placeholder="Search 100+ currencies (USD, EUR, ₹, Yen)..." aria-label="Search currencies">
                 <div class="custom-options-list">
                     <div class="custom-option selected" data-value="" data-name="none select currency" data-symbol="">
                         <span><span class="custom-option-flag">🌐</span> None (Select Currency)</span>

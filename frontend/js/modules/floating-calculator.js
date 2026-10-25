@@ -461,7 +461,7 @@
 
         try {
             localStorage.setItem(STORAGE_STATE_KEY, state.isOpen ? "true" : "false");
-        } catch (_) {}
+        } catch (err) { console.debug("[Calc] Save state fallback:", err.message); }
     }
 
     function syncPanelPositionWithTrigger() {
@@ -588,7 +588,7 @@
                 leftRatio: rect.left / window.innerWidth,
                 topRatio: rect.top / window.innerHeight
             }));
-        } catch (_) {}
+        } catch (err) { console.debug("[Calc] Save pos fallback:", err.message); }
     }
 
     function restorePosition() {
@@ -615,7 +615,7 @@
                     trigger.style.right = "auto";
                 }
             }
-        } catch (_) {}
+        } catch (err) { console.debug("[Calc] Load pos fallback:", err.message); }
     }
 
     const FX_CACHE_KEY = "et_fx_daily_rates";
@@ -676,7 +676,7 @@
                             rate = Number(cached.rates[toCurr]);
                         }
                     }
-                } catch (_) {}
+                } catch (err) { console.debug("[Calc] Cached rates fallback:", err.message); }
 
                 // 2. Fetch fresh rates if not in cache
                 if (!rate) {
@@ -871,7 +871,7 @@
             try {
                 localStorage.removeItem(STORAGE_POS_KEY);
                 localStorage.removeItem(STORAGE_STATE_KEY);
-            } catch (_) {}
+            } catch (err) { console.debug("[Calc] Reset storage fallback:", err.message); }
             const trigger = document.getElementById("floatingCalcTrigger");
             const panel = document.getElementById("floatingCalcPanel");
             if (trigger) {

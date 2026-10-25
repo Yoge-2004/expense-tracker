@@ -48,6 +48,7 @@ logs/
 /user3_*.json
 /expense_tracker.sqlite.enc
 /hf_downloaded_snapshot.enc
+/*.enc
 /database/*.sqlite.enc
 /gemini_*review*.md
 .scannerwork/

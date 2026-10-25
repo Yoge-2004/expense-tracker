@@ -20,7 +20,7 @@ const WebBiometrics = (() => {
 
     const bytesToBase64Url = (bytes) => {
         const binary = String.fromCharCode(...new Uint8Array(bytes));
-        return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+        return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/={1,2}$/, "");
     };
 
     const serializeCredential = (credential) => {

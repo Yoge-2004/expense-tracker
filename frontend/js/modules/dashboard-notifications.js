@@ -145,7 +145,7 @@
                 osc.start(now + idx * 0.08);
                 osc.stop(now + idx * 0.08 + 0.6);
             });
-        } catch (_) {}
+        } catch (err) { console.debug("[AudioSynth] WebAudio fallback:", err.message); }
     }
 
     function playCustomNotificationSound() {
@@ -195,7 +195,7 @@
                 swRegistration = existing;
                 return existing;
             }
-        } catch (_) {}
+        } catch (err) { console.debug("[AudioCache] Candidate audio fallback:", err.message); }
 
         // Resolve candidates based on whether we are loaded in a /frontend/ subpath or at root
         const isFrontendSubdir = window.location.pathname.includes("/frontend/");
@@ -327,7 +327,7 @@
             if (navigator.clipboard && navigator.clipboard.readText) {
                 pastedText = await navigator.clipboard.readText();
             }
-        } catch (_) {}
+        } catch (err) { console.debug("[Clipboard] ReadText fallback:", err.message); }
 
         let parsed = pastedText ? parseFinancialDebitText(pastedText) : null;
 
@@ -378,7 +378,7 @@
                 banner.style.display = "none";
                 return;
             }
-        } catch (_) {}
+        } catch (err) { console.debug("[Notifications] Fallback:", err.message); }
 
         banner.removeAttribute("hidden");
         banner.style.display = "flex";
@@ -411,7 +411,7 @@
                 try {
                     // Snooze for 7 days
                     localStorage.setItem(NOTIF_BANNER_SNOOZE_KEY, String(Date.now() + 7 * 86400000));
-                } catch (_) {}
+                } catch (err) { console.debug("[Banner] Snooze storage fallback:", err.message); }
             };
         }
     }

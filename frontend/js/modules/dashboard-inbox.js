@@ -158,7 +158,7 @@
                         }
                         try {
                             await apiRequest(`${base}/${notifItem.id}`, { method: "DELETE" });
-                        } catch (_) {}
+                        } catch (err) { console.warn("[Inbox] Failed to delete notification:", err.message); }
                     }, 240);
                 }, 160);
             }

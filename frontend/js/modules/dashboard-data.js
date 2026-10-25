@@ -60,7 +60,7 @@
 
             if (skipCache) {
                 if (typeof clearApiCache === "function") clearApiCache();
-                try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+                try { localStorage.removeItem(getCacheKey()); } catch (err) { console.debug("[DashboardData] LocalStorage removal fallback:", err.message); }
             }
 
             const cached = skipCache ? null : loadExpenseCache();

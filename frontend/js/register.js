@@ -67,7 +67,7 @@ async function doSendOtp() {
         document.getElementById('reg-name').classList.add('is-invalid');
         return;
     }
-    if (!email || !/^\s*[^\s@]+@[^\s@]+\.[^\s@]+\s*$/.test(email)) {
+    if (!email || !/^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(email.trim())) {
         showToast('Please enter a valid email address.', 'error');
         document.getElementById('reg-email').classList.add('is-invalid');
         return;
@@ -174,11 +174,16 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
     // the register request returns (slow on a cold server) that activation has
     // expired, so the old prompt-after-the-request often never appeared.
     let notificationPrompt = null;
-    try {
-        if ('Notification' in window && Notification.permission === 'default') {
-            notificationPrompt = Promise.resolve(Notification.requestPermission()).catch(() => {});
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        try {
+            const req = Notification.requestPermission();
+            if (req && typeof req.catch === 'function') {
+                notificationPrompt = req.catch(() => {});
+            }
+        } catch (_) {
+            notificationPrompt = null;
         }
-    } catch (_) { /* unsupported browser: skip */ }
+    }
 
     try {
         const payload = { name, username, email, password, currency };
@@ -232,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const nameValid = !!nameInput && nameInput.value.trim().length >= 2;
         const userValid = !!userInput && userInput.value.trim().length >= 3 && /^[a-zA-Z0-9_.-]+$/.test(userInput.value.trim());
-        const emailValid = !!emailInput && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim());
+        const emailValid = !!emailInput && /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(emailInput.value.trim());
         const currencyValid = !!currencyInput?.value;
         const password = passInput?.value || '';
         const passwordScore = [

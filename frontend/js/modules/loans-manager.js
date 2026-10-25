@@ -68,7 +68,7 @@
                 if (cur === "GBP") return "£";
                 if (cur === "JPY") return "¥";
                 return "₹";
-            } catch {}
+            } catch (err) { console.debug("[Loans] Curr fallback:", err.message); }
         }
         return "₹";
     }

@@ -1269,7 +1269,7 @@ function triggerFileDownload(blob, filename) {
         try {
             a.remove();
             URL.revokeObjectURL(objectUrl);
-        } catch (_) {}
+        } catch (err) { console.debug("[Export] Cleanup fallback:", err.message); }
     }, 2500);
 }
 
@@ -1644,7 +1644,7 @@ importFileInput?.addEventListener("change", async (e) => {
             showToast(data.message || "Expenses imported successfully!", "success");
         }
         if (typeof window.clearApiCache === "function") window.clearApiCache();
-        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+        try { localStorage.removeItem(getCacheKey()); } catch (err) { console.debug("[Cache] LocalStorage removal fallback:", err.message); }
         await loadDashboard(true);
     } catch (err) {
         TransferDock.fail(err.message || "Import failed");
@@ -1689,7 +1689,7 @@ reconcileStatementInput?.addEventListener("change", async (e) => {
         showToast(data.message || "Bank statement reconciled successfully!", "success");
 
         if (typeof window.clearApiCache === "function") window.clearApiCache();
-        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+        try { localStorage.removeItem(getCacheKey()); } catch (err) { console.debug("[Cache] LocalStorage removal fallback:", err.message); }
         await loadDashboard(true);
     } catch (err) {
         TransferDock.fail(err.message || "Reconciliation failed");
@@ -3520,7 +3520,7 @@ importIncomeFileInput?.addEventListener("change", async (e) => {
         TransferDock.complete(`Imported ${data.imported || 0} incomes`);
         showToast(data.message || "Incomes imported successfully!", "success");
         if (typeof window.clearApiCache === "function") window.clearApiCache();
-        try { localStorage.removeItem(getCacheKey()); } catch (_) {}
+        try { localStorage.removeItem(getCacheKey()); } catch (err) { console.debug("[Cache] LocalStorage removal fallback:", err.message); }
         await loadDashboard(true);
     } catch (err) {
         TransferDock.fail(err.message || "Import failed");
@@ -3597,7 +3597,7 @@ function determineAccountInception() {
             if (d) dates.push(d);
         });
     }
-    dates.sort();
+    dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
     if (dates.length > 0) {
         const earliest = new Date(dates[0]);
         const eYear = earliest.getFullYear();

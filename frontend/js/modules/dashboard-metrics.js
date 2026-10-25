@@ -106,7 +106,7 @@
                     if (Array.isArray(cachedBudgets) && cachedBudgets.length) {
                         monthlyBudgetLimit = cachedBudgets.reduce((sum, b) => sum + Number(b.limit || 0), 0);
                     }
-                } catch (_) {}
+                } catch (err) { console.debug("[Metrics] Budget limit sum fallback:", err.message); }
 
                 let safeDaily = 0;
                 if (monthlyBudgetLimit > 0) {

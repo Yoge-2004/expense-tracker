@@ -30,12 +30,14 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
     /**
      * Retrieves all budgets configured by the specified user.
+     * Uses LEFT JOIN FETCH to eagerly initialize category and avoid LazyInitializationException.
      *
      * @param user the {@link User} whose budgets are to be fetched
      * @return a list of {@link Budget} records owned by the user;
      *         empty list if none exist
      */
-    List<Budget> findByUser(User user);
+    @Query("SELECT b FROM Budget b LEFT JOIN FETCH b.category WHERE b.user = :user")
+    List<Budget> findByUser(@Param("user") User user);
 
     /**
      * Retrieves the budget configured for a specific user and category combination.

@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
@@ -50,6 +51,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @RestController
 @RequestMapping({"/api/reports", "/api/expenses"})
 public class RangeReportController {
@@ -354,7 +356,7 @@ public class RangeReportController {
 
             // Group expenses by category
             Map<String, List<Expense>> catMap = d.expenses.stream()
-                    .collect(Collectors.groupingBy(e -> e.getCategory() != null ? e.getCategory().getName() : "Uncategorized"));
+                    .collect(Collectors.groupingBy(e -> categoryName(e.getCategory())));
             List<Map.Entry<String, List<Expense>>> sortedCats = catMap.entrySet().stream()
                     .sorted((a, b) -> {
                         BigDecimal sumA = a.getValue().stream().map(e -> nz(e.getAmount())).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -450,7 +452,7 @@ public class RangeReportController {
                 r.setHeightInPoints(20);
                 boolean z = (row % 2 == 0);
                 put(expenseSheet, row, 0, safeDate(x.getExpenseDate()), z ? dataCenterZebra : dataCenter);
-                put(expenseSheet, row, 1, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), z ? dataLeftZebra : dataLeft);
+                put(expenseSheet, row, 1, categoryName(x.getCategory()), z ? dataLeftZebra : dataLeft);
                 put(expenseSheet, row, 2, safe(x.getDescription()), z ? dataLeftZebra : dataLeft);
                 put(expenseSheet, row, 3, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
                 put(expenseSheet, row, 4, x.isRecurring() ? "Yes" : "No", z ? dataCenterZebra : dataCenter);
@@ -519,7 +521,7 @@ public class RangeReportController {
                 put(subscriptionSheet, row, 1, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
                 put(subscriptionSheet, row, 2, safe(x.getFrequency()), z ? dataCenterZebra : dataCenter);
                 put(subscriptionSheet, row, 3, safeDate(x.getNextDueDate()), z ? dataCenterZebra : dataCenter);
-                put(subscriptionSheet, row, 4, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), z ? dataLeftZebra : dataLeft);
+                put(subscriptionSheet, row, 4, categoryName(x.getCategory()), z ? dataLeftZebra : dataLeft);
                 row++;
             }
             if (row > 1) {
@@ -543,7 +545,7 @@ public class RangeReportController {
                 Row r = budgetSheet.createRow(row);
                 r.setHeightInPoints(20);
                 boolean z = (row % 2 == 0);
-                put(budgetSheet, row, 0, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), z ? dataLeftZebra : dataLeft);
+                put(budgetSheet, row, 0, categoryName(x.getCategory()), z ? dataLeftZebra : dataLeft);
                 put(budgetSheet, row, 1, nz(x.getLimitAmount()), z ? dataMoneyZebra : dataMoney);
                 put(budgetSheet, row, 2, safe(x.getPeriod()), z ? dataCenterZebra : dataCenter);
                 put(budgetSheet, row, 3, safeDate(x.getStartDate()), z ? dataCenterZebra : dataCenter);
@@ -743,7 +745,7 @@ public class RangeReportController {
             Expense x = expenses.get(i);
             boolean z = (i % 2 == 1);
             cell(t, safeDate(x.getExpenseDate()), muted, z);
-            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted, z);
+            cell(t, categoryName(x.getCategory()), muted, z);
             cell(t, safe(x.getDescription()), muted, z);
             cell(t, s + " " + nz(x.getAmount()), muted, z);
         }
@@ -792,7 +794,7 @@ public class RangeReportController {
             cell(t, s + " " + nz(x.getAmount()), muted, z);
             cell(t, safe(x.getFrequency()), muted, z);
             cell(t, safeDate(x.getNextDueDate()), muted, z);
-            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted, z);
+            cell(t, categoryName(x.getCategory()), muted, z);
         }
         doc.add(t);
     }
@@ -809,7 +811,7 @@ public class RangeReportController {
         for (int i = 0; i < budgets.size(); i++) {
             Budget x = budgets.get(i);
             boolean z = (i % 2 == 1);
-            cell(t, x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(), muted, z);
+            cell(t, categoryName(x.getCategory()), muted, z);
             cell(t, s + " " + nz(x.getLimitAmount()), muted, z);
             cell(t, safe(x.getPeriod()), muted, z);
             cell(t, safeDate(x.getStartDate()) + " → " + safeDate(x.getEndDate()), muted, z);
@@ -820,7 +822,7 @@ public class RangeReportController {
     private static List<String> insights(Data d, BigDecimal spend, BigDecimal income, String symbol) {
         String top = d.expenses.stream()
                 .collect(Collectors.groupingBy(
-                        x -> x.getCategory() == null ? "Uncategorized" : x.getCategory().getName(),
+                        x -> categoryName(x.getCategory()),
                         Collectors.mapping(x -> nz(x.getAmount()),
                                 Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))))
                 .entrySet().stream()
@@ -875,6 +877,18 @@ public class RangeReportController {
 
     private static String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private static String categoryName(com.example.expensetracker.model.Category cat) {
+        if (cat == null) {
+            return "Uncategorized";
+        }
+        try {
+            String name = cat.getName();
+            return (name != null && !name.isBlank()) ? name : "Uncategorized";
+        } catch (Exception ex) {
+            return "Uncategorized";
+        }
     }
 
     private static String safeDate(LocalDate value) {
