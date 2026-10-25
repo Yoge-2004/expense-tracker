@@ -13,7 +13,7 @@ export function parseNotificationDate(value: string | number | Date | null | und
   if (value instanceof Date) return value;
   if (typeof value === 'number') return new Date(value);
   const str = String(value).trim();
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str) && !/[Zz]|[+-]\d{2}(?::?\d{2})?$/.test(str)) {
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str) && !/(?:[Zz]|[+-]\d{2}(?::?\d{2})?)$/.test(str)) {
     return new Date(str + 'Z');
   }
   return new Date(str);

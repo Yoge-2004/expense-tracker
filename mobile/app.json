@@ -25,6 +25,7 @@
     },
     "android": {
       "package": "com.yoge.expensetracker",
+      "allowBackup": false,
       "versionCode": 10,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

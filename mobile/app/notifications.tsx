@@ -204,7 +204,7 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {
-    getNotificationSoundEnabled().then(setSoundEnabled);
+    void getNotificationSoundEnabled().then(setSoundEnabled).catch(() => {});
   }, []);
 
   const handleToggleSound = async (val: boolean) => {
@@ -236,7 +236,7 @@ export default function NotificationsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      load();
+      void load();
     }, [load])
   );
 
@@ -246,7 +246,7 @@ export default function NotificationsScreen() {
     } catch {
       // the next refresh shows the truth
     }
-    load();
+    void load();
   };
 
   const clearNotification = async (id: number) => {
@@ -276,7 +276,7 @@ export default function NotificationsScreen() {
             } catch {
               // offline fallback
             }
-            load();
+            void load();
           },
         },
       ],
@@ -304,7 +304,7 @@ export default function NotificationsScreen() {
       });
     } catch (e) {
       showAlert('Could not save', e instanceof ApiError ? e.message : 'Check your connection and try again.', undefined, 'error');
-      load();
+      void load();
     }
   };
 
@@ -312,7 +312,7 @@ export default function NotificationsScreen() {
     try {
       await apiRequest(`${base}/test`, { method: 'POST' });
       showAlert('Test sent', 'A test notification is on its way.', undefined, 'success');
-      load();
+      void load();
     } catch (e) {
       showAlert('Could not send', e instanceof ApiError ? e.message : 'Check your connection and try again.', undefined, 'error');
     }
@@ -361,7 +361,7 @@ export default function NotificationsScreen() {
                 );
                 return;
               }
-              togglePreference(pref.type, value);
+              void togglePreference(pref.type, value);
             }}
             trackColor={{ false: c.border, true: '#93C5FD' }}
             thumbColor={pref.enabled ? '#2563EB' : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
@@ -405,7 +405,7 @@ export default function NotificationsScreen() {
               refreshing={refreshing}
               onRefresh={() => {
                 setRefreshing(true);
-                load();
+                void load();
               }}
               tintColor={c.primary}
             />

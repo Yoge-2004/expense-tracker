@@ -273,29 +273,29 @@ const HEALTH_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
-            checkHealth();
+            void checkHealth();
             checkPendingFlashToast();
         });
     } else {
-        checkHealth();
+        void checkHealth();
         checkPendingFlashToast();
     }
-    setInterval(checkHealth, HEALTH_CHECK_INTERVAL_MS);
+    setInterval(() => { void checkHealth(); }, HEALTH_CHECK_INTERVAL_MS);
 
     window.addEventListener("online", () => {
         console.log("[Network] Browser online. Checking server health...");
-        checkHealth();
+        void checkHealth();
     });
 
     window.addEventListener("focus", () => {
         if (!isServerOnline || wasOffline) {
-            checkHealth();
+            void checkHealth();
         }
     });
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && (!isServerOnline || wasOffline)) {
-            checkHealth();
+            void checkHealth();
         }
     });
 }
@@ -687,14 +687,22 @@ function getCurrencySymbol() { return getCurrencyInfo().symbol; }
 function formatGlobalCurrency(amt) {
     const info = getCurrencyInfo();
     try {
-        return new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, maximumFractionDigits: 2 }).format(amt || 0);
-    } catch (e) { return `${info.symbol} ${Number(amt || 0).toFixed(2)}`; }
+        const str = new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, maximumFractionDigits: 2 }).format(amt || 0);
+        return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
+    } catch (e) {
+        const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
+        return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(2)}` : `${info.symbol}${Number(amt || 0).toFixed(2)}`;
+    }
 }
 function formatGlobalCompactCurrency(amt) {
     const info = getCurrencyInfo();
     try {
-        return new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, notation: 'compact', maximumFractionDigits: 1 }).format(amt || 0);
-    } catch (e) { return `${info.symbol} ${Number(amt || 0).toFixed(0)}`; }
+        const str = new Intl.NumberFormat(info.locale, { style: 'currency', currency: info.code, notation: 'compact', maximumFractionDigits: 1 }).format(amt || 0);
+        return str.replace(/([^\w\s])\s+([\d,.-]+)/, '$1$2');
+    } catch (e) {
+        const isAlpha = /^[A-Z]{3}$/.test(info.symbol);
+        return isAlpha ? `${info.symbol} ${Number(amt || 0).toFixed(0)}` : `${info.symbol}${Number(amt || 0).toFixed(0)}`;
+    }
 }
 
 initGlobalTheme();

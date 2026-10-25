@@ -4,6 +4,9 @@ import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.Income;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.model.Budget;
+import com.example.expensetracker.model.RecurringExpense;
+import com.example.expensetracker.model.SavingsGoal;
 import com.example.expensetracker.repository.BudgetRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.IncomeRepository;
@@ -135,6 +138,107 @@ class RangeReportControllerTest {
 
         verify(security).validateUserAccess(10L);
         verifyNoInteractions(expenses, incomes);
+    }
+
+
+    @Test
+    void excelWithPopulatedBudgetsSubscriptionsAndGoalsSucceeds() {
+        User user = user(15L, "Full User");
+        Category food = category("Food");
+        when(users.findById(15L)).thenReturn(Optional.of(user));
+        when(expenses.findByUser(user)).thenReturn(List.of(expense(100, LocalDate.of(2026, 9, 1), "Lunch", food)));
+        when(incomes.findByUser(user)).thenReturn(List.of(income(3000, LocalDate.of(2026, 9, 5), "Salary")));
+
+        SavingsGoal goal = new SavingsGoal();
+        goal.setName("Car Down Payment");
+        goal.setTargetAmount(BigDecimal.valueOf(50000));
+        goal.setCurrentAmount(BigDecimal.valueOf(12000));
+        goal.setStatus("IN_PROGRESS");
+        goal.setUser(user);
+        when(savingsGoals.findByUser(user)).thenReturn(List.of(goal));
+
+        RecurringExpense rec = new RecurringExpense();
+        rec.setDescription("Netflix");
+        rec.setAmount(BigDecimal.valueOf(649));
+        rec.setFrequency("MONTHLY");
+        rec.setNextDueDate(LocalDate.of(2026, 10, 15));
+        rec.setCategory(food);
+        rec.setUser(user);
+        when(recurringExpenses.findByUser(user)).thenReturn(List.of(rec));
+
+        Budget b = new Budget();
+        b.setLimitAmount(BigDecimal.valueOf(15000));
+        b.setCategory(food);
+        b.setPeriod("MONTHLY");
+        b.setStartDate(LocalDate.of(2026, 9, 1));
+        b.setEndDate(LocalDate.of(2026, 9, 30));
+        b.setUser(user);
+        when(budgets.findByUser(user)).thenReturn(List.of(b));
+
+        var response = controller.excel(15L, null, null, "INR");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().length > 2000);
+    }
+
+    @Test
+    void excelGracefullyHandlesLazyInitializationExceptionOnProxyCategory() {
+        User user = user(16L, "Lazy User");
+        Category mockLazyCategory = mock(Category.class);
+        when(mockLazyCategory.getName()).thenThrow(new org.hibernate.LazyInitializationException("Could not initialize proxy - no session"));
+
+        when(users.findById(16L)).thenReturn(Optional.of(user));
+        when(expenses.findByUser(user)).thenReturn(List.of(expense(200, LocalDate.of(2026, 9, 2), "Coffee", mockLazyCategory)));
+        when(incomes.findByUser(user)).thenReturn(List.of());
+        when(savingsGoals.findByUser(user)).thenReturn(List.of());
+
+        Budget b = new Budget();
+        b.setLimitAmount(BigDecimal.valueOf(5000));
+        b.setCategory(mockLazyCategory);
+        b.setUser(user);
+        when(budgets.findByUser(user)).thenReturn(List.of(b));
+
+        RecurringExpense r = new RecurringExpense();
+        r.setDescription("Sub");
+        r.setAmount(BigDecimal.valueOf(99));
+        r.setCategory(mockLazyCategory);
+        r.setUser(user);
+        when(recurringExpenses.findByUser(user)).thenReturn(List.of(r));
+
+        var response = controller.excel(16L, null, null, "INR");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().length > 2000);
+    }
+
+    @Test
+    void pdfGracefullyHandlesLazyInitializationExceptionOnProxyCategory() {
+        User user = user(17L, "Lazy User PDF");
+        Category mockLazyCategory = mock(Category.class);
+        when(mockLazyCategory.getName()).thenThrow(new org.hibernate.LazyInitializationException("Could not initialize proxy - no session"));
+
+        when(users.findById(17L)).thenReturn(Optional.of(user));
+        when(expenses.findByUser(user)).thenReturn(List.of(expense(200, LocalDate.of(2026, 9, 2), "Coffee", mockLazyCategory)));
+        when(incomes.findByUser(user)).thenReturn(List.of());
+        when(savingsGoals.findByUser(user)).thenReturn(List.of());
+
+        Budget b = new Budget();
+        b.setLimitAmount(BigDecimal.valueOf(5000));
+        b.setCategory(mockLazyCategory);
+        b.setUser(user);
+        when(budgets.findByUser(user)).thenReturn(List.of(b));
+
+        RecurringExpense r = new RecurringExpense();
+        r.setDescription("Sub");
+        r.setAmount(BigDecimal.valueOf(99));
+        r.setCategory(mockLazyCategory);
+        r.setUser(user);
+        when(recurringExpenses.findByUser(user)).thenReturn(List.of(r));
+
+        var response = controller.pdf(17L, null, null, "INR");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().length > 1000);
     }
 
     private static User user(Long id, String name) {

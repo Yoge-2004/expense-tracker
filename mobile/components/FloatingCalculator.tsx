@@ -559,7 +559,7 @@ export const FloatingCalculator: React.FC = () => {
                     onPress={() => {
                       setFxFrom(item.from);
                       setFxTo(item.to);
-                      handleConvertCurrency(item.from, item.to);
+                      void handleConvertCurrency(item.from, item.to);
                     }}
                     style={[
                       styles.fxChip,

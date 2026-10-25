@@ -150,7 +150,7 @@
                             </button>
                         </div>
                         <div style="padding: 10px 14px; border-bottom: 1px solid var(--border);">
-                            <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">PREFERRED CURRENCY</label>
+                            <span class="form-label" style="font-size: 11px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">PREFERRED CURRENCY</span>
                             <p style="font-size: 10.5px; color: var(--text-muted); margin: -2px 0 8px; line-height: 1.4;">Changes the symbol shown — amounts aren't converted between currencies.</p>
                             <input type="hidden" id="currencySelector" value="INR">
                             <div class="custom-select-wrapper" id="dashCurrencyWrapper">
@@ -676,7 +676,7 @@
                     <button type="button" class="preset-btn" data-preset="last30">Last 30 Days</button>
                 </div>
 
-                <select id="filterMonth" class="filter-select">
+                <select id="filterMonth" class="filter-select" aria-label="Filter by month">
                     <option value="all">All Months</option>
                     <option value="0">January</option>
                     <option value="1">February</option>
@@ -691,14 +691,14 @@
                     <option value="10">November</option>
                     <option value="11">December</option>
                 </select>
-                <select id="filterYear" class="filter-select">
+                <select id="filterYear" class="filter-select" aria-label="Filter by year">
                     <option value="all">All Years</option>
                 </select>
 
-                <select id="filterCategory" class="filter-select">
+                <select id="filterCategory" class="filter-select" aria-label="Filter by category">
                     <option value="all">All Categories</option>
                 </select>
-                <select id="filterSort" class="filter-select">
+                <select id="filterSort" class="filter-select" aria-label="Sort expenses">
                     <option value="date-desc">Newest First</option>
                     <option value="date-asc">Oldest First</option>
                     <option value="amount-desc">High to Low</option>
@@ -739,7 +739,7 @@
                     </div>
                 </div>
 
-                <select id="incomeFilterFrequency" class="filter-select" title="Filter by Cadence">
+                <select id="incomeFilterFrequency" class="filter-select" title="Filter by Cadence" aria-label="Filter by cadence">
                     <option value="all">All Frequencies</option>
                     <option value="DAILY">Daily (Wages)</option>
                     <option value="WEEKLY">Weekly (Wages)</option>
@@ -748,7 +748,7 @@
                     <option value="CUSTOM">Custom</option>
                 </select>
 
-                <select id="incomeFilterSort" class="filter-select" title="Sort Incomes">
+                <select id="incomeFilterSort" class="filter-select" title="Sort Incomes" aria-label="Sort incomes">
                     <option value="date-desc">Newest First</option>
                     <option value="date-asc">Oldest First</option>
                     <option value="amount-desc">Highest Amount</option>
@@ -898,9 +898,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Category</label>
+                    <label for="categorySelect">Category</label>
                     <div class="input-group">
-                        <select id="categorySelect" required></select>
+                        <select id="categorySelect" required aria-label="Category"></select>
                         <button type="button" id="addCategoryBtn" class="btn-icon" title="Add Custom Category" aria-label="Add custom category">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </button>
@@ -1293,7 +1293,7 @@
                 <input type="hidden" id="depositGoalId">
                 <div class="form-group">
                     <label for="depositAmount">Contribution Amount</label>
-                    <input type="number" id="depositAmount" required placeholder="0.00" step="0.01" min="0.01" autofocus>
+                    <input type="number" id="depositAmount" required placeholder="0.00" step="0.01" min="0.01">
                 </div>
                 <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Add Deposit</button>
             </form>
@@ -1314,7 +1314,7 @@
             <form id="loanAdjustmentForm" style="padding:16px 20px 20px;">
                 <input type="hidden" id="loanId">
                 <div class="form-group">
-                    <label style="display:block; font-size:12px; font-weight:700; margin-bottom:8px;">Adjustment Direction</label>
+                    <span class="form-label" style="display:block; font-size:12px; font-weight:700; margin-bottom:8px;">Adjustment Direction</span>
                     <div class="loan-type-toggle-group" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                         <button type="button" class="loan-type-btn active" id="loanTypeLentBtn" data-type="LENT">
                             <span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Lent to Friend</span>
@@ -1433,13 +1433,13 @@
             <div class="period-picker-body" style="padding: 16px 20px 22px;">
                 <!-- Year Selection Chips -->
                 <div style="margin-bottom: 16px;">
-                    <label class="period-picker-label">ACTIVE YEARS</label>
+                    <span class="period-picker-label">ACTIVE YEARS</span>
                     <div class="period-chips-row" id="reportYearChips"></div>
                 </div>
 
                 <!-- Month Selection Grid -->
                 <div style="margin-bottom: 16px;">
-                    <label class="period-picker-label">SELECT MONTH</label>
+                    <span class="period-picker-label">SELECT MONTH</span>
                     <div class="period-months-grid" id="reportMonthGrid"></div>
                 </div>
 

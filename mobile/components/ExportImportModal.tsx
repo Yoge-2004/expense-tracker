@@ -89,7 +89,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
 
   useEffect(() => {
     // Restore any active/recent transfer task upon mount
-    AsyncStorage.getItem(STORAGE_TRANSFER_JOB_KEY).then((data) => {
+    void AsyncStorage.getItem(STORAGE_TRANSFER_JOB_KEY).then((data) => {
       if (data) {
         try {
           const parsed: TransferProgressInfo = JSON.parse(data);
@@ -101,12 +101,12 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
           }
         } catch {}
       }
-    });
+    }).catch(() => {});
 
     // Listen to device wake/app resume to recover in-flight or background-completed jobs
     const sub = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        AsyncStorage.getItem(STORAGE_TRANSFER_JOB_KEY).then((data) => {
+        void AsyncStorage.getItem(STORAGE_TRANSFER_JOB_KEY).then((data) => {
           if (data) {
             try {
               const parsed: TransferProgressInfo = JSON.parse(data);
@@ -115,7 +115,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
               }
             } catch {}
           }
-        });
+        }).catch(() => {});
       }
     });
 

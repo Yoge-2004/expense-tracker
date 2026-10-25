@@ -128,7 +128,7 @@ export default function ProfileScreen() {
       const healthy = await checkServerHealth();
       setIsOffline(!healthy);
       if (healthy) {
-        checkForAppUpdate().then((info) => setUpdateInfo(info));
+        void checkForAppUpdate().then((info) => setUpdateInfo(info)).catch(() => {});
       }
     } finally {
       setRetryingProfile(false);
@@ -136,8 +136,8 @@ export default function ProfileScreen() {
   };
 
   React.useEffect(() => {
-    checkConnectivity();
-    checkForAppUpdate().then((info) => setUpdateInfo(info));
+    void checkConnectivity();
+    void checkForAppUpdate().then((info) => setUpdateInfo(info)).catch(() => {});
   }, []);
 
   const handleCheckUpdate = async () => {
@@ -175,10 +175,10 @@ export default function ProfileScreen() {
   const [transactionAlertsEnabled, setTransactionAlertsOn] = useState(true);
 
   React.useEffect(() => {
-    getDailyRemindersEnabled().then((enabled) => setRemindersEnabled(enabled));
-    getSmartRemindersEnabled().then((enabled) => setSmartRemindersEnabled(enabled));
-    getTransactionAlertsEnabled().then((enabled) => setTransactionAlertsOn(enabled));
-    getInstantDebitAlertsEnabled().then((enabled) => setInstantDebitEnabled(enabled));
+    void getDailyRemindersEnabled().then((enabled) => setRemindersEnabled(enabled)).catch(() => {});
+    void getSmartRemindersEnabled().then((enabled) => setSmartRemindersEnabled(enabled)).catch(() => {});
+    void getTransactionAlertsEnabled().then((enabled) => setTransactionAlertsOn(enabled)).catch(() => {});
+    void getInstantDebitAlertsEnabled().then((enabled) => setInstantDebitEnabled(enabled)).catch(() => {});
   }, []);
 
   const handleToggleTransactionAlerts = async () => {
@@ -399,9 +399,9 @@ export default function ProfileScreen() {
         if (u && u.hasSecurityPin) setHasSecurityPin(true);
         if (u && u.email) {
           setAccountEmail(u.email);
-          savedPinEmail().then((saved) =>
+          void savedPinEmail().then((saved) =>
             setFingerprintResetEnabled(!!saved && saved === String(u.email).trim().toLowerCase())
-          );
+          ).catch(() => {});
         }
       })
       .catch(() => {});
@@ -627,7 +627,7 @@ export default function ProfileScreen() {
       setShowDeleteModal(false);
       setDeleteConfirmText('');
       setDeletePassword('');
-      logout();
+      await logout();
     } catch (err: any) {
       setDeletePassword('');
       const msg = err instanceof ApiError ? err.message : 'Could not delete account.';
@@ -747,7 +747,7 @@ export default function ProfileScreen() {
               activeOpacity={0.8}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                toggleTheme();
+                void toggleTheme();
               }}
               style={[styles.menuRow, { borderBottomColor: c.border }]}
             >

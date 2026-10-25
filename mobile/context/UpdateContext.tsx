@@ -77,7 +77,7 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
   // On launch: show a known update straight away from the cache, then confirm with a fresh check.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
       const cached = await loadCachedUpdate();
       if (!cancelled && cached) {
         const rebased = withCurrentVersion(cached, CURRENT_APP_VERSION);

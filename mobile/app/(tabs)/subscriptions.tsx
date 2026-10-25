@@ -200,14 +200,14 @@ export default function SubscriptionsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchAllRecurringData();
+      void fetchAllRecurringData();
     }, [userId])
   );
 
   const onRefresh = () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    fetchAllRecurringData();
+    void fetchAllRecurringData();
   };
 
   /**
@@ -368,7 +368,7 @@ export default function SubscriptionsScreen() {
       showAlert('Installment Deposited', `Successfully contributed ${currSym}${amt.toLocaleString()} to ${depositModalGoal.name}.`);
       setDepositModalGoal(null);
       setDepositAmount('');
-      fetchAllRecurringData();
+      void fetchAllRecurringData();
     } catch (e: any) {
       const msg = e instanceof ApiError ? e.message : 'Could not record installment deposit.';
       showAlert('Deposit Failed', msg);
@@ -420,7 +420,7 @@ export default function SubscriptionsScreen() {
             activeOpacity={0.85}
             onPress={() => {
               setIsLoading(true);
-              fetchAllRecurringData();
+              void fetchAllRecurringData();
             }}
             style={[styles.retryBtn, { backgroundColor: c.primary }]}
           >
@@ -463,7 +463,7 @@ export default function SubscriptionsScreen() {
             retrying={refreshing}
             onRetry={() => {
               setRefreshing(true);
-              fetchAllRecurringData();
+              void fetchAllRecurringData();
             }}
           />
         ) : null}

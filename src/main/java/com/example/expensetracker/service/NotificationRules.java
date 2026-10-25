@@ -60,9 +60,11 @@ public final class NotificationRules {
         return average.signum() > 0 && amount.compareTo(average.multiply(LARGE_MULTIPLE)) >= 0;
     }
 
-    /** "INR 1,200" */
+    /** "INR 1,200" or "₹1,200" */
     public static String money(String currency, BigDecimal amount) {
-        String code = currency == null || currency.isBlank() ? "INR" : currency;
-        return String.format(Locale.ROOT, "%s %,.0f", code, amount == null ? BigDecimal.ZERO : amount);
+        String code = currency == null || currency.isBlank() ? "INR" : currency.trim();
+        boolean isAlpha = code.matches("^[A-Za-z]{3}$");
+        String format = isAlpha ? "%s %,.0f" : "%s%,.0f";
+        return String.format(Locale.ROOT, format, code, amount == null ? BigDecimal.ZERO : amount);
     }
 }

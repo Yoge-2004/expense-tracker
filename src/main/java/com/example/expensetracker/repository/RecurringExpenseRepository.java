@@ -34,6 +34,7 @@ public interface RecurringExpenseRepository extends JpaRepository<RecurringExpen
     /**
      * Retrieves all recurring expenses whose {@code nextDueDate} is on or before
      * the specified date.
+     * Uses LEFT JOIN FETCH to eagerly load category and user.
      *
      * <p>Called daily by the {@link com.example.expensetracker.service.RecurringExpenseScheduler}
      * with today's date to find any subscriptions that are due to generate a new
@@ -44,14 +45,14 @@ public interface RecurringExpenseRepository extends JpaRepository<RecurringExpen
      * @return a list of {@link RecurringExpense} records due for processing;
      *         empty list if none are due
      */
-    List<RecurringExpense> findByNextDueDateLessThanEqual(LocalDate date);
+    @Query("SELECT r FROM RecurringExpense r LEFT JOIN FETCH r.category LEFT JOIN FETCH r.user WHERE r.nextDueDate <= :date")
+    List<RecurringExpense> findByNextDueDateLessThanEqual(@Param("date") LocalDate date);
 
     /**
      * Retrieves all recurring expense subscriptions belonging to a specific user.
      * Uses LEFT JOIN FETCH to eagerly initialize category and avoid LazyInitializationException.
      *
-     * <p>Used by the {@code GET /api/expenses/recurring/user/{userId}} endpoint
-     * to display all active subscriptions in the user's dashboard.</p>
+     * <p>Used by the {@code GET /api/expenses/recurring/user/{userId}} endpoint\n     * to display all active subscriptions in the user's dashboard.</p>
      *
      * @param user the {@link User} whose recurring expenses are to be retrieved
      * @return a list of {@link RecurringExpense} records owned by the user;

@@ -150,7 +150,7 @@ export function summariseReleaseNotes(notes: string, maxLines = 6): string {
       line
         .replace(/^\s{0,3}#{1,6}\s*/, '')
         .replace(/^\s*[-*+]\s+/, '\u2022 ')
-        .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/!?\[([^\]]+)\]\([^)]+\)/g, '$1')
         .replace(/[*_`]/g, '')
         .trim()
     )

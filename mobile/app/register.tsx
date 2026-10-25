@@ -42,7 +42,7 @@ import { performGoogleSignIn } from '../services/googleAuth';
 import { requestNotificationPermissions, scheduleDailyExpenseReminders } from '../services/notifications';
 
 function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email);
 }
 
 function isValidUsername(username: string): boolean {

@@ -132,7 +132,7 @@ function bucketByMonth<T extends { amount: number | string }>(
 
 const completedMonths = (totals: Map<string, number>, now: Date): string[] => {
   const current = monthKey(now)!;
-  return [...totals.keys()].filter((k) => k < current).sort();
+  return [...totals.keys()].filter((k) => k < current).sort((a, b) => a.localeCompare(b));
 };
 
 /* --- I1: month-over-month vs trailing baseline (needs 2 completed months) - */

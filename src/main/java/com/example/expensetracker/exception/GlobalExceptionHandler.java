@@ -44,7 +44,11 @@ public class GlobalExceptionHandler {
             IllegalArgumentException ex,
             HttpServletRequest request) {
 
-        log.warn("Bad request at '{}': {}", request.getRequestURI(), ex.getMessage());
+        if (ex.getCause() != null) {
+            log.warn("Bad request at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        } else {
+            log.warn("Bad request at '{}': {}", request.getRequestURI(), ex.getMessage());
+        }
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -61,7 +65,11 @@ public class GlobalExceptionHandler {
             BadRequestException ex,
             HttpServletRequest request) {
 
-        log.warn("Bad request exception at '{}': {}", request.getRequestURI(), ex.getMessage());
+        if (ex.getCause() != null) {
+            log.warn("Bad request exception at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        } else {
+            log.warn("Bad request exception at '{}': {}", request.getRequestURI(), ex.getMessage());
+        }
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -78,7 +86,11 @@ public class GlobalExceptionHandler {
             IllegalStateException ex,
             HttpServletRequest request) {
 
-        log.warn("Conflict at '{}': {}", request.getRequestURI(), ex.getMessage());
+        if (ex.getCause() != null) {
+            log.error("Conflict / Illegal state at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        } else {
+            log.warn("Conflict at '{}': {}", request.getRequestURI(), ex.getMessage());
+        }
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
@@ -95,7 +107,11 @@ public class GlobalExceptionHandler {
             ConflictException ex,
             HttpServletRequest request) {
 
-        log.warn("Conflict exception at '{}': {}", request.getRequestURI(), ex.getMessage());
+        if (ex.getCause() != null) {
+            log.error("Conflict exception at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        } else {
+            log.warn("Conflict exception at '{}': {}", request.getRequestURI(), ex.getMessage());
+        }
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
@@ -230,7 +246,11 @@ public class GlobalExceptionHandler {
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
         String reason = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
 
-        log.warn("ResponseStatusException ({}) at '{}': {}", status.value(), request.getRequestURI(), reason);
+        if (status.is5xxServerError()) {
+            log.error("ResponseStatusException ({}) at '{}': {}", status.value(), request.getRequestURI(), reason, ex);
+        } else {
+            log.warn("ResponseStatusException ({}) at '{}': {}", status.value(), request.getRequestURI(), reason);
+        }
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 status.value(),
@@ -252,7 +272,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
 
-        log.error("Database connection failure at '{}': {}", request.getRequestURI(), ex.getMessage());
+        log.error("Database connection failure at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.SERVICE_UNAVAILABLE.value(),

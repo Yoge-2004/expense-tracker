@@ -361,9 +361,9 @@ function RootLayoutNav() {
     if (isLoading || !token || remindersInitialized.current) return;
 
     remindersInitialized.current = true;
-    getDailyRemindersEnabled().then((enabled) => {
+    void getDailyRemindersEnabled().then((enabled) => {
       if (enabled) scheduleDailyExpenseReminders().catch(() => {});
-    });
+    }).catch(() => {});
     // The morning, weekly, month-start and month-end reminders (bills and salary follow once data loads).
     scheduleSmartReminders().catch(() => {});
   }, [isLoading, token]);
@@ -455,7 +455,7 @@ function RootLayoutNav() {
 
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
-        checkClipboardForSms();
+        void checkClipboardForSms();
       }
     });
 

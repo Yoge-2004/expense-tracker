@@ -13,6 +13,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { planDueReminders, planMonthEndReminders, ReminderSources, REMINDER_ID_PREFIX } from '../utils/reminderPlan';
+import { getCurrencySymbol } from './currency';
 import { apiRequest, getSession, invalidateApiCache } from './api';
 
 const REMINDERS_STORAGE_KEY = 'expense_tracker_daily_reminders_enabled';
@@ -54,7 +55,7 @@ export function formatNotificationAmount(
   const num = typeof amount === "number" ? amount : parseFloat(String(amount || 0));
   const safeNum = isNaN(num) ? 0 : num;
   const rawCurr = (currency || "₹").trim();
-  const symbol = rawCurr === "INR" ? "₹" : rawCurr;
+  const symbol = getCurrencySymbol(rawCurr);
   const isAlphaCode = /^[A-Z]{3}$/.test(symbol);
   const minDecimals = fixedDecimals !== undefined ? fixedDecimals : (safeNum % 1 !== 0 ? 2 : 0);
   const maxDecimals = fixedDecimals !== undefined ? fixedDecimals : 2;
@@ -653,7 +654,7 @@ export function registerIncomingNotificationListener(userId?: string | null) {
 
     const subReceived = Notifications.addNotificationReceivedListener(handleNotification);
     const subResponse = Notifications.addNotificationResponseReceivedListener((response: any) => {
-      handleNotification(response?.notification);
+      void handleNotification(response?.notification);
     });
 
     return {

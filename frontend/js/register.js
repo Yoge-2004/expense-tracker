@@ -175,14 +175,9 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
     // expired, so the old prompt-after-the-request often never appeared.
     let notificationPrompt = null;
     if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-        try {
-            const req = Notification.requestPermission();
-            if (req && typeof req.catch === 'function') {
-                notificationPrompt = req.catch(() => {});
-            }
-        } catch (_) {
-            notificationPrompt = null;
-        }
+        notificationPrompt = Promise.resolve()
+            .then(() => Notification.requestPermission())
+            .catch(() => {});
     }
 
     try {

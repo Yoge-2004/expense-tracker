@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import Constants, { AppOwnership, ExecutionEnvironment } from 'expo-constants';
 import * as AuthSession from 'expo-auth-session';
+import * as Crypto from 'expo-crypto';
 import { GOOGLE_OAUTH_CONFIG } from '../constants/auth';
 
 const GOOGLE_DISCOVERY = {
@@ -101,7 +102,7 @@ async function performWebGoogleSignIn(): Promise<string | null> {
   const redirectUri = AuthSession.makeRedirectUri({
     scheme: 'expensetracker',
   });
-  const nonce = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  const nonce = Crypto.randomUUID();
 
   const authRequest = new AuthSession.AuthRequest({
     clientId: GOOGLE_OAUTH_CONFIG.webClientId,

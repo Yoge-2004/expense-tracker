@@ -608,7 +608,7 @@ public class RangeReportController {
             return out.toByteArray();
         } catch (Exception ex) {
             log.error("Failed to generate executive Excel report: {}", ex.getMessage(), ex);
-            throw new IllegalStateException("Unable to create executive Excel report", ex);
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to create executive Excel report", ex);
         }
     }
 
@@ -708,7 +708,7 @@ public class RangeReportController {
             return out.toByteArray();
         } catch (Exception ex) {
             log.error("Failed to generate executive PDF report: {}", ex.getMessage(), ex);
-            throw new IllegalStateException("Unable to create executive PDF report", ex);
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to create executive PDF report", ex);
         }
     }
 

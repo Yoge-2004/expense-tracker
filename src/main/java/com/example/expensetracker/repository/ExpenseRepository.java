@@ -25,9 +25,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             + "ORDER BY e.expenseDate DESC, e.id DESC")
     List<Expense> findByUser(@Param("user") User user);
 
-    Optional<Expense> findByIdAndUser(Long id, User user);
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.id = :id AND e.user = :user")
+    Optional<Expense> findByIdAndUser(@Param("id") Long id, @Param("user") User user);
 
-    List<Expense> findByUserAndExpenseDateBetween(User user, LocalDate startDate, LocalDate endDate);
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user AND e.expenseDate BETWEEN :startDate AND :endDate ORDER BY e.expenseDate DESC, e.id DESC")
+    List<Expense> findByUserAndExpenseDateBetween(@Param("user") User user, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     boolean existsByCategory_Id(Long categoryId);
 

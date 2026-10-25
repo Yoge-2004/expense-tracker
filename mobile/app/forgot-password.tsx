@@ -34,7 +34,7 @@ import { ThemeToggleBtn } from "../components/ThemeToggleBtn";
 import { readPinWithFingerprint, savedPinEmail } from "../utils/pinVault";
 
 function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(email);
 }
 
 export default function ForgotPasswordScreen() {
@@ -138,7 +138,7 @@ export default function ForgotPasswordScreen() {
       setFingerprintReady(false);
       return;
     }
-    savedPinEmail().then((saved) => setFingerprintReady(!!saved && saved === email.trim().toLowerCase()));
+    void savedPinEmail().then((saved) => setFingerprintReady(!!saved && saved === email.trim().toLowerCase())).catch(() => {});
   }, [step, hasSecurityPin, email]);
 
   // Fingerprint releases the saved Security PIN; the server still verifies the PIN as usual.

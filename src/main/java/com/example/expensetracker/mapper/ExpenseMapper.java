@@ -34,8 +34,9 @@ public final class ExpenseMapper {
      *
      * <p>Maps the entity's core fields (id, amount, description, expenseDate)
      * along with category details if a category is associated. If the expense
-     * has no category, both {@code categoryId} and {@code categoryName} in the
-     * resulting DTO will be {@code null}.</p>
+     * has no category or the category proxy cannot be initialized, both
+     * {@code categoryId} and {@code categoryName} in the resulting DTO will
+     * fail gracefully without throwing LazyInitializationException.</p>
      *
      * <p>Returns {@code null} safely if the provided expense is {@code null}.</p>
      *
@@ -52,8 +53,17 @@ public final class ExpenseMapper {
 
         Category category = expense.getCategory();
         if (category != null) {
-            categoryId = category.getId();
-            categoryName = category.getName();
+            try {
+                categoryId = category.getId();
+                categoryName = category.getName();
+            } catch (Exception ex) {
+                try {
+                    categoryId = category.getId();
+                } catch (Exception ignored) {
+                    categoryId = null;
+                }
+                categoryName = null;
+            }
         }
 
         return new ExpenseDto(

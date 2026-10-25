@@ -244,14 +244,14 @@ setBudgetForm?.addEventListener("submit", async (e) => {
     const submitBtn = setBudgetForm.querySelector('button[type="submit"]');
     if (submitBtn.disabled) return; // a submission is already in flight
 
-    const catId = parseInt(budgetCategorySelect.value);
-    const limit = parseFloat((document.getElementById("budgetLimit") || document.getElementById("budgetLimitAmount")).value);
+    const catId = Number.parseInt(budgetCategorySelect.value);
+    const limit = Number.parseFloat((document.getElementById("budgetLimit") || document.getElementById("budgetLimitAmount")).value);
     const period = budgetPeriod.value;
-    const intervalDays = period === "CUSTOM" ? (parseInt(document.getElementById("budgetIntervalDays")?.value) || 30) : null;
+    const intervalDays = period === "CUSTOM" ? (Number.parseInt(document.getElementById("budgetIntervalDays")?.value) || 30) : null;
     const startDate = document.getElementById("budgetStartDate").value || null;
     const endDate = document.getElementById("budgetEndDate").value || null;
 
-    if (isNaN(limit) || limit <= 0) return showToast("Limit amount must be greater than 0", "error");
+    if (Number.isNaN(limit) || limit <= 0) return showToast("Limit amount must be greater than 0", "error");
 
     submitBtn.disabled = true;
     try {
@@ -473,17 +473,17 @@ elements.addForm.addEventListener("submit", async (e) => {
     const id = document.getElementById("expenseId").value;
     const isRecurring = elements.isRecurring.checked;
 
-    const amountVal = parseFloat(document.getElementById("amount").value);
+    const amountVal = Number.parseFloat(document.getElementById("amount").value);
     const dateVal = document.getElementById("date").value;
 
-    if (isNaN(amountVal) || amountVal <= 0) return showToast("Amount must be a positive number.", "error");
+    if (Number.isNaN(amountVal) || amountVal <= 0) return showToast("Amount must be a positive number.", "error");
     if (!dateVal) return showToast("Please select a valid date.", "error");
 
     const expenseData = {
         description: document.getElementById("desc").value,
         amount: amountVal,
         expenseDate: dateVal,
-        categoryId: parseInt(elements.categorySelect.value)
+        categoryId: Number.parseInt(elements.categorySelect.value)
     };
     if (isRecurring) {
         expenseData.frequency = elements.recurringFrequency.value;
@@ -724,7 +724,7 @@ async function renderManageCategoriesList() {
                 populateFilterDropdowns(allCategories, allExpenses);
                 renderCategoryPills(allCategories);
                 showToast(`Category "${catName}" deleted.`, "success");
-                renderManageCategoriesList();
+                await renderManageCategoriesList();
             } catch (error) {
                 showToast(error.message, "error");
             }
@@ -734,7 +734,7 @@ async function renderManageCategoriesList() {
 
 document.getElementById("manageCategoriesBtn")?.addEventListener("click", () => {
     openModal(manageCategoriesModal);
-    renderManageCategoriesList();
+    void renderManageCategoriesList();
 });
 document.getElementById("closeManageCategoriesModalBtn")?.addEventListener("click", () => {
     closeModal(manageCategoriesModal);
@@ -953,7 +953,7 @@ if (exportMonthlySummaryBtn) {
 
 const sendMonthlyReportBtn = document.getElementById("sendMonthlyReportBtn");
 if (sendMonthlyReportBtn) {
-    (async () => {
+    void (async () => {
         try {
             const authConfig = await apiRequest("/auth/config", { method: "GET" });
             if (authConfig && authConfig.emailVerificationEnabled) {
@@ -974,7 +974,7 @@ if (sendMonthlyReportBtn) {
 }
 
 // Fetch and display server-side user profile (name + email)
-(async () => {
+void (async () => {
     try {
         const profile = await apiRequest(`/users/${userId}`);
         if (profile) {
@@ -1200,7 +1200,7 @@ function generateXmlSpreadsheet(sheetName, headers, rows, totalColIdx, totalLabe
         xml += `\n   <Row ss:Height="21">`;
         r.forEach((cell, idx) => {
             if (idx === totalColIdx) {
-                const num = parseFloat(cell) || 0;
+                const num = Number.parseFloat(cell) || 0;
                 sum += num;
                 const style = isZebra ? "CurrencyZebra" : "Currency";
                 xml += `<Cell ss:StyleID="${style}"><Data ss:Type="Number">${num}</Data></Cell>`;
@@ -1281,7 +1281,7 @@ function exportExpensesClientSideExcel() {
         e.id || (idx + 1),
         e.expenseDate || e.date || "",
         e.category?.name || e.categoryName || e.category || "General",
-        parseFloat(e.amount) || 0,
+        Number.parseFloat(e.amount) || 0,
         e.description || "",
         (e.recurring || e.isRecurring) ? "YES" : "NO"
     ]);
@@ -1298,7 +1298,7 @@ function exportIncomesClientSideExcel() {
         inc.id || (idx + 1),
         inc.incomeDate || inc.date || "",
         inc.source || "Cash Inflow",
-        parseFloat(inc.amount) || 0,
+        Number.parseFloat(inc.amount) || 0,
         inc.description || "",
         (inc.isRecurring || inc.recurring) ? "YES" : "NO"
     ]);
@@ -1518,7 +1518,7 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
 
         let blob;
         const contentLength = res.headers.get("Content-Length");
-        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        const total = contentLength ? Number.parseInt(contentLength, 10) : 0;
         if (res.body && typeof res.body.getReader === "function") {
             const reader = res.body.getReader();
             const chunks = [];
@@ -1571,7 +1571,7 @@ async function downloadAuthenticated(url, fallbackFilename, loadingMessage, fall
 }
 
 document.getElementById("exportExcelBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(
+    void downloadAuthenticated(
         `${API_BASE_URL}/expenses/user/${userId}/export/excel`,
         "expenses.xlsx",
         "Generating Expenses Excel Workbook...",
@@ -1580,7 +1580,7 @@ document.getElementById("exportExcelBtn")?.addEventListener("click", () => {
 });
 
 document.getElementById("exportReportExcelBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(
+    void downloadAuthenticated(
         `${API_BASE_URL}/reports/user/${userId}/export/excel`,
         "executive_financial_statement.xlsx",
         "Generating Complete Executive Financial Workbook (Excel)..."
@@ -1588,15 +1588,15 @@ document.getElementById("exportReportExcelBtn")?.addEventListener("click", () =>
 });
 
 document.getElementById("exportCsvBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/csv`, "expenses.csv", "Exporting CSV...");
+    void downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/csv`, "expenses.csv", "Exporting CSV...");
 });
 
 document.getElementById("exportJsonBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/json`, "expenses.json", "Exporting JSON...");
+    void downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/json`, "expenses.json", "Exporting JSON...");
 });
 
 document.getElementById("exportPdfBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/pdf`, "expenses.pdf", "Generating PDF report...");
+    void downloadAuthenticated(`${API_BASE_URL}/expenses/user/${userId}/export/pdf`, "expenses.pdf", "Generating PDF report...");
 });
 
 const importBtn = document.getElementById("importBtn");
@@ -1706,14 +1706,14 @@ elements.manageSubsBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     toggleProfileMenu(false);
     openModal(elements.subsModal);
-    loadSubscriptions();
+    await loadSubscriptions();
 });
 
 // Also handle the "Manage Subscriptions →" link in the metrics card
 document.getElementById("manageSubsLink")?.addEventListener("click", async (e) => {
     e.preventDefault();
     openModal(elements.subsModal);
-    loadSubscriptions();
+    await loadSubscriptions();
 });
 
 // Close Modal
@@ -2085,7 +2085,7 @@ window.deleteIncomeFromSubsModal = async (incId) => {
         await apiRequest(`/incomes/${incId}/user/${userId}`, { method: "DELETE" });
         showToast("Income record deleted.", "success");
         await loadDashboard(true);
-        loadSubscriptions();
+        await loadSubscriptions();
     } catch (err) {
         showToast(err.message || "Failed to delete income", "error");
     } finally {
@@ -2136,19 +2136,19 @@ editSubForm?.addEventListener("submit", async (e) => {
 
     const id = document.getElementById("editSubId").value;
     const desc = document.getElementById("editSubDesc").value;
-    const amount = parseFloat(document.getElementById("editSubAmount").value);
+    const amount = Number.parseFloat(document.getElementById("editSubAmount").value);
     const nextDueDate = document.getElementById("editSubNextDate").value;
     const frequency = document.getElementById("editSubFrequency")?.value || "MONTHLY";
-    const intervalDaysRaw = parseInt(document.getElementById("editSubIntervalDays")?.value || "1");
+    const intervalDaysRaw = Number.parseInt(document.getElementById("editSubIntervalDays")?.value || "1");
 
-    if (isNaN(amount) || amount <= 0) return showToast("Amount must be greater than 0", "error");
-    if (frequency === "CUSTOM" && (isNaN(intervalDaysRaw) || intervalDaysRaw < 1)) {
+    if (Number.isNaN(amount) || amount <= 0) return showToast("Amount must be greater than 0", "error");
+    if (frequency === "CUSTOM" && (Number.isNaN(intervalDaysRaw) || intervalDaysRaw < 1)) {
         return showToast("Custom interval must be at least 1 day", "error");
     }
 
     const categoryId = document.getElementById("editSubCategory")?.value;
     const body = { description: desc, amount, nextDueDate, frequency };
-    if (categoryId) body.categoryId = parseInt(categoryId);
+    if (categoryId) body.categoryId = Number.parseInt(categoryId);
     if (frequency === "CUSTOM") body.intervalDays = intervalDaysRaw;
 
     submitBtn.disabled = true;
@@ -2159,7 +2159,7 @@ editSubForm?.addEventListener("submit", async (e) => {
         });
         showToast("Subscription updated successfully.", "success");
         closeModal(editSubModal);
-        loadSubscriptions();
+        await loadSubscriptions();
     } catch (e) {
         showToast(e.message, "error");
     } finally {
@@ -2174,7 +2174,7 @@ window.cancelSubscription = async (id, event) => {
     try {
         await apiRequest(`/expenses/recurring/${id}`, { method: "DELETE" });
         showToast("Subscription cancelled.", "success");
-        loadSubscriptions();
+        await loadSubscriptions();
     } catch (err) {
         showToast(err.message, "error");
         const btn = event?.target?.closest(".btn-delete");
@@ -3168,14 +3168,14 @@ incomePillsBar?.querySelectorAll(".pill-chip").forEach(pill => {
     });
 });
 
-document.getElementById("incomeSearchInput")?.addEventListener("input", debounce(applyIncomeFilters, 250));
+(document.getElementById("incomeSearchInput") || document.getElementById("filterSearch"))?.addEventListener("input", debounce(applyIncomeFilters, 250));
 document.getElementById("incomeFilterStartDate")?.addEventListener("change", applyIncomeFilters);
 document.getElementById("incomeFilterEndDate")?.addEventListener("change", applyIncomeFilters);
 document.getElementById("incomeFilterFrequency")?.addEventListener("change", applyIncomeFilters);
 document.getElementById("incomeFilterSort")?.addEventListener("change", applyIncomeFilters);
 
 function resetIncomeFilters() {
-    const searchInput = document.getElementById("incomeSearchInput");
+    const searchInput = document.getElementById("incomeSearchInput") || document.getElementById("filterSearch");
     if (searchInput) searchInput.value = "";
     const startDate = document.getElementById("incomeFilterStartDate");
     if (startDate) startDate.value = "";
@@ -3221,10 +3221,10 @@ incomeForm?.addEventListener("submit", async (e) => {
     const isRecurring = isRecurringEl?.checked || false;
     const frequency = isRecurring ? (document.getElementById("incomeRecurringFrequency")?.value || "MONTHLY") : null;
     const intervalDays = (isRecurring && frequency === "CUSTOM")
-        ? (parseInt(document.getElementById("incomeRecurringIntervalDays")?.value, 10) || 1)
+        ? (Number.parseInt(document.getElementById("incomeRecurringIntervalDays")?.value, 10) || 1)
         : null;
 
-    const amountVal = parseFloat(amountEl.value);
+    const amountVal = Number.parseFloat(amountEl.value);
     if (!Number.isFinite(amountVal) || amountVal <= 0) {
         showToast("Please enter a valid positive amount.", "error");
         amountEl.classList.add("is-invalid");
@@ -3336,7 +3336,7 @@ document.getElementById("goalIsRecurring")?.addEventListener("change", (e) => {
         fields.style.display = e.target.checked ? "block" : "none";
         fields.hidden = !e.target.checked;
         if (e.target.checked) {
-            const targetVal = parseFloat(document.getElementById("goalTargetAmount")?.value || 0);
+            const targetVal = Number.parseFloat(document.getElementById("goalTargetAmount")?.value || 0);
             const recAmt = document.getElementById("goalRecurringAmount");
             if (recAmt && !recAmt.value && targetVal > 0) {
                 recAmt.value = Math.round(targetVal / 12);
@@ -3367,16 +3367,16 @@ savingsGoalForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = document.getElementById("goalId").value;
     const isRec = document.getElementById("goalIsRecurring")?.checked || false;
-    const recAmount = isRec ? parseFloat(document.getElementById("goalRecurringAmount")?.value || 0) : null;
+    const recAmount = isRec ? Number.parseFloat(document.getElementById("goalRecurringAmount")?.value || 0) : null;
     const recFreq = isRec ? (document.getElementById("goalFrequency")?.value || "MONTHLY") : null;
     const intervalDays = (isRec && recFreq === "CUSTOM")
-        ? (parseInt(document.getElementById("goalRecurringIntervalDays")?.value, 10) || 30)
+        ? (Number.parseInt(document.getElementById("goalRecurringIntervalDays")?.value, 10) || 30)
         : null;
 
     const payload = {
         name: document.getElementById("goalName").value.trim(),
-        targetAmount: parseFloat(document.getElementById("goalTargetAmount").value),
-        currentAmount: parseFloat(document.getElementById("goalCurrentAmount").value || 0),
+        targetAmount: Number.parseFloat(document.getElementById("goalTargetAmount").value),
+        currentAmount: Number.parseFloat(document.getElementById("goalCurrentAmount").value || 0),
         targetDate: document.getElementById("goalTargetDate").value,
         isRecurring: isRec,
         recurringAmount: recAmount,
@@ -3426,7 +3426,7 @@ savingsGoalModal?.addEventListener("click", (e) => {
 savingsDepositForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const goalId = document.getElementById("depositGoalId").value;
-    const amount = parseFloat(document.getElementById("depositAmount").value);
+    const amount = Number.parseFloat(document.getElementById("depositAmount").value);
 
     try {
         setLoading(true, "Recording contribution...");
@@ -3459,11 +3459,11 @@ bindDatePickerAutoPopups();
 
 // --- EXECUTIVE STATEMENT & INCOMES EXPORT / IMPORT CONTROLS ---
 document.getElementById("exportReportPdfBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(`${API_BASE_URL}/reports/user/${userId}/export/pdf`, "executive_financial_statement.pdf", "Generating Complete Executive Financial Statement PDF...");
+    void downloadAuthenticated(`${API_BASE_URL}/reports/user/${userId}/export/pdf`, "executive_financial_statement.pdf", "Generating Complete Executive Financial Statement PDF...");
 });
 
 document.getElementById("exportIncomeExcelBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(
+    void downloadAuthenticated(
         `${API_BASE_URL}/incomes/user/${userId}/export/excel`,
         "incomes.xlsx",
         "Generating Incomes Excel Workbook...",
@@ -3472,15 +3472,15 @@ document.getElementById("exportIncomeExcelBtn")?.addEventListener("click", () =>
 });
 
 document.getElementById("exportIncomeCsvBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/csv`, "incomes.csv", "Exporting Incomes CSV...");
+    void downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/csv`, "incomes.csv", "Exporting Incomes CSV...");
 });
 
 document.getElementById("exportIncomeJsonBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/json`, "incomes.json", "Exporting Incomes JSON...");
+    void downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/json`, "incomes.json", "Exporting Incomes JSON...");
 });
 
 document.getElementById("exportIncomePdfBtn")?.addEventListener("click", () => {
-    downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/pdf`, "incomes_report.pdf", "Generating Incomes PDF Report...");
+    void downloadAuthenticated(`${API_BASE_URL}/incomes/user/${userId}/export/pdf`, "incomes_report.pdf", "Generating Incomes PDF Report...");
 });
 
 const importIncomeBtn = document.getElementById("importIncomeBtn");
@@ -3602,7 +3602,7 @@ function determineAccountInception() {
         const earliest = new Date(dates[0]);
         const eYear = earliest.getFullYear();
         const eMonth = earliest.getMonth() + 1;
-        if (!isNaN(eYear) && eYear >= 2020 && eYear <= currentSystemYear) {
+        if (!Number.isNaN(eYear) && eYear >= 2020 && eYear <= currentSystemYear) {
             periodStartYear = eYear;
             periodStartMonth = eMonth;
             const years = [];
@@ -3946,7 +3946,7 @@ async function exportMonthlyJson(year = selectedReportYear, month = selectedRepo
 // Action button listeners in Period Picker Modal
 periodViewReportBtn?.addEventListener("click", () => {
     closeModal(monthlyReportPeriodModal);
-    openMonthlyReportPreview(selectedReportYear, selectedReportMonth);
+    void openMonthlyReportPreview(selectedReportYear, selectedReportMonth);
 });
 
 async function downloadMonthlyPdf(year = selectedReportYear, month = selectedReportMonth) {
@@ -3966,7 +3966,7 @@ async function downloadMonthlyPdf(year = selectedReportYear, month = selectedRep
         const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
             ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
             : { name: `Month_${padMonth}` };
-        downloadAuthenticated(
+        await downloadAuthenticated(
             url,
             `ExpenseTracker_Statement_${monthObj.name}_${targetYear}.pdf`,
             `Generating ${monthObj.name} ${targetYear} Executive PDF Statement...`
@@ -3993,7 +3993,7 @@ async function downloadMonthlyExcel(year = selectedReportYear, month = selectedR
         const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
             ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
             : { name: `Month_${padMonth}` };
-        downloadAuthenticated(
+        await downloadAuthenticated(
             url,
             `ExpenseTracker_Workbook_${monthObj.name}_${targetYear}.xlsx`,
             `Generating ${monthObj.name} ${targetYear} PowerBI Excel Workbook...`
@@ -4004,27 +4004,27 @@ async function downloadMonthlyExcel(year = selectedReportYear, month = selectedR
 }
 
 periodDownloadReportBtn?.addEventListener("click", () => {
-    downloadMonthlyReport(selectedReportYear, selectedReportMonth);
+    void downloadMonthlyReport(selectedReportYear, selectedReportMonth);
 });
 
 document.getElementById("periodDownloadPdfBtn")?.addEventListener("click", () => {
-    downloadMonthlyPdf(selectedReportYear, selectedReportMonth);
+    void downloadMonthlyPdf(selectedReportYear, selectedReportMonth);
 });
 
 document.getElementById("periodDownloadExcelBtn")?.addEventListener("click", () => {
-    downloadMonthlyExcel(selectedReportYear, selectedReportMonth);
+    void downloadMonthlyExcel(selectedReportYear, selectedReportMonth);
 });
 
 document.getElementById("periodExportCsvBtn")?.addEventListener("click", () => {
-    exportMonthlyCsv(selectedReportYear, selectedReportMonth);
+    void exportMonthlyCsv(selectedReportYear, selectedReportMonth);
 });
 
 document.getElementById("periodExportJsonBtn")?.addEventListener("click", () => {
-    exportMonthlyJson(selectedReportYear, selectedReportMonth);
+    void exportMonthlyJson(selectedReportYear, selectedReportMonth);
 });
 
 periodEmailReportBtn?.addEventListener("click", () => {
-    emailMonthlyReport(selectedReportYear, selectedReportMonth);
+    void emailMonthlyReport(selectedReportYear, selectedReportMonth);
 });
 
 // Profile avatar menu triggers -> open Period Picker Modal
@@ -4052,11 +4052,11 @@ printReportBtn?.addEventListener("click", () => {
 });
 
 downloadHtmlReportBtn?.addEventListener("click", () => {
-    downloadMonthlyReport(viewedReportYear, viewedReportMonth);
+    void downloadMonthlyReport(viewedReportYear, viewedReportMonth);
 });
 
 emailReportBtn?.addEventListener("click", () => {
-    emailMonthlyReport(viewedReportYear, viewedReportMonth);
+    void emailMonthlyReport(viewedReportYear, viewedReportMonth);
 });
 
 
@@ -4290,7 +4290,7 @@ async function openSecurityPinDialog() {
 
 securityPinBtn?.addEventListener("click", (e) => {
     e.preventDefault();
-    openSecurityPinDialog();
+    void openSecurityPinDialog();
 });
 
 closeSecurityPinModalBtn?.addEventListener("click", () => {
@@ -4465,7 +4465,7 @@ function openBiometricsDialog() {
     if (typeof toggleProfileMenu === "function") toggleProfileMenu(false);
     if (!biometricsModal) return;
     openModal(biometricsModal);
-    renderBiometricsModal();
+    void renderBiometricsModal();
 }
 
 biometricAuthBtn?.addEventListener("click", (e) => {

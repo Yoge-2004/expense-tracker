@@ -28,10 +28,10 @@ const CREDIT_REGEX = /\b(credited|received|refunded|deposited|reversal|cashback|
 // Global flag: a message can contain more than one currency-tagged number
 // (the transaction amount AND the account balance), so every occurrence
 // needs to be considered rather than just the first.
-const AMOUNT_REGEX = /(?:(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|₹|\$|EUR|€|GBP|£))/gi;
+const AMOUNT_REGEX = /(?:(?:Rs\.?|INR|EUR|GBP|[₹$€£])\s*(\d[\d,]*(?:\.\d{1,2})?)|(\d[\d,]*(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|EUR|GBP|[₹$€£]))/gi;
 
 // Secondary fallback amount matcher if currency symbol is separate
-const FALLBACK_AMOUNT_REGEX = /\b(?:amount|amt|for|of)\s*(?:is|:)?\s*(?:Rs\.?|INR|₹|\$)?\s*([\d,]+(?:\.\d{1,2})?)\b/i;
+const FALLBACK_AMOUNT_REGEX = /\b(?:amount|amt|for|of)\b(?:\s*[:=]|\s+is)?(?:\s+(?:Rs\.?|INR|[₹$]))?\s*(\d[\d,]*(?:\.\d{1,2})?)\b/i;
 
 // Last-resort anchor: a bare number (no currency token attached) near the
 // debit/credit keyword — for messages that state the amount before any
@@ -49,8 +49,8 @@ const NUMBER_EXCLUSION_CONTEXT_REGEX =
 
 // Regex for merchant/vendor identification
 const MERCHANT_PATTERNS = [
-  /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9\s&'.-]{2,30}?)(?:\s+(?:on|using|via|with|ref|bal|avbl|avl|dated|through|card|ac|ending|successfully|successful|\.|\,)|$)/i,
-  /(?:paid to|transferred to)\s+([A-Za-z0-9\s&'.-]{2,30}?)(?:\s+(?:on|via|with|using|ref|bal|successfully|successful|\.|\,)|$)/i,
+  /(?:at|to|vpa|towards|for)\s+([A-Za-z0-9&'.-]+(?:\s+[A-Za-z0-9&'.-]+){0,4}?)(?:\s+(?:on|using|via|with|ref|bal|avbl|avl|dated|through|card|ac|ending|successfully|successful)\b|[.,]|$)/i,
+  /(?:paid to|transferred to)\s+([A-Za-z0-9&'.-]+(?:\s+[A-Za-z0-9&'.-]+){0,4}?)(?:\s+(?:on|via|with|using|ref|bal|successfully|successful)\b|[.,]|$)/i,
   /(?:vpa\s+)([a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+)/i,
 ];
 
@@ -62,7 +62,7 @@ const ACCOUNT_PATTERNS = [
 ];
 
 // Regex for transaction reference or UTR
-const REF_REGEX = /(?:ref|utr|rrn|txn|id|reference)\s*(?:no\.?|id|:)?\s*([A-Za-z0-9]{6,22})/i;
+const REF_REGEX = /(?:ref|utr|rrn|txn|id|reference)\b(?:\s*[:=]|\s+(?:no\.?|id))?\s*([A-Za-z0-9]{6,22})/i;
 
 // Rejection filters: non-executed events (OTPs, declined transactions, bill reminders, payment requests, loan promos)
 const NON_FINANCIAL_EXCLUSION_REGEX =
@@ -193,7 +193,7 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
     if (m && m[1]) {
       let candidate = m[1].trim();
       candidate = candidate.replace(/^(the|a|an)\s+/i, "");
-      candidate = candidate.replace(/\b(successfully|successful|with cred|using cred|with|using)\b/gi, "").trim();
+      candidate = candidate.replace(/\b(?:successfully|successful|(?:with|using)(?:\s+cred)?)\b/gi, "").trim();
       candidate = candidate.replace(/[.,;:]+$/, "").trim();
       if (candidate.length > 1 && !/^(your|my|account|bank|branch)$/i.test(candidate)) {
         result.merchant = candidate;

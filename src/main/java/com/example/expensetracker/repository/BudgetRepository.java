@@ -41,6 +41,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
     /**
      * Retrieves the budget configured for a specific user and category combination.
+     * Uses LEFT JOIN FETCH to eagerly initialize category and avoid LazyInitializationException.
      *
      * <p>Used to check whether a budget already exists before deciding to
      * create a new one or update the existing one.</p>
@@ -51,7 +52,8 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
      * @return an {@link Optional} containing the matching {@link Budget},
      *         or {@link Optional#empty()} if no budget exists for that pair
      */
-    Optional<Budget> findByUserAndCategoryId(User user, Long categoryId);
+    @Query("SELECT b FROM Budget b LEFT JOIN FETCH b.category WHERE b.user = :user AND b.category.id = :categoryId")
+    Optional<Budget> findByUserAndCategoryId(@Param("user") User user, @Param("categoryId") Long categoryId);
 
     void deleteByUserAndCategoryId(User user, Long categoryId);
 

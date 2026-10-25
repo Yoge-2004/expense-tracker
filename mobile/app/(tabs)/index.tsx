@@ -525,10 +525,10 @@ export default function DashboardScreen() {
       onPanResponderRelease: (_, g) => {
         if (g.dx < -35) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          setLedgerTab((curr) => (curr === "all" ? "expenses" : curr === "expenses" ? "incomes" : "incomes"));
+          setLedgerTab((curr) => (curr === "all" ? "expenses" : "incomes"));
         } else if (g.dx > 35) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          setLedgerTab((curr) => (curr === "incomes" ? "expenses" : curr === "expenses" ? "all" : "all"));
+          setLedgerTab((curr) => (curr === "incomes" ? "expenses" : "all"));
         }
       },
     })
@@ -635,7 +635,7 @@ export default function DashboardScreen() {
       setPartialError(!categoriesLoaded || !Array.isArray(incomesData) || !Array.isArray(savingsData));
       setCachedTime(null);
 
-      saveCache({
+      void saveCache({
         expenses: safeExp,
         budgets: safeBud,
         categories: nextCategories,
@@ -671,15 +671,15 @@ export default function DashboardScreen() {
       if (Array.isArray(cached.loans)) setLoans(cached.loans);
       if (cached.loanMetrics) setLoanMetrics(cached.loanMetrics);
       setIsLoading(false);
-      fetchData(true);
+      void fetchData(true);
     } else {
-      fetchData(false);
+      void fetchData(false);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      loadWithCache();
+      void loadWithCache();
     }, [userId])
   );
 
@@ -693,7 +693,7 @@ export default function DashboardScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    Promise.all([
+    void Promise.all([
       fetchData(true),
       refreshUserProfile?.().catch(() => {}),
     ]);
@@ -768,7 +768,7 @@ export default function DashboardScreen() {
               }
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               showAlert("Deleted", `${isIncome ? "Inflow" : "Expense"} record removed successfully.`, undefined, "success");
-              fetchData(true);
+              void fetchData(true);
             } catch (e: any) {
               const msg = e instanceof ApiError ? e.message : `Could not delete ${isIncome ? "income" : "expense"} record.`;
               showAlert("Delete Failed", msg, undefined, "error");
@@ -873,7 +873,7 @@ export default function DashboardScreen() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               setSavingsGoals((prev) => prev.filter((g) => g.id !== goal.id));
               showAlert("Deleted", "Savings goal removed successfully.", undefined, "success");
-              fetchData(true);
+              void fetchData(true);
             } catch (e: any) {
               const msg = e instanceof ApiError ? e.message : "Could not delete savings goal.";
               showAlert("Delete Failed", msg, undefined, "error");
@@ -920,7 +920,7 @@ export default function DashboardScreen() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               setBudgets((prev) => prev.filter((item) => (item.budgetId ? item.budgetId !== b.budgetId : item.categoryId !== b.categoryId)));
               showAlert("Budget Deleted", "Category spending cap removed successfully.", undefined, "success");
-              fetchData(true);
+              void fetchData(true);
             } catch (e: any) {
               const msg = e instanceof ApiError ? e.message : "Could not delete category budget.";
               showAlert("Delete Failed", msg, undefined, "error");
@@ -1397,7 +1397,7 @@ export default function DashboardScreen() {
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                toggleStealthMode();
+                void toggleStealthMode();
               }}
               style={({ pressed }) => [
                 styles.topActionBtn,

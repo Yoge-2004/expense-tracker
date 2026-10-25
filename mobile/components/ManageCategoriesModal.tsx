@@ -103,7 +103,7 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
 
   useEffect(() => {
     if (visible) {
-      fetchCategoriesAndUsage();
+      void fetchCategoriesAndUsage();
     }
   }, [visible, userId]);
 

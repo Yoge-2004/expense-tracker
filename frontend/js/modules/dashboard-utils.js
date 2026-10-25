@@ -48,8 +48,10 @@
         if (typeof window.formatGlobalCurrency === "function") {
             return window.formatGlobalCurrency(amount);
         }
-        const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "$";
-        return `${symbol} ${Number(amount || 0).toFixed(2)}`;
+        const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "₹";
+        const isAlpha = /^[A-Z]{3}$/.test(symbol);
+        const numStr = Number(amount || 0).toFixed(2);
+        return isAlpha ? `${symbol} ${numStr}` : `${symbol}${numStr}`;
     }
 
     const CATEGORY_PALETTE = [

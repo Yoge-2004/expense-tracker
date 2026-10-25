@@ -434,7 +434,7 @@ export default function AddExpenseScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadCategories();
+      void loadCategories();
     }, [userId])
   );
 
@@ -446,13 +446,13 @@ export default function AddExpenseScreen() {
     const delay = 4000 * (categoryRetryCount.current + 1);
     const timer = setTimeout(() => {
       categoryRetryCount.current += 1;
-      loadCategories();
+      void loadCategories();
     }, delay);
     return () => clearTimeout(timer);
   }, [categoriesError, categoryRetryTick]);
 
   useEffect(() => {
-    loadCategories();
+    void loadCategories();
     if (isEditMode) {
       if (params.editType) {
         setActiveTab(params.editType as any);
@@ -572,7 +572,7 @@ export default function AddExpenseScreen() {
 
   useEffect(() => {
     if (activeTab === 'budget' && userId) {
-      loadExistingBudgets();
+      void loadExistingBudgets();
     }
   }, [activeTab, userId]);
 
@@ -864,7 +864,7 @@ export default function AddExpenseScreen() {
               }
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               showAlert('Budget Deleted', 'Category spending cap removed successfully.', undefined, 'success');
-              loadExistingBudgets();
+              void loadExistingBudgets();
             } catch (e: any) {
               const msg = e instanceof ApiError ? e.message : 'Could not delete budget.';
               showAlert('Delete Failed', msg, undefined, 'error');
@@ -932,7 +932,7 @@ export default function AddExpenseScreen() {
         {
           text: 'OK',
           onPress: () => {
-            loadExistingBudgets();
+            void loadExistingBudgets();
             if (isEditMode) router.replace('/(tabs)');
           },
         },
@@ -983,7 +983,7 @@ export default function AddExpenseScreen() {
             refreshing={refreshing}
             onRefresh={() => {
               setRefreshing(true);
-              loadCategories();
+              void loadCategories();
             }}
             tintColor={c.primary}
           />
@@ -999,7 +999,7 @@ export default function AddExpenseScreen() {
             onRetry={() => {
               categoryRetryCount.current = 0;
               setRefreshing(true);
-              loadCategories();
+              void loadCategories();
             }}
             retrying={refreshing}
           />
@@ -1174,7 +1174,7 @@ export default function AddExpenseScreen() {
                     styles.inputWrap,
                     {
                       backgroundColor: c.inputBg,
-                      borderColor: focusedField === 'incomeSource' ? '#10B981' : '#10B981',
+                      borderColor: focusedField === 'incomeSource' ? '#10B981' : c.border,
                       borderWidth: focusedField === 'incomeSource' ? 2 : 1.5,
                     },
                   ]}
@@ -1409,7 +1409,7 @@ export default function AddExpenseScreen() {
                     styles.inputWrap,
                     {
                       backgroundColor: c.inputBg,
-                      borderColor: focusedField === 'goalName' ? '#F59E0B' : '#F59E0B',
+                      borderColor: focusedField === 'goalName' ? '#F59E0B' : c.border,
                       borderWidth: focusedField === 'goalName' ? 2 : 1.5,
                     },
                   ]}

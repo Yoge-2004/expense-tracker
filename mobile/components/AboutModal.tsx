@@ -49,7 +49,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
 
   useEffect(() => {
     if (visible) {
-      checkUpdate();
+      void checkUpdate();
     }
   }, [visible]);
 

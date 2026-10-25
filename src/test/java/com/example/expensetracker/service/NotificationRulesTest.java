@@ -64,5 +64,7 @@ class NotificationRulesTest {
         assertEquals(bd("150.00"), NotificationRules.average(List.of(bd("100"), bd("200"))));
         assertEquals("INR 1,200", NotificationRules.money("INR", bd("1200")));
         assertEquals("INR 5", NotificationRules.money(null, bd("5")));
+        assertEquals("₹1,200", NotificationRules.money("₹", bd("1200")));
+        assertEquals("$50", NotificationRules.money("$", bd("50")));
     }
 }

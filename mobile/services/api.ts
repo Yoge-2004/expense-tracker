@@ -98,7 +98,11 @@ export async function safeStorageSet(key: string, value: string): Promise<void> 
     await SecureStore.setItemAsync(key, value);
     return;
   } catch (secureError) {
-    console.warn(`[API] SecureStore setItem failed for ${key}, falling back to AsyncStorage:`, secureError);
+    console.warn(`[API] SecureStore setItem failed for ${key}:`, secureError);
+    // Never fall back to unencrypted storage for sensitive credentials
+    if (key === TOKEN_KEY || key.includes('token') || key.includes('biometric')) {
+      throw secureError;
+    }
   }
 
   try {

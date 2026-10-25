@@ -108,7 +108,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
           const dates = expenses
             .map((e) => e.expenseDate)
             .filter(Boolean)
-            .sort();
+            .sort((a, b) => a.localeCompare(b));
           if (dates.length > 0) {
             const earliest = new Date(dates[0]);
             const eYear = earliest.getFullYear();
@@ -140,7 +140,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
     }
 
     if (visible) {
-      determineInception();
+      void determineInception();
     }
   }, [visible, userId]);
 

@@ -125,7 +125,7 @@ export function AuthProvider({
         setIsLoading(false);
       }
     }
-    loadSession();
+    void loadSession();
   }, []);
 
   /**
@@ -334,7 +334,7 @@ export function AuthProvider({
    */
   // Register this phone for push once signed in. It never prompts: permission is asked at sign-up.
   useEffect(() => {
-    if (userId) registerPushToken(userId);
+    if (userId) void registerPushToken(userId);
   }, [userId]);
 
   const logout = async (): Promise<void> => {

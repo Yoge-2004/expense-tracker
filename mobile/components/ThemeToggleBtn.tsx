@@ -53,7 +53,7 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
       : (cb: () => void) => setTimeout(cb, 16);
 
     scheduleIdle(() => {
-      toggleTheme();
+      void toggleTheme();
     });
   };
 
