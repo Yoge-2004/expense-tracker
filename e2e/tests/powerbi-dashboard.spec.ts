@@ -102,7 +102,7 @@ test.describe('PowerBI Executive Analytics Dashboard', () => {
   test('renders active cross-filter badge upon programmatic or visual selection and clears on close', async ({ page }) => {
     // Trigger programmatic cross-filter via window.DashboardPowerBI
     await page.evaluate(() => {
-      window.DashboardPowerBI.applyCrossFilter('category', 'Dining', 'Food & Dining');
+      window.DashboardPowerBI!.applyCrossFilter('category', 'Dining', 'Food & Dining');
     });
 
     const crossFilterContainer = page.locator('#biCrossFilterContainer');
