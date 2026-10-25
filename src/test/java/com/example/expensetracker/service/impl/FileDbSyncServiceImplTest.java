@@ -30,7 +30,7 @@ class FileDbSyncServiceImplTest {
     @Test
     @DisplayName("syncDbToFile: triggers failover backup and returns success status")
     void syncDbToFile_success() {
-        when(failoverService.backupCurrentDatabase()).thenReturn(true);
+        when(failoverService.forceBackupCurrentDatabase()).thenReturn(true);
         when(failoverService.getDiagnostics()).thenReturn(Map.of("configured", true, "statusMessage", "OK"));
 
         Map<String, Object> result = syncService.syncDbToFile();
@@ -38,13 +38,13 @@ class FileDbSyncServiceImplTest {
         assertNotNull(result);
         assertEquals("success", result.get("status"));
         assertTrue(result.get("message").toString().contains("completed successfully"));
-        verify(failoverService).backupCurrentDatabase();
+        verify(failoverService).forceBackupCurrentDatabase();
     }
 
     @Test
     @DisplayName("syncDbToFile: handles backup failure cleanly")
     void syncDbToFile_failure() {
-        when(failoverService.backupCurrentDatabase()).thenReturn(false);
+        when(failoverService.forceBackupCurrentDatabase()).thenReturn(false);
         when(failoverService.getDiagnostics()).thenReturn(
                 Map.of("configured", false, "statusMessage", "HF_TOKEN is missing or blank."));
 
@@ -70,13 +70,13 @@ class FileDbSyncServiceImplTest {
     @Test
     @DisplayName("pushJsonBackupToHuggingFace: triggers failover backup and returns success status")
     void pushJsonBackupToHuggingFace_success() {
-        when(failoverService.backupCurrentDatabase()).thenReturn(true);
+        when(failoverService.forceBackupCurrentDatabase()).thenReturn(true);
 
         Map<String, Object> result = syncService.pushJsonBackupToHuggingFace();
 
         assertNotNull(result);
         assertEquals("success", result.get("status"));
-        verify(failoverService).backupCurrentDatabase();
+        verify(failoverService).forceBackupCurrentDatabase();
     }
 
     @Test
@@ -95,6 +95,6 @@ class FileDbSyncServiceImplTest {
         when(failoverService.getDiagnostics()).thenReturn(diag);
 
         assertEquals(diag, syncService.getHuggingFaceStatus());
-        verify(failoverService, never()).backupCurrentDatabase();
+        verify(failoverService, never()).forceBackupCurrentDatabase();
     }
 }

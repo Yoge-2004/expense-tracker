@@ -14,5 +14,9 @@ interface Window {
     createController?: (...args: any[]) => any;
     [key: string]: any;
   };
+  DashboardPowerBI?: {
+    applyCrossFilter: (type: string, value: string | number | boolean, label: string) => void;
+    [key: string]: any;
+  };
   openNewIncomeModal?: (...args: any[]) => any;
 }
