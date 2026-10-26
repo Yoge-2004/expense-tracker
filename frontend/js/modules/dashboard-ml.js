@@ -19,66 +19,103 @@
             .replace(/'/g, "&#039;");
     }
 
+    // Helper to produce or lookup SVG icon for category
+    function getCategorySvg(nameOrId, size = 16) {
+        if (window.DashboardUtils && typeof window.DashboardUtils.getCategorySvg === "function") {
+            return window.DashboardUtils.getCategorySvg(nameOrId, size);
+        }
+        if (typeof window.getCategorySvg === "function") {
+            return window.getCategorySvg(nameOrId, size);
+        }
+        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"`;
+        return `<svg ${svgAttrs}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
+    }
+
+    function getCategoryIcon(itemOrName, size = 16) {
+        if (!itemOrName) return getCategorySvg("general", size);
+        if (typeof itemOrName === "object") {
+            if (typeof itemOrName.svg === "function") {
+                return itemOrName.svg(size);
+            }
+            if (typeof itemOrName.svg === "string") {
+                return itemOrName.svg;
+            }
+            return getCategorySvg(itemOrName.name || itemOrName.id, size);
+        }
+        return getCategorySvg(itemOrName, size);
+    }
+
+
     // 1. CANONICAL TAXONOMY DEFINITIONS (Aligned with trained TF-IDF & backend models)
     const CANONICAL_TAXONOMY = [
         {
             id: "food_dining",
             name: "Food & Dining",
-            emoji: "🍔",
+            svg: (size = 16) => getCategorySvg("food", size),
+            get emoji() { return this.svg(16); },
             aliases: ["food", "dining", "groceries", "grocery", "restaurant", "restaurants", "cafe", "coffee", "snacks", "lunch", "dinner", "breakfast", "swiggy", "zomato", "eats"]
         },
         {
             id: "transportation",
             name: "Transportation",
-            emoji: "🚗",
+            svg: (size = 16) => getCategorySvg("transport", size),
+            get emoji() { return this.svg(16); },
             aliases: ["transport", "transportation", "travel", "fuel", "gas", "petrol", "diesel", "cab", "taxi", "uber", "ola", "metro", "flight", "commute", "bus", "train", "parking", "toll"]
         },
         {
             id: "shopping_retail",
             name: "Shopping & Retail",
-            emoji: "🛍️",
+            svg: (size = 16) => getCategorySvg("shop", size),
+            get emoji() { return this.svg(16); },
             aliases: ["shopping", "retail", "clothing", "apparel", "electronics", "amazon", "flipkart", "store", "fashion", "shoes", "mall", "supermarket", "purchase"]
         },
         {
             id: "entertainment_recreation",
             name: "Entertainment & Recreation",
-            emoji: "🎬",
+            svg: (size = 16) => getCategorySvg("entertain", size),
+            get emoji() { return this.svg(16); },
             aliases: ["entertainment", "recreation", "movies", "cinema", "netflix", "spotify", "prime", "games", "gaming", "outing", "hobby", "concert", "theatre", "disney", "youtube"]
         },
         {
             id: "healthcare_medical",
             name: "Healthcare & Medical",
-            emoji: "💊",
+            svg: (size = 16) => getCategorySvg("health", size),
+            get emoji() { return this.svg(16); },
             aliases: ["health", "healthcare", "medical", "pharmacy", "medicine", "doctor", "hospital", "dental", "clinic", "fitness", "gym", "meds", "apollo", "prescription"]
         },
         {
             id: "utilities_services",
             name: "Utilities & Services",
-            emoji: "⚡",
+            svg: (size = 16) => getCategorySvg("utilities", size),
+            get emoji() { return this.svg(16); },
             aliases: ["utilities", "utility", "services", "bills", "electricity", "water", "internet", "wifi", "broadband", "recharge", "phone", "mobile", "gas bill", "rent", "maintenance", "power"]
         },
         {
             id: "financial_services",
             name: "Financial Services",
-            emoji: "🏦",
+            svg: (size = 16) => getCategorySvg("finance", size),
+            get emoji() { return this.svg(16); },
             aliases: ["finance", "financial", "investment", "investments", "banking", "bank", "insurance", "taxes", "tax", "loan", "emi", "interest", "brokerage", "crypto", "mutual fund", "sip", "card"]
         },
         {
             id: "income",
             name: "Income",
-            emoji: "💼",
+            svg: (size = 16) => getCategorySvg("income", size),
+            get emoji() { return this.svg(16); },
             aliases: ["income", "salary", "wages", "bonus", "dividend", "interest income", "stipend", "freelance", "payout", "deposit"]
         },
         {
             id: "government_legal",
             name: "Government & Legal",
-            emoji: "⚖️",
+            svg: (size = 16) => getCategorySvg("government", size),
+            get emoji() { return this.svg(16); },
             aliases: ["government", "legal", "court", "license", "passport", "fine", "penalty", "stamp", "registration", "challan", "fees"]
         },
         {
             id: "charity_donations",
             name: "Charity & Donations",
-            emoji: "🤝",
+            svg: (size = 16) => getCategorySvg("charity", size),
+            get emoji() { return this.svg(16); },
             aliases: ["charity", "donation", "donations", "ngo", "aid", "relief", "gift", "giving", "contribution"]
         }
     ];
@@ -104,13 +141,23 @@
 
     function getTaxonomyItem(canonicalId) {
         if (!canonicalId) {
-            return { id: "unknown", name: "General Expense", emoji: "💳", aliases: [] };
+            return {
+            id: "unknown",
+            name: "General Expense",
+            svg: (size = 16) => getCategorySvg("general", size),
+            get emoji() { return this.svg(16); },
+            aliases: []
+        };
         }
         const clean = String(canonicalId).toLowerCase().trim();
-        return CANONICAL_TAXONOMY.find(t => t.id === clean || t.name.toLowerCase() === clean) || {
+        const found = CANONICAL_TAXONOMY.find(t => t.id === clean || t.name.toLowerCase() === clean);
+        if (found) return found;
+
+        return {
             id: clean,
             name: clean.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-            emoji: "🏷️",
+            svg: (size = 16) => getCategorySvg(clean, size),
+            get emoji() { return this.svg(16); },
             aliases: []
         };
     }
@@ -325,7 +372,7 @@
         const confPct = Math.round((prediction.confidence || 0) * 100);
 
         if (predName) {
-            predName.innerHTML = `${item.emoji} ${escapeHtml(item.name)}`;
+            predName.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;">${getCategoryIcon(item, 16)} <span>${escapeHtml(item.name)}</span></span>`;
         }
 
         if (confBadge) {
@@ -362,8 +409,8 @@
                 pillsList.innerHTML = alternatives.map(alt => {
                     const altItem = getTaxonomyItem(alt.category);
                     const altConf = Math.round((alt.confidence || 0) * 100);
-                    return `<button type=\"button\" class=\"ai-pill-chip\" data-canonical=\"${escapeHtml(alt.category)}\">
-                        ${altItem.emoji} ${escapeHtml(altItem.name)} <span style=\"opacity:0.75; font-size:10px;\">${altConf}%</span>
+                    return `<button type=\"button\" class=\"ai-pill-chip\" data-canonical=\"${escapeHtml(alt.category)}\" style=\"display:inline-flex; align-items:center; gap:5px;\">
+                        ${getCategoryIcon(altItem, 13)} <span>${escapeHtml(altItem.name)}</span> <span style=\"opacity:0.75; font-size:10px;\">${altConf}%</span>
                     </button>`;
                 }).join("");
 
@@ -536,7 +583,7 @@
 
                 const pct = Math.round((top.confidence || 0) * 100);
                 const taxonomyItem = getTaxonomyItem(top.category);
-                const icon = window.getCategorySvg ? window.getCategorySvg(taxonomyItem.name, 16) : (taxonomyItem.emoji || "");
+                const icon = getCategoryIcon(taxonomyItem, 16);
                 const displayName = taxonomyItem.name || top.category;
 
                 const rawTopK = Array.isArray(response)
@@ -548,7 +595,7 @@
                 const alternatives = rawTopK.map(p => {
                     const altItem = getTaxonomyItem(p.category);
                     const altConf = Math.round((p.confidence || 0) * 100);
-                    return `<span class="ml-alt-chip" data-cat="${escapeHtml(p.category)}"  style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); font-size:11px; margin-right:4px;">${window.getCategorySvg ? window.getCategorySvg(altItem.name, 12) : altItem.emoji} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
+                    return `<span class="ml-alt-chip" data-cat="${escapeHtml(p.category)}"  style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); font-size:11px; margin-right:4px;">${getCategoryIcon(altItem, 12)} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
                 }).join("");
 
                 if (resultContainer) {
@@ -710,6 +757,8 @@
         submitFeedbackRecord,
         resolveToCanonical,
         getTaxonomyItem,
+        getCategoryIcon,
+        getCategorySvg,
         checkDuplicateExpense,
         onExpenseSaved,
         resetActiveSession,

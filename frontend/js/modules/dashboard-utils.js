@@ -51,8 +51,7 @@
         const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "₹";
         const isAlpha = /^[A-Z]{3}$/.test(symbol);
         const numStr = Number(amount || 0).toFixed(2);
-        return isAlpha ? `${symbol} ${numStr}` : `${symbol}${numStr}`;
-    }
+        return isAlpha ? `${symbol} ${numStr}` : `${symbol}${numStr}`;\n    }
 
     const CATEGORY_PALETTE = [
         { bg: "rgba(199,154,62,0.12)", color: "#C79A3E" }, // 1. Imperial Gold
@@ -98,8 +97,8 @@
 
     function getCategorySvg(name, size = 16) {
         const value = String(name || "").toLowerCase();
-        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:auto; flex-shrink:0;"`;
-        if (value.includes("saving") || value.includes("deposit") || value.includes("invest")) {
+        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; flex-shrink:0;"`;
+        if (value.includes("saving") || value.includes("deposit") || value.includes("invest") || value.includes("finance") || value.includes("bank")) {
             return `<svg ${svgAttrs}><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a8 8 0 0 1-16 0V6"/><circle cx="12" cy="14" r="2"/></svg>`;
         }
         if (value.includes("loan") || value.includes("debt") || value.includes("borrow") || value.includes("lend") || value.includes("adjust")) {
@@ -131,6 +130,15 @@
         }
         if (value.includes("grocer") || value.includes("market") || value.includes("super") || value.includes("mart")) {
             return `<svg ${svgAttrs}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
+        }
+        if (value.includes("income") || value.includes("salary") || value.includes("wage") || value.includes("bonus") || value.includes("payout")) {
+            return `<svg ${svgAttrs}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
+        }
+        if (value.includes("government") || value.includes("legal") || value.includes("court") || value.includes("law") || value.includes("tax") || value.includes("fine")) {
+            return `<svg ${svgAttrs}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`;
+        }
+        if (value.includes("charity") || value.includes("donation") || value.includes("ngo") || value.includes("gift") || value.includes("aid")) {
+            return `<svg ${svgAttrs}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
         }
         return `<svg ${svgAttrs}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
     }
@@ -170,4 +178,5 @@
     });
     window.escapeHtml = escapeHtml;
     window.debounce = debounce;
+    window.getCategorySvg = getCategorySvg;
 })();
