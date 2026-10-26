@@ -545,12 +545,29 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     flex-wrap: wrap !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 12px !important;
-    padding: 14px 18px !important;
+    gap: 10px !important;
+    padding: 10px 18px !important;
+    min-height: 56px !important;
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
     overflow: visible !important;
+}
+
+@media (min-width: 769px) {
+    .admin-topbar-root {
+        flex-wrap: nowrap !important;
+        padding: 8px 18px !important;
+    }
+    .admin-heading-root {
+        flex: 0 1 auto !important;
+    }
+    .admin-top-actions {
+        flex-wrap: nowrap !important;
+        width: auto !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+    }
 }
 
 .admin-heading-root {
@@ -798,11 +815,6 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     .grid-analytics {
         grid-template-columns: 1fr !important;
         gap: 16px !important;
-    }
-
-    .top-bar-actions {
-        width: 100% !important;
-        justify-content: space-between !important;
     }
 
     .chart-wrapper {

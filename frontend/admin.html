@@ -49,25 +49,25 @@
                 <p class="text-muted admin-welcome-subtitle" id="userWelcomeText">Admin Command Center &bull; Executive Governance</p>
             </div>
 
-            <div class="top-bar-actions">
-                <!-- Direct Link back to User Dashboard -->
-                <a href="dashboard.html" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:8px 14px; border-radius:10px; font-weight:600; font-size:13px;" title="Switch to Personal Financial Workspace">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    <span>User Workspace</span>
-                </a>
-
+            <div class="top-bar-actions admin-top-actions">
                 <!-- Live Auto-Refresh Interval Selector -->
                 <div class="admin-top-select-wrapper" style="display:inline-flex; align-items:center;">
-                    <select id="autoRefreshSelector" class="form-select" aria-label="Telemetry polling frequency" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer;" title="Telemetry polling frequency">
+                    <select id="autoRefreshSelector" class="form-select" aria-label="Telemetry polling frequency" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:6px 10px; font-size:12px; font-weight:600; height:34px; box-sizing:border-box; cursor:pointer;" title="Telemetry polling frequency">
                         <option value="15000">Poll: 15s</option>
                         <option value="30000" selected>Poll: 30s</option>
                         <option value="60000">Poll: 60s</option>
                         <option value="0">Poll: Off</option>
                     </select>
                 </div>
+
+                <!-- Direct Link back to User Dashboard (placed compactly beside Poll on larger displays) -->
+                <a href="dashboard.html" class="btn-secondary admin-workspace-btn" id="adminUserWorkspaceBtn" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none; padding:0 12px; border-radius:10px; font-weight:600; font-size:12px; height:34px; box-sizing:border-box; white-space:nowrap;" title="Switch to Personal Financial Workspace">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>User Workspace</span>
+                </a>
 
                 <div class="top-bar-utility-group">
                     <!-- Web Studio & Appearance Trigger -->
