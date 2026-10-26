@@ -375,7 +375,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
         try {
             MonthlyReportDto report = generateMonthlyReport(userId, year, month);
-            String htmlContent = buildMonthlyReportHtml(user.getName(), report);
+            String htmlContent = buildMonthlyReportHtml(user.getName(), report, user.getId());
 
             JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
             if (mailSender == null) {
@@ -412,7 +412,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
         MonthlyReportDto report = generateMonthlyReport(userId, year, month);
-        return buildMonthlyReportHtml(user.getName(), report);
+        return buildMonthlyReportHtml(user.getName(), report, user.getId());
     }
 
     private void saveReportLog(User user, int year, int month, boolean success, String errorMsg) {
@@ -476,7 +476,20 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
      * Renders responsive HTML financial report including cash flow summary, category breakdown,
      * budget limits, income inflows, and savings goals milestones.
      */
+    private String formatCurrencyAmount(BigDecimal amount) {
+        if (amount == null) return "0.00";
+        return String.format(Locale.US, "%,.2f", amount);
+    }
+
     private String buildMonthlyReportHtml(String userName, MonthlyReportDto report) {
+        return buildMonthlyReportHtml(userName, report, 1L);
+    }
+
+    /**
+     * Renders responsive HTML financial report including cash flow summary, category breakdown,
+     * budget limits, income inflows, savings goals milestones, and high-fidelity print letterhead.
+     */
+    private String buildMonthlyReportHtml(String userName, MonthlyReportDto report, Long userId) {
         String rawCurr = report.currency() != null ? report.currency() : "INR";
         String currSymbol = "INR".equalsIgnoreCase(rawCurr) ? "₹"
                 : ("USD".equalsIgnoreCase(rawCurr) ? "$"
@@ -484,24 +497,28 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                 : ("GBP".equalsIgnoreCase(rawCurr) ? "£"
                 : ("JPY".equalsIgnoreCase(rawCurr) ? "¥" : rawCurr))));
 
+        long effectiveUserId = userId != null ? userId : 1L;
+        String refCode = String.format("ET-STMT-%04d%02d-%04d", report.year(), report.month(), effectiveUserId % 10000L);
+        String generationDate = LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.US));
+
         // Categories
         StringBuilder categoryRows = new StringBuilder();
         for (MonthlyReportDto.CategoryReportDto c : report.categoryBreakdown()) {
             categoryRows.append("""
-                <tr>
-                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
+                <tr class="report-row report-cat-row">
+                    <td class="report-cell report-cat-name" style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
                                font-weight: 600; color: #ece7d8;">%s</td>
-                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
+                    <td class="report-cell report-amount report-cat-amount" style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
                                text-align: right; font-weight: 700; color: #c79a3e;">%s %s</td>
-                    <td style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
+                    <td class="report-cell report-share-cell" style="padding: 12px 14px; border-bottom: 1px solid rgba(236,231,216,0.08);
                                text-align: right;">
-                        <span style="display: inline-block; background: rgba(199, 154, 62, 0.12); color: #c79a3e;
+                        <span class="report-share-badge" style="display: inline-block; background: rgba(199, 154, 62, 0.12); color: #c79a3e;
                                      padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">
                             %.1f%%
                         </span>
                     </td>
                 </tr>
-                """.formatted(escapeHtml(c.categoryName()), currSymbol, c.totalAmount(), c.percentage()));
+                """.formatted(escapeHtml(c.categoryName()), currSymbol, formatCurrencyAmount(c.totalAmount()), c.percentage()));
         }
 
         // Budgets
@@ -513,26 +530,26 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     : (b.usagePercentage() > 80 ? "Near Limit" : "On Track");
             double barWidth = Math.min(b.usagePercentage(), 100.0);
             budgetCards.append("""
-                <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1);
+                <div class="report-card budget-card" style="background: #10120e; border: 1px solid rgba(236,231,216,0.1);
                             border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;
+                    <div class="card-head" style="display: flex; justify-content: space-between; align-items: center;
                                 margin-bottom: 8px;">
-                        <span style="font-size: 14px; font-weight: 700; color: #ece7d8;">%s</span>
-                        <span style="font-size: 12px; font-weight: 700; color: %s;
+                        <span class="card-title" style="font-size: 14px; font-weight: 700; color: #ece7d8;">%s</span>
+                        <span class="budget-badge" style="font-size: 12px; font-weight: 700; color: %s;
                                      background: rgba(255,255,255,0.05); padding: 3px 8px;
                                      border-radius: 6px;">%s (%.1f%%)</span>
                     </div>
-                    <div style="background: rgba(255,255,255,0.08); height: 6px;
+                    <div class="progress-track" style="background: rgba(255,255,255,0.08); height: 6px;
                                 border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
-                        <div style="background: %s; width: %.1f%%; height: 100%%; border-radius: 999px;"></div>
+                        <div class="progress-fill" style="background: %s; width: %.1f%%; height: 100%%; border-radius: 999px;"></div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #a8a395;">
-                        <span>Spent: <strong>%s %s</strong></span>
-                        <span>Limit: <strong>%s %s</strong></span>
+                    <div class="card-foot" style="display: flex; justify-content: space-between; font-size: 12px; color: #a8a395;">
+                        <span>Spent: <strong class="card-amt">%s %s</strong></span>
+                        <span>Limit: <strong class="card-amt">%s %s</strong></span>
                     </div>
                 </div>
                 """.formatted(escapeHtml(b.categoryName()), badgeColor, badgeText, b.usagePercentage(),
-                        badgeColor, barWidth, currSymbol, b.spentAmount(), currSymbol, b.limitAmount()));
+                        badgeColor, barWidth, currSymbol, formatCurrencyAmount(b.spentAmount()), currSymbol, formatCurrencyAmount(b.limitAmount())));
         }
 
         // Savings Goals
@@ -541,25 +558,25 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             for (SavingsGoalDto g : report.savingsGoals()) {
                 boolean completed = "COMPLETED".equalsIgnoreCase(g.status()) || g.progressPercentage() >= 100.0;
                 String badgeColor = completed ? "#10b981" : "#3b82f6";
-                String badgeText = completed ? "Achieved" : String.format("%.1f%%", g.progressPercentage());
+                String badgeText = completed ? "Achieved" : String.format(Locale.US, "%.1f%%", g.progressPercentage());
                 double barWidth = Math.min(g.progressPercentage(), 100.0);
                 savingsCards.append("""
-                    <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1);
+                    <div class="report-card savings-card" style="background: #10120e; border: 1px solid rgba(236,231,216,0.1);
                                 border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;
+                        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center;
                                     margin-bottom: 8px;">
-                            <span style="font-size: 14px; font-weight: 700; color: #ece7d8;">%s</span>
-                            <span style="font-size: 12px; font-weight: 700; color: %s;
+                            <span class="card-title" style="font-size: 14px; font-weight: 700; color: #ece7d8;">%s</span>
+                            <span class="savings-badge" style="font-size: 12px; font-weight: 700; color: %s;
                                          background: rgba(255,255,255,0.05); padding: 3px 8px;
                                          border-radius: 6px;">%s</span>
                         </div>
-                        <div style="background: rgba(255,255,255,0.08); height: 6px;
+                        <div class="progress-track" style="background: rgba(255,255,255,0.08); height: 6px;
                                     border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
-                            <div style="background: %s; width: %.1f%%; height: 100%%; border-radius: 999px;"></div>
+                            <div class="progress-fill" style="background: %s; width: %.1f%%; height: 100%%; border-radius: 999px;"></div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #a8a395;">
-                            <span>Saved: <strong>%s %s</strong></span>
-                            <span>Target: <strong>%s %s</strong>%s</span>
+                        <div class="card-foot" style="display: flex; justify-content: space-between; font-size: 12px; color: #a8a395;">
+                            <span>Saved: <strong class="card-amt">%s %s</strong></span>
+                            <span>Target: <strong class="card-amt">%s %s</strong>%s</span>
                         </div>
                     </div>
                     """.formatted(
@@ -569,9 +586,9 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         badgeColor,
                         barWidth,
                         currSymbol,
-                        g.currentAmount(),
+                        formatCurrencyAmount(g.currentAmount()),
                         currSymbol,
-                        g.targetAmount(),
+                        formatCurrencyAmount(g.targetAmount()),
                         g.targetDate() != null ? " · Due " + g.targetDate() : ""
                     ));
             }
@@ -582,14 +599,14 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         if (report.incomes() != null && !report.incomes().isEmpty()) {
             for (IncomeDto inc : report.incomes()) {
                 incomeRows.append("""
-                    <tr>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                    <tr class="report-row report-income-row">
+                        <td class="report-cell report-date" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    font-size: 13px; color: #a8a395;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                        <td class="report-cell report-desc" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                        <td class="report-cell report-source" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    font-size: 12px; color: #10b981;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                        <td class="report-cell report-amount report-income-amount" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    text-align: right; font-weight: 700; color: #10b981;">+ %s %s</td>
                     </tr>
                     """.formatted(
@@ -598,7 +615,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                             ? inc.description() : "Income Inflow"),
                         escapeHtml(inc.source() != null ? inc.source() : "General"),
                         currSymbol,
-                        inc.amount()
+                        formatCurrencyAmount(inc.amount())
                     ));
             }
         }
@@ -608,7 +625,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         if (report.insights() != null) {
             for (String insight : report.insights()) {
                 insightItems.append("""
-                    <div style="padding: 10px 14px; background: rgba(199, 154, 62, 0.06);
+                    <div class="insight-item" style="padding: 10px 14px; background: rgba(199, 154, 62, 0.06);
                                 border-left: 3px solid #c79a3e; border-radius: 0 8px 8px 0; margin-bottom: 8px;
                                 font-size: 13px; color: #ece7d8; line-height: 1.5;">
                         %s
@@ -622,14 +639,14 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         if (report.topExpenses() != null && !report.topExpenses().isEmpty()) {
             for (ExpenseDto exp : report.topExpenses()) {
                 topExpenseRows.append("""
-                    <tr>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                    <tr class="report-row report-expense-row">
+                        <td class="report-cell report-date" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    font-size: 13px; color: #a8a395;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                        <td class="report-cell report-desc" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    font-size: 13px; font-weight: 600; color: #ece7d8;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                        <td class="report-cell report-cat" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    font-size: 12px; color: #c79a3e;">%s</td>
-                        <td style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
+                        <td class="report-cell report-amount report-expense-amount" style="padding: 10px 12px; border-bottom: 1px solid rgba(236,231,216,0.06);
                                    text-align: right; font-weight: 700; color: #ef4444;">- %s %s</td>
                     </tr>
                     """.formatted(
@@ -638,7 +655,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                             ? exp.description() : "General Expense"),
                         escapeHtml(exp.categoryName() != null ? exp.categoryName() : "General"),
                         currSymbol,
-                        exp.amount()
+                        formatCurrencyAmount(exp.amount())
                     ));
             }
         }
@@ -649,6 +666,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>ExpenseTracker Pro - Monthly Financial Statement - %s</title>
             <style>
               body { margin: 0; padding: 0; background-color: #080a07;
                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -664,7 +682,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                              border: 1px solid rgba(199, 154, 62, 0.3); border-radius: 999px;
                              padding: 6px 18px; font-size: 13px; font-weight: 800;
                              color: #c79a3e; letter-spacing: 0.5px; }
-              .stat-grid { display: table; width: 100%%; margin-bottom: 24px; }\
+              .stat-grid { display: table; width: 100%%; margin-bottom: 24px; }
               .stat-cell { display: table-cell; width: 50%%; padding: 6px; }
               .stat-box { background: #0b0d09; border: 1px solid rgba(236, 231, 216, 0.08);
                           border-radius: 14px; padding: 18px 14px; text-align: center; }
@@ -677,6 +695,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
               .email-footer { padding: 24px 32px; border-top: 1px solid rgba(236, 231, 216, 0.08);
                               background: #0b0d09; text-align: center; font-size: 12px;
                               color: #6b6558; line-height: 1.6; }
+              .print-letterhead, .print-footer { display: none; }
 
               /* Custom Luxury Scrollbar */
               html, body {
@@ -708,17 +727,448 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
               ::-webkit-scrollbar-thumb:hover {
                   background: rgba(199, 154, 62, 0.8) !important;
               }
-              * {
-                  scrollbar-width: thin !important;
-                  scrollbar-color: rgba(199, 154, 62, 0.45) rgba(11, 13, 9, 0.9) !important;
+
+              /* ==========================================================================
+                 EXECUTIVE PRINT MEDIA STYLESHEET (A4 & US Letter Financial Statement)
+                 ========================================================================== */
+              @media print {
+                  @page {
+                      size: A4 portrait;
+                      margin: 10mm 12mm 14mm 12mm;
+                  }
+                  *, *:before, *:after {
+                      box-sizing: border-box !important;
+                      text-shadow: none !important;
+                      filter: none !important;
+                  }
+                  html, body {
+                      background: #ffffff !important;
+                      background-color: #ffffff !important;
+                      color: #0f172a !important;
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+                      font-size: 10pt !important;
+                      line-height: 1.4 !important;
+                      margin: 0 !important;
+                      padding: 0 !important;
+                      -webkit-print-color-adjust: exact !important;
+                      print-color-adjust: exact !important;
+                      scrollbar-width: none !important;
+                  }
+                  ::-webkit-scrollbar {
+                      display: none !important;
+                  }
+                  .email-container {
+                      max-width: 100%% !important;
+                      width: 100%% !important;
+                      margin: 0 !important;
+                      padding: 0 !important;
+                      background: #ffffff !important;
+                      background-color: #ffffff !important;
+                      border: none !important;
+                      border-radius: 0 !important;
+                      box-shadow: none !important;
+                      overflow: visible !important;
+                  }
+                  .email-body {
+                      padding: 0 2px !important;
+                  }
+                  .screen-header, .screen-footer, .no-print, .email-header, .email-footer {
+                      display: none !important;
+                  }
+                  .print-letterhead, .print-footer {
+                      display: block !important;
+                  }
+                  .print-header-top {
+                      display: flex !important;
+                      justify-content: space-between !important;
+                      align-items: flex-start !important;
+                      margin-bottom: 8px !important;
+                  }
+                  .print-brand-row {
+                      display: flex !important;
+                      align-items: center !important;
+                      gap: 8px !important;
+                  }
+                  .print-brand-title {
+                      font-size: 18pt !important;
+                      font-weight: 900 !important;
+                      letter-spacing: -0.4px !important;
+                      color: #0f172a !important;
+                      line-height: 1.1 !important;
+                  }
+                  .print-gold-text {
+                      color: #926117 !important;
+                  }
+                  .print-brand-tagline {
+                      font-size: 8pt !important;
+                      font-weight: 600 !important;
+                      letter-spacing: 0.5px !important;
+                      text-transform: uppercase !important;
+                      color: #64748b !important;
+                      margin-top: 3px !important;
+                  }
+                  .print-meta-col {
+                      text-align: right !important;
+                  }
+                  .print-doc-badge {
+                      display: inline-block !important;
+                      background: #f8fafc !important;
+                      border: 1px solid #cbd5e1 !important;
+                      border-radius: 4px !important;
+                      padding: 2px 8px !important;
+                      font-size: 7.5pt !important;
+                      font-weight: 800 !important;
+                      letter-spacing: 0.8px !important;
+                      color: #926117 !important;
+                      margin-bottom: 3px !important;
+                  }
+                  .print-period-title {
+                      font-size: 13pt !important;
+                      font-weight: 800 !important;
+                      color: #0f172a !important;
+                      line-height: 1.2 !important;
+                  }
+                  .print-ref-code, .print-date {
+                      font-size: 8pt !important;
+                      color: #64748b !important;
+                      font-family: 'IBM Plex Mono', 'Courier New', monospace !important;
+                  }
+                  .print-divider {
+                      border-bottom: 2.5px solid #926117 !important;
+                      margin: 8px 0 12px 0 !important;
+                  }
+                  .print-account-strip {
+                      display: table !important;
+                      width: 100%% !important;
+                      background: #f8fafc !important;
+                      background-color: #f8fafc !important;
+                      border: 1px solid #e2e8f0 !important;
+                      border-radius: 6px !important;
+                      margin-bottom: 14px !important;
+                  }
+                  .print-account-item {
+                      display: table-cell !important;
+                      width: 25%% !important;
+                      padding: 7px 10px !important;
+                      border-right: 1px solid #e2e8f0 !important;
+                      vertical-align: top !important;
+                  }
+                  .print-account-item:last-child {
+                      border-right: none !important;
+                  }
+                  .print-account-label {
+                      display: block !important;
+                      font-size: 7pt !important;
+                      font-weight: 700 !important;
+                      letter-spacing: 0.5px !important;
+                      text-transform: uppercase !important;
+                      color: #64748b !important;
+                      margin-bottom: 2px !important;
+                  }
+                  .print-account-val {
+                      display: block !important;
+                      font-size: 9pt !important;
+                      font-weight: 700 !important;
+                      color: #0f172a !important;
+                  }
+                  .print-verified {
+                      color: #047857 !important;
+                  }
+                  .user-greeting {
+                      font-size: 10.5pt !important;
+                      font-weight: 700 !important;
+                      color: #334155 !important;
+                      margin-bottom: 10px !important;
+                  }
+                  .hero-card {
+                      background: #f8fafc !important;
+                      background-color: #f8fafc !important;
+                      border: 1.5px solid #e2e8f0 !important;
+                      border-left: 5px solid #b91c1c !important;
+                      border-radius: 6px !important;
+                      padding: 12px 16px !important;
+                      margin-bottom: 12px !important;
+                      text-align: left !important;
+                      page-break-inside: avoid !important;
+                      break-inside: avoid !important;
+                  }
+                  .hero-card .hero-label {
+                      font-size: 7.5pt !important;
+                      font-weight: 800 !important;
+                      text-transform: uppercase !important;
+                      letter-spacing: 1px !important;
+                      color: #64748b !important;
+                  }
+                  .hero-card .hero-val {
+                      font-size: 22pt !important;
+                      font-weight: 900 !important;
+                      color: #b91c1c !important;
+                      margin: 3px 0 !important;
+                      font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace !important;
+                      letter-spacing: -0.5px !important;
+                  }
+                  .hero-card .hero-sub {
+                      font-size: 8pt !important;
+                      color: #64748b !important;
+                  }
+                  .stat-grid {
+                      display: table !important;
+                      width: 100%% !important;
+                      margin-bottom: 8px !important;
+                      page-break-inside: avoid !important;
+                      break-inside: avoid !important;
+                  }
+                  .stat-cell {
+                      display: table-cell !important;
+                      width: 50%% !important;
+                      padding: 3px !important;
+                  }
+                  .stat-box {
+                      background: #f8fafc !important;
+                      background-color: #f8fafc !important;
+                      border: 1px solid #e2e8f0 !important;
+                      border-radius: 6px !important;
+                      padding: 9px 12px !important;
+                      text-align: left !important;
+                      page-break-inside: avoid !important;
+                      break-inside: avoid !important;
+                  }
+                  .stat-box .stat-label {
+                      font-size: 7pt !important;
+                      font-weight: 700 !important;
+                      text-transform: uppercase !important;
+                      letter-spacing: 0.5px !important;
+                      color: #64748b !important;
+                      margin-bottom: 3px !important;
+                  }
+                  .stat-box .stat-val {
+                      font-size: 12pt !important;
+                      font-weight: 800 !important;
+                      color: #0f172a !important;
+                      font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace !important;
+                  }
+                  .stat-box .stat-val-green {
+                      color: #047857 !important;
+                  }
+                  .section-title {
+                      font-size: 10pt !important;
+                      font-weight: 800 !important;
+                      text-transform: uppercase !important;
+                      letter-spacing: 0.7px !important;
+                      color: #0f172a !important;
+                      margin: 16px 0 8px 0 !important;
+                      padding-bottom: 3px !important;
+                      border-bottom: 1.5px solid #cbd5e1 !important;
+                      page-break-after: avoid !important;
+                      break-after: avoid !important;
+                  }
+                  .insight-item {
+                      background: #fefce8 !important;
+                      background-color: #fefce8 !important;
+                      border: 1px solid #fef08a !important;
+                      border-left: 4px solid #b45309 !important;
+                      border-radius: 4px !important;
+                      margin-bottom: 6px !important;
+                      padding: 7px 11px !important;
+                      font-size: 8.5pt !important;
+                      color: #1e293b !important;
+                      line-height: 1.5 !important;
+                      page-break-inside: avoid !important;
+                      break-inside: avoid !important;
+                  }
+                  table {
+                      width: 100%% !important;
+                      border-collapse: collapse !important;
+                      margin-bottom: 14px !important;
+                      page-break-inside: auto !important;
+                  }
+                  thead {
+                      display: table-header-group !important;
+                  }
+                  tr {
+                      page-break-inside: avoid !important;
+                      break-inside: avoid !important;
+                  }
+                  th {
+                      background: #f1f5f9 !important;
+                      background-color: #f1f5f9 !important;
+                      color: #334155 !important;
+                      font-size: 7.5pt !important;
+                      font-weight: 700 !important;
+                      text-transform: uppercase !important;
+                      letter-spacing: 0.5px !important;
+                      padding: 5px 8px !important;
+                      border-top: 1px solid #cbd5e1 !important;
+                      border-bottom: 1.5px solid #94a3b8 !important;
+                  }
+                  td {
+                      padding: 6px 8px !important;
+                      border-bottom: 1px solid #e2e8f0 !important;
+                      font-size: 8.5pt !important;
+                      color: #1e293b !important;
+                      vertical-align: middle !important;
+                  }
+                  .report-date {
+                      color: #64748b !important;
+                      font-family: 'IBM Plex Mono', monospace !important;
+                  }
+                  .report-desc, .report-cat-name {
+                      color: #0f172a !important;
+                      font-weight: 600 !important;
+                  }
+                  .report-source {
+                      color: #047857 !important;
+                      font-weight: 600 !important;
+                  }
+                  .report-cat {
+                      color: #926117 !important;
+                      font-weight: 600 !important;
+                  }
+                  .report-amount {
+                      font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace !important;
+                      font-weight: 700 !important;
+                      font-variant-numeric: tabular-nums !important;
+                  }
+                  .report-income-amount {
+                      color: #047857 !important;
+                  }
+                  .report-expense-amount {
+                      color: #b91c1c !important;
+                  }
+                  .report-share-badge {
+                      background: #fef3c7 !important;
+                      background-color: #fef3c7 !important;
+                      color: #92400e !important;
+                      border: 1px solid #fde68a !important;
+                      padding: 1px 5px !important;
+                      border-radius: 4px !important;
+                      font-size: 7.5pt !important;
+                      font-weight: 700 !important;
+                  }
+                  .budget-card, .savings-card {
+                      background: #f8fafc !important;
+                      background-color: #f8fafc !important;
+                      border: 1px solid #e2e8f0 !important;
+                      border-radius: 6px !important;
+                      padding: 8px 12px !important;
+                      margin-bottom: 6px !important;
+                      page-break-inside: avoid !important;
+                      break-inside: avoid !important;
+                  }
+                  .card-title {
+                      color: #0f172a !important;
+                      font-weight: 700 !important;
+                      font-size: 9pt !important;
+                  }
+                  .budget-badge, .savings-badge {
+                      background: #f1f5f9 !important;
+                      background-color: #f1f5f9 !important;
+                      border: 1px solid #cbd5e1 !important;
+                      font-size: 7.5pt !important;
+                      font-weight: 700 !important;
+                      padding: 1px 5px !important;
+                      border-radius: 4px !important;
+                  }
+                  .progress-track {
+                      background: #e2e8f0 !important;
+                      background-color: #e2e8f0 !important;
+                      border: 1px solid #cbd5e1 !important;
+                      height: 5px !important;
+                      border-radius: 999px !important;
+                      overflow: hidden !important;
+                      margin-bottom: 5px !important;
+                  }
+                  .progress-fill {
+                      height: 100%% !important;
+                      border-radius: 999px !important;
+                  }
+                  .card-foot {
+                      font-size: 8pt !important;
+                      color: #475569 !important;
+                  }
+                  .card-amt {
+                      color: #0f172a !important;
+                      font-family: 'IBM Plex Mono', monospace !important;
+                  }
+                  .print-footer {
+                      margin-top: 18px !important;
+                      padding-top: 8px !important;
+                      border-top: 1.5px solid #cbd5e1 !important;
+                      page-break-inside: avoid !important;
+                      break-inside: avoid !important;
+                  }
+                  .print-footer-grid {
+                      display: flex !important;
+                      justify-content: space-between !important;
+                      align-items: flex-start !important;
+                      font-size: 7.5pt !important;
+                      color: #475569 !important;
+                      margin-bottom: 4px !important;
+                  }
+                  .print-footer-sub {
+                      font-size: 7pt !important;
+                      color: #94a3b8 !important;
+                      margin-top: 2px !important;
+                  }
+                  .print-footer-disclaimer {
+                      font-size: 6.5pt !important;
+                      color: #94a3b8 !important;
+                      line-height: 1.35 !important;
+                      border-top: 1px solid #f1f5f9 !important;
+                      padding-top: 4px !important;
+                      margin-top: 3px !important;
+                  }
               }
             </style>
             </head>
             <body>
               <div class="email-container">
-                <div class="email-header">
+                <!-- PRINT LETTERHEAD: Prominent high-contrast executive header for print/paper -->
+                <div class="print-letterhead">
+                  <div class="print-header-top">
+                    <div class="print-brand-col">
+                      <div class="print-brand-row">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="print-brand-logo">
+                          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#926117" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M2 17L12 22L22 17" stroke="#926117" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M2 12L12 17L22 12" stroke="#926117" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="print-brand-title">ExpenseTracker <span class="print-gold-text">Pro</span></span>
+                      </div>
+                      <div class="print-brand-tagline">Private Wealth &amp; Financial Management Suite</div>
+                    </div>
+                    <div class="print-meta-col">
+                      <div class="print-doc-badge">EXECUTIVE STATEMENT</div>
+                      <div class="print-period-title">%s</div>
+                      <div class="print-ref-code">Ref: %s</div>
+                      <div class="print-date">Issued: %s</div>
+                    </div>
+                  </div>
+                  <div class="print-divider"></div>
+                  <div class="print-account-strip">
+                    <div class="print-account-item">
+                      <span class="print-account-label">ACCOUNT HOLDER</span>
+                      <span class="print-account-val">%s</span>
+                    </div>
+                    <div class="print-account-item">
+                      <span class="print-account-label">STATEMENT PERIOD</span>
+                      <span class="print-account-val">%s</span>
+                    </div>
+                    <div class="print-account-item">
+                      <span class="print-account-label">BASE CURRENCY</span>
+                      <span class="print-account-val">%s (%s)</span>
+                    </div>
+                    <div class="print-account-item">
+                      <span class="print-account-label">AUDIT STATUS</span>
+                      <span class="print-account-val print-verified">✓ Verified Ledger</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SCREEN HEADER: Sleek Obsidian & Luxury Gold statement for email and on-screen preview -->
+                <div class="screen-header email-header">
                   <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px;">
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(199, 154, 62, 0.25) 0%%, rgba(19, 23, 17, 0.9) 100%%); border: 1.5px solid #c79a3e; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(199, 154, 62, 0.25); border-radius: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(199, 154, 62, 0.25) 0%%, rgba(19, 23, 17, 0.9) 100%%); border: 1.5px solid #c79a3e; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(199, 154, 62, 0.25);">
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#c79a3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M2 17L12 22L22 17" stroke="#c79a3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -733,31 +1183,32 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="brand-badge"><span style="color:#c79a3e; margin-right:4px;">✦</span> OBSIDIAN &amp; LUXURY GOLD EXECUTIVE STATEMENT</div>
                   <h2 style="margin: 14px 0 0; color: #ece7d8; font-size: 24px;">%s</h2>
                 </div>
+
                 <div class="email-body">
-                  <div style="font-size: 18px; font-weight: 700; margin-bottom: 18px;">Hello %s,</div>
+                  <div class="user-greeting" style="font-size: 18px; font-weight: 700; margin-bottom: 18px;">Hello %s,</div>
 
                   <!-- Hero Outflow -->
                   <div class="hero-card">
-                    <div style="font-size: 11px; text-transform: uppercase;
+                    <div class="hero-label" style="font-size: 11px; text-transform: uppercase;
                          letter-spacing: 1.5px; color: #a8a395;">Total Outflow (Expenses)</div>
                     <div class="hero-val">%s %s</div>
-                    <div style="font-size: 13px; color: #a8a395; margin-top: 6px;">Across %d transactions</div>
+                    <div class="hero-sub" style="font-size: 13px; color: #a8a395; margin-top: 6px;">Across %d transactions</div>
                   </div>
 
                   <!-- Cash Flow & Inflow Metric Grid -->
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase;
+                        <div class="stat-label" style="font-size: 11px; text-transform: uppercase;
                              color: #a8a395;">Total Income Inflow</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%s %s</div>
+                        <div class="stat-val stat-val-green" style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase;
-                             color: #a8a395;">Net Savings (%s%%)</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
+                        <div class="stat-label" style="font-size: 11px; text-transform: uppercase;
+                             color: #a8a395;">Net Savings (%.1f%%)</div>
+                        <div class="stat-val" style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                   </div>
@@ -765,16 +1216,16 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase;
+                        <div class="stat-label" style="font-size: 11px; text-transform: uppercase;
                              color: #a8a395;">Daily Expense Average</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
+                        <div class="stat-val" style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase;
+                        <div class="stat-label" style="font-size: 11px; text-transform: uppercase;
                              color: #a8a395;">Budget Health Score</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%d%%</div>
+                        <div class="stat-val stat-val-green" style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 4px;">%d%%</div>
                       </div>
                     </div>
                   </div>
@@ -782,15 +1233,15 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   <div class="stat-grid">
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase;
+                        <div class="stat-label" style="font-size: 11px; text-transform: uppercase;
                              color: #a8a395;">Peak Single Expense</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
+                        <div class="stat-val" style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                     <div class="stat-cell">
                       <div class="stat-box">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Recurring Outflow</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
+                        <div class="stat-label" style="font-size: 11px; text-transform: uppercase; color: #a8a395;">Recurring Outflow</div>
+                        <div class="stat-val" style="font-size: 18px; font-weight: 800; color: #ece7d8; margin-top: 4px;">%s %s</div>
                       </div>
                     </div>
                   </div>
@@ -803,7 +1254,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
 
                   <!-- Monthly Income Sources -->
                   <div class="section-title">Monthly Income Sources</div>
-                  <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+                  <table class="report-table report-income-table" style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                     <thead>
                       <tr style="color: #a8a395; text-align: left;
                           border-bottom: 1px solid rgba(236,231,216,0.15);
@@ -820,14 +1271,14 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   </table>
 
                   <!-- Active Savings Goals -->
-                  <div class="section-title">Active Savings Goals & Milestones</div>
+                  <div class="section-title">Active Savings Goals &amp; Milestones</div>
                   <div style="margin-bottom: 24px;">
                     %s
                   </div>
 
                   <!-- Top Spending Categories -->
                   <div class="section-title">Spending by Category</div>
-                  <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
+                  <table class="report-table report-category-table" style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
                     <thead>
                       <tr style="color: #a8a395; text-align: left;
                           border-bottom: 1px solid rgba(236,231,216,0.15);
@@ -843,7 +1294,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   </table>
 
                   <!-- Budget Adherence -->
-                  <div class="section-title">Budget Adherence & Limits</div>
+                  <div class="section-title">Budget Adherence &amp; Limits</div>
                   <div style="margin-bottom: 24px;">
                     %s
                   </div>
@@ -852,31 +1303,58 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   %s
 
                 </div>
-                <div class="email-footer">
+
+                <!-- Screen Footer -->
+                <div class="screen-footer email-footer">
                   <strong>ExpenseTracker Pro</strong> · Smart Financial Intelligence<br>
                   Automated Monthly Report Generated for %s
+                </div>
+
+                <!-- Print Footer: Formal statement footer with audit attestation -->
+                <div class="print-footer">
+                  <div class="print-footer-grid">
+                    <div class="print-footer-left">
+                      <strong>ExpenseTracker Pro</strong> · Executive Financial Intelligence Suite
+                      <div class="print-footer-sub">Autonomous Personal Accounting &amp; Wealth Analytics</div>
+                    </div>
+                    <div class="print-footer-right">
+                      <span>Personal &amp; Confidential Statement for %s</span>
+                      <div class="print-footer-sub">Period: %s · Generated: %s</div>
+                    </div>
+                  </div>
+                  <div class="print-footer-disclaimer">
+                    This monthly financial performance statement is automatically compiled from authenticated transaction records for personal wealth tracking, tax planning, and audit preservation. Confidential document.
+                  </div>
                 </div>
               </div>
             </body>
             </html>
             """.formatted(
                 report.period(),
+                report.period(),
+                refCode,
+                generationDate,
+                userName != null ? userName : "User",
+                report.period(),
+                rawCurr,
+                currSymbol,
+                report.period(),
                 userName != null ? userName : "User",
                 currSymbol,
-                report.totalOutflow(),
+                formatCurrencyAmount(report.totalOutflow()),
                 report.transactionCount(),
                 currSymbol,
-                report.totalIncome(),
+                formatCurrencyAmount(report.totalIncome()),
                 report.savingsRate(),
                 currSymbol,
-                report.netCashFlow(),
+                formatCurrencyAmount(report.netCashFlow()),
                 currSymbol,
-                report.dailyAverage(),
+                formatCurrencyAmount(report.dailyAverage()),
                 report.budgetHealthScore(),
                 currSymbol,
-                report.highestExpenseAmount(),
+                formatCurrencyAmount(report.highestExpenseAmount()),
                 currSymbol,
-                report.recurringTotal(),
+                formatCurrencyAmount(report.recurringTotal()),
                 insightItems.toString(),
                 !incomeRows.isEmpty() ? incomeRows.toString()
                         : ("<tr><td colspan='4' style='padding: 12px; color: #a8a395;'>"
@@ -892,7 +1370,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         + "No category budgets configured for this period.</div>"),
                 !topExpenseRows.isEmpty() ? """
                     <div class="section-title">Largest Outflow Transactions</div>
-                    <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+                    <table class="report-table report-expense-table" style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                       <thead>
                         <tr style="color: #a8a395; text-align: left;
                           border-bottom: 1px solid rgba(236,231,216,0.15);
@@ -908,7 +1386,10 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                       </tbody>
                     </table>
                     """.formatted(topExpenseRows.toString()) : "",
-                report.period()
+                report.period(),
+                userName != null ? userName : "User",
+                report.period(),
+                generationDate
             );
     }
 }

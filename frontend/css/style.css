@@ -15996,3 +15996,22 @@ body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
 
 /* --- End of aesthetics.css --- */
 
+
+/* ==========================================================================
+   GLOBAL PRINT MEDIA & PREVIEW RULES
+   ========================================================================== */
+@media print {
+    /* Hide decorative canvas, floating controls, reticles, audio buttons, and toast notifications */
+    .animated-background-canvas,
+    #executiveReticle,
+    .executive-reticle,
+    .toast-container,
+    .floating-calculator-wrap,
+    .audio-toggle-btn,
+    .command-palette-backdrop,
+    .cursor-dot,
+    .cursor-ring,
+    .cal-backdrop {
+        display: none !important;
+    }
+}

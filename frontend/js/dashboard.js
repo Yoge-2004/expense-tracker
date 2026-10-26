@@ -4129,8 +4129,29 @@ closeMonthlyReportModalBtn?.addEventListener("click", () => closeModal(monthlyRe
 
 printReportBtn?.addEventListener("click", () => {
     if (monthlyReportFrame && monthlyReportFrame.contentWindow) {
-        monthlyReportFrame.contentWindow.focus();
-        monthlyReportFrame.contentWindow.print();
+        try {
+            monthlyReportFrame.contentWindow.focus();
+            monthlyReportFrame.contentWindow.print();
+        } catch (e) {
+            console.error("Monthly report print frame error:", e);
+            window.print();
+        }
+    }
+});
+
+// Shortcut: If monthly report modal is active and user presses Ctrl+P / Cmd+P, print the report frame
+window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "P")) {
+        if (monthlyReportModal && monthlyReportModal.classList.contains("active") && monthlyReportFrame && monthlyReportFrame.contentWindow) {
+            e.preventDefault();
+            try {
+                monthlyReportFrame.contentWindow.focus();
+                monthlyReportFrame.contentWindow.print();
+            } catch (err) {
+                console.error("Monthly report print frame error:", err);
+                window.print();
+            }
+        }
     }
 });
 
