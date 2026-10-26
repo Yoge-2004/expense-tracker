@@ -5350,7 +5350,7 @@ button[type="submit"]:active {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow: visible;
     animation: cardEntrance 0.5s var(--ease);
 }
 
@@ -5810,8 +5810,7 @@ button[type="submit"]:active {
     .dashboard-container {
         padding: 14px 14px 36px;
         gap: 14px;
-        overflow-x: hidden;
-        overflow-y: visible;
+        overflow: visible;
         touch-action: pan-y;
         -webkit-overflow-scrolling: touch;
     }
@@ -12224,8 +12223,7 @@ body {
 .dashboard-container {
     height: auto !important;
     min-height: 100% !important;
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
+    overflow: visible !important;
 }
 
 /* ================== 8. MOBILE RESPONSIVE & GLOBAL SCROLLABILITY ================== */
@@ -12260,8 +12258,7 @@ body {
         flex-direction: column;
         gap: 14px;
         padding: 14px 14px 36px !important;
-        overflow-x: hidden !important;
-        overflow-y: visible !important;
+        overflow: visible !important;
         touch-action: pan-y !important;
         -webkit-overflow-scrolling: touch !important;
     }

@@ -26,8 +26,7 @@ body {
 .dashboard-container {
     height: auto !important;
     min-height: 100% !important;
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
+    overflow: visible !important;
 }
 
 /* ================== 8. MOBILE RESPONSIVE & GLOBAL SCROLLABILITY ================== */
@@ -62,8 +61,7 @@ body {
         flex-direction: column;
         gap: 14px;
         padding: 14px 14px 36px !important;
-        overflow-x: hidden !important;
-        overflow-y: visible !important;
+        overflow: visible !important;
         touch-action: pan-y !important;
         -webkit-overflow-scrolling: touch !important;
     }

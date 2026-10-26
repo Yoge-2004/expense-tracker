@@ -609,7 +609,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     margin: 0 auto !important;
     padding: 16px 20px !important;
     box-sizing: border-box !important;
-    overflow-x: hidden !important;
+    overflow: visible !important;
 }
 
 .card {
@@ -807,8 +807,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     .dashboard-container {
         padding: 10px 12px 36px !important;
         gap: 12px !important;
-        overflow-x: hidden !important;
-        overflow-y: visible !important;
+        overflow: visible !important;
         touch-action: pan-y !important;
         -webkit-overflow-scrolling: touch !important;
     }

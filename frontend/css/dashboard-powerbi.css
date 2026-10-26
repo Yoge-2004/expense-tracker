@@ -505,7 +505,8 @@
         gap: 8px;
         width: 100%;
         overflow-x: auto;
-        overflow-y: hidden;
+        overflow-y: visible;
+        touch-action: pan-x pan-y;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
         padding: 4px 2px;

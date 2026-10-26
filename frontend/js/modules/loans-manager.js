@@ -664,6 +664,7 @@
                 modal.removeAttribute("hidden");
                 modal.classList.add("active");
                 document.body.classList.add("modal-open");
+                document.documentElement.classList.add("modal-open");
             }
         }
 
@@ -675,6 +676,7 @@
                 modal.classList.remove("active");
                 if (!document.querySelector(".modal-overlay.active")) {
                     document.body.classList.remove("modal-open");
+                    document.documentElement.classList.remove("modal-open");
                 }
             }
         }
@@ -855,6 +857,7 @@
             modal.removeAttribute("hidden");
             modal.classList.add("active");
             document.body.classList.add("modal-open");
+            document.documentElement.classList.add("modal-open");
         }
 
         setTimeout(() => {

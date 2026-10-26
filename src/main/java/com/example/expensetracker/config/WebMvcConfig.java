@@ -97,16 +97,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .setCacheControl(staticCache);
 
         registry.addResourceHandler("/favicon.ico")
-                .addResourceLocations("file:frontend/favicon.ico", "classpath:/frontend/favicon.ico")
+                .addResourceLocations("file:frontend/", "classpath:/frontend/", "classpath:/static/")
                 .setCacheControl(staticCache);
 
         // Service Worker script handlers for root and frontend subpaths
         registry.addResourceHandler("/sw.js")
-                .addResourceLocations("file:frontend/sw.js", "classpath:/frontend/sw.js")
+                .addResourceLocations("file:frontend/", "classpath:/frontend/", "classpath:/static/")
                 .setCacheControl(CacheControl.noCache().mustRevalidate());
 
         registry.addResourceHandler("/frontend/sw.js")
-                .addResourceLocations("file:frontend/sw.js", "classpath:/frontend/sw.js")
+                .addResourceLocations("file:frontend/", "classpath:/frontend/", "classpath:/static/")
                 .setCacheControl(CacheControl.noCache().mustRevalidate());
 
         // Shorter cache for HTML pages themselves — allow revalidation
@@ -131,32 +131,31 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         registry.addResourceHandler("/manifest.json")
                 .addResourceLocations(
-                        "file:frontend/manifest.json",
-                        "classpath:/static/manifest.json",
-                        "classpath:/frontend/manifest.json"
+                        "file:frontend/",
+                        "classpath:/static/",
+                        "classpath:/frontend/"
                 )
                 .setCacheControl(htmlCache);
 
         registry.addResourceHandler("/frontend/manifest.json")
                 .addResourceLocations(
-                        "file:frontend/manifest.json",
-                        "classpath:/static/manifest.json",
-                        "classpath:/static/frontend/manifest.json",
-                        "classpath:/frontend/manifest.json"
+                        "file:frontend/",
+                        "classpath:/static/",
+                        "classpath:/frontend/"
                 )
                 .setCacheControl(htmlCache);
 
         registry.addResourceHandler("/robots.txt")
                 .addResourceLocations(
-                        "file:frontend/robots.txt",
-                        "classpath:/static/robots.txt"
+                        "file:frontend/",
+                        "classpath:/static/"
                 )
                 .setCacheControl(htmlCache);
 
         registry.addResourceHandler("/sitemap.xml")
                 .addResourceLocations(
-                        "file:frontend/sitemap.xml",
-                        "classpath:/static/sitemap.xml"
+                        "file:frontend/",
+                        "classpath:/static/"
                 )
                 .setCacheControl(htmlCache);
     }
