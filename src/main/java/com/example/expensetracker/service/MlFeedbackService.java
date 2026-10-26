@@ -25,6 +25,8 @@ import java.util.UUID;
 @Transactional
 public class MlFeedbackService {
 
+    private static final List<String> TRAINING_READY_STATUSES = List.of("eligible", "approved");
+
     private static final Set<String> CANONICAL_CATEGORIES = Set.of(
             "food_dining",
             "transportation",
@@ -81,7 +83,7 @@ public class MlFeedbackService {
 
     @Transactional(readOnly = true)
     public long countEligible() {
-        return repository.countByTrainingStatus("eligible");
+        return repository.countByTrainingStatusIn(TRAINING_READY_STATUSES);
     }
 
     @Transactional(readOnly = true)
@@ -89,7 +91,7 @@ public class MlFeedbackService {
         int safeLimit = Math.min(Math.max(limit, 1), 1000);
         List<MlFeedback> feedback;
         if (after == null || after.isBlank()) {
-            feedback = repository.findByTrainingStatusOrderByIdAsc("eligible", PageRequest.of(0, safeLimit));
+            feedback = repository.findByTrainingStatusInOrderByIdAsc(TRAINING_READY_STATUSES, PageRequest.of(0, safeLimit));
         } else {
             Long afterId;
             try {
@@ -97,8 +99,8 @@ public class MlFeedbackService {
             } catch (NumberFormatException exception) {
                 throw new IllegalArgumentException("ML feedback cursor must be a numeric id");
             }
-            feedback = repository.findByTrainingStatusAndIdGreaterThanOrderByIdAsc(
-                    "eligible", afterId, PageRequest.of(0, safeLimit));
+            feedback = repository.findByTrainingStatusInAndIdGreaterThanOrderByIdAsc(
+                    TRAINING_READY_STATUSES, afterId, PageRequest.of(0, safeLimit));
         }
 
         List<MlFeedbackTrainingRecord> records = feedback.stream()
@@ -125,7 +127,7 @@ public class MlFeedbackService {
         int updated = 0;
         for (String feedbackId : requested) {
             MlFeedback feedback = repository.findByFeedbackId(feedbackId).orElse(null);
-            if (feedback != null && "eligible".equals(feedback.getTrainingStatus())) {
+            if (feedback != null && ("eligible".equals(feedback.getTrainingStatus()) || "approved".equals(feedback.getTrainingStatus()))) {
                 feedback.setTrainingStatus("consumed");
                 updated++;
             }

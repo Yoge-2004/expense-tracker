@@ -12,6 +12,21 @@ export interface Category {
   name: string;
 }
 
+function toCanonicalCategory(raw: string): string {
+  const norm = (raw || "").toLowerCase().trim().replace(/[\s&-]+/g, "_");
+  if (norm.includes("food") || norm.includes("dining") || norm.includes("restaurant") || norm.includes("grocer")) return "food_dining";
+  if (norm.includes("transport") || norm.includes("travel") || norm.includes("fuel") || norm.includes("cab")) return "transportation";
+  if (norm.includes("shop") || norm.includes("retail") || norm.includes("cloth") || norm.includes("store")) return "shopping_retail";
+  if (norm.includes("entertain") || norm.includes("movie") || norm.includes("recreat") || norm.includes("game")) return "entertainment_recreation";
+  if (norm.includes("health") || norm.includes("medic") || norm.includes("doctor") || norm.includes("pharm")) return "healthcare_medical";
+  if (norm.includes("util") || norm.includes("bill") || norm.includes("electric") || norm.includes("water")) return "utilities_services";
+  if (norm.includes("financ") || norm.includes("bank") || norm.includes("invest") || norm.includes("fee")) return "financial_services";
+  if (norm.includes("gov") || norm.includes("legal") || norm.includes("tax") || norm.includes("fine")) return "government_legal";
+  if (norm.includes("charity") || norm.includes("donat")) return "charity_donations";
+  if (norm.includes("income") || norm.includes("salary")) return "income";
+  return "shopping_retail";
+}
+
 export function isValidDateString(dateStr: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
   const [yearStr, monthStr, dayStr] = dateStr.split('-');
@@ -481,6 +496,22 @@ export function useExpenseForm({
             expenseDate: expenseDate.trim(),
           }),
         });
+
+        if (aiSuggestion && aiSuggestion.category) {
+          const selectedCatName = categories.find((cat) => cat.id === categoryId)?.name || "";
+          const chosenCanonical = toCanonicalCategory(selectedCatName);
+          apiRequest("/ml/feedback", {
+            method: 'POST',
+            body: JSON.stringify({
+              transactionId: String(editId),
+              text: cleanDesc,
+              predictedCategory: aiSuggestion.category,
+              correctedCategory: chosenCanonical,
+              confidence: Math.min(1.0, Math.max(0.0, aiSuggestion.confidence || 0.95)),
+              modelVersion: "production",
+            }),
+          }).catch(() => {});
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         showAlert('Updated', 'Expense updated successfully.', [
           {
@@ -507,10 +538,26 @@ export function useExpenseForm({
           }
         }
 
-        await apiRequest(`/expenses/user/${userId}`, {
+        const savedExpense: any = await apiRequest(`/expenses/user/${userId}`, {
           method: 'POST',
           body: JSON.stringify(payload),
         });
+
+        if (aiSuggestion && aiSuggestion.category && savedExpense?.id) {
+          const selectedCatName = categories.find((cat) => cat.id === categoryId)?.name || "";
+          const chosenCanonical = toCanonicalCategory(selectedCatName);
+          apiRequest("/ml/feedback", {
+            method: 'POST',
+            body: JSON.stringify({
+              transactionId: String(savedExpense.id),
+              text: cleanDesc,
+              predictedCategory: aiSuggestion.category,
+              correctedCategory: chosenCanonical,
+              confidence: Math.min(1.0, Math.max(0.0, aiSuggestion.confidence || 0.95)),
+              modelVersion: "production",
+            }),
+          }).catch(() => {});
+        }
 
         notifyTransactionRecorded({
           kind: 'DEBIT',

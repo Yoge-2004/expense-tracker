@@ -966,9 +966,14 @@
             const stats = await apiRequest("/admin/ml/stats");
             if (!stats) return;
 
-            document.getElementById("mlActiveModel").textContent = stats.activeModel || "TFIDF-v2.4";
-            document.getElementById("mlPendingFeedback").textContent = `${stats.pendingFeedback || 0} Pending Review`;
-            document.getElementById("mlTotalFeedback").textContent = (stats.totalFeedback || 0).toLocaleString();
+            const activeModelEl = document.getElementById("mlActiveModel");
+            if (activeModelEl) activeModelEl.textContent = stats.activeModel || "TF-IDF";
+
+            const pendingEl = document.getElementById("mlPendingFeedback");
+            if (pendingEl) pendingEl.textContent = `${stats.pendingFeedback || 0} Pending Review`;
+
+            const totalEl = document.getElementById("mlTotalFeedback");
+            if (totalEl) totalEl.textContent = (stats.totalFeedback || 0).toLocaleString();
         } catch (e) {
             console.error("ML stats error:", e);
         }

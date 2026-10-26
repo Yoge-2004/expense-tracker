@@ -1226,3 +1226,32 @@ select.custom-select-native {
         flex: 1 1 100% !important;
     }
 }
+
+/* ML Retraining Responsive Actions */
+.retrain-actions-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+
+.retrain-actions-wrapper button {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .retrain-actions-wrapper {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .retrain-actions-wrapper button {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+}

@@ -497,7 +497,7 @@
                         <span class="status-badge badge-success">Production</span>
                     </div>
                     <div class="metric-value-row">
-                        <span class="metric-value" style="font-size:18px;">Dual-Gram TF-IDF</span>
+                        <span class="metric-value" id="mlActiveModel" style="font-size:18px;">Dual-Gram TF-IDF</span>
                     </div>
                     <div class="metric-footer">
                         <span class="text-muted">99.8% precision · Rev: production</span>
@@ -582,14 +582,14 @@
                             Unattended retraining job scheduled on Hugging Face (<code>0 2 * * *</code>). Automatically triggers when approved feedback reaches 500 samples.
                         </p>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <button id="refreshRetrainLogsBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; font-size:12px; border-radius:10px;">
+                    <div class="retrain-actions-wrapper" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; max-width:100%;">
+                        <button id="refreshRetrainLogsBtn" class="btn-secondary" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 14px; font-size:12px; border-radius:10px; white-space:nowrap; flex-shrink:0;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh Logs</span>
                         </button>
-                        <button id="triggerManualRetrainBtn" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; font-size:12px; border-radius:10px;">
+                        <button id="triggerManualRetrainBtn" class="btn-primary" style="display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 16px; font-size:12px; border-radius:10px; white-space:nowrap; flex-shrink:0; max-width:100%;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                            <span>Trigger Retrain Evaluation</span>
+                            <span>Evaluate Retraining</span>
                         </button>
                     </div>
                 </div>
