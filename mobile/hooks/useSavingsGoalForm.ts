@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { apiRequest, ApiError } from '../services/api';
 
 export interface UseSavingsGoalFormOptions {
-  userId: number | null;
+  userId: string | number | null;
   currSymbol: string;
   isEditMode: boolean;
   editId?: string;

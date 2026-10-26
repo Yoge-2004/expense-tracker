@@ -367,7 +367,7 @@ The reporting layer supports generated financial documents, including PDF and Ex
 
 | Layer | Technology |
 |---|---|
-| Backend language | Java 26 |
+| Backend language | Java 27 |
 | Backend framework | Spring Boot 4.1.1 |
 | Security | Spring Security, JWT (JJWT 0.13.0), Google OAuth 2.0, WebAuthn / Passkeys |
 | Persistence | Spring Data JPA / Hibernate |
@@ -377,7 +377,7 @@ The reporting layer supports generated financial documents, including PDF and Ex
 | API documentation | SpringDoc OpenAPI 3.1.0 / Swagger UI |
 | Web Frontend | Modern HTML5, Modular JavaScript (ES6+), CSS Custom Properties, Chart.js |
 | Web UX & Theme | Custom HUD Pointer, Command Palette (`Ctrl+K`), Golden Aura elevation |
-| Mobile Framework | React Native 0.86.3, Expo 57.0.31, Expo Router 57.0.23, requestIdleCallback scheduler |
+| Mobile Framework | React Native 0.88.0, React 19.3.0, Expo 58.0.19, Expo Router 58.0.26, requestIdleCallback scheduler |
 | Mobile Optimization | Memoized React Context & Hooks (`useMemo`, `useCallback`), Native Driver animations |
 | Mobile Auth & Bio | `@react-native-google-signin/google-signin` 16.1.5, `expo-local-authentication` |
 | Machine Learning | Python 3.14, Scikit-learn, TF-IDF Dual-Gram, Transformer Classifier, FastAPI |
@@ -432,7 +432,7 @@ expense-tracker/
 │   ├── playwright.config.ts     # Playwright configuration
 │   └── package.json             # E2E test dependencies
 │
-├── src/main/java/               # Spring Boot production backend (Java 26)
+├── src/main/java/               # Spring Boot production backend (Java 27)
 │   └── com/example/expensetracker/
 │       ├── config/              # Security, CORS, Swagger, Resilient Routing DataSource
 │       ├── controller/           # REST endpoints
@@ -467,7 +467,7 @@ expense-tracker/
 
 ## Prerequisites
 
-- Java 26 (the backend targets Java 26)
+- Java 27 (the backend targets Java 27)
 - Maven 3.9+ or the included Maven Wrapper
 - A modern browser
 - Node.js/npm if working on the mobile client
@@ -749,7 +749,7 @@ scripts\run-all-tests.bat --playwright-ts
 
 ### 1. Backend Java Tests (JUnit + Mockito + Cucumber)
 
-**Prerequisites:** Java 26 (JDK), Maven (or use `./mvnw`)
+**Prerequisites:** Java 27 (JDK), Maven (or use `./mvnw`)
 
 ```bash
 # Run all backend tests (unit + controller + Cucumber BDD)
@@ -803,7 +803,7 @@ npm run test:report
 
 ### 3. Web E2E Tests — Playwright Java (29 tests)
 
-**Prerequisites:** Java 26 (JDK), Maven, Playwright browser binary
+**Prerequisites:** Java 27 (JDK), Maven, Playwright browser binary
 
 ```bash
 # First time only: download Playwright browser binary

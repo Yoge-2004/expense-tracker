@@ -17,7 +17,7 @@ This Space runs the Spring Boot backend and the Python ML inference service in o
 
 > **Primary database:** Neon PostgreSQL  
 > **Failover database snapshot:** encrypted SQLite stored in this Hugging Face Space repository  
-> **Application runtime:** Spring Boot + Java 26  
+> **Application runtime:** Spring Boot + Java 27  
 > **ML runtime:** Python 3.14 + FastAPI  
 > **Container:** Docker on Hugging Face Spaces  
 > **Public gateway:** `7860`  

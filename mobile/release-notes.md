@@ -26,7 +26,7 @@ A release focused on **profile picture synchronization across web & mobile, dual
 
 ### 2026 Runtime Standards & Modernized Scheduling
 - **`requestIdleCallback` Scheduler**: Completely replaced deprecated `InteractionManager.runAfterInteractions` with a standard cooperative idle task scheduler pattern and asynchronous fallbacks.
-- **Zero Warnings**: Fully resolved all deprecation warnings under React Native 0.86+ and Expo SDK 57.
+- **Zero Warnings**: Fully resolved all deprecation warnings under React Native 0.88+ and Expo SDK 58.
 
 ---
 

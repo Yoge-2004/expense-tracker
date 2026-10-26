@@ -56,7 +56,6 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
   const handleDeleteBudgetFromList = props.handleDeleteBudgetFromList ?? form?.handleDeleteBudgetFromList ?? (() => {});
   const existingBudgets = props.existingBudgets ?? form?.existingBudgets ?? [];
   const isSubmitting = props.isSubmitting !== undefined ? props.isSubmitting : (form?.isSubmitting ?? false);
-  const isLight = theme === 'light';
 
   return (
     <StaggeredView delay={100} direction="up">

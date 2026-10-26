@@ -22,7 +22,7 @@
 #   ./scripts/run-all-tests.sh --install-deps     # install deps then run all
 #
 # Prerequisites:
-#   - Java 26 (JDK) + Maven (or use ./mvnw)
+#   - Java 27 (JDK) + Maven (or use ./mvnw)
 #   - Node.js 18+ and npm
 #   - For Playwright: npx playwright install chromium
 #   - For mobile E2E: detox-cli + iOS simulator or Android emulator

@@ -5,7 +5,7 @@ import { notifyTransactionRecorded } from '../services/notifications';
 import { IncomeKind, monthKey, monthLabel, shiftMonth } from '../utils/moneyFlow';
 
 export interface UseIncomeFormOptions {
-  userId: number | null;
+  userId: string | number | null;
   currSymbol: string;
   isEditMode: boolean;
   editId?: string;

@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { apiRequest, ApiError } from '../services/api';
 
 export interface UseBudgetFormOptions {
-  userId: number | null;
+  userId: string | number | null;
   categories: { id: number; name: string }[];
   isEditMode: boolean;
   editId?: string;

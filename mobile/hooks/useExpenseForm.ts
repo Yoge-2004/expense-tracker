@@ -26,7 +26,7 @@ export function isValidDateString(dateStr: string): boolean {
 }
 
 export interface UseExpenseFormOptions {
-  userId: number | null;
+  userId: string | number | null;
   currSymbol: string;
   categories: Category[];
   isEditMode: boolean;

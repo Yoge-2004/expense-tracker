@@ -8,7 +8,7 @@ export interface Category {
   name: string;
 }
 
-export function useCategories(userId: number | null) {
+export function useCategories(userId: string | number | null) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

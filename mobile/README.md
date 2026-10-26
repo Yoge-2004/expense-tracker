@@ -28,7 +28,7 @@ Each release contains the corresponding APK, checksums, version information, and
 
 The Expense Tracker mobile application is the native client for the Expense Tracker platform. It is designed for fast everyday finance interactions while sharing the same backend, authentication model, and financial data as the web application.
 
-The mobile client lives in this directory and is built with **Expo 57, React Native 0.86.3, Expo Router, and TypeScript**.
+The mobile client lives in this directory and is built with **Expo 58, React Native 0.88.0 (React 19.3), Expo Router, and TypeScript**.
 
 ### The mobile app is responsible for
 
@@ -226,7 +226,7 @@ The exact directory tree may evolve as the application grows; this README descri
 | Technology | Role |
 |---|---|
 | Expo 57 | React Native application tooling and runtime ecosystem |
-| React Native 0.86.3 | Native UI framework |
+| React Native 0.88.0 (React 19.3) | Native UI framework |
 | Expo Router ~57 | File-based application navigation |
 | TypeScript ~6.0.3 | Static typing |
 | React 19.2.3 | UI/component model |

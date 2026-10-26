@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Java 26
+      - name: Setup Java 27
         uses: actions/setup-java@v6
         with:
           distribution: temurin

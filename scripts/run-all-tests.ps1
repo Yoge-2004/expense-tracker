@@ -42,7 +42,7 @@
 
 .NOTES
     Prerequisites:
-    - Java 26 (JDK) + Maven (or use .\mvnw.cmd)
+    - Java 27 (JDK) + Maven (or use .\mvnw.cmd)
     - Node.js 18+ and npm
     - For Playwright: npx playwright install chromium
 #>

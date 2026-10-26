@@ -322,7 +322,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
             <View style={[styles.techCard, { backgroundColor: c.inputBg, borderColor: c.border }]}>
               <Text style={[styles.techTitle, { color: c.text }]}>Core Architecture</Text>
               <Text style={[styles.techSub, { color: c.textMuted }]}>
-                Spring Boot 4.1.1 (Java 26) &bull; React Native 0.86 (Expo SDK 57) &bull; TypeScript &bull; Apache POI &bull; Tesseract OCR
+                Spring Boot 4.1.1 (Java 27) &bull; React Native 0.88 (Expo SDK 58 &bull; React 19.3) &bull; TypeScript &bull; Apache POI &bull; Tesseract OCR
               </Text>
             </View>
           </ScrollView>
