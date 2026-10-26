@@ -24,62 +24,52 @@
         {
             id: "food_dining",
             name: "Food & Dining",
-            emoji: "🍔",
-            aliases: ["food", "dining", "groceries", "grocery", "restaurant", "restaurants", "cafe", "coffee", "snacks", "lunch", "dinner", "breakfast", "swiggy", "zomato", "eats"]
+                        aliases: ["food", "dining", "groceries", "grocery", "restaurant", "restaurants", "cafe", "coffee", "snacks", "lunch", "dinner", "breakfast", "swiggy", "zomato", "eats"]
         },
         {
             id: "transportation",
             name: "Transportation",
-            emoji: "🚗",
-            aliases: ["transport", "transportation", "travel", "fuel", "gas", "petrol", "diesel", "cab", "taxi", "uber", "ola", "metro", "flight", "commute", "bus", "train", "parking", "toll"]
+                        aliases: ["transport", "transportation", "travel", "fuel", "gas", "petrol", "diesel", "cab", "taxi", "uber", "ola", "metro", "flight", "commute", "bus", "train", "parking", "toll"]
         },
         {
             id: "shopping_retail",
             name: "Shopping & Retail",
-            emoji: "🛍️",
-            aliases: ["shopping", "retail", "clothing", "apparel", "electronics", "amazon", "flipkart", "store", "fashion", "shoes", "mall", "supermarket", "purchase"]
+                        aliases: ["shopping", "retail", "clothing", "apparel", "electronics", "amazon", "flipkart", "store", "fashion", "shoes", "mall", "supermarket", "purchase"]
         },
         {
             id: "entertainment_recreation",
             name: "Entertainment & Recreation",
-            emoji: "🎬",
-            aliases: ["entertainment", "recreation", "movies", "cinema", "netflix", "spotify", "prime", "games", "gaming", "outing", "hobby", "concert", "theatre", "disney", "youtube"]
+                        aliases: ["entertainment", "recreation", "movies", "cinema", "netflix", "spotify", "prime", "games", "gaming", "outing", "hobby", "concert", "theatre", "disney", "youtube"]
         },
         {
             id: "healthcare_medical",
             name: "Healthcare & Medical",
-            emoji: "💊",
-            aliases: ["health", "healthcare", "medical", "pharmacy", "medicine", "doctor", "hospital", "dental", "clinic", "fitness", "gym", "meds", "apollo", "prescription"]
+                        aliases: ["health", "healthcare", "medical", "pharmacy", "medicine", "doctor", "hospital", "dental", "clinic", "fitness", "gym", "meds", "apollo", "prescription"]
         },
         {
             id: "utilities_services",
             name: "Utilities & Services",
-            emoji: "💡",
-            aliases: ["utilities", "utility", "services", "bills", "electricity", "water", "internet", "wifi", "broadband", "recharge", "phone", "mobile", "gas bill", "rent", "maintenance", "power"]
+                        aliases: ["utilities", "utility", "services", "bills", "electricity", "water", "internet", "wifi", "broadband", "recharge", "phone", "mobile", "gas bill", "rent", "maintenance", "power"]
         },
         {
             id: "financial_services",
             name: "Financial Services",
-            emoji: "💳",
-            aliases: ["finance", "financial", "investment", "investments", "banking", "bank", "insurance", "taxes", "tax", "loan", "emi", "interest", "brokerage", "crypto", "mutual fund", "sip", "card"]
+                        aliases: ["finance", "financial", "investment", "investments", "banking", "bank", "insurance", "taxes", "tax", "loan", "emi", "interest", "brokerage", "crypto", "mutual fund", "sip", "card"]
         },
         {
             id: "income",
             name: "Income",
-            emoji: "💰",
-            aliases: ["income", "salary", "wages", "bonus", "dividend", "interest income", "stipend", "freelance", "payout", "deposit"]
+                        aliases: ["income", "salary", "wages", "bonus", "dividend", "interest income", "stipend", "freelance", "payout", "deposit"]
         },
         {
             id: "government_legal",
             name: "Government & Legal",
-            emoji: "⚖️",
-            aliases: ["government", "legal", "court", "license", "passport", "fine", "penalty", "stamp", "registration", "challan", "fees"]
+                        aliases: ["government", "legal", "court", "license", "passport", "fine", "penalty", "stamp", "registration", "challan", "fees"]
         },
         {
             id: "charity_donations",
             name: "Charity & Donations",
-            emoji: "🤝",
-            aliases: ["charity", "donation", "donations", "ngo", "aid", "relief", "gift", "giving", "contribution"]
+                        aliases: ["charity", "donation", "donations", "ngo", "aid", "relief", "gift", "giving", "contribution"]
         }
     ];
 
@@ -104,14 +94,13 @@
 
     function getTaxonomyItem(canonicalId) {
         if (!canonicalId) {
-            return { id: "unknown", name: "General Expense", emoji: "🏷️", aliases: [] };
+            return { id: "unknown", name: "General Expense",  aliases: [] };
         }
         const clean = String(canonicalId).toLowerCase().trim();
         return CANONICAL_TAXONOMY.find(t => t.id === clean || t.name.toLowerCase() === clean) || {
             id: clean,
             name: clean.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-            emoji: "🏷️",
-            aliases: []
+                        aliases: []
         };
     }
 

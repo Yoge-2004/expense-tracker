@@ -76,34 +76,34 @@
                 <div class="bi-slicers-row">
                     <!-- Horizon Slicer -->
                     <div class="bi-slicer-group" id="biHorizonSlicer" role="group" aria-label="Time Horizon Slicer">
-                        <span class="bi-slicer-label">Horizon</span>
+                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horizon</span>
                         <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" data-horizon="all">All Time</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="mtd">This Month</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="last30">Last 30 Days</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="qtd">This Quarter</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="ytd">Year to Date</button>
-                            <button type="button" class="bi-slicer-pill" data-horizon="last7">Last 7 Days</button>
+                            <button type="button" class="pill-chip bi-slicer-pill active" data-horizon="all">All Time</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-horizon="mtd">This Month</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-horizon="last30">Last 30 Days</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-horizon="qtd">This Quarter</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-horizon="ytd">Year to Date</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-horizon="last7">Last 7 Days</button>
                         </div>
                     </div>
 
                     <!-- Commitment Slicer -->
                     <div class="bi-slicer-group" id="biCommitmentSlicer" role="group" aria-label="Commitment Type Slicer">
-                        <span class="bi-slicer-label">Commitment</span>
+                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:4px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Commitment</span>
                         <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" data-commitment="all">All Types</button>
-                            <button type="button" class="bi-slicer-pill" data-commitment="onetime">One-Time</button>
-                            <button type="button" class="bi-slicer-pill" data-commitment="recurring">Subscriptions</button>
+                            <button type="button" class="pill-chip bi-slicer-pill active" data-commitment="all">All Types</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-commitment="onetime">One-Time</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-commitment="recurring">Subscriptions</button>
                         </div>
                     </div>
 
                     <!-- Cashflow Direction Slicer -->
                     <div class="bi-slicer-group" id="biStreamSlicer" role="group" aria-label="Cashflow Stream Slicer">
-                        <span class="bi-slicer-label">Flow</span>
+                        <span class="bi-slicer-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:4px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Cash Flow</span>
                         <div class="bi-slicer-pills-wrap">
-                            <button type="button" class="bi-slicer-pill active" data-stream="all">All Cash</button>
-                            <button type="button" class="bi-slicer-pill" data-stream="expenses">Outflow Only</button>
-                            <button type="button" class="bi-slicer-pill" data-stream="incomes">Inflow Only</button>
+                            <button type="button" class="pill-chip bi-slicer-pill active" data-stream="all">All Cash</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-stream="expenses">Outflow Only</button>
+                            <button type="button" class="pill-chip bi-slicer-pill" data-stream="incomes">Inflow Only</button>
                         </div>
                     </div>
                 </div>

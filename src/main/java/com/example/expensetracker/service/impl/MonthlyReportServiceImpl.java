@@ -386,7 +386,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setTo(user.getEmail());
-            helper.setSubject(String.format("📊 Your Monthly Financial Intelligence Report — %s", report.period()));
+            helper.setSubject(String.format("Your Monthly Financial Intelligence Report — %s", report.period()));
             helper.setText(htmlContent, true);
 
             mailSender.send(mimeMessage);
@@ -541,7 +541,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
             for (SavingsGoalDto g : report.savingsGoals()) {
                 boolean completed = "COMPLETED".equalsIgnoreCase(g.status()) || g.progressPercentage() >= 100.0;
                 String badgeColor = completed ? "#10b981" : "#3b82f6";
-                String badgeText = completed ? "Achieved 🎉" : String.format("%.1f%%", g.progressPercentage());
+                String badgeText = completed ? "Achieved" : String.format("%.1f%%", g.progressPercentage());
                 double barWidth = Math.min(g.progressPercentage(), 100.0);
                 savingsCards.append("""
                     <div style="background: #10120e; border: 1px solid rgba(236,231,216,0.1);
@@ -796,13 +796,13 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   </div>
 
                   <!-- Key Insights -->
-                  <div class="section-title">🧠 Key Financial Insights</div>
+                  <div class="section-title">Key Financial Insights</div>
                   <div style="margin-bottom: 24px;">
                     %s
                   </div>
 
                   <!-- Monthly Income Sources -->
-                  <div class="section-title">💵 Monthly Income Sources</div>
+                  <div class="section-title">Monthly Income Sources</div>
                   <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                     <thead>
                       <tr style="color: #a8a395; text-align: left;
@@ -820,13 +820,13 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   </table>
 
                   <!-- Active Savings Goals -->
-                  <div class="section-title">🎯 Active Savings Goals & Milestones</div>
+                  <div class="section-title">Active Savings Goals & Milestones</div>
                   <div style="margin-bottom: 24px;">
                     %s
                   </div>
 
                   <!-- Top Spending Categories -->
-                  <div class="section-title">🏷️ Spending by Category</div>
+                  <div class="section-title">Spending by Category</div>
                   <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
                     <thead>
                       <tr style="color: #a8a395; text-align: left;
@@ -843,7 +843,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                   </table>
 
                   <!-- Budget Adherence -->
-                  <div class="section-title">🛡️ Budget Adherence & Limits</div>
+                  <div class="section-title">Budget Adherence & Limits</div>
                   <div style="margin-bottom: 24px;">
                     %s
                   </div>
@@ -891,7 +891,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                         : ("<div style='color: #a8a395; font-size: 13px;'>"
                         + "No category budgets configured for this period.</div>"),
                 !topExpenseRows.isEmpty() ? """
-                    <div class="section-title">💳 Largest Outflow Transactions</div>
+                    <div class="section-title">Largest Outflow Transactions</div>
                     <table style="width: 100%%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
                       <thead>
                         <tr style="color: #a8a395; text-align: left;

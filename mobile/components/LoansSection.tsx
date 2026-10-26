@@ -57,7 +57,8 @@ interface LoansSectionProps {
   showAlert: (title: string, message: string, buttons?: any[], type?: any) => void;
 }
 
-export const LoansSection: React.FC<LoansSectionProps> = ({
+export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
+
   userId,
   currSymbol,
   isStealthMode,
@@ -1238,7 +1239,7 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
       </Modal>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

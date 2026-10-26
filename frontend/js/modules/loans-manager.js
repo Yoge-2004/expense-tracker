@@ -556,7 +556,7 @@
         let html = '<option value="">-- None / Standalone Adjustment --</option>';
 
         if (loanCatExpenses.length > 0) {
-            html += '<optgroup label="⭐ Expenses Tagged as \'Loan\' Category">';
+            html += '<optgroup label="Expenses Tagged as \'Loan\' Category">';
             loanCatExpenses.forEach(exp => {
                 const isSel = currentVal && String(exp.id) === String(currentVal) ? 'selected' : '';
                 html += `<option value="${exp.id}" ${isSel}>${exp.expenseDate} · ${escapeHtml(exp.description || 'Loan')} (${sym}${formatAmount(exp.amount)})</option>`;

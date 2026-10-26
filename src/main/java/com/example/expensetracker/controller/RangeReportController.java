@@ -726,9 +726,9 @@ public class RangeReportController {
                 put(expenseSheet, row, 3, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
                 put(expenseSheet, row, 4, x.isRecurring() ? "Yes" : "No", z ? dataCenterZebra : dataCenter);
                 if (totalExpCount >= 3 && stdDevExp > 0.0001 && nz(x.getAmount()).doubleValue() > outlierThreshold) {
-                    put(expenseSheet, row, 5, "⚠️ STATISTICAL SURGE (Z > 2.0)", z ? dataCenterZebra : dataCenter);
+                    put(expenseSheet, row, 5, "[STATISTICAL SURGE] (Z > 2.0)", z ? dataCenterZebra : dataCenter);
                 } else {
-                    put(expenseSheet, row, 5, "✅ NOMINAL", z ? dataCenterZebra : dataCenter);
+                    put(expenseSheet, row, 5, "NOMINAL", z ? dataCenterZebra : dataCenter);
                 }
                 row++;
             }

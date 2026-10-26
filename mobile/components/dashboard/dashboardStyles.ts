@@ -520,7 +520,7 @@ export const dashboardStyles = StyleSheet.create({
   },
   ledgerEndLine: {
     flex: 1,
-    height: StyleSheet.hairlineWidth,
+    height: 1,
     opacity: 0.5,
   },
   ledgerEndContent: {

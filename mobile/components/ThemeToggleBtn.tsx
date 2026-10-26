@@ -73,7 +73,8 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
   );
 });
 
-const styles = StyleSheet.create({\n  toggleBtn: {
+const styles = StyleSheet.create({
+  toggleBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,

@@ -193,7 +193,7 @@ export const DashboardLedger = memo(function DashboardLedger({
       <View style={styles.ledgerHeader}>
         <View style={styles.ledgerHeaderLeft}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Transactions</Text>
-          <View style={[styles.countBadge, { backgroundColor: c.primary + '18' }]}>\
+          <View style={[styles.countBadge, { backgroundColor: c.primary + '18' }]}>
             <Text style={[styles.countBadgeText, { color: c.primary }]}>
               {unifiedTransactions.length}
             </Text>
@@ -202,7 +202,7 @@ export const DashboardLedger = memo(function DashboardLedger({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={toggleFilterPanel}
-          style={[\
+          style={[
             styles.filterToggleBtn,
             {
               backgroundColor: showFilters ? c.primary + '20' : c.inputBg,
@@ -216,7 +216,7 @@ export const DashboardLedger = memo(function DashboardLedger({
             color={showFilters ? c.primary : c.textMuted}
           />
           <Text
-            style={[\
+            style={[
               styles.filterToggleText,
               { color: showFilters ? c.primary : c.textMuted },
             ]}

@@ -162,73 +162,133 @@
     align-items: center;
     gap: 12px;
     background: rgba(0, 0, 0, 0.2);
-    padding: 6px 12px;
-    border-radius: 12px;
+    padding: 8px 12px;
+    border-radius: 14px;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
     width: 100%;
     box-sizing: border-box;
 }
 
 [data-theme="light"] .bi-slicer-group {
-    background: rgba(0, 0, 0, 0.04);
+    background: rgba(0, 0, 0, 0.03);
     border-color: rgba(0, 0, 0, 0.08);
 }
 
 .bi-slicer-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--primary, #C79A3E);
-    min-width: 90px;
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.1);
+    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.25);
+    padding: 5px 10px;
+    border-radius: 8px;
+    min-width: 96px;
     flex-shrink: 0;
     white-space: nowrap;
 }
 
 [data-theme="light"] .bi-slicer-label {
     color: #966C1E;
+    background: rgba(150, 108, 30, 0.08);
+    border-color: rgba(150, 108, 30, 0.2);
 }
 
 .bi-slicer-pills-wrap {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    flex: 1;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 0%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 2px 0;
 }
 
+.bi-slicer-pills-wrap::-webkit-scrollbar {
+    display: none !important;
+    width: 0;
+    height: 0;
+}
+
+/* Slicer chips styled identically to expenses & transactions category filter chips */
 .bi-slicer-pill {
-    background: transparent;
-    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: max-content;
+    width: auto;
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 100px;
+    background: var(--input-bg, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
     color: var(--text-muted, #9E988A);
     font-size: 12px;
     font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    letter-spacing: 0.01em;
+    cursor: var(--cursor-pointer, pointer);
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background-color 0.2s var(--ease, ease),
+                border-color 0.2s var(--ease, ease),
+                color 0.2s var(--ease, ease);
 }
 
 .bi-slicer-pill:hover {
+    z-index: 5;
     color: var(--text-main, #EAE6DF);
-    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-accent, rgba(199, 154, 62, 0.4));
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.08);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb, 199, 154, 62), 0.25);
 }
 
 .bi-slicer-pill.active {
-    background: var(--card-bg, #1A1C16);
-    color: var(--primary, #C79A3E);
+    background: var(--primary-gradient, linear-gradient(135deg, #C79A3E, #A26B25));
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px var(--primary-glow, rgba(199, 154, 62, 0.4));
+    transform: translateY(-2px) scale(1.03);
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(199, 154, 62, 0.35);
+}
+
+.bi-slicer-pill.active:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 16px var(--primary-glow, rgba(199, 154, 62, 0.5));
+}
+
+[data-theme="light"] .bi-slicer-pill {
+    background: var(--input-bg, #f3efe6);
+    border-color: var(--border, rgba(0, 0, 0, 0.1));
+    color: var(--text-muted, #736b5e);
+}
+
+[data-theme="light"] .bi-slicer-pill:hover {
+    color: var(--text-main, #1c1917);
+    border-color: var(--border-accent, rgba(150, 108, 30, 0.35));
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.1);
 }
 
 [data-theme="light"] .bi-slicer-pill.active {
-    background: #FFFFFF;
-    color: #966C1E;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    border-color: rgba(199, 154, 62, 0.4);
+    background: var(--primary-gradient, linear-gradient(135deg, #966C1E, #6B4910));
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px rgba(150, 108, 30, 0.35);
 }
 
 /* 3. KPI MICRO-SPARKLINES & VARIANCE DELTA INDICATORS */
@@ -421,7 +481,7 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
-        padding: 10px 12px;
+        padding: 8px 10px;
         border-radius: 12px;
         width: 100%;
         box-sizing: border-box;
@@ -432,33 +492,44 @@
         letter-spacing: 0.06em;
         color: var(--primary, #C79A3E);
         min-width: 0;
-        padding: 0;
+        padding: 3px 8px;
     }
     .bi-slicer-pills-wrap {
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+        flex-wrap: nowrap;
+        gap: 8px;
         width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px 2px;
+    }
+    .bi-slicer-pills-wrap::-webkit-scrollbar {
+        display: none !important;
     }
     .bi-slicer-pill {
-        flex: 1 1 calc(33.333% - 6px);
-        min-width: calc(33.333% - 6px);
-        text-align: center;
-        white-space: nowrap;
-        font-size: 11.5px;
+        flex: 0 0 auto;
+        min-width: max-content;
+        width: auto;
+        height: 32px;
+        padding: 0 14px;
+        border-radius: 100px;
+        font-size: 12px;
         font-weight: 600;
-        padding: 8px 6px;
-        border-radius: 8px;
+        white-space: nowrap;
         box-sizing: border-box;
     }
 }
 
 @media (max-width: 480px) {
     .bi-slicer-pill {
-        flex: 1 1 calc(50% - 6px);
-        min-width: calc(50% - 6px);
+        flex: 0 0 auto;
+        min-width: max-content;
+        width: auto;
+        height: 30px;
+        padding: 0 12px;
         font-size: 11.5px;
-        padding: 8px 6px;
     }
 }
 
