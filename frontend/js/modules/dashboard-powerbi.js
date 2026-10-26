@@ -938,27 +938,34 @@
         const card = document.getElementById(cardId);
         if (!card) return;
 
-        let badge = card.querySelector(".bi-variance-badge");
+        // Prevent header collision: remove any badge that was previously attached to .metric-header
+        const headerBadge = card.querySelector(".metric-header > .bi-variance-badge");
+        if (headerBadge) headerBadge.remove();
+
+        // Attach cleanly inside .metric-value-row alongside the numerical amount
+        let badge = card.querySelector(".metric-value-row > .bi-variance-badge");
         if (!badge) {
             badge = document.createElement("span");
             badge.className = "bi-variance-badge";
-            const header = card.querySelector(".metric-header");
-            if (header) header.appendChild(badge);
+            const valueRow = card.querySelector(".metric-value-row") || card.querySelector(".metric-header");
+            if (valueRow) valueRow.appendChild(badge);
         }
 
         const absDelta = Math.abs(deltaPct).toFixed(1);
+        badge.title = "Month-over-Month (MoM): Compared to last month's total";
+
         if (Math.abs(deltaPct) < 0.1 || isNaN(deltaPct)) {
             badge.className = "bi-variance-badge neutral";
-            badge.textContent = `0% MoM`;
+            badge.textContent = `0% vs last mo.`;
             return;
         }
 
         if (deltaPct > 0) {
             badge.className = higherIsBetter ? "bi-variance-badge up-favorable" : "bi-variance-badge up-unfavorable";
-            badge.textContent = `▲ +${absDelta}% MoM`;
+            badge.textContent = `▲ +${absDelta}% vs last mo.`;
         } else {
             badge.className = higherIsBetter ? "bi-variance-badge down-unfavorable" : "bi-variance-badge down-favorable";
-            badge.textContent = `▼ -${absDelta}% MoM`;
+            badge.textContent = `▼ -${absDelta}% vs last mo.`;
         }
     }
 
