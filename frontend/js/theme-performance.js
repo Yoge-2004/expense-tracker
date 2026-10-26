@@ -20,7 +20,7 @@
         clearTimeout(switchTimer);
         switchTimer = setTimeout(() => {
             document.documentElement.classList.remove(THEME_SWITCH_CLASS);
-        }, 120);
+        }, 250);
     }
 
     function hexToRgb(hex) {

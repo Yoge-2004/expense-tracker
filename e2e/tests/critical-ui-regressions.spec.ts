@@ -37,7 +37,7 @@ test.describe('Critical UI regressions', () => {
     expect(fontState.bodyFontLoaded).toBe(true);
     expect(fontState.monoFontLoaded).toBe(true);
     expect(fontState.fontLinks.length).toBeGreaterThan(0);
-    expect(fontState.fontLinks.every(href => href.includes('v=20260914-font1'))).toBe(true);
+    expect(fontState.fontLinks.every(href => href.includes('fonts.googleapis.com'))).toBe(true);
   });
 
   test('opens and visibly renders the expense modal', async ({ page }) => {

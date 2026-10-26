@@ -135,12 +135,12 @@ class MlFeedbackServiceTest {
     @Test
     @DisplayName("countEligible: delegates count to repository")
     void countEligible_returnsCountFromRepository() {
-        when(feedbackRepository.countByTrainingStatus("eligible")).thenReturn(25L);
+        when(feedbackRepository.countByTrainingStatusIn(List.of("eligible", "approved"))).thenReturn(25L);
 
         long count = service.countEligible();
 
         assertEquals(25L, count);
-        verify(feedbackRepository).countByTrainingStatus("eligible");
+        verify(feedbackRepository).countByTrainingStatusIn(List.of("eligible", "approved"));
     }
 
     @Test
@@ -148,7 +148,7 @@ class MlFeedbackServiceTest {
     void fetchEligible_nullCursor_fetchesFirstPage() {
         MlFeedback f1 = createFeedback("f1", 1L, "eligible");
         MlFeedback f2 = createFeedback("f2", 2L, "eligible");
-        when(feedbackRepository.findByTrainingStatusOrderByIdAsc(eq("eligible"), any(Pageable.class)))
+        when(feedbackRepository.findByTrainingStatusInOrderByIdAsc(eq(List.of("eligible", "approved")), any(Pageable.class)))
                 .thenReturn(List.of(f1, f2));
 
         MlFeedbackPageResponse page = service.fetchEligible(null, 2);
@@ -162,8 +162,8 @@ class MlFeedbackServiceTest {
     @DisplayName("fetchEligible: valid numeric after cursor queries next slice")
     void fetchEligible_withValidCursor_fetchesSubsequentSlice() {
         MlFeedback f3 = createFeedback("f3", 3L, "eligible");
-        when(feedbackRepository.findByTrainingStatusAndIdGreaterThanOrderByIdAsc(
-                eq("eligible"), eq(2L), any(Pageable.class)))
+        when(feedbackRepository.findByTrainingStatusInAndIdGreaterThanOrderByIdAsc(
+                eq(List.of("eligible", "approved")), eq(2L), any(Pageable.class)))
                 .thenReturn(List.of(f3));
 
         MlFeedbackPageResponse page = service.fetchEligible("2", 5);

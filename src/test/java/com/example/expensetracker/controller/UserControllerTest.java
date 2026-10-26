@@ -7,6 +7,7 @@ import com.example.expensetracker.security.JwtService;
 import com.example.expensetracker.security.CustomUserDetailsService;
 import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
+import com.example.expensetracker.service.UserAppearanceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ class UserControllerTest {
     @Autowired MockMvc mockMvc;
 
     @MockitoBean UserService userService;
+    @MockitoBean UserAppearanceService userAppearanceService;
     @MockitoBean UserRepository userRepository;
     @MockitoBean UserSecurity userSecurity;
     @MockitoBean PasswordEncoder passwordEncoder;
