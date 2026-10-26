@@ -176,7 +176,7 @@ function showToast(message, type = "info") {
 }
 
 const apiCache = new Map();
-const CACHE_TTL_MS = 15000;
+const CACHE_TTL_MS = 60000;
 
 function clearApiCache() {
     apiCache.clear();
@@ -367,6 +367,13 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
             }
             await new Promise(r => setTimeout(r, 2000));
             return executeApiRequest(endpoint, options, retriesLeft - 1);
+        }
+        if (method === "GET") {
+            const staleCache = apiCache.get(endpoint);
+            if (staleCache && staleCache.data) {
+                console.warn("[API] Network offline, returning cached data fallback for:", endpoint);
+                return staleCache.data;
+            }
         }
         updateServerStatus(false, "Offline / Server Disconnected");
         const netErr = new Error("Unable to connect to the server. Please check your connection and try again.");

@@ -16011,7 +16011,91 @@ body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
     .command-palette-backdrop,
     .cursor-dot,
     .cursor-ring,
-    .cal-backdrop {
+    .cal-backdrop,
+    .theme-studio-backdrop,
+    .studio-panel,
+    .toast-region,
+    .server-status-badge,
+    .app-loading {
         display: none !important;
+    }
+
+    /* Isolated print formatting when Monthly Report preview modal is open */
+    body.report-preview-active,
+    body:has(#monthlyReportModal.active) {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.report-preview-active .dashboard-container,
+    body.report-preview-active .hero-bg,
+    body.report-preview-active > *:not(#monthlyReportModal):not(#hiddenMonthlyReportPrintFrame),
+    body:has(#monthlyReportModal.active) .dashboard-container,
+    body:has(#monthlyReportModal.active) .hero-bg,
+    body:has(#monthlyReportModal.active) > *:not(#monthlyReportModal):not(#hiddenMonthlyReportPrintFrame) {
+        display: none !important;
+    }
+
+    body.report-preview-active #monthlyReportModal,
+    body:has(#monthlyReportModal.active) #monthlyReportModal {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        background: #ffffff !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    body.report-preview-active #monthlyReportModal .modal,
+    body:has(#monthlyReportModal.active) #monthlyReportModal .modal {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+
+    body.report-preview-active #monthlyReportModal .modal-header,
+    body.report-preview-active #monthlyReportModal .monthly-report-toolbar,
+    body:has(#monthlyReportModal.active) #monthlyReportModal .modal-header,
+    body:has(#monthlyReportModal.active) #monthlyReportModal .monthly-report-toolbar {
+        display: none !important;
+    }
+
+    body.report-preview-active #monthlyReportModal .monthly-report-frame-container,
+    body:has(#monthlyReportModal.active) #monthlyReportModal .monthly-report-frame-container {
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 100vh !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
+
+    body.report-preview-active #monthlyReportModal iframe,
+    body:has(#monthlyReportModal.active) #monthlyReportModal iframe {
+        display: block !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
     }
 }

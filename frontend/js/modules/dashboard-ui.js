@@ -73,6 +73,9 @@
         if (!modalEl) return;
         modalEl.classList.remove("active");
         modalEl.setAttribute("aria-hidden", "true");
+        if (modalEl.id === "monthlyReportModal") {
+            document.body.classList.remove("report-preview-active");
+        }
 
         if (modalEl._focusTrapHandler) {
             modalEl.removeEventListener("keydown", modalEl._focusTrapHandler);

@@ -60,14 +60,27 @@
 
             if (skipCache) {
                 if (typeof clearApiCache === "function") clearApiCache();
-                try { localStorage.removeItem(getCacheKey()); } catch (err) { console.debug("[DashboardData] LocalStorage removal fallback:", err.message); }
             }
 
-            const cached = skipCache ? null : loadExpenseCache();
+            const cached = (typeof loadDashboardCache === "function" ? loadDashboardCache() : null) || (typeof loadExpenseCache === "function" ? loadExpenseCache() : null);
             const renderedFromCache = !!cached;
 
             if (cached) {
-                renderDashboardData(cached.expenses, cached.categories);
+                if (cached.expenses && cached.categories) {
+                    renderDashboardData(cached.expenses, cached.categories);
+                }
+                if (Array.isArray(cached.incomes) && cached.incomes.length > 0) {
+                    renderIncomes(cached.incomes);
+                }
+                if (Array.isArray(cached.savingsGoals) && cached.savingsGoals.length > 0) {
+                    renderSavingsGoals(cached.savingsGoals);
+                }
+                if (Array.isArray(cached.budgets) && cached.budgets.length > 0 && typeof window.renderBudgets === "function") {
+                    window.renderBudgets(cached.budgets);
+                }
+                if (cached.expenses && cached.incomes && cached.savingsGoals) {
+                    updateCashFlowMetrics(cached.expenses, cached.incomes, cached.savingsGoals);
+                }
             } else {
                 showSkeletonLoading();
             }
@@ -160,7 +173,17 @@
                 }
 
                 updateCashFlowMetrics(expenses || [], allIncomes, allSavingsGoals);
-                saveExpenseCache(expenses, categories);
+                if (typeof saveDashboardCache === "function") {
+                    saveDashboardCache({
+                        expenses,
+                        categories,
+                        incomes: allIncomes,
+                        savingsGoals: allSavingsGoals,
+                        budgets: window.cachedBudgets || []
+                    });
+                } else {
+                    saveExpenseCache(expenses, categories);
+                }
             } catch (error) {
                 // An older failed request must not surface an error after a newer
                 // refresh has already taken ownership of the dashboard state.

@@ -3642,6 +3642,7 @@ let selectedReportMonth = currentSystemMonth;
 let viewedReportYear = currentSystemYear;
 let viewedReportMonth = currentSystemMonth;
 let cachedReportHtml = "";
+let currentReportBlobUrl = null;
 
 const monthlyReportPeriodModal = document.getElementById("monthlyReportPeriodModal");
 const closePeriodModalBtn = document.getElementById("closePeriodModalBtn");
@@ -3888,8 +3889,18 @@ async function openMonthlyReportPreview(year = selectedReportYear, month = selec
         if (!res.ok) throw new Error(`Failed to load monthly report (${res.status})`);
         cachedReportHtml = await res.text();
         if (monthlyReportFrame) {
-            monthlyReportFrame.onload = () => applyLuxuryScrollbarToReportFrame(monthlyReportFrame);
-            monthlyReportFrame.srcdoc = cachedReportHtml;
+            if (currentReportBlobUrl) {
+                try { URL.revokeObjectURL(currentReportBlobUrl); } catch (_) {}
+            }
+            try {
+                const blob = new Blob([cachedReportHtml], { type: "text/html;charset=utf-8" });
+                currentReportBlobUrl = URL.createObjectURL(blob);
+                monthlyReportFrame.onload = () => applyLuxuryScrollbarToReportFrame(monthlyReportFrame);
+                monthlyReportFrame.src = currentReportBlobUrl;
+            } catch (_) {
+                monthlyReportFrame.onload = () => applyLuxuryScrollbarToReportFrame(monthlyReportFrame);
+                monthlyReportFrame.srcdoc = cachedReportHtml;
+            }
             setTimeout(() => applyLuxuryScrollbarToReportFrame(monthlyReportFrame), 50);
             setTimeout(() => applyLuxuryScrollbarToReportFrame(monthlyReportFrame), 250);
         }
@@ -3899,6 +3910,7 @@ async function openMonthlyReportPreview(year = selectedReportYear, month = selec
         if (changeReportPeriodBtnLabel) {
             changeReportPeriodBtnLabel.textContent = `${monthObj.name} ${viewedReportYear}`;
         }
+        document.body.classList.add("report-preview-active");
         openModal(monthlyReportModal);
     } catch (err) {
         showToast(err.message || "Unable to preview monthly report", "error");
@@ -4119,41 +4131,99 @@ viewMonthlyReportBtn?.addEventListener("click", (e) => {
 
 // Toolbar buttons inside Preview Modal
 changeReportPeriodBtn?.addEventListener("click", () => {
+    document.body.classList.remove("report-preview-active");
     closeModal(monthlyReportModal);
     selectedReportYear = viewedReportYear;
     selectedReportMonth = viewedReportMonth;
     openMonthlyReportPeriodModal("view");
 });
 
-closeMonthlyReportModalBtn?.addEventListener("click", () => closeModal(monthlyReportModal));
+closeMonthlyReportModalBtn?.addEventListener("click", () => {
+    document.body.classList.remove("report-preview-active");
+    closeModal(monthlyReportModal);
+});
+
+function executeMonthlyReportPrint() {
+    let htmlToPrint = cachedReportHtml;
+    if (!htmlToPrint && monthlyReportFrame && monthlyReportFrame.contentDocument) {
+        htmlToPrint = monthlyReportFrame.contentDocument.documentElement.outerHTML;
+    }
+    if (!htmlToPrint) {
+        window.print();
+        return;
+    }
+
+    let printFrame = document.getElementById("hiddenMonthlyReportPrintFrame");
+    if (printFrame) {
+        printFrame.remove();
+    }
+
+    printFrame = document.createElement("iframe");
+    printFrame.id = "hiddenMonthlyReportPrintFrame";
+    printFrame.setAttribute("aria-hidden", "true");
+    printFrame.style.position = "fixed";
+    printFrame.style.right = "0";
+    printFrame.style.bottom = "0";
+    printFrame.style.width = "0";
+    printFrame.style.height = "0";
+    printFrame.style.border = "0";
+    printFrame.style.visibility = "hidden";
+    document.body.appendChild(printFrame);
+
+    const frameDoc = printFrame.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(htmlToPrint);
+    frameDoc.close();
+
+    const doPrint = () => {
+        try {
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
+        } catch (e) {
+            console.error("Monthly report print execution error:", e);
+            if (monthlyReportFrame && monthlyReportFrame.contentWindow) {
+                try {
+                    monthlyReportFrame.contentWindow.focus();
+                    monthlyReportFrame.contentWindow.print();
+                } catch (_) {
+                    window.print();
+                }
+            } else {
+                window.print();
+            }
+        } finally {
+            setTimeout(() => {
+                if (printFrame && printFrame.parentNode) {
+                    printFrame.remove();
+                }
+            }, 5000);
+        }
+    };
+
+    if (printFrame.contentWindow.document.readyState === "complete") {
+        setTimeout(doPrint, 120);
+    } else {
+        printFrame.onload = () => setTimeout(doPrint, 120);
+    }
+}
 
 printReportBtn?.addEventListener("click", () => {
-    if (monthlyReportFrame && monthlyReportFrame.contentWindow) {
-        try {
-            monthlyReportFrame.contentWindow.focus();
-            monthlyReportFrame.contentWindow.print();
-        } catch (e) {
-            console.error("Monthly report print frame error:", e);
-            window.print();
-        }
-    }
+    executeMonthlyReportPrint();
 });
 
 // Shortcut: If monthly report modal is active and user presses Ctrl+P / Cmd+P, print the report frame
+// Registered in capture phase (true) with stopImmediatePropagation so it cleanly intercepts before browser default print
 window.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && (e.key === "p" || e.key === "P")) {
-        if (monthlyReportModal && monthlyReportModal.classList.contains("active") && monthlyReportFrame && monthlyReportFrame.contentWindow) {
+        const isReportModalActive = (monthlyReportModal && monthlyReportModal.classList.contains("active")) ||
+                                    document.body.classList.contains("report-preview-active");
+        if (isReportModalActive) {
             e.preventDefault();
-            try {
-                monthlyReportFrame.contentWindow.focus();
-                monthlyReportFrame.contentWindow.print();
-            } catch (err) {
-                console.error("Monthly report print frame error:", err);
-                window.print();
-            }
+            e.stopImmediatePropagation();
+            executeMonthlyReportPrint();
         }
     }
-});
+}, true);
 
 downloadHtmlReportBtn?.addEventListener("click", () => {
     void downloadMonthlyReport(viewedReportYear, viewedReportMonth);

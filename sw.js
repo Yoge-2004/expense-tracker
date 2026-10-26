@@ -4,7 +4,8 @@
    debit transaction alerts.
    ========================================================================== */
 
-const CACHE_NAME = "expense-tracker-cache-v3";
+const CACHE_NAME = "expense-tracker-cache-v4";
+const DATA_CACHE_NAME = "expense-tracker-data-v1";
 const ASSETS_TO_CACHE = [
     "index.html",
     "dashboard.html",
@@ -58,7 +59,7 @@ self.addEventListener("activate", (event) => {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== CACHE_NAME) {
+                    if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
                         return caches.delete(key);
                     }
                 })
@@ -67,15 +68,44 @@ self.addEventListener("activate", (event) => {
     );
 });
 
-// Fetch event - Serve cached static assets with network fallback; bypass API/mutations
+// Fetch event - Serve cached static assets with network fallback and Stale-While-Revalidate API data caching
 self.addEventListener("fetch", (event) => {
     const { request } = event;
-    if (request.method !== "GET") return;
-
     const url = new URL(request.url);
 
-    // Bypass API calls, websockets, and browser extensions
-    if (url.pathname.startsWith("/api/") || !url.protocol.startsWith("http")) {
+    // Invalidate API data cache on mutations (POST, PUT, DELETE)
+    if (request.method !== "GET") {
+        if (url.pathname.startsWith("/api/")) {
+            caches.delete(DATA_CACHE_NAME).catch(() => {});
+        }
+        return;
+    }
+
+    if (!url.protocol.startsWith("http")) return;
+
+    // Handle API GET requests: Stale-While-Revalidate data caching
+    if (url.pathname.startsWith("/api/")) {
+        // Exclude authentication and admin endpoints
+        if (url.pathname.includes("/auth/") || url.pathname.includes("/admin/")) {
+            return;
+        }
+
+        event.respondWith(
+            caches.open(DATA_CACHE_NAME).then((cache) => {
+                return cache.match(request).then((cachedResponse) => {
+                    const fetchPromise = fetch(request).then((networkResponse) => {
+                        if (networkResponse && networkResponse.status === 200) {
+                            cache.put(request, networkResponse.clone()).catch(() => {});
+                        }
+                        return networkResponse;
+                    }).catch((err) => {
+                        if (cachedResponse) return cachedResponse;
+                        throw err;
+                    });
+                    return cachedResponse || fetchPromise;
+                });
+            })
+        );
         return;
     }
 
