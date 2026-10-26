@@ -2,19 +2,26 @@ package com.example.expensetracker.service;
 
 import com.example.expensetracker.model.Expense;
 import com.example.expensetracker.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service interface defining the business operations for managing expense records.
- *
- * <p>This interface abstracts the expense management layer, providing methods
- * to create, read, update, and delete expense entries scoped to individual users.
+ * <p>
+ * This interface abstracts the expense management layer, providing methods
+ * to create, read, update, delete, and query expense entries scoped to individual users.
  * The concrete implementation is provided by
- * {@link com.example.expensetracker.service.impl.ExpenseServiceImpl}.</p>
- *
- * <p>Ownership validation is enforced at this layer — users may only read,
- * update, or delete their own expense records.</p>
+ * {@link com.example.expensetracker.service.impl.ExpenseServiceImpl}.
+ * </p>
+ * <p>
+ * Ownership validation and domain invariants are enforced at this layer — users may only read,
+ * update, or delete their own expense records.
+ * </p>
  *
  * @author Yogeshwaran
  * @version 1.0
@@ -59,6 +66,51 @@ public interface ExpenseService {
      *         empty list if the user has recorded no expenses
      */
     List<Expense> getUserExpenses(User user);
+
+    /**
+     * Retrieves a paginated slice of expense records belonging to the specified user.
+     *
+     * @param user     the owning user
+     * @param pageable pagination parameters (page number, page size, sort order)
+     * @return a paginated page of expenses with initialized categories
+     */
+    Page<Expense> getUserExpenses(User user, Pageable pageable);
+
+    /**
+     * Retrieves all expenses recorded by the user within an inclusive date interval.
+     * Uses indexed database-level range query with category fetch join.
+     *
+     * @param user      the owning user
+     * @param startDate interval start date (inclusive)
+     * @param endDate   interval end date (inclusive)
+     * @return list of expenses in the specified range
+     */
+    List<Expense> getUserExpensesByDateRange(User user, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Finds a single expense by ID scoped to the authenticated user.
+     *
+     * @param expenseId the expense ID
+     * @param user      the owning user
+     * @return an optional containing the expense if found and owned by user
+     */
+    Optional<Expense> getExpenseById(Long expenseId, User user);
+
+    /**
+     * Computes the total cumulative sum of all expenses recorded by the given user.
+     *
+     * @param user the owning user
+     * @return total expense sum, or zero if none exist
+     */
+    BigDecimal getTotalExpensesByUser(User user);
+
+    /**
+     * Counts the total number of expense entries recorded by the given user.
+     *
+     * @param user the owning user
+     * @return total count of expense records
+     */
+    long getExpenseCountByUser(User user);
 
     /**
      * Deletes an expense record by its ID, enforcing user ownership.

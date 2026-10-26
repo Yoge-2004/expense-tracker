@@ -6,101 +6,81 @@ import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.service.ExpenseService;
-import lombok.RequiredArgsConstructor;
+import com.example.expensetracker.service.validator.ExpenseValidator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.*;
 
 /**
  * Concrete implementation of {@link ExpenseService} providing business logic
- * for creating, retrieving, updating, and deleting expense records.
- *
- * <p>This service enforces user ownership on all mutating operations —
- * users may only modify or delete their own expense records. Category
- * ownership validation is also applied during expense creation to prevent
- * users from assigning categories that belong to other users.</p>
+ * for creating, retrieving, updating, deleting, and querying expense records.
+ * <p>
+ * Decouples business validation and IDOR access invariants into {@link ExpenseValidator}
+ * to fulfill the Single Responsibility Principle (SRP).
+ * </p>
  *
  * @author Yogeshwaran
- * @version 1.0
+ * @version 1.1
  * @see ExpenseService
+ * @see ExpenseValidator
  * @see ExpenseRepository
- * @see CategoryRepository
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ExpenseServiceImpl implements ExpenseService {
 
-    /** Repository for expense persistence and querying. */
     private final ExpenseRepository expenseRepository;
-
-    /** Repository for category lookups during ownership validation. */
     private final CategoryRepository categoryRepository;
+    private final ExpenseValidator expenseValidator;
+
+    /**
+     * Primary constructor injecting repositories and dedicated validator.
+     */
+    @Autowired
+    public ExpenseServiceImpl(ExpenseRepository expenseRepository,
+                              CategoryRepository categoryRepository,
+                              @Autowired(required = false) ExpenseValidator expenseValidator) {
+        this.expenseRepository = expenseRepository;
+        this.categoryRepository = categoryRepository;
+        this.expenseValidator = (expenseValidator != null)
+                ? expenseValidator
+                : new ExpenseValidator(categoryRepository);
+    }
+
+    /**
+     * Convenience constructor preserving backward compatibility for test harnesses.
+     */
+    public ExpenseServiceImpl(ExpenseRepository expenseRepository, CategoryRepository categoryRepository) {
+        this(expenseRepository, categoryRepository, null);
+    }
 
     /**
      * {@inheritDoc}
-     *
-     * <p>Validates that the referenced {@link Category} exists. If a category ID
-     * is provided on the expense, it is resolved from the database and its ownership
-     * is checked — the category must either be global (no user) or owned by the
-     * requesting user. The user is then linked to the expense before saving.</p>
-     *
-     * <p>After saving, the expense list cache for this user is evicted to ensure
-     * the next read returns fresh data from the database.</p>
-     *
-     * @param expense the expense to create; category ID must reference an existing category
-     * @param user    the owner of the expense
-     * @return the persisted {@link Expense} entity with generated ID and audit timestamps
-     * @throws IllegalArgumentException if the category does not exist or belongs to
-     *                                  a different user
      */
     @Override
     @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public Expense createExpense(Expense expense, User user) {
-        if (user == null || user.getId() == null) {
-            log.warn("Rejected expense creation with null user context");
-            throw new IllegalArgumentException("User must be specified");
-        }
-        if (expense == null) {
-            log.warn("Rejected null expense creation for userId={}", user.getId());
-            throw new IllegalArgumentException("Expense cannot be null");
-        }
-        if (expense.getAmount() == null || expense.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("Rejected non-positive expense amount={} for userId={}", expense.getAmount(), user.getId());
-            throw new IllegalArgumentException("Expense amount must be greater than zero");
-        }
-        if (expense.getExpenseDate() == null) {
-            log.warn("Rejected expense creation with null date for userId={}", user.getId());
-            throw new IllegalArgumentException("Expense date cannot be null");
-        }
+        expenseValidator.validateUser(user);
+        expenseValidator.validateExpenseBasic(expense, user.getId());
 
         log.info("Creating expense for userId={}: amount={}, date={}, categoryId={}",
                 user.getId(), expense.getAmount(), expense.getExpenseDate(),
                 expense.getCategory() != null ? expense.getCategory().getId() : null);
 
         if (expense.getCategory() != null && expense.getCategory().getId() != null) {
-            Category category = categoryRepository
-                    .findById(expense.getCategory().getId())
-                    .orElseThrow(() ->
-                            new IllegalArgumentException("Category not found"));
-
-            // Validate ownership: only global or user-owned categories are permitted
-            if (category.getUser() != null
-                    && !category.getUser().getId().equals(user.getId())) {
-                log.warn("Category ownership violation: categoryId={} does not belong to userId={}",
-                        category.getId(), user.getId());
-                throw new IllegalArgumentException(
-                        "Category does not belong to this user");
-            }
-
+            Category category = expenseValidator.resolveAndValidateCategory(
+                    expense.getCategory().getId(), user.getId());
             expense.setCategory(category);
         }
 
@@ -117,36 +97,11 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Transactional
     @CacheEvict(value = "userExpenses", key = "#user.id")
     public List<Expense> createExpenses(List<Expense> expenses, User user) {
-        if (user == null || user.getId() == null) {
-            log.warn("Rejected batch expense creation with null user context");
-            throw new IllegalArgumentException("User must be specified");
-        }
         if (expenses == null || expenses.isEmpty()) {
             return Collections.emptyList();
         }
-
         Map<Long, Category> categoryCache = new HashMap<>();
-
-        for (Expense exp : expenses) {
-            if (exp.getAmount() == null || exp.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Expense amount must be greater than zero");
-            }
-            if (exp.getExpenseDate() == null) {
-                throw new IllegalArgumentException("Expense date cannot be null");
-            }
-            if (exp.getCategory() != null && exp.getCategory().getId() != null) {
-                Long catId = exp.getCategory().getId();
-                Category category = categoryCache.computeIfAbsent(catId, id ->
-                        categoryRepository.findById(id).orElseThrow(() ->
-                                new IllegalArgumentException("Category not found with id: " + id))
-                );
-                if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
-                    throw new IllegalArgumentException("Category does not belong to this user");
-                }
-                exp.setCategory(category);
-            }
-            exp.setUser(user);
-        }
+        expenseValidator.validateBatch(expenses, user, categoryCache);
 
         List<Expense> saved = expenseRepository.saveAll(expenses);
         log.info("Batch saved {} expenses for userId={}", saved.size(), user.getId());
@@ -155,19 +110,11 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     /**
      * {@inheritDoc}
-     *
-     * <p>Result is cached in {@code userExpenses} keyed by {@code user.id}.
-     * This avoids repeated SQL round-trips to Neon on every dashboard reload.</p>
-     *
-     * @param user the owner of the expenses to retrieve
-     * @return a list of all {@link Expense} records owned by the user
      */
     @Override
     @Cacheable(value = "userExpenses", key = "#user.id")
     public List<Expense> getUserExpenses(User user) {
-        if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException("User must be specified");
-        }
+        expenseValidator.validateUser(user);
         log.debug("Loading expenses from DB/Cache for userId={}", user.getId());
         List<Expense> expenses = expenseRepository.findByUser(user);
         log.debug("Loaded {} expense records for userId={}", expenses.size(), user.getId());
@@ -176,16 +123,61 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     /**
      * {@inheritDoc}
-     *
-     * <p>Loads the expense by ID, verifies that it belongs to the given user,\n     * and deletes it. Throws an {@link IllegalArgumentException} if the expense
-     * is not found or ownership does not match.</p>
-     *
-     * <p>Evicts the user's cached expense list on successful deletion.</p>
-     *
-     * @param expenseId the ID of the expense to delete
-     * @param user      the user requesting deletion; must own the expense
-     * @throws IllegalArgumentException if the expense is not found or does not
-     *                                  belong to the given user
+     */
+    @Override
+    public Page<Expense> getUserExpenses(User user, Pageable pageable) {
+        expenseValidator.validateUser(user);
+        return expenseRepository.findByUserWithCategory(user, pageable);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Expense> getUserExpensesByDateRange(User user, LocalDate startDate, LocalDate endDate) {
+        expenseValidator.validateUser(user);
+        if (startDate != null && endDate != null) {
+            return expenseRepository.findByUserAndExpenseDateBetween(user, startDate, endDate);
+        } else if (startDate != null) {
+            return expenseRepository.findByUserAndExpenseDateGreaterThanEqual(user, startDate);
+        } else if (endDate != null) {
+            return expenseRepository.findByUserAndExpenseDateLessThanEqual(user, endDate);
+        }
+        return expenseRepository.findByUser(user);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<Expense> getExpenseById(Long expenseId, User user) {
+        expenseValidator.validateUser(user);
+        if (expenseId == null) {
+            return Optional.empty();
+        }
+        return expenseRepository.findByIdAndUser(expenseId, user);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public BigDecimal getTotalExpensesByUser(User user) {
+        expenseValidator.validateUser(user);
+        return expenseRepository.sumTotalExpensesAmountByUser(user);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getExpenseCountByUser(User user) {
+        expenseValidator.validateUser(user);
+        return expenseRepository.countByUser(user);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     @Transactional
@@ -194,18 +186,14 @@ public class ExpenseServiceImpl implements ExpenseService {
         if (expenseId == null) {
             throw new IllegalArgumentException("Expense ID cannot be null");
         }
-        if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException("User must be specified");
-        }
+        expenseValidator.validateUser(user);
         log.info("Deleting expense id={} for userId={}", expenseId, user.getId());
         Expense expense = expenseRepository.findById(expenseId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Expense not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
 
         if (!expense.getUser().getId().equals(user.getId())) {
             log.warn("Ownership mismatch: expense id={} does not belong to userId={}", expenseId, user.getId());
-            throw new IllegalArgumentException(
-                    "Expense does not belong to this user");
+            throw new IllegalArgumentException("Expense does not belong to this user");
         }
 
         expenseRepository.delete(expense);
@@ -214,19 +202,6 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     /**
      * {@inheritDoc}
-     *
-     * <p>Loads the existing expense by ID and verifies user ownership.
-     * Applies updates only to non-null fields provided in {@code expenseUpdates}:
-     * description, amount, expense date, and category. Updated entity is then saved.</p>
-     *
-     * <p>Evicts the user's cached expense list so the next fetch reflects the update.</p>
-     *
-     * @param expenseId      the ID of the expense to update
-     * @param expenseUpdates contains the new field values to apply
-     * @param user           the user requesting the update; must own the expense
-     * @return the updated and persisted {@link Expense} entity
-     * @throws IllegalArgumentException if the expense is not found
-     * @throws AccessDeniedException    if the expense does not belong to the user
      */
     @Override
     @Transactional
@@ -235,9 +210,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         if (expenseId == null) {
             throw new IllegalArgumentException("Expense ID cannot be null");
         }
-        if (user == null || user.getId() == null) {
-            throw new IllegalArgumentException("User must be specified");
-        }
+        expenseValidator.validateUser(user);
         if (expenseUpdates == null) {
             throw new IllegalArgumentException("Expense updates cannot be null");
         }
@@ -248,10 +221,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         Expense existing = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new IllegalArgumentException("Expense not found"));
 
-        if (!existing.getUser().getId().equals(user.getId())) {
-            log.warn("Ownership mismatch: expense id={} does not belong to userId={}", expenseId, user.getId());
-            throw new AccessDeniedException("Expense does not belong to this user");
-        }
+        expenseValidator.validateOwnership(existing, user.getId());
 
         if (expenseUpdates.getDescription() != null) {
             existing.setDescription(expenseUpdates.getDescription());
@@ -264,19 +234,8 @@ public class ExpenseServiceImpl implements ExpenseService {
         }
         if (expenseUpdates.getCategory() != null) {
             if (expenseUpdates.getCategory().getId() != null) {
-                Category category = categoryRepository
-                        .findById(expenseUpdates.getCategory().getId())
-                        .orElseThrow(() ->
-                                new IllegalArgumentException("Category not found"));
-
-                if (category.getUser() != null
-                        && !category.getUser().getId().equals(user.getId())) {
-                    log.warn("Category ownership mismatch on update: categoryId={} does not belong to userId={}",
-                            category.getId(), user.getId());
-                    throw new IllegalArgumentException(
-                            "Category does not belong to this user");
-                }
-
+                Category category = expenseValidator.resolveAndValidateCategory(
+                        expenseUpdates.getCategory().getId(), user.getId());
                 existing.setCategory(category);
             } else {
                 existing.setCategory(null);
