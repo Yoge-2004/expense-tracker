@@ -24,7 +24,7 @@
     <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Release%20v1.0.9&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
   </a>
   <a href="LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-A78BFA?style=for-the-badge&labelColor=141812" alt="License" />
+    <img src="https://img.shields.io/badge/License-Apache_2.0-D22128?style=for-the-badge&logo=apache&labelColor=141812" alt="Apache 2.0 License" />
   </a>
 </p>
 
@@ -668,5 +668,5 @@ ExpenseTracker PRO enforces end-to-end quality assurance across unit, integratio
 ---
 
 <div align="center">
-  <sub>Engineered with precision by <a href="https://github.com/Yoge-2004">Yoge-2004</a> • Released under the MIT License</sub>
+  <sub>Engineered with precision by <a href="https://github.com/Yoge-2004">Yoge-2004</a> • Released under the Apache License 2.0</sub>
 </div>
