@@ -57,4 +57,51 @@ public class MlInferenceClient {
                     "ML inference service is unreachable at " + exception.getMessage(), exception);
         }
     }
+
+    public Map<String, Object> matchMerchant(Map<String, Object> payload) {
+        return postGeneric("/api/v1/merchants/match", payload);
+    }
+
+    public Map<String, Object> checkDuplicates(Map<String, Object> payload) {
+        return postGeneric("/api/v1/duplicates/check", payload);
+    }
+
+    public Map<String, Object> scoreAnomalies(Map<String, Object> payload) {
+        return postGeneric("/api/v1/anomalies/score", payload);
+    }
+
+    public Map<String, Object> forecastSpending(Map<String, Object> payload) {
+        return postGeneric("/api/v1/forecast/spending", payload);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> health() {
+        try {
+            return client.get()
+                    .uri("/health")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(Map.class);
+        } catch (Exception e) {
+            return Map.of("status", "unavailable", "error", e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> postGeneric(String uri, Map<String, Object> payload) {
+        try {
+            return client.post()
+                    .uri(uri)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .body(Map.class);
+        } catch (RestClientResponseException exception) {
+            throw new IllegalStateException(
+                    "ML inference service returned HTTP " + exception.getStatusCode().value(), exception);
+        } catch (ResourceAccessException exception) {
+            throw new IllegalStateException(
+                    "ML inference service is unreachable at " + exception.getMessage(), exception);
+        }
+    }
 }
