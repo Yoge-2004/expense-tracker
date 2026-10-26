@@ -489,10 +489,10 @@
 .studio-footer-actions #studioResetBtn,
 .studio-footer-actions .btn-secondary {
     width: auto !important;
-    min-width: 130px !important;
-    max-width: fit-content !important;
+    min-width: auto !important;
+    max-width: none !important;
     height: 42px !important;
-    padding: 0 18px !important;
+    padding: 0 20px !important;
     margin: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -502,15 +502,16 @@
     font-weight: 600 !important;
     border-radius: 12px !important;
     box-sizing: border-box !important;
+    flex: 0 0 auto !important;
 }
 
 .studio-footer-actions #studioSaveSyncBtn,
 .studio-footer-actions .btn-primary {
     width: auto !important;
-    min-width: 170px !important;
-    max-width: fit-content !important;
+    min-width: auto !important;
+    max-width: none !important;
     height: 42px !important;
-    padding: 0 22px !important;
+    padding: 0 24px !important;
     margin: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -520,6 +521,7 @@
     font-weight: 700 !important;
     border-radius: 12px !important;
     box-sizing: border-box !important;
+    flex: 0 0 auto !important;
 }
 
 @media (max-width: 600px) {
@@ -531,13 +533,16 @@
     .studio-footer-actions {
         width: 100%;
         display: flex;
+        flex-direction: column;
         gap: 10px;
     }
     .studio-footer-actions #studioResetBtn,
     .studio-footer-actions #studioSaveSyncBtn {
-        flex: 1 1 50% !important;
         width: 100% !important;
         min-width: 0 !important;
+        max-width: 100% !important;
+        height: 44px !important;
+        flex: 1 1 auto !important;
     }
     .studio-sync-status {
         justify-content: center;

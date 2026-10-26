@@ -152,6 +152,7 @@
     let currentBlurIntensity = 0;
 
     let activeColorTarget = 'primary'; // 'primary' | 'accent' | 'highlight'
+    let syncUiControls = () => {};
 
     // Try reading cached custom palette
     try {
@@ -544,7 +545,7 @@
                     </div>
                     <div class="studio-footer-actions">
                         <button type="button" class="btn-secondary" id="studioResetBtn">Reset Defaults</button>
-                        <button type="button" class="btn-primary" id="studioSaveSyncBtn">Save & Sync to Cloud</button>
+                        <button type="button" class="btn-primary" id="studioSaveSyncBtn">Save & Sync</button>
                     </div>
                 </div>
             </div>
@@ -953,7 +954,7 @@
             }
         });
 
-        function syncUiControls() {
+        syncUiControls = function () {
             updateColorPickerInputs();
 
             // Font cards
