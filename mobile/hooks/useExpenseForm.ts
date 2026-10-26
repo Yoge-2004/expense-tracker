@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, ApiError } from '../services/api';
 import { notifyTransactionRecorded, parseFinancialMessage, formatNotificationAmount } from '../services/notifications';
 import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../services/receiptOcr';
@@ -63,6 +64,7 @@ export function useExpenseForm({
   const [frequency, setFrequency] = useState('MONTHLY');
   const [intervalDays, setIntervalDays] = useState('30');
 
+  // Model 1: Classifier State
   const [aiSuggestion, setAiSuggestion] = useState<{
     category: string;
     confidence: number;
@@ -71,6 +73,14 @@ export function useExpenseForm({
   } | null>(null);
   const [isAiClassifying, setIsAiClassifying] = useState(false);
   const userOverrodeCategory = useRef(false);
+
+  // Model 2: Merchant Matcher State
+  const [merchantSuggestions, setMerchantSuggestions] = useState<{ merchant: string; similarity: number }[]>([]);
+  const [isMatchingMerchant, setIsMatchingMerchant] = useState(false);
+
+  // Model 3: Semantic Duplicate Detection State
+  const [duplicateMatch, setDuplicateMatch] = useState<{ text: string; similarity: number } | null>(null);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
 
   const [isScanningOcr, setIsScanningOcr] = useState(false);
   const [ocrSuccessData, setOcrSuccessData] = useState<ParsedReceipt | null>(null);
@@ -99,7 +109,7 @@ export function useExpenseForm({
     }
   }, [initialParams?.description, initialParams?.amount, initialParams?.categoryId, initialParams?.date]);
 
-  // AI Classification Debounce
+  // Model 1: AI Classification Debounce
   useEffect(() => {
     if (isEditMode) return;
     const cleanDesc = description.trim();
@@ -147,6 +157,111 @@ export function useExpenseForm({
 
     return () => clearTimeout(timer);
   }, [description, categories, isEditMode]);
+
+  // Model 2: Merchant Vector Matcher Debounce
+  useEffect(() => {
+    if (isEditMode) return;
+    const cleanDesc = description.trim();
+    if (cleanDesc.length < 2) {
+      setMerchantSuggestions([]);
+      setIsMatchingMerchant(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsMatchingMerchant(true);
+      try {
+        const res = await apiRequest('/ml/merchants/match', {
+          method: 'POST',
+          body: JSON.stringify({ query: cleanDesc, top_k: 4 }),
+        });
+        if (res && Array.isArray(res.matches)) {
+          const valid = res.matches
+            .filter((m: any) => (m.similarity || 0) >= 0.30)
+            .map((m: any) => {
+              let name = String(m.merchant || '').trim();
+              name = name.replace(/^(?:parse this banking sms and extract entities|extract financial entities from this message|identify transaction details in this message)\s*/i, '');
+              name = name.replace(/\b(?:hdfc|sbi|icici|axis|xx|rs|inr|vpa|upi|ref|ac|a\/c|ybl|okaxis)\b/gi, ' ');
+              name = name.replace(/\s+/g, ' ').trim();
+              const words = name.split(' ').filter((w: string) => w.length > 1).slice(0, 3);
+              const clean = words.join(' ');
+              const finalName = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : String(m.merchant).slice(0, 20);
+              return { merchant: finalName, similarity: Number(m.similarity) || 0 };
+            });
+          setMerchantSuggestions(valid.slice(0, 4));
+        }
+      } catch (_) {
+        // Silently skip if network or ML unavailable
+      } finally {
+        setIsMatchingMerchant(false);
+      }
+    }, 240);
+
+    return () => clearTimeout(timer);
+  }, [description, isEditMode]);
+
+  // Model 3: Duplicate Transaction Semantic Vector Matcher
+  useEffect(() => {
+    if (isEditMode) return;
+    const cleanDesc = description.trim();
+    const numAmt = parseFloat(amount);
+    if (cleanDesc.length < 3 || isNaN(numAmt) || numAmt <= 0) {
+      setDuplicateMatch(null);
+      setIsCheckingDuplicates(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingDuplicates(true);
+      try {
+        const stored = await AsyncStorage.getItem('cached_expenses');
+        if (stored) {
+          const list = JSON.parse(stored);
+          if (Array.isArray(list) && list.length > 0) {
+            const candidateList = list
+              .filter((e: any) => {
+                const a = parseFloat(e.amount);
+                return !isNaN(a) && (Math.abs(a - numAmt) <= 2.0 || Math.abs(a - numAmt) / numAmt <= 0.15);
+              })
+              .map((e: any) => e.description)
+              .filter(Boolean);
+
+            if (candidateList.length > 0) {
+              const res = await apiRequest('/ml/duplicates/check', {
+                method: 'POST',
+                body: JSON.stringify({
+                  query: cleanDesc,
+                  candidates: candidateList.slice(0, 15),
+                  threshold: 0.65,
+                }),
+              });
+              if (res && Array.isArray(res.matches) && res.matches.length > 0) {
+                const best = res.matches[0];
+                setDuplicateMatch({
+                  text: best.text,
+                  similarity: Number(best.similarity) || 0,
+                });
+                return;
+              }
+            }
+          }
+        }
+        setDuplicateMatch(null);
+      } catch (_) {
+        setDuplicateMatch(null);
+      } finally {
+        setIsCheckingDuplicates(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [description, amount, isEditMode]);
+
+  const applyMerchantSuggestion = useCallback((chosen: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setDescription(chosen);
+    setMerchantSuggestions([]);
+  }, []);
 
   const toggleRecurring = useCallback((val: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -299,6 +414,8 @@ export function useExpenseForm({
     setExpenseDate(new Date().toISOString().split('T')[0]);
     setIsRecurring(false);
     setAiSuggestion(null);
+    setMerchantSuggestions([]);
+    setDuplicateMatch(null);
     userOverrodeCategory.current = false;
     setErrors({});
   }, []);
@@ -451,6 +568,11 @@ export function useExpenseForm({
     setIntervalDays,
     aiSuggestion,
     isAiClassifying,
+    merchantSuggestions,
+    isMatchingMerchant,
+    applyMerchantSuggestion,
+    duplicateMatch,
+    isCheckingDuplicates,
     userOverrodeCategory,
     isScanningOcr,
     ocrSuccessData,

@@ -45,6 +45,11 @@ export interface ExpenseFormTabProps {
     matchedCatName?: string;
   } | null;
   isAiClassifying?: boolean;
+  merchantSuggestions?: { merchant: string; similarity: number }[];
+  isMatchingMerchant?: boolean;
+  duplicateMatch?: { text: string; similarity: number } | null;
+  isCheckingDuplicates?: boolean;
+  applyMerchantSuggestion?: (merchant: string) => void;
   userOverrodeCategory?: { current: boolean };
   isScanningOcr?: boolean;
   ocrSuccessData?: ParsedReceipt | null;
@@ -92,6 +97,9 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
   const setIntervalDays = props.setIntervalDays ?? form?.setIntervalDays ?? (() => {});
   const aiSuggestion = props.aiSuggestion !== undefined ? props.aiSuggestion : (form?.aiSuggestion ?? null);
   const isAiClassifying = props.isAiClassifying !== undefined ? props.isAiClassifying : (form?.isAiClassifying ?? false);
+  const merchantSuggestions = props.merchantSuggestions ?? form?.merchantSuggestions ?? [];
+  const duplicateMatch = props.duplicateMatch !== undefined ? props.duplicateMatch : (form?.duplicateMatch ?? null);
+  const applyMerchantSuggestion = props.applyMerchantSuggestion ?? form?.applyMerchantSuggestion ?? ((m: string) => setDescription(m));
   const userOverrodeCategory = props.userOverrodeCategory ?? form?.userOverrodeCategory ?? { current: false };
   const isScanningOcr = props.isScanningOcr !== undefined ? props.isScanningOcr : (form?.isScanningOcr ?? false);
   const ocrSuccessData = props.ocrSuccessData !== undefined ? props.ocrSuccessData : (form?.ocrSuccessData ?? null);
@@ -336,7 +344,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
             style={[
               styles.inputWrap,
               {
-                backgroundColor: c.inputBg,
+backgroundColor: c.inputBg,
                 borderColor: errors.description ? c.accent : c.primary,
                 borderWidth: focusedField === 'expenseDesc' ? 2 : 1.5,
               },
@@ -363,6 +371,38 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
           </View>
           {!!errors.description && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.description}</Text>}
 
+          {/* Model 2: Vector Merchant Matcher Suggestions */}
+          {merchantSuggestions && merchantSuggestions.length > 0 && (
+            <View style={{ marginTop: 6 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center' }}>
+                <Text style={{ fontSize: 10.5, color: c.textMuted, fontWeight: '600' }}>Matched:</Text>
+                {merchantSuggestions.map((item, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    activeOpacity={0.75}
+                    onPress={() => applyMerchantSuggestion(item.merchant)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                      backgroundColor: isLight ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.18)',
+                      borderColor: isLight ? 'rgba(212, 175, 55, 0.35)' : 'rgba(212, 175, 55, 0.3)',
+                      borderWidth: 1,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={12} color={c.primary} />
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: c.text }}>{item.merchant}</Text>
+                    <Text style={{ fontSize: 9.5, color: c.primary, fontWeight: '800' }}>{Math.round(item.similarity * 100)}%</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Model 1: Classifier Suggestion Pill */}
           {aiSuggestion && (
             <View
               style={{
@@ -415,6 +455,33 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                     <Text style={{ fontSize: 11, fontWeight: '800', color: isLight ? '#FFF' : '#10120E' }}>Apply</Text>
                   </TouchableOpacity>
                 )}
+              </View>
+            </View>
+          )}
+
+          {/* Model 3: Duplicate Transaction Similarity Alert */}
+          {duplicateMatch && (
+            <View
+              style={{
+                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                borderColor: 'rgba(245, 158, 11, 0.35)',
+                borderWidth: 1,
+                borderRadius: 10,
+                padding: 10,
+                marginTop: 8,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <Ionicons name="warning-outline" size={18} color="#F59E0B" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#F59E0B' }}>
+                  Similar Transaction Detected ({Math.round(duplicateMatch.similarity * 100)}% Match)
+                </Text>
+                <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 2 }}>
+                  "{duplicateMatch.text}" recorded recently with matching amount.
+                </Text>
               </View>
             </View>
           )}
@@ -597,7 +664,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
             </View>
 
             {frequency === 'CUSTOM' && (
-              <View style={{ marginTop: 10 }}>
+<View style={{ marginTop: 10 }}>
                 <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Custom Cycle (in Days)</Text>
                 <TextInput
                   style={[
