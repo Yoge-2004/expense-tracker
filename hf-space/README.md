@@ -167,3 +167,4 @@ Built and maintained by **Yoge-2004** as the backend and ML serving layer for th
 - Main project: `Yoge-2004/expense-tracker`
 - Backend + ML Space: `Yoge-2004/expense-tracker-backend`
 - Model repository: `Yoge-2004/expense-intelligence-model`
+- License: [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
