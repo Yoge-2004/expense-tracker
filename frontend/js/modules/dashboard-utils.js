@@ -51,7 +51,8 @@
         const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "₹";
         const isAlpha = /^[A-Z]{3}$/.test(symbol);
         const numStr = Number(amount || 0).toFixed(2);
-        return isAlpha ? `${symbol} ${numStr}` : `${symbol}${numStr}`;\n    }
+        return isAlpha ? `${symbol} ${numStr}` : `${symbol}${numStr}`;
+    }
 
     const CATEGORY_PALETTE = [
         { bg: "rgba(199,154,62,0.12)", color: "#C79A3E" }, // 1. Imperial Gold
