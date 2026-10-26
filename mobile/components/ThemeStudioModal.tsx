@@ -230,6 +230,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
               backgroundColor: isLight ? '#FFFFFF' : '#141712',
               borderColor: c.borderAccent,
               maxWidth: isWide ? 620 : '100%',
+              height: isWide ? 680 : '88%',
             },
           ]}
         >
@@ -300,6 +301,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
           {/* Tab Content */}
           <ThemedScrollView
             style={styles.scrollArea}
+            containerStyle={{ flex: 1, width: '100%' }}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
@@ -731,7 +733,8 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     width: '100%',
-    maxHeight: '90%',
+    height: '88%',
+    maxHeight: '92%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1,
@@ -784,11 +787,13 @@ const styles = StyleSheet.create({
   },
   scrollArea: {
     flex: 1,
+    width: '100%',
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 36,
+    flexGrow: 1,
   },
   sectionWrap: {
     gap: 10,
