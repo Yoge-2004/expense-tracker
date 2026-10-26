@@ -19,5 +19,21 @@ public record ErrorResponse(
         String message,
 
         @Schema(description = "Request URI path that triggered the error", example = "/api/auth/register")
-        String path
-) {}
+        String path,
+
+        @Schema(description = "Correlation / Trace ID for production log tracking and support", example = "uEJTXr")
+        String traceId
+) {
+    public ErrorResponse(LocalDateTime timestamp, int status, String error, String message, String path) {
+        this(timestamp, status, error, message, path, resolveTraceId());
+    }
+
+    private static String resolveTraceId() {
+        try {
+            String tid = org.slf4j.MDC.get("traceId");
+            return (tid != null && !tid.isBlank()) ? tid : java.util.UUID.randomUUID().toString();
+        } catch (Exception ignored) {
+            return java.util.UUID.randomUUID().toString();
+        }
+    }
+}

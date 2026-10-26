@@ -260,7 +260,7 @@ if (logoutBtn) {
     logoutBtn.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
-        ["token", "userId", "userName", "userEmail"].forEach((key) => localStorage.removeItem(key));
+        ["token", "userId", "userName", "userEmail", "userRole", "userUsername", "userProfilePicture"].forEach((key) => localStorage.removeItem(key));
         window.location.href = "index.html";
     }, true);
 }

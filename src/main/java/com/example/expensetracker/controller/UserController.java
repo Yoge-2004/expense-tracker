@@ -419,10 +419,12 @@ public class UserController {
             else if (lower.contains("gif")) ext = ".gif";
 
             // Remove any existing avatar files for this user
-            for (String e : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
+            for (String oldExt : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img")) {
                 try {
-                    java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + e));
-                } catch (Exception ignored) {}
+                    java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + oldExt));
+                } catch (Exception ex) {
+                    log.debug("Notice while removing old avatar extension {} for userId={}: {}", oldExt, userId, ex.getMessage());
+                }
             }
 
             byte[] rawBytes = file.getBytes();
@@ -484,7 +486,9 @@ public class UserController {
                             .contentType(MediaType.parseMediaType(contentType))
                             .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
                             .body(data);
-                } catch (java.io.IOException ignored) {}
+                } catch (java.io.IOException ex) {
+                    log.warn("Could not read avatar file {} for userId={}: {}", file, userId, ex.getMessage());
+                }
             }
         }
 
@@ -612,7 +616,9 @@ public class UserController {
         for (String ext : java.util.List.of(".jpg", ".png", ".webp", ".gif", ".img", ".meta")) {
             try {
                 java.nio.file.Files.deleteIfExists(avatarDir.resolve("user_" + userId + ext));
-            } catch (Exception ignored) {}
+            } catch (Exception ex) {
+                    log.debug("Notice while removing old avatar extension {} for userId={}: {}", ext, userId, ex.getMessage());
+                }
         }
         userService.updateProfilePicture(userId, null);
         return ResponseEntity.noContent().build();

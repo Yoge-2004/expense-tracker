@@ -99,7 +99,7 @@ export default function RegisterScreen() {
         setCheckingConfig(false);
       }
     }
-    checkAuthConfig();
+    void checkAuthConfig();
   }, []);
 
   const handleGoogleSignIn = async () => {

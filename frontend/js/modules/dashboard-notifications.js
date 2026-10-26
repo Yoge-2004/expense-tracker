@@ -243,10 +243,11 @@
         if (!parsed || parsed.direction !== "DEBIT") return false;
         playCustomNotificationSound();
 
-        const title = `💸 Instant Debit Alert: ${parsed.currency} ${parsed.amount.toFixed(2)}`;
+        const formattedAmt = formatNotificationCurrency(parsed.amount, parsed.currency);
+        const title = `💸 Instant Debit Alert: ${formattedAmt}`;
         const merchantPart = parsed.merchant ? ` at ${parsed.merchant}` : "";
         const accPart = parsed.accountTail ? ` (Card/A/c xx${parsed.accountTail})` : "";
-        const body = `Spent ${parsed.currency} ${parsed.amount.toFixed(2)}${merchantPart}${accPart}. Tap to record or categorize now.`;
+        const body = `Spent ${formattedAmt}${merchantPart}${accPart}. Tap to record or categorize now.`;
 
         if ("Notification" in window && Notification.permission === "granted") {
             try {
@@ -340,7 +341,7 @@
         if (parsed && parsed.amount) {
             handleNotificationAction(parsed);
             if (typeof window.showToast === "function") {
-                window.showToast(`Parsed ${parsed.currency} ${parsed.amount.toFixed(2)} from SMS!`, "success");
+                window.showToast(`Parsed ${formatNotificationCurrency(parsed.amount, parsed.currency)} from SMS!`, "success");
             }
         } else {
             if (typeof window.showToast === "function") {
@@ -448,9 +449,20 @@
         init();
     }
 
+    function formatNotificationCurrency(amount, cur) {
+        if (window.DashboardUtils && typeof window.DashboardUtils.formatCurrency === "function") {
+            return window.DashboardUtils.formatCurrency(Number(amount));
+        }
+        const sym = cur || (typeof getCurrencySymbol === "function" ? getCurrencySymbol() : "₹");
+        const isAlpha = /^[A-Z]{3}$/.test(sym);
+        const formatted = Number(amount || 0).toLocaleString();
+        return isAlpha ? `${sym} ${formatted}` : `${sym}${formatted}`;
+    }
+
     async function notifySalaryCredit(amount, currency = '₹', source = 'Salary') {
         playCustomNotificationSound();
-        const title = `💰 ${source} Credited: ${currency} ${Number(amount).toLocaleString('en-IN')}`;
+        const formattedAmt = formatNotificationCurrency(amount, currency);
+        const title = `💰 ${source} Credited: ${formattedAmt}`;
         const body = 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!';
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
@@ -481,7 +493,7 @@
         const isDebit = kind === "DEBIT";
         const formatted = window.DashboardUtils && typeof window.DashboardUtils.formatCurrency === "function"
             ? window.DashboardUtils.formatCurrency(Number(amount))
-            : Number(amount).toLocaleString("en-IN");
+            : formatNotificationCurrency(amount);
         const title = `${isDebit ? "💸 Debit" : "💰 Credit"} recorded: ${formatted}`;
         const body = [label, detail].filter((part) => part && String(part).trim()).join(" · ")
             || (isDebit ? "Expense saved." : "Income saved.");
@@ -508,9 +520,10 @@
         const title = isExceeded
             ? `🚨 Budget Exceeded: ${categoryName}`
             : `⚠️ Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
+        const remainingFormatted = formatNotificationCurrency(Math.abs(remainingAmt), currency);
         const body = isExceeded
-            ? `You have exceeded your limit for ${categoryName} by ${currency} ${Math.abs(remainingAmt).toLocaleString('en-IN')}.`
-            : `You have used ${Math.round(percentSpent)}% of your ${categoryName} budget. Remaining buffer: ${currency} ${remainingAmt.toLocaleString('en-IN')}.`;
+            ? `You have exceeded your limit for ${categoryName} by ${remainingFormatted}.`
+            : `You have used ${Math.round(percentSpent)}% of your ${categoryName} budget. Remaining buffer: ${remainingFormatted}.`;
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
                 if (swRegistration && 'showNotification' in swRegistration) {

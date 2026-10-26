@@ -163,14 +163,18 @@ function initGoogleSignIn() {
             btnContainer.style.display = "block";
             const parentWidth = btnContainer.parentElement?.getBoundingClientRect().width || 380;
             const width = Math.min(Math.max(Math.round(parentWidth) || 360, 240), 440);
-            window.google.accounts.id.renderButton(btnContainer, {
-                type: "standard",
-                shape: "rectangular",
-                theme: "outline",
-                text: "continue_with",
-                size: "large",
-                width: width
-            });
+            try {
+                window.google.accounts.id.renderButton(btnContainer, {
+                    type: "standard",
+                    shape: "rectangular",
+                    theme: "outline",
+                    text: "continue_with",
+                    size: "large",
+                    width: width
+                });
+            } catch (renderErr) {
+                console.warn("Failed to render Google Sign-In button:", renderErr);
+            }
         });
     } catch (e) {
         console.warn("Google Sign-In initialization:", e);
@@ -211,9 +215,9 @@ function handleGoogleOAuth() {
             }
         });
     } catch (err) {
-        console.error("Failed to prompt Google Sign-In:", err);
+        console.warn("Failed to prompt Google Sign-In:", err);
         setGoogleButtonLoading(false);
-        showToast("Google Sign-In prompt failed.", "error");
+        showToast("Google Sign-In prompt failed. Please sign in with username/email.", "info");
     }
 }
 

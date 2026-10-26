@@ -219,8 +219,24 @@
         return result;
     }
 
+    async function loadTesseractOnDemand() {
+        if (typeof Tesseract !== "undefined") return;
+        return new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+            script.crossOrigin = "anonymous";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load Tesseract.js OCR library on demand."));
+            document.head.appendChild(script);
+        });
+    }
+
     async function initOcrWorker(progressCallback) {
         if (ocrWorker) return ocrWorker;
+        if (typeof Tesseract === "undefined") {
+            progressCallback?.("Loading OCR Engine on demand...", 5);
+            await loadTesseractOnDemand();
+        }
         if (typeof Tesseract === "undefined") {
             throw new Error("Tesseract.js OCR library is not loaded.");
         }
@@ -250,8 +266,12 @@
             let extractedText = "";
             let confidence = 85;
 
-            // Attempt 1: Browser-integrated Tesseract.js WebAssembly
+            // Attempt 1: Browser-integrated Tesseract.js WebAssembly (Lazy-loaded on demand)
             try {
+                if (typeof Tesseract === "undefined") {
+                    callbacks.onProgress?.("Loading OCR Engine...", 10);
+                    await loadTesseractOnDemand().catch(() => {});
+                }
                 if (typeof Tesseract !== "undefined") {
                     const worker = await initOcrWorker((msg, pct) => {
                         callbacks.onProgress?.(msg, pct);

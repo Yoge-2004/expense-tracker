@@ -39,6 +39,7 @@ import {
   parseFinancialMessage,
   detectAndAddExpenseFromMessage,
   detectAndAddCreditFromMessage,
+  formatNotificationAmount,
 } from '../services/notifications';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { readSavedTheme } from '../services/api';
@@ -398,12 +399,13 @@ function RootLayoutNav() {
           const amountVal = parsed.amount;
           lastProcessedClipRef.current = text;
 
+          const formattedAmt = formatNotificationAmount(amountVal, parsed.currency, 2);
           if (parsed.direction === 'DEBIT') {
             const merchantStr = parsed.merchant ? ` at ${parsed.merchant}` : '';
             const accStr = parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : '';
             showAlert(
               '⚡ Bank SMS Detected',
-              `Found bank debit of ${parsed.currency} ${amountVal.toFixed(2)}${merchantStr}${accStr}.\n\nWould you like to record this to your expense ledger?`,
+              `Found bank debit of ${formattedAmt}${merchantStr}${accStr}.\n\nWould you like to record this to your expense ledger?`,
               [
                 { text: 'Dismiss', style: 'cancel' },
                 {
@@ -423,7 +425,7 @@ function RootLayoutNav() {
                   text: 'Record Now',
                   onPress: async () => {
                     await detectAndAddExpenseFromMessage(text, userId);
-                    showAlert('Recorded! ✅', `Added ${parsed.currency} ${amountVal.toFixed(2)} to your expenses.`, undefined, 'success');
+                    showAlert('Recorded! ✅', `Added ${formattedAmt} to your expenses.`, undefined, 'success');
                   },
                 },
               ],
@@ -433,14 +435,14 @@ function RootLayoutNav() {
             const srcStr = parsed.merchant ? ` from ${parsed.merchant}` : '';
             showAlert(
               '💰 Bank Credit Detected',
-              `Found bank credit of ${parsed.currency} ${amountVal.toFixed(2)}${srcStr}.\n\nWould you like to record this to your incomes?`,
+              `Found bank credit of ${formattedAmt}${srcStr}.\n\nWould you like to record this to your incomes?`,
               [
                 { text: 'Dismiss', style: 'cancel' },
                 {
                   text: 'Record Now',
                   onPress: async () => {
                     await detectAndAddCreditFromMessage(text, userId);
-                    showAlert('Recorded! ✅', `Added ${parsed.currency} ${amountVal.toFixed(2)} to your incomes.`, undefined, 'success');
+                    showAlert('Recorded! ✅', `Added ${formattedAmt} to your incomes.`, undefined, 'success');
                   },
                 },
               ],

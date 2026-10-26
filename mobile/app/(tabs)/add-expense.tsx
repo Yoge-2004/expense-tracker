@@ -25,7 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
-import { notifyTransactionRecorded, parseFinancialMessage } from '../../services/notifications';
+import { notifyTransactionRecorded, parseFinancialMessage, formatNotificationAmount } from '../../services/notifications';
 import { Colors, getCategoryEmoji } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -340,7 +340,8 @@ export default function AddExpenseScreen() {
                 : `Bank Debit${parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : ""}`;
               setDescription(desc);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-              showAlert("Bank SMS Parsed! ⚡", `Pre-filled ${parsed.currency} ${parsed.amount.toFixed(2)} at ${parsed.merchant || "Merchant"}.`, undefined, "success");
+              const formattedParsedAmt = formatNotificationAmount(parsed.amount, parsed.currency, 2);
+              showAlert("Bank SMS Parsed! ⚡", `Pre-filled ${formattedParsedAmt} at ${parsed.merchant || "Merchant"}.`, undefined, "success");
               return;
             } else if (parsed.direction === "CREDIT") {
               setActiveTab("income");
@@ -348,7 +349,8 @@ export default function AddExpenseScreen() {
               setIncomeSource(parsed.merchant || "Bank Credit");
               setIncomeDesc(parsed.merchant ? `Credit from ${parsed.merchant}` : "Bank Inflow");
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-              showAlert("Bank Credit Parsed! 💰", `Pre-filled ${parsed.currency} ${parsed.amount.toFixed(2)} from ${parsed.merchant || "Source"}.`, undefined, "success");
+              const formattedParsedCredit = formatNotificationAmount(parsed.amount, parsed.currency, 2);
+              showAlert("Bank Credit Parsed! 💰", `Pre-filled ${formattedParsedCredit} from ${parsed.merchant || "Source"}.`, undefined, "success");
               return;
             }
           }

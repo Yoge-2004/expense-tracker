@@ -28,7 +28,8 @@ const CREDIT_REGEX = /\b(credited|received|refunded|deposited|reversal|cashback|
 // Global flag: a message can contain more than one currency-tagged number
 // (the transaction amount AND the account balance), so every occurrence
 // needs to be considered rather than just the first.
-const AMOUNT_REGEX = /(?:(?:Rs\.?|INR|EUR|GBP|[₹$€£])\s*(\d[\d,]*(?:\.\d{1,2})?)|(\d[\d,]*(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|EUR|GBP|[₹$€£]))/gi;
+const AMOUNT_PREFIX_REGEX = /(?:Rs\.?|INR|EUR|GBP|[₹$€£])\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/gi;
+const AMOUNT_SUFFIX_REGEX = /\b(\d+(?:,\d+)*(?:\.\d{1,2})?)\s+(?:Rs\.?|INR|EUR|GBP)\b/gi;
 
 // Secondary fallback amount matcher if currency symbol is separate
 const FALLBACK_AMOUNT_REGEX = /\b(?:amount|amt|for|of)\b(?:\s*[:=]|\s+is)?(?:\s+(?:Rs\.?|INR|[₹$]))?\s*(\d[\d,]*(?:\.\d{1,2})?)\b/i;
@@ -122,7 +123,10 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
   const isBalanceContext = (idx: number) =>
     BALANCE_CONTEXT_REGEX.test(cleanText.slice(Math.max(0, idx - 20), idx));
 
-  const taggedMatches = [...cleanText.matchAll(AMOUNT_REGEX)];
+  const taggedMatches = [
+    ...cleanText.matchAll(AMOUNT_PREFIX_REGEX),
+    ...cleanText.matchAll(AMOUNT_SUFFIX_REGEX),
+  ].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
   let chosen: RegExpMatchArray | null = null;
 
   if (keywordIndex >= 0) {
@@ -194,7 +198,10 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
       let candidate = m[1].trim();
       candidate = candidate.replace(/^(the|a|an)\s+/i, "");
       candidate = candidate.replace(/\b(?:successfully|successful|(?:with|using)(?:\s+cred)?)\b/gi, "").trim();
-      candidate = candidate.replace(/[.,;:]+$/, "").trim();
+      while (candidate.length > 0 && ".,;:".includes(candidate[candidate.length - 1])) {
+        candidate = candidate.slice(0, -1);
+      }
+      candidate = candidate.trim();
       if (candidate.length > 1 && !/^(your|my|account|bank|branch)$/i.test(candidate)) {
         result.merchant = candidate;
         break;

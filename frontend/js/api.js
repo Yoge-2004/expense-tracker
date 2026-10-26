@@ -400,10 +400,7 @@ async function executeApiRequest(endpoint, options = {}, retriesLeft = 2) {
     const shouldSkipAuthRedirect = options.skipAuthRedirect === true || isDeleteAccount || isVerifyPin;
 
     if (response.status === 401 && !endpoint.includes("/auth/") && !shouldSkipAuthRedirect) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userEmail");
+        ["token", "userId", "userName", "userEmail", "userRole", "userUsername", "userProfilePicture"].forEach((key) => localStorage.removeItem(key));
         window.location.href = "index.html";
         throw new Error("Your session has expired. Please sign in again.");
     }
@@ -758,3 +755,22 @@ window.addEventListener("unhandledrejection", (event) => {
 window.addEventListener("error", (event) => {
     console.warn("Handled Window Error:", event.error || event.message);
 });
+
+// Synchronize authentication and appearance changes across multiple browser tabs
+if (typeof window !== "undefined") {
+    window.addEventListener("storage", (e) => {
+        if (e.key === "token" && !e.newValue) {
+            const path = window.location.pathname;
+            const isAuthPage = path.endsWith("index.html") ||
+                               path.endsWith("register.html") ||
+                               path.endsWith("forgot-password.html") ||
+                               path === "/" ||
+                               path === "";
+            if (!isAuthPage) {
+                window.location.href = "index.html";
+            }
+        } else if (e.key === "theme" && e.newValue) {
+            document.documentElement.setAttribute("data-theme", e.newValue);
+        }
+    });
+}

@@ -54,7 +54,7 @@
     }
 
     function formatTrendDate(value) {
-        return utils.parseLocalDate(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        return utils.parseLocalDate(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
     }
 
     function formatCompactCurrency(value) {

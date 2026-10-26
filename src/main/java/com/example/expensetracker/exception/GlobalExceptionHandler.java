@@ -532,7 +532,9 @@ public class GlobalExceptionHandler {
             org.springframework.http.converter.HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
-        log.warn("Message not readable at '{}': {}", request.getRequestURI(), ex.getMessage());
+        Throwable root = ex.getMostSpecificCause();
+        String detail = root != null && root.getMessage() != null ? root.getMessage().split("\r?\n")[0].trim() : ex.getMessage();
+        log.warn("Message not readable at '{}': {}", request.getRequestURI(), detail);
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -542,6 +544,45 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(org.springframework.transaction.TransactionSystemException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionSystemException(
+            org.springframework.transaction.TransactionSystemException ex,
+            HttpServletRequest request) {
+
+        Throwable root = ex.getRootCause();
+        if (root instanceof jakarta.validation.ConstraintViolationException cve) {
+            return handleConstraintViolation(cve, request);
+        }
+        log.error("Transaction failure at '{}': {}", request.getRequestURI(), ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                "A transaction commit failure occurred",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler({
+            org.springframework.dao.OptimisticLockingFailureException.class,
+            jakarta.persistence.OptimisticLockException.class
+    })
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(
+            Exception ex,
+            HttpServletRequest request) {
+
+        log.warn("Optimistic lock conflict at '{}': {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                "The resource was modified by another operation. Please reload and try again.",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)

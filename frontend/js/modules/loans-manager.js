@@ -658,14 +658,25 @@
             if (reminderDateGroup) reminderDateGroup.style.display = "none";
 
             selectType("LENT");
-            modal.removeAttribute("hidden");
-            modal.style.display = "flex";
+            if (typeof window.openModal === "function") {
+                window.openModal(modal);
+            } else {
+                modal.removeAttribute("hidden");
+                modal.classList.add("active");
+                document.body.classList.add("modal-open");
+            }
         }
 
         function closeModal() {
             if (!modal) return;
-            modal.setAttribute("hidden", "");
-            modal.style.display = "none";
+            if (typeof window.closeModal === "function") {
+                window.closeModal(modal);
+            } else {
+                modal.classList.remove("active");
+                if (!document.querySelector(".modal-overlay.active")) {
+                    document.body.classList.remove("modal-open");
+                }
+            }
         }
 
         function selectType(t) {
@@ -682,6 +693,9 @@
         addBtn?.addEventListener("click", openModal);
         closeBtn?.addEventListener("click", closeModal);
         cancelBtn?.addEventListener("click", closeModal);
+        modal?.addEventListener("click", (e) => {
+            if (e.target === modal) closeModal();
+        });
 
         typeLentBtn?.addEventListener("click", () => selectType("LENT"));
         typeBorrowedBtn?.addEventListener("click", () => selectType("BORROWED"));
@@ -834,8 +848,13 @@
         const reminderOptions = document.getElementById("loanReminderOptions");
         if (reminderOptions) reminderOptions.style.display = "none";
 
-        modal.removeAttribute("hidden");
-        modal.style.display = "flex";
+        if (typeof window.openModal === "function") {
+            window.openModal(modal);
+        } else {
+            modal.removeAttribute("hidden");
+            modal.classList.add("active");
+            document.body.classList.add("modal-open");
+        }
 
         setTimeout(() => {
             document.getElementById("loanCounterparty")?.focus();

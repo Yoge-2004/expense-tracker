@@ -1089,9 +1089,10 @@ export async function scheduleLoanReminders(loans: any[], currSymbol: string = '
       const title = isLent
         ? `🤝 Collect from ${loan.counterparty}`
         : `💳 Pay back ${loan.counterparty}`;
+      const formattedAmt = formatNotificationAmount(loan.amount, currSymbol);
       const body = isLent
-        ? `Reminder to collect ${currSymbol}${Number(loan.amount).toLocaleString()} from ${loan.counterparty}${loan.notes ? ` (${loan.notes})` : ''}.`
-        : `Reminder to repay ${currSymbol}${Number(loan.amount).toLocaleString()} to ${loan.counterparty}${loan.notes ? ` (${loan.notes})` : ''}.`;
+        ? `Reminder to collect ${formattedAmt} from ${loan.counterparty}${loan.notes ? ` (${loan.notes})` : ''}.`
+        : `Reminder to repay ${formattedAmt} to ${loan.counterparty}${loan.notes ? ` (${loan.notes})` : ''}.`;
 
       // Parse custom time (e.g. "10:00" or default to 10:00 AM)
       let hour = 10;

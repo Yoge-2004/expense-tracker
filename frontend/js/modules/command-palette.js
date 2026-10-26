@@ -14,7 +14,7 @@
             badge: "Add",
             keywords: "expense spend cost record pay",
             run: () => {
-                const btn = document.getElementById("addExpenseBtn");
+                const btn = document.getElementById("openModalBtn") || document.getElementById("addExpenseBtn");
                 if (btn) btn.click();
             }
         },
@@ -26,7 +26,7 @@
             badge: "OCR",
             keywords: "scan receipt bill invoice camera ocr image photo",
             run: () => {
-                const addBtn = document.getElementById("addExpenseBtn");
+                const addBtn = document.getElementById("openModalBtn") || document.getElementById("addExpenseBtn");
                 if (addBtn) addBtn.click();
                 setTimeout(() => {
                     const fileInput = document.getElementById("receiptFileInput");
@@ -42,8 +42,12 @@
             badge: "Add",
             keywords: "income salary deposit earn inflow",
             run: () => {
-                const btn = document.getElementById("addIncomeBtn");
-                if (btn) btn.click();
+                if (typeof window.openNewIncomeModal === "function") {
+                    window.openNewIncomeModal();
+                } else {
+                    const btn = document.getElementById("openIncomeModalBtn") || document.getElementById("addIncomeTableBtn") || document.getElementById("addIncomeBtn");
+                    if (btn) btn.click();
+                }
             }
         },
         {
@@ -128,7 +132,7 @@
             badge: "Budgets",
             keywords: "budget spending limit category plan",
             run: () => {
-                const btn = document.getElementById("setBudgetBtn");
+                const btn = document.getElementById("addBudgetBtn") || document.getElementById("setBudgetBtn");
                 if (btn) btn.click();
             }
         },
@@ -140,7 +144,7 @@
             badge: "Savings",
             keywords: "savings goal target fund emergency",
             run: () => {
-                const btn = document.getElementById("addSavingsGoalBtn");
+                const btn = document.getElementById("addGoalBtn") || document.getElementById("addSavingsGoalBtn");
                 if (btn) btn.click();
             }
         },
@@ -155,7 +159,7 @@
                 if (typeof toggleGlobalTheme === "function") {
                     toggleGlobalTheme();
                 } else {
-                    const btn = document.getElementById("themeToggleBtn");
+                    const btn = document.getElementById("themeToggle") || document.getElementById("themeToggleBtn");
                     if (btn) btn.click();
                 }
             }

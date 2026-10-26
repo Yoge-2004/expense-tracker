@@ -32,6 +32,8 @@ import java.util.Base64;
  */
 public final class HuggingFaceFileClient {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HuggingFaceFileClient.class);
+
     /** e.g. {@code Yoge-2004/expense-tracker-backend}.
      *  Ends in \z (absolute end of input) rather than $. NOTE for future readers:
      *  with {@code String.matches()} the two behave identically, because matches()
@@ -164,8 +166,10 @@ public final class HuggingFaceFileClient {
             return commitResponse.statusCode() >= 200 && commitResponse.statusCode() < 300;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            log.warn("LFS upload interrupted for repo='{}', path='{}'", repo, path);
             return false;
         } catch (Exception e) {
+            log.warn("LFS upload failed for repo='{}', path='{}': {}", repo, path, e.getMessage(), e);
             return false;
         }
     }

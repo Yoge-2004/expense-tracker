@@ -1517,10 +1517,16 @@
 
     // ── Utilities ────────────────────────────────────────────────────────────
     function formatCurrency(amount) {
-        return "₹" + Number(amount || 0).toLocaleString("en-IN", {
+        if (typeof window.formatGlobalCurrency === "function") {
+            return window.formatGlobalCurrency(amount);
+        }
+        const symbol = typeof window.getCurrencySymbol === "function" ? window.getCurrencySymbol() : "₹";
+        const isAlpha = /^[A-Z]{3}$/.test(symbol);
+        const formatted = Number(amount || 0).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
+        return isAlpha ? `${symbol} ${formatted}` : `${symbol}${formatted}`;
     }
 
     function escapeHtml(str) {
