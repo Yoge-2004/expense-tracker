@@ -98,7 +98,7 @@
 
     function getCategorySvg(name, size = 16) {
         const value = String(name || "").toLowerCase();
-        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-2px;"`;
+        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin:auto; flex-shrink:0;"`;
         if (value.includes("saving") || value.includes("deposit") || value.includes("invest")) {
             return `<svg ${svgAttrs}><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a8 8 0 0 1-16 0V6"/><circle cx="12" cy="14" r="2"/></svg>`;
         }
@@ -136,7 +136,7 @@
     }
 
     function getCategoryEmoji(name) {
-        return getCategorySvg(name, 16);
+        return getCategorySvg(name, 20);
     }
 
     function debounce(fn, delay) {

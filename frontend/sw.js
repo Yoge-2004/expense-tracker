@@ -4,7 +4,7 @@
    debit transaction alerts.
    ========================================================================== */
 
-const CACHE_NAME = "expense-tracker-cache-v2";
+const CACHE_NAME = "expense-tracker-cache-v3";
 const ASSETS_TO_CACHE = [
     "index.html",
     "dashboard.html",

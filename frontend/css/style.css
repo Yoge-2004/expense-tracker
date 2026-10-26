@@ -9193,9 +9193,10 @@ body.modal-open {
 .income-emoji-box svg {
     display: block !important;
     margin: auto !important;
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px !important;
+    height: 20px !important;
     color: currentColor;
+    flex-shrink: 0;
     flex-shrink: 0;
 }
 
