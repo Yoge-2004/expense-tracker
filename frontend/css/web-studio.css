@@ -53,17 +53,24 @@
 .studio-modal-tabs {
     display: flex;
     border-bottom: 1px solid var(--border);
-    background: rgba(0, 0, 0, 0.15);
-    padding: 0 20px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 20px 0;
     gap: 8px;
     overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-shrink: 0;
+}
+
+.studio-modal-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .studio-tab-btn {
-    padding: 12px 16px;
+    padding: 12px 18px 14px;
     background: transparent;
     border: none;
-    border-bottom: 2px solid transparent;
+    border-bottom: 2.5px solid transparent;
     color: var(--text-muted);
     font-size: 13px;
     font-weight: 600;
@@ -73,6 +80,7 @@
     gap: 8px;
     transition: all 0.2s var(--ease);
     white-space: nowrap;
+    line-height: 1.4;
 }
 
 .studio-tab-btn:hover {
@@ -464,7 +472,76 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
     background: rgba(255, 255, 255, 0.02);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.studio-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+.studio-footer-actions #studioResetBtn,
+.studio-footer-actions .btn-secondary {
+    width: auto !important;
+    min-width: 130px !important;
+    max-width: fit-content !important;
+    height: 42px !important;
+    padding: 0 18px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+}
+
+.studio-footer-actions #studioSaveSyncBtn,
+.studio-footer-actions .btn-primary {
+    width: auto !important;
+    min-width: 170px !important;
+    max-width: fit-content !important;
+    height: 42px !important;
+    padding: 0 22px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 600px) {
+    .studio-modal-footer {
+        flex-direction: column-reverse;
+        gap: 12px;
+        align-items: stretch;
+    }
+    .studio-footer-actions {
+        width: 100%;
+        display: flex;
+        gap: 10px;
+    }
+    .studio-footer-actions #studioResetBtn,
+    .studio-footer-actions #studioSaveSyncBtn {
+        flex: 1 1 50% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    .studio-sync-status {
+        justify-content: center;
+    }
 }
 
 .studio-sync-status {

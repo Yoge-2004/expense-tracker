@@ -542,7 +542,7 @@
                         <span class="studio-sync-dot" id="studioSyncDot"></span>
                         <span id="studioSyncText">Ready</span>
                     </div>
-                    <div style="display:flex; gap:10px;">
+                    <div class="studio-footer-actions">
                         <button type="button" class="btn-secondary" id="studioResetBtn">Reset Defaults</button>
                         <button type="button" class="btn-primary" id="studioSaveSyncBtn">Save & Sync to Cloud</button>
                     </div>
