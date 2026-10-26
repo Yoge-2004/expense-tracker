@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <!-- Unified Theme-Adaptive Brand Favicons -->
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=20261026-gem1">
+    <link rel="icon" type="image/x-icon" href="favicon.ico?v=20261026-gem1">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
     <title>Admin Command Center | Expense Tracker Pro</title>
@@ -393,7 +393,12 @@
                 </div>
 
                 <!-- User Table -->
-                <div class="table-wrapper income-table-container">
+                <div class="table-scroll-hint-mobile">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+                    <span>Swipe horizontally to view all columns</span>
+                    <span class="scroll-arrow">⇄</span>
+                </div>
+                <div class="table-wrapper admin-table-scroll-wrapper">
                     <table class="data-table" style="width:100%; border-collapse:collapse;">
                         <thead>
                             <tr>
@@ -525,7 +530,7 @@
             </section>
 
             <!-- Inference Sandbox & Feedback Moderation Grid -->
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px; margin-top:20px;">
+            <div class="admin-grid-2col admin-ml-grid" style="display:grid; gap:20px; margin-top:20px;">
                 <!-- Interactive Inference Sandbox -->
                 <div class="card">
                     <div class="section-heading" style="margin-bottom:14px;">
@@ -572,7 +577,7 @@
 
         <!-- ── TAB 5: BROADCAST STUDIO ────────────────────────────────── -->
         <section id="broadcastTab" class="admin-content-view" role="tabpanel" style="display:none;">
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px; align-items:start;">
+            <div class="admin-grid-2col admin-broadcast-grid" style="display:grid; gap:24px; align-items:start;">
                 <!-- Announcement Form -->
                 <div class="card">
                     <div class="section-heading" style="margin-bottom:14px;">
@@ -821,7 +826,12 @@
                 </div>
 
                 <!-- Audit Log Table -->
-                <div class="table-wrapper income-table-container">
+                <div class="table-scroll-hint-mobile">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+                    <span>Swipe horizontally to view all columns</span>
+                    <span class="scroll-arrow">⇄</span>
+                </div>
+                <div class="table-wrapper admin-table-scroll-wrapper">
                     <table class="data-table" style="width:100%; border-collapse:collapse;">
                         <thead>
                             <tr>
@@ -886,7 +896,12 @@
                 </div>
 
                 <!-- Database Records Table -->
-                <div class="table-wrapper income-table-container">
+                <div class="table-scroll-hint-mobile">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+                    <span>Swipe horizontally to view all columns</span>
+                    <span class="scroll-arrow">⇄</span>
+                </div>
+                <div class="table-wrapper admin-table-scroll-wrapper">
                     <table class="data-table" style="width:100%; border-collapse:collapse;">
                         <thead>
                             <tr>
