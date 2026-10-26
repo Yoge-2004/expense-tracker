@@ -38,10 +38,10 @@ function isValidEmail(email: string): boolean {
 }
 
 export default function ForgotPasswordScreen() {
-  const { theme } = useAuth();
+  const { theme, themeColors } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
   const isLight = theme === "light";
   const insets = useSafeAreaInsets();
 

@@ -53,9 +53,12 @@
     border-collapse: collapse;
 }
 
-/* Mobile income cards: prevent table-width overflow and keep actions visually consistent with the expense ledger. */
-.income-table-container { width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
-.income-table { width: 100%; max-width: 100%; }
+.income-table-container .income-table {
+    width: 100%;
+    min-width: 580px;
+    border-collapse: collapse;
+}
+.income-table { width: 100%; }
 .income-table .btn-edit,
 .income-table .btn-delete {
     width: 36px; height: 36px; min-width: 36px; min-height: 36px;

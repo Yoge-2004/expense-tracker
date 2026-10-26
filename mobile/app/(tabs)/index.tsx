@@ -154,9 +154,10 @@ export default function DashboardScreen() {
         .catch(() => {});
     }, [userId, refreshUserProfile])
   );
+  const { themeColors } = useAuth();
   const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
 
   // Dynamic responsive window dimensions & adaptive layout breakpoints
   const { width } = useWindowDimensions();

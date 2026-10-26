@@ -115,8 +115,9 @@ export default function SubscriptionsScreen() {
   const { showAlert } = useAlert();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { themeColors } = useAuth();
   const currSym = getCurrencySymbol(currency);
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
   const isLight = theme === 'light';
 
   const { width } = useWindowDimensions();

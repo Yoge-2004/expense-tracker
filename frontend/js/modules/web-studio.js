@@ -246,27 +246,26 @@
     }
 
     function applyAtmosphere(type, uri, opacity, blur) {
-        const heroBg = document.querySelector('.hero-bg');
-        if (!heroBg) return;
+        const bgs = document.querySelectorAll('.hero-bg, .auth-hero-bg');
+        if (!bgs.length) return;
 
-        if (type === 'none') {
-            heroBg.style.backgroundImage = 'none';
-            heroBg.style.filter = 'none';
-            return;
-        }
-
-        if (type === 'custom' && uri) {
-            heroBg.style.backgroundImage = `url("${uri}")`;
-            heroBg.style.backgroundSize = 'cover';
-            heroBg.style.backgroundPosition = 'center';
-            heroBg.style.opacity = `${opacity}`;
-            heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
-        } else {
-            // Preset / default ambient gradients
-            heroBg.style.backgroundImage = '';
-            heroBg.style.opacity = `${opacity}`;
-            heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
-        }
+        bgs.forEach(heroBg => {
+            if (type === 'none') {
+                heroBg.style.backgroundImage = 'none';
+                heroBg.style.filter = 'none';
+            } else if (type === 'custom' && uri) {
+                heroBg.style.backgroundImage = `url("${uri}")`;
+                heroBg.style.backgroundSize = 'cover';
+                heroBg.style.backgroundPosition = 'center';
+                heroBg.style.opacity = `${opacity}`;
+                heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+            } else {
+                // Preset / default ambient gradients
+                heroBg.style.backgroundImage = '';
+                heroBg.style.opacity = `${opacity}`;
+                heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+            }
+        });
     }
 
     // Immediate zero-flicker application on script load

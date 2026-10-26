@@ -47,11 +47,11 @@ function isValidEmail(email: string): boolean {
 }
 
 export default function LoginScreen() {
-  const { login, loginWithGoogle, loginWithBiometrics, isBiometricsAvailable, theme } = useAuth();
+  const { login, loginWithGoogle, loginWithBiometrics, isBiometricsAvailable, theme, themeColors } = useAuth();
   const [isBioLoading, setIsBioLoading] = useState(false);
   const { showAlert } = useAlert();
   const router = useRouter();
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
   const isLight = theme === 'light';
   const insets = useSafeAreaInsets();
 

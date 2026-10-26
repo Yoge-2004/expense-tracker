@@ -98,9 +98,10 @@ export default function AddExpenseScreen() {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [calendarTarget, setCalendarTarget] = useState<'expense' | 'income' | 'savings'>('expense');
 
+  const { themeColors } = useAuth();
   const currSymbol = getCurrencySymbol(currency);
   const isLight = theme === 'light';
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
 
   const handleSuccessNavigate = useCallback(() => {
     router.replace('/(tabs)');

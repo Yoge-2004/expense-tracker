@@ -8,7 +8,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet, safeStorageDelete } from '../services/api';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { registerPushToken, unregisterPushToken } from '../services/notifications';
-import { PreferencesProvider, usePreferences } from './PreferencesContext';
+import { PreferencesProvider, usePreferences, BackgroundAssetConfig } from './PreferencesContext';
+import { ThemeColors, FontTokens } from '../constants/theme';
 
 export { usePreferences } from './PreferencesContext';
 
@@ -39,6 +40,9 @@ export interface AuthContextType extends AuthStateContextType {
   updateCurrency: (currency: string) => Promise<void>;
   isStealthMode: boolean;
   toggleStealthMode: () => Promise<void>;
+  themeColors: ThemeColors;
+  activeFonts: FontTokens;
+  backgroundAsset: BackgroundAssetConfig;
 }
 
 const AuthContext = createContext<AuthStateContextType | undefined>(undefined);
@@ -483,6 +487,9 @@ export function useAuth(): AuthContextType {
       updateCurrency,
       isStealthMode: prefs.isStealthMode,
       toggleStealthMode: prefs.toggleStealthMode,
+      themeColors: prefs.themeColors,
+      activeFonts: prefs.activeFonts,
+      backgroundAsset: prefs.backgroundAsset,
     }),
     [
       auth,
@@ -492,6 +499,9 @@ export function useAuth(): AuthContextType {
       updateCurrency,
       prefs.isStealthMode,
       prefs.toggleStealthMode,
+      prefs.themeColors,
+      prefs.activeFonts,
+      prefs.backgroundAsset,
     ]
   );
 }

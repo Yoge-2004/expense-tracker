@@ -112,10 +112,10 @@ function AnimatedAddTabIcon({
 }
 
 export default function TabLayout() {
-  const { theme } = useAuth();
+  const { theme, themeColors } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
   const isLight = theme === "light";
 
   // High-contrast, WCAG AA/AAA-compliant colors for crisp visibility across light and dark themes

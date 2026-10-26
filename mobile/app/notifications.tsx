@@ -190,12 +190,12 @@ const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: 
 };
 
 export default function NotificationsScreen() {
-  const { userId, theme } = useAuth();
+  const { userId, theme, themeColors } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
   const { openPrompt } = useUpdate();
   const insets = useSafeAreaInsets();
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
 
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
