@@ -80,6 +80,7 @@ public record AdminDatabaseTopologyDto(
             String lastUploadAt,
             String lastError,
             String tokenScopeDiagnosis,
-            boolean isConfigured
+            boolean isConfigured,
+            long latencyMs
     ) {}
 }

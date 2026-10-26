@@ -859,19 +859,34 @@
     }
 
     // ── 3-Tier Multi-Cloud Database Topology ─────────────────────────────────
-    async function loadDatabaseTopology() {
+    async function loadDatabaseTopology(isManualProbe = false) {
+        const sStatusEl = document.getElementById("dbServerStatus");
+        const nStatusEl = document.getElementById("dbNeonStatus");
+        const hStatusEl = document.getElementById("dbHfStatus");
+
+        if (isManualProbe) {
+            if (sStatusEl) { sStatusEl.className = "status-badge badge-warning"; sStatusEl.innerHTML = '<span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px;"></span>PROBING...'; }
+            if (nStatusEl) { nStatusEl.className = "status-badge badge-warning"; nStatusEl.innerHTML = '<span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px;"></span>PROBING...'; }
+            if (hStatusEl) { hStatusEl.className = "status-badge badge-warning"; hStatusEl.innerHTML = '<span class="pulse-dot" style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px;"></span>PROBING...'; }
+            const lat1 = document.getElementById("dbServerLatency");
+            const lat2 = document.getElementById("dbNeonLatency");
+            const lat3 = document.getElementById("dbHfLatency");
+            if (lat1) lat1.textContent = "Pinging…";
+            if (lat2) lat2.textContent = "Pinging…";
+            if (lat3) lat3.textContent = "Pinging…";
+        }
+
         try {
             const data = await apiRequest("/admin/resilience/database-state");
-            if (!data) return;
+            if (!data) throw new Error("No database state returned by server");
 
             // Server Primary Engine
             const s = data.server || data.serverDatabase;
             if (s) {
-                const statusEl = document.getElementById("dbServerStatus");
-                if (statusEl) {
+                if (sStatusEl) {
                     const status = (s.healthStatus || s.status || "ONLINE").toUpperCase();
-                    statusEl.textContent = status.includes("ONLINE") ? "ONLINE" : (status.includes("DEGRADED") ? "DEGRADED" : status);
-                    statusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : (status.includes("DEGRADED") ? "status-badge badge-warning" : "status-badge badge-netflow");
+                    sStatusEl.textContent = status.includes("ONLINE") ? "ONLINE" : (status.includes("DEGRADED") ? "DEGRADED" : status);
+                    sStatusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : (status.includes("DEGRADED") ? "status-badge badge-warning" : "status-badge badge-netflow");
                 }
                 const vendorEl = document.getElementById("dbServerVendor");
                 if (vendorEl) vendorEl.textContent = s.engine || s.vendor || "PostgreSQL";
@@ -888,11 +903,10 @@
             // Neon Serverless PostgreSQL
             const n = data.neon || data.neonCloudDatabase;
             if (n) {
-                const statusEl = document.getElementById("dbNeonStatus");
-                if (statusEl) {
+                if (nStatusEl) {
                     const status = (n.status || "STANDBY").toUpperCase();
-                    statusEl.textContent = status.includes("ONLINE") ? "ONLINE" : "STANDBY";
-                    statusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : "status-badge badge-netflow";
+                    nStatusEl.textContent = status.includes("ONLINE") ? "ONLINE" : "STANDBY";
+                    nStatusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : "status-badge badge-netflow";
                 }
                 const vendorEl = document.getElementById("dbNeonVendor");
                 if (vendorEl) vendorEl.textContent = n.host ? `Serverless (${n.host.split('.')[0]})` : (n.vendor || "Serverless Neon PG");
@@ -909,27 +923,15 @@
             // Hugging Face Spaces Failover
             const h = data.huggingFace || data.huggingFaceSpaces;
             if (h) {
-                const statusEl = document.getElementById("dbHfStatus");
-                if (statusEl) {
+                if (hStatusEl) {
                     const status = (h.status || (h.isConfigured ? "ONLINE" : "STANDBY")).toUpperCase();
-                    statusEl.textContent = status.includes("ONLINE") ? "ONLINE" : "STANDBY";
-                    statusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : "status-badge badge-subs";
+                    hStatusEl.textContent = status.includes("ONLINE") ? "ONLINE" : "STANDBY";
+                    hStatusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : "status-badge badge-subs";
                 }
                 const vendorEl = document.getElementById("dbHfVendor");
                 if (vendorEl) vendorEl.textContent = h.cipherAlgorithm ? `Git LFS + ${h.cipherAlgorithm}` : (h.vendor || "Git LFS + SQLite Cipher");
                 const latEl = document.getElementById("dbHfLatency");
-                if (latEl) {
-                    if (h.lastSuccessAt && h.lastSuccessAt !== "never") {
-                        try {
-                            const d = new Date(h.lastSuccessAt);
-                            latEl.textContent = `Sync: ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-                        } catch (e) {
-                            latEl.textContent = "Synced";
-                        }
-                    } else {
-                        latEl.textContent = `${h.latencyMs ?? 45} ms`;
-                    }
-                }
+                if (latEl) latEl.textContent = `${h.latencyMs ?? 45} ms`;
                 const connEl = document.getElementById("dbHfConns");
                 if (connEl) connEl.textContent = (h.status?.toUpperCase().includes("ONLINE") || h.isConfigured) ? "Ready & Synced" : "Standby";
                 const catEl = document.getElementById("dbHfCatalog");
@@ -938,8 +940,23 @@
                 if (noteEl) noteEl.textContent = h.tokenScopeDiagnosis ? `${h.tokenScopeDiagnosis}` : (h.notes || "Secondary failover replica with AES-256-GCM snapshot sync");
             }
 
+            if (isManualProbe) {
+                document.querySelectorAll("#databaseTopologyGrid .card").forEach(c => {
+                    c.style.transition = "box-shadow 0.35s ease, transform 0.2s ease";
+                    c.style.boxShadow = "0 0 16px rgba(199, 154, 62, 0.45)";
+                    setTimeout(() => { c.style.boxShadow = ""; }, 1000);
+                });
+            }
+
+            return data;
         } catch (e) {
             console.error("Database topology query error:", e);
+            if (isManualProbe) {
+                if (sStatusEl) { sStatusEl.className = "status-badge badge-warning"; sStatusEl.textContent = "UNREACHABLE"; }
+                if (nStatusEl) { nStatusEl.className = "status-badge badge-warning"; nStatusEl.textContent = "STANDBY"; }
+                if (hStatusEl) { hStatusEl.className = "status-badge badge-warning"; hStatusEl.textContent = "STANDBY"; }
+                throw e;
+            }
         }
     }
 
@@ -1485,16 +1502,21 @@
         // 3-Tier Database Cluster Probe
         document.getElementById("btnProbeTopology")?.addEventListener("click", async () => {
             const btn = document.getElementById("btnProbeTopology");
+            const svg = btn?.querySelector("svg");
             if (btn) btn.disabled = true;
+            if (svg) svg.style.animation = "spin 0.8s linear infinite";
+
             showToast("Probing multi-cloud cluster latency & storage states…", "info");
             try {
-                await loadDatabaseTopology();
+                await loadDatabaseTopology(true);
                 await loadResilienceDiagnostics();
                 showToast("Database cluster state refreshed in real time!", "success");
             } catch (err) {
-                showToast("Failed to probe cluster: " + err.message, "error");
+                console.error("Cluster probe failed:", err);
+                showToast("Failed to probe cluster: " + (err.message || "Request failed"), "error");
             } finally {
                 if (btn) btn.disabled = false;
+                if (svg) svg.style.animation = "";
             }
         });
 
