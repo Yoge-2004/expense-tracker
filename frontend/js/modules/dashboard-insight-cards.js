@@ -25,25 +25,32 @@
     /* Visual treatment per insight kind. Colours reuse the semantic tokens
        already defined in variables/tokens.css rather than introducing new
        hardcoded hex values. */
-    const KIND_STYLE = {
-        caution:       { icon: "⚠️", varName: "--metric-savings", fallback: "#F59E0B" },
-        positive:      { icon: "✅", varName: "--metric-inflow",  fallback: "#10B981" },
-        informational: { icon: "💡", varName: "--metric-netflow", fallback: "#3B82F6" }
+    const SVG_ICONS = {
+        caution: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        positive: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        informational: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+        "month-over-month": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+        "projection": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>',
+        "temporal-pattern": '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        category: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        anomaly: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+        recurring: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>',
+        goal: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
     };
 
-    const ID_ICONS = {
-        "month-over-month": "📈",
-        "projection": "🔮",
-        "temporal-pattern": "🗓️"
+    const KIND_STYLE = {
+        caution:       { icon: SVG_ICONS.caution, varName: "--metric-savings", fallback: "#F59E0B" },
+        positive:      { icon: SVG_ICONS.positive, varName: "--metric-inflow",  fallback: "#10B981" },
+        informational: { icon: SVG_ICONS.informational, varName: "--metric-netflow", fallback: "#3B82F6" }
     };
 
     function iconFor(insight) {
-        if (ID_ICONS[insight.id]) return ID_ICONS[insight.id];
-        if (insight.id.startsWith("category-trend")) return "📊";
-        if (insight.id.startsWith("anomaly")) return "🔍";
-        if (insight.id.startsWith("recurring")) return "🔄";
-        if (insight.id.startsWith("goal")) return "🎯";
-        return KIND_STYLE[insight.kind]?.icon || "💡";
+        if (SVG_ICONS[insight.id]) return SVG_ICONS[insight.id];
+        if (insight.id.startsWith("category-trend")) return SVG_ICONS.category;
+        if (insight.id.startsWith("anomaly")) return SVG_ICONS.anomaly;
+        if (insight.id.startsWith("recurring")) return SVG_ICONS.recurring;
+        if (insight.id.startsWith("goal")) return SVG_ICONS.goal;
+        return KIND_STYLE[insight.kind]?.icon || SVG_ICONS.informational;
     }
 
     /* A moderate/low-confidence insight is labelled as such in the UI. The

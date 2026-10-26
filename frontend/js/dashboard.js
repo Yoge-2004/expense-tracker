@@ -346,7 +346,7 @@ function renderList(expenses) {
     if (expenses.length === 0) {
         elements.expenseList.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">💸</div>
+                <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
                 <div class="empty-state-title">No transactions yet</div>
                 <div class="empty-state-sub">Click <strong>Record Expense</strong> above to add your first transaction and start tracking your finances.</div>
             </div>`;
@@ -367,7 +367,7 @@ function renderList(expenses) {
                 <div class="expense-meta" style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
                     <span>${formatDate(exp.expenseDate)}</span>
                     <span class="cat-chip" style="background:${catColor.bg}; color:${catColor.color}; border:1px solid ${catColor.color}30;">${escapeHtml(catName)}</span>
-                    ${isRecurring ? '<span style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; font-weight:600; color:var(--accent); background:rgba(162,62,50,0.08); padding:2px 8px; border-radius:3px; border:1px solid rgba(162,62,50,0.35);">⟳ RECURRING</span>' : ''}
+                    ${isRecurring ? '<span style="font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; font-weight:600; color:var(--accent); background:rgba(162,62,50,0.08); padding:2px 8px; border-radius:3px; border:1px solid rgba(162,62,50,0.35); display:inline-flex; align-items:center; gap:3px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>RECURRING</span>' : ''}
                 </div>
             </div>
             <div class="expense-actions-col" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
@@ -1355,7 +1355,7 @@ const TransferDock = (() => {
         dockEl.innerHTML = `
             <div class="transfer-dock-header">
                 <div class="transfer-dock-file">
-                    <div class="transfer-dock-icon" id="transferDockIcon">📄</div>
+                    <div class="transfer-dock-icon" id="transferDockIcon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                     <div class="transfer-dock-info">
                         <div class="transfer-dock-filename" id="transferDockFilename">File</div>
                         <div class="transfer-dock-status" id="transferDockStatus">Initializing...</div>
@@ -1377,11 +1377,19 @@ const TransferDock = (() => {
 
     function getIconForFile(filename) {
         const lower = String(filename || "").toLowerCase();
-        if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) return "📊";
-        if (lower.endsWith(".pdf")) return "📑";
-        if (lower.endsWith(".csv")) return "📋";
-        if (lower.endsWith(".json")) return "⚙️";
-        return "📁";
+        if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
+            return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>';
+        }
+        if (lower.endsWith(".pdf")) {
+            return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+        }
+        if (lower.endsWith(".csv")) {
+            return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>';
+        }
+        if (lower.endsWith(".json")) {
+            return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+        }
+        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
     }
 
     return {
@@ -1390,7 +1398,7 @@ const TransferDock = (() => {
             const dock = getOrCreateDock();
             dock.className = `transfer-dock active ${mode}-mode`;
             const iconEl = document.getElementById("transferDockIcon");
-            if (iconEl) iconEl.textContent = getIconForFile(filename);
+            if (iconEl) iconEl.innerHTML = getIconForFile(filename);
             const nameEl = document.getElementById("transferDockFilename");
             if (nameEl) nameEl.textContent = filename;
             const statusEl = document.getElementById("transferDockStatus");
@@ -1434,7 +1442,7 @@ const TransferDock = (() => {
                 badge.textContent = "Complete";
             }
             const iconEl = document.getElementById("transferDockIcon");
-            if (iconEl) iconEl.textContent = "✅";
+            if (iconEl) iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
             const fill = document.getElementById("transferDockFill");
             if (fill) fill.style.width = "100%";
             const pctEl = document.getElementById("transferDockPct");
@@ -1459,7 +1467,7 @@ const TransferDock = (() => {
                 badge.textContent = "Failed";
             }
             const iconEl = document.getElementById("transferDockIcon");
-            if (iconEl) iconEl.textContent = "⚠️";
+            if (iconEl) iconEl.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
             const statusEl = document.getElementById("transferDockStatus");
             if (statusEl) statusEl.textContent = errorMessage;
             const detail = document.getElementById("transferDockDetail");
@@ -1935,7 +1943,7 @@ function renderSubsModalContent() {
     if (isSubsOffline) {
         elements.subsList.innerHTML = `
             <div class="empty-state connection-error" style="text-align:center; padding:36px 16px;">
-                <div class="empty-state-icon" style="font-size:32px; margin-bottom:8px;">⚠️</div>
+                <div class="empty-state-icon" style="margin-bottom:8px;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
                 <div class="empty-state-title" style="font-weight:600; font-size:15px; margin-bottom:6px; color:var(--text-main);">Server Connection Failed</div>
                 <div class="empty-state-sub" style="color:var(--text-muted); font-size:13px; max-width:340px; margin:0 auto 16px;">
                     Could not reach the server to load your subscriptions and recurring cash flow.
@@ -2001,8 +2009,8 @@ function renderSubsModalContent() {
             return `
             <div class="sub-row" style="display:flex; justify-content:space-between; align-items:center; padding:14px 12px; border-bottom:1px solid var(--border); margin-bottom:8px; border-radius:12px; background:var(--card-bg); transition:background 0.2s;" onmouseenter="this.style.background='var(--input-bg)'" onmouseleave="this.style.background='var(--card-bg)'">
                 <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
-                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); display:inline-flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;">
-                        🪙
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg>
                     </div>
                     <div style="flex:1; min-width:0;">
                         <div style="font-weight:700; color:var(--text-main); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -2012,7 +2020,7 @@ function renderSubsModalContent() {
                             <span>Installment: <span style="color:#F59E0B; font-weight:700;">${formatCurrency(goal.recurringAmount || 0)}</span></span>
                             <span style="opacity:0.4;">•</span>
                             <span style="background:rgba(245,158,11,0.12); color:#F59E0B; border:1px solid rgba(245,158,11,0.3); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">
-                                🔁 ${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
                             </span>
                             ${goal.nextDueDate ? `<span style="opacity:0.4;">•</span><span>Next: <strong style="color:var(--text-main);">${formatDate(goal.nextDueDate)}</strong></span>` : ''}
                         </div>
@@ -2059,7 +2067,7 @@ function renderSubsModalContent() {
                             <span style="font-weight:600; color:#10B981;">+${formatCurrency(inc.amount)}</span>
                             <span style="opacity:0.4;">•</span>
                             <span style="background:rgba(16,185,129,0.12); color:#10B981; border:1px solid rgba(16,185,129,0.3); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.04em; text-transform:uppercase;">
-                                ⟳ ${freqLabel}
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>${freqLabel}
                             </span>
                         </div>
                     </div>
@@ -2402,7 +2410,7 @@ if (webAvatarFileInput) {
             const currentName = localStorage.getItem("userName") || "User";
             renderDashboardAvatar(currentName, newUrl);
             updateModalAvatarPreview(currentName, newUrl);
-            showToast("Profile picture updated successfully! 📸", "success");
+            showToast("Profile picture updated successfully!", "success");
             if (avatarUploadStatus) avatarUploadStatus.textContent = "";
         } catch (err) {
             showToast(err.message || "Failed to upload profile picture.", "error");
@@ -2674,7 +2682,7 @@ function applyIncomeFilters() {
     if (!allIncomes || allIncomes.length === 0) {
         listEl.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">💰</div>
+                <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg></div>
                 <div class="empty-state-title">No income records logged yet</div>
                 <div class="empty-state-sub">Click <strong>Record Income</strong> above to track your salary, investments, client retainers, or other inflows.</div>
             </div>`;
@@ -2749,20 +2757,44 @@ function applyIncomeFilters() {
 }
 window.applyIncomeFilters = applyIncomeFilters;
 
-function getIncomeSourceEmoji(source) {
+function getIncomeSourceSvg(source) {
     const s = (source || '').toLowerCase();
-    if (s.includes('salary') || s.includes('paycheck') || s.includes('wage') || s.includes('job') || s.includes('employer')) return '💼';
-    if (s.includes('freelance') || s.includes('contract') || s.includes('consult') || s.includes('client') || s.includes('gig')) return '💻';
-    if (s.includes('invest') || s.includes('stock') || s.includes('equity') || s.includes('mutual') || s.includes('crypto') || s.includes('trading')) return '📈';
-    if (s.includes('dividend') || s.includes('interest') || s.includes('yield') || s.includes('capital gain')) return '💰';
-    if (s.includes('rental') || s.includes('rent') || s.includes('real estate') || s.includes('property') || s.includes('tenant') || s.includes('airbnb')) return '🏢';
-    if (s.includes('business') || s.includes('sales') || s.includes('revenue') || s.includes('store') || s.includes('commerce') || s.includes('shop')) return '🏬';
-    if (s.includes('bonus') || s.includes('commission') || s.includes('incentive') || s.includes('prize') || s.includes('reward')) return '🏆';
-    if (s.includes('gift') || s.includes('grant') || s.includes('allowance') || s.includes('scholarship') || s.includes('donation')) return '🎁';
-    if (s.includes('refund') || s.includes('reimburse') || s.includes('cashback') || s.includes('tax refund')) return '💳';
-    if (s.includes('pension') || s.includes('retirement') || s.includes('social security') || s.includes('401k') || s.includes('ira')) return '🏦';
-    return '💵';
+    if (s.includes('salary') || s.includes('paycheck') || s.includes('wage') || s.includes('job') || s.includes('employer')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
+    }
+    if (s.includes('freelance') || s.includes('contract') || s.includes('consult') || s.includes('client') || s.includes('gig')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>';
+    }
+    if (s.includes('invest') || s.includes('stock') || s.includes('equity') || s.includes('mutual') || s.includes('crypto') || s.includes('trading')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
+    }
+    if (s.includes('dividend') || s.includes('interest') || s.includes('yield') || s.includes('capital gain')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/></svg>';
+    }
+    if (s.includes('rental') || s.includes('rent') || s.includes('real estate') || s.includes('property') || s.includes('tenant') || s.includes('airbnb')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>';
+    }
+    if (s.includes('business') || s.includes('sales') || s.includes('revenue') || s.includes('store') || s.includes('commerce') || s.includes('shop')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+    }
+    if (s.includes('bonus') || s.includes('commission') || s.includes('incentive') || s.includes('prize') || s.includes('reward')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>';
+    }
+    if (s.includes('gift') || s.includes('grant') || s.includes('allowance') || s.includes('scholarship') || s.includes('donation')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
+    }
+    if (s.includes('refund') || s.includes('reimburse') || s.includes('cashback') || s.includes('tax refund')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
+    }
+    if (s.includes('pension') || s.includes('retirement') || s.includes('social security') || s.includes('401k') || s.includes('ira')) {
+        return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="12 3 2 10 22 10 12 3"/><line x1="6" y1="10" x2="6" y2="21"/><line x1="10" y1="10" x2="10" y2="21"/><line x1="14" y1="10" x2="14" y2="21"/><line x1="18" y1="10" x2="18" y2="21"/></svg>';
+    }
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
 }
+function getIncomeSourceEmoji(source) {
+    return getIncomeSourceSvg(source);
+}
+window.getIncomeSourceSvg = getIncomeSourceSvg;
 window.getIncomeSourceEmoji = getIncomeSourceEmoji;
 
 function renderIncomesTableOnly(incomes) {
@@ -2774,7 +2806,7 @@ function renderIncomesTableOnly(incomes) {
         if (isFiltered) {
             listEl.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">🔍</div>
+                    <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
                     <div class="empty-state-title">No matching incomes found</div>
                     <div class="empty-state-sub">Try adjusting your search query, cadence filter, or date range.</div>
                     <button type="button" class="btn-icon btn-text-icon" onclick="resetIncomeFilters()" style="display:inline-flex; align-items:center; gap:6px; margin:12px auto 0; cursor:pointer;">
@@ -2784,7 +2816,7 @@ function renderIncomesTableOnly(incomes) {
         } else {
             listEl.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">💰</div>
+                    <div class="empty-state-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.85;"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5a2.5 2.5 0 0 0-5 0c0 3 5 2 5 5a2.5 2.5 0 0 1-5 0"/></svg></div>
                     <div class="empty-state-title">No income records logged yet</div>
                     <div class="empty-state-sub">Click <strong>Record Income</strong> above to track your salary, investments, client retainers, or other inflows.</div>
                 </div>`;
@@ -2824,8 +2856,8 @@ function renderIncomesTableOnly(incomes) {
                             <td class="income-desc-cell" style="padding:10px 12px; color:var(--text-muted); font-size:13px; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(inc.description || "")}">${escapeHtml(inc.description || "—")}</td>
                             <td style="padding:12px 14px;">
                                 ${isRec 
-                                    ? `<span class="status-badge badge-success" style="font-size:11px; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:5px;"><span style="font-size:12px;">⟳</span> Recurring (${freqLabel})</span>` 
-                                    : '<span class="status-badge badge-neutral" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;"><span style="font-size:11px;">⚡</span> One-Time</span>'}
+                                    ? `<span class="status-badge badge-success" style="font-size:11px; background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:5px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Recurring (${freqLabel})</span>` 
+                                    : '<span class="status-badge badge-neutral" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> One-Time</span>'}
                             </td>
                             <td style="padding:12px 14px; text-align:right; font-weight:700; color:#10B981; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:14px;">
                                 +${formatCurrency(inc.amount)}
@@ -2988,13 +3020,13 @@ function renderSavingsGoals(goals) {
                         <span style="font-size:11.5px; color:var(--text-muted);">Target: ${goal.targetDate || "Flexible"}</span>
                         ${goal.isRecurring ? `
                             <div style="margin-top:4px; font-size:11px; color:#F59E0B; display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(245,158,11,0.25);">
-                                🔁 <strong>${formatCurrency(goal.recurringAmount)}</strong> / ${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px; margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><strong>${formatCurrency(goal.recurringAmount)}</strong> / ${escapeHtml(formatGoalFrequency(goal.frequency, goal.intervalDays))}
                                 ${goal.nextDueDate ? `• Next: ${formatDate(goal.nextDueDate)}` : ''}
                             </div>
                         ` : ''}
                     </div>
                     ${isCompleted 
-                        ? '<span class="status-badge badge-success badge-pulse-glow" style="font-size:11px;">Completed 🎯</span>'
+                        ? '<span class="status-badge badge-success badge-pulse-glow" style="font-size:11px; display:inline-flex; align-items:center; gap:4px;">Completed <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>'
                         : `<span class="status-badge badge-warning" style="font-size:11px;">${ratio}% Achieved</span>`}
                 </div>
                 
@@ -3498,7 +3530,7 @@ savingsDepositForm?.addEventListener("submit", async (e) => {
             body: JSON.stringify({ amount })
         });
         celebrateSuccess(e.clientX, e.clientY);
-        showToast("Deposit contributed successfully! 🎯", "success");
+        showToast("Deposit contributed successfully!", "success");
         closeModal(savingsDepositModal);
         await loadDashboard(true);
     } catch (err) {
@@ -3758,13 +3790,13 @@ function setPeriodModalMode(mode) {
     const exportActions = document.getElementById("periodExportModeActions");
 
     if (mode === "export") {
-        if (modalIcon) modalIcon.textContent = "📥";
+        if (modalIcon) modalIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
         if (modalTitle) modalTitle.textContent = "Export Monthly Summary";
         if (modalSubtitle) modalSubtitle.textContent = "Select statement period & format to download your financial records.";
         if (viewActions) viewActions.style.display = "none";
         if (exportActions) exportActions.style.display = "block";
     } else {
-        if (modalIcon) modalIcon.textContent = "📊";
+        if (modalIcon) modalIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>';
         if (modalTitle) modalTitle.textContent = "View Monthly Report";
         if (modalSubtitle) modalSubtitle.textContent = "Account inception:";
         if (viewActions) viewActions.style.display = "block";
@@ -4338,8 +4370,8 @@ async function openSecurityPinDialog() {
             pinStatusIndicator.style.border = `1px solid ${hasPin ? "#4C7A78" : "#E6A23C"}`;
             pinStatusIndicator.style.color = hasPin ? "#4C7A78" : "#E6A23C";
             pinStatusIndicator.innerHTML = hasPin
-                ? `<span>🔒 <strong>Active:</strong> 6-Digit PIN is set. Enter a new PIN below if you want to update it.</span>`
-                : `<span>⚠️ <strong>Not Configured:</strong> Set a 6-digit PIN below for zero-email instant recovery.</span>`;
+                ? `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Active:</strong> 6-Digit PIN is set. Enter a new PIN below if you want to update it.</span>`
+                : `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Not Configured:</strong> Set a 6-digit PIN below for zero-email instant recovery.</span>`;
         }
     } catch (err) {
         console.warn("Could not fetch user security status:", err);
@@ -4384,7 +4416,7 @@ securityPinForm?.addEventListener("submit", async (e) => {
             method: "PUT",
             body: JSON.stringify({ securityPin: newPin })
         });
-        showToast("Security PIN updated successfully! 🔒", "success");
+        showToast("Security PIN updated successfully!", "success");
         closeModal(securityPinModal);
     } catch (err) {
         showToast(err.message || "Failed to update Security PIN", "error");
@@ -4408,14 +4440,14 @@ async function renderBiometricsModal() {
     biometricsStatusIndicator.style.background = "rgba(100, 116, 139, 0.1)";
     biometricsStatusIndicator.style.border = "1px solid rgba(100, 116, 139, 0.2)";
     biometricsStatusIndicator.style.color = "var(--text-muted)";
-    biometricsStatusIndicator.innerHTML = `<span>⏳ Checking biometric authenticator & passkey status...</span>`;
+    biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Checking biometric authenticator & passkey status...</span>`;
     biometricsActionsContainer.innerHTML = "";
 
     if (!window.WebBiometrics) {
         biometricsStatusIndicator.style.background = "rgba(230, 80, 60, 0.15)";
         biometricsStatusIndicator.style.border = "1px solid #E6503C";
         biometricsStatusIndicator.style.color = "#E6503C";
-        biometricsStatusIndicator.innerHTML = `<span>⚠️ <strong>Module Unavailable:</strong> Biometrics script could not be loaded.</span>`;
+        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Module Unavailable:</strong> Biometrics script could not be loaded.</span>`;
         return;
     }
 
@@ -4444,7 +4476,7 @@ async function renderBiometricsModal() {
         biometricsStatusIndicator.style.background = "rgba(230, 162, 60, 0.15)";
         biometricsStatusIndicator.style.border = "1px solid #E6A23C";
         biometricsStatusIndicator.style.color = "#E6A23C";
-        biometricsStatusIndicator.innerHTML = `<span>⚠️ <strong>Device Unsupported:</strong> ${safeEscapeBio(msg)}</span>`;
+        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><strong>Device Unsupported:</strong> ${safeEscapeBio(msg)}</span>`;
 
         if (isServerEnabled) {
             biometricsActionsContainer.innerHTML = `
@@ -4463,11 +4495,11 @@ async function renderBiometricsModal() {
         biometricsStatusIndicator.style.background = "rgba(76, 122, 120, 0.15)";
         biometricsStatusIndicator.style.border = "1px solid #4C7A78";
         biometricsStatusIndicator.style.color = "#4C7A78";
-        biometricsStatusIndicator.innerHTML = `<span>🔒 <strong>Passkey Active:</strong> Biometric sign-in is active for your account. You can sign in passwordless using Touch ID, Face ID, or Windows Hello.</span>`;
+        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Passkey Active:</strong> Biometric sign-in is active for your account. You can sign in passwordless using Touch ID, Face ID, or Windows Hello.</span>`;
 
         biometricsActionsContainer.innerHTML = `
             <button type="button" id="registerAnotherPasskeyBtn" class="btn-secondary" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                🧬 Register / Update Passkey for This Device
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34"/><path d="M21 12a9 9 0 0 0-9-9"/><path d="M12 7a5 5 0 0 1 5 5"/></svg> Register / Update Passkey for This Device
             </button>
             <button type="button" id="removePasskeyBtn" class="btn-danger" style="width:100%; padding:9px 12px; font-size:13px; display:flex; align-items:center; justify-content:center; gap:6px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -4480,11 +4512,11 @@ async function renderBiometricsModal() {
         biometricsStatusIndicator.style.background = "rgba(100, 116, 139, 0.12)";
         biometricsStatusIndicator.style.border = "1px solid rgba(100, 116, 139, 0.25)";
         biometricsStatusIndicator.style.color = "var(--text-muted)";
-        biometricsStatusIndicator.innerHTML = `<span>⚪ <strong>Not Configured:</strong> No biometric passkeys are linked to your account. Set up biometric unlock to sign in without passwords.</span>`;
+        biometricsStatusIndicator.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg><strong>Not Configured:</strong> No biometric passkeys are linked to your account. Set up biometric unlock to sign in without passwords.</span>`;
 
         biometricsActionsContainer.innerHTML = `
             <button type="button" id="enablePasskeyBtn" class="btn-primary" style="width:100%; padding:10px 14px; font-size:13.5px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                🧬 Set Up Biometric Sign-In on This Device
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34"/><path d="M21 12a9 9 0 0 0-9-9"/><path d="M12 7a5 5 0 0 1 5 5"/></svg> Set Up Biometric Sign-In on This Device
             </button>
         `;
         document.getElementById("enablePasskeyBtn")?.addEventListener("click", handleEnrollBiometrics);
@@ -4498,7 +4530,7 @@ async function handleEnrollBiometrics() {
     const userEmail = localStorage.getItem("userEmail") || (window.currentUser && window.currentUser.email) || "user";
     try {
         await window.WebBiometrics.enroll(userEmail, token);
-        showToast("Biometric passkey registered successfully! 🧬", "success");
+        showToast("Biometric passkey registered successfully!", "success");
         await renderBiometricsModal();
     } catch (err) {
         showToast(err.message || "Biometric registration was cancelled.", "info");

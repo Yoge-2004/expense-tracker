@@ -415,7 +415,7 @@
 
             if (useBtn) {
                 const oldText = useBtn.innerHTML;
-                useBtn.innerHTML = `<span>Applied ✓</span>`;
+                useBtn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px;">Applied <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>`;
                 setTimeout(() => { useBtn.innerHTML = oldText; }, 1400);
             }
         } else {
@@ -436,7 +436,7 @@
 
             if (useBtn) {
                 const oldText = useBtn.innerHTML;
-                useBtn.innerHTML = `<span>Opened In Expense ✓</span>`;
+                useBtn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:4px;">Opened In Expense <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>`;
                 setTimeout(() => { useBtn.innerHTML = oldText; }, 1400);
             }
         }

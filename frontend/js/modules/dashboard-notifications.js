@@ -244,7 +244,7 @@
         playCustomNotificationSound();
 
         const formattedAmt = formatNotificationCurrency(parsed.amount, parsed.currency);
-        const title = `💸 Instant Debit Alert: ${formattedAmt}`;
+        const title = `Instant Debit Alert: ${formattedAmt}`;
         const merchantPart = parsed.merchant ? ` at ${parsed.merchant}` : "";
         const accPart = parsed.accountTail ? ` (Card/A/c xx${parsed.accountTail})` : "";
         const body = `Spent ${formattedAmt}${merchantPart}${accPart}. Tap to record or categorize now.`;
@@ -462,7 +462,7 @@
     async function notifySalaryCredit(amount, currency = '₹', source = 'Salary') {
         playCustomNotificationSound();
         const formattedAmt = formatNotificationCurrency(amount, currency);
-        const title = `💰 ${source} Credited: ${formattedAmt}`;
+        const title = `${source} Credited: ${formattedAmt}`;
         const body = 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!';
         if ('Notification' in window && Notification.permission === 'granted') {
             try {
@@ -494,7 +494,7 @@
         const formatted = window.DashboardUtils && typeof window.DashboardUtils.formatCurrency === "function"
             ? window.DashboardUtils.formatCurrency(Number(amount))
             : formatNotificationCurrency(amount);
-        const title = `${isDebit ? "💸 Debit" : "💰 Credit"} recorded: ${formatted}`;
+        const title = `${isDebit ? "Debit" : "Credit"} recorded: ${formatted}`;
         const body = [label, detail].filter((part) => part && String(part).trim()).join(" · ")
             || (isDebit ? "Expense saved." : "Income saved.");
         const tag = `transaction-${Date.now()}`;
@@ -518,8 +518,8 @@
         playCustomNotificationSound();
         const isExceeded = percentSpent >= 100;
         const title = isExceeded
-            ? `🚨 Budget Exceeded: ${categoryName}`
-            : `⚠️ Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
+            ? `Budget Exceeded: ${categoryName}`
+            : `Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
         const remainingFormatted = formatNotificationCurrency(Math.abs(remainingAmt), currency);
         const body = isExceeded
             ? `You have exceeded your limit for ${categoryName} by ${remainingFormatted}.`

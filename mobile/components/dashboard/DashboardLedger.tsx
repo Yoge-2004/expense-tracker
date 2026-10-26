@@ -4,11 +4,13 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  FlatList,
   PanResponder,
   NativeSyntheticEvent,
   NativeScrollEvent,
   LayoutChangeEvent,
   Animated,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -50,6 +52,9 @@ export interface DashboardLedgerProps {
 
 const LedgerSeparator = () => <View style={styles.ledgerSeparator} />;
 
+// Isolate bounded VirtualizedList from ancestor ScrollView to prevent nesting warnings
+const ScrollContext = (ScrollView as any).Context;
+
 export const DashboardLedger = memo(function DashboardLedger({
   colors: c,
   theme,
@@ -78,11 +83,10 @@ export const DashboardLedger = memo(function DashboardLedger({
   onRowDelete,
 }: DashboardLedgerProps) {
   const [showFilters, setShowFilters] = useState(false);
-  const [ledgerDisplayLimit, setLedgerDisplayLimit] = useState(20);
   const ledgerScrollY = useRef(new Animated.Value(0)).current;
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
-  const ledgerScrollRef = useRef<any>(null);
+  const ledgerFlatListRef = useRef<FlatList<UnifiedTxItem>>(null);
 
   const toggleFilterPanel = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -107,11 +111,6 @@ export const DashboardLedger = memo(function DashboardLedger({
     [ledgerTab, setLedgerTab]
   );
 
-  const displayedTransactions = useMemo(
-    () => unifiedTransactions.slice(0, ledgerDisplayLimit),
-    [unifiedTransactions, ledgerDisplayLimit]
-  );
-
   const onLedgerContentSize = useCallback((_w: number, h: number) => setLedgerContentHeight(h), []);
   const onLedgerLayout = useCallback((e: LayoutChangeEvent) => setLedgerViewHeight(e.nativeEvent.layout.height), []);
   const onLedgerScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -120,9 +119,73 @@ export const DashboardLedger = memo(function DashboardLedger({
 
   // Changing filters resets the list view to top
   useEffect(() => {
-    ledgerScrollRef.current?.scrollTo({ y: 0, animated: false });
-    setLedgerDisplayLimit(20);
+    ledgerFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
+
+  const renderRow = useCallback(
+    ({ item }: { item: UnifiedTxItem }) => (
+      <TransactionRow
+        tx={item}
+        colors={c}
+        currSymbol={currSymbol}
+        isStealth={isStealthMode}
+        onPress={onRowPress}
+        onEdit={onRowEdit}
+        onDelete={onRowDelete}
+      />
+    ),
+    [c, currSymbol, isStealthMode, onRowPress, onRowEdit, onRowDelete]
+  );
+
+  const renderListFooter = useCallback(() => {
+    if (unifiedTransactions.length === 0) return null;
+    return (
+      <View style={styles.ledgerEndBanner}>
+        <View style={[styles.ledgerEndLine, { backgroundColor: c.border }]} />
+        <View style={styles.ledgerEndContent}>
+          <Ionicons name="checkmark-circle-outline" size={13} color={c.textMuted} />
+          <Text style={[styles.ledgerEndText, { color: c.textMuted }]}>
+            All {unifiedTransactions.length} transaction{unifiedTransactions.length === 1 ? '' : 's'} loaded
+          </Text>
+        </View>
+        <View style={[styles.ledgerEndLine, { backgroundColor: c.border }]} />
+      </View>
+    );
+  }, [unifiedTransactions.length, c.border, c.textMuted]);
+
+  const keyExtractor = useCallback((item: UnifiedTxItem) => item.uniqueKey, []);
+
+  const listElement = (
+    <>
+      <FlatList
+        ref={ledgerFlatListRef}
+        data={unifiedTransactions}
+        keyExtractor={keyExtractor}
+        renderItem={renderRow}
+        ItemSeparatorComponent={LedgerSeparator}
+        ListFooterComponent={renderListFooter}
+        style={styles.innerListScroll}
+        contentContainerStyle={styles.transactionsList}
+        nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={onLedgerScroll}
+        onContentSizeChange={onLedgerContentSize}
+        onLayout={onLedgerLayout}
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
+      />
+      <ThemedScrollbar
+        scrollY={ledgerScrollY}
+        contentHeight={ledgerContentHeight}
+        viewHeight={ledgerViewHeight}
+        trackColor={c.scrollTrack}
+        thumbColor={c.scrollThumb}
+      />
+    </>
+  );
 
   return (
     <View style={[styles.ledgerContainer, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -130,7 +193,7 @@ export const DashboardLedger = memo(function DashboardLedger({
       <View style={styles.ledgerHeader}>
         <View style={styles.ledgerHeaderLeft}>
           <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Transactions</Text>
-          <View style={[styles.countBadge, { backgroundColor: c.primary + '18' }]}>
+          <View style={[styles.countBadge, { backgroundColor: c.primary + '18' }]}>\
             <Text style={[styles.countBadgeText, { color: c.primary }]}>
               {unifiedTransactions.length}
             </Text>
@@ -139,7 +202,7 @@ export const DashboardLedger = memo(function DashboardLedger({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={toggleFilterPanel}
-          style={[
+          style={[\
             styles.filterToggleBtn,
             {
               backgroundColor: showFilters ? c.primary + '20' : c.inputBg,
@@ -153,7 +216,7 @@ export const DashboardLedger = memo(function DashboardLedger({
             color={showFilters ? c.primary : c.textMuted}
           />
           <Text
-            style={[
+            style={[\
               styles.filterToggleText,
               { color: showFilters ? c.primary : c.textMuted },
             ]}
@@ -275,54 +338,12 @@ export const DashboardLedger = memo(function DashboardLedger({
                 : 'Log transactions to see live inflows and outflows.'}
             </Text>
           </View>
+        ) : ScrollContext?.Provider ? (
+          <ScrollContext.Provider value={null}>
+            {listElement}
+          </ScrollContext.Provider>
         ) : (
-          <>
-            <ScrollView
-              ref={ledgerScrollRef}
-              style={styles.innerListScroll}
-              contentContainerStyle={styles.transactionsList}
-              nestedScrollEnabled={true}
-              showsVerticalScrollIndicator={false}
-              scrollEventThrottle={16}
-              onScroll={onLedgerScroll}
-              onContentSizeChange={onLedgerContentSize}
-              onLayout={onLedgerLayout}
-            >
-              {displayedTransactions.map((item, idx) => (
-                <React.Fragment key={item.uniqueKey}>
-                  {idx > 0 && <LedgerSeparator />}
-                  <TransactionRow
-                    tx={item}
-                    colors={c}
-                    currSymbol={currSymbol}
-                    isStealth={isStealthMode}
-                    onPress={onRowPress}
-                    onEdit={onRowEdit}
-                    onDelete={onRowDelete}
-                  />
-                </React.Fragment>
-              ))}
-              {unifiedTransactions.length > ledgerDisplayLimit && (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => setLedgerDisplayLimit((prev) => prev + 20)}
-                  style={[styles.loadMoreRowBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
-                >
-                  <Text style={[styles.loadMoreRowText, { color: c.primary }]}>
-                    Load More ({unifiedTransactions.length - ledgerDisplayLimit} remaining)
-                  </Text>
-                  <Ionicons name="chevron-down" size={14} color={c.primary} />
-                </TouchableOpacity>
-              )}
-            </ScrollView>
-            <ThemedScrollbar
-              scrollY={ledgerScrollY}
-              contentHeight={ledgerContentHeight}
-              viewHeight={ledgerViewHeight}
-              trackColor={c.scrollTrack}
-              thumbColor={c.scrollThumb}
-            />
-          </>
+          listElement
         )}
       </View>
     </View>

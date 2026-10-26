@@ -382,7 +382,7 @@
                     if (successBox) {
                         successBox.style.display = "flex";
                         if (summaryTextEl) {
-                            summaryTextEl.textContent = `✨ Extracted: ${parsed.merchant || "Store"} · ₹${parsed.amount || "0"} (${parsed.confidence}% OCR confidence)`;
+                            summaryTextEl.textContent = `Extracted: ${parsed.merchant || "Store"} · ₹${parsed.amount || "0"} (${parsed.confidence}% OCR confidence)`;
                         }
                     }
 
@@ -398,23 +398,23 @@
                         let pillsHtml = "";
                         const gt = bd.grandTotal || parsed.amount;
                         if (gt) {
-                            pillsHtml += `<button type="button" class="receipt-breakdown-pill active" data-amt="${gt}" title="Click to apply Grand Total">💰 Total: ₹${gt.toFixed(2)}</button>`;
+                            pillsHtml += `<button type="button" class="receipt-breakdown-pill active" data-amt="${gt}" title="Click to apply Grand Total"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:-1px; margin-right:4px;"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>Total: ₹${gt.toFixed(2)}</button>`;
                         }
                         if (bd.subtotal && bd.subtotal !== gt) {
-                            pillsHtml += `<button type="button" class="receipt-breakdown-pill" data-amt="${bd.subtotal}" title="Click to apply Subtotal (pre-tax)">📦 Subtotal: ₹${bd.subtotal.toFixed(2)}</button>`;
+                            pillsHtml += `<button type="button" class="receipt-breakdown-pill" data-amt="${bd.subtotal}" title="Click to apply Subtotal (pre-tax)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:-1px; margin-right:4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Subtotal: ₹${bd.subtotal.toFixed(2)}</button>`;
                         }
                         if (bd.totalTax) {
                             let taxTag = "GST/Tax";
                             if (bd.cgst && bd.sgst) taxTag = `CGST+SGST (₹${bd.cgst} + ₹${bd.sgst})`;
                             else if (bd.igst) taxTag = `IGST (₹${bd.igst})`;
                             else if (bd.vat) taxTag = `VAT (₹${bd.vat})`;
-                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Identified tax breakdown">🏛️ ${taxTag}: ₹${bd.totalTax.toFixed(2)}</span>`;
+                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Identified tax breakdown"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:-1px; margin-right:4px;"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>${taxTag}: ₹${bd.totalTax.toFixed(2)}</span>`;
                         }
                         if (bd.discount) {
-                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Discount deducted">🏷️ Discount: -₹${bd.discount.toFixed(2)}</span>`;
+                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Discount deducted"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:-1px; margin-right:4px;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Discount: -₹${bd.discount.toFixed(2)}</span>`;
                         }
                         if (bd.charges) {
-                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Fees and charges">🚚 Charges: ₹${bd.charges.toFixed(2)}</span>`;
+                            pillsHtml += `<span class="receipt-breakdown-pill" style="cursor:default;" title="Fees and charges"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:-1px; margin-right:4px;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Charges: ₹${bd.charges.toFixed(2)}</span>`;
                         }
 
                         if (pillsHtml) {

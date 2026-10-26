@@ -1,14 +1,14 @@
 /**
  * @file ThemeToggleBtn.tsx
- * @description Modern haptic-enabled theme switcher button with spring rotation animation.
+ * @description Modern haptic-enabled theme switcher button with instant touch-down responsiveness.
  * Adapts seamlessly across all screens and headers in the mobile app.
  */
 
-import React, { useRef } from 'react';
-import { Animated, TouchableOpacity, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import React, { useRef, useCallback } from 'react';
+import { Animated, Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '../context/AuthContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { Colors } from '../constants/theme';
 
 interface ThemeToggleBtnProps {
@@ -16,39 +16,24 @@ interface ThemeToggleBtnProps {
 }
 
 export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style }) => {
-  const { theme, toggleTheme } = useAuth();
+  const { theme, toggleTheme } = usePreferences();
   const isLight = theme === 'light';
   const c = Colors[theme];
-  const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
-  const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    rotateAnim.setValue(0);
-    Animated.parallel([
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 220,
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 0.92,
-          duration: 90,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 130,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start(() => {
-      rotateAnim.setValue(0);
-    });
-    // Toggle theme instantly without queue delay
+  const handlePressIn = useCallback(() => {
+    // 1. Immediately toggle theme state with zero touch-up or gesture delay
     void toggleTheme();
-  };
+    // 2. Fire physical tactile feedback at the exact millisecond of contact
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    // 3. Crisp, hardware-accelerated icon micro-spin
+    rotateAnim.setValue(0);
+    Animated.timing(rotateAnim, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [toggleTheme, rotateAnim]);
 
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -56,23 +41,24 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
   });
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      onPress={handlePress}
+    <Pressable
+      onPressIn={handlePressIn}
+      hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={`Switch to ${isLight ? 'Dark' : 'Light'} Theme`}
-      style={[
+      style={({ pressed }) => [
         styles.toggleBtn,
         {
           backgroundColor: isLight ? '#FFFFFF' : c.card,
           borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : 'rgba(199, 154, 62, 0.35)',
+          opacity: pressed ? 0.75 : 1,
         },
         style,
       ]}
     >
       <Animated.View
         style={{
-          transform: [{ scale: scaleAnim }, { rotate: spin }],
+          transform: [{ rotate: spin }],
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -83,12 +69,11 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
           color={c.primary}
         />
       </Animated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 });
 
-const styles = StyleSheet.create({
-  toggleBtn: {
+const styles = StyleSheet.create({\n  toggleBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,

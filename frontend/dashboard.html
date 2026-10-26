@@ -800,7 +800,7 @@
                     <div style="width:32px; height:32px; border-radius:8px; background:rgba(var(--primary-rgb), 0.15); display:flex; align-items:center; justify-content:center; color:var(--primary); border:1px solid rgba(var(--primary-rgb), 0.3); box-shadow:0 0 12px rgba(var(--primary-rgb), 0.25);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </div>
-                    <h3 id="expenseModalTitle" style="margin:0; display:flex; align-items:center;">Record Expense <span class="ai-active-pill" title="AI auto-categorization active">⚡ AI Ready</span></h3>
+                    <h3 id="expenseModalTitle" style="margin:0; display:flex; align-items:center;">Record Expense <span class="ai-active-pill" title="AI auto-categorization active" style="display:inline-flex; align-items:center; gap:4px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>AI Ready</span></h3>
                 </div>
                 <button class="modal-close" id="closeExpenseModalBtn" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
@@ -842,7 +842,7 @@
                     </div>
                     <div class="receipt-ocr-success" id="receiptOcrSuccess" style="display:none; flex-direction:column; align-items:stretch; gap:8px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span id="receiptOcrSummaryText">✨ Receipt data extracted and pre-filled!</span>
+                            <span id="receiptOcrSummaryText"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:-2px; margin-right:4px;"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>Receipt data extracted and pre-filled!</span>
                             <button type="button" id="dismissReceiptOcrBtn" class="receipt-ocr-dismiss">&times;</button>
                         </div>
                         <div class="receipt-ocr-breakdown" id="receiptOcrBreakdown" style="display:none;"></div>
@@ -851,7 +851,7 @@
                 <div class="form-group">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <label for="desc" style="margin-bottom:0;">Description</label>
-                        <span id="aiAssistBadge" class="ai-active-pill" style="font-size:9px; padding:2px 6px;">✨ Smart Assist</span>
+                        <span id="aiAssistBadge" class="ai-active-pill" style="font-size:9px; padding:2px 6px; display:inline-flex; align-items:center; gap:4px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>Smart Assist</span>
                     </div>
                     <div class="input-with-ai-wrap">
                         <input type="text" id="desc" required placeholder="e.g. Uber ride home, AWS Cloud, Whole Foods" autocomplete="off">
@@ -862,7 +862,7 @@
                     <div id="aiSuggestionBox" class="ai-suggestion-box" style="display: none;">
                         <div class="ai-suggestion-header">
                             <div class="ai-suggestion-title">
-                                <span class="ai-badge-icon">⚡</span>
+                                <span class="ai-badge-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
                                 <span>AI Suggestion:</span>
                                 <strong id="aiPredictedCategoryName" class="ai-pred-highlight">—</strong>
                                 <span id="aiConfidenceBadge" class="ai-conf-badge">—% match</span>
@@ -874,13 +874,13 @@
                             <div id="aiPillsList" class="ai-pills-list"></div>
                         </div>
                         <div id="aiAutoAppliedNotice" class="ai-auto-notice" style="display: none;">
-                            <span>✨ Category auto-selected by AI. Change anytime below.</span>
+                            <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:-1px; margin-right:4px;"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>Category auto-selected by AI. Change anytime below.</span>
                         </div>
                     </div>
 
                     <!-- Duplicate Detection Box -->
                     <div id="duplicateWarningBox" class="duplicate-warning-box" style="display: none;">
-                        <span class="dup-icon">⚠️</span>
+                        <span class="dup-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                         <div class="dup-content">
                             <span class="dup-title">Similar transaction detected</span>
                             <span id="dupDetailText" class="dup-text"></span>
@@ -1619,7 +1619,7 @@
             <div class="help-guide-body">
                 <div class="help-card">
                     <div class="help-card-header">
-                        <span class="help-card-icon">🚀</span>
+                        <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg></span>
                         <div class="help-card-title">1. Dashboard & Cash Flow Matrix</div>
                     </div>
                     <div class="help-card-desc">
@@ -1635,7 +1635,7 @@
 
                 <div class="help-card">
                     <div class="help-card-header">
-                        <span class="help-card-icon">💸</span>
+                        <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg></span>
                         <div class="help-card-title">2. Inflows, Expenses & Subscriptions</div>
                     </div>
                     <div class="help-card-desc">
@@ -1651,7 +1651,7 @@
 
                 <div class="help-card">
                     <div class="help-card-header">
-                        <span class="help-card-icon">📷</span>
+                        <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="4"/></svg></span>
                         <div class="help-card-title">3. Smart Receipt & Bill OCR</div>
                     </div>
                     <div class="help-card-desc">
@@ -1667,7 +1667,7 @@
 
                 <div class="help-card">
                     <div class="help-card-header">
-                        <span class="help-card-icon">🎯</span>
+                        <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
                         <div class="help-card-title">4. Envelopes & Savings Goals</div>
                     </div>
                     <div class="help-card-desc">
@@ -1681,7 +1681,7 @@
 
                 <div class="help-card">
                     <div class="help-card-header">
-                        <span class="help-card-icon">📊</span>
+                        <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
                         <div class="help-card-title">5. Executive Reports & Excel Export</div>
                     </div>
                     <div class="help-card-desc">
@@ -1696,7 +1696,7 @@
 
                 <div class="help-card">
                     <div class="help-card-header">
-                        <span class="help-card-icon">⚡</span>
+                        <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
                         <div class="help-card-title">6. Power Shortcuts</div>
                     </div>
                     <div class="help-card-desc">
@@ -1712,7 +1712,7 @@
 
                 <div class="help-card">
                     <div class="help-card-header">
-                        <span class="help-card-icon">🧮</span>
+                        <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg></span>
                         <div class="help-card-title">7. Quick Calculator & Bill Splitter</div>
                     </div>
                     <div class="help-card-desc">

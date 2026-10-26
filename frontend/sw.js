@@ -112,7 +112,7 @@ self.addEventListener("push", (event) => {
     const defaultBadge = toAbsoluteUrl("/assets/badge-72.png");
 
     let data = {
-        title: "💸 Immediate Debit Alert",
+        title: "Immediate Debit Alert",
         body: "A new debit transaction has occurred.",
         icon: defaultIcon,
         badge: defaultBadge,

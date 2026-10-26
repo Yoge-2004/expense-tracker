@@ -507,7 +507,32 @@ export const dashboardStyles = StyleSheet.create({
     lineHeight: 17,
   },
   transactionsList: {
-    paddingBottom: 4,
+    paddingBottom: 16,
+  },
+  ledgerEndBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    gap: 8,
+    marginTop: 4,
+  },
+  ledgerEndLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    opacity: 0.5,
+  },
+  ledgerEndContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ledgerEndText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   loadMoreRowBtn: {
     flexDirection: 'row',

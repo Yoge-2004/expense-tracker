@@ -173,7 +173,7 @@
             modal.innerHTML = `
                 <div class="bi-decomp-box">
                     <div class="bi-decomp-top">
-                        <h3 class="bi-decomp-title">🔍 Variance Decomposition &amp; Cost Driver Tree</h3>
+                        <h3 class="bi-decomp-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="display:inline-block; vertical-align:-2px; margin-right:6px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Variance Decomposition &amp; Cost Driver Tree</h3>
                         <button type="button" class="bi-crossfilter-close" id="biCloseDecompBtn">&times;</button>
                     </div>
                     <p style="font-size:12px;color:var(--text-muted,#9E988A);margin:0;">
@@ -322,7 +322,7 @@
         container.style.display = "inline-flex";
         container.innerHTML = `
             <span class="bi-active-crossfilter-pill">
-                <span>📊 Filtered: <strong>${escapeHtml(activeCrossFilter.label)}</strong></span>
+                <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="display:inline-block; vertical-align:-2px; margin-right:5px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>Filtered: <strong>${escapeHtml(activeCrossFilter.label)}</strong></span>
                 <button type="button" class="bi-crossfilter-close" id="biClearCrossFilterBtn" title="Clear cross-filter">&times;</button>
             </span>
         `;
@@ -562,11 +562,11 @@
         if (!txt || !btn) return;
 
         if (anomalies.length > 0) {
-            txt.textContent = `⚠️ ${anomalies.length} Surges (>2σ)`;
+            txt.textContent = `${anomalies.length} Surges (>2σ)`;
             btn.style.borderColor = "rgba(239, 68, 68, 0.45)";
             btn.style.color = "#EF4444";
         } else {
-            txt.textContent = `✅ 0 Surges`;
+            txt.textContent = `0 Surges`;
             btn.style.borderColor = "rgba(16, 185, 129, 0.45)";
             btn.style.color = "#10B981";
         }

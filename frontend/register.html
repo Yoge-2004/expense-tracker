@@ -587,7 +587,7 @@
                 <input type="text" class="custom-select-search" placeholder="Search 100+ currencies (USD, EUR, ₹, Yen)..." aria-label="Search currencies">
                 <div class="custom-options-list">
                     <div class="custom-option selected" data-value="" data-name="none select currency" data-symbol="">
-                        <span><span class="custom-option-flag">🌐</span> None (Select Currency)</span>
+                        <span><span class="custom-option-flag" style="display:inline-flex; align-items:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg></span> None (Select Currency)</span>
                     </div>
                     ${currencyList.map(item => `
                         <div class="custom-option" data-value="${item.code}" data-name="${item.name.toLowerCase()}" data-symbol="${item.symbol.toLowerCase()}">

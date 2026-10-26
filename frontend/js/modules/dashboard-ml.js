@@ -536,7 +536,7 @@
 
                 const pct = Math.round((top.confidence || 0) * 100);
                 const taxonomyItem = getTaxonomyItem(top.category);
-                const icon = taxonomyItem.emoji || "🏷️";
+                const icon = window.getCategorySvg ? window.getCategorySvg(taxonomyItem.name, 16) : (taxonomyItem.emoji || "");
                 const displayName = taxonomyItem.name || top.category;
 
                 const rawTopK = Array.isArray(response)
@@ -548,7 +548,7 @@
                 const alternatives = rawTopK.map(p => {
                     const altItem = getTaxonomyItem(p.category);
                     const altConf = Math.round((p.confidence || 0) * 100);
-                    return `<span class="ml-alt-chip" data-cat="${escapeHtml(p.category)}" style="cursor:pointer; display:inline-block; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); font-size:11px; margin-right:4px;">${altItem.emoji} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
+                    return `<span class="ml-alt-chip" data-cat="${escapeHtml(p.category)}"  style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); font-size:11px; margin-right:4px;">${window.getCategorySvg ? window.getCategorySvg(altItem.name, 12) : altItem.emoji} ${escapeHtml(altItem.name)} (${altConf}%)</span>`;
                 }).join("");
 
                 if (resultContainer) {
@@ -656,7 +656,7 @@
         card.innerHTML = `
             <div class="insight-card-item-header">
                 <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1 1 auto;">
-                    <div class="insight-icon-box" style="background: rgba(var(--primary-rgb, 199, 154, 62), 0.15); color: var(--primary, #C79A3E);">⚡</div>
+                    <div class="insight-icon-box" style="background: rgba(var(--primary-rgb, 199, 154, 62), 0.15); color: var(--primary, #C79A3E); display:inline-flex; align-items:center; justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
                     <span class="insight-card-label" style="min-width:0; overflow-wrap:break-word;">AI Smart Categorizer</span>
                 </div>
                 <span class="insight-confidence-tag" style="display:inline-flex; align-items:center; justify-content:center; gap:5px; line-height:1; background: ${statusBg}; color: ${statusColor}; border-color: ${statusBorder}; margin-left:auto; flex-shrink:0;">
@@ -674,10 +674,10 @@
                 <div id="mlClassifierResult" style="margin-top:8px;">
                     <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:11px; color:var(--text-muted);">
                         <span>Try:</span>
-                        <span class="ml-sample-chip" data-sample="Swiggy meal" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">🍔 Swiggy</span>
-                        <span class="ml-sample-chip" data-sample="Uber ride" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">🚗 Uber</span>
-                        <span class="ml-sample-chip" data-sample="Netflix 4K" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">🎬 Netflix</span>
-                        <span class="ml-sample-chip" data-sample="Electricity bill" style="cursor:pointer; padding:2px 7px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border);">⚡ Power</span>
+                        <span class="ml-sample-chip" data-sample="Swiggy meal" style="cursor:pointer; padding:2px 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border); display:inline-flex; align-items:center; gap:4px;">${window.getCategorySvg ? window.getCategorySvg('food', 12) : ''} Swiggy</span>
+                        <span class="ml-sample-chip" data-sample="Uber ride" style="cursor:pointer; padding:2px 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border); display:inline-flex; align-items:center; gap:4px;">${window.getCategorySvg ? window.getCategorySvg('transport', 12) : ''} Uber</span>
+                        <span class="ml-sample-chip" data-sample="Netflix 4K" style="cursor:pointer; padding:2px 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border); display:inline-flex; align-items:center; gap:4px;">${window.getCategorySvg ? window.getCategorySvg('entertainment', 12) : ''} Netflix</span>
+                        <span class="ml-sample-chip" data-sample="Electricity bill" style="cursor:pointer; padding:2px 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border); display:inline-flex; align-items:center; gap:4px;">${window.getCategorySvg ? window.getCategorySvg('utilities', 12) : ''} Power</span>
                     </div>
                 </div>
             </div>

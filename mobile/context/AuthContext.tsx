@@ -467,16 +467,27 @@ export function useAuth(): AuthContextType {
     async (code: string) => {
       await prefs.updateCurrency(code, auth.userId);
     },
-    [prefs, auth.userId]
+    [prefs.updateCurrency, auth.userId]
   );
 
-  return {
-    ...auth,
-    theme: prefs.theme,
-    toggleTheme: prefs.toggleTheme,
-    currency: prefs.currency,
-    updateCurrency,
-    isStealthMode: prefs.isStealthMode,
-    toggleStealthMode: prefs.toggleStealthMode,
-  };
+  return useMemo(
+    () => ({
+      ...auth,
+      theme: prefs.theme,
+      toggleTheme: prefs.toggleTheme,
+      currency: prefs.currency,
+      updateCurrency,
+      isStealthMode: prefs.isStealthMode,
+      toggleStealthMode: prefs.toggleStealthMode,
+    }),
+    [
+      auth,
+      prefs.theme,
+      prefs.toggleTheme,
+      prefs.currency,
+      updateCurrency,
+      prefs.isStealthMode,
+      prefs.toggleStealthMode,
+    ]
+  );
 }

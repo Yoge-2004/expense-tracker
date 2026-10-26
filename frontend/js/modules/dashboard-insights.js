@@ -70,7 +70,7 @@
             } else if (netCashflow >= 0) {
                 cashflowInsight = `Retaining <strong>${savingsRate}%</strong> of income (+<strong>${formatCurrency(netCashflow)}</strong> surplus). Strive for ≥20% to accelerate goal funding.`;
             } else {
-                cashflowInsight = `⚠️ Net deficit of <strong>-${formatCurrency(Math.abs(netCashflow))}</strong> this period. Outflows exceed inflows by <strong>${Math.round((activeOutflow / activeInflow) * 100)}%</strong>.`;
+                cashflowInsight = `Net deficit of <strong>-${formatCurrency(Math.abs(netCashflow))}</strong> this period. Outflows exceed inflows by <strong>${Math.round((activeOutflow / activeInflow) * 100)}%</strong>.`;
             }
         } else {
             cashflowInsight = `Total spend is <strong>${formatCurrency(activeOutflow)}</strong>. Record your income streams in Cash Inflow to calculate your net savings rate.`;
@@ -86,7 +86,7 @@
         if (safeGoals.length === 0) {
             goalsInsight = `No active savings goals. Establish reserve targets (e.g. Emergency Fund, Investments) to project funding velocity.`;
         } else if (remainingGoalsNeeded <= 0 && totalGoalsTarget > 0) {
-            goalsInsight = `🎉 All active savings milestones are <strong>100% funded</strong> (${formatCurrency(totalGoalsCurrent)} saved). Ready for new financial horizons.`;
+            goalsInsight = `All active savings milestones are <strong>100% funded</strong> (${formatCurrency(totalGoalsCurrent)} saved). Ready for new financial horizons.`;
         } else if (netCashflow > 0) {
             const monthsToFund = Math.max(1, Math.ceil(remainingGoalsNeeded / netCashflow));
             goalsInsight = `At current net surplus of <strong>${formatCurrency(netCashflow)}/mo</strong>, remaining targets (<strong>${formatCurrency(remainingGoalsNeeded)}</strong>) will be reached in ~<strong>${monthsToFund} month${monthsToFund === 1 ? '' : 's'}</strong> (${goalsOverallPct}% achieved).`;
@@ -208,11 +208,11 @@
             const penalty = (exceededCount * 18) + (warningCount * 8);
             budgetHealthScore = Math.max(0, 35 - penalty);
             if (exceededCount > 0) {
-                budgetInsightText = `⚠️ <strong>${exceededCount} budget(s) exceeded</strong>. Review high-spend categories immediately.`;
+                budgetInsightText = `<strong>${exceededCount} budget(s) exceeded</strong>. Review high-spend categories immediately.`;
             } else if (warningCount > 0) {
-                budgetInsightText = `🟡 <strong>${warningCount} budget(s) nearing limit</strong> (>80% capacity utilized).`;
+                budgetInsightText = `<strong>${warningCount} budget(s) nearing limit</strong> (>80% capacity utilized).`;
             } else {
-                budgetInsightText = `🟢 <strong>${safeBudgets.length} of ${safeBudgets.length}</strong> categories strictly on target.`;
+                budgetInsightText = `<strong>${safeBudgets.length} of ${safeBudgets.length}</strong> categories strictly on target.`;
             }
         }
     
@@ -243,7 +243,7 @@
             <div class="insight-card-item highlight-card" style="grid-column: 1 / -1; background: var(--card-bg, rgba(255,255,255,0.04)); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981; font-size:18px;">📊</div>
+                        <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
                         <div>
                             <span class="insight-card-label" style="font-size:14px; font-weight:700; color:var(--text-main);">Monthly Inflows & Outflows Summary</span>
                             <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Net monthly liquidity balance & cash flow performance</div>
@@ -280,7 +280,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">🎯</div>
+                    <div class="insight-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
                     <span class="insight-card-label">Savings Goals Trajectory</span>
                 </div>
                 <div class="insight-card-content">
@@ -290,7 +290,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">💵</div>
+                    <div class="insight-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10B981;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg></div>
                     <span class="insight-card-label">Salary Coverage & Stability</span>
                 </div>
                 <div class="insight-card-content">
@@ -300,7 +300,7 @@
 
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">🛡️</div>
+                    <div class="insight-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                     <span class="insight-card-label">Emergency Savings Runway</span>
                 </div>
                 <div class="insight-card-content">
@@ -310,7 +310,7 @@
 
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;">🔄</div>
+                    <div class="insight-icon-box" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg></div>
                     <span class="insight-card-label">Recurring Baseline Coverage</span>
                 </div>
                 <div class="insight-card-content">
@@ -320,7 +320,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(199, 154, 62, 0.15); color: #C79A3E;">🔥</div>
+                    <div class="insight-icon-box" style="background: rgba(199, 154, 62, 0.15); color: #C79A3E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-2.5-1.5-4.5 0-2 1.5-3 1.5-3s-1.5.5-2.5 2c-1.1 1.65-2.5 3.5-2.5 5.5z"/><path d="M12 2c-4 4.5-6 8-6 12a6 6 0 0 0 12 0c0-4-2-7.5-6-12z"/></svg></div>
                     <span class="insight-card-label">Burn Velocity & Runway</span>
                 </div>
                 <div class="insight-card-content">
@@ -330,7 +330,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(76, 122, 120, 0.15); color: #4C7A78;">📊</div>
+                    <div class="insight-icon-box" style="background: rgba(76, 122, 120, 0.15); color: #4C7A78;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
                     <span class="insight-card-label">Category Concentration</span>
                 </div>
                 <div class="insight-card-content">
@@ -340,7 +340,7 @@
     
             <div class="insight-card-item">
                 <div class="insight-card-item-header">
-                    <div class="insight-icon-box" style="background: rgba(162, 62, 50, 0.15); color: #A23E32;">🛡️</div>
+                    <div class="insight-icon-box" style="background: rgba(162, 62, 50, 0.15); color: #A23E32;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                     <span class="insight-card-label">Budget Governance</span>
                 </div>
                 <div class="insight-card-content">

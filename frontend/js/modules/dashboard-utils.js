@@ -96,20 +96,47 @@
         return CATEGORY_PALETTE[paletteIndex];
     }
 
-    function getCategoryEmoji(name) {
+    function getCategorySvg(name, size = 16) {
         const value = String(name || "").toLowerCase();
-        if (value.includes("saving") || value.includes("deposit")) return "💰";
-        if (value.includes("loan") || value.includes("debt") || value.includes("borrow") || value.includes("lend") || value.includes("adjust")) return "🤝";
-        if (value.includes("food") || value.includes("dining") || value.includes("restaurant")) return "🍔";
-        if (value.includes("transport") || value.includes("travel") || value.includes("uber")) return "🚗";
-        if (value.includes("shop") || value.includes("cloth") || value.includes("amazon")) return "🛍️";
-        if (value.includes("util") || value.includes("electric") || value.includes("water") || value.includes("bill")) return "⚡";
-        if (value.includes("entertain") || value.includes("movie") || value.includes("netflix")) return "🎬";
-        if (value.includes("health") || value.includes("medical") || value.includes("gym")) return "💊";
-        if (value.includes("edu") || value.includes("course") || value.includes("book")) return "📚";
-        if (value.includes("subscribe") || value.includes("saas") || value.includes("software")) return "💻";
-        if (value.includes("grocer") || value.includes("market") || value.includes("super")) return "🛒";
-        return "💳";
+        const svgAttrs = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-2px;"`;
+        if (value.includes("saving") || value.includes("deposit") || value.includes("invest")) {
+            return `<svg ${svgAttrs}><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a8 8 0 0 1-16 0V6"/><circle cx="12" cy="14" r="2"/></svg>`;
+        }
+        if (value.includes("loan") || value.includes("debt") || value.includes("borrow") || value.includes("lend") || value.includes("adjust")) {
+            return `<svg ${svgAttrs}><path d="m11 17 2 2a1 1 0 0 0 1.4 0l4.3-4.3a1 1 0 0 0 0-1.4L16 11"/><path d="m13 7 1.3-1.3a1 1 0 0 1 1.4 0L19 9"/><path d="m2 14 6 6"/><path d="M20 22l2-2"/><path d="m3 7 5.7 5.7a1 1 0 0 0 1.4 0L15 8"/><path d="m8 2 2 2"/></svg>`;
+        }
+        if (value.includes("food") || value.includes("dining") || value.includes("restaurant") || value.includes("meal") || value.includes("cafe")) {
+            return `<svg ${svgAttrs}><path d="M18 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3ZM7 2v20M3 2v6a4 4 0 0 0 4 4h0a4 4 0 0 0 4-4V2"/></svg>`;
+        }
+        if (value.includes("transport") || value.includes("travel") || value.includes("uber") || value.includes("fuel") || value.includes("car")) {
+            return `<svg ${svgAttrs}><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H7.5a1 1 0 0 0-.8.4L4 11l-5.16.86a1 1 0 0 0-.84.99V16h3"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>`;
+        }
+        if (value.includes("shop") || value.includes("cloth") || value.includes("amazon") || value.includes("retail") || value.includes("apparel")) {
+            return `<svg ${svgAttrs}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
+        }
+        if (value.includes("util") || value.includes("electric") || value.includes("water") || value.includes("bill") || value.includes("power")) {
+            return `<svg ${svgAttrs}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+        }
+        if (value.includes("entertain") || value.includes("movie") || value.includes("netflix") || value.includes("music") || value.includes("stream")) {
+            return `<svg ${svgAttrs}><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>`;
+        }
+        if (value.includes("health") || value.includes("medical") || value.includes("gym") || value.includes("pharmacy") || value.includes("doctor")) {
+            return `<svg ${svgAttrs}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`;
+        }
+        if (value.includes("edu") || value.includes("course") || value.includes("book") || value.includes("school") || value.includes("study")) {
+            return `<svg ${svgAttrs}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`;
+        }
+        if (value.includes("subscribe") || value.includes("saas") || value.includes("software") || value.includes("cloud") || value.includes("tech")) {
+            return `<svg ${svgAttrs}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>`;
+        }
+        if (value.includes("grocer") || value.includes("market") || value.includes("super") || value.includes("mart")) {
+            return `<svg ${svgAttrs}><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
+        }
+        return `<svg ${svgAttrs}><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`;
+    }
+
+    function getCategoryEmoji(name) {
+        return getCategorySvg(name, 16);
     }
 
     function debounce(fn, delay) {
@@ -138,6 +165,7 @@
         formatDate,
         getCategoryColor,
         getCategoryEmoji,
+        getCategorySvg,
         debounce
     });
     window.escapeHtml = escapeHtml;

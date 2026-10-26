@@ -9,7 +9,7 @@
         {
             id: "record-expense",
             title: "Record Expense",
-            icon: "💸",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>',
             category: "Actions",
             badge: "Add",
             keywords: "expense spend cost record pay",
@@ -21,7 +21,7 @@
         {
             id: "scan-receipt",
             title: "Scan Receipt / Bill (OCR)",
-            icon: "📷",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="4"/></svg>',
             category: "Actions",
             badge: "OCR",
             keywords: "scan receipt bill invoice camera ocr image photo",
@@ -37,7 +37,7 @@
         {
             id: "add-income",
             title: "Add Income Stream",
-            icon: "💰",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>',
             category: "Actions",
             badge: "Add",
             keywords: "income salary deposit earn inflow",
@@ -53,7 +53,7 @@
         {
             id: "toggle-stealth",
             title: "Toggle Privacy / Stealth Mode",
-            icon: "👁️",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
             category: "Preferences",
             badge: "Alt+S",
             keywords: "stealth privacy hide mask blur numbers amounts balances",
@@ -66,7 +66,7 @@
         {
             id: "quick-calculator",
             title: "Quick Calculator & Bill Splitter",
-            icon: "🧮",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg>',
             category: "Tools",
             badge: "Alt+C",
             keywords: "calc calculator math divide split bill count numbers total",
@@ -79,7 +79,7 @@
         {
             id: "export-workbook",
             title: "Export Executive Workbook (Excel)",
-            icon: "📊",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
             category: "Reports",
             badge: "Excel",
             keywords: "excel report workbook statement download export poi",
@@ -91,7 +91,7 @@
         {
             id: "export-statement-pdf",
             title: "Export Executive Statement (PDF)",
-            icon: "📑",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
             category: "Reports",
             badge: "PDF",
             keywords: "pdf report statement download print export",
@@ -103,7 +103,7 @@
         {
             id: "export-expenses-excel",
             title: "Export Expenses Spreadsheet (Excel)",
-            icon: "📗",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13l3 3M11 13l-3 3"/></svg>',
             category: "Exports",
             badge: "Expenses",
             keywords: "expenses excel xlsx export download",
@@ -115,7 +115,7 @@
         {
             id: "export-incomes-excel",
             title: "Export Incomes Spreadsheet (Excel)",
-            icon: "💵",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>',
             category: "Exports",
             badge: "Incomes",
             keywords: "incomes excel xlsx export download",
@@ -127,7 +127,7 @@
         {
             id: "manage-budgets",
             title: "Manage Category Budgets",
-            icon: "💼",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
             category: "Management",
             badge: "Budgets",
             keywords: "budget spending limit category plan",
@@ -139,7 +139,7 @@
         {
             id: "manage-savings",
             title: "Manage Savings Goals",
-            icon: "🎯",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
             category: "Management",
             badge: "Savings",
             keywords: "savings goal target fund emergency",
@@ -151,7 +151,7 @@
         {
             id: "toggle-theme",
             title: "Toggle Theme (Dark / Light)",
-            icon: "🌓",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
             category: "Preferences",
             badge: "Appearance",
             keywords: "theme mode dark light color appearance",
@@ -167,7 +167,7 @@
         {
             id: "refresh-data",
             title: "Refresh Live Ledger Data",
-            icon: "🔄",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>',
             category: "Data",
             badge: "Sync",
             keywords: "refresh reload sync pull data update",
@@ -181,7 +181,7 @@
         {
             id: "help-guide",
             title: "User Guide & Feature Walkthrough",
-            icon: "📖",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
             category: "Help",
             badge: "Guide",
             keywords: "help guide walkthrough faq docs how to manual tutorial",
