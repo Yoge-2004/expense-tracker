@@ -23,6 +23,8 @@ h1, h2, h3, h4, h5, h6, .brand-title, .section-title, .admin-drawer h3, .modal-t
 /* Button & Table Action nowrap & auto-width enforcement */
 .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-icon, .admin-nav-item, .stream-pill-btn {
     white-space: nowrap !important;
+    position: relative !important;
+    overflow: hidden !important;
 }
 
 #userPrevBtn, #userNextBtn, #dbPrevBtn, #dbNextBtn, #auditPrevBtn, #auditNextBtn {
@@ -1237,12 +1239,17 @@ select.custom-select-native {
 }
 
 .retrain-actions-wrapper button {
+    position: relative !important;
     white-space: nowrap !important;
     flex-shrink: 0;
     box-sizing: border-box !important;
     padding: 9px 18px !important;
     line-height: 1.4 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
+}
+
+.retrain-actions-wrapper button::after {
+    display: none !important;
 }
 
 /* Ensure status-badge pills in tables never wrap or distort pill geometry */
