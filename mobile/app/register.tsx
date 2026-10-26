@@ -107,7 +107,7 @@ export default function RegisterScreen() {
       if (idToken) {
         await loginWithGoogle(idToken);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        showAlert('🎉 Welcome!', 'Google Sign-In successful!', undefined, 'success');
+        showAlert('Welcome!', 'Google Sign-In successful!', undefined, 'success');
       }
     } catch (err: any) {
       const msg = err instanceof ApiError ? err.message : err.message || 'Google registration failed.';
@@ -175,7 +175,7 @@ export default function RegisterScreen() {
       });
       setOtpSent(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert('Code Sent 📩', `A 6-digit verification code was sent to ${email.trim()}.`);
+      showAlert('Code Sent', `A 6-digit verification code was sent to ${email.trim()}.`);
     } catch (error: any) {
       const isApiErr = error instanceof ApiError;
       const msg = isApiErr ? error.message : 'Could not send verification email.';
@@ -198,7 +198,7 @@ export default function RegisterScreen() {
         }
       } catch (_) {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert('🎉 Welcome!', 'Account created successfully! Please sign in with your credentials.', [
+      showAlert('Welcome!', 'Account created successfully! Please sign in with your credentials.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
       ], 'success');
     } catch (error: any) {
@@ -225,7 +225,7 @@ export default function RegisterScreen() {
         }
       } catch (_) {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert('🎉 Welcome!', 'Account created successfully! Please sign in.', [
+      showAlert('Welcome!', 'Account created successfully! Please sign in.', [
         { text: 'Sign In', onPress: () => router.replace('/login') },
       ], 'success');
     } catch (error: any) {

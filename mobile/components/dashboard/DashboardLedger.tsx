@@ -11,6 +11,7 @@ import {
   LayoutChangeEvent,
   Animated,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -48,6 +49,9 @@ export interface DashboardLedgerProps {
   onRowPress: (tx: UnifiedTxItem) => void;
   onRowEdit: (tx: UnifiedTxItem) => void;
   onRowDelete: (tx: UnifiedTxItem) => void;
+  isLoading?: boolean;
+  isRefreshing?: boolean;
+  onOpenHelpGuide?: () => void;
 }
 
 const LedgerSeparator = () => <View style={styles.ledgerSeparator} />;
@@ -81,8 +85,13 @@ export const DashboardLedger = memo(function DashboardLedger({
   onRowPress,
   onRowEdit,
   onRowDelete,
+  isLoading = false,
+  isRefreshing = false,
+  onOpenHelpGuide,
 }: DashboardLedgerProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(25);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const ledgerScrollY = useRef(new Animated.Value(0)).current;
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
@@ -111,16 +120,32 @@ export const DashboardLedger = memo(function DashboardLedger({
     [ledgerTab, setLedgerTab]
   );
 
+  const displayedTransactions = useMemo(
+    () => unifiedTransactions.slice(0, displayLimit),
+    [unifiedTransactions, displayLimit]
+  );
+
   const onLedgerContentSize = useCallback((_w: number, h: number) => setLedgerContentHeight(h), []);
   const onLedgerLayout = useCallback((e: LayoutChangeEvent) => setLedgerViewHeight(e.nativeEvent.layout.height), []);
   const onLedgerScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     ledgerScrollY.setValue(e.nativeEvent.contentOffset.y);
   }, [ledgerScrollY]);
 
-  // Changing filters resets the list view to top
+  // Changing filters resets the list view to top and resets progressive batching
   useEffect(() => {
     ledgerFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    setDisplayLimit(25);
+    setIsLoadingMore(false);
   }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
+
+  const handleEndReached = useCallback(() => {
+    if (isLoadingMore || displayLimit >= unifiedTransactions.length) return;
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setDisplayLimit((prev) => Math.min(prev + 25, unifiedTransactions.length));
+      setIsLoadingMore(false);
+    }, 120);
+  }, [isLoadingMore, displayLimit, unifiedTransactions.length]);
 
   const renderRow = useCallback(
     ({ item }: { item: UnifiedTxItem }) => (
@@ -139,6 +164,23 @@ export const DashboardLedger = memo(function DashboardLedger({
 
   const renderListFooter = useCallback(() => {
     if (unifiedTransactions.length === 0) return null;
+
+    const isBusy = isLoading || isRefreshing || isLoadingMore;
+    const hasMore = displayLimit < unifiedTransactions.length;
+
+    if (isBusy || hasMore) {
+      return (
+        <View style={styles.ledgerEndBanner}>
+          <ActivityIndicator size="small" color={c.primary} />
+          <Text style={[styles.ledgerEndText, { color: c.textMuted }]}>
+            {isLoading || isRefreshing
+              ? 'Loading transactions...'
+              : 'Loading more transactions...'}
+          </Text>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.ledgerEndBanner}>
         <View style={[styles.ledgerEndLine, { backgroundColor: c.border }]} />
@@ -151,7 +193,16 @@ export const DashboardLedger = memo(function DashboardLedger({
         <View style={[styles.ledgerEndLine, { backgroundColor: c.border }]} />
       </View>
     );
-  }, [unifiedTransactions.length, c.border, c.textMuted]);
+  }, [
+    unifiedTransactions.length,
+    isLoading,
+    isRefreshing,
+    isLoadingMore,
+    displayLimit,
+    c.primary,
+    c.border,
+    c.textMuted,
+  ]);
 
   const keyExtractor = useCallback((item: UnifiedTxItem) => item.uniqueKey, []);
 
@@ -159,7 +210,7 @@ export const DashboardLedger = memo(function DashboardLedger({
     <>
       <FlatList
         ref={ledgerFlatListRef}
-        data={unifiedTransactions}
+        data={displayedTransactions}
         keyExtractor={keyExtractor}
         renderItem={renderRow}
         ItemSeparatorComponent={LedgerSeparator}
@@ -172,6 +223,8 @@ export const DashboardLedger = memo(function DashboardLedger({
         onScroll={onLedgerScroll}
         onContentSizeChange={onLedgerContentSize}
         onLayout={onLedgerLayout}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.4}
         initialNumToRender={12}
         maxToRenderPerBatch={10}
         windowSize={5}
@@ -201,31 +254,43 @@ export const DashboardLedger = memo(function DashboardLedger({
             </Text>
           </View>
         </View>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={toggleFilterPanel}
-          style={[
-            styles.filterToggleBtn,
-            {
-              backgroundColor: showFilters ? c.primary + '20' : c.inputBg,
-              borderColor: showFilters ? c.primary : c.border,
-            },
-          ]}
-        >
-          <Ionicons
-            name={showFilters ? 'options' : 'options-outline'}
-            size={14}
-            color={showFilters ? c.primary : c.textMuted}
-          />
-          <Text
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {onOpenHelpGuide && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={onOpenHelpGuide}
+              style={[styles.helpGuideMiniBtn, { backgroundColor: c.inputBg, borderColor: c.border }]}
+              accessibilityLabel="Gestures & Help Guide"
+            >
+              <Ionicons name="help-circle-outline" size={16} color={c.primary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={toggleFilterPanel}
             style={[
-              styles.filterToggleText,
-              { color: showFilters ? c.primary : c.textMuted },
+              styles.filterToggleBtn,
+              {
+                backgroundColor: showFilters ? c.primary + '20' : c.inputBg,
+                borderColor: showFilters ? c.primary : c.border,
+              },
             ]}
           >
-            Filter
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name={showFilters ? 'options' : 'options-outline'}
+              size={14}
+              color={showFilters ? c.primary : c.textMuted}
+            />
+            <Text
+              style={[
+                styles.filterToggleText,
+                { color: showFilters ? c.primary : c.textMuted },
+              ]}
+            >
+              Filter
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Activity Stream Selector Pills: All | Outflows | Inflows */}
@@ -268,6 +333,24 @@ export const DashboardLedger = memo(function DashboardLedger({
             Inflows ({filteredIncomesCount})
           </Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Gesture Quick Clue Bar */}
+      <View style={[styles.gestureCueBar, { backgroundColor: c.inputBg, borderColor: c.border }]}>
+        <View style={styles.gestureCueLeft}>
+          <Ionicons name="swap-horizontal" size={13} color={c.primary} />
+          <Text style={[styles.gestureCueText, { color: c.textMuted }]}>
+            Swipe row: <Text style={{ color: '#D4AF37', fontWeight: '700' }}>Right</Text> (Edit) ·{' '}
+            <Text style={{ color: '#EF4444', fontWeight: '700' }}>Left</Text> (Delete)
+          </Text>
+        </View>
+        <Text style={[styles.gestureCueDot, { color: c.border }]}>•</Text>
+        <View style={styles.gestureCueRight}>
+          <Ionicons name="finger-print-outline" size={12} color={c.textMuted} />
+          <Text style={[styles.gestureCueText, { color: c.textMuted }]}>
+            Tap for Loan/Split
+          </Text>
+        </View>
       </View>
 
       {/* Search Input */}
@@ -331,15 +414,24 @@ export const DashboardLedger = memo(function DashboardLedger({
       {/* Bounded Scrollable Items Box */}
       <View style={[styles.scrollableLedgerBox, { borderColor: c.border }]}>
         {unifiedTransactions.length === 0 ? (
-          <View style={styles.emptyLedgerInside}>
-            <Ionicons name="receipt-outline" size={38} color={c.textMuted} />
-            <Text style={[styles.emptyLedgerTitle, { color: c.text }]}>No activity found</Text>
-            <Text style={[styles.emptyLedgerSub, { color: c.textMuted }]}>
-              {searchQuery || selectedCategory !== 'all' || datePreset !== 'all'
-                ? 'Adjust your search query, dates, or stream tabs.'
-                : 'Log transactions to see live inflows and outflows.'}
-            </Text>
-          </View>
+          isLoading || isRefreshing ? (
+            <View style={styles.emptyLedgerInside}>
+              <ActivityIndicator size="large" color={c.primary} />
+              <Text style={[styles.emptyLedgerSub, { color: c.textMuted, marginTop: 10 }]}>
+                Loading transactions...
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.emptyLedgerInside}>
+              <Ionicons name="receipt-outline" size={38} color={c.textMuted} />
+              <Text style={[styles.emptyLedgerTitle, { color: c.text }]}>No activity found</Text>
+              <Text style={[styles.emptyLedgerSub, { color: c.textMuted }]}>
+                {searchQuery || selectedCategory !== 'all' || datePreset !== 'all'
+                  ? 'Adjust your search query, dates, or stream tabs.'
+                  : 'Log transactions to see live inflows and outflows.'}
+              </Text>
+            </View>
+          )
         ) : ScrollContext?.Provider ? (
           <ScrollContext.Provider value={null}>
             {listElement}

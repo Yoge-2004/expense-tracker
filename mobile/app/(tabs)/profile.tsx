@@ -48,6 +48,8 @@ import { ThemedScrollView } from '../../components/ThemedScrollbar';
 import { MonthlyReportModal } from '../../components/MonthlyReportModal';
 import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { AboutModal } from '../../components/AboutModal';
+import { ThemeStudioModal } from '../../components/ThemeStudioModal';
+import { usePreferences } from '../../context/PreferencesContext';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
 import { checkForAppUpdate, AppReleaseInfo, DISPLAY_VERSION } from '../../services/appUpdate';
 import {
@@ -83,8 +85,9 @@ export default function ProfileScreen() {
   } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
+  const { themeColors } = usePreferences();
   const isLight = theme === 'light';
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
 
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 700;
@@ -98,6 +101,7 @@ export default function ProfileScreen() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showThemeStudioModal, setShowThemeStudioModal] = useState(false);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
   // Profile Avatar Modal State
@@ -145,7 +149,7 @@ export default function ProfileScreen() {
     setCheckingUpdate(false);
     if (info.hasUpdate) {
       showAlert(
-        'Update Available 🚀',
+        'Update Available',
         'A new version (' + info.latestVersion + ') is available.',
         [
           { text: 'Later', style: 'cancel' },
@@ -160,7 +164,7 @@ export default function ProfileScreen() {
       );
     } else {
       showAlert(
-        'Up to Date 🎉',
+        'Up to Date',
         'ExpenseTracker is on the latest release (' + DISPLAY_VERSION + ').',
         undefined,
         'success'
@@ -233,7 +237,7 @@ export default function ProfileScreen() {
     await setInstantDebitAlertsEnabled(next);
     setInstantDebitEnabled(next);
     showAlert(
-      next ? 'Debit Detection Active ⚡' : 'Debit Detection Paused',
+      next ? 'Debit Detection Active' : 'Debit Detection Paused',
       next
         ? 'Bank debit SMS and transaction notifications will be automatically detected and added to your ledger.'
         : 'Automatic expense creation from debit alerts is paused.',
@@ -250,14 +254,14 @@ export default function ProfileScreen() {
     if (result) {
       if (result.duplicate) {
         showAlert(
-          'Duplicate Suppressed 🛡️',
+          'Duplicate Suppressed',
           `This debit (${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}) was already recorded recently and was suppressed to prevent duplicates.`,
           undefined,
           'info'
         );
       } else {
         showAlert(
-          'Instant Debit Triggered 💸',
+          'Instant Debit Triggered',
           `Parsed & added expense to ledger: ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant}.`,
           undefined,
           'success'
@@ -300,14 +304,14 @@ export default function ProfileScreen() {
       if (result) {
         if (result.duplicate) {
           showAlert(
-            'Duplicate Suppressed 🛡️',
+            'Duplicate Suppressed',
             `This transaction (${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant || 'merchant'}) was already recorded recently.`,
             undefined,
             'info'
           );
         } else {
           showAlert(
-            'Expense Recorded! ⚡',
+            'Expense Recorded!',
             `Successfully captured ${result.currency} ${result.amount?.toFixed(2)} at ${result.merchant || 'merchant'} to your expense ledger.`,
             undefined,
             'success'
@@ -441,7 +445,7 @@ export default function ProfileScreen() {
       }
       setEnableFingerprintOnSave(false);
       showAlert(
-        'Security PIN Saved 🔒',
+        'Security PIN Saved',
         `Your 6-digit recovery PIN has been configured successfully.${fingerprintNote}`,
         undefined,
         'success'
@@ -496,7 +500,7 @@ export default function ProfileScreen() {
       setShowAvatarModal(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert(
-        "Profile Picture Updated 📸",
+        "Profile Picture Updated",
         "Your profile picture has been updated from your device and synced.",
         undefined,
         "success"
@@ -764,6 +768,36 @@ export default function ProfileScreen() {
               </View>
             </TouchableOpacity>
 
+            {/* Appearance & Theming Studio */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                setShowThemeStudioModal(true);
+              }}
+              style={[styles.menuRow, { borderBottomColor: c.border }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Appearance and Theme Studio"
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconBox, { backgroundColor: c.primary + "18" }]}>
+                  <Ionicons name="color-palette-outline" size={18} color={c.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text style={[styles.menuRowTitle, { color: c.text }]}>Studio & Appearance</Text>
+                    <View style={{ backgroundColor: c.primary + "22", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 9.5, fontWeight: "800", color: c.primary }}>STUDIO</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.menuRowSub, { color: c.textMuted }]}>
+                    Fonts, atmospheric wallpapers & auto-extracted palettes
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+            </TouchableOpacity>
+
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => {
@@ -973,7 +1007,7 @@ export default function ProfileScreen() {
 
             <View style={{ padding: 12, backgroundColor: isLight ? 'rgba(212, 175, 55, 0.08)' : 'rgba(245, 200, 66, 0.08)', borderRadius: 10, margin: 12, borderWidth: 1, borderColor: isLight ? 'rgba(212, 175, 55, 0.25)' : 'rgba(245, 200, 66, 0.2)' }}>
               <Text style={{ fontSize: 11.5, lineHeight: 17, color: isLight ? '#78350F' : '#F5C842' }}>
-                💡 <Text style={{ fontWeight: '700' }}>How Bank SMS capture works:</Text> Whenever you receive a bank debit SMS, copy it. ExpenseTracker automatically parses the amount & merchant the moment you switch to the app or tap "Paste SMS" on the Record screen!
+                <Text style={{ fontWeight: '700' }}>How Bank SMS capture works:</Text> Whenever you receive a bank debit SMS, copy it. ExpenseTracker automatically parses the amount & merchant the moment you switch to the app or tap "Paste SMS" on the Record screen!
               </Text>
             </View>
           </View>
@@ -1655,6 +1689,7 @@ export default function ProfileScreen() {
       />
       <HelpGuideModal visible={showHelpModal} onClose={() => setShowHelpModal(false)} />
       <AboutModal visible={showAboutModal} onClose={() => setShowAboutModal(false)} />
+      <ThemeStudioModal visible={showThemeStudioModal} onClose={() => setShowThemeStudioModal(false)} />
     </View>
   );
 }

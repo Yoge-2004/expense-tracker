@@ -756,7 +756,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                   {/* Executive Insights */}
                   {Array.isArray(reportData.insights) && reportData.insights.length > 0 && (
                     <View style={[styles.reportSectionBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                      <Text style={[styles.reportSectionTitle, { color: c.primary }]}>💡 Executive Insights</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}><Ionicons name="bulb-outline" size={15} color={c.primary} /><Text style={[styles.reportSectionTitle, { color: c.primary, marginBottom: 0 }]}>Executive Insights</Text></View>
                       {reportData.insights.map((ins: string, idx: number) => {
                         const cleanIns = ins.replace(/<[^>]*>?/gm, ''); // strip html tags for clean display
                         return (
@@ -771,7 +771,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                   {/* Category Breakdown */}
                   {Array.isArray(reportData.categoryBreakdown) && reportData.categoryBreakdown.length > 0 && (
                     <View style={[styles.reportSectionBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                      <Text style={[styles.reportSectionTitle, { color: c.text }]}>📊 Category Breakdown</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}><Ionicons name="pie-chart-outline" size={15} color={c.text} /><Text style={[styles.reportSectionTitle, { color: c.text, marginBottom: 0 }]}>Category Breakdown</Text></View>
                       {reportData.categoryBreakdown.map((cat: any, idx: number) => (
                         <View key={idx} style={[styles.catRow, { borderBottomColor: c.border }]}>
                           <Text style={[styles.catRowName, { color: c.text }]}>{cat.categoryName}</Text>
@@ -791,7 +791,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                   {/* Top Expenses */}
                   {Array.isArray(reportData.topExpenses) && reportData.topExpenses.length > 0 && (
                     <View style={[styles.reportSectionBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                      <Text style={[styles.reportSectionTitle, { color: c.text }]}>🏷️ Peak Outflow Transactions</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}><Ionicons name="trending-down-outline" size={15} color={c.text} /><Text style={[styles.reportSectionTitle, { color: c.text, marginBottom: 0 }]}>Peak Outflow Transactions</Text></View>
                       {reportData.topExpenses.map((exp: any, idx: number) => (
                         <View key={idx} style={[styles.topExpRow, { borderBottomColor: c.border }]}>
                           <View style={{ flex: 1 }}>

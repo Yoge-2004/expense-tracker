@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expense Tracker",
     "slug": "expense-tracker-mobile",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
       "icon": "./assets/icon.png",
       "supportsTablet": true,
       "bundleIdentifier": "com.yoge.expensetracker",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -20,13 +20,14 @@
             ]
           }
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Use Face ID to securely authenticate and access your Expense Tracker."
       }
     },
     "android": {
       "package": "com.yoge.expensetracker",
       "allowBackup": false,
-      "versionCode": 10,
+      "versionCode": 11,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F9F6EF"

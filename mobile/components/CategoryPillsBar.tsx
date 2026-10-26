@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { Colors, getCategoryEmoji } from '../constants/theme';
+import { Colors, getCategoryIconName } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CalendarPickerModal } from './CalendarPickerModal';
@@ -87,7 +87,7 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
             { id: 'today', label: 'Today' },
             { id: 'month', label: 'This Month' },
             { id: 'last30', label: 'Last 30D' },
-            { id: 'custom', label: 'Custom Range 📅' },
+            { id: 'custom', label: 'Custom Range' },
           ] as const
         ).map((p) => {
           const isActive = datePreset === p.id;
@@ -123,78 +123,68 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
         })}
       </ScrollView>
 
-      {/* Custom Date Range Picker Taps (Opens Calendar Modal) */}
+      {/* Expandable Custom Date Inputs when 'custom' is active */}
       {datePreset === 'custom' && (
-        <View style={[styles.customDateBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-          {/* Start Date Button */}
+        <View style={[styles.customDateBox, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={styles.dateInputCol}>
-            <Text style={[styles.dateLabel, { color: c.textMuted }]}>Start Date:</Text>
+            <Text style={[styles.dateLabel, { color: c.textMuted }]}>FROM</Text>
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setCalendarTarget('start')}
+              style={[styles.dateInputWrap, { backgroundColor: c.inputBg, borderColor: c.inputBorder }]}
               accessibilityRole="button"
-              accessibilityLabel={`Start date${startDate ? `, ${startDate}` : ''}. Open date picker`}
-              style={[styles.dateInputWrap, { borderColor: c.border, backgroundColor: c.card }]}
+              accessibilityLabel="Select start date"
             >
-              <Ionicons name="calendar" size={15} color={c.primary} />
+              <Ionicons name="calendar-outline" size={14} color={c.primary} />
               <Text
                 style={[
                   styles.dateDisplayText,
                   { color: startDate ? c.text : c.textMuted },
                 ]}
-                numberOfLines={1}
               >
-                {startDate || 'Pick Start Date'}
+                {startDate || 'YYYY-MM-DD'}
               </Text>
-              {!!startDate && onStartDateChange && (
+              {!!startDate && (
                 <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onStartDateChange('');
-                  }}
+                  onPress={() => onStartDateChange && onStartDateChange('')}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.clearDateButton}
                   accessibilityRole="button"
                   accessibilityLabel="Clear start date"
-                  hitSlop={8}
-                  style={styles.clearDateButton}
                 >
-                  <Ionicons name="close-circle" size={15} color={c.textMuted} />
+                  <Ionicons name="close-circle" size={14} color={c.textMuted} />
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
           </View>
 
-          {/* End Date Button */}
           <View style={styles.dateInputCol}>
-            <Text style={[styles.dateLabel, { color: c.textMuted }]}>End Date:</Text>
+            <Text style={[styles.dateLabel, { color: c.textMuted }]}>TO</Text>
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => setCalendarTarget('end')}
+              style={[styles.dateInputWrap, { backgroundColor: c.inputBg, borderColor: c.inputBorder }]}
               accessibilityRole="button"
-              accessibilityLabel={`End date${endDate ? `, ${endDate}` : ''}. Open date picker`}
-              style={[styles.dateInputWrap, { borderColor: c.border, backgroundColor: c.card }]}
+              accessibilityLabel="Select end date"
             >
-              <Ionicons name="calendar" size={15} color={c.primary} />
+              <Ionicons name="calendar-outline" size={14} color={c.primary} />
               <Text
                 style={[
                   styles.dateDisplayText,
                   { color: endDate ? c.text : c.textMuted },
                 ]}
-                numberOfLines={1}
               >
-                {endDate || 'Pick End Date'}
+                {endDate || 'YYYY-MM-DD'}
               </Text>
-              {!!endDate && onEndDateChange && (
+              {!!endDate && (
                 <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onEndDateChange('');
-                  }}
+                  onPress={() => onEndDateChange && onEndDateChange('')}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.clearDateButton}
                   accessibilityRole="button"
                   accessibilityLabel="Clear end date"
-                  hitSlop={8}
-                  style={styles.clearDateButton}
                 >
-                  <Ionicons name="close-circle" size={15} color={c.textMuted} />
+                  <Ionicons name="close-circle" size={14} color={c.textMuted} />
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
@@ -202,18 +192,17 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
         </View>
       )}
 
-      {/* Horizontal Category Pills (Global + Custom) */}
+      {/* Category Pills */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* All Transactions Pill */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => handleSelectCat('all')}
           accessibilityRole="button"
-          accessibilityLabel={`All categories, ${safeCategories.length} available`}
+          accessibilityLabel="Category: All Categories"
           accessibilityState={{ selected: selectedCategory === 'all' }}
           style={[
             styles.catPill,
@@ -223,6 +212,11 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
             },
           ]}
         >
+          <Ionicons
+            name="layers-outline"
+            size={14}
+            color={selectedCategory === 'all' ? (isLight ? '#FFF' : '#10120E') : c.primary}
+          />
           <Text
             style={[
               styles.catPillText,
@@ -232,13 +226,13 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
               },
             ]}
           >
-            All Categories ({safeCategories.length})
+            All
           </Text>
         </TouchableOpacity>
 
-        {/* Categories (Global + User Custom) */}
         {safeCategories.map((cat) => {
           const isActive = selectedCategory.toLowerCase() === (cat.name || '').toLowerCase();
+          const iconColor = isActive ? (isLight ? '#FFF' : '#10120E') : c.primary;
           return (
             <TouchableOpacity
               key={cat.id}
@@ -255,7 +249,7 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
                 },
               ]}
             >
-              <Text style={styles.catEmoji}>{getCategoryEmoji(cat.name)}</Text>
+              <Ionicons name={getCategoryIconName(cat.name)} size={14} color={iconColor} />
               <Text
                 style={[
                   styles.catPillText,
@@ -362,9 +356,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
-  },
-  catEmoji: {
-    fontSize: 13,
   },
   catPillText: {
     fontSize: 12,

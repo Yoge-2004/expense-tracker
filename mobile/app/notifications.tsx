@@ -392,6 +392,14 @@ export default function NotificationsScreen() {
         </View>
       </View>
 
+      {/* Gesture Hint Bar */}
+      <View style={[styles.swipeHintBar, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Ionicons name="swap-horizontal-outline" size={14} color={c.primary} />
+        <Text style={[styles.swipeHintText, { color: c.textMuted }]}>
+          Tip: Swipe any notification left or right to dismiss
+        </Text>
+      </View>
+
       {loading ? (
         <ImmersiveLoader message="Syncing Notifications..." compact />
       ) : (
@@ -421,6 +429,22 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
+  swipeHintBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  swipeHintText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
   iconBtn: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 18, fontWeight: '800' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },

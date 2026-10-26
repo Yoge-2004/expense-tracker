@@ -1,7 +1,11 @@
 package com.example.expensetracker.service.impl;
 
+import com.example.expensetracker.dto.MlClassificationRequest;
+import com.example.expensetracker.dto.MlClassificationResponse;
+import com.example.expensetracker.service.MlInferenceClient;
 import com.example.expensetracker.service.ReceiptOcrService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,6 +32,17 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 public class ReceiptOcrServiceImpl implements ReceiptOcrService {
+
+    private final MlInferenceClient mlInferenceClient;
+
+    public ReceiptOcrServiceImpl() {
+        this(null);
+    }
+
+    @Autowired
+    public ReceiptOcrServiceImpl(@Autowired(required = false) MlInferenceClient mlInferenceClient) {
+        this.mlInferenceClient = mlInferenceClient;
+    }
 
     private static final Map<String, List<String>> CATEGORY_KEYWORDS;
     static {
@@ -434,6 +449,21 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
             }
         }
 
+        // Augment or refine with ML inference client if available and category is Miscellaneous or low confidence
+        if (mlInferenceClient != null && ("Miscellaneous".equals(category) || maxMatches <= 1)) {
+            try {
+                String query = (merchant != null && !"Receipt Purchase".equals(merchant))
+                        ? merchant
+                        : text.substring(0, Math.min(text.length(), 200));
+                MlClassificationResponse mlResp = mlInferenceClient.classify(new MlClassificationRequest(query, 1));
+                if (mlResp != null && mlResp.confidence() >= 0.70 && mlResp.category() != null) {
+                    category = mapCanonicalToReadable(mlResp.category());
+                }
+            } catch (Exception e) {
+                log.debug("ML inference fallback during receipt OCR: {}", e.getMessage());
+            }
+        }
+
         Map<String, Object> breakdown = new LinkedHashMap<>();
         breakdown.put("grandTotal", grandTotal);
         breakdown.put("subtotal", subtotal);
@@ -452,6 +482,28 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         result.put("confidence", amount != null && !"Receipt Purchase".equals(merchant) ? 92 : 75);
         result.put("breakdown", breakdown);
         return result;
+    }
+
+    private String mapCanonicalToReadable(String canonical) {
+        if (canonical == null) return "Miscellaneous";
+        return switch (canonical.toLowerCase(Locale.ROOT)) {
+            case "food_dining" -> "Food & Dining";
+            case "transportation" -> "Transportation";
+            case "shopping_retail" -> "Shopping";
+            case "entertainment_recreation" -> "Entertainment";
+            case "healthcare_medical" -> "Health & Medical";
+            case "utilities_services" -> "Utilities";
+            default -> {
+                String[] words = canonical.replace("_", " ").split("\\s+");
+                StringBuilder sb = new StringBuilder();
+                for (String w : words) {
+                    if (!w.isEmpty()) {
+                        sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1)).append(" ");
+                    }
+                }
+                yield sb.toString().trim();
+            }
+        };
     }
 
     private Double extractVal(String line, Pattern pattern) {

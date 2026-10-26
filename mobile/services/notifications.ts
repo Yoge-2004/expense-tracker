@@ -203,7 +203,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
     await Notifications.scheduleNotificationAsync({
       identifier: MIDDAY_NOTIFICATION_ID,
       content: {
-        title: '☀️ Midday Expense Check',
+        title: 'Midday Expense Check',
         body: 'Did you grab lunch or make a morning purchase? Take 10 seconds to record it now!',
         sound: await resolveNotificationSound(),
         color: '#D4AF37',
@@ -221,7 +221,7 @@ export async function scheduleDailyExpenseReminders(): Promise<boolean> {
     await Notifications.scheduleNotificationAsync({
       identifier: EVENING_NOTIFICATION_ID,
       content: {
-        title: '🌙 Daily Ledger Wrap-up',
+        title: 'Daily Ledger Wrap-up',
         body: "Wrap up today's ledger! Log any remaining transactions before heading to sleep.",
         sound: await resolveNotificationSound(),
         color: '#D4AF37',
@@ -366,8 +366,8 @@ export async function notifyInstantDebit(transaction: ParsedTransaction, autoAdd
 
     const formattedAmt = formatNotificationAmount(transaction.amount, transaction.currency, 2);
     const title = transaction.direction === "DEBIT"
-      ? (autoAdded ? `💸 Auto-Added Debit: ${formattedAmt}` : `💸 Debit Alert: ${formattedAmt}`)
-      : `💰 Transaction Alert: ${formattedAmt}`;
+      ? (autoAdded ? `Auto-Added Debit: ${formattedAmt}` : `Debit Alert: ${formattedAmt}`)
+      : `Transaction Alert: ${formattedAmt}`;
 
     const merchantStr = transaction.merchant ? ` at ${transaction.merchant}` : "";
     const accStr = transaction.accountTail ? ` (Card/A/c xx${transaction.accountTail})` : "";
@@ -684,7 +684,7 @@ export async function notifySalaryCredit(amount: number, currency: string = '₹
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `💵 ${source} Credited: ${formatNotificationAmount(amount, currency)}`,
+        title: `${source} Credited: ${formatNotificationAmount(amount, currency)}`,
         body: 'Your earnings have landed. Allocate to savings goals, SIPs, and fixed commitments before spending begins!',
         sound: await resolveNotificationSound(),
         color: '#D4AF37',
@@ -712,8 +712,8 @@ export async function notifyBudgetThresholdAlert(categoryName: string, percentSp
 
     const isExceeded = percentSpent >= 100;
     const title = isExceeded
-      ? `🚨 Budget Exceeded: ${categoryName}`
-      : `⚠️ Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
+      ? `Budget Exceeded: ${categoryName}`
+      : `Budget Warning: ${categoryName} (${Math.round(percentSpent)}%)`;
     const body = isExceeded
       ? `You have exceeded your limit for ${categoryName} by ${formatNotificationAmount(Math.abs(remainingAmt), currency)}.`
       : `You have used ${Math.round(percentSpent)}% of your ${categoryName} budget. Remaining buffer: ${formatNotificationAmount(remainingAmt, currency)}.`;
@@ -748,7 +748,7 @@ export async function notifySubscriptionDue(subscriptionName: string, amount: nu
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `🔄 Upcoming Renewal: ${subscriptionName}`,
+        title: `Upcoming Renewal: ${subscriptionName}`,
         body: `${subscriptionName} (${formatNotificationAmount(amount, currency, 2)}) is scheduled to renew on ${dueDate}. Review or ensure adequate balance.`,
         sound: await resolveNotificationSound(),
         color: '#D4AF37',
@@ -776,8 +776,8 @@ export async function notifySavingsGoalMilestone(goalName: string, progressPerce
 
     const isComplete = progressPercent >= 100;
     const title = isComplete
-      ? `🎉 Goal Accomplished: ${goalName}!`
-      : `🎯 Milestone Reached: ${goalName} (${progressPercent}%)`;
+      ? `Goal Accomplished: ${goalName}!`
+      : `Milestone Reached: ${goalName} (${progressPercent}%)`;
     const body = isComplete
       ? `Congratulations! You have reached 100% of your target: ${formatNotificationAmount(savedAmount, currency)}.`
       : `Great progress! You have saved ${formatNotificationAmount(savedAmount, currency)} of ${formatNotificationAmount(targetAmount, currency)} (${progressPercent}%).`;
@@ -815,19 +815,19 @@ function fixedSmartReminders() {
   return [
     {
       id: `${REMINDER_ID_PREFIX}morning`,
-      title: '☀️ Plan your day',
+      title: 'Plan your day',
       body: "Check your budgets and today's bills before you spend.",
       trigger: { type: types.DAILY, hour: 9, minute: 0 },
     },
     {
       id: `${REMINDER_ID_PREFIX}weekly_review`,
-      title: '📊 Weekly review',
+      title: 'Weekly review',
       body: 'See how your week went: spending vs last week and your top categories.',
       trigger: { type: types.WEEKLY, weekday: 1, hour: 19, minute: 0 }, // Sunday 7:00 PM
     },
     {
       id: `${REMINDER_ID_PREFIX}month_start`,
-      title: '🗓️ New month, fresh start',
+      title: 'New month, fresh start',
       body: "Set this month's budgets and log your salary when it arrives.",
       trigger: { type: types.MONTHLY, day: 1, hour: 9, minute: 0 },
     },
@@ -982,7 +982,7 @@ export async function notifyTransactionRecorded(transaction: RecordedTransaction
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: isDebit ? `💸 Debit recorded: ${amountText}` : `💵 Credit recorded: ${amountText}`,
+        title: isDebit ? `Debit recorded: ${amountText}` : `Credit recorded: ${amountText}`,
         body: body || (isDebit ? 'Expense saved.' : 'Income saved.'),
         sound: await resolveNotificationSound(),
         color: '#D4AF37',
@@ -1087,8 +1087,8 @@ export async function scheduleLoanReminders(loans: any[], currSymbol: string = '
 
       const isLent = loan.type === 'LENT';
       const title = isLent
-        ? `🤝 Collect from ${loan.counterparty}`
-        : `💳 Pay back ${loan.counterparty}`;
+        ? `Collect from ${loan.counterparty}`
+        : `Pay back ${loan.counterparty}`;
       const formattedAmt = formatNotificationAmount(loan.amount, currSymbol);
       const body = isLent
         ? `Reminder to collect ${formattedAmt} from ${loan.counterparty}${loan.notes ? ` (${loan.notes})` : ''}.`

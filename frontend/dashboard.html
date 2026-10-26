@@ -636,6 +636,23 @@
                 </button>
             </div>
 
+            <!-- Gesture & Keyboard Quick Clue Bar -->
+            <div class="ledger-gesture-hint-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:7px 14px; margin: 0 0 14px; border-radius:10px; background:var(--input-bg, rgba(255,255,255,0.03)); border:1px solid var(--border); font-size:11.5px; color:var(--text-muted);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="color:var(--primary); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                        Gestures &amp; Shortcuts:
+                    </span>
+                    <span>Swipe row <strong style="color:#D4AF37;">Right</strong> to Edit &bull; <strong style="color:#EF4444;">Left</strong> to Delete (touchscreens)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span>Press <kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">/</kbd> Search</span>
+                    <span><kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">Ctrl+K</kbd> Palette</span>
+                    <span><kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">Alt+S</kbd> Stealth</span>
+                    <span><kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">Alt+C</kbd> Calc</span>
+                </div>
+            </div>
+
             <!-- Category Pills Quick Bar -->
             <div class="category-pills-wrapper" id="categoryPillsWrapper">
                 <div class="category-pills-bar" id="categoryPillsBar">
@@ -1697,13 +1714,16 @@
                 <div class="help-card">
                     <div class="help-card-header">
                         <span class="help-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-                        <div class="help-card-title">6. Power Shortcuts</div>
+                        <div class="help-card-title">6. Power Shortcuts & Touch Gestures</div>
                     </div>
                     <div class="help-card-desc">
-                        Navigate effortlessly with keyboard hotkeys:
+                        Navigate effortlessly with keyboard hotkeys and mobile touch gestures:
                         <ul class="help-tips-list">
+                            <li><strong>Touchscreen Swipe Row</strong>: On phones and tablets, swipe any transaction row <strong style="color:#D4AF37;">Right</strong> to edit instantly, or <strong style="color:#EF4444;">Left</strong> to delete.</li>
+                            <li><strong>Draggable Floating Calculator</strong>: Drag the gold calculator bubble anywhere on your viewport.</li>
                             <li><kbd>Ctrl + K</kbd> or <kbd>Cmd + K</kbd>: Open Spotlight Command Palette to trigger any action instantly.</li>
                             <li><kbd>Alt + C</kbd>: Toggle Floating Quick Calculator & Bill Splitter.</li>
+                            <li><kbd>Alt + S</kbd>: Toggle Privacy / Stealth Mode (masks all balances with dots <code>••••••</code> in public).</li>
                             <li><kbd>/</kbd>: Instantly jump to and focus table search.</li>
                             <li><kbd>Esc</kbd>: Dismiss any active dialog, palette, or menu.</li>
                         </ul>

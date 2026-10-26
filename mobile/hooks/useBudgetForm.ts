@@ -169,7 +169,7 @@ export function useBudgetForm({
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       showAlert(
-        isEditMode ? '🎯 Budget Updated' : '🎯 Budget Saved',
+        isEditMode ? 'Budget Updated' : 'Budget Saved',
         'Category spending cap saved successfully.',
         [
           {

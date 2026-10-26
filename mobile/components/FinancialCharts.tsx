@@ -23,7 +23,7 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
-import { Colors, getCategoryColor, getCategoryEmoji } from '../constants/theme';
+import { Colors, getCategoryColor, getCategoryIconName } from '../constants/theme';
 import { getCurrencySymbol } from '../services/currency';
 
 // Dynamic chart dimensions calculated adaptively per device form factor
@@ -157,8 +157,9 @@ export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expen
           {categories.slice(0, 5).map((cat, i) => (
             <View key={i} style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: cat.color }]} />
+              <Ionicons name={getCategoryIconName(cat.name)} size={12} color={cat.color} style={{ marginRight: 4 }} />
               <Text style={[styles.legendName, { color: c.text }]} numberOfLines={1}>
-                {getCategoryEmoji(cat.name)} {cat.name}
+                {cat.name}
               </Text>
               <Text style={[styles.legendPct, { color: c.textMuted }]}>{cat.pct.toFixed(0)}%</Text>
             </View>
@@ -541,8 +542,9 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
             <View key={i} style={styles.budgetRow}>
               <View style={styles.budgetMeta}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                  <Ionicons name={getCategoryIconName(b.categoryName)} size={13} color={barColor} />
                   <Text style={[styles.budgetName, { color: c.text }]} numberOfLines={1}>
-                    {getCategoryEmoji(b.categoryName)} {b.categoryName}
+                    {b.categoryName}
                   </Text>
                   {b.period && (
                     <View style={{ backgroundColor: c.inputBg, paddingHorizontal: 5, paddingVertical: 1.5, borderRadius: 4, borderWidth: 1, borderColor: c.border }}>

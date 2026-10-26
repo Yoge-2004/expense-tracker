@@ -100,14 +100,14 @@ export default function ForgotPasswordScreen() {
 
       if (pinConfigured) {
         showAlert(
-          "Security PIN Verification 🔒",
+          "Security PIN Verification",
           "Account verified. Please enter your 6-digit Security PIN to proceed.",
           [{ text: "Continue", onPress: () => setStep("verify") }],
           "info"
         );
       } else if (emailEnabled) {
         showAlert(
-          "Verification Code Dispatched 📩",
+          "Verification Code Dispatched",
           `A 6-digit verification code has been sent to ${trimmedEmail}.`,
           [{ text: "Enter Code", onPress: () => setStep("verify") }],
           "success"
@@ -205,7 +205,7 @@ export default function ForgotPasswordScreen() {
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      showAlert("🎉 Password Updated", "Your password has been reset successfully. Please sign in.", [
+      showAlert("Password Updated", "Your password has been reset successfully. Please sign in.", [
         { text: "Sign In", onPress: () => router.replace("/login") },
       ], "success");
     } catch (e: any) {
@@ -317,7 +317,7 @@ export default function ForgotPasswordScreen() {
                       {hasSecurityPin ? "6-Digit Security PIN" : "6-Digit Verification Code"}
                     </Text>
                     <Text style={[styles.helperBadge, { color: c.primary }]}>
-                      {hasSecurityPin ? "🔒 Zero-Email" : "📩 Code Sent"}
+                      {hasSecurityPin ? "Zero-Email" : "Code Sent"}
                     </Text>
                   </View>
                   <View style={[styles.inputBox, { backgroundColor: c.inputBg, borderColor: inputBorder("code") }]}>

@@ -20,7 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
-import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
+import { Colors, getCategoryColor, getCategoryIconName } from '../../constants/theme';
 import { AmbientAura } from '../../components/AmbientAura';
 import { StaggeredView } from '../../components/StaggeredView';
 import { NumberTicker } from '../../components/NumberTicker';
@@ -961,9 +961,7 @@ export default function SubscriptionsScreen() {
                   <View style={styles.subTopRow}>
                     <View style={styles.subLeft}>
                       <View style={[styles.catIconWrap, { backgroundColor: catColor + '18' }]}>
-                        <Text style={styles.catEmojiText}>
-                          {getCategoryEmoji(sub.categoryName || 'General')}
-                        </Text>
+                        <Ionicons name={getCategoryIconName(sub.categoryName || 'General')} size={18} color={catColor} />
                       </View>
                       <View style={styles.subMeta}>
                         <Text style={[styles.subTitle, { color: c.text }]}>{sub.description}</Text>

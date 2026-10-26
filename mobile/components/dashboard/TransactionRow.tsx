@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
+import { Colors, getCategoryColor, getCategoryIconName } from '../../constants/theme';
 import { TransactionRowProps } from './dashboardTypes';
 
 function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) {
@@ -178,7 +178,7 @@ export const TransactionRow = memo(function TransactionRow({
               {isIncome ? (
                 <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
               ) : (
-                <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || 'General')}</Text>
+                <Ionicons name={getCategoryIconName(tx.categoryOrSource || 'General')} size={17} color={catColor} />
               )}
             </View>
             <View style={styles.txMeta}>
@@ -204,33 +204,29 @@ export const TransactionRow = memo(function TransactionRow({
           </View>
 
           <View style={styles.txRight}>
-            <Text style={[styles.txAmount, isIncome ? { color: '#10B981', fontWeight: '800' } : tStyles.amountText, { fontWeight: '800' }]}>
-              {isStealth
-                ? `${isIncome ? '+' : '-'}${currSymbol}••••••`
-                : `${isIncome ? '+' : '-'}${currSymbol}${Number(tx.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+            <Text
+              style={[
+                styles.txAmount,
+                isIncome ? styles.incomeText : styles.expenseText,
+                tStyles.amountText,
+              ]}
+            >
+              {isIncome ? '+' : '-'}
+              {currSymbol}
+              {isStealth ? '••••' : tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </Text>
-            <View style={styles.txRowActions}>
+            <View style={styles.txActionsRow}>
               <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  onEdit(tx);
-                }}
+                onPress={() => onEdit(tx)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.txMiniActionBtn, tStyles.miniBtn]}
-                accessibilityLabel="Edit transaction"
+                style={[styles.miniActionBtn, tStyles.miniBtn]}
               >
-                <Ionicons name="pencil" size={12} color={isIncome ? '#10B981' : colors.primary} />
+                <Ionicons name="pencil-outline" size={12} color={colors.primary} />
               </TouchableOpacity>
               <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                  onDelete(tx);
-                }}
+                onPress={() => onDelete(tx)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.txMiniActionBtn, tStyles.miniBtn]}
-                accessibilityLabel="Delete transaction"
+                style={[styles.miniActionBtn, tStyles.miniBtn]}
               >
                 <Ionicons name="trash-outline" size={12} color={colors.accent} />
               </TouchableOpacity>
@@ -245,8 +241,7 @@ export const TransactionRow = memo(function TransactionRow({
 const styles = StyleSheet.create({
   swipeRowWrapper: {
     position: 'relative',
-    borderRadius: 14,
-    overflow: 'hidden',
+    marginBottom: 8,
   },
   swipeRowBg: {
     ...StyleSheet.absoluteFill,
@@ -255,27 +250,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
   swipeActionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 9,
+    borderRadius: 8,
   },
   swipeActionRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 9,
+    borderRadius: 8,
   },
   swipeActionText: {
     fontSize: 12,
     fontWeight: '800',
+    letterSpacing: 0.5,
   },
   txCard: {
     flexDirection: 'row',
@@ -297,9 +293,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  catEmojiText: {
-    fontSize: 16,
   },
   txMeta: {
     flex: 1,
@@ -328,35 +321,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-    marginLeft: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    marginLeft: 2,
   },
   recurringBadgeText: {
     fontSize: 9,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
   txRight: {
     alignItems: 'flex-end',
+    gap: 4,
   },
   txAmount: {
-    fontSize: 14.5,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '800',
     letterSpacing: -0.3,
   },
-  txRowActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 6,
-    marginTop: 4,
+  incomeText: {
+    color: '#10B981',
   },
-  txMiniActionBtn: {
-    width: 24,
-    height: 24,
+  expenseText: {
+    color: '#C79A3E',
+  },
+  txActionsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  miniActionBtn: {
+    padding: 4,
     borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

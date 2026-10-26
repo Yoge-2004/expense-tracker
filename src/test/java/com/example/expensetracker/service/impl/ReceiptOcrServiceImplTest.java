@@ -1,11 +1,17 @@
 package com.example.expensetracker.service.impl;
 
+import com.example.expensetracker.dto.MlClassificationRequest;
+import com.example.expensetracker.dto.MlClassificationResponse;
+import com.example.expensetracker.service.MlInferenceClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -82,6 +88,28 @@ class ReceiptOcrServiceImplTest {
         Map<String, Object> intRes = service.parseReceiptText(integerReceipt);
         assertNotNull(intRes);
         assertEquals(450.0, (Double) intRes.get("amount"), 0.001);
+    }
+
+    @Test
+    @DisplayName("parseReceiptText delegates to MlInferenceClient when available")
+    void parseReceiptText_usesMlInferenceWhenAvailable() {
+        MlInferenceClient mockMl = Mockito.mock(MlInferenceClient.class);
+        ReceiptOcrServiceImpl mlEnabledService = new ReceiptOcrServiceImpl(mockMl);
+
+        Mockito.when(mockMl.classify(ArgumentMatchers.any(MlClassificationRequest.class)))
+                .thenReturn(new MlClassificationResponse("transportation", 0.94, List.of(), "v2", "tfidf"));
+
+        String receiptText = """
+                UNKNOWN LOGISTICS TRANSIT
+                Date: 2026-09-15
+                Service Fare: $50.00
+                Grand Total: $50.00
+                """;
+
+        Map<String, Object> result = mlEnabledService.parseReceiptText(receiptText);
+        assertEquals("Transportation", result.get("category"));
+        Mockito.verify(mockMl, Mockito.atLeastOnce())
+                .classify(ArgumentMatchers.any(MlClassificationRequest.class));
     }
 
     @Test

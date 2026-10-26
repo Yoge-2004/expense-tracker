@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
+from typing import Any
 
 import joblib
 import numpy as np
@@ -56,6 +57,11 @@ class MerchantSimilarityIndex:
         path.mkdir(parents=True, exist_ok=True)
         joblib.dump(self, path / "model.joblib")
 
+    @classmethod
+    def load(cls, path: Path) -> "MerchantSimilarityIndex":
+        target = path / "model.joblib" if path.is_dir() else path
+        return joblib.load(target)
+
 
 class DuplicateSimilarityModel:
     def __init__(self, vectorizer: TfidfVectorizer, matrix):
@@ -83,9 +89,37 @@ class DuplicateSimilarityModel:
                     break
         return pairs
 
+    def find_similar(
+        self, query: str, candidates: list[str], threshold: float = 0.85, top_k: int = 5
+    ) -> list[dict[str, str | float | int]]:
+        if not candidates or not query or not str(query).strip():
+            return []
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        q_vec = self.vectorizer.transform([str(query).strip()])
+        cand_mat = self.vectorizer.transform([str(c) for c in candidates])
+        scores = cosine_similarity(q_vec, cand_mat)[0]
+        results = []
+        for idx, score in enumerate(scores):
+            if float(score) >= threshold:
+                results.append(
+                    {
+                        "text": candidates[idx],
+                        "similarity": round(float(score), 4),
+                        "index": idx,
+                    }
+                )
+        results.sort(key=lambda x: x["similarity"], reverse=True)
+        return results[:top_k]
+
     def save(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
         joblib.dump(self, path / "model.joblib")
+
+    @classmethod
+    def load(cls, path: Path) -> "DuplicateSimilarityModel":
+        target = path / "model.joblib" if path.is_dir() else path
+        return joblib.load(target)
 
 
 class TransactionAnomalyModel:
@@ -114,9 +148,52 @@ class TransactionAnomalyModel:
         output["is_anomaly"] = model.predict(X).astype(int) == -1
         return cls(model, feature_columns, scaler), output
 
+    def score(self, frame: pd.DataFrame) -> pd.DataFrame:
+        numeric = frame.copy()
+        for col in self.feature_columns:
+            if col not in numeric.columns:
+                numeric[col] = 0.0
+            else:
+                numeric[col] = pd.to_numeric(numeric[col], errors="coerce").fillna(0.0)
+        features = numeric[self.feature_columns].replace([np.inf, -np.inf], np.nan).fillna(0.0)
+        X = self.scaler.transform(features)
+        output = frame.copy()
+        output["anomaly_score"] = [round(float(s), 4) for s in self.model.decision_function(X)]
+        output["is_anomaly"] = [bool(a) for a in (self.model.predict(X).astype(int) == -1)]
+        return output
+
+    def score_transactions(self, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if not records:
+            return []
+        frame = pd.DataFrame(records)
+        scored = self.score(frame)
+        return scored.to_dict(orient="records")
+
+    @classmethod
+    def default_baseline(cls, seed: int = 42) -> "TransactionAnomalyModel":
+        rng = np.random.default_rng(seed)
+        n = 1000
+        amounts = rng.exponential(scale=50.0, size=n) + rng.uniform(5.0, 500.0, size=n)
+        hours = rng.integers(0, 24, size=n)
+        dows = rng.integers(0, 7, size=n)
+        balances = rng.uniform(500.0, 10000.0, size=n)
+        synth = pd.DataFrame({
+            "amount": amounts,
+            "hour": hours,
+            "day_of_week": dows,
+            "balance": balances,
+        })
+        model, _ = cls.fit(synth, seed=seed)
+        return model
+
     def save(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
         joblib.dump(self, path / "model.joblib")
+
+    @classmethod
+    def load(cls, path: Path) -> "TransactionAnomalyModel":
+        target = path / "model.joblib" if path.is_dir() else path
+        return joblib.load(target)
 
 
 @dataclass
@@ -174,6 +251,55 @@ class SpendingForecastModel:
             predicted=pred,
         )
 
+    def forecast(self, frame: pd.DataFrame | list[dict[str, Any]], horizon_days: int = 7) -> list[dict[str, str | float]]:
+        if isinstance(frame, list):
+            frame = pd.DataFrame(frame)
+        daily = self._daily_frame(frame)
+        if len(daily) < 28:
+            raise ValueError(f"Need at least 28 days of daily spending history to forecast (received {len(daily)}).")
+        work = daily.copy()
+        forecasts = []
+        last_date = pd.to_datetime(work.index.max())
+        for i in range(1, horizon_days + 1):
+            next_date = last_date + pd.DateOffset(days=int(i))
+            amounts = work["amount"]
+            lag_1 = float(amounts.iloc[-1])
+            lag_7 = float(amounts.iloc[-7]) if len(amounts) >= 7 else lag_1
+            lag_28 = float(amounts.iloc[-28]) if len(amounts) >= 28 else lag_7
+            roll_7 = float(amounts.iloc[-7:].mean())
+            roll_28 = float(amounts.iloc[-28:].mean())
+            row = pd.DataFrame([{
+                "dow": next_date.dayofweek,
+                "day": next_date.day,
+                "month": next_date.month,
+                "lag_1": lag_1,
+                "lag_7": lag_7,
+                "lag_28": lag_28,
+                "roll_7": roll_7,
+                "roll_28": roll_28,
+            }])[self.feature_columns]
+            pred_amount = max(0.0, float(self.model.predict(row)[0]))
+            forecasts.append({
+                "date": next_date.strftime("%Y-%m-%d"),
+                "predicted_amount": round(pred_amount, 2),
+            })
+            work.loc[next_date] = pred_amount
+        return forecasts
+
+    @classmethod
+    def default_baseline(cls, seed: int = 42) -> "SpendingForecastModel":
+        rng = np.random.default_rng(seed)
+        dates = pd.date_range("2026-01-01", periods=90, freq="D")
+        amounts = 30.0 + 10.0 * np.sin(np.arange(90) * 2 * np.pi / 7) + rng.normal(0, 5.0, 90)
+        synth = pd.DataFrame({"date": dates, "amount": np.maximum(5.0, amounts)})
+        model, _ = cls.fit(synth, seed=seed, holdout_days=14)
+        return model
+
     def save(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
         joblib.dump(self, path / "model.joblib")
+
+    @classmethod
+    def load(cls, path: Path) -> "SpendingForecastModel":
+        target = path / "model.joblib" if path.is_dir() else path
+        return joblib.load(target)

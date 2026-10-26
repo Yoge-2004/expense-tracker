@@ -297,6 +297,38 @@ For Android builds, the Google Cloud OAuth configuration must match the applicat
 - **Integrated Help Guide & About Center**: Contextual modals providing naive-user onboarding, step-by-step feature explanations, and architectural transparency.
 - **Fluid Executive HUD Cursor**: Custom ambient dot-ring pointer providing responsive hover elevation feedback across all interactive elements.
 
+## 🎮 Gestures & Keyboard Shortcuts Guide
+
+Expense Tracker is designed for high-velocity navigation across mobile, tablet, and desktop with tactile touch gestures and fast keyboard accelerators:
+
+### 📱 Mobile App Gestures (iOS & Android)
+
+| Gesture | Target Surface | Action Triggered | Haptic Feedback |
+|---|---|---|---|
+| **Swipe Right** (`dx > +70 px`) | Transaction Row (Ledger) | **Quick Edit**: Opens edit form with transaction data pre-populated | `Light` impact |
+| **Swipe Left** (`dx < -70 px`) | Transaction Row (Ledger) | **Quick Delete**: Triggers safety confirmation dialog | `Warning` notification |
+| **Single Tap** | Transaction Row (Ledger) | **4-Way Action Sheet**: Choose between *Split/Link to Loan*, *Edit*, *Delete*, or *Cancel* | `Light` impact |
+| **Horizontal Swipe** | Activity Stream Selector | **Cycle Stream**: Flips between *All Activity* ↔ *Outflows* ↔ *Inflows* | Fluid pan |
+| **Swipe Left / Right** | Notification Item | **Dismiss Alert**: Slides out and removes the notification from inbox | `Medium` impact |
+| **Press & Drag** | Floating Quick Calculator | **Reposition Bubble**: Freely move the calculator bubble anywhere on viewport (saved across app sessions) | Fluid drag |
+| **Tap Eye Icon** (`👁️`) | Command Header / Profile | **Stealth Mode**: Toggles privacy shield to mask financial amounts with dots (`••••••`) | `Light` impact |
+| **Pull Down** | Any Screen View | **Pull-to-Refresh**: Bypasses local cache and forces live re-synchronization | System refresh |
+
+### 🌐 Web & Desktop Shortcuts
+
+| Shortcut / Gesture | Context | Action Triggered |
+|---|---|---|
+| `Ctrl + K` / `Cmd + K` | Global | **Executive Command Palette**: Search actions, trigger modals, and jump screens |
+| `Alt + C` | Global | **Floating Calculator**: Toggle the quick calculator & bill splitter |
+| `Alt + S` | Global | **Stealth Privacy Mode**: Mask all financial figures and balances (`••••••`) |
+| `/` (Slash) | Dashboard | **Instant Search**: Focuses the transaction & inflow search input |
+| `Escape` | Modals / Menus | **Dismiss**: Closes active modals, command palette, and dropdown menus |
+| **Touchscreen Row Swipe** | Mobile Web Table Rows | Swipe right to edit, swipe left to delete (on touch-enabled devices) |
+| **Draggable Header** | Floating Calculator | Drag calculator window anywhere across desktop or browser viewports |
+
+> [!TIP]
+> **Never Forget a Shortcut:** Both the mobile app and web frontend display subtle, persistent gesture cue bars above the transaction ledger (*Swipe right to edit, left to delete*) and provide 1-tap access to the complete in-app interactive **User Guide & Help** modal directly from the command header.
+
 ## Offline Resilience & Skeleton Loading
 
 - **Zero-Flicker Skeleton Loaders**: Metric cards and transaction lists initialize in an animated shimmer skeleton state before network hydration, eliminating jarring `0` or default value flashes.
@@ -1014,9 +1046,9 @@ docs/images/
 
 # 📦 Releases
 
-Download the latest Android builds (**v1.0.4**, Version Code **6**), view release notes, checksums, and previous versions from the official GitHub Releases page or read [RELEASE_NOTES.md](RELEASE_NOTES.md).
+Download the latest Android builds (**v1.0.9**, Version Code **11**), view release notes, checksums, and previous versions from the official GitHub Releases page or read [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
-**👉 [View all releases (v1.0.4)](https://github.com/Yoge-2004/expense-tracker/releases)**
+**👉 [View all releases (v1.0.9)](https://github.com/Yoge-2004/expense-tracker/releases)**
 
 ---
 

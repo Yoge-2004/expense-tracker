@@ -4,14 +4,32 @@
  * - Theme selection (dark / light) with system color scheme detection and persistence
  * - Stealth mode toggle for privacy in public spaces
  * - Currency preference (e.g. INR, USD, EUR)
+ * - Dynamic Theming & Appearance Studio (Fonts, Background Assets & Auto-Extracted Palettes)
  *
  * Decoupled from AuthContext so UI cosmetic toggles do not trigger cascading
  * re-renders of authentication-dependent components.
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useColorScheme } from 'react-native';
 import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest } from '../services/api';
+import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets } from '../constants/theme';
+import { ExtractedPalette, PRESET_BACKGROUNDS, PresetBackground } from '../services/paletteExtractor';
+
+export interface BackgroundAssetConfig {
+  type: 'preset' | 'custom' | 'none';
+  presetId?: string;
+  uri?: string;
+  overlayOpacity: number; // 0.0 - 0.9
+  blurIntensity?: number; // 0 - 20
+}
+
+export const DEFAULT_BG_ASSET: BackgroundAssetConfig = {
+  type: 'preset',
+  presetId: 'default',
+  overlayOpacity: 0.35,
+  blurIntensity: 0,
+};
 
 export interface PreferencesContextType {
   theme: 'dark' | 'light';
@@ -21,6 +39,20 @@ export interface PreferencesContextType {
   currency: string;
   updateCurrency: (currency: string, userId?: string | null) => Promise<void>;
   setCurrencyState: (currency: string) => void;
+
+  // Appearance & Studio properties
+  fontChoice: FontChoice;
+  setFontChoice: (font: FontChoice) => Promise<void>;
+  activeFonts: FontTokens;
+
+  backgroundAsset: BackgroundAssetConfig;
+  setBackgroundAsset: (config: BackgroundAssetConfig) => Promise<void>;
+
+  customPalette: ExtractedPalette | null;
+  setCustomPalette: (palette: ExtractedPalette | null) => Promise<void>;
+
+  themeColors: ThemeColors;
+  resetAppearance: () => Promise<void>;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -40,6 +72,11 @@ export function PreferencesProvider({
   const [currency, setCurrency] = useState<string>('INR');
   const userToggledThemeRef = useRef(false);
 
+  // Appearance Studio states
+  const [fontChoice, setFontChoiceState] = useState<FontChoice>('grotesk');
+  const [backgroundAsset, setBackgroundAssetState] = useState<BackgroundAssetConfig>(DEFAULT_BG_ASSET);
+  const [customPalette, setCustomPaletteState] = useState<ExtractedPalette | null>(null);
+
   useEffect(() => {
     if (initialTheme && !userToggledThemeRef.current && initialTheme !== theme) {
       setTheme(initialTheme);
@@ -58,18 +95,44 @@ export function PreferencesProvider({
       })
       .catch(() => {});
 
-    // Hydrate saved currency and stealth preferences
+    // Hydrate saved currency, stealth, and appearance preferences
     Promise.all([
       safeStorageGet('user_currency'),
       safeStorageGet('app_stealth_mode'),
+      safeStorageGet('app_font_choice'),
+      safeStorageGet('app_bg_asset'),
+      safeStorageGet('app_custom_palette'),
     ])
-      .then(([savedCurrency, savedStealth]) => {
+      .then(([savedCurrency, savedStealth, savedFont, savedBg, savedPalette]) => {
         if (!mounted) return;
         if (savedStealth === 'true') {
           setIsStealthMode(true);
         }
         if (savedCurrency) {
           setCurrency(savedCurrency);
+        }
+        if (savedFont && ['grotesk', 'fraunces', 'mono', 'system'].includes(savedFont)) {
+          setFontChoiceState(savedFont as FontChoice);
+        }
+        if (savedBg) {
+          try {
+            const parsed = JSON.parse(savedBg);
+            if (parsed && typeof parsed === 'object') {
+              setBackgroundAssetState(parsed);
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+        if (savedPalette) {
+          try {
+            const parsed = JSON.parse(savedPalette);
+            if (parsed && typeof parsed === 'object') {
+              setCustomPaletteState(parsed);
+            }
+          } catch {
+            // Ignore parse errors
+          }
         }
       })
       .catch((e) => {
@@ -123,6 +186,86 @@ export function PreferencesProvider({
     setCurrency(code);
   }, []);
 
+  const setFontChoice = useCallback(async (font: FontChoice) => {
+    setFontChoiceState(font);
+    try {
+      await safeStorageSet('app_font_choice', font);
+    } catch (e) {
+      console.warn('[PreferencesContext] Failed to save font choice:', e);
+    }
+  }, []);
+
+  const setBackgroundAsset = useCallback(async (config: BackgroundAssetConfig) => {
+    setBackgroundAssetState(config);
+    try {
+      await safeStorageSet('app_bg_asset', JSON.stringify(config));
+    } catch (e) {
+      console.warn('[PreferencesContext] Failed to save background asset:', e);
+    }
+  }, []);
+
+  const setCustomPalette = useCallback(async (palette: ExtractedPalette | null) => {
+    setCustomPaletteState(palette);
+    try {
+      if (palette) {
+        await safeStorageSet('app_custom_palette', JSON.stringify(palette));
+      } else {
+        await safeStorageSet('app_custom_palette', '');
+      }
+    } catch (e) {
+      console.warn('[PreferencesContext] Failed to save custom palette:', e);
+    }
+  }, []);
+
+  const resetAppearance = useCallback(async () => {
+    setFontChoiceState('grotesk');
+    setBackgroundAssetState(DEFAULT_BG_ASSET);
+    setCustomPaletteState(null);
+    try {
+      await safeStorageSet('app_font_choice', 'grotesk');
+      await safeStorageSet('app_bg_asset', JSON.stringify(DEFAULT_BG_ASSET));
+      await safeStorageSet('app_custom_palette', '');
+    } catch (e) {
+      console.warn('[PreferencesContext] Failed to reset appearance:', e);
+    }
+  }, []);
+
+  const activeFonts = useMemo(() => {
+    return FontPresets[fontChoice] || FontPresets.grotesk;
+  }, [fontChoice]);
+
+  const activePreset: PresetBackground = useMemo(() => {
+    return (
+      PRESET_BACKGROUNDS.find((p) => p.id === backgroundAsset.presetId) ||
+      PRESET_BACKGROUNDS[0]
+    );
+  }, [backgroundAsset.presetId]);
+
+  const themeColors = useMemo<ThemeColors>(() => {
+    const baseColors = Colors[theme];
+    const activePalette =
+      customPalette ??
+      (theme === 'light' ? activePreset.lightPalette : activePreset.darkPalette);
+
+    if (!activePalette) return baseColors;
+
+    return {
+      ...baseColors,
+      primary: activePalette.primary || baseColors.primary,
+      primaryGradientEnd: activePalette.primaryGradientEnd || baseColors.primaryGradientEnd,
+      accent: activePalette.accent || baseColors.accent,
+      highlight: activePalette.highlight || baseColors.highlight,
+      card: activePalette.card || baseColors.card,
+      surface: activePalette.surface || baseColors.surface,
+      borderAccent: activePalette.borderAccent || baseColors.borderAccent,
+      scrollThumb: activePalette.primary ? activePalette.primary + '80' : baseColors.scrollThumb,
+      cardTotalBg: activePalette.primary ? activePalette.primary + '1F' : baseColors.cardTotalBg,
+      cardTotalBorder: activePalette.primary ? activePalette.primary + '52' : baseColors.cardTotalBorder,
+      cardCountBg: activePalette.accent ? activePalette.accent + '1F' : baseColors.cardCountBg,
+      cardCountBorder: activePalette.accent ? activePalette.accent + '52' : baseColors.cardCountBorder,
+    };
+  }, [theme, customPalette, activePreset]);
+
   const value = useMemo(
     () => ({
       theme,
@@ -132,8 +275,34 @@ export function PreferencesProvider({
       currency,
       updateCurrency,
       setCurrencyState,
+      fontChoice,
+      setFontChoice,
+      activeFonts,
+      backgroundAsset,
+      setBackgroundAsset,
+      customPalette,
+      setCustomPalette,
+      themeColors,
+      resetAppearance,
     }),
-    [theme, toggleTheme, isStealthMode, toggleStealthMode, currency, updateCurrency, setCurrencyState]
+    [
+      theme,
+      toggleTheme,
+      isStealthMode,
+      toggleStealthMode,
+      currency,
+      updateCurrency,
+      setCurrencyState,
+      fontChoice,
+      setFontChoice,
+      activeFonts,
+      backgroundAsset,
+      setBackgroundAsset,
+      customPalette,
+      setCustomPalette,
+      themeColors,
+      resetAppearance,
+    ]
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

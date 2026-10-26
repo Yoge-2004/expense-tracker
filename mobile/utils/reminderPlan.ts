@@ -125,7 +125,7 @@ export function planDueReminders(
     for (const offset of [3, 1, 0]) {
       add({
         id: `${REMINDER_ID_PREFIX}bill_${bill.id}_${dayKey(due)}_${offset}`,
-        title: `💳 ${name} is due ${whenLabel(offset)}`,
+        title: `${name} is due ${whenLabel(offset)}`,
         body: `${formatReminderMoney(currency, bill.amount)} is due on ${dayLabel(due)}. Make sure your balance can cover it.`,
         date: atHour(due, -offset, hour),
         screen: '/(tabs)/subscriptions',
@@ -140,7 +140,7 @@ export function planDueReminders(
     const name = (income.source ?? '').trim() || 'Income';
     add({
       id: `${REMINDER_ID_PREFIX}income_${income.id}_${dayKey(due)}`,
-      title: `💰 ${name} is expected today`,
+      title: `${name} is expected today`,
       body: `${formatReminderMoney(currency, income.amount)} is due today. Open the app to check that it arrived.`,
       date: atHour(due, 0, hour),
       screen: '/(tabs)',
@@ -155,7 +155,7 @@ export function planDueReminders(
     for (const offset of [1, 0]) {
       add({
         id: `${REMINDER_ID_PREFIX}goal_${goal.id}_${dayKey(due)}_${offset}`,
-        title: `🎯 Savings top-up due ${whenLabel(offset)}`,
+        title: `Savings top-up due ${whenLabel(offset)}`,
         body: `Put ${formatReminderMoney(currency, goal.recurringAmount)} toward ${name}.`,
         date: atHour(due, -offset, hour),
         screen: '/(tabs)',

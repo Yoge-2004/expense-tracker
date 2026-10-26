@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
@@ -32,7 +33,64 @@ class AnalysisResponse(ClassificationResponse):
     analysis: dict[str, float | str]
 
 
-app = FastAPI(title="Expense Tracker ML API", version="0.2.0")
+class MerchantMatchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=200)
+    top_k: int = Field(default=5, ge=1, le=20)
+
+
+class MerchantMatchItem(BaseModel):
+    merchant: str
+    similarity: float
+
+
+class MerchantMatchResponse(BaseModel):
+    query: str
+    matches: list[MerchantMatchItem]
+
+
+class DuplicateCheckRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    candidates: list[str] = Field(min_length=1, max_length=1000)
+    threshold: float = Field(default=0.85, ge=0.0, le=1.0)
+    top_k: int = Field(default=5, ge=1, le=20)
+
+
+class DuplicateMatchItem(BaseModel):
+    text: str
+    similarity: float
+    index: int
+
+
+class DuplicateCheckResponse(BaseModel):
+    query: str
+    matches: list[DuplicateMatchItem]
+
+
+class AnomalyScoreRequest(BaseModel):
+    transactions: list[dict[str, Any]] = Field(min_length=1, max_length=10000)
+
+
+class AnomalyScoreResponse(BaseModel):
+    results: list[dict[str, Any]]
+    total_anomalies: int
+
+
+class SpendingForecastRequest(BaseModel):
+    history: list[dict[str, Any]] = Field(min_length=28, max_length=5000)
+    horizon_days: int = Field(default=7, ge=1, le=30)
+
+
+class ForecastDayItem(BaseModel):
+    date: str
+    predicted_amount: float
+
+
+class SpendingForecastResponse(BaseModel):
+    horizon_days: int
+    forecast: list[ForecastDayItem]
+
+
+app = FastAPI(title="Expense Tracker ML API", version="0.3.0")
 _registry: ModelRegistry | None = None
 _load_error: str | None = None
 
@@ -56,7 +114,16 @@ def health() -> dict:
         service = _service()
     except HTTPException:
         return {"status": "degraded", "model_error": _load_error or "model not loaded"}
-    return {"status": "ok", "model": service.registry.metadata()}
+    return {
+        "status": "ok",
+        "model": service.registry.metadata(),
+        "auxiliary_models": {
+            "merchant_similarity": "available",
+            "duplicate_similarity": "available",
+            "transaction_anomaly": "available",
+            "spending_forecast": "available",
+        },
+    }
 
 
 @app.post("/api/v1/classify", response_model=ClassificationResponse)
@@ -67,3 +134,33 @@ def classify(request: ClassificationRequest) -> dict:
 @app.post("/api/v1/analyze", response_model=AnalysisResponse)
 def analyze(request: ClassificationRequest) -> dict:
     return _service().analyze(request.description, top_n=request.top_n)
+
+
+@app.post("/api/v1/merchants/match", response_model=MerchantMatchResponse)
+def match_merchant(request: MerchantMatchRequest) -> dict:
+    matches = _service().match_merchant(request.query, top_k=request.top_k)
+    return {"query": request.query, "matches": matches}
+
+
+@app.post("/api/v1/duplicates/check", response_model=DuplicateCheckResponse)
+def check_duplicates(request: DuplicateCheckRequest) -> dict:
+    matches = _service().check_duplicates(
+        request.query, request.candidates, threshold=request.threshold, top_k=request.top_k
+    )
+    return {"query": request.query, "matches": matches}
+
+
+@app.post("/api/v1/anomalies/score", response_model=AnomalyScoreResponse)
+def score_anomalies(request: AnomalyScoreRequest) -> dict:
+    results = _service().score_anomalies(request.transactions)
+    anomalies_count = sum(1 for r in results if r.get("is_anomaly") is True)
+    return {"results": results, "total_anomalies": anomalies_count}
+
+
+@app.post("/api/v1/forecast/spending", response_model=SpendingForecastResponse)
+def forecast_spending(request: SpendingForecastRequest) -> dict:
+    try:
+        forecast = _service().forecast_spending(request.history, horizon_days=request.horizon_days)
+        return {"horizon_days": request.horizon_days, "forecast": forecast}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

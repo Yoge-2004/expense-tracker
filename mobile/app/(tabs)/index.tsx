@@ -47,6 +47,7 @@ import {
 } from '../../components/FinancialCharts';
 import { DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
+import { HelpGuideModal } from '../../components/HelpGuideModal';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { DashboardMetricsMatrix } from '../../components/dashboard/DashboardMetricsMatrix';
 import { DashboardLedger } from '../../components/dashboard/DashboardLedger';
@@ -138,10 +139,6 @@ interface Subscription {
  * Main dashboard screen component.
  */
 
-
-
-// The ledger FlatList sits in the page's ScrollView, but it has a fixed height and scrolls on its own, so its
-
 export default function DashboardScreen() {
   const { userId, userName, theme, currency, profilePicture, isStealthMode, toggleStealthMode, refreshUserProfile } = useAuth();
   const { showAlert } = useAlert();
@@ -198,6 +195,7 @@ export default function DashboardScreen() {
   const [endDate, setEndDate] = useState('');
   const [sortOption, setSortOption] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc');
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [helpGuideVisible, setHelpGuideVisible] = useState(false);
   const [ledgerTab, setLedgerTab] = useState<'all' | 'expenses' | 'incomes'>('all');
 
   const CACHE_KEY = `expense_cache_v4_${userId}`;
@@ -276,9 +274,6 @@ export default function DashboardScreen() {
       });
 
       // Keep what we already had for any optional list whose request failed.
-      // Previously a failed categories request replaced the list with [] and
-      // saveCache() wrote that empty list to disk, wiping the cached
-      // categories the Add tab hydrates from.
       const categoriesLoaded = Array.isArray(globalCats) || Array.isArray(userCats);
       const nextCategories = categoriesLoaded ? safeCat : categories;
       const nextIncomes = Array.isArray(incomesData) ? incomesData : incomes;
@@ -345,8 +340,7 @@ export default function DashboardScreen() {
     }, [userId])
   );
 
-  // Keep the on-device bill, salary and savings reminders in step with the data on screen. Same
-  // mechanism as the 1:30 PM and 8:30 PM reminders: scheduled on the phone, no server needed.
+  // Keep the on-device bill, salary and savings reminders in step with the data on screen.
   useEffect(() => {
     if (isLoading) return;
     scheduleSmartReminders({ currency: currSymbol, subscriptions, incomes, goals: savingsGoals }).catch(() => {});
@@ -360,8 +354,6 @@ export default function DashboardScreen() {
       refreshUserProfile?.().catch(() => {}),
     ]);
   };
-
-
 
   const handleTransactionEdit = (tx: UnifiedTxItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -656,7 +648,6 @@ export default function DashboardScreen() {
           if (isToday) {
             matchDate = incDStr === todayStr;
           } else if (isMonth) {
-            // An income counts toward the month it is FOR (salary paid on the 30th for next month).
             matchDate = effectiveMonth(inc) === thisMonth;
           } else if (isLast30 && thirtyAgo) {
             matchDate = new Date(dateStr) >= thirtyAgo;
@@ -673,10 +664,8 @@ export default function DashboardScreen() {
     });
   }, [incomes, searchQuery, datePreset, startDate, endDate]);
 
-  // Dashboard metrics intentionally derive from the exact same filtered datasets as the ledger.
   const dashboardExpenses = filteredExpenses;
   const dashboardIncomes = filteredIncomes;
-
 
   // Memoized KPIs & Category Summaries (zero compute on theme switch)
   const {
@@ -694,7 +683,6 @@ export default function DashboardScreen() {
     safeDailySpend,
     noSpendStreak,
   } = useMemo(() => {
-    // Money handed back reduces spending and is not income.
     const spent = netSpent(dashboardExpenses, dashboardIncomes);
     const income = earnedTotal(dashboardIncomes);
     const net = income - spent;
@@ -857,16 +845,12 @@ export default function DashboardScreen() {
     });
   }, [ledgerTab, filteredExpenses, filteredIncomes, sortOption]);
 
-  // Rows are memoised, so the handlers they receive must keep the same identity between renders.
   const rowActions = useRef({ press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete });
   rowActions.current = { press: handleTransactionPress, edit: handleTransactionEdit, remove: handleTransactionDelete };
   const onRowPress = useCallback((tx: UnifiedTxItem) => rowActions.current.press(tx), []);
   const onRowEdit = useCallback((tx: UnifiedTxItem) => rowActions.current.edit(tx), []);
   const onRowDelete = useCallback((tx: UnifiedTxItem) => rowActions.current.remove(tx), []);
 
-
-
-  // The search text is typed in SearchField; applying it to the list is a non-urgent update.
   const handleSearch = useCallback((query: string) => {
     startTransition(() => setSearchQuery(query));
   }, []);
@@ -884,8 +868,7 @@ export default function DashboardScreen() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => fetchData(false)}
-            style={[styles.retryBtn, { backgroundColor: c.primary }]}
-          >
+            style={[styles.retryBtn, { backgroundColor: c.primary }]}>
             <Ionicons name="refresh" size={18} color="#10120E" />
             <Text style={styles.retryBtnText}>Retry Connection</Text>
           </TouchableOpacity>
@@ -936,6 +919,7 @@ export default function DashboardScreen() {
           isStealthMode={isStealthMode}
           toggleStealthMode={toggleStealthMode}
           onOpenExportModal={() => setExportModalVisible(true)}
+          onPressHelp={() => setHelpGuideVisible(true)}
           onPressNotifications={() => router.push('/notifications' as any)}
           colors={c}
           theme={theme}
@@ -1096,6 +1080,9 @@ export default function DashboardScreen() {
             onRowPress={onRowPress}
             onRowEdit={onRowEdit}
             onRowDelete={onRowDelete}
+            isLoading={isLoading}
+            isRefreshing={refreshing}
+            onOpenHelpGuide={() => setHelpGuideVisible(true)}
           />
         </StaggeredView>
 
@@ -1108,6 +1095,12 @@ export default function DashboardScreen() {
         expenses={expenses}
         onClose={() => setExportModalVisible(false)}
         onDataImported={() => fetchData(true)}
+      />
+
+      {/* In-App Interactive User Guide & Gestures Modal */}
+      <HelpGuideModal
+        visible={helpGuideVisible}
+        onClose={() => setHelpGuideVisible(false)}
       />
     </View>
   );

@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
-import { Colors, getCategoryEmoji } from '../constants/theme';
+import { Colors, getCategoryIconName } from '../constants/theme';
 import { apiRequest } from '../services/api';
 import { getCurrencySymbol } from '../services/currency';
 import { ThemedScrollView } from './ThemedScrollbar';
@@ -214,7 +214,7 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
                         },
                       ]}
                     >
-                      <Text style={styles.catChipEmoji}>{getCategoryEmoji(cat.name)}</Text>
+                      <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.primary} style={{ marginRight: 4 }} />
                       <Text
                         style={[
                           styles.catChipText,

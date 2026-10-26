@@ -544,14 +544,14 @@ export const FloatingCalculator: React.FC = () => {
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fxQuickScroll}>
                 {[
-                  { from: 'USD', to: currency || 'INR', label: `USD➔${currSymbol}` },
-                  { from: 'EUR', to: currency || 'INR', label: `EUR➔${currSymbol}` },
-                  { from: 'GBP', to: currency || 'INR', label: `GBP➔${currSymbol}` },
-                  { from: 'AED', to: currency || 'INR', label: `AED➔${currSymbol}` },
-                  { from: currency || 'INR', to: 'USD', label: `${currSymbol}➔USD` },
-                  { from: 'CAD', to: currency || 'INR', label: `CAD➔${currSymbol}` },
-                  { from: 'AUD', to: currency || 'INR', label: `AUD➔${currSymbol}` },
-                  { from: 'JPY', to: currency || 'INR', label: `JPY➔${currSymbol}` },
+                  { from: 'USD', to: currency || 'INR', label: `USD→${currSymbol}` },
+                  { from: 'EUR', to: currency || 'INR', label: `EUR→${currSymbol}` },
+                  { from: 'GBP', to: currency || 'INR', label: `GBP→${currSymbol}` },
+                  { from: 'AED', to: currency || 'INR', label: `AED→${currSymbol}` },
+                  { from: currency || 'INR', to: 'USD', label: `${currSymbol}→USD` },
+                  { from: 'CAD', to: currency || 'INR', label: `CAD→${currSymbol}` },
+                  { from: 'AUD', to: currency || 'INR', label: `AUD→${currSymbol}` },
+                  { from: 'JPY', to: currency || 'INR', label: `JPY→${currSymbol}` },
                 ].map((item, idx) => (
                   <TouchableOpacity
                     key={idx}

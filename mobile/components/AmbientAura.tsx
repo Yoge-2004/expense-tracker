@@ -2,10 +2,11 @@
  * @file AmbientAura.tsx
  * @description Atmospheric glowing gradient background with smooth drifting organic orbs.
  * Matches the website's dark/light mesh glow effects without taxing GPU performance.
+ * Integrates dynamic theme palettes and custom user wallpaper background assets.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions, Image } from 'react-native';
 import { usePreferences } from '../context/PreferencesContext';
 
 interface AmbientAuraProps {
@@ -14,10 +15,10 @@ interface AmbientAuraProps {
 }
 
 /**
- * Atmospheric ambient aura background mesh.
+ * Atmospheric ambient aura background mesh with custom wallpaper and dynamic orbs.
  */
 export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEvents = 'none' }) => {
-  const { theme } = usePreferences();
+  const { theme, themeColors, backgroundAsset } = usePreferences();
   const { width, height } = useWindowDimensions();
   const isLight = theme === 'light';
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -118,9 +119,35 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
     outputRange: [20, -25],
   });
 
+  // Dynamic orb colors derived from the active theme or auto-extracted palette
+  const orb1Color = themeColors.primary + (isLight ? '28' : '1E');
+  const orb2Color = themeColors.accent + (isLight ? '22' : '22');
+  const orb3Color = themeColors.highlight + (isLight ? '22' : '20');
+  const hasCustomBg = backgroundAsset.type === 'custom' && !!backgroundAsset.uri;
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={pointerEvents}>
-      {/* Orb 1 - Primary/Luxury Gold Glow */}
+      {/* Optional Custom Background Image / Wallpaper */}
+      {hasCustomBg && (
+        <>
+          <Image
+            source={{ uri: backgroundAsset.uri }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: isLight ? '#FFFFFF' : '#000000',
+                opacity: backgroundAsset.overlayOpacity ?? 0.35,
+              },
+            ]}
+          />
+        </>
+      )}
+
+      {/* Orb 1 - Primary / Luxury Highlight Glow */}
       <Animated.View
         style={[
           styles.orb,
@@ -129,7 +156,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
             height: Math.min(width, height) * 1.15,
             top: -Math.min(width, height) * 0.35,
             right: -Math.min(width, height) * 0.25,
-            backgroundColor: isLight ? 'rgba(212, 175, 55, 0.16)' : 'rgba(212, 175, 55, 0.12)',
+            backgroundColor: orb1Color,
             transform: [
               { translateX: orb1TranslateX },
               { translateY: orb1TranslateY },
@@ -139,25 +166,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
         ]}
       />
 
-      {/* Orb 4 - Amethyst / Peer Loans Glow */}
-      <Animated.View
-        style={[
-          styles.orb,
-          {
-            width: Math.min(width, height) * 0.75,
-            height: Math.min(width, height) * 0.75,
-            top: height * 0.52,
-            right: -Math.min(width, height) * 0.25,
-            backgroundColor: isLight ? 'rgba(139, 92, 246, 0.10)' : 'rgba(139, 92, 246, 0.08)',
-            transform: [
-              { translateX: orb1TranslateX },
-              { translateY: orb2TranslateY },
-            ],
-          },
-        ]}
-      />
-
-      {/* Orb 2 - Accent/Oxblood Glow */}
+      {/* Orb 2 - Accent Glow */}
       <Animated.View
         style={[
           styles.orb,
@@ -166,7 +175,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
             height: Math.min(width, height) * 0.75,
             top: height * 0.25,
             left: -Math.min(width, height) * 0.25,
-            backgroundColor: isLight ? 'rgba(231, 76, 60, 0.12)' : 'rgba(162, 62, 50, 0.14)',
+            backgroundColor: orb2Color,
             transform: [
               { translateX: orb2TranslateX },
               { translateY: orb2TranslateY },
@@ -176,7 +185,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
         ]}
       />
 
-      {/* Orb 3 - Teal/Highlight Glow */}
+      {/* Orb 3 - Secondary Highlight Glow */}
       <Animated.View
         style={[
           styles.orb,
@@ -185,7 +194,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
             height: Math.min(width, height) * 0.65,
             bottom: height * 0.1,
             right: -Math.min(width, height) * 0.15,
-            backgroundColor: isLight ? 'rgba(14, 165, 233, 0.12)' : 'rgba(76, 122, 120, 0.14)',
+            backgroundColor: orb3Color,
             transform: [
               { translateX: orb3TranslateX },
               { translateY: orb3TranslateY },
@@ -200,6 +209,6 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
 const styles = StyleSheet.create({
   orb: {
     position: 'absolute',
-    borderRadius: 999,
+    borderRadius: 9999,
   },
 });

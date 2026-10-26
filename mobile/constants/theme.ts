@@ -155,30 +155,104 @@ export function getCategoryColor(name: string | undefined | null, index?: number
   return CategoryPalette[paletteIndex];
 }
 
-export function getCategoryEmoji(name: string | undefined | null): string {
+export type CategoryIconName =
+  | 'wallet-outline'
+  | 'swap-horizontal-outline'
+  | 'restaurant-outline'
+  | 'car-outline'
+  | 'bag-handle-outline'
+  | 'flash-outline'
+  | 'film-outline'
+  | 'medkit-outline'
+  | 'school-outline'
+  | 'laptop-outline'
+  | 'cart-outline'
+  | 'card-outline';
+
+/**
+ * Maps a category or income source to a sleek, vector-based Ionicons glyph.
+ * Replaces all legacy emoji representations with sharp vector iconography.
+ */
+export function getCategoryIconName(name: string | undefined | null): CategoryIconName {
   const n = (name || '').toLowerCase();
-  if (n.includes('saving') || n.includes('deposit')) return '💰';
-  if (n.includes('loan') || n.includes('debt') || n.includes('borrow') || n.includes('lend') || n.includes('adjust')) return '🤝';
-  if (n.includes('food') || n.includes('dining') || n.includes('restaurant')) return '🍔';
-  if (n.includes('transport') || n.includes('travel') || n.includes('uber') || n.includes('fuel')) return '🚗';
-  if (n.includes('shop') || n.includes('cloth') || n.includes('amazon')) return '🛍️';
-  if (n.includes('util') || n.includes('electric') || n.includes('water') || n.includes('bill')) return '⚡';
-  if (n.includes('entertain') || n.includes('movie') || n.includes('netflix') || n.includes('game')) return '🎬';
-  if (n.includes('health') || n.includes('medical') || n.includes('gym') || n.includes('fitness')) return '💊';
-  if (n.includes('edu') || n.includes('course') || n.includes('book')) return '📚';
-  if (n.includes('subscri') || n.includes('saas') || n.includes('software')) return '💻';
-  if (n.includes('grocer') || n.includes('market') || n.includes('super')) return '🛒';
-  return '💳';
+  if (n.includes('saving') || n.includes('deposit')) return 'wallet-outline';
+  if (n.includes('loan') || n.includes('debt') || n.includes('borrow') || n.includes('lend') || n.includes('adjust')) return 'swap-horizontal-outline';
+  if (n.includes('food') || n.includes('dining') || n.includes('restaurant')) return 'restaurant-outline';
+  if (n.includes('transport') || n.includes('travel') || n.includes('uber') || n.includes('fuel')) return 'car-outline';
+  if (n.includes('shop') || n.includes('cloth') || n.includes('amazon')) return 'bag-handle-outline';
+  if (n.includes('util') || n.includes('electric') || n.includes('water') || n.includes('bill')) return 'flash-outline';
+  if (n.includes('entertain') || n.includes('movie') || n.includes('netflix') || n.includes('game')) return 'film-outline';
+  if (n.includes('health') || n.includes('medical') || n.includes('gym') || n.includes('fitness')) return 'medkit-outline';
+  if (n.includes('edu') || n.includes('course') || n.includes('book')) return 'school-outline';
+  if (n.includes('subscri') || n.includes('saas') || n.includes('software')) return 'laptop-outline';
+  if (n.includes('grocer') || n.includes('market') || n.includes('super')) return 'cart-outline';
+  return 'card-outline';
 }
 
-export const Fonts = {
-  display: 'Fraunces_500Medium',
-  displaySemiBold: 'Fraunces_600SemiBold',
-  body: 'HankenGrotesk_400Regular',
-  bodyMedium: 'HankenGrotesk_500Medium',
-  bodySemiBold: 'HankenGrotesk_600SemiBold',
-  bodyBold: 'HankenGrotesk_700Bold',
-  mono: 'IBMPlexMono_400Regular',
-  monoMedium: 'IBMPlexMono_500Medium',
-  monoSemiBold: 'IBMPlexMono_600SemiBold',
+/** Legacy helper provided for backwards-compatibility; returns empty string as emojis are removed. */
+export function getCategoryEmoji(_name: string | undefined | null): string {
+  return '';
+}
+
+export type FontChoice = 'grotesk' | 'fraunces' | 'mono' | 'system';
+
+export interface FontTokens {
+  display: string;
+  displaySemiBold: string;
+  body: string;
+  bodyMedium: string;
+  bodySemiBold: string;
+  bodyBold: string;
+  mono: string;
+  monoMedium: string;
+  monoSemiBold: string;
+}
+
+export const FontPresets: Record<FontChoice, FontTokens> = {
+  grotesk: {
+    display: 'HankenGrotesk_700Bold',
+    displaySemiBold: 'HankenGrotesk_600SemiBold',
+    body: 'HankenGrotesk_400Regular',
+    bodyMedium: 'HankenGrotesk_500Medium',
+    bodySemiBold: 'HankenGrotesk_600SemiBold',
+    bodyBold: 'HankenGrotesk_700Bold',
+    mono: 'IBMPlexMono_400Regular',
+    monoMedium: 'IBMPlexMono_500Medium',
+    monoSemiBold: 'IBMPlexMono_600SemiBold',
+  },
+  fraunces: {
+    display: 'Fraunces_600SemiBold',
+    displaySemiBold: 'Fraunces_500Medium',
+    body: 'Fraunces_500Medium',
+    bodyMedium: 'Fraunces_500Medium',
+    bodySemiBold: 'Fraunces_600SemiBold',
+    bodyBold: 'Fraunces_600SemiBold',
+    mono: 'IBMPlexMono_400Regular',
+    monoMedium: 'IBMPlexMono_500Medium',
+    monoSemiBold: 'IBMPlexMono_600SemiBold',
+  },
+  mono: {
+    display: 'IBMPlexMono_600SemiBold',
+    displaySemiBold: 'IBMPlexMono_500Medium',
+    body: 'IBMPlexMono_400Regular',
+    bodyMedium: 'IBMPlexMono_500Medium',
+    bodySemiBold: 'IBMPlexMono_600SemiBold',
+    bodyBold: 'IBMPlexMono_600SemiBold',
+    mono: 'IBMPlexMono_400Regular',
+    monoMedium: 'IBMPlexMono_500Medium',
+    monoSemiBold: 'IBMPlexMono_600SemiBold',
+  },
+  system: {
+    display: 'System',
+    displaySemiBold: 'System',
+    body: 'System',
+    bodyMedium: 'System',
+    bodySemiBold: 'System',
+    bodyBold: 'System',
+    mono: 'System',
+    monoMedium: 'System',
+    monoSemiBold: 'System',
+  },
 };
+
+export const Fonts: FontTokens = FontPresets.grotesk;

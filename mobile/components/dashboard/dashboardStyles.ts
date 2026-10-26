@@ -422,6 +422,14 @@ export const dashboardStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
+  helpGuideMiniBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   filterToggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -434,6 +442,35 @@ export const dashboardStyles = StyleSheet.create({
   filterToggleText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  gestureCueBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 6,
+  },
+  gestureCueLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  gestureCueRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  gestureCueText: {
+    fontSize: 11,
+    letterSpacing: -0.1,
+  },
+  gestureCueDot: {
+    fontSize: 10,
   },
   searchBox: {
     flexDirection: 'row',

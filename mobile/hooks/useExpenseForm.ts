@@ -239,7 +239,7 @@ export function useExpenseForm({
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
               const formattedParsedAmt = formatNotificationAmount(parsed.amount, parsed.currency, 2);
               showAlert(
-                'Bank SMS Parsed! ⚡',
+                'Bank SMS Parsed!',
                 `Pre-filled ${formattedParsedAmt} at ${parsed.merchant || 'Merchant'}.`,
                 undefined,
                 'success'
@@ -404,7 +404,7 @@ export function useExpenseForm({
         }).catch(() => {});
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        showAlert('🎉 Logged!', 'Transaction recorded successfully.', [
+        showAlert('Logged!', 'Transaction recorded successfully.', [
           { text: 'View Dashboard', onPress: onSuccess },
         ]);
         resetForm();

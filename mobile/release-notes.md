@@ -1,32 +1,29 @@
-# Expense Tracker Mobile v1.0.5
+# Expense Tracker Mobile v1.0.9
 
-A release focused on **profile picture synchronization across web & mobile, dual-mode OCR receipt scanning (file browsing + live camera), resilient low-power background export/import processing, 50MB multipart limits, and modernized 2026 asynchronous scheduling**.
+A performance and cross-platform release focused on **zero-latency theme switching, scroll context isolation for infinite virtualized transaction ledgers, accurate ledger loading lifecycle states, iOS Retina scrollbar gutter separation, and strict iOS App Store & sandbox compliance**.
 
 ---
 
-## What's New in v1.0.5
+## What's New in v1.0.9
 
-### Profile Picture Synchronization & Management
-- **Automatic Multi-Surface Sync**: Mobile app now actively queries `GET /api/users/{userId}` to fetch and display the user's avatar image (from Google OAuth or custom URLs), matching the web experience.
-- **Auto-Refresh Lifecycle**: Profile avatars refresh automatically on app startup, tab focus (`useFocusEffect`), and pull-to-refresh.
-- **In-App Avatar Customization**: Added an interactive camera badge and avatar editor modal in the mobile Settings screen allowing users to preview, set, update, or remove profile image URLs.
+### Instant, Zero-Latency Theme Switching
+- Removed React Navigation stack animation delays by disabling route transitions (`animation: "none"`) on the main tab navigator, eliminating the artificial 180ms screen fade delay during theme switching.
+- Upgraded theme toggle button to a high-priority `Pressable` with `onPressIn` and `hitSlop={8}` to trigger theme shifts at t = 0ms upon initial touch contact.
+- Removed synthetic rotation animations and decoupled heavy background blur aura renders (`AmbientAura.tsx` memoization) to eliminate GPU/CPU rasterization contention during theme swaps.
 
-### Receipt OCR Dual Mode (File Browsing + Live Camera)
-- **Flexible Ingestion**: Removed the restrictive `capture="environment"` attribute that previously forced mobile browsers directly into camera viewfinders.
-- **Dedicated Actions**: Users can now select **"Browse Receipt"** to pick existing images or documents from device storage and photo galleries, or tap **"Take Photo"** for instant live camera capture.
-- **Cross-Platform Compatibility**: Enhanced OCR pipeline ensures seamless parsing on both mobile viewports and desktop web browsers.
+### Infinite Virtualized Ledger & Accurate Loading States
+- Resolved React Native nested virtualized list warnings using `(ScrollView as any).Context` isolation (`<ScrollContext.Provider value={null}>`).
+- Fixed premature display of final state banner: while transactions are being fetched from backend (`isLoading || refreshing`) or dynamically streaming rows on scroll, an active spinner (`"Loading transactions..."` / `"Loading more transactions..."`) is displayed.
+- The final indicator (`— ✓ ALL {N} TRANSACTIONS LOADED —`) is strictly and exclusively rendered once all records have actually loaded into view and network sync is complete.
+- Progressive streaming auto-reveals batches of 25 records on scroll (`onEndReached`) ensuring zero lag, instant startup, and seamless infinite scrolling.
+- Adjusted bottom padding to prevent transaction card clipping against the ledger container boundary.
 
-### Resilient Bulk Export & Import for Large Ledgers
-- **Low-Power Task Persistence**: In-flight export and import job states are continuously persisted to `AsyncStorage` (`@expense_tracker_active_transfer_job`).
-- **OS Suspension & Wake Recovery**: Added `AppState` listeners to seamlessly restore transfer cards and progress percentages when the device resumes from background suspension, screen lock, or OS low-power modes.
-- **Chunked Memory Processing**: Replaced monolithic joins with chunked row serialization (`CHUNK_SIZE = 2500`) and event-loop yielding (`await new Promise(r => setTimeout(r, 0))`), preventing JavaScript heap spikes (OOM) and OS watchdog kills when exporting thousands or lakhs of transactions.
-
-### File Upload Capacity
-- **Expanded Multipart Limits**: Spring Boot multipart limits increased to **50MB** per file and **60MB** per request, accommodating over 500,000 transaction rows.
-
-### 2026 Runtime Standards & Modernized Scheduling
-- **`requestIdleCallback` Scheduler**: Completely replaced deprecated `InteractionManager.runAfterInteractions` with a standard cooperative idle task scheduler pattern and asynchronous fallbacks.
-- **Zero Warnings**: Fully resolved all deprecation warnings under React Native 0.88+ and Expo SDK 58.
+### iOS Platform Fidelity & Sandbox Safeguards
+- Increased list right padding to provide a dedicated 5px gutter separating cards from the custom gold scrollbar track on high-DPI iOS Retina displays.
+- Disabled bouncing and overscroll on inner nested lists (`bounces={false}`, `overScrollMode="never"`) to prevent nested scroll traps and momentum lock on iOS devices.
+- Configured `NSFaceIDUsageDescription` in `app.json` for Apple biometric compliance.
+- Guarded SMS clipboard reading against iOS 14+ paste privacy banners.
+- Handled platform-specific update installation: Android supports in-app APK sideloading, while iOS safely routes users to Safari/TestFlight in compliance with App Store guidelines.
 
 ---
 
@@ -34,9 +31,8 @@ A release focused on **profile picture synchronization across web & mobile, dual
 
 | Attribute | Details |
 | :--- | :--- |
-| **Release Version** | 1.0.5 |
-| **Android Version Code** | 7 |
-| **iOS Build Number** | 6 |
+| **Release Version** | 1.0.9 |
+| **Android Version Code** | 11 |
 | **Package ID** | com.yoge.expensetracker |
 | **iOS Bundle ID** | com.yoge.expensetracker |
 | **Commit SHA** | main |
@@ -45,7 +41,7 @@ A release focused on **profile picture synchronization across web & mobile, dual
 
 ## Installation
 
-1. Android: download the `expense-tracker.apk` asset from the release.
+1. Android: download the expense-tracker.apk asset from the release.
 2. Verify: optionally compare the published SHA-256 checksum with your downloaded APK.
 
 ### Notes

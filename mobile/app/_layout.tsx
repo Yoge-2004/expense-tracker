@@ -10,7 +10,7 @@ import { AlertProvider, useAlert } from '../context/AlertContext';
 import { UpdateProvider, useUpdate } from '../context/UpdateContext';
 import UpdateBanner from '../components/UpdateBanner';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, Animated, StyleSheet, StatusBar, Easing, useColorScheme, AppState, AppStateStatus } from 'react-native';
+import { View, Text, Animated, StyleSheet, StatusBar, Easing, useColorScheme, AppState, AppStateStatus, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
@@ -383,6 +383,7 @@ function RootLayoutNav() {
     if (isLoading || !token || !userId) return;
 
     const checkClipboardForSms = async () => {
+      if (Platform.OS !== 'android') return;
       try {
         const enabled = await getInstantDebitAlertsEnabled();
         if (!enabled) return;
@@ -404,7 +405,7 @@ function RootLayoutNav() {
             const merchantStr = parsed.merchant ? ` at ${parsed.merchant}` : '';
             const accStr = parsed.accountTail ? ` (A/c xx${parsed.accountTail})` : '';
             showAlert(
-              '⚡ Bank SMS Detected',
+              'Bank SMS Detected',
               `Found bank debit of ${formattedAmt}${merchantStr}${accStr}.\n\nWould you like to record this to your expense ledger?`,
               [
                 { text: 'Dismiss', style: 'cancel' },
@@ -425,7 +426,7 @@ function RootLayoutNav() {
                   text: 'Record Now',
                   onPress: async () => {
                     await detectAndAddExpenseFromMessage(text, userId);
-                    showAlert('Recorded! ✅', `Added ${formattedAmt} to your expenses.`, undefined, 'success');
+                    showAlert('Recorded!', `Added ${formattedAmt} to your expenses.`, undefined, 'success');
                   },
                 },
               ],
@@ -434,7 +435,7 @@ function RootLayoutNav() {
           } else if (parsed.direction === 'CREDIT') {
             const srcStr = parsed.merchant ? ` from ${parsed.merchant}` : '';
             showAlert(
-              '💰 Bank Credit Detected',
+              'Bank Credit Detected',
               `Found bank credit of ${formattedAmt}${srcStr}.\n\nWould you like to record this to your incomes?`,
               [
                 { text: 'Dismiss', style: 'cancel' },
@@ -442,7 +443,7 @@ function RootLayoutNav() {
                   text: 'Record Now',
                   onPress: async () => {
                     await detectAndAddCreditFromMessage(text, userId);
-                    showAlert('Recorded! ✅', `Added ${formattedAmt} to your incomes.`, undefined, 'success');
+                    showAlert('Recorded!', `Added ${formattedAmt} to your incomes.`, undefined, 'success');
                   },
                 },
               ],

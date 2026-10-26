@@ -62,9 +62,26 @@ const SECTIONS: GuideSection[] = [
     ]
   },
   {
+    id: 'gestures',
+    icon: 'hand-left-outline',
+    title: '3. Touch Gestures & Speed Shortcuts',
+    badge: 'Gestures',
+    summary: 'Control your entire financial workflow effortlessly with tactile gestures and haptics.',
+    bullets: [
+      'Swipe Row Right: Instant quick edit on any transaction with tactile haptic feedback.',
+      'Swipe Row Left: Instant delete confirmation for any transaction with warning haptic.',
+      'Single Tap on Row: Opens 4-way action sheet: Convert / Link to Loan, Edit, Delete, or Cancel.',
+      'Swipe Activity Stream: Swipe horizontally across the All Activity / Outflows / Inflows tabs to cycle streams.',
+      'Swipe Notification: Swipe any notification left or right to clear it immediately.',
+      'Draggable Calculator: Drag and drop the floating calculator bubble anywhere on your screen.',
+      'Stealth Privacy Mode: Tap the Eye icon in the top header or Profile to mask balances (••••••).',
+      'Pull-to-Refresh: Pull down on any screen to bypass cache and resynchronize live financial records.'
+    ]
+  },
+  {
     id: 'notifications',
     icon: 'notifications-outline',
-    title: '3. Alerts & Smart Debit Tracking',
+    title: '4. Alerts & Smart Debit Tracking',
     badge: 'Automation',
     summary: 'Stay on top of your wallet without having to remember manual entries.',
     bullets: [
@@ -76,7 +93,7 @@ const SECTIONS: GuideSection[] = [
   {
     id: 'envelopes',
     icon: 'wallet-outline',
-    title: '4. Budgets & Savings Envelopes',
+    title: '5. Budgets & Savings Envelopes',
     badge: 'Planning',
     summary: 'Enforce spending discipline and build long-term wealth.',
     bullets: [
@@ -88,7 +105,7 @@ const SECTIONS: GuideSection[] = [
   {
     id: 'exports',
     icon: 'document-text-outline',
-    title: '5. Executive Spreadsheets & Backups',
+    title: '6. Executive Spreadsheets & Backups',
     badge: 'Reporting',
     summary: 'Generate institutional-grade financial statements for auditing or personal archiving.',
     bullets: [
@@ -100,7 +117,7 @@ const SECTIONS: GuideSection[] = [
   {
     id: 'security',
     icon: 'shield-checkmark-outline',
-    title: '6. Biometrics & Zero-Email Security',
+    title: '7. Biometrics & Zero-Email Security',
     badge: 'Security',
     summary: 'Bank-grade protection keeping your financial data exclusively yours.',
     bullets: [
@@ -111,7 +128,7 @@ const SECTIONS: GuideSection[] = [
   {
     id: 'calculator',
     icon: 'calculator-outline',
-    title: '7. Floating Calculator & Bill Splitter',
+    title: '8. Floating Calculator & Bill Splitter',
     badge: 'Tools',
     summary: 'Do fast calculations and split group expenses without switching apps.',
     bullets: [
@@ -129,7 +146,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ visible, onClose
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 
-  const [expandedId, setExpandedId] = useState<string>('dashboard');
+  const [expandedId, setExpandedId] = useState<string>('gestures');
 
   const toggleSection = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -160,7 +177,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ visible, onClose
               <View>
                 <Text style={[styles.title, { color: c.text }]}>User Guide & Help</Text>
                 <Text style={[styles.subtitle, { color: c.textMuted }]}>
-                  Master your financial command center
+                  Master your financial command center & gestures
                 </Text>
               </View>
             </View>

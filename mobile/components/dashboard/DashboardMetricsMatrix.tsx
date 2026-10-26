@@ -142,7 +142,7 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
             {/* No-Spend Streak */}
             <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: '#F59E0B50' }]}>
               <View style={[styles.proMetricIconCircle, { backgroundColor: '#F59E0B20' }]}>
-                <Text style={{ fontSize: 12 }}>🔥</Text>
+                <Ionicons name="flame" size={13} color="#F59E0B" />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>No-Spend Streak</Text>

@@ -981,6 +981,20 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 }
 
 /* Platform Database Toolbar & Filters Layout */
+select.custom-select-native {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 .admin-db-toolbar {
     display: flex;
     justify-content: space-between;
@@ -997,13 +1011,33 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
-    flex: 1 1 540px;
+    flex: 1 1 auto;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
 }
 
-.admin-db-select {
+.admin-db-filters .custom-select-wrapper {
+    width: auto;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-db-filters .custom-select-wrapper[data-target-id="dbStreamTypeSelect"] {
+    flex: 0 1 210px;
+    width: 210px;
+    max-width: 100%;
+}
+
+.admin-db-filters .custom-select-wrapper[data-target-id="dbUserFilterSelect"] {
+    flex: 0 1 270px;
+    width: 270px;
+    max-width: 100%;
+}
+
+.admin-db-select:not(.custom-select-native) {
     background: var(--input-bg);
     color: var(--text-main);
     border: 1px solid var(--border);
@@ -1020,16 +1054,16 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     overflow: hidden;
 }
 
-#dbStreamTypeSelect {
+#dbStreamTypeSelect:not(.custom-select-native) {
     flex: 0 1 230px;
     min-width: 160px;
     max-width: 100%;
 }
 
-#dbUserFilterSelect {
+#dbUserFilterSelect:not(.custom-select-native) {
     flex: 1 1 280px;
     min-width: 180px;
-    max-width: 100%;
+    max-width: 380px;
 }
 
 .admin-db-actions {
@@ -1051,6 +1085,8 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     text-decoration: none;
     box-sizing: border-box;
     white-space: nowrap;
+    width: auto;
+    height: auto;
 }
 
 /* High-readability responsive log stream */
@@ -1129,22 +1165,34 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     }
 
     .admin-db-toolbar {
-        flex-direction: column;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
         align-items: stretch !important;
         width: 100% !important;
         gap: 12px !important;
     }
 
     .admin-db-filters {
-        flex-direction: column;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
         align-items: stretch !important;
         width: 100% !important;
         gap: 10px !important;
     }
 
-    .admin-db-select,
-    #dbStreamTypeSelect,
-    #dbUserFilterSelect {
+    .admin-db-filters .custom-select-wrapper,
+    .admin-db-filters .custom-select-wrapper[data-target-id="dbStreamTypeSelect"],
+    .admin-db-filters .custom-select-wrapper[data-target-id="dbUserFilterSelect"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 1 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .admin-db-select:not(.custom-select-native),
+    #dbStreamTypeSelect:not(.custom-select-native),
+    #dbUserFilterSelect:not(.custom-select-native) {
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;

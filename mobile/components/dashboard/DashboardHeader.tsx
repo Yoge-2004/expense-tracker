@@ -15,6 +15,7 @@ export interface DashboardHeaderProps {
   isStealthMode: boolean;
   toggleStealthMode: () => Promise<void> | void;
   onOpenExportModal: () => void;
+  onPressHelp?: () => void;
   colors: ThemeColors;
   theme: 'light' | 'dark';
 }
@@ -26,6 +27,7 @@ export const DashboardHeader = memo(function DashboardHeader({
   isStealthMode,
   toggleStealthMode,
   onOpenExportModal,
+  onPressHelp,
   onPressNotifications,
   colors: c,
   theme,
@@ -45,7 +47,7 @@ export const DashboardHeader = memo(function DashboardHeader({
         </View>
         <View style={styles.userGreetingCol}>
           <Text style={[styles.greetingSubtitle, { color: c.textMuted }]}>
-            Welcome back 👋
+            Welcome back
           </Text>
           <Text
             style={[styles.greetingTitle, { color: c.text }]}
@@ -61,6 +63,29 @@ export const DashboardHeader = memo(function DashboardHeader({
       </View>
 
       <View style={styles.topBarRight}>
+        {/* Help Guide & Gestures Button */}
+        {onPressHelp && (
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={onPressHelp}
+            style={[
+              styles.topActionBtn,
+              {
+                backgroundColor: isLight ? '#FFFFFF' : c.card,
+                borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
+                shadowColor: isLight ? 'transparent' : '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isLight ? 0 : 0.08,
+                shadowRadius: 4,
+                elevation: isLight ? 0 : 2,
+              },
+            ]}
+            accessibilityLabel="User Guide & Gestures"
+          >
+            <Ionicons name="help-circle-outline" size={19} color={c.primary} />
+          </TouchableOpacity>
+        )}
+
         {/* Export / Data Hub Button */}
         <TouchableOpacity
           activeOpacity={0.88}

@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
-import { ThemeColors, getCategoryEmoji } from '../../constants/theme';
+import { ThemeColors, getCategoryIconName } from '../../constants/theme';
 import { SampleReceiptsPicker } from '../SampleReceiptsPicker';
 import { ParsedReceipt } from '../../services/receiptOcr';
 import { formStyles as styles } from './formStyles';
@@ -220,9 +220,10 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
               }}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#10B981' }}>
-                  ✨ {ocrSuccessData.merchant} · {currSymbol}{ocrSuccessData.amount} ({ocrSuccessData.confidence}% confidence)
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="sparkles" size={12} color="#10B981" />
+                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#10B981' }}>{ocrSuccessData.merchant} · {currSymbol}{ocrSuccessData.amount} ({ocrSuccessData.confidence}% confidence)</Text>
+                </View>
                 <TouchableOpacity onPress={() => setOcrSuccessData(null)}>
                   <Ionicons name="close" size={14} color={c.textMuted} />
                 </TouchableOpacity>
@@ -328,7 +329,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                 <Text style={{ fontSize: 10.5, color: c.textMuted, fontWeight: '600' }}>AI Classifying...</Text>
               </View>
             ) : (
-              <Text style={{ fontSize: 10.5, color: c.primary, fontWeight: '700' }}>⚡ AI Categorizer</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}><Ionicons name="flash" size={11} color={c.primary} /><Text style={{ fontSize: 10.5, color: c.primary, fontWeight: '700' }}>AI Categorizer</Text></View>
             )}
           </View>
           <View
@@ -375,10 +376,10 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
-                  <Text style={{ fontSize: 13 }}>⚡</Text>
+                  <Ionicons name="flash" size={13} color={c.primary} />
                   <Text style={[styles.fieldLabel, { color: c.textMuted, marginBottom: 0 }]}>AI Suggestion:</Text>
                   <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.primary }}>
-                    {getCategoryEmoji(aiSuggestion.matchedCatName || aiSuggestion.category)}{' '}
+                    <Ionicons name={getCategoryIconName(aiSuggestion.matchedCatName || aiSuggestion.category)} size={13} color={c.primary} style={{ marginRight: 4 }} />
                     {aiSuggestion.matchedCatName ||
                       aiSuggestion.category.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())}
                   </Text>
@@ -478,7 +479,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                     },
                   ]}
                 >
-                  <Text style={styles.catChipEmoji}>{getCategoryEmoji(cat.name)}</Text>
+                  <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.primary} style={{ marginRight: 4 }} />
                   <Text
                     style={[
                       styles.catChipText,

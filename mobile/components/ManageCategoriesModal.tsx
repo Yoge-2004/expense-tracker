@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
-import { Colors, getCategoryEmoji } from '../constants/theme';
+import { Colors, getCategoryIconName } from '../constants/theme';
 import { ThemedScrollView } from './ThemedScrollbar';
 import { apiRequest } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -154,7 +154,7 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
       const usageDesc = usageParts.length > 0 ? usageParts.join(', ') : 'active records';
 
       showAlert(
-        'Category Protected 🔒',
+        'Category Protected',
         `"${cat.name}" cannot be deleted because it is currently used by ${usageDesc}.\n\nTo delete this category, reassign or delete those records first.`,
         undefined,
         'info'
@@ -266,7 +266,7 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
                       ]}
                     >
                       <View style={styles.catInfo}>
-                        <Text style={styles.catEmoji}>{getCategoryEmoji(cat.name)}</Text>
+                        <Ionicons name={getCategoryIconName(cat.name)} size={16} color={c.primary} style={{ marginRight: 6 }} />
                         <Text style={[styles.catName, { color: c.text }]}>{cat.name}</Text>
                         {inUse && (
                           <TouchableOpacity

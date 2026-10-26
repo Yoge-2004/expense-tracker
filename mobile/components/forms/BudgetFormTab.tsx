@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
-import { ThemeColors, getCategoryEmoji } from '../../constants/theme';
+import { ThemeColors, getCategoryIconName } from '../../constants/theme';
 import { formStyles as styles } from './formStyles';
 
 import { useBudgetForm } from '../../hooks/useBudgetForm';
@@ -83,7 +83,7 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
                     },
                   ]}
                 >
-                  <Text style={styles.catChipEmoji}>{getCategoryEmoji(cat.name)}</Text>
+                  <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.primary} style={{ marginRight: 4 }} />
                   <Text
                     style={[
                       styles.catChipText,
@@ -251,7 +251,7 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-                      <Text style={{ fontSize: 18 }}>{getCategoryEmoji(b.categoryName)}</Text>
+                      <Ionicons name={getCategoryIconName(b.categoryName)} size={18} color={c.primary} />
                       <View>
                         <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>{b.categoryName}</Text>
                         <Text style={{ fontSize: 12, color: c.textMuted }}>

@@ -27,8 +27,8 @@ function main() {
   const ipaShaPath = path.join(baseDir, 'expense-tracker.ipa.sha256');
   const outputPath = path.join(baseDir, 'release-notes.md');
 
-  let version = '1.0.4';
-  let versionCode = 6;
+  let version = '1.0.9';
+  let versionCode = 11;
   let packageId = 'com.yoge.expensetracker';
   let bundleId = 'com.yoge.expensetracker';
   if (fs.existsSync(appJsonPath)) {
@@ -65,30 +65,30 @@ function main() {
   const lines = [
     '# Expense Tracker Mobile v' + version,
     '',
-    'A release focused on **bulk notification clearing, instant touch clearing UX, verified ML categorization, responsive theme animations, and polished financial reporting**.',
+    'A performance and cross-platform release focused on **zero-latency theme switching, scroll context isolation for infinite virtualized transaction ledgers, accurate ledger loading lifecycle states, iOS Retina scrollbar gutter separation, and strict iOS App Store & sandbox compliance**.',
     '',
     '---',
     '',
     "## What's New in v" + version,
     '',
-    '### Notification Management (Web & Mobile)',
-    '- Added **"Clear all notifications"** button in both the mobile app header and web dashboard inbox panel.',
-    '- Added backend bulk-clear API endpoint (`DELETE /api/notifications/user/{userId}`) with immediate unread count and badge counter reset.',
-    '- Protected bulk deletion with an in-app confirmation dialog to prevent accidental data loss.',
+    '### Instant, Zero-Latency Theme Switching',
+    '- Removed React Navigation stack animation delays by disabling route transitions (`animation: "none"`) on the main tab navigator, eliminating the artificial 180ms screen fade delay during theme switching.',
+    '- Upgraded theme toggle button to a high-priority `Pressable` with `onPressIn` and `hitSlop={8}` to trigger theme shifts at t = 0ms upon initial touch contact.',
+    '- Removed synthetic rotation animations and decoupled heavy background blur aura renders (`AmbientAura.tsx` memoization) to eliminate GPU/CPU rasterization contention during theme swaps.',
     '',
-    '### Search UX & Soft Keyboard Touch Responsiveness',
-    '- Fixed search bar clear button in mobile app: tapping the **X** icon now clears the input immediately on the first touch without requiring an extra tap to retract the keyboard.',
-    '- Enabled `keyboardShouldPersistTaps="handled"` on scroll views and currency lists, paired with `onPressIn` and expanded hit slop.',
+    '### Infinite Virtualized Ledger & Accurate Loading States',
+    '- Resolved React Native nested virtualized list warnings using `(ScrollView as any).Context` isolation (`<ScrollContext.Provider value={null}>`).',
+    '- Fixed premature display of final state banner: while transactions are being fetched from backend (`isLoading || refreshing`) or dynamically streaming rows on scroll, an active spinner (`"Loading transactions..."` / `"Loading more transactions..."`) is displayed.',
+    '- The final indicator (`— ✓ ALL {N} TRANSACTIONS LOADED —`) is strictly and exclusively rendered once all records have actually loaded into view and network sync is complete.',
+    '- Progressive streaming auto-reveals batches of 25 records on scroll (`onEndReached`) ensuring zero lag, instant startup, and seamless infinite scrolling.',
+    '- Adjusted bottom padding to prevent transaction card clipping against the ledger container boundary.',
     '',
-    '### Machine Learning & SMS Expense Categorization',
-    '- Connected automated SMS notification listeners with ML inference categorizer for credit and debit transaction tracking.',
-    '- Hardened ML training pipelines, promotion gates, and dataset loading routines for continuous model retraining.',
-    '- Verified model publishing to Hugging Face Model Hub and serving Space sync; all 51 ML pytest suites passing with headless Agg plotting.',
-    '',
-    '### Theme Switching & Visual Refinements',
-    '- Fixed theme toggle 360-degree rotation animation so the moon icon maintains an upright position across theme toggles.',
-    '- Corrected Savings Retention Rate percentage formatting in executive Excel workbooks.',
-    '- Resolved Java 21 IDE inspections in `ExportServiceImpl` with modern record constructs and optimized collections.',
+    '### iOS Platform Fidelity & Sandbox Safeguards',
+    '- Increased list right padding to provide a dedicated 5px gutter separating cards from the custom gold scrollbar track on high-DPI iOS Retina displays.',
+    '- Disabled bouncing and overscroll on inner nested lists (`bounces={false}`, `overScrollMode="never"`) to prevent nested scroll traps and momentum lock on iOS devices.',
+    '- Configured `NSFaceIDUsageDescription` in `app.json` for Apple biometric compliance.',
+    '- Guarded SMS clipboard reading against iOS 14+ paste privacy banners.',
+    '- Handled platform-specific update installation: Android supports in-app APK sideloading, while iOS safely routes users to Safari/TestFlight in compliance with App Store guidelines.',
     '',
     '---',
     '',
