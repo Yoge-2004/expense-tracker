@@ -41,7 +41,8 @@
         ribbon.setAttribute("aria-label", "PowerBI Executive Slicers and Cross-Filters");
 
         ribbon.innerHTML = `
-            <div class="bi-slicers-top">
+            <!-- External Slicers Header - Positioned Above & Outside the Filter Container -->
+            <div class="bi-slicers-top bi-slicers-external-top" style="margin-bottom: 12px;">
                 <div class="bi-slicers-heading">
                     <span class="bi-badge">
                         <span class="bi-badge-dot"></span>
@@ -70,7 +71,9 @@
                 </div>
             </div>
 
-            <div class="bi-slicers-row">
+            <!-- Dedicated Slicers Filter Container Housing the 3 Interactive Filters -->
+            <div class="bi-slicers-filter-container" id="biSlicersFilterContainer">
+                <div class="bi-slicers-row">
                 <!-- Horizon Slicer -->
                 <div class="bi-slicer-group" id="biHorizonSlicer" role="group" aria-label="Time Horizon Slicer">
                     <span class="bi-slicer-label">Horizon</span>
@@ -149,6 +152,7 @@
                         <span class="bi-whatif-kpi-val" id="simHealthScore">75 / 100</span>
                     </div>
                 </div>
+            </div>
             </div>
         `;
 

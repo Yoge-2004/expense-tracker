@@ -16,44 +16,26 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react';
 import {
-  PanResponder,
-  StyleSheet,
   Text,
   View,
-  ScrollView,
-  FlatList,
   TouchableOpacity,
-  Pressable,
-  ActivityIndicator,
-  TextInput,
   RefreshControl,
-  Animated,
-  Dimensions,
   useWindowDimensions,
-  AppState,
-  Image,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-  LayoutChangeEvent,
-  LogBox,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedScrollbar, ThemedScrollView } from '../../components/ThemedScrollbar';
+import { ThemedScrollView } from '../../components/ThemedScrollbar';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
-import { apiRequest, ApiError, checkServerHealth, resolveAvatarUrl } from '../../services/api';
+import { apiRequest, ApiError } from '../../services/api';
 import { getCurrencySymbol } from '../../services/currency';
 import { scheduleSmartReminders } from '../../services/notifications';
-import { Colors, getCategoryColor, getCategoryEmoji, ThemeColors } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { AmbientAura } from '../../components/AmbientAura';
-import { NumberTicker } from '../../components/NumberTicker';
-import { AnimatedCard } from '../../components/AnimatedCard';
-import { AnimatedProgressBar } from '../../components/AnimatedProgressBar';
 import { StaggeredView } from '../../components/StaggeredView';
 import { InsightCards } from '../../components/InsightCards';
 import {
@@ -63,11 +45,8 @@ import {
   DayOfWeekChart,
   BudgetVsActualChart,
 } from '../../components/FinancialCharts';
-import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
+import { DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
-import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
-import { TransactionRow } from '../../components/dashboard/TransactionRow';
-import { SearchField } from '../../components/dashboard/SearchField';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { DashboardMetricsMatrix } from '../../components/dashboard/DashboardMetricsMatrix';
 import { DashboardLedger } from '../../components/dashboard/DashboardLedger';
@@ -162,17 +141,9 @@ interface Subscription {
 
 
 // The ledger FlatList sits in the page's ScrollView, but it has a fixed height and scrolls on its own, so its
-// windowing works as intended. React Native still prints its generic nesting warning in development builds.
-LogBox.ignoreLogs(['VirtualizedLists should never be nested inside plain ScrollViews']);
-
-/** Stable key for the virtualised ledger. */
-const ledgerKeyExtractor = (tx: UnifiedTxItem) => tx.uniqueKey;
-
-/** The 8px gap between ledger rows (a FlatList has no `gap`). */
-const LedgerSeparator = () => <View style={styles.ledgerSeparator} />;
 
 export default function DashboardScreen() {
-  const { userId, userName, theme, toggleTheme, currency, profilePicture, isStealthMode, toggleStealthMode, refreshUserProfile } = useAuth();
+  const { userId, userName, theme, currency, profilePicture, isStealthMode, toggleStealthMode, refreshUserProfile } = useAuth();
   const { showAlert } = useAlert();
   const router = useRouter();
 
@@ -188,11 +159,10 @@ export default function DashboardScreen() {
   );
   const insets = useSafeAreaInsets();
   const currSymbol = getCurrencySymbol(currency);
-  const isLight = theme === 'light';
   const c = Colors[theme];
 
   // Dynamic responsive window dimensions & adaptive layout breakpoints
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const isTablet = width >= 600 && width < 1024;
   const isDesktopOrTV = width >= 1024;
   const isLargeScreen = width >= 600;
@@ -227,29 +197,8 @@ export default function DashboardScreen() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortOption, setSortOption] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc');
-  const [showFilters, setShowFilters] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [ledgerTab, setLedgerTab] = useState<'all' | 'expenses' | 'incomes'>('all');
-  // Gesture support for swiping between stream tabs (All <-> Outflows <-> Inflows)
-  const streamTabsResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-      onPanResponderRelease: (_, g) => {
-        if (g.dx < -35) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          setLedgerTab((curr) => (curr === "all" ? "expenses" : "incomes"));
-        } else if (g.dx > 35) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          setLedgerTab((curr) => (curr === "incomes" ? "expenses" : "all"));
-        }
-      },
-    })
-  ).current;
-
-
-  // Animation values
-  const filterAnim = useRef(new Animated.Value(0)).current;
 
   const CACHE_KEY = `expense_cache_v4_${userId}`;
 
@@ -412,17 +361,7 @@ export default function DashboardScreen() {
     ]);
   };
 
-  const toggleFilterPanel = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const toValue = showFilters ? 0 : 1;
-    setShowFilters(!showFilters);
-    Animated.spring(filterAnim, {
-      toValue,
-      friction: 8,
-      tension: 50,
-      useNativeDriver: false,
-    }).start();
-  };
+
 
   const handleTransactionEdit = (tx: UnifiedTxItem) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -654,8 +593,6 @@ export default function DashboardScreen() {
     const isCustom = datePreset === 'custom';
     const nowD = new Date();
     const todayStr = isToday ? nowD.toISOString().split('T')[0] : '';
-    const nowMonth = isMonth ? nowD.getMonth() : -1;
-    const nowYear = isMonth ? nowD.getFullYear() : -1;
     const thirtyAgo = isLast30 ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : null;
 
     return expenses.filter((e) => {
@@ -740,14 +677,12 @@ export default function DashboardScreen() {
   const dashboardExpenses = filteredExpenses;
   const dashboardIncomes = filteredIncomes;
 
-  const now = new Date();
 
   // Memoized KPIs & Category Summaries (zero compute on theme switch)
   const {
     totalSpent,
     totalIncome,
     netCashFlow,
-    savingsRate,
     dailyBurn,
     monthEndForecast,
     currentMonthSpent,
@@ -799,8 +734,11 @@ export default function DashboardScreen() {
       safeSpend = Math.max(0, (totalBudgetLimit - cMonthSpent) / daysLeft);
     } else if (thisMonthInflow > 0) {
       safeSpend = Math.max(0, (thisMonthInflow - cMonthSpent) / daysLeft);
+    } else if (income > 0) {
+      const remainingPool = income - spent;
+      safeSpend = Math.max(0, remainingPool > 0 ? remainingPool / daysLeft : 0);
     } else {
-      safeSpend = Math.max(0, burn * 0.85);
+      safeSpend = Math.max(0, burn > 0 ? Math.round(burn * 1.1) : 500);
     }
 
     // No-Spend Day Streak
@@ -926,54 +864,7 @@ export default function DashboardScreen() {
   const onRowEdit = useCallback((tx: UnifiedTxItem) => rowActions.current.edit(tx), []);
   const onRowDelete = useCallback((tx: UnifiedTxItem) => rowActions.current.remove(tx), []);
 
-  // The ledger is a virtualised FlatList: only the rows on screen (plus a small buffer) exist, however many
-  // transactions are loaded. A theme change therefore repaints a handful of rows, not every row scrolled past.
-  const ledgerScrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
-  const ledgerScrollY = useRef(new Animated.Value(0)).current;
-  const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
-  const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
-  const [ledgerDisplayLimit, setLedgerDisplayLimit] = useState(20);
-  const onLedgerScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => ledgerScrollY.setValue(e.nativeEvent.contentOffset.y),
-    [ledgerScrollY]
-  );
-  const matrixCardStyles = useMemo(() => ({
-    cardPrimary: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.primary}40` }],
-    badgePrimary: [styles.matrixBadge, { backgroundColor: `${c.primary}18` }],
-    cardTeal: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.teal}40` }],
-    badgeTeal: [styles.matrixBadge, { backgroundColor: `${c.teal}18` }],
-    cardAccent: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.accent}40` }],
-    badgeAccent: [styles.matrixBadge, { backgroundColor: `${c.accent}18` }],
-    cardWarning: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.warning}40` }],
-    badgeWarning: [styles.matrixBadge, { backgroundColor: `${c.warning}18` }],
-  }), [matrixCardWidth, c.card, c.primary, c.teal, c.accent, c.warning]);
 
-  const displayedTransactions = useMemo(
-    () => unifiedTransactions.slice(0, ledgerDisplayLimit),
-    [unifiedTransactions, ledgerDisplayLimit]
-  );
-
-  const onLedgerContentSize = useCallback((_w: number, h: number) => setLedgerContentHeight(h), []);
-  const onLedgerLayout = useCallback((e: LayoutChangeEvent) => setLedgerViewHeight(e.nativeEvent.layout.height), []);
-  const renderLedgerItem = useCallback(
-    ({ item }: { item: UnifiedTxItem }) => (
-      <TransactionRow
-        tx={item}
-        colors={c}
-        currSymbol={currSymbol}
-        isStealth={isStealthMode}
-        onPress={onRowPress}
-        onEdit={onRowEdit}
-        onDelete={onRowDelete}
-      />
-    ),
-    [c, currSymbol, isStealthMode, onRowPress, onRowEdit, onRowDelete]
-  );
-  // Changing the filters or sort order starts the list from the top again.
-  useEffect(() => {
-    ledgerScrollRef.current?.scrollTo({ y: 0, animated: false });
-    setLedgerDisplayLimit(20);
-  }, [searchQuery, selectedCategory, datePreset, startDate, endDate, ledgerTab, sortOption]);
 
   // The search text is typed in SearchField; applying it to the list is a non-urgent update.
   const handleSearch = useCallback((query: string) => {
@@ -1045,6 +936,7 @@ export default function DashboardScreen() {
           isStealthMode={isStealthMode}
           toggleStealthMode={toggleStealthMode}
           onOpenExportModal={() => setExportModalVisible(true)}
+          onPressNotifications={() => router.push('/notifications' as any)}
           colors={c}
           theme={theme}
         />
@@ -1073,8 +965,8 @@ export default function DashboardScreen() {
           isLargeScreen={isLargeScreen}
           matrixCardWidth={matrixCardWidth}
           netCashFlow={netCashFlow}
-          totalIncomeMonth={totalIncomeMonth}
-          totalExpenseMonth={totalExpenseMonth}
+          totalIncomeMonth={currentMonthInflow > 0 ? currentMonthInflow : totalIncome}
+          totalExpenseMonth={currentMonthSpent > 0 ? currentMonthSpent : totalSpent}
           safeDailySpend={safeDailySpend}
           noSpendStreak={noSpendStreak}
           totalSpent={totalSpent}

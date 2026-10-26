@@ -120,6 +120,9 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
             </View>
           </View>
 
+          {/* Clean Separation Divider */}
+          <View style={[styles.cashFlowHorizontalDivider, { backgroundColor: c.border }]} />
+
           {/* Micro Pro Metrics Row */}
           <View style={styles.proMetricsRow}>
             {/* Safe Daily Spend */}

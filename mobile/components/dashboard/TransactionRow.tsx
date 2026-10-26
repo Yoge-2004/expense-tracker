@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, getCategoryColor, getCategoryEmoji, ThemeColors } from '../../constants/theme';
-import { UnifiedTxItem, TransactionRowProps } from './dashboardTypes';
+import { Colors, getCategoryColor, getCategoryEmoji } from '../../constants/theme';
+import { TransactionRowProps } from './dashboardTypes';
 
 function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) {
   return (

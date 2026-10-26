@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
 import { ChoiceChips } from '../ChoiceChips';
 import { ThemeColors } from '../../constants/theme';

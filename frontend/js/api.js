@@ -49,7 +49,7 @@ function ensureFeedbackUi() {
                     <span id="loadingText" class="immersive-loading-text">Connecting to the server…</span>
                     <span class="immersive-loading-sub">Secured Ledger Synchronization</span>
                     <div id="loadingProgressTrack" class="loading-progress-track" style="display:none; width:100%; height:4px; background:rgba(255,255,255,0.12); border-radius:2px; overflow:hidden; margin-top:4px;">
-                        <div id="loadingProgressBar" class="loading-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
+                        <div id="loadingProgressBar" class="loading-progress-bar" style="width:0; height:100%; background:linear-gradient(90deg, #c79a3e, #f59e0b); transition: width 0.15s ease-out; border-radius:2px;"></div>
                     </div>
                 </div>
             </div>
@@ -708,11 +708,13 @@ document.addEventListener("DOMContentLoaded", () => {
     initGlobalTheme();
 
     document.addEventListener("click", (e) => {
+        if (!(e.target instanceof Element)) return;
         const toggleBtn = e.target.closest(".theme-toggle-btn, #themeToggle");
         if (toggleBtn) toggleGlobalTheme();
     });
 
     document.addEventListener("click", (e) => {
+        if (!(e.target instanceof Element)) return;
         const targetBtn = e.target.closest(".btn-primary, .btn-secondary, .btn-oauth, .preset-btn, .btn-icon, button[type='submit']:not(.pill-chip)");
         if (!targetBtn) return;
 
@@ -732,6 +734,16 @@ document.addEventListener("DOMContentLoaded", () => {
         ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
         setTimeout(() => ripple.remove(), 600);
     });
+
+    // Universal smooth horizontal wheel scrolling for tabs, taskbars, and slicer ribbons
+    document.addEventListener("wheel", (e) => {
+        if (!e.target || !(e.target instanceof Element)) return;
+        const ribbon = e.target.closest(".ledger-stream-tabs, .admin-nav-stream, .bi-slicers-row, .stream-tabs, #adminStreamTabs");
+        if (ribbon && e.deltaY !== 0 && ribbon.scrollWidth > ribbon.clientWidth) {
+            e.preventDefault();
+            ribbon.scrollLeft += (e.deltaY * 1.25);
+        }
+    }, { passive: false });
 });
 
 // --- GLOBAL ERROR & UNHANDLED REJECTION HANDLERS ---

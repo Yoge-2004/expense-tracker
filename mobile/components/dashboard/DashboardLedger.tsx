@@ -8,6 +8,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   LayoutChangeEvent,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -25,8 +26,8 @@ export interface DashboardLedgerProps {
   currSymbol: string;
   isStealthMode: boolean;
   categories: { id: number; name: string }[];
-  selectedCategory: string | number;
-  onSelectCategory: (cat: string | number) => void;
+  selectedCategory: string;
+  onSelectCategory: (cat: string) => void;
   datePreset: DatePresetType;
   onSelectDatePreset: (preset: DatePresetType) => void;
   startDate: string;
@@ -78,10 +79,10 @@ export const DashboardLedger = memo(function DashboardLedger({
 }: DashboardLedgerProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [ledgerDisplayLimit, setLedgerDisplayLimit] = useState(20);
-  const [ledgerScrollY, setLedgerScrollY] = useState(0);
+  const ledgerScrollY = useRef(new Animated.Value(0)).current;
   const [ledgerContentHeight, setLedgerContentHeight] = useState(0);
   const [ledgerViewHeight, setLedgerViewHeight] = useState(0);
-  const ledgerScrollRef = useRef<ScrollView>(null);
+  const ledgerScrollRef = useRef<any>(null);
 
   const toggleFilterPanel = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -114,8 +115,8 @@ export const DashboardLedger = memo(function DashboardLedger({
   const onLedgerContentSize = useCallback((_w: number, h: number) => setLedgerContentHeight(h), []);
   const onLedgerLayout = useCallback((e: LayoutChangeEvent) => setLedgerViewHeight(e.nativeEvent.layout.height), []);
   const onLedgerScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setLedgerScrollY(e.nativeEvent.contentOffset.y);
-  }, []);
+    ledgerScrollY.setValue(e.nativeEvent.contentOffset.y);
+  }, [ledgerScrollY]);
 
   // Changing filters resets the list view to top
   useEffect(() => {

@@ -385,7 +385,7 @@
 
         if (typeof motionMediaQuery.addEventListener === 'function') {
             motionMediaQuery.addEventListener('change', handleMotionPreferenceChange);
-        } else {
+        } else if (typeof motionMediaQuery.addListener === 'function') {
             motionMediaQuery.addListener(handleMotionPreferenceChange);
         }
 

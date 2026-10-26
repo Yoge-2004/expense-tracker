@@ -1,6 +1,7 @@
 package com.example.expensetracker.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -132,7 +133,8 @@ public class User {
      */
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20, columnDefinition = "varchar(20) default 'ROLE_USER'")
+    @ColumnDefault("'ROLE_USER'")
+    @Column(name = "role", nullable = false, length = 20)
     private Role role = Role.ROLE_USER;
 
     /**

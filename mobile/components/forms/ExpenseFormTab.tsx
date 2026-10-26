@@ -45,7 +45,7 @@ export interface ExpenseFormTabProps {
     matchedCatName?: string;
   } | null;
   isAiClassifying?: boolean;
-  userOverrodeCategory?: React.MutableRefObject<boolean>;
+  userOverrodeCategory?: { current: boolean };
   isScanningOcr?: boolean;
   ocrSuccessData?: ParsedReceipt | null;
   setOcrSuccessData?: (data: ParsedReceipt | null) => void;
@@ -101,7 +101,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
   const handlePickReceipt = props.handlePickReceipt ?? form?.handlePickReceipt ?? (() => {});
   const handlePasteBankSms = props.handlePasteBankSms ?? form?.handlePasteBankSms ?? (() => {});
   const handleTestSampleReceipt = props.handleTestSampleReceipt ?? form?.handleTestSampleReceipt ?? (() => {});
-  const handleSmsDetectionInDesc = props.handleSmsDetectionInDesc ?? form?.handleSmsDetectionInDesc ?? (() => {});
+  const handleSmsDetectionInDesc = props.handleSmsDetectionInDesc ?? form?.handleSmsDetectionInDesc ?? ((v: string) => setDescription(v));
   const focusedField = props.focusedField !== undefined ? props.focusedField : (form?.focusedField ?? null);
   const setFocusedField = props.setFocusedField ?? form?.setFocusedField ?? (() => {});
   const errors = props.errors ?? form?.errors ?? {};

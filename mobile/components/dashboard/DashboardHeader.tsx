@@ -1,7 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { ThemeColors } from '../../constants/theme';
 import { resolveAvatarUrl } from '../../services/api';
@@ -9,6 +8,7 @@ import { ThemeToggleBtn } from '../ThemeToggleBtn';
 import { dashboardStyles as styles } from './dashboardStyles';
 
 export interface DashboardHeaderProps {
+  onPressNotifications: () => void;
   userName: string | null;
   profilePicture: string | null;
   unreadNotifications: number;
@@ -26,10 +26,10 @@ export const DashboardHeader = memo(function DashboardHeader({
   isStealthMode,
   toggleStealthMode,
   onOpenExportModal,
+  onPressNotifications,
   colors: c,
   theme,
 }: DashboardHeaderProps) {
-  const router = useRouter();
   const isLight = theme === 'light';
   const now = new Date();
 
@@ -86,7 +86,7 @@ export const DashboardHeader = memo(function DashboardHeader({
         <View style={styles.bellBtnWrapper}>
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => router.push('/notifications' as any)}
+            onPress={onPressNotifications}
             style={[
               styles.topActionBtn,
               {

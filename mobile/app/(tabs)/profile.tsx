@@ -16,7 +16,6 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   TouchableOpacity,
   Switch,
   TextInput,
@@ -26,7 +25,6 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
-  Linking,
   Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,7 +61,6 @@ import {
   scheduleDailyExpenseReminders,
   cancelDailyExpenseReminders,
   getDailyRemindersEnabled,
-  processIncomingMessageForDebitNotification,
   detectAndAddExpenseFromMessage,
 } from '../../services/notifications';
 
@@ -514,10 +511,10 @@ export default function ProfileScreen() {
 
   const handleSaveAvatar = async () => {
     const cleanUrl = avatarUrlInput.trim();
-    if (cleanUrl && !cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+    if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
       showAlert(
         "Invalid URL",
-        "Please enter a valid web image URL (starting with https:// or http://).",
+        "Please enter a valid web image URL (starting with https://).",
         undefined,
         "warning"
       );

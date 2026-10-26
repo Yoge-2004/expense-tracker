@@ -112,6 +112,7 @@
             mlTab: { title: "ML & AI Governance", sub: "Model accuracy, interactive inference sandbox, and user correction queue" },
             broadcastTab: { title: "Broadcast Studio", sub: "Compose platform-wide push alerts with real-time mobile preview" },
             resilienceTab: { title: "Resilience & Ops", sub: "3-tier database cluster state, failover snapshots & cache oversight" },
+            databaseTab: { title: "Platform Database & Financial Ledgers", sub: "Inspect all user expenses, incomes, and multi-tenant ledger data" },
             auditTab: { title: "Compliance Audit Trail", sub: "Immutable non-repudiation records and CSV export for regulatory oversight" }
         };
 
@@ -141,7 +142,11 @@
                 if (targetId === "logsTab") loadApplicationLogs();
                 if (targetId === "mlTab") { loadMlStats(); loadMlFeedbackQueue(); }
                 if (targetId === "resilienceTab") { loadResilienceDiagnostics(); loadDatabaseTopology(); }
+                if (targetId === "databaseTab") loadPlatformDatabase();
                 if (targetId === "auditTab") loadAuditLogs();
+
+                // Keep clicked tab in view
+                item.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
 
                 // Re-initialize custom dropdown selects whenever views become visible
                 setTimeout(() => {
@@ -151,6 +156,40 @@
                 }, 40);
             });
         });
+
+        // Initialize taskbar horizontal scroll controls & chevrons
+        const tabsNav = document.getElementById("adminStreamTabs");
+        const scrollLeftBtn = document.getElementById("adminNavScrollLeft");
+        const scrollRightBtn = document.getElementById("adminNavScrollRight");
+
+        function updateScrollButtons() {
+            if (!tabsNav) return;
+            const maxScroll = tabsNav.scrollWidth - tabsNav.clientWidth;
+            if (scrollLeftBtn) scrollLeftBtn.style.display = tabsNav.scrollLeft > 10 ? "inline-flex" : "none";
+            if (scrollRightBtn) scrollRightBtn.style.display = (maxScroll - tabsNav.scrollLeft) > 10 ? "inline-flex" : "none";
+        }
+
+        if (tabsNav) {
+            tabsNav.addEventListener("scroll", updateScrollButtons, { passive: true });
+            window.addEventListener("resize", updateScrollButtons);
+            setTimeout(updateScrollButtons, 120);
+
+            // Smooth wheel scroll
+            tabsNav.addEventListener("wheel", (e) => {
+                if (e.deltaY !== 0 && tabsNav.scrollWidth > tabsNav.clientWidth) {
+                    e.preventDefault();
+                    tabsNav.scrollLeft += (e.deltaY * 1.25);
+                    updateScrollButtons();
+                }
+            }, { passive: false });
+
+            scrollLeftBtn?.addEventListener("click", () => {
+                tabsNav.scrollBy({ left: -240, behavior: "smooth" });
+            });
+            scrollRightBtn?.addEventListener("click", () => {
+                tabsNav.scrollBy({ left: 240, behavior: "smooth" });
+            });
+        }
     }
 
     // ── Auto-Refresh Orchestrator ────────────────────────────────────────────
@@ -439,6 +478,7 @@
             }
 
             tbody.innerHTML = "";
+            populateDbUserFilter(data.content);
             data.content.forEach(u => {
                 const tr = document.createElement("tr");
 
@@ -553,9 +593,136 @@
             setTimeout(() => {
                 if (typeof window.initAllCustomSelects === "function") window.initAllCustomSelects();
             }, 30);
+
+            // Fetch this user specific real-time transactions into drawer table
+            loadUserDrawerLedger(userId, "expenses");
         } catch (e) {
             console.error("Open drawer error:", e);
             showToast("Failed to fetch user security details", "error");
+        }
+    }
+
+    let drawerTxnType = "expenses";
+    async function loadUserDrawerLedger(userId, type) {
+        drawerTxnType = type;
+        const tbody = document.getElementById("drawerLedgerTableBody");
+        if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--text-muted);">Loading transactions…</td></tr>`;
+
+        document.getElementById("drawerTabExpensesBtn")?.classList.toggle("active", type === "expenses");
+        document.getElementById("drawerTabIncomesBtn")?.classList.toggle("active", type === "incomes");
+
+        try {
+            const endpoint = type === "incomes" ? `/admin/data/incomes?userId=${userId}&size=25` : `/admin/data/expenses?userId=${userId}&size=25`;
+            const data = await apiRequest(endpoint);
+            const items = Array.isArray(data) ? data : (data?.content || []);
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--text-muted);">No records found for this user.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            items.forEach(it => {
+                const tr = document.createElement("tr");
+                const dateStr = it.date || it.expenseDate || it.incomeDate || "—";
+                const dClean = dateStr !== "—" ? new Date(dateStr).toLocaleDateString() : "—";
+                const cat = escapeHtml(it.categoryName || it.category || it.source || "General");
+                const amt = formatCurrency(it.amount || 0);
+                const desc = escapeHtml(it.description || it.note || "—");
+
+                tr.innerHTML = `
+                    <td style="color:var(--text-muted);">${dClean}</td>
+                    <td><span class="status-badge badge-netflow">${cat}</span></td>
+                    <td style="font-family:var(--font-mono); font-weight:700; color:${type === 'incomes' ? 'var(--metric-inflow)' : 'var(--metric-outflow)'};">
+                        ${type === 'incomes' ? + : -}${amt}
+                    </td>
+                    <td style="color:var(--text-main); max-width:140px; overflow:hidden; text-overflow:ellipsis;">${desc}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--danger-text);">Error loading transactions</td></tr>`;
+        }
+    }
+
+    // ── Platform Database Multi-Tenant Ledger Inspection ─────────────────────
+    let dbPage = 0;
+    const dbPageSize = 25;
+    let dbStreamType = "expenses";
+    let dbSelectedUserId = "";
+
+    function populateDbUserFilter(users) {
+        const sel = document.getElementById("dbUserFilterSelect");
+        if (!sel || !Array.isArray(users)) return;
+        const currentVal = sel.value;
+        sel.innerHTML = `<option value="">All Users (Multi-Tenant Platform Database)</option>`;
+        users.forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id;
+            opt.textContent = `User #${u.id} - ${u.name || u.username} (${u.email})`;
+            sel.appendChild(opt);
+        });
+        sel.value = currentVal;
+    }
+
+    async function loadPlatformDatabase() {
+        const tbody = document.getElementById("databaseTableBody");
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">Querying platform database…</td></tr>`;
+
+        try {
+            let endpoint = dbStreamType === "incomes" ? "/admin/data/incomes" : "/admin/data/expenses";
+            let url = `${endpoint}?page=${dbPage}&size=${dbPageSize}`;
+            if (dbSelectedUserId) {
+                url += `&userId=${encodeURIComponent(dbSelectedUserId)}`;
+            }
+
+            const data = await apiRequest(url);
+            const items = Array.isArray(data) ? data : (data?.content || []);
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">No records found in this stream.</td></tr>`;
+                document.getElementById("dbPaginationLabel").textContent = `Showing page ${dbPage + 1}`;
+                document.getElementById("dbPrevBtn").disabled = dbPage === 0;
+                document.getElementById("dbNextBtn").disabled = true;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            items.forEach(item => {
+                const tr = document.createElement("tr");
+                const isExpense = dbStreamType === "expenses";
+                const amountFormatted = formatCurrency(item.amount || 0);
+                const dateStr = item.date || item.expenseDate || item.incomeDate || item.createdAt || "—";
+                const dateClean = dateStr !== "—" ? new Date(dateStr).toLocaleDateString() : "—";
+                const categoryOrSource = escapeHtml(item.categoryName || item.category || item.source || "General");
+                const desc = escapeHtml(item.description || item.note || "—");
+                const method = escapeHtml(item.paymentMethod || item.incomeType || (item.recurring ? "Subscription" : "One-off"));
+                const userDisplay = item.userId ? `#${item.userId} (${escapeHtml(item.userName || item.username || item.userEmail || "User")})` : "System";
+
+                tr.innerHTML = `
+                    <td style="font-family:var(--font-mono); color:var(--text-muted);">#${escapeHtml(item.id)}</td>
+                    <td style="font-size:12px; font-weight:600; color:var(--text-main);">${userDisplay}</td>
+                    <td style="color:var(--text-muted); font-size:12px;">${dateClean}</td>
+                    <td><span class="status-badge badge-netflow">${categoryOrSource}</span></td>
+                    <td style="font-family:var(--font-mono); font-weight:700; color:${isExpense ? 'var(--metric-outflow)' : 'var(--metric-inflow)'};">
+                        ${isExpense ? '-' : '+'}${amountFormatted}
+                    </td>
+                    <td style="color:var(--text-main); max-width:240px; overflow:hidden; text-overflow:ellipsis;">${desc}</td>
+                    <td><span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${method}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById("dbPaginationLabel").textContent = `Showing page ${dbPage + 1} (${items.length} records)`;
+            document.getElementById("dbPrevBtn").disabled = dbPage === 0;
+            const totalPages = data?.totalPages !== undefined ? data.totalPages : (items.length < dbPageSize ? dbPage + 1 : dbPage + 2);
+            document.getElementById("dbNextBtn").disabled = (dbPage + 1) >= totalPages;
+        } catch (e) {
+            console.error("Database load error:", e);
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--danger-text);">Failed to load platform database: ${escapeHtml(e.message)}</td></tr>`;
         }
     }
 
@@ -720,8 +887,9 @@
         if (!queueList) return;
 
         try {
-            const data = await apiRequest("/admin/ml/feedback/pending");
-            if (!Array.isArray(data) || data.length === 0) {
+            const raw = await apiRequest("/admin/ml/feedback/pending");
+            const data = Array.isArray(raw) ? raw : (raw?.content || []);
+            if (data.length === 0) {
                 queueList.innerHTML = `<div style="padding:24px; text-align:center; color:var(--text-muted);">All feedback items reviewed. Queue clear!</div>`;
                 return;
             }
@@ -735,15 +903,20 @@
                 card.style.padding = "14px";
                 card.style.borderRadius = "12px";
 
+                const desc = escapeHtml(item.text || item.expenseDescription || "Category feedback");
+                const predicted = escapeHtml(item.predictedCategory || item.suggestedCategory || "—");
+                const corrected = escapeHtml(item.correctedCategory || item.userSelectedCategory || "—");
+                const user = escapeHtml(item.userEmail ? `by ${item.userEmail}` : "");
+
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <strong style="color:var(--text-main); font-size:13px;">"${escapeHtml(item.expenseDescription)}"</strong>
-                        <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">₹${item.amount || 0}</span>
+                        <strong style="color:var(--text-main); font-size:13px;">"${desc}"</strong>
+                        <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">${user}</span>
                     </div>
                     <div style="font-size:12px; margin-bottom:12px; display:flex; gap:10px; align-items:center;">
-                        <span style="color:var(--danger-text); text-decoration:line-through;">Model: ${escapeHtml(item.suggestedCategory || "—")}</span>
+                        <span style="color:var(--danger-text); text-decoration:line-through;">Model: ${predicted}</span>
                         <span style="color:var(--text-muted);">➔</span>
-                        <span style="color:var(--metric-inflow); font-weight:700;">User: ${escapeHtml(item.userSelectedCategory || "—")}</span>
+                        <span style="color:var(--metric-inflow); font-weight:700;">User: ${corrected}</span>
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn-primary" style="flex:1; padding:6px 10px; font-size:11px;" onclick="reviewMlFeedback(${item.id}, 'ACCEPT')">
@@ -1356,6 +1529,63 @@
                     loadDatabaseTopology();
                 }
             });
+        });
+
+        // Platform Database Tab Controls
+        document.getElementById("dbStreamTypeSelect")?.addEventListener("change", (e) => {
+            dbStreamType = e.target.value;
+            dbPage = 0;
+            loadPlatformDatabase();
+        });
+
+        document.getElementById("dbUserFilterSelect")?.addEventListener("change", (e) => {
+            dbSelectedUserId = e.target.value;
+            dbPage = 0;
+            loadPlatformDatabase();
+        });
+
+        document.getElementById("refreshDatabaseBtn")?.addEventListener("click", () => {
+            loadPlatformDatabase();
+            showToast("Platform database view refreshed", "info");
+        });
+
+        document.getElementById("dbPrevBtn")?.addEventListener("click", () => {
+            if (dbPage > 0) {
+                dbPage--;
+                loadPlatformDatabase();
+            }
+        });
+
+        document.getElementById("dbNextBtn")?.addEventListener("click", () => {
+            dbPage++;
+            loadPlatformDatabase();
+        });
+
+        document.getElementById("exportLedgerJsonBtn")?.addEventListener("click", async () => {
+            try {
+                showToast("Generating multi-tenant ledger export…", "info");
+                const data = await apiRequest("/admin/data/export-ledger");
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = downloadUrl;
+                a.download = `platform-ledger-export-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+                showToast("Full platform ledger JSON exported!", "success");
+            } catch (err) {
+                showToast("Export failed: " + err.message, "error");
+            }
+        });
+
+        // Drawer Ledger Tab Switchers
+        document.getElementById("drawerTabExpensesBtn")?.addEventListener("click", () => {
+            if (selectedDrawerUserId) loadUserDrawerLedger(selectedDrawerUserId, "expenses");
+        });
+        document.getElementById("drawerTabIncomesBtn")?.addEventListener("click", () => {
+            if (selectedDrawerUserId) loadUserDrawerLedger(selectedDrawerUserId, "incomes");
         });
 
         // Audit Log Search & Pagination

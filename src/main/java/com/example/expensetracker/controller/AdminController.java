@@ -229,7 +229,7 @@ public class AdminController {
     }
 
     @Operation(summary = "Get ML feedback queue", description = "Paginated list of user category corrections for model retraining review")
-    @GetMapping("/ml/feedback")
+    @GetMapping({"/ml/feedback", "/ml/feedback/pending"})
     public ResponseEntity<Page<AdminMlFeedbackItemDto>> getMlFeedback(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -335,7 +335,7 @@ public class AdminController {
 
     @Operation(summary = "Get all platform expenses", description = "Paginated list of all expenses across all users")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    @GetMapping("/expenses")
+    @GetMapping({"/expenses", "/data/expenses"})
     public ResponseEntity<Page<ExpenseDto>> getAllExpenses(
             @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "0") int page,
@@ -347,7 +347,7 @@ public class AdminController {
 
     @Operation(summary = "Get all platform incomes", description = "Paginated list of all incomes across all users")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    @GetMapping("/incomes")
+    @GetMapping({"/incomes", "/data/incomes"})
     public ResponseEntity<Page<IncomeDto>> getAllIncomes(
             @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "0") int page,
@@ -359,14 +359,14 @@ public class AdminController {
 
     @Operation(summary = "Export complete platform ledger", description = "Dumps complete multi-tenant ledger as structured JSON")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    @GetMapping("/database/export/json")
+    @GetMapping({"/database/export/json", "/data/export-ledger"})
     public ResponseEntity<Map<String, Object>> exportPlatformLedgerJson() {
         return ResponseEntity.ok(adminDataService.exportPlatformLedger());
     }
 
     @Operation(summary = "Download portable SQLite database snapshot", description = "Generates and streams immediate portable SQLite database snapshot file")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    @GetMapping("/database/snapshot/download")
+    @GetMapping({"/database/snapshot/download", "/data/snapshot"})
     public ResponseEntity<byte[]> downloadDatabaseSnapshot() throws Exception {
         byte[] bytes = adminDataService.exportSqliteSnapshot();
         return ResponseEntity.ok()

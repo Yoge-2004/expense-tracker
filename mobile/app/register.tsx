@@ -70,7 +70,6 @@ export default function RegisterScreen() {
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
 
   const [isEmailVerificationEnabled, setIsEmailVerificationEnabled] = useState(false);
-  const [checkingConfig, setCheckingConfig] = useState(true);
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -95,8 +94,6 @@ export default function RegisterScreen() {
         }
       } catch {
         setIsEmailVerificationEnabled(false);
-      } finally {
-        setCheckingConfig(false);
       }
     }
     void checkAuthConfig();

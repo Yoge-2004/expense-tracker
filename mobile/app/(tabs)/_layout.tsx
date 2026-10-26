@@ -7,7 +7,7 @@
  */
 
 import React, { useRef, useEffect } from "react";
-import { View, StyleSheet, Platform, Animated } from "react-native";
+import { StyleSheet, Platform, Animated } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

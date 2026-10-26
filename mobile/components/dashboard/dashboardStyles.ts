@@ -129,8 +129,8 @@ export const dashboardStyles = StyleSheet.create({
   },
   bellBadge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -6,
+    right: -6,
     minWidth: 18,
     height: 18,
     paddingHorizontal: 4,
@@ -218,10 +218,17 @@ export const dashboardStyles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
   },
+  cashFlowHorizontalDivider: {
+    width: '100%',
+    height: 1,
+    marginVertical: 14,
+  },
   proMetricsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    gap: 10,
+    marginTop: 0,
+    marginBottom: 0,
   },
   proMetricBadge: {
     flex: 1,
