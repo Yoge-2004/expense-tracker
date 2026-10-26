@@ -1,6 +1,7 @@
 name: ML Validation
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - 'ml/**'
