@@ -140,7 +140,7 @@
                 // Lazy load
                 if (targetId === "usersTab") loadUsersDirectory();
                 if (targetId === "logsTab") loadApplicationLogs();
-                if (targetId === "mlTab") { loadMlStats(); loadMlFeedbackQueue(); }
+                if (targetId === "mlTab") { loadMlStats(); loadMlFeedbackQueue(); loadMlRetrainingLogs(); }
                 if (targetId === "resilienceTab") { loadResilienceDiagnostics(); loadDatabaseTopology(); }
                 if (targetId === "databaseTab") loadPlatformDatabase();
                 if (targetId === "auditTab") loadAuditLogs();
@@ -1035,10 +1035,67 @@
             showToast(`Correction marked as ${decision}`, "success");
             loadMlStats();
             loadMlFeedbackQueue();
+            loadMlRetrainingLogs();
         } catch (e) {
             showToast(e.message || "Failed to submit review", "error");
         }
     };
+
+    // ── Continuous ML Retraining Observability ────────────────────────────────
+    async function loadMlRetrainingLogs() {
+        const tbody = document.getElementById("retrainingRunsTbody");
+        const logsEl = document.getElementById("retrainTerminalLogs");
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Syncing automated retraining logs…</td></tr>`;
+        }
+
+        try {
+            const data = await apiRequest("/admin/ml/retrain/logs");
+            if (!data) return;
+
+            if (tbody) {
+                const runs = Array.isArray(data.runs) ? data.runs : [];
+                if (runs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">No retraining runs recorded yet.</td></tr>`;
+                } else {
+                    tbody.innerHTML = "";
+                    runs.forEach(r => {
+                        const tr = document.createElement("tr");
+                        const isSuccess = (r.status || "").includes("COMPLETED") || (r.status || "").includes("PROMOTED");
+                        const isWarning = (r.status || "").includes("SKIPPED") || (r.status || "").includes("RUNNING");
+                        const badgeClass = isSuccess ? "badge-success" : (isWarning ? "badge-warning" : "badge-subs");
+
+                        const metricsStr = r.metrics
+                            ? `Macro F1: ${(r.metrics.macroF1 ?? 0).toFixed(3)} | Acc: ${(r.metrics.accuracy ?? 0).toFixed(3)} (${r.metrics.samples || 0} samples)`
+                            : escapeHtml(r.message || "—");
+
+                        const timeClean = r.timestamp ? new Date(r.timestamp).toLocaleString() : "—";
+                        const samplesCount = r.metrics?.samples || r.feedbackConsumed || "—";
+
+                        tr.innerHTML = `
+                            <td style="font-family:var(--font-mono); color:var(--primary); font-weight:600;">${escapeHtml(r.runId || "—")}</td>
+                            <td style="font-size:11px; color:var(--text-muted);">${timeClean}</td>
+                            <td style="font-size:11px;"><span class="status-badge badge-netflow">${escapeHtml(r.trigger || "CRON")}</span></td>
+                            <td><span class="status-badge ${badgeClass}">● ${escapeHtml(r.status || "UNKNOWN")}</span></td>
+                            <td style="font-family:var(--font-mono);">${samplesCount}</td>
+                            <td style="font-size:11px; color:var(--text-muted); max-width:280px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.message || "")}">${metricsStr}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            }
+
+            if (logsEl && data.terminalLogs) {
+                logsEl.textContent = Array.isArray(data.terminalLogs) ? data.terminalLogs.join("\n") : data.terminalLogs;
+                logsEl.scrollTop = logsEl.scrollHeight;
+            }
+        } catch (e) {
+            console.error("Retraining logs query error:", e);
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--danger-text);">Failed to load retraining logs: ${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
+    }
 
     // ── Live Broadcast Mockup ────────────────────────────────────────────────
     function setupInteractiveMockup() {
@@ -1564,6 +1621,47 @@
             } catch (e) {
                 showToast(e.message || "Inference failed", "error");
             }
+        });
+
+        // Automated ML Retraining Engine Controls
+        document.getElementById("refreshRetrainLogsBtn")?.addEventListener("click", async () => {
+            const btn = document.getElementById("refreshRetrainLogsBtn");
+            if (btn) btn.disabled = true;
+            try {
+                await loadMlRetrainingLogs();
+                showToast("Retraining execution history and logs refreshed", "success");
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        });
+
+        document.getElementById("copyRetrainLogsBtn")?.addEventListener("click", () => {
+            const logsText = document.getElementById("retrainTerminalLogs")?.textContent || "";
+            if (!logsText || logsText.includes("Listening for retraining")) {
+                showToast("No active retraining logs to copy", "info");
+                return;
+            }
+            navigator.clipboard.writeText(logsText).then(() => {
+                showToast("Retraining logs copied to clipboard", "success");
+            }).catch(() => {
+                showToast("Failed to copy logs to clipboard", "error");
+            });
+        });
+
+        document.getElementById("triggerManualRetrainBtn")?.addEventListener("click", () => {
+            triggerStepUpVerification({
+                title: "Trigger ML Retraining Evaluation",
+                desc: "This procedure inspects all pending user corrections against the 500-sample quality gate, trains candidate models on Hugging Face if threshold is met, and auto-promotes to production if validation metrics pass. Requires 6-digit Security PIN.",
+                onConfirm: async (pin) => {
+                    const res = await apiRequest("/admin/ml/retrain/trigger", {
+                        method: "POST",
+                        body: JSON.stringify({ stepUpPin: pin })
+                    });
+                    showToast(res.message || "Retraining evaluation executed", res.success ? "success" : "info");
+                    await loadMlRetrainingLogs();
+                    await loadMlStats();
+                }
+            });
         });
 
         // Broadcast Announcement Dispatch

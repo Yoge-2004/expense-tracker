@@ -8,9 +8,12 @@ import com.example.expensetracker.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Map;
+
 /**
- * Service for administrative governance of the ML expense categorization model,
- * reviewing user correction queues, and running live inference sandbox tests.
+ * Service for administrative governance of the ML models,
+ * reviewing user correction queues, running inference sandbox tests,
+ * and tracking automated model retraining execution logs.
  *
  * @author Yogeshwaran
  */
@@ -23,4 +26,8 @@ public interface AdminMlGovernanceService {
     void reviewFeedback(Long feedbackId, String decision, User actor, String ipAddress, String userAgent);
 
     MlClassificationResponse testPrediction(MlClassificationRequest request);
+
+    Map<String, Object> getRetrainingLogs();
+
+    Map<String, Object> triggerRetraining(String stepUpPin, User actor, String ipAddress, String userAgent);
 }

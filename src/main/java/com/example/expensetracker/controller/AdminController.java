@@ -260,6 +260,26 @@ public class AdminController {
         return ResponseEntity.ok(mlGovernanceService.testPrediction(request));
     }
 
+    @Operation(summary = "Get ML Retraining Automation Logs & History", description = "Returns retraining history, automated cron schedule status, evaluation benchmarks, and logs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @GetMapping("/ml/retrain/logs")
+    public ResponseEntity<Map<String, Object>> getMlRetrainingLogs() {
+        return ResponseEntity.ok(mlGovernanceService.getRetrainingLogs());
+    }
+
+    @Operation(summary = "Trigger on-demand ML retraining", description = "Executes model retraining evaluation pipeline. Requires ADMIN or SUPER_ADMIN and valid step-up PIN.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PostMapping("/ml/retrain/trigger")
+    public ResponseEntity<Map<String, Object>> triggerMlRetraining(
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal CustomUserDetails principal,
+            HttpServletRequest httpRequest) {
+        String pin = body != null ? body.get("stepUpPin") : null;
+        String ip = extractClientIp(httpRequest);
+        String ua = httpRequest.getHeader("User-Agent");
+        return ResponseEntity.ok(mlGovernanceService.triggerRetraining(pin, principal.getUser(), ip, ua));
+    }
+
     @Operation(summary = "Broadcast announcement", description = "Dispatches push notifications & inbox announcements to targeted users. Requires PIN.")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @PostMapping("/notifications/broadcast")
