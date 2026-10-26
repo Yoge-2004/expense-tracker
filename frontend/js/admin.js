@@ -164,30 +164,91 @@
 
         function updateScrollButtons() {
             if (!tabsNav) return;
-            const maxScroll = tabsNav.scrollWidth - tabsNav.clientWidth;
-            if (scrollLeftBtn) scrollLeftBtn.style.display = tabsNav.scrollLeft > 10 ? "inline-flex" : "none";
-            if (scrollRightBtn) scrollRightBtn.style.display = (maxScroll - tabsNav.scrollLeft) > 10 ? "inline-flex" : "none";
+            const scrollLeft = Math.ceil(tabsNav.scrollLeft);
+            const maxScroll = Math.max(0, tabsNav.scrollWidth - tabsNav.clientWidth);
+
+            if (maxScroll <= 4) {
+                // All tabs comfortably fit within view
+                if (scrollLeftBtn) scrollLeftBtn.style.display = "none";
+                if (scrollRightBtn) scrollRightBtn.style.display = "none";
+                return;
+            }
+
+            if (scrollLeftBtn) {
+                scrollLeftBtn.style.display = "inline-flex";
+                scrollLeftBtn.disabled = scrollLeft <= 4;
+            }
+            if (scrollRightBtn) {
+                scrollRightBtn.style.display = "inline-flex";
+                scrollRightBtn.disabled = scrollLeft >= (maxScroll - 4);
+            }
         }
 
         if (tabsNav) {
             tabsNav.addEventListener("scroll", updateScrollButtons, { passive: true });
             window.addEventListener("resize", updateScrollButtons);
-            setTimeout(updateScrollButtons, 120);
+            setTimeout(updateScrollButtons, 50);
+            setTimeout(updateScrollButtons, 200);
+            setTimeout(updateScrollButtons, 600);
 
-            // Smooth wheel scroll
+            // Smooth wheel scroll (handling both deltaX and deltaY)
             tabsNav.addEventListener("wheel", (e) => {
-                if (e.deltaY !== 0 && tabsNav.scrollWidth > tabsNav.clientWidth) {
-                    e.preventDefault();
-                    tabsNav.scrollLeft += (e.deltaY * 1.25);
-                    updateScrollButtons();
+                if (tabsNav.scrollWidth > tabsNav.clientWidth) {
+                    const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+                    if (delta !== 0) {
+                        e.preventDefault();
+                        tabsNav.scrollLeft += (delta * 1.25);
+                        updateScrollButtons();
+                    }
                 }
             }, { passive: false });
 
+            const scrollStep = 240;
             scrollLeftBtn?.addEventListener("click", () => {
-                tabsNav.scrollBy({ left: -240, behavior: "smooth" });
+                if (typeof tabsNav.scrollBy === "function") {
+                    tabsNav.scrollBy({ left: -scrollStep, behavior: "smooth" });
+                } else {
+                    tabsNav.scrollLeft -= scrollStep;
+                }
+                setTimeout(updateScrollButtons, 320);
             });
             scrollRightBtn?.addEventListener("click", () => {
-                tabsNav.scrollBy({ left: 240, behavior: "smooth" });
+                if (typeof tabsNav.scrollBy === "function") {
+                    tabsNav.scrollBy({ left: scrollStep, behavior: "smooth" });
+                } else {
+                    tabsNav.scrollLeft += scrollStep;
+                }
+                setTimeout(updateScrollButtons, 320);
+            });
+
+            // Desktop mouse drag-to-scroll support
+            let isDragging = false;
+            let startMouseX = 0;
+            let initialScroll = 0;
+
+            tabsNav.addEventListener("mousedown", (e) => {
+                if (e.target.closest("button")) return;
+                isDragging = true;
+                startMouseX = e.pageX - tabsNav.offsetLeft;
+                initialScroll = tabsNav.scrollLeft;
+                tabsNav.style.cursor = "grabbing";
+            });
+
+            window.addEventListener("mouseup", () => {
+                if (isDragging) {
+                    isDragging = false;
+                    tabsNav.style.cursor = "";
+                    updateScrollButtons();
+                }
+            });
+
+            tabsNav.addEventListener("mousemove", (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.pageX - tabsNav.offsetLeft;
+                const walk = (x - startMouseX) * 1.4;
+                tabsNav.scrollLeft = initialScroll - walk;
+                updateScrollButtons();
             });
         }
     }
