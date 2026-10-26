@@ -43,64 +43,80 @@
 
 <p align="center">
   <b>Enterprise Financial Command Center • Autonomous Cash Flow Governance • Universal Cross-Platform Engine</b>
-  <br/>
-  <a href="#-executive-overview">Executive Overview</a> •
-  <a href="#-why-expensetracker-pro-comparison-matrix">Why ExpenseTracker PRO?</a> •
-  <a href="#️-enterprise-architecture--system-topology">Architecture</a> •
-  <a href="#-comprehensive-feature-portfolio">Feature Portfolio</a> •
-  <a href="#-mobile-native-companion-suite">Mobile Suite</a> •
-  <a href="#-interactive-rest-api-reference">API Reference</a> •
-  <a href="#-machine-learning--continuous-intelligence-fleet">ML Fleet</a> •
-  <a href="#-quick-start-guide">Quick Start</a> •
-  <a href="#-testing-ecosystem-557-tests">Testing</a>
 </p>
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
 </div>
 
-## 📑 Table of Contents
+## 🧭 Executive Navigation Compass
 
-- [🌟 Executive Overview](#-executive-overview)
-- [⚖️ Why ExpenseTracker PRO? (Comparison Matrix)](#️-why-expensetracker-pro-comparison-matrix)
-- [🏗️ Enterprise Architecture & System Topology](#️-enterprise-architecture--system-topology)
-  - [1. High-Level Distributed Infrastructure (C4 Model)](#1-high-level-distributed-infrastructure-c4-model)
-  - [2. Spring Boot Backend Layered Architecture](#2-spring-boot-backend-layered-architecture)
-  - [3. Relational Entity-Relationship Diagram (ERD)](#3-relational-entity-relationship-diagram-erd)
-  - [4. Transaction Lifecycle & State Machine](#4-transaction-lifecycle--state-machine)
-  - [5. Continuous ML Fleet Retraining & Feedback Loop](#5-continuous-ml-fleet-retraining--feedback-loop)
-  - [6. Client-Side Dual-Mode OCR & Multi-Tax Decomposition Pipeline](#6-client-side-dual-mode-ocr--multi-tax-decomposition-pipeline)
-- [💎 Comprehensive Feature Portfolio](#-comprehensive-feature-portfolio)
-  - [1. Unified Cash Flow Ledger & Dual-Stream Audit Trail](#1-unified-cash-flow-ledger--dual-stream-audit-trail)
-  - [2. Inflow Intelligence & Income Stream Governance](#2-inflow-intelligence--income-stream-governance)
-  - [3. Multi-Tax Receipt OCR Scanner (Client-Side Privacy-First)](#3-multi-tax-receipt-ocr-scanner-client-side-privacy-first)
-  - [4. Continuous Intelligence Machine Learning Fleet](#4-continuous-intelligence-machine-learning-fleet)
-  - [5. Power BI-Grade Excel Analytics & Interactive Data Hub](#5-power-bi-grade-excel-analytics--interactive-data-hub)
-  - [6. Budget Allocation & Velocity Variance Engine](#6-budget-allocation--velocity-variance-engine)
-  - [7. Active Subscriptions & Recurring Financial Commitment Engine](#7-active-subscriptions--recurring-financial-commitment-engine)
-  - [8. Savings Goals Milestones & Contribution Vault](#8-savings-goals-milestones--contribution-vault)
-  - [9. Web Studio & Universal Appearance Engine (12 Luxury Themes)](#9-web-studio--universal-appearance-engine-12-luxury-themes)
-  - [10. Executive Command Palette (Ctrl/Cmd + K) & Fluid Ambient HUD Pointer](#10-executive-command-palette-ctrlcmd--k--fluid-ambient-hud-pointer)
-  - [11. Draggable Quick Calculator & Multi-Currency FX Converter](#11-draggable-quick-calculator--multi-currency-fx-converter)
-  - [12. Stealth Privacy Mode & Visual Obfuscation](#12-stealth-privacy-mode--visual-obfuscation)
-  - [13. Safe-to-Spend Daily Allowance & No-Spend Habit Streaks](#13-safe-to-spend-daily-allowance--no-spend-habit-streaks)
-  - [14. Zero-Trust Security, WebAuthn Passkeys & Step-Up Admin PIN](#14-zero-trust-security-webauthn-passkeys--step-up-admin-pin)
-  - [15. Responsive Cross-Platform Command Studio](#15-responsive-cross-platform-command-studio)
-- [📱 Mobile Native Companion Suite (React Native & Expo Router)](#-mobile-native-companion-suite-react-native--expo-router)
-  - [1. Mobile Feature Capabilities & Collage](#1-mobile-feature-capabilities--collage)
-  - [2. Mobile Touch Gestures & Haptic Profile Reference](#2-mobile-touch-gestures--haptic-profile-reference)
-  - [3. SMS Banking Debit Parser Engine](#3-sms-banking-debit-parser-engine)
-- [🎮 Web & Desktop Keyboard Shortcuts Guide](#-web--desktop-keyboard-shortcuts-guide)
-- [🔌 Interactive REST API Reference](#-interactive-rest-api-reference)
-- [🧠 Machine Learning & Continuous Intelligence Fleet](#-machine-learning--continuous-intelligence-fleet)
-- [⚡ Performance Engineering & Java 27 Optimization](#-performance-engineering--java-27-optimization)
-- [🛠️ Technology Stack Architecture](#️-technology-stack-architecture)
-- [📂 Repository Layout](#-repository-layout)
-- [🚢 Deployment & DevOps Ecosystem](#-deployment--devops-ecosystem)
-- [🚀 Quick Start Guide](#-quick-start-guide)
-- [⚙️ Environment Variables Reference](#️-environment-variables-reference)
-- [🧪 Testing Ecosystem (557+ Tests)](#-testing-ecosystem-557-tests)
-- [📦 Releases & Installation](#-releases--installation)
+<table width="100%">
+  <tr>
+    <td width="33%" valign="top">
+      <h4>⚡ <b>System Architecture</b></h4>
+      <sub>Distributed topology, C4 model & data models</sub>
+      <br/><br/>
+      • <a href="#1-high-level-distributed-infrastructure-c4-model"><b>Distributed Topology (C4)</b></a><br/>
+      • <a href="#2-spring-boot-backend-layered-architecture"><b>Backend Layered Pipeline</b></a><br/>
+      • <a href="#3-relational-entity-relationship-diagram-erd"><b>Relational ERD Model</b></a><br/>
+      • <a href="#4-transaction-lifecycle--state-machine"><b>Transaction State Machine</b></a><br/>
+      • <a href="#5-continuous-ml-fleet-retraining--feedback-loop"><b>ML Retraining Loop</b></a>
+    </td>
+    <td width="33%" valign="top">
+      <h4>💎 <b>Feature Suite</b></h4>
+      <sub>Cash flow, multi-tax OCR & AI fleet</sub>
+      <br/><br/>
+      • <a href="#1-unified-cash-flow-ledger--dual-stream-audit-trail"><b>Unified Cash Flow Ledger</b></a><br/>
+      • <a href="#2-inflow-intelligence--income-stream-governance"><b>Inflow Stream Intelligence</b></a><br/>
+      • <a href="#3-multi-tax-receipt-ocr-scanner-client-side-privacy-first"><b>Client-Side Multi-Tax OCR</b></a><br/>
+      • <a href="#4-continuous-intelligence-machine-learning-fleet"><b>Continuous ML Intelligence</b></a><br/>
+      • <a href="#5-power-bi-grade-excel-analytics--interactive-data-hub"><b>Power BI Excel Data Hub</b></a>
+    </td>
+    <td width="33%" valign="top">
+      <h4>📱 <b>Mobile & Interfaces</b></h4>
+      <sub>Expo Router native client & Web Studio</sub>
+      <br/><br/>
+      • <a href="#-mobile-native-companion-suite-react-native--expo-router"><b>React Native Companion</b></a><br/>
+      • <a href="#3-sms-banking-debit-parser-engine"><b>SMS Banking Auto-Capture</b></a><br/>
+      • <a href="#9-web-studio--universal-appearance-engine-12-luxury-themes"><b>12 Luxury Web Palettes</b></a><br/>
+      • <a href="#10-executive-command-palette-ctrlcmd--k--fluid-ambient-hud-pointer"><b>Command Palette (Ctrl+K)</b></a><br/>
+      • <a href="#-web--desktop-keyboard-shortcuts-guide"><b>Keyboard & Gesture Guide</b></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h4>🔐 <b>Zero-Trust Security</b></h4>
+      <sub>WebAuthn, Admin PIN & DR hybrid sync</sub>
+      <br/><br/>
+      • <a href="#14-zero-trust-security-webauthn-passkeys--step-up-admin-pin"><b>FIDO2 Passkeys & Auth</b></a><br/>
+      • <a href="#12-stealth-privacy-mode--visual-obfuscation"><b>Stealth Privacy Mode</b></a><br/>
+      • <a href="#13-safe-to-spend-daily-allowance--no-spend-habit-streaks"><b>Safe-to-Spend Metric</b></a><br/>
+      • <a href="#-performance-engineering--java-27-optimization"><b>Java 27 Generational ZGC</b></a><br/>
+      • <a href="#-deployment--devops-ecosystem"><b>Hugging Face & Docker</b></a>
+    </td>
+    <td width="33%" valign="top">
+      <h4>🔌 <b>API & Engineering</b></h4>
+      <sub>OpenAPI contracts, benchmarks & stack</sub>
+      <br/><br/>
+      • <a href="#-interactive-rest-api-reference"><b>OpenAPI REST Reference</b></a><br/>
+      • <a href="#-machine-learning--continuous-intelligence-fleet"><b>ML Benchmark Matrix</b></a><br/>
+      • <a href="#️-technology-stack-architecture"><b>Tech Stack Architecture</b></a><br/>
+      • <a href="#-repository-layout"><b>Repository Layout Map</b></a><br/>
+      • <a href="#-why-expensetracker-pro-comparison-matrix"><b>Enterprise Comparison</b></a>
+    </td>
+    <td width="33%" valign="top">
+      <h4>🚀 <b>Execution & QA</b></h4>
+      <sub>Quick start, configurations & testing</sub>
+      <br/><br/>
+      • <a href="#-quick-start-guide"><b>Fast-Track Quick Start</b></a><br/>
+      • <a href="#⚙️-environment-variables-reference"><b>Environment Config Table</b></a><br/>
+      • <a href="#-testing-ecosystem-557-tests"><b>557+ Tests Quality Gate</b></a><br/>
+      • <a href="#-releases--installation"><b>Download Android APK</b></a><br/>
+      • <a href="#-executive-overview"><b>Platform Overview</b></a>
+    </td>
+  </tr>
+</table>
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
@@ -135,16 +151,16 @@ Operating on **Java 27** using Generational ZGC, **Spring Boot 4.1.1**, **Python
 
 | Capability / Dimension | 🏆 ExpenseTracker PRO | 📊 Excel / Spreadsheets | 🏦 Mint / Credit Karma | 🎯 YNAB (You Need A Budget) | 👥 Splitwise |
 |---|:---:|:---:|:---:|:---:|:---:|
-| **Privacy & Data Ownership** | **100% Self-Hosted & Local** | Local file | 3rd-Party Cloud / Data Sold | 3rd-Party Cloud | 3rd-Party Cloud |
-| **Pricing & Licensing** | **Free & Open Source (Apache 2.0)** | Paid Office 365 | Ad-supported / Monetized | \$100+/year subscription | Freemium / Paid Pro |
-| **Client-Side Receipt OCR** | **✅ WebAssembly (Zero Leakage)** | ❌ None | ❌ Cloud OCR | ❌ Manual Entry Only | ⚠️ Cloud OCR (Pro only) |
-| **Dual AI Categorization** | **✅ TF-IDF + DistilBERT** | ❌ Manual Rules | ⚠️ Primitive Heuristics | ❌ Manual Assignment | ❌ None |
-| **Continuous Model Retraining** | **✅ Self-Retraining ML Fleet** | ❌ None | ❌ Static Black Box | ❌ None | ❌ None |
-| **Mobile Banking SMS Parsing** | **✅ Real-time Android/iOS** | ❌ None | ⚠️ Bank Aggregator APIs | ❌ None | ❌ None |
-| **Power BI-Grade Excel Output** | **✅ Apache POI Auto-Generated** | ⚠️ Manual Formulas | ❌ Flat CSV Only | ❌ Flat CSV Only | ❌ Flat CSV Only |
-| **Biometric Passkeys (WebAuthn)** | **✅ FIDO2 Hardware Keys** | ❌ None | ❌ Password / 2FA | ❌ Password / 2FA | ❌ Password Only |
-| **Disaster Recovery Hybrid Sync** | **✅ Postgres + Encrypted SQLite + HF** | ❌ Manual Backup | ❌ Vendor Lock-in | ❌ Vendor Lock-in | ❌ None |
-| **High-Throughput Runtime** | **✅ Java 27 Virtual Threads** | ❌ Desktop App | ❌ Closed SaaS | ❌ Closed SaaS | ❌ Closed SaaS |
+| **Privacy & Data Ownership** | **`100% Self-Hosted & Local`** | Local file | 3rd-Party Cloud / Data Sold | 3rd-Party Cloud | 3rd-Party Cloud |
+| **Pricing & Licensing** | **`Free & Open Source (Apache 2.0)`** | Paid Office 365 | Ad-supported / Monetized | \$100+/year subscription | Freemium / Paid Pro |
+| **Client-Side Receipt OCR** | **`✅ WebAssembly (Zero Leakage)`** | ❌ None | ❌ Cloud OCR | ❌ Manual Entry Only | ⚠️ Cloud OCR (Pro only) |
+| **Dual AI Categorization** | **`✅ TF-IDF + DistilBERT`** | ❌ Manual Rules | ⚠️ Primitive Heuristics | ❌ Manual Assignment | ❌ None |
+| **Continuous Model Retraining** | **`✅ Self-Retraining ML Fleet`** | ❌ None | ❌ Static Black Box | ❌ None | ❌ None |
+| **Mobile Banking SMS Parsing** | **`✅ Real-time Android/iOS`** | ❌ None | ⚠️ Bank Aggregator APIs | ❌ None | ❌ None |
+| **Power BI-Grade Excel Output** | **`✅ Apache POI Auto-Generated`** | ⚠️ Manual Formulas | ❌ Flat CSV Only | ❌ Flat CSV Only | ❌ Flat CSV Only |
+| **Biometric Passkeys (WebAuthn)** | **`✅ FIDO2 Hardware Keys`** | ❌ None | ❌ Password / 2FA | ❌ Password / 2FA | ❌ Password Only |
+| **Disaster Recovery Hybrid Sync** | **`✅ Postgres + Encrypted SQLite + HF`** | ❌ Manual Backup | ❌ Vendor Lock-in | ❌ Vendor Lock-in | ❌ None |
+| **High-Throughput Runtime** | **`✅ Java 27 Virtual Threads`** | ❌ Desktop App | ❌ Closed SaaS | ❌ Closed SaaS | ❌ Closed SaaS |
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
@@ -898,54 +914,54 @@ Operating on **Java 27 (Eclipse Temurin)** with **Spring Boot 4.1.1**, the platf
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-## 📂 Repository Layout
+## 📂 Repository Layout Map
 
-```text
-expense-tracker/
-├── frontend/                    # Web client application
-│   ├── css/                     # UI stylesheets (admin, web-studio, responsive)
-│   ├── js/                      # Browser logic & modules (web-studio, custom-controls)
-│   ├── index.html               # Authentication portal
-│   ├── dashboard.html           # Personal financial command center
-│   ├── admin.html               # Platform administration & ML fleet governance
-│   └── sw.js                    # Service Worker (Web Push & PWA offline cache)
-│
-├── mobile/                      # Expo React Native mobile application
-│   ├── app/                     # Expo Router file-based route screens
-│   ├── components/              # Native UI components (Ledger, ThemedScrollbar, Calculator)
-│   ├── constants/               # Theme tokens, font configurations, API contracts
-│   ├── context/                 # State providers (PreferencesContext, AuthContext)
-│   ├── services/                # API gateway, SMS debit parser, receipt OCR
-│   └── __tests__/               # Jest test suites (160 tests passed)
-│
-├── ml/                          # Machine Learning microservice
-│   ├── api/                     # FastAPI inference microservice (:8000)
-│   ├── jobs/                    # Automated Hugging Face retraining scripts
-│   ├── src/expense_ml/          # Inference service, model registry, preprocessing
-│   ├── tests/                   # Pytest test suite (55 tests passed)
-│   └── pyproject.toml           # Python package specifications (UV managed)
-│
-├── src/main/java/               # Spring Boot production backend (Java 27)
-│   └── com/example/expensetracker/
-│       ├── config/              # Security, CORS, Swagger, Dynamic DataSource Router
-│       ├── controller/          # REST endpoints (Expenses, Incomes, Budgets, Admin)
-│       ├── dto/                 # Request/response validation schemas
-│       ├── model/               # JPA database entities
-│       ├── repository/          # Spring Data JPA repositories
-│       └── service/             # Business rules, ML governance, POI Excel reporting
-│
-├── docker/                      # Production container orchestrator
-│   ├── entrypoint.sh            # Container bootstrap & file permissions guarantee
-│   ├── nginx.conf               # Reverse proxy (7860 -> 8080 & 8000)
-│   └── supervisord.conf         # Multi-daemon process supervisor
-│
-├── e2e/                         # Playwright TypeScript browser automation suite
-├── docs/images/                 # High-resolution architectural and UI assets
-├── Dockerfile                   # Multi-stage production container
-├── pom.xml                      # Maven project configuration (Java 27)
-├── sw.js                        # Root Service Worker for global origin scope
-└── run-tests.sh                 # Unified cross-platform test runner
-```
+<table width="100%">
+  <thead>
+    <tr>
+      <th width="28%">Module & Location</th>
+      <th width="35%">Architectural Responsibility</th>
+      <th width="37%">Core Tech Stack & Assets</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>frontend/</code><br/><sub>Web Client Studio</sub></td>
+      <td>High-performance responsive single-page command center with 12 themes and client-side OCR.</td>
+      <td>HTML5, Modular ES6+, Tesseract.js WebAssembly, Web Studio, CSS3 Glassmorphism</td>
+    </tr>
+    <tr>
+      <td><code>mobile/</code><br/><sub>Mobile Companion</sub></td>
+      <td>Cross-platform native iOS/Android client with SMS bank debit listeners and gestures.</td>
+      <td>React Native 0.88, Expo Router 58, Haptics, LocalAuthentication, Jest (160 tests)</td>
+    </tr>
+    <tr>
+      <td><code>src/main/java/</code><br/><sub>Spring Boot Backend</sub></td>
+      <td>Enterprise business logic, security filters, virtual threads, and POI reporting.</td>
+      <td>Eclipse Temurin Java 27, Spring Boot 4.1.1, JJWT 0.13.0, Apache POI 5.5.1</td>
+    </tr>
+    <tr>
+      <td><code>ml/</code><br/><sub>Machine Learning Subsystem</sub></td>
+      <td>Dual-engine real-time NLP categorization, anomaly detection, and automated retraining.</td>
+      <td>Python 3.14, FastAPI, UV 0.11.21, Scikit-Learn, PyTorch, Transformers</td>
+    </tr>
+    <tr>
+      <td><code>docker/</code><br/><sub>Production Orchestration</sub></td>
+      <td>Multi-daemon container supervisor and reverse proxy configuration.</td>
+      <td>Supervisord, Nginx 1.26, Entrypoint bootstrap scripts</td>
+    </tr>
+    <tr>
+      <td><code>e2e/</code><br/><sub>End-to-End Automation</sub></td>
+      <td>Cross-browser automated test suites verifying critical user workflows.</td>
+      <td>Playwright Test, TypeScript, Cross-browser Chromium/Firefox/WebKit</td>
+    </tr>
+    <tr>
+      <td><code>docs/images/</code><br/><sub>Visual Asset Registry</sub></td>
+      <td>High-resolution architectural diagrams, UI showcases, and animated SVG components.</td>
+      <td>Vector SVGs, WebP/PNG mockups, dark/light picture media queries</td>
+    </tr>
+  </tbody>
+</table>
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
@@ -977,13 +993,9 @@ ExpenseTracker PRO is engineered for friction-free deployment across cloud provi
 
 ## 🚀 Quick Start Guide
 
-### Prerequisites
-- **Java 27 JDK** (Eclipse Temurin recommended)
-- **Maven 3.9+** (or use included `./mvnw`)
-- **Node.js 18+** & npm (for Web E2E and Mobile app)
-- **Python 3.14** with **uv** (if developing ML models locally)
-
-### 1. Launch Backend API (Spring Boot)
+<details open>
+<summary><b>1. Launch Backend API (Spring Boot 4.1.1 on Java 27)</b></summary>
+<br/>
 
 ```bash
 git clone https://github.com/Yoge-2004/expense-tracker.git
@@ -992,18 +1004,22 @@ cd expense-tracker
 # Start the Spring Boot backend on http://localhost:8080
 ./mvnw spring-boot:run
 ```
+</details>
 
-### 2. Launch Web Client
-
-Serve the `frontend/` directory using any local static web server:
+<details open>
+<summary><b>2. Launch Web Client Studio (Zero-Build Browser Execution)</b></summary>
+<br/>
 
 ```bash
 cd frontend
 python3 -m http.server 5500
 # Open http://localhost:5500 in your browser
 ```
+</details>
 
-### 3. Launch Mobile Companion App (Expo React Native)
+<details open>
+<summary><b>3. Launch Mobile Companion App (Expo React Native)</b></summary>
+<br/>
 
 ```bash
 cd mobile
@@ -1012,10 +1028,12 @@ npm install
 # Start the Expo interactive development server
 npx expo start
 ```
-
 *Press `a` for Android Emulator, `i` for iOS Simulator, or scan the QR code with Expo Go.*
+</details>
 
-### 4. Run via Docker (Combined Production Space)
+<details open>
+<summary><b>4. Run via Multi-Stage Docker Container (Gateway Port 7860)</b></summary>
+<br/>
 
 ```bash
 # Package production Spring Boot artifact
@@ -1027,6 +1045,7 @@ docker build -t expense-tracker-prod .
 # Run container exposing gateway port 7860
 docker run --rm -p 7860:7860   -e SPRING_DATASOURCE_URL="jdbc:h2:mem:expensetrackerdb"   -e JWT_SECRET="your-256-bit-hex-secret-key-here"   expense-tracker-prod
 ```
+</details>
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
