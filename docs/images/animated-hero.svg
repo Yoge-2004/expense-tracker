@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c09"/>
+      <stop offset="50%" stop-color="#121510"/>
+      <stop offset="100%" stop-color="#070806"/>
+    </linearGradient>
+
+    <!-- Metallic Gold Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E5C07B"/>
+      <stop offset="25%" stop-color="#F3E5AB"/>
+      <stop offset="50%" stop-color="#C79A3E"/>
+      <stop offset="75%" stop-color="#DFB76C"/>
+      <stop offset="100%" stop-color="#A87928"/>
+    </linearGradient>
+
+    <!-- Moving Glow Filter -->
+    <radialGradient id="ambientGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#C79A3E" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="#C79A3E" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Shimmer Beam Gradient -->
+    <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C79A3E" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#FFF2B2" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#C79A3E" stop-opacity="0"/>
+    </linearGradient>
+
+    <style>
+      @keyframes pulseGlow {
+        0%, 100% { opacity: 0.45; transform: scale(1); }
+        50% { opacity: 0.85; transform: scale(1.08); }
+      }
+      @keyframes floatParticle {
+        0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
+        50% { transform: translateY(-14px) translateX(8px); opacity: 0.8; }
+      }
+      @keyframes liveBlink {
+        0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px #10B981); }
+        50% { opacity: 0.35; filter: drop-shadow(0 0 1px #10B981); }
+      }
+      @keyframes beamSlide {
+        0% { transform: translateX(-1200px); }
+        100% { transform: translateX(1200px); }
+      }
+      .ambient-layer {
+        transform-origin: 600px 140px;
+        animation: pulseGlow 6s ease-in-out infinite;
+      }
+      .particle-1 { animation: floatParticle 5s ease-in-out infinite; }
+      .particle-2 { animation: floatParticle 7s ease-in-out infinite 1.5s; }
+      .particle-3 { animation: floatParticle 6s ease-in-out infinite 3s; }
+      .live-dot { animation: liveBlink 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+      .beam-track { animation: beamSlide 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+      .brand-font { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+      .mono-font { font-family: "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    </style>
+  </defs>
+
+  <!-- Card Canvas Base -->
+  <rect x="2" y="2" width="1196" height="316" rx="24" fill="url(#bgGrad)" stroke="#C79A3E" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- Ambient Glow Aura -->
+  <ellipse class="ambient-layer" cx="600" cy="140" rx="480" ry="140" fill="url(#ambientGlow)"/>
+
+  <!-- Subtle Top Shimmer Beam -->
+  <g clip-path="url(#cardClip)">
+    <rect class="beam-track" x="0" y="2" width="400" height="2" fill="url(#shimmer)"/>
+  </g>
+
+  <!-- Floating Particles -->
+  <circle class="particle-1" cx="320" cy="90" r="2" fill="#E5C07B"/>
+  <circle class="particle-2" cx="880" cy="80" r="2.5" fill="#FFF2B2"/>
+  <circle class="particle-3" cx="600" cy="40" r="1.8" fill="#DFB76C"/>
+  <circle class="particle-1" cx="240" cy="220" r="2" fill="#C79A3E"/>
+  <circle class="particle-2" cx="960" cy="210" r="2.2" fill="#E5C07B"/>
+
+  <!-- Top Badge Ribbon -->
+  <g transform="translate(600, 52)">
+    <!-- Pill container -->
+    <rect x="-185" y="-14" width="370" height="28" rx="14" fill="#181C14" stroke="#C79A3E" stroke-opacity="0.4" stroke-width="1"/>
+    <!-- Live Pulse Dot -->
+    <circle class="live-dot" cx="-160" cy="0" r="4.5" fill="#10B981"/>
+    <!-- Label -->
+    <text x="-145" y="4" class="mono-font" font-size="11" font-weight="700" fill="#E5C07B" letter-spacing="0.1em">ENTERPRISE FINANCIAL INTELLIGENCE</text>
+  </g>
+
+  <!-- Hero Title -->
+  <g transform="translate(600, 136)">
+    <!-- Main Header -->
+    <text x="0" y="0" text-anchor="middle" class="brand-font" font-size="44" font-weight="900" fill="#FFFFFF" letter-spacing="-0.03em">
+      ExpenseTracker <tspan fill="url(#goldGrad)">PRO</tspan>
+    </text>
+    <!-- Subtitle / Tagline -->
+    <text x="0" y="32" text-anchor="middle" class="brand-font" font-size="15" font-weight="400" fill="#94A3B8" letter-spacing="0.01em">
+      Autonomous Cash Flow Governance • Dual-Engine ML Retraining • Real-Time Fleet Telemetry
+    </text>
+  </g>
+
+  <!-- Micro Architecture Badges Row -->
+  <g transform="translate(600, 235)">
+    <!-- Badge 1: Java 27 -->
+    <g transform="translate(-370, 0)">
+      <rect x="-85" y="-16" width="170" height="32" rx="8" fill="#141812" stroke="#2A3022" stroke-width="1"/>
+      <text x="0" y="4.5" text-anchor="middle" class="mono-font" font-size="11.5" font-weight="700" fill="#F3E5AB">☕ JAVA 27 + ZGC</text>
+    </g>
+
+    <!-- Badge 2: Spring Boot 4.1.1 -->
+    <g transform="translate(-185, 0)">
+      <rect x="-85" y="-16" width="170" height="32" rx="8" fill="#141812" stroke="#2A3022" stroke-width="1"/>
+      <text x="0" y="4.5" text-anchor="middle" class="mono-font" font-size="11.5" font-weight="700" fill="#34D399">🌱 SPRING BOOT 4.1.1</text>
+    </g>
+
+    <!-- Badge 3: Python 3.14 ML -->
+    <g transform="translate(0, 0)">
+      <rect x="-85" y="-16" width="170" height="32" rx="8" fill="#141812" stroke="#2A3022" stroke-width="1"/>
+      <text x="0" y="4.5" text-anchor="middle" class="mono-font" font-size="11.5" font-weight="700" fill="#60A5FA">🧠 PYTHON 3.14 ML</text>
+    </g>
+
+    <!-- Badge 4: React Native / Expo -->
+    <g transform="translate(185, 0)">
+      <rect x="-85" y="-16" width="170" height="32" rx="8" fill="#141812" stroke="#2A3022" stroke-width="1"/>
+      <text x="0" y="4.5" text-anchor="middle" class="mono-font" font-size="11.5" font-weight="700" fill="#A78BFA">📱 EXPO 58 + ROUTER</text>
+    </g>
+
+    <!-- Badge 5: Dual OCR Scanner -->
+    <g transform="translate(370, 0)">
+      <rect x="-85" y="-16" width="170" height="32" rx="8" fill="#141812" stroke="#2A3022" stroke-width="1"/>
+      <text x="0" y="4.5" text-anchor="middle" class="mono-font" font-size="11.5" font-weight="700" fill="#F472B6">🧾 MULTI-TAX OCR</text>
+    </g>
+  </g>
+
+  <!-- Bottom Accent Divider Line -->
+  <line x1="80" y1="288" x2="1120" y2="288" stroke="#C79A3E" stroke-opacity="0.2" stroke-width="1"/>
+  <circle cx="600" cy="288" r="3" fill="#C79A3E" fill-opacity="0.7"/>
+</svg>

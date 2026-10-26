@@ -1,1091 +1,547 @@
 <div align="center">
 
-# 💰 Expense Tracker
+<img src="docs/images/animated-hero.svg" alt="ExpenseTracker PRO Animated Banner" width="100%" />
 
-### A complete personal-finance workspace for tracking money, understanding spending, and planning ahead.
+<br/>
 
-**Web • Android/iOS • REST API • Secure Authentication • Reports • Budgets • Savings • Recurring Finance**
+<a href="https://github.com/Yoge-2004/expense-tracker">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=20&duration=3000&pause=1000&color=C79A3E&center=true&vCenter=true&width=800&lines=Autonomous+Cash+Flow+Governance+%26+Financial+Command;Powered+by+Java+27+(ZGC)+%E2%80%A2+Spring+Boot+4.1.1;Dual-Engine+Continuous+ML+Retraining+(TF-IDF+%2B+Transformer);Client-Side+Tesseract.js+Multi-Tax+OCR+Decomposition;Power+BI-Grade+Excel+Dashboards+%26+Interactive+Data+Hub;Expo+Router+React+Native+Native+Mobile+Companion" alt="Typing SVG" />
+</a>
 
-![Expense Tracker hero](docs/images/website/hero-dashboard.png)
+<br/>
 
-[![Backend CI](https://github.com/Yoge-2004/expense-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Yoge-2004/expense-tracker/actions/workflows/ci.yml)
-[![Android Build](https://github.com/Yoge-2004/expense-tracker/actions/workflows/android-apk.yml/badge.svg)](https://github.com/Yoge-2004/expense-tracker/actions/workflows/android-apk.yml)
+<p align="center">
+  <a href="https://github.com/Yoge-2004/expense-tracker/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Yoge-2004/expense-tracker/ci.yml?branch=main&label=Backend%20CI&logo=github&style=for-the-badge&color=10B981&labelColor=141812" alt="CI Status" />
+  </a>
+  <a href="https://github.com/Yoge-2004/expense-tracker/actions/workflows/android-apk.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/Yoge-2004/expense-tracker/android-apk.yml?branch=main&label=Android%20APK&logo=android&style=for-the-badge&color=38BDF8&labelColor=141812" alt="Android APK" />
+  </a>
+  <a href="https://huggingface.co/spaces/Yoge-2004/expense-tracker-backend">
+    <img src="https://img.shields.io/badge/Hugging%20Face-Spaces%20Live-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black&labelColor=141812" alt="Hugging Face Space" />
+  </a>
+  <a href="https://github.com/Yoge-2004/expense-tracker/releases/latest">
+    <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Latest%20Release&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-A78BFA?style=for-the-badge&labelColor=141812" alt="License" />
+  </a>
+</p>
+
+<p align="center">
+  <b>Enterprise-Grade Personal Finance Workspace • Synchronized Cross-Platform Engine</b>
+  <br/>
+  <a href="#-enterprise-architecture--system-topology">Architecture</a> •
+  <a href="#-product-at-a-glance">Features</a> •
+  <a href="#-machine-learning--continuous-intelligence-fleet">ML Fleet</a> •
+  <a href="#-multi-tax-receipt-ocr-scanner">Receipt OCR</a> •
+  <a href="#-run-the-web--backend-locally">Quickstart</a> •
+  <a href="#-testing-ecosystem">Testing</a>
+</p>
+
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
 </div>
 
----
+## 🌟 Executive Overview
 
-## ✨ What is Expense Tracker?
+**ExpenseTracker PRO** is a full-stack, enterprise-grade financial intelligence ecosystem engineered with performance-first principles. Built on **Java 27** using Generational ZGC, **Spring Boot 4.1.1**, **Python 3.14**, and **Expo React Native**, the platform unifies real-time cash flow recording, multi-tax receipt OCR, dual-engine machine learning categorization, and executive telemetry governance into an atomic, coherent workspace.
 
-Expense Tracker is a full-stack personal-finance application designed around one idea: **your financial data should be easy to record, easy to understand, and useful for making decisions.**
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│  🌐 Web Studio (HTML5 / ES6+ Custom Atmosphere & Theme Performance Engine)        │
+│  📱 Mobile Suite (Expo 58 / React Native 0.88 / Native Haptics & Biometrics)     │
+│  ⚙️ Core API (Spring Boot 4.1.1 / Java 27 / JJWT 0.13.0 / WebAuthn Passkeys)      │
+│  🧠 ML Microservice (Python 3.14 / FastAPI / TF-IDF + Transformer Retraining)    │
+│  💾 Hybrid Persistence (PostgreSQL / Neon / Encrypted SQLite DR Snapshots / H2)  │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
 
-The repository contains three cooperating surfaces:
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/hero-dashboard.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/images/website/hero-dashboard.png">
+  <img src="docs/images/website/hero-dashboard.png" alt="ExpenseTracker PRO Executive Dashboard" width="100%" />
+</picture>
 
-- 🌐 **Web application** — a responsive browser experience for everyday finance management.
-- 📱 **Mobile application** — an Expo + React Native client for recording and reviewing finances on the go.
-- ⚙️ **Backend API** — a Spring Boot service that owns authentication, business rules, persistence, reports, and synchronization.
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-The same backend powers the web and mobile clients, keeping finance data and business logic consistent across devices.
+## 🧭 Product at a Glance
 
-![Platform overview](docs/images/website/platform-overview.png)
-
----
-
-## 🧭 Product at a glance
-
-| Area | What you can do |
+| Domain | Capabilities & Engineering Innovations |
 |---|---|
-| **Expenses** | Record, review, update, and organize spending with category tagging. |
-| **Receipt OCR** | Dual-mode Tesseract.js scanner accepting browsed files (gallery/storage) or live camera capture, extracting multi-tax breakdowns (CGST, SGST, IGST, VAT, Tips, Discounts) with 1-click auto-fill. |
-| **Recurring finance** | Track recurring monthly commitments, subscriptions, and recurring income streams. |
-| **Income** | Monitor independent incoming cash flows, salary, dividends, and freelance retainers. |
-| **Unified Ledger** | Synchronized chronological cash flow ledger combining outflows and inflows with real-time filtering and sorting. |
-| **Budgets** | Define category spending caps with dynamic velocity tracking and visual progress indicators. |
-| **Savings goals** | Target milestones, track deposits, and monitor goal progress percentages. |
-| **Dashboard** | Skeleton-loaded executive KPI matrix, spending distribution, burn velocity, and financial insights. |
-| **Power BI Excel & Reports** | Download Power BI-grade formatted Excel dashboards and PDF statements, plus full Excel import/export data hub. |
-| **Theme & UI** | Diffused golden aura elevation across Dark & Light modes, custom HUD cursor, and `Ctrl`/`Cmd` + `K` Command Palette. |
-| **Authentication** | JWT-based authentication, Google sign-in, WebAuthn/passkeys, and biometric unlock (Face ID / Fingerprint). |
-| **Profile & Settings** | Cross-surface display name and profile avatar synchronization, in-app mobile avatar editor, 6-digit security PIN for instant recovery, and multi-currency selection. |
-| **Notifications** | Real-time push alerts, financial event digest, per-type preferences, and one-click bulk inbox clearing on web and mobile. |
-| **Machine Learning** | Dual-engine ML categorization (TF-IDF + Transformer), automated SMS financial alert listener, interactive tester, and continuous retraining feedback loop. |
-| **Floating Calculator & FX Converter** | Draggable & dockable quick calculator on web and mobile with precision-safe math, bill splitting (÷2 to ÷5), 1-tap auto-insert, and daily multi-currency live conversions (USD, EUR, GBP, AED ➔ INR) via `open.er-api.com` with 24-hr device caching. |
-| **Stealth / Privacy Mode** | Instant privacy shield (`Alt + S` or header `👁️` toggle) masking financial values with blur and bullets to guard against shoulder-surfing. |
-| **Safe-to-Spend Allowance** | Real-time daily spending guardrail based on remaining monthly budget, scheduled subscriptions, and days left in the month. |
-| **No-Spend Day Streak** | Habit-building tracker celebrating consecutive ₹0 non-recurring expense days with dashboard fire badges and interactive calendar milestone markers. |
-| **Persistence** | H2 for development, SQLite client-encrypted fallback, and PostgreSQL / Neon for production. |
-| **Data resilience** | Zero-downtime offline caching, network retry fallbacks, low-power background task state persistence for bulk export/import (up to 50MB / 500k+ rows) with chunked memory streaming, and Hugging Face Hub snapshot sync. |
+| **💰 Unified Cash Flow Ledger** | Chronological dual-stream ledger combining expense outflows and income inflows with sub-millisecond filtering, multi-column sorting, and inline editing. |
+| **🧾 Multi-Tax Receipt OCR** | Dual-mode Tesseract.js scanner operating 100% client-side. Automatically identifies and decomposes Subtotal, CGST, SGST, IGST, VAT, Tips, and Discounts into interactive prefill pills. |
+| **🧠 Continuous ML Fleet** | Dual-engine categorization (TF-IDF SAGA + DistilBERT Transformer), SMS bank debit notification listener, interactive prediction playground, and Hugging Face automated retraining loop. |
+| **📊 Power BI Excel Hub** | Executive POI-generated Excel workbooks styled after Microsoft Power BI, featuring KPI cards, distribution matrices, formatted tables, and PDF statement generation. |
+| **🎨 Web Studio & Atmosphere** | Live customizable UI engine supporting dynamic palettes, custom font uploads via FontFace API, background image wallpapers with configurable blur and opacity, and atomic theme switching. |
+| **🛡️ Zero-Trust Security** | Stateless JWT authentication, Google OAuth 2.0 verification, WebAuthn/FIDO2 passkey biometric sign-in, Step-Up Admin PIN protection, and shoulder-surfing Stealth Privacy Mode (`Alt+S`). |
+| **📈 Dynamic Budget Guardrails** | Category spending caps with velocity burn metrics, Safe-to-Spend daily allowances, and visual habit-building No-Spend Day streak milestones. |
+| **🧮 Draggable Quick Calculator** | Floating dockable calculator (`Alt+C`) with precision math, 1-tap bill splitting (`÷2` to `÷5`), and live daily FX conversions across USD, EUR, GBP, AED, and INR. |
+| **💾 Multi-Tier Resilience** | PostgreSQL / Neon primary, client-side encrypted SQLite snapshot failover (`expense_tracker.sqlite.enc`), 50MB chunked memory streaming, and zero-downtime offline caching. |
 
----
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-# 🌐 Web Application
+## 🏗️ Enterprise Architecture & System Topology
 
-The web client lives in `frontend/` and is a lightweight browser application built with HTML, CSS, and JavaScript. It communicates with the Spring Boot API and is deployable as a static site.
+The platform implements a distributed, decoupled multi-service architecture designed for high throughput, sub-10ms response times, and automated failure recovery.
 
-## 🖥️ Web experience
+### 1. High-Level Distributed Infrastructure
 
-### Authentication
+```mermaid
+flowchart TD
+    subgraph Clients ["Client Applications Surface"]
+        Web["🌐 Web Client<br/>(HTML5 / ES6+ Modular / Web Studio)"]
+        Mobile["📱 Mobile Native App<br/>(React Native 0.88 / Expo Router 58)"]
+    end
 
-The web experience starts with account creation and sign-in. Authentication establishes the user's session and protects finance data from other accounts.
+    subgraph Edge ["Gateway & Ingress Layer"]
+        Nginx["🛡️ Nginx Reverse Proxy<br/>(Port 7860 Public Entrypoint)"]
+    end
 
-![Web registration](docs/images/website/auth-register.png)
+    subgraph Core ["Enterprise Core Backend (Eclipse Temurin JRE 27)"]
+        direction TB
+        SB["🌱 Spring Boot 4.1.1 Engine<br/>(:8080 Virtual Thread Ready)"]
+        Security["🔐 Spring Security & JWT 0.13.0<br/>+ WebAuthn Passkeys"]
+        Governance["⚡ Admin Fleet Governance<br/>& Step-Up PIN Gate"]
+        Sync["🔄 FileDbSyncService<br/>& DR Snapshot Sync"]
+        Reports["📑 Apache POI 5.5.1<br/>& OpenPDF Engine"]
+    end
 
-![Web login](docs/images/website/auth-login.png)
+    subgraph ML ["AI Intelligence & Continuous Learning"]
+        FastAPI["🧠 FastAPI Microservice<br/>(Python 3.14 @ 127.0.0.1:8000)"]
+        TFIDF["⚡ Dual-Gram TF-IDF Classifier"]
+        Transformer["🤖 DistilBERT Transformer"]
+        Aux["🔍 Merchant & Anomaly Detectors"]
+    end
 
-### Dashboard
+    subgraph Persistence ["Hybrid Data Persistence Tier"]
+        Postgres[("🐘 PostgreSQL / Neon<br/>(Primary Production Cluster)")]
+        SQLite[("🔒 Encrypted SQLite<br/>(Offline / DR Snapshot)")]
+        H2[("⚡ In-Memory H2<br/>(Dev & Automated Tests)")]
+        HFHub[("🤗 Hugging Face Model Hub<br/>& Snapshot Backup")]
+    end
 
-The dashboard is the application's command center. It brings together high-level financial metrics, spending distribution, trends, and budget information so that the user can understand their current position without opening individual records.
+    Web -->|HTTP / REST| Nginx
+    Mobile -->|HTTPS / REST| Nginx
 
-![Web dashboard](docs/images/website/dashboard.png)
+    Nginx -->|Proxy /api| SB
+    Nginx -->|Proxy /ml-api| FastAPI
 
-### Expense management
+    SB --> Security
+    SB --> Governance
+    SB --> Reports
+    SB --> Sync
 
-Expenses can be entered with their description, amount, category, and date. Recurring monthly expenses can be identified at creation time so regular commitments are represented in the financial model.
+    Governance -->|Hot-Inference & Audit| FastAPI
+    FastAPI --> TFIDF
+    FastAPI --> Transformer
+    FastAPI --> Aux
 
-![Add expense](docs/images/website/add-expense.png)
-
-### Categories & budgets
-
-Categories provide structure for spending analysis, while budgets turn that structure into actionable limits. The dashboard can surface category-level spending and budget progress.
-
-![Budgets](docs/images/website/budgets.png)
-
-### Income
-
-Income is tracked independently from expenses, allowing the application to represent cash inflows as well as outflows and provide a more complete view of net financial movement.
-
-![Income](docs/images/website/income.png)
-
-### Savings goals
-
-Savings goals represent longer-term targets. Users can create goals, monitor calculated progress, and make deposit contributions toward the target amount.
-
-![Savings goals](docs/images/website/savings-goals.png)
-
-### Reports & exports
-
-The backend provides report generation for financial data, including PDF and Excel export capabilities. This makes the application useful beyond the dashboard itself: data can be archived, shared, or analyzed separately.
-
-![Reports](docs/images/website/reports.png)
-
-### Floating Quick Calculator & Bill Splitter
-
-A draggable, dockable on-screen calculator is accessible across the dashboard. Press <kbd>Alt + C</kbd> or tap the gold floating bubble to crunch numbers, split bills with `1x`, `÷2`, `÷3`, `÷4`, `÷5` chips, and click **Use Amount** to auto-populate the calculated figure directly into the active transaction form.
-
-### Responsive design
-
-The web interface is designed to remain usable across desktop and narrow/mobile browser widths. The repository includes browser-oriented checks for important responsive/authentication UI behavior.
-
-![Responsive web UI](docs/images/website/responsive.png)
-
----
-
-# 📱 Mobile Application
-
-The mobile client lives in `mobile/` and uses **Expo, React Native, and Expo Router**. It is a native companion to the web experience rather than a separate product: both clients consume the same backend API.
-
-![Mobile app](docs/images/mobile/app-collage.png)
-
-### Mobile authentication
-
-The app supports native Google Sign-In through `@react-native-google-signin/google-signin`, while the backend remains responsible for validating the resulting identity token and issuing the application's authenticated session.
-
-![Mobile authentication](docs/images/mobile/auth.png)
-
-### Mobile navigation
-
-Expo Router organizes the application into navigable screens and tabs. Shared authentication/theme context and a dedicated API service keep screen code focused on presentation and user interaction.
-
-![Mobile navigation](docs/images/mobile/navigation.png)
-
-### Mobile finance workflows
-
-The mobile application is intended for quick, frequent interactions: adding an expense, reviewing recent activity, checking budgets, recording income, and monitoring savings progress.
-
-![Mobile expense entry](docs/images/mobile/add-expense.png)
-
-![Mobile dashboard](docs/images/mobile/dashboard.png)
-
-![Mobile financial planning](docs/images/mobile/planning.png)
-
-### Responsive & landscape layouts
-
-The mobile interface dynamically adapts across devices, screen orientations (seamless portrait and landscape auto-rotation), foldables, and tablets.
-
-![Mobile landscape responsive](docs/images/mobile/landscape.png)
-
----
-
-# 🏗️ Architecture
-
-Expense Tracker follows a client/API architecture:
-
-```text
-┌───────────────────────┐       ┌──────────────────────────┐
-│   Web Application     │       │   Expo React Native App  │
-│   frontend/           │       │   mobile/                │
-└───────────┬───────────┘       └────────────┬─────────────┘
-            │                                │
-            └──────────────┬─────────────────┘
-                           │ HTTP / JSON
-                           ▼
-                ┌─────────────────────────┐
-                │ Spring Boot REST API    │
-                │ src/main/java/...       │
-                ├─────────────────────────┤
-                │ Security / JWT / OAuth  │
-                │ Controllers             │
-                │ DTOs + Mappers          │
-                │ Services + Business     │
-                │ Reports + Sync           │
-                └────────────┬────────────┘
-                             │
-                    ┌────────┴────────┐
-                    ▼                 ▼
-             PostgreSQL / Neon   SQLite / H2
-                    │                 │
-                    └────────┬────────┘
-                             ▼
-                   Optional HF snapshots
+    SB -->|HikariCP 7.0.2 Pool| Postgres
+    SB -.->|Fallback Failover| SQLite
+    SB -.->|Dev / Test Isolation| H2
+    Sync <-->|Snapshot Commit / Pull| HFHub
 ```
 
-![System architecture](docs/images/architecture/system-architecture.png)
+---
 
-### Backend layers
+### 2. Spring Boot Layered Architecture (IntelliJ Component Decomposition)
 
-```text
-Controller
-   ↓
-DTO / Validation
-   ↓
-Service
-   ↓
-Repository
-   ↓
-JPA Entity
-   ↓
-Database
+The backend code is organized into strict architectural boundaries ensuring single-responsibility decoupling and unit testability:
+
+```mermaid
+flowchart LR
+    subgraph Presentation ["Presentation Layer"]
+        C_Auth["AuthController"]
+        C_Exp["ExpenseController"]
+        C_Inc["IncomeController"]
+        C_Bud["BudgetController"]
+        C_Gov["AdminController"]
+        C_Rep["ReportController"]
+    end
+
+    subgraph Security ["Security & Filter Chain"]
+        Sec_Cfg["SecurityConfig"]
+        Jwt_Filt["JwtAuthenticationFilter"]
+        Cors_Filt["CorsFilter"]
+        Rate_Lim["RateLimitFilter"]
+    end
+
+    subgraph ServiceLayer ["Business Logic & Services"]
+        S_Exp["ExpenseService"]
+        S_Inc["IncomeService"]
+        S_Bud["BudgetService"]
+        S_Gov["AdminMlGovernanceService"]
+        S_Rep["ReportService"]
+        S_Sync["FileDbSyncService"]
+    end
+
+    subgraph DataAccess ["Data Access Layer"]
+        R_Exp["ExpenseRepository"]
+        R_Inc["IncomeRepository"]
+        R_Bud["BudgetRepository"]
+        R_User["UserRepository"]
+        R_Audit["CategoryAuditRepository"]
+    end
+
+    subgraph Database ["JPA Entities & Tables"]
+        E_Exp[("Expense Entity")]
+        E_Inc[("Income Entity")]
+        E_Bud[("Budget Entity")]
+        E_User[("User Entity")]
+    end
+
+    Security --> Presentation
+    Presentation --> ServiceLayer
+    ServiceLayer --> DataAccess
+    DataAccess --> Database
 ```
-
-The separation keeps transport concerns, business rules, persistence, and data representation independently testable.
 
 ---
 
-# 🔐 Authentication & Security
+### 3. Continuous ML Fleet Retraining & Feedback Loop
 
-The backend uses Spring Security and JWT for application authentication. Google identity tokens can be verified server-side, and WebAuthn/passkey endpoints are provided by the backend.
+ExpenseTracker PRO continuously trains its categorization models on ground-truth user corrections through an immutable, gated pipeline:
 
-### JWT flow
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Admin
+    participant Client as Web / Mobile Client
+    participant SB as Spring Boot Backend
+    participant AuditDB as Category Audit Table
+    participant HFJob as Hugging Face Retrain Job
+    participant PyML as FastAPI ML Engine (:8000)
+    participant Registry as HF Model Hub Registry
 
-```text
-User → Login/Register → Backend
-                         ↓
-                    Authenticate
-                         ↓
-                    Issue JWT
-                         ↓
-Client stores session token
-                         ↓
-Authenticated API requests
-Authorization: Bearer <token>
+    User->>Client: Edit Category / Inflow Classification
+    Client->>SB: POST /api/expenses/feedback
+    SB->>AuditDB: Record ground-truth labeled correction
+    Note over AuditDB,HFJob: Triggered via Scheduled Cron or Step-Up PIN
+    HFJob->>AuditDB: Ingest eligible approved feedback records
+    HFJob->>HFJob: Train Candidate TF-IDF & Transformer models
+    HFJob->>HFJob: Evaluate Candidate vs Production Baseline Gate
+    alt Candidate Outperforms Baseline Gate
+        HFJob->>Registry: Commit immutable version v<run_id>
+        HFJob->>Registry: Promote alias to production
+        HFJob->>PyML: Hot Reload /api/v1/reload
+        PyML->>Registry: Pull new weights into runtime memory
+        PyML-->>SB: Return Fleet Health Status 200 OK
+        SB-->>Client: Live Telemetry Pulse & Refreshed Metrics
+    else Candidate Underperforms Gate
+        HFJob->>HFJob: Abort deployment & retain active baseline
+        HFJob->>SB: Record audit telemetry with rejection cause
+    end
 ```
-
-### Google Sign-In flow
-
-```text
-Web / Mobile client
-        ↓
-Google authentication
-        ↓
-Google ID token
-        ↓
-Expense Tracker backend
-        ↓
-Google ID-token verification
-        ↓
-Application authentication / JWT
-```
-
-For Android builds, the Google Cloud OAuth configuration must match the application's package name and the signing certificate used for the installed APK. The Android package is `com.yoge.expensetracker`.
-
-> **Security note:** never commit JWT secrets, database passwords, SMTP credentials, Hugging Face write tokens, or OAuth client secrets to Git.
 
 ---
 
-# 🧩 Core Features
+### 4. Client-Side Dual-Mode OCR & Multi-Tax Decomposition
 
-## Expense tracking
+```mermaid
+flowchart TD
+    Scan["📸 Receipt Image Ingestion<br/>(Camera Capture or Gallery Browse)"]
+    Canvas["🖼️ Canvas Adaptive Preprocessor<br/>(Grayscale, Dynamic Contrast, Sharpen)"]
+    WASM["⚡ Tesseract.js WebAssembly Core<br/>(100% Client-Side Private OCR)"]
+    Parser["🧩 Multi-Tax Regex Tokenizer<br/>(Pattern Recognition & Decomposition)"]
 
-- Create and manage expense records with custom descriptions, amounts, and dates.
-- Assign expenses to global or user-created categories with custom icons and color tokens.
-- Support recurring monthly expense definitions with active subscription tracking.
-- Analyze spending by category and over time with responsive chart visualizations.
+    subgraph Taxes ["Identified Bill Tax Breakdown"]
+        Base["Base Subtotal / Net Amount"]
+        CGST["CGST (Central Goods & Services Tax)"]
+        SGST["SGST (State Goods & Services Tax)"]
+        IGST["IGST (Integrated GST)"]
+        VAT["VAT & Municipal Surcharges"]
+        Tips["Tips & Service Gratuity"]
+        Disc["Promotional Discounts & Credits"]
+    end
 
-![Expense tracking](docs/images/website/expenses.png)
+    Pills["🏷️ Interactive Breakdown Pills<br/>(Click Any Pill to Inspect Amount)"]
+    Modal["📝 Transaction Modal Auto-Fill<br/>(One-Click Complete Form Injection)"]
 
-## Multi-Tax Receipt OCR Scanner
+    Scan --> Canvas --> WASM --> Parser
+    Parser --> Base & CGST & SGST & IGST & VAT & Tips & Disc
+    Base & CGST & SGST & IGST & VAT & Tips & Disc --> Pills --> Modal
+```
 
-- **Client-Side Privacy-First OCR**: Uses browser-integrated Tesseract.js for instant optical character recognition without sending receipt images to external servers.
-- **Complex Multi-Tax Decomposition**: Automatically identifies and extracts individual bill breakdowns:
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
+
+## 🔬 Core System Features
+
+<details open>
+<summary><b>🧾 1. Multi-Tax Receipt OCR Scanner (Client-Side Privacy)</b></summary>
+<br/>
+
+The receipt scanner operates entirely inside the client’s browser using WebAssembly-powered Tesseract.js. No receipt photographs or sensitive merchant invoices are ever transmitted to third-party cloud APIs.
+
+- **Dual Ingestion**: Drag-and-drop receipt image files or activate real-time device camera scanning.
+- **Granular Tax Extraction**: Intelligently identifies individual line items:
   - Base Subtotal / Net Amount
-  - CGST (Central Goods and Services Tax)
-  - SGST (State Goods and Services Tax)
-  - IGST (Integrated Goods and Services Tax)
-  - VAT (Value Added Tax)
-  - Service Charges & Tips
-  - Percentage & Absolute Discounts (e.g. `-10%`, `-₹60.00`)
-- **Interactive Breakdown Matrix**: Renders visual breakdown pills allowing users to review taxes and click any line item to prefill the expense creation modal instantly.
+  - CGST, SGST, IGST (Indian GST Structure)
+  - VAT & Hospitality Service Taxes
+  - Service Charges, Gratuities & Delivery Fees
+  - Negative deductions and coupon discounts (`-10%`, `-₹120.00`)
+- **1-Click Modal Prefill**: Visual pills appear below the scanner. Clicking any pill pre-populates the expense amount, merchant name, and categorization modal instantly.
 
-## Modern Power BI-Grade Excel Analytics & Data Hub
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/add-expense.png">
+  <img src="docs/images/website/add-expense.png" alt="Multi-Tax Receipt OCR Scanner" width="100%" />
+</picture>
+</details>
 
-- **Executive Workbook Architecture**: Generates beautifully formatted Excel workbooks styled after modern Power BI dashboards:
-  - Executive KPI summary cards (Total Spent, Total Inflows, Net Cash Flow, Savings Rate)
-  - Categorized breakdown matrices with percentage distributions
-  - Tabular transaction ledgers with formatted currency values and status badges
-- **Bidirectional Data Hub**: Full Excel import and export support for both expenses and incomes with built-in validation safeguards.
+<details>
+<summary><b>🧠 2. AI Machine Learning Continuous Intelligence Fleet</b></summary>
+<br/>
 
-## Unified Audit Trail & Cash Flow Ledger
+- **Dual-Model Categorization Architecture**:
+  - **TF-IDF + Logistic Regression (SAGA)**: Microsecond baseline inference for known merchants and recurring descriptions.
+  - **DistilBERT Transformer**: Deep contextual text understanding on ambiguous, informal, or complex merchant statements.
+- **Automated SMS Debit Parsing**: Mobile listener captures bank SMS alerts (UPI, NEFT, IMPS, Visa, Mastercard) and auto-populates financial entries without manual typing.
+- **Executive Retraining Governance**: Platform administrators can inspect model accuracy, drift telemetry, sample sizes, and manually trigger retraining with 6-digit Step-Up PIN authentication.
 
-- **Synchronized Dual-Stream Ledger**: Combines expense outflows and income inflows into a single chronological ledger.
-- **Instant Filtering & Sorting**: Filter by search query, category, cadence (one-time vs recurring), date range, and sort by date or amount.
-- **Inline Row Actions**: Quick inline edit and delete modal workflows for rapid transaction reconciliation.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/dashboard.png">
+  <img src="docs/images/website/dashboard.png" alt="AI Categorizer and Machine Learning Intelligence" width="100%" />
+</picture>
+</details>
 
-## Executive Command Palette (`Ctrl`/`Cmd` + `K`) & HUD Experience
+<details>
+<summary><b>📊 3. Power BI-Grade Excel Analytics & Data Hub</b></summary>
+<br/>
 
-- **Keyboard-First Navigation**: Press `Ctrl + K` (Windows/Linux) or `Cmd + K` (macOS) anywhere on the web dashboard to open an instant command center.
-- **Quick Actions & Navigation**: Jump between ledger tabs, trigger expense or income creation modals, download reports, or toggle themes without touching the mouse.
-- **Integrated Help Guide & About Center**: Contextual modals providing naive-user onboarding, step-by-step feature explanations, and architectural transparency.
-- **Fluid Executive HUD Cursor**: Custom ambient dot-ring pointer providing responsive hover elevation feedback across all interactive elements.
+- **Executive Excel Reports**: Generates multi-sheet workbooks styled to modern Microsoft Power BI standards using Apache POI:
+  - Executive KPI Summary Cards (Total Inflows, Outflows, Net Balance, Savings Velocity)
+  - Categorized breakdown distributions with formatted percentage metrics
+  - High-density tabular ledgers with currency formatting and status tags
+- **Bidirectional Data Hub**: High-throughput Excel and CSV import/export pipeline supporting up to 50MB and 500,000+ rows with streaming memory safety.
 
-## 🎮 Gestures & Keyboard Shortcuts Guide
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/reports.png">
+  <img src="docs/images/website/reports.png" alt="Power BI-Grade Financial Reports" width="100%" />
+</picture>
+</details>
 
-Expense Tracker is designed for high-velocity navigation across mobile, tablet, and desktop with tactile touch gestures and fast keyboard accelerators:
+<details>
+<summary><b>🎨 4. Web Studio & Appearance Customization Engine</b></summary>
+<br/>
 
-### 📱 Mobile App Gestures (iOS & Android)
+- **Custom Wallpaper Atmosphere**: Upload personalized background images or select from 6 curated luxury presets with adjustable blur (0–20px) and opacity (0.0–0.9).
+- **Dynamic Color Palettes**: Extract dominant palettes automatically or customize `--primary`, `--accent`, and `--highlight` tokens with real-time CSS variable cascading.
+- **Typography Engine**: Choose between **Hanken Grotesk**, **Fraunces**, **IBM Plex Mono**, or upload custom `.woff2`/`.ttf` font files dynamically via the FontFace API.
+- **Atomic Theme Guard**: Suppresses multi-node transition bursts during theme swaps, ensuring 60fps frame rates across huge financial ledgers.
+</details>
 
-| Gesture | Target Surface | Action Triggered | Haptic Feedback |
+<details>
+<summary><b>🎮 5. High-Velocity Gestures & Keyboard Shortcuts Guide</b></summary>
+<br/>
+
+### 📱 Mobile Touch Gestures (iOS & Android)
+
+| Gesture | Context / Target | Action Triggered | Haptic Feedback |
 |---|---|---|---|
-| **Swipe Right** (`dx > +70 px`) | Transaction Row (Ledger) | **Quick Edit**: Opens edit form with transaction data pre-populated | `Light` impact |
-| **Swipe Left** (`dx < -70 px`) | Transaction Row (Ledger) | **Quick Delete**: Triggers safety confirmation dialog | `Warning` notification |
-| **Single Tap** | Transaction Row (Ledger) | **4-Way Action Sheet**: Choose between *Split/Link to Loan*, *Edit*, *Delete*, or *Cancel* | `Light` impact |
-| **Horizontal Swipe** | Activity Stream Selector | **Cycle Stream**: Flips between *All Activity* ↔ *Outflows* ↔ *Inflows* | Fluid pan |
-| **Swipe Left / Right** | Notification Item | **Dismiss Alert**: Slides out and removes the notification from inbox | `Medium` impact |
-| **Press & Drag** | Floating Quick Calculator | **Reposition Bubble**: Freely move the calculator bubble anywhere on viewport (saved across app sessions) | Fluid drag |
-| **Tap Eye Icon** (`👁️`) | Command Header / Profile | **Stealth Mode**: Toggles privacy shield to mask financial amounts with dots (`••••••`) | `Light` impact |
-| **Pull Down** | Any Screen View | **Pull-to-Refresh**: Bypasses local cache and forces live re-synchronization | System refresh |
+| **Swipe Right** (`dx > +70px`) | Ledger Row | **Quick Edit**: Opens edit modal pre-populated | `Light` impact |
+| **Swipe Left** (`dx < -70px`) | Ledger Row | **Quick Delete**: Prompts delete confirmation | `Warning` notification |
+| **Single Tap** | Ledger Row | **4-Way Action Sheet**: Split, Link Loan, Edit, Delete | `Light` impact |
+| **Horizontal Pan** | Stream Tabs | **Cycle Stream**: All Activity ↔ Outflows ↔ Inflows | Fluid swipe |
+| **Press & Drag** | Floating Calculator | **Reposition Bubble**: Move calculator anywhere on screen | Smooth pan |
+| **Header Eye Tap** (`👁️`) | Top Bar | **Stealth Privacy Mode**: Masks numbers with `••••••` | `Light` impact |
+| **Pull Down** | Any Screen | **Pull-to-Refresh**: Bypasses cache and synchronizes | System trigger |
 
 ### 🌐 Web & Desktop Shortcuts
 
-| Shortcut / Gesture | Context | Action Triggered |
+| Shortcut | Scope | Functionality |
 |---|---|---|
-| `Ctrl + K` / `Cmd + K` | Global | **Executive Command Palette**: Search actions, trigger modals, and jump screens |
-| `Alt + C` | Global | **Floating Calculator**: Toggle the quick calculator & bill splitter |
-| `Alt + S` | Global | **Stealth Privacy Mode**: Mask all financial figures and balances (`••••••`) |
-| `/` (Slash) | Dashboard | **Instant Search**: Focuses the transaction & inflow search input |
-| `Escape` | Modals / Menus | **Dismiss**: Closes active modals, command palette, and dropdown menus |
-| **Touchscreen Row Swipe** | Mobile Web Table Rows | Swipe right to edit, swipe left to delete (on touch-enabled devices) |
-| **Draggable Header** | Floating Calculator | Drag calculator window anywhere across desktop or browser viewports |
+| <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> | Global | **Executive Command Palette**: Jump between tabs, trigger modals, search |
+| <kbd>Alt</kbd> + <kbd>C</kbd> | Global | **Floating Calculator**: Toggle quick calculator & bill splitter |
+| <kbd>Alt</kbd> + <kbd>S</kbd> | Global | **Stealth Privacy Mode**: Instantly mask all financial numbers |
+| <kbd>Alt</kbd> + <kbd>T</kbd> | Global | **Web Studio**: Open Appearance, Palette, and Wallpaper editor |
+| <kbd>/</kbd> (Forward Slash) | Dashboard | **Quick Search**: Focus transaction & inflow filter input |
+| <kbd>Escape</kbd> | Global | **Dismiss**: Close active modals, menus, and command palette |
+</details>
 
-> [!TIP]
-> **Never Forget a Shortcut:** Both the mobile app and web frontend display subtle, persistent gesture cue bars above the transaction ledger (*Swipe right to edit, left to delete*) and provide 1-tap access to the complete in-app interactive **User Guide & Help** modal directly from the command header.
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-## Offline Resilience & Skeleton Loading
+## 🛠️ Technology Stack Architecture
 
-- **Zero-Flicker Skeleton Loaders**: Metric cards and transaction lists initialize in an animated shimmer skeleton state before network hydration, eliminating jarring `0` or default value flashes.
-- **Graceful Offline Fallbacks**: Automatically surfaces cached data when network connectivity is lost, with an intuitive "Offline / Retry" badge.
+<div align="center">
 
-## Budget management
+| Domain | Technology | Version | Purpose / Architectural Responsibility |
+|---|---|---|---|
+| **Runtime & JDK** | Eclipse Temurin | `Java 27` | Generational ZGC, Virtual Threads, high-throughput bytecode execution |
+| **Backend Framework** | Spring Boot | `4.1.1` | REST APIs, IoC container, auto-configuration, production metrics |
+| **Security & Auth** | Spring Security / JJWT | `0.13.0` | Stateless token authentication, Google OAuth 2.0, WebAuthn Passkeys |
+| **Persistence** | Hibernate / Spring Data | `7.4.5` | JPA Entity relational mapping, HikariCP 7.0.2 connection pooling |
+| **Databases** | PostgreSQL / Neon | `42.7.13` | Primary cloud database with client-encrypted SQLite disaster fallback |
+| **Reporting & Docs** | Apache POI / OpenPDF | `5.5.1` / `3.0.5` | Power BI-grade Excel dashboards, PDF statements, 50MB multipart limit |
+| **Client OCR Engine** | Tesseract.js | WebAssembly | Client-side privacy-first optical character recognition & multi-tax parser |
+| **API Contract** | SpringDoc OpenAPI | `3.1.0` | Swagger UI 5.32, OpenAPI 3.1.0 interactive documentation |
+| **Web Frontend** | Modular HTML5 / ES6+ | Modern | Theme Performance Engine, Web Studio, custom HUD cursor, Chart.js |
+| **Mobile Core** | React Native / Expo | `0.88` / `58` | Cross-platform native mobile app, Expo Router 58, React 19.3 |
+| **Mobile Optimization** | React Native Worklets | `0.13.0` | Native 60fps gesture transitions, memoized context re-render guards |
+| **Machine Learning** | Python / FastAPI / Scikit | `3.14` / `0.3.0` | Dual-engine ML categorization, merchant similarity, anomaly detection |
+| **Package Manager** | Astral UV | `0.11.21` | Deterministic ultra-fast Python environment resolution & syncing |
+| **Testing Harness** | JUnit 6, Playwright, Jest | Latest | 136 Unit tests, 19 Cucumber BDD, 191 Playwright E2E, 60+ Jest tests |
+| **Container Engine** | Multi-Stage Docker | Linux OCI | Eclipse Temurin 27-JRE + Python 3.14 unified Hugging Face Space |
 
-Budgets provide a target for category spending and allow actual expenditure to be compared with planned limits.
+</div>
 
-![Budget tracking](docs/images/website/budget-progress.png)
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-## Income tracking
-
-Income records allow multiple sources of incoming money to be represented separately from spending.
-
-![Income tracking](docs/images/website/income-detail.png)
-
-## Savings goals
-
-Savings goals support target amounts, progress calculation, and contribution/deposit workflows.
-
-![Savings goal](docs/images/website/savings-detail.png)
-
-## Recurring finance
-
-Recurring records make regular monthly commitments easier to represent. The backend contains scheduler support for recurring financial workflows.
-
-![Recurring expenses](docs/images/website/recurring.png)
-
-## Profile & Identity Management
-
-- Update full display name seamlessly across Web and Mobile with instant synchronization to the backend.
-- Set and verify 6-digit Security PIN for zero-email instant recovery and biometric unlock.
-- Multi-currency selection with instant symbol updates across all ledgers and metrics.
-
-## AI / Machine Learning Continuous Intelligence
-
-Expense Tracker integrates an automated, continuous intelligence machine learning pipeline running alongside the core Spring Boot backend:
-
-- **Dual-Engine Model Architecture**:
-  - **TF-IDF + Logistic Regression (SAGA)** for ultra-fast, zero-overhead baseline categorization.
-  - **Fine-tuned Transformer Sequence Classifier** (`distilbert-base-uncased` / `MiniLM`) for deep contextual text comprehension on ambiguous transaction descriptions.
-- **Real-Time Interactive Prediction**:
-  - Embedded client prediction widget with confidence metrics, interactive categorization chips, and 1-click expense creation modal prefill.
-  - High-throughput asynchronous FastAPI microservice running internally on `127.0.0.1:8000` proxied via Nginx.
-- **Continuous Learning & Feedback Loop**:
-  - Automatic collection of user category corrections in a secure audit table.
-  - Leakage-safe candidate training runs triggered via Hugging Face scheduled training jobs.
-  - Strict quality evaluation gates requiring candidate models to outperform the current production baseline before deployment.
-- **Hugging Face Model Registry & Auto-Rollback**:
-  - Models versioned immutably as `v<run-id>` with an alias pointing to `production`.
-  - Zero-downtime serving space restarts with instantaneous health probes and immediate fallback if a model fails validation.
-- **Automated SMS Financial Alert Categorization**:
-  - Mobile background listener detects bank debit/credit transaction notifications.
-  - Automatically parses amounts and passes merchant/counterparty text to the ML categorization pipeline for instant zero-touch bookkeeping.
-
-![AI Smart Categorizer and Insights Dashboard](docs/images/website/dashboard.png)
-
-## Reporting
-
-The reporting layer supports generated financial documents, including PDF and Excel exports.
-
-![Financial reports](docs/images/website/report-exports.png)
-
----
-
-# 🛠️ Technology Stack
-
-| Layer | Technology |
-|---|---|
-| Backend language | Java 27 |
-| Backend framework | Spring Boot 4.1.1 |
-| Security | Spring Security, JWT (JJWT 0.13.0), Google OAuth 2.0, WebAuthn / Passkeys |
-| Persistence | Spring Data JPA / Hibernate |
-| Databases | H2, SQLite (encrypted client-side fallback), PostgreSQL / Neon |
-| Reporting & Excel | Apache POI 5.5.1, OpenPDF 3.0.5, SheetJS (xlsx.full.min.js), 50MB multipart limit |
-| Client-Side OCR | Tesseract.js (WebAssembly / multi-tax parser) |
-| API documentation | SpringDoc OpenAPI 3.1.0 / Swagger UI |
-| Web Frontend | Modern HTML5, Modular JavaScript (ES6+), CSS Custom Properties, Chart.js |
-| Web UX & Theme | Custom HUD Pointer, Command Palette (`Ctrl+K`), Golden Aura elevation |
-| Mobile Framework | React Native 0.88.0, React 19.3.0, Expo 58.0.19, Expo Router 58.0.26, requestIdleCallback scheduler |
-| Mobile Optimization | Memoized React Context & Hooks (`useMemo`, `useCallback`), Native Driver animations |
-| Mobile Auth & Bio | `@react-native-google-signin/google-signin` 16.1.5, `expo-local-authentication` |
-| Machine Learning | Python 3.14, Scikit-learn, TF-IDF Dual-Gram, Transformer Classifier, FastAPI |
-| Testing | JUnit, Mockito, Cucumber BDD, Playwright (Java + TS), Jest, Detox |
-| Build & Runtime | Maven 3.9+, Docker / Eclipse Temurin JRE 26 |
-| Backend hosting | Hugging Face Spaces |
-| Web hosting | Netlify |
-
----
-
-# 📂 Repository Structure
+## 📂 Repository Layout
 
 ```text
 expense-tracker/
-├── frontend/                    # Browser application
-│   ├── css/                     # UI stylesheets (themes, responsive grid)
-│   ├── js/                      # Browser logic & modules (ML categorizer, dashboard)
-│   └── index.html               # Main web entry point
+├── frontend/                    # Web application client
+│   ├── css/                     # UI stylesheets (admin, web-studio, responsive)
+│   ├── js/                      # Browser logic & modules (web-studio, custom-controls)
+│   ├── index.html               # Web authentication entry point
+│   ├── dashboard.html           # Personal financial command center
+│   └── admin.html               # Platform administration & ML fleet governance
 │
-├── mobile/                      # Expo React Native application
-│   ├── app/                     # Expo Router screens/routes
-│   ├── components/              # Reusable mobile UI (InsightCards, charts, modals)
-│   ├── constants/               # API, auth, and theme constants
-│   ├── context/                 # Authentication & global theme state
-│   ├── services/                # Backend API integrations & SMS debit parser
-│   ├── __tests__/               # Jest unit tests (currency, API, auth)
-│   └── e2e/                     # Detox E2E tests (login, dashboard)
+├── mobile/                      # Expo React Native mobile application
+│   ├── app/                     # Expo Router file-based route screens
+│   ├── components/              # Native UI components (Ledger, ThemedScrollbar, Calculator)
+│   ├── constants/               # Theme tokens, font configurations, API contracts
+│   ├── context/                 # State providers (PreferencesContext, AuthContext)
+│   ├── services/                # API gateway, SMS debit parser, receipt OCR
+│   └── __tests__/               # Jest test suites (160 tests passed)
 │
-├── ml/                          # Machine Learning subsystem
-│   ├── api/                     # FastAPI inference service (internal port 8000)
-│   ├── config/                  # Training hyperparameters & model configs
-│   ├── jobs/                    # Hugging Face continuous learning training jobs
-│   ├── models/                  # Versioned candidate & production model artifacts
-│   ├── src/expense_ml/          # Preprocessing, TF-IDF, Transformer & evaluation pipelines
-│   ├── tests/                   # Pytest suite for ML classification & API endpoints
-│   ├── pyproject.toml           # Python dependencies managed with uv
-│   └── kaggle_train.py          # Master training pipeline runner
-│
-├── docker/                      # Production container configuration
-│   ├── entrypoint.sh            # Container initialization & /data filesystem guarantee
-│   ├── nginx.conf               # Gateway reverse-proxy (7860 → 8080 & 8000)
-│   └── supervisord.conf         # Multi-process orchestrator (nginx, spring-boot, python-ml)
-│
-├── hf-space/                    # Hugging Face Space deployment bundle
-│   └── README.md                # Hugging Face Space metadata frontmatter & production docs
-│
-├── database/                    # Offline persistence & disaster recovery snapshots
-│   └── expense_tracker.sqlite.enc # Client-side encrypted SQLite snapshot for instant failover
-│
-├── e2e/                         # Playwright TypeScript E2E tests
-│   ├── tests/                   # login.spec.ts, dashboard.spec.ts, expenses.spec.ts
-│   ├── playwright.config.ts     # Playwright configuration
-│   └── package.json             # E2E test dependencies
+├── ml/                          # Machine Learning microservice
+│   ├── api/                     # FastAPI inference microservice (:8000)
+│   ├── jobs/                    # Automated Hugging Face retraining scripts
+│   ├── src/expense_ml/          # Inference service, model registry, preprocessing
+│   ├── tests/                   # Pytest test suite (55 tests passed)
+│   └── pyproject.toml           # Python package specifications (UV managed)
 │
 ├── src/main/java/               # Spring Boot production backend (Java 27)
 │   └── com/example/expensetracker/
-│       ├── config/              # Security, CORS, Swagger, Resilient Routing DataSource
-│       ├── controller/           # REST endpoints
-│       ├── dto/                  # Request/response models
-│       ├── exception/            # Global exception handling
-│       ├── mapper/               # Entity ↔ DTO mapping
-│       ├── model/                # JPA entities
-│       ├── repository/           # Spring Data repositories
-│       ├── scheduler/            # Scheduled financial workflows
-│       └── service/              # Business logic, ML continuous learning feedback, failover
+│       ├── config/              # Security, CORS, Swagger, Dynamic DataSource Router
+│       ├── controller/          # REST endpoints (Expenses, Incomes, Budgets, Admin)
+│       ├── dto/                 # Request/response validation schemas
+│       ├── model/               # JPA database entities
+│       ├── repository/          # Spring Data JPA repositories
+│       └── service/             # Business rules, ML governance, POI Excel reporting
 │
-├── src/test/                    # Backend tests and BDD scenarios
-│   ├── java/.../controller/     # JUnit + MockMvc controller tests
-│   ├── java/.../cucumber/       # Cucumber BDD step definitions
-│   ├── java/.../playwright/     # Playwright Java E2E tests
-│   └── resources/features/      # Cucumber .feature files (auth, expenses, export)
+├── docker/                      # Production container orchestrator
+│   ├── entrypoint.sh            # Container bootstrap & file permissions guarantee
+│   ├── nginx.conf               # Reverse proxy (7860 -> 8080 & 8000)
+│   └── supervisord.conf         # Multi-daemon process supervisor
 │
-├── scripts/                     # Automation scripts
-│   ├── run-all-tests.sh         # Cross-platform test runner (Linux/macOS)
-│   ├── run-all-tests.bat        # Cross-platform test runner (Windows CMD)
-│   └── run-all-tests.ps1        # Cross-platform test runner (Windows PowerShell)
-├── docs/images/                 # Documentation visual assets & screenshots
-├── Dockerfile                   # Multi-stage production container for HF Spaces
-├── netlify.toml                 # Web deployment configuration
-├── pom.xml                      # Maven project configuration
-└── run-tests.sh                 # Test convenience wrapper (→ scripts/run-all-tests.sh)
+├── e2e/                         # Playwright TypeScript browser automation suite
+├── Dockerfile                   # Multi-stage production container
+├── pom.xml                      # Maven project configuration (Java 27)
+└── run-tests.sh                 # Unified cross-platform test runner
 ```
 
----
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-# 🚀 Run the Web + Backend Locally
+## 🚀 Quick Start Guide
 
-## Prerequisites
+### Prerequisites
+- **Java 27 JDK** (Eclipse Temurin recommended)
+- **Maven 3.9+** (or use included `./mvnw`)
+- **Node.js 18+** & npm (for Web E2E and Mobile app)
+- **Python 3.14** with **uv** (if developing ML models locally)
 
-- Java 27 (the backend targets Java 27)
-- Maven 3.9+ or the included Maven Wrapper
-- A modern browser
-- Node.js/npm if working on the mobile client
-
-## Start the backend
+### 1. Launch Backend API (Spring Boot)
 
 ```bash
 git clone https://github.com/Yoge-2004/expense-tracker.git
 cd expense-tracker
+
+# Start the Spring Boot backend on http://localhost:8080
 ./mvnw spring-boot:run
 ```
 
-The backend starts on port `8080` using the project's development configuration.
+### 2. Launch Web Client
 
-![Local backend](docs/images/development/backend-running.png)
-
-## Open the web application
-
-Serve the `frontend/` directory using a local static server, then configure the frontend API origin as appropriate for your environment.
-
-Example:
+Serve the `frontend/` directory using any local static web server:
 
 ```bash
 cd frontend
-python -m http.server 5500
+python3 -m http.server 5500
+# Open http://localhost:5500 in your browser
 ```
 
-Open the displayed local URL in a browser.
-
-![Local website](docs/images/development/web-local.png)
-
----
-
-# 📱 Run the Mobile App Locally
+### 3. Launch Mobile Companion App (Expo React Native)
 
 ```bash
 cd mobile
 npm install
+
+# Start the Expo interactive development server
 npx expo start
 ```
 
-Useful commands:
+*Press `a` for Android Emulator, `i` for iOS Simulator, or scan the QR code with Expo Go.*
+
+### 4. Run via Docker (Combined Production Space)
 
 ```bash
-npm run android
-npm run ios
-npm run web
-npm run ts:check
-```
-
-Expo Go can be used for compatible development workflows; native Google Sign-In behavior should be validated using an appropriate native development/release build rather than assuming Expo Go reproduces native OAuth configuration.
-
-![Mobile development](docs/images/development/mobile-running.png)
-
----
-
-# ⚙️ Environment Configuration
-
-Production secrets belong in the hosting environment, not in source control.
-
-| Variable | Purpose |
-|---|---|
-| `SPRING_DATASOURCE_URL` | JDBC URL for the active database. |
-| `SPRING_DATASOURCE_DRIVER_CLASS_NAME` | JDBC driver class. |
-| `SPRING_DATASOURCE_USERNAME` | Database username. |
-| `SPRING_DATASOURCE_PASSWORD` | Database password. |
-| `SPRING_JPA_DATABASE_PLATFORM` | Hibernate database dialect. |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins allowed by CORS. |
-| `JWT_SECRET` | Secret used to sign application JWTs. |
-| `GOOGLE_OAUTH_CLIENT_ID` | Google Web OAuth client ID used for backend token audience verification. |
-| `HF_TOKEN` | Hugging Face token with **write** access to the snapshot repository. Set it as a *runtime* secret in the Space settings; the GitHub Actions `HF_TOKEN` secret only deploys the Space and is a different thing. |
-| `DB_BACKUP_KEY` | **Required for snapshots.** Encrypts and decrypts `database/expense_tracker.sqlite.enc`. With it unset, nothing is ever uploaded. |
-| `HF_SPACE_REPO` | Repository that stores the snapshot, normally `Yoge-2004/expense-tracker-backend`. |
-| `HF_REPO_TYPE` | `space` (default, as designed) or `dataset`. A dataset repo is created privately on first backup and does not rebuild the Space on every snapshot commit. |
-| `SYNC_SECRET_KEY` | Token for `/api/sync/*`, sent as the `X-Sync-Token` header. Needed to read snapshot status or force a backup. |
-| `APP_TRUSTED_PROXY_ENABLED` | When true behind reverse proxies (Nginx), trusts forwarded client IP addresses. |
-| `APP_TRUSTED_PROXY_CIDRS` | Comma-separated CIDR allowlist for trusted upstream proxies (default: `127.0.0.1/32,::1/128`). |
-| `MODEL_ID` | Explicit Hugging Face model repository or local path for Python ML inference. |
-
-### Example development configuration
-
-```properties
-SPRING_DATASOURCE_URL=jdbc:h2:mem:expensetrackerdb
-SPRING_DATASOURCE_USERNAME=sa
-SPRING_DATASOURCE_PASSWORD=
-JWT_SECRET=<generate-a-secret>
-GOOGLE_OAUTH_CLIENT_ID=<google-web-client-id>
-```
-
-Do not copy real production credentials into this example.
-
-![Environment configuration](docs/images/development/environment.png)
-
----
-
-# 🐳 Docker
-
-The repository includes a production-oriented Dockerfile for Hugging Face Spaces. The container uses Eclipse Temurin JRE 26, exposes port `7860`, and runs the application as UID `1000`.
-
-Build the backend JAR:
-
-```bash
+# Package production Spring Boot artifact
 ./mvnw clean package -DskipTests
+
+# Build unified multi-process container
+docker build -t expense-tracker-prod .
+
+# Run container exposing gateway port 7860
+docker run --rm -p 7860:7860   -e SPRING_DATASOURCE_URL="jdbc:h2:mem:expensetrackerdb"   -e JWT_SECRET="your-256-bit-hex-secret-key-here"   expense-tracker-prod
 ```
 
-Build the image:
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-```bash
-docker build -t expense-tracker-backend .
-```
+## ⚙️ Environment Variables Reference
 
-Run it locally:
+| Variable | Scope | Purpose | Default / Example |
+|---|---|---|---|
+| `SPRING_DATASOURCE_URL` | Backend | JDBC connection string | `jdbc:postgresql://ep-xyz.neon.tech/neondb` |
+| `SPRING_DATASOURCE_USERNAME` | Backend | Database access username | `neondb_owner` |
+| `SPRING_DATASOURCE_PASSWORD` | Backend | Database access password | `••••••••••••` |
+| `JWT_SECRET` | Backend | HMAC-SHA256 signing secret for JWT tokens | Hex or Base64 string |
+| `GOOGLE_OAUTH_CLIENT_ID` | Backend | Google OAuth Web Client ID for token audience checks | `xyz.apps.googleusercontent.com` |
+| `CORS_ALLOWED_ORIGINS` | Backend | Comma-separated allowed web origins | `http://localhost:5500,https://app.netlify.app` |
+| `HF_TOKEN` | Sync / ML | Hugging Face user write access token | `hf_••••••••••••` |
+| `DB_BACKUP_KEY` | Disaster Recovery | AES encryption key for client SQLite snapshots | 256-bit passphrase |
+| `MODEL_ID` | ML Fleet | Hugging Face model repository ID | `Yoge-2004/expense-intelligence-model` |
+| `MODEL_TYPE` | ML Fleet | Inference engine choice (`tfidf` or `transformer`) | `tfidf` |
 
-```bash
-docker run --rm -p 7860:7860 \
-  -e SPRING_DATASOURCE_URL="<jdbc-url>" \
-  -e SPRING_DATASOURCE_USERNAME="<username>" \
-  -e SPRING_DATASOURCE_PASSWORD="<password>" \
-  -e JWT_SECRET="<secret>" \
-  expense-tracker-backend
-```
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-The Docker image expects the compiled artifact at `/app/app.jar`.
+## 🧪 Testing Ecosystem
 
-![Docker deployment](docs/images/deployment/docker.png)
+ExpenseTracker PRO enforces end-to-end quality assurance across unit, integration, BDD, and browser layers.
 
----
+<div align="center">
 
-# ☁️ Deployment
-
-## Web → Netlify
-
-The root `netlify.toml` configures the static web deployment and API proxy behavior. The frontend is published from `frontend/`.
-
-## Backend → Hugging Face Spaces
-
-The backend is packaged as a Docker Space. The container listens on port `7860` and starts the Spring Boot executable JAR.
-
-![Hugging Face deployment](docs/images/deployment/huggingface.png)
-
-## Database → PostgreSQL / Neon
-
-PostgreSQL can be used as the production database. Connection pooling is configured to avoid keeping unnecessary idle connections alive.
-
-![Production deployment](docs/images/deployment/production.png)
-
----
-
-# 🔄 Data Persistence & Hugging Face Sync
-
-Hosted containers may have ephemeral local storage. The project therefore includes an optional synchronization mechanism based on:
-
-- `expense_tracker.db` — SQLite database snapshot.
-- `expenses_sync.json` — portable JSON snapshot.
-- Hugging Face Hub commit/download operations through `FileDbSyncService`.
-
-When enabled, the application can pull persisted snapshots and push updated snapshots back to the configured Hugging Face repository.
-
-Available synchronization endpoints are under `/api/sync` and include file-to-database, database-to-file, push-to-Hugging-Face, and pull-from-Hugging-Face operations.
-
-![Persistence synchronization](docs/images/architecture/data-sync.png)
-
-> Treat synchronized database files as application data, not as a substitute for a dedicated production database backup strategy.
-
----
-
-# 📚 API Documentation
-
-The backend exposes OpenAPI documentation through SpringDoc.
-
-When running locally:
-
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-
-Typical authentication workflow:
-
-1. Register with `POST /api/auth/register`.
-2. Log in with `POST /api/auth/login`.
-3. Copy the returned JWT.
-4. Click **Authorize** in Swagger UI.
-5. Enter the token without duplicating the `Bearer` prefix.
-6. Call authenticated endpoints.
-
-![Swagger API](docs/images/development/swagger.png)
-
----
-
-# 🗺️ API Surface
-
-The API is organized around domain resources rather than one large controller.
-
-| Resource | Base path | Purpose |
-|---|---|---|
-| Authentication | `/api/auth` | Registration, login, identity authentication. |
-| Users | `/api/users` | Authenticated user/profile operations. |
-| Expenses | `/api/expenses` | Expense records and spending workflows. |
-| Categories | `/api/categories` | Expense/category management. |
-| Income | `/api/incomes` | Income records and cash inflow workflows. |
-| Savings | `/api/savings/goals` | Savings goals and contributions. |
-| Reports | `/api/reports` | Financial report generation/export. |
-| Health | `/api/health` | Application/database health checks. |
-| WebAuthn | `/api/webauthn` | Passkey/WebAuthn operations. |
-| Sync | `/api/sync` | File/database/Hugging Face synchronization. |
-
-For the authoritative request/response schemas, use Swagger/OpenAPI generated directly from the running backend.
-
----
-
-# 🧪 Testing
-
-The repository uses multiple test layers so that business logic, HTTP contracts, BDD scenarios, browser behavior, and mobile app logic can be checked independently.
-
-## Test Suites Overview
-
-| Suite | Tooling | Tests | Location | Focus |
+| Suite | Technology | Tests | Execution Command | Scope |
 |---|---|---|---|---|
-| Backend unit + controller | JUnit + Mockito | 136 | `src/test/java/` | Business/service behavior, HTTP endpoints, validation |
-| Backend BDD | Cucumber + Spring Boot | 19 | `src/test/resources/features/` | Human-readable end-to-end scenarios |
-| Web E2E (Java) | Playwright + JUnit | 29 | `src/test/java/.../playwright/` | Browser automation against running app |
-| Web E2E (TypeScript) | Playwright Test | 162 | `e2e/tests/` | Cross-browser UI testing (login, dashboard, expenses) |
-| Mobile unit | Jest + jest-expo | 60+ | `mobile/__tests__/` | Currency service, API service, auth context |
-| Mobile E2E | Detox | 20+ | `mobile/e2e/` | iOS simulator / Android emulator flows |
-| Static checks | TypeScript + JavaScript syntax | — | CI workflow | Client-side type safety |
+| **Backend Unit & API** | JUnit 6 + Mockito | `136` | `./mvnw test` | Service logic, controllers, security filters |
+| **Backend BDD** | Cucumber BDD | `19` | `./mvnw test -Dtest=CucumberTestRunner` | Human-readable user stories & scenarios |
+| **Web E2E (TypeScript)** | Playwright Test | `162` | `cd e2e && npm test` | Cross-browser flows (login, dashboard, modals) |
+| **Web E2E (Java)** | Playwright Java | `29` | `./mvnw test -Dplaywright=true` | Full-stack server + browser integration |
+| **Mobile App Unit** | Jest + React Native | `160` | `cd mobile && npm test` | Currency math, OCR, context hooks, themes |
+| **Python ML Fleet** | Pytest + Ruff | `55` | `cd ml && uv run pytest` | Model registry, API endpoints, retraining gate |
 
-## Quick Start — Run All Tests
+</div>
 
-### Linux / macOS
+### Unified Cross-Platform Runner
 
 ```bash
-# From the repository root — runs backend + Playwright TS + mobile unit tests
+# Run all core test suites with one command
 ./run-tests.sh
 
-# Install dependencies first, then run all tests
-./run-tests.sh --install-deps
-
-# Run a specific suite
-./run-tests.sh --backend           # backend Java tests only
-./run-tests.sh --playwright-ts     # Playwright TypeScript E2E only
-./run-tests.sh --mobile-unit       # mobile Jest unit tests only
-./run-tests.sh --playwright-java   # Playwright Java E2E only
-
-# Run everything (including Playwright Java)
-./run-tests.sh --all
+# Install all dependencies and run complete fleet
+./run-tests.sh --install-deps --all
 ```
 
-### Windows (Command Prompt / .bat)
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-```cmd
-:: From the repository root
-scripts\run-all-tests.bat
+## 📦 Releases & Downloads
 
-:: Install dependencies first, then run all tests
-scripts\run-all-tests.bat --install-deps
-
-:: Run a specific suite
-scripts\run-all-tests.bat --backend
-scripts\run-all-tests.bat --mobile-unit
-scripts\run-all-tests.bat --playwright-ts
-```
-
-### Windows (PowerShell / .ps1)
-
-```powershell
-# From the repository root
-.\scripts\run-all-tests.ps1
-
-# Install dependencies first, then run all tests
-.\scripts\run-all-tests.ps1 -InstallDeps
-
-# Run a specific suite
-.\scripts\run-all-tests.ps1 -Backend
-.\scripts\run-all-tests.ps1 -MobileUnit
-.\scripts\run-all-tests.ps1 -PlaywrightTs
-.\scripts\run-all-tests.ps1 -PlaywrightJava
-```
-
-## Individual Test Suites
-
-### 1. Backend Java Tests (JUnit + Mockito + Cucumber)
-
-**Prerequisites:** Java 27 (JDK), Maven (or use `./mvnw`)
-
-```bash
-# Run all backend tests (unit + controller + Cucumber BDD)
-./mvnw test
-
-# Run only Cucumber BDD scenarios
-./mvnw test -Dtest=CucumberTestRunner
-
-# Run a specific test class
-./mvnw test -Dtest=ExpenseControllerTest
-
-# Run with coverage report
-./mvnw test jacoco:report
-```
-
-**What's tested:**
-- 136 unit/controller tests covering all REST endpoints, service business logic, security, and exception handling
-- 19 Cucumber BDD scenarios across 3 feature files:
-  - `auth.feature` — registration, login, duplicate email, invalid currency, unauthenticated access
-  - `expenses.feature` — create, list, update, delete, cross-user authorization, budget setting
-  - `export.feature` — CSV, Excel, PDF exports for expenses, incomes, and financial statements
-
-### 2. Web E2E Tests — Playwright TypeScript (162 tests)
-
-**Prerequisites:** Node.js 18+, npm
-
-```bash
-cd e2e
-
-# First time only: install dependencies + browser binary
-npm install
-npx playwright install chromium
-
-# Run all tests (headless)
-npm test
-
-# Run with visible browser
-npm run test:headed
-
-# Run with Playwright UI mode (interactive debugging)
-npm run test:ui
-
-# Open the HTML test report
-npm run test:report
-```
-
-**What's tested (3 spec files):**
-- `login.spec.ts` (33 tests) — login form, OAuth, biometric, theme toggle, registration fields, forgot-password
-- `dashboard.spec.ts` (98 tests) — 5 chart canvases, 8 metric cards, expense form, table tabs, filters, budgets, savings goals, subscriptions, reports, profile menu, currency selector, responsive layout (mobile + tablet)
-- `expenses.spec.ts` (31 tests) — form interactions, tab switching, filter interactions, budget creation, savings goals, subscriptions, profile menu, currency selector, report period
-
-### 3. Web E2E Tests — Playwright Java (29 tests)
-
-**Prerequisites:** Java 27 (JDK), Maven, Playwright browser binary
-
-```bash
-# First time only: download Playwright browser binary
-./mvnw exec:java -e -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.args="install chromium"
-
-# Run the Playwright Java E2E tests (disabled by default — enable with -Dplaywright=true)
-./mvnw test -Dtest=PlaywrightE2ETest -Dplaywright=true
-```
-
-**What's tested:**
-- Login page: form fields, Google OAuth, biometric, theme toggle, hero section
-- Registration page: all fields, currency selector, security PIN, OTP, 6-step progress indicator
-- Dashboard: 5 chart canvases, 8 metric cards, expense form fields, table tabs
-- Dashboard: filters, budgets, savings goals, subscriptions, reports, profile menu, currency selector
-- Auth redirect behavior
-
-### 4. Mobile App Unit Tests (Jest — 60+ tests)
-
-**Prerequisites:** Node.js 18+, npm
-
-```bash
-cd mobile
-
-# First time only: install dependencies
-npm install
-
-# Run all unit tests
-npm test
-
-# Watch mode (re-runs on file changes)
-npm run test:watch
-
-# With coverage report
-npm run test:coverage
-
-# CI mode (coverage + limited workers)
-npm run test:ci
-```
-
-**What's tested:**
-- `currency.test.ts` (40+ tests) — `WORLD_CURRENCIES` registry validation, `getCurrencySymbol()` (case insensitivity, null/undefined, unknown codes), `formatCurrencyAmount()` (string input, null, NaN, large numbers, decimals, negative, zero)
-- `api.test.ts` (20+ tests) — `ApiError` class construction, defaults, `isTimeout`, `isNetworkError`, `isUnauthorized`, `validationErrors`, `rawPayload`, all `ApiErrorCode` variants
-- `auth-context.test.ts` — `AuthProvider` export validation, `useAuth` throws outside provider
-
-### 5. Mobile App E2E Tests (Detox — 20+ tests)
-
-**Prerequisites:** macOS (iOS) or Linux (Android), Detox CLI, simulator/emulator
-
-```bash
-# Install Detox CLI globally
-npm install -g detox-cli
-
-cd mobile
-
-# ── iOS (macOS only) ──
-detox build -c ios.sim.debug       # build the app for iOS simulator
-detox test -c ios.sim.debug        # run E2E tests on iOS simulator
-
-# ── Android (macOS or Linux) ──
-detox build -c android.emu.debug   # build the app for Android emulator
-detox test -c android.emu.debug    # run E2E tests on Android emulator
-```
-
-**What's tested:**
-- `login.e2e.ts` (10+ tests) — login screen rendering, form input, invalid credentials, Google OAuth, biometric login, navigation to register/forgot-password
-- `dashboard.e2e.ts` (10+ test) — dashboard metrics, bottom tab bar, charts, add expense flow (form, input, validation, save), subscriptions tab, profile tab (user info, theme toggle, logout)
-
-## Test Scripts
-
-The repository includes cross-platform test runner scripts:
-
-| File | Platform | Description |
-|---|---|---|
-| `run-tests.sh` | Linux / macOS | Root-level convenience wrapper |
-| `scripts/run-all-tests.sh` | Linux / macOS | Full-featured bash script with all options |
-| `scripts/run-all-tests.bat` | Windows (CMD) | Windows batch script |
-| `scripts/run-all-tests.ps1` | Windows (PowerShell) | PowerShell script with named parameters |
-
-### Script Options
-
-| Bash / .bat flag | PowerShell param | Description |
-|---|---|---|
-| `--backend` | `-Backend` | Run only backend Java tests |
-| `--playwright-java` | `-PlaywrightJava` | Run only Playwright Java E2E tests |
-| `--playwright-ts` | `-PlaywrightTs` | Run only Playwright TypeScript E2E tests |
-| `--mobile-unit` | `-MobileUnit` | Run only mobile Jest unit tests |
-| `--all` | `-All` | Run all test suites |
-| `--install-deps` | `-InstallDeps` | Install dependencies before running |
-
-## CI/CD Integration
-
-The GitHub Actions CI workflow (`.github/workflows/ci.yml`) runs automatically on every push and pull request:
-
-1. **Repository hygiene** — checks for secrets, formatting
-2. **Backend tests** — `./mvnw test` (136 unit/controller + 19 Cucumber BDD tests)
-3. **Web frontend checks** — JavaScript syntax validation + mobile TypeScript check
-
-To add mobile unit tests or Playwright E2E tests to CI, add these steps to your workflow:
-
-```yaml
-- name: Run mobile unit tests
-  working-directory: mobile
-  run: |
-    npm ci
-    npm run test:ci
-
-- name: Run Playwright E2E tests
-  working-directory: e2e
-  run: |
-    npm ci
-    npx playwright install chromium
-    npm test
-```
-
-## Prerequisites Summary
-
-| Tool | Version | Required for |
-|---|---|---|
-| Java JDK | 26+ | Backend tests, Playwright Java E2E |
-| Maven | 3.9+ (or use `./mvnw`) | Backend tests |
-| Node.js | 18+ | Playwright TS E2E, mobile unit tests |
-| npm | 9+ | Playwright TS E2E, mobile unit tests |
-| Playwright browsers | Chromium | Web E2E tests (Java + TypeScript) |
-| Detox CLI | latest | Mobile E2E tests |
-| Xcode | 15+ | Mobile iOS E2E (macOS only) |
-| Android Studio | latest | Mobile Android E2E |
-
-![Automated tests](docs/images/development/tests.png)
-
----
-
-# 🔁 Development Workflow
-
-A typical contribution cycle looks like:
-
-```text
-Create feature/fix
-      ↓
-Update backend and/or client
-      ↓
-Run local checks
-      ↓
-Run automated test suite
-      ↓
-Review UI on web + mobile when relevant
-      ↓
-Commit
-      ↓
-GitHub Actions
-      ↓
-Deploy affected surface
-```
-
-![CI workflow](docs/images/development/ci.png)
-
----
-
-# 🖼️ Visual Asset Map
-
-The documentation includes comprehensive visual assets captured directly from live simulated web, mobile, and cloud environments with realistic financial sample data.
-
-```text
-docs/images/
-├── website/
-│   ├── hero-dashboard.png
-│   ├── platform-overview.png
-│   ├── auth-register.png
-│   ├── auth-login.png
-│   ├── dashboard.png
-│   ├── add-expense.png
-│   ├── budgets.png
-│   ├── income.png
-│   ├── savings-goals.png
-│   ├── reports.png
-│   ├── responsive.png
-│   ├── expenses.png
-│   ├── budget-progress.png
-│   ├── income-detail.png
-│   ├── savings-detail.png
-│   ├── recurring.png
-│   └── report-exports.png
-├── mobile/
-│   ├── app-collage.png
-│   ├── auth.png
-│   ├── navigation.png
-│   ├── add-expense.png
-│   ├── dashboard.png
-│   ├── planning.png
-│   └── landscape.png
-├── architecture/
-│   ├── system-architecture.png
-│   └── data-sync.png
-├── deployment/
-│   ├── docker.png
-│   ├── huggingface.png
-│   └── production.png
-└── development/
-    ├── backend-running.png
-    ├── web-local.png
-    ├── mobile-running.png
-    ├── environment.png
-    ├── swagger.png
-    ├── tests.png
-    └── ci.png
-```
-
----
-
-# 📦 Releases
-
-Download the latest Android builds (**v1.0.9**, Version Code **11**), view release notes, checksums, and previous versions from the official GitHub Releases page or read [RELEASE_NOTES.md](RELEASE_NOTES.md).
-
-**👉 [View all releases (v1.0.9)](https://github.com/Yoge-2004/expense-tracker/releases)**
-
----
-
-# 🤝 Contributing
-
-1. Fork the repository.
-2. Create a focused branch.
-3. Make the smallest coherent change.
-4. Add or update tests where behavior changes.
-5. Check both web and mobile clients when an API contract changes.
-6. Update documentation/screenshots when the user-facing experience changes.
-7. Open a pull request with a clear description and verification steps.
-
----
-
-# 🛡️ Security Principles
-
-- Never commit secrets.
-- Use environment variables for production credentials.
-- Use strong, unique JWT secrets.
-- Restrict CORS to trusted application origins.
-- Register OAuth credentials against the correct package/bundle identifier and signing certificate.
-- Treat exported reports and database snapshots as sensitive financial data.
-- Avoid putting real personal financial information in screenshots, tests, or documentation.
-
----
-
-# 📄 License
-
-This project is licensed under the **Apache License 2.0**. See [`LICENSE`](LICENSE) for the complete license text.
+- **Latest Android APK**: [**Download v1.0.9 (Build 11)**](https://github.com/Yoge-2004/expense-tracker/releases/latest)
+- **Detailed Release Notes**: Read [RELEASE_NOTES.md](RELEASE_NOTES.md) for full change logs, security enhancements, and migration notes.
 
 ---
 
 <div align="center">
-
-### 💸 Track it. Understand it. Plan it.
-
-**Expense Tracker** brings everyday spending, income, budgets, savings, and reporting into one connected financial workspace.
-
+  <sub>Engineered with precision by <a href="https://github.com/Yoge-2004">Yoge-2004</a> • Released under the MIT License</sub>
 </div>
