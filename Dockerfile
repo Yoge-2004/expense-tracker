@@ -1,8 +1,8 @@
-ARG UV_VERSION=0.12.15
+ARG UV_VERSION=0.13.5
 
 FROM eclipse-temurin:27-jre
 
-ARG UV_VERSION=0.12.15
+ARG UV_VERSION=0.13.5
 
 ENV DEBIAN_FRONTEND=noninteractive \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     MODEL_TYPE=tfidf \
     HF_HOME=/data/cache/huggingface
 
-COPY --from=ghcr.io/astral-sh/uv:0.12.15 /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /usr/local/bin/
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends nginx supervisor ca-certificates curl tesseract-ocr tesseract-ocr-eng \
@@ -28,7 +28,7 @@ RUN apt-get update \
     else \
         useradd --create-home --uid 1000 --shell /usr/sbin/nologin app; \
     fi \
-    && mkdir -p /data \
+    && mkdir -p /data/cache/huggingface \
     && chown -R app:app /data \
     && uv python install 3.14
 
@@ -44,14 +44,17 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/expense-tracker.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/entrypoint.sh /app/entrypoint.sh
 
+# Optimize cold boot: pre-sync dependencies, pre-compile bytecode (.pyc), and warm model cache
 RUN chmod +x /app/entrypoint.sh \
     && cd /app/ml \
     && uv sync --frozen --no-dev --extra serve \
+    && .venv/bin/python -m compileall -q /app/ml \
+    && (HF_HOME=/data/cache/huggingface .venv/bin/python -c "from expense_ml.inference.model_registry import ModelRegistry; ModelRegistry.from_environment()" 2>/dev/null || true) \
     && chown -R app:app /app /opt/uv /data
 
 EXPOSE 7860 8080 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
     CMD curl -fsS http://127.0.0.1:7860/health || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
