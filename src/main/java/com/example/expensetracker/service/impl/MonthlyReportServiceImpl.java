@@ -76,12 +76,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Value("${app.mail.enabled:false}")
     private boolean mailEnabled;
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public MonthlyReportDto generateMonthlyReport(Long userId, int year, int month) {
+    private void validatePeriod(Long userId, int year, int month) {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null");
         }
@@ -91,6 +86,15 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
         if (year < 1900 || year > 2100) {
             throw new IllegalArgumentException("Year must be between 1900 and 2100 (got " + year + ")");
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public MonthlyReportDto generateMonthlyReport(Long userId, int year, int month) {
+        validatePeriod(userId, year, month);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
@@ -176,7 +180,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
                     .filter(e -> e.getCategory() != null && r.getReimbursedCategoryId().equals(e.getCategory().getId()))
                     .findFirst()
                     .ifPresent(e -> categorySums.computeIfPresent(e.getCategory().getName(),
-                            (name, sum) -> sum.subtract(r.getAmount()).max(BigDecimal.ZERO)));
+                            (_, sum) -> sum.subtract(r.getAmount()).max(BigDecimal.ZERO)));
         }
         // Percentages are relative to what the categories add up to, so they always total 100.
         double totalDouble = categorySums.values().stream().mapToDouble(BigDecimal::doubleValue).sum();
@@ -357,15 +361,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Override
     @Transactional
     public void sendMonthlyReportEmail(Long userId, int year, int month) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
-        }
-        if (month < 1 || month > 12) {
-            throw new IllegalArgumentException("Month must be between 1 and 12 (got " + month + ")");
-        }
-        if (year < 1900 || year > 2100) {
-            throw new IllegalArgumentException("Year must be between 1900 and 2100 (got " + year + ")");
-        }
+        validatePeriod(userId, year, month);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
@@ -412,9 +408,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
     @Override
     @Transactional(readOnly = true)
     public String generateMonthlyReportHtml(Long userId, int year, int month) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID cannot be null");
-        }
+        validatePeriod(userId, year, month);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
         MonthlyReportDto report = generateMonthlyReport(userId, year, month);
@@ -724,7 +718,7 @@ public class MonthlyReportServiceImpl implements MonthlyReportService {
               <div class="email-container">
                 <div class="email-header">
                   <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px;">
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(199, 154, 62, 0.25) 0%%, rgba(19, 23, 17, 0.9) 100%%); border: 1.5px solid #c79a3e; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(199, 154, 62, 0.25);">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(199, 154, 62, 0.25) 0%%, rgba(19, 23, 17, 0.9) 100%%); border: 1.5px solid #c79a3e; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(199, 154, 62, 0.25); border-radius: 12px;">
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#c79a3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M2 17L12 22L22 17" stroke="#c79a3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

@@ -264,6 +264,7 @@ public class IncomeController {
                 .body(bytes);
     }
 
+    @SuppressWarnings({"UnknownHttpHeaderInspection", "SpringMVCUnknownHttpHeaderInspection"})
     @Operation(summary = "Export incomes to PDF report",
         description = "Generates a printable PDF income report table with calculated totals.")
     @GetMapping("/user/{userId}/export/pdf")
@@ -271,7 +272,7 @@ public class IncomeController {
             @Parameter(description = "User ID", required = true) @PathVariable Long userId,
             @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)")
             @RequestParam(value = "currency", required = false) String currencyParam,
-            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+            @SuppressWarnings("all") @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         userSecurity.validateUserAccess(userId);
         log.info("Exporting incomes to PDF for userId={}, currencyParam={}, currencyHeader={}",
                 userId, currencyParam, currencyHeader);
@@ -288,6 +289,7 @@ public class IncomeController {
                 .body(bytes);
     }
 
+    @SuppressWarnings({"UnknownHttpHeaderInspection", "SpringMVCUnknownHttpHeaderInspection"})
     @Operation(summary = "Export incomes to Excel (.xlsx)",
         description = "Generates a styled Microsoft Excel workbook containing all user incomes.")
     @GetMapping({"/user/{userId}/export/excel", "/user/{userId}/export/xlsx"})
@@ -295,7 +297,7 @@ public class IncomeController {
             @Parameter(description = "User ID", required = true) @PathVariable Long userId,
             @Parameter(description = "Preferred ISO currency code (e.g. INR, USD, EUR)")
             @RequestParam(value = "currency", required = false) String currencyParam,
-            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+            @SuppressWarnings("all") @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
         userSecurity.validateUserAccess(userId);
         log.info("Exporting incomes to Excel for userId={}, currencyParam={}, currencyHeader={}",
                 userId, currencyParam, currencyHeader);

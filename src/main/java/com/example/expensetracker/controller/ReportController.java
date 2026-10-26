@@ -41,6 +41,9 @@ import java.util.Map;
 @RequestMapping("/api/reports")
 public class ReportController {
 
+    //noinspection UnknownHttpHeader,SpringJavaUnknownHttpHeaderInspection
+    private static final String CURRENCY_HEADER_KEY = "X-Currency";
+
     private final MonthlyReportService monthlyReportService;
     private final UserSecurity userSecurity;
     private final RangeReportController rangeReportController;
@@ -106,7 +109,8 @@ public class ReportController {
     public ResponseEntity<byte[]> exportFinancialStatementExcel(
             @PathVariable Long userId,
             @RequestParam(value = "currency", required = false) String currencyParam,
-            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+            @RequestHeader(required = false) HttpHeaders headers) {
+        String currencyHeader = headers != null ? headers.getFirst(CURRENCY_HEADER_KEY) : null;
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank())
                 ? currencyParam : currencyHeader;
         ResponseEntity<byte[]> response = rangeReportController.excel(userId, null, null,
@@ -127,7 +131,8 @@ public class ReportController {
     public ResponseEntity<byte[]> exportFinancialStatementPdf(
             @PathVariable Long userId,
             @RequestParam(value = "currency", required = false) String currencyParam,
-            @RequestHeader(value = "X-Currency", required = false) String currencyHeader) {
+            @RequestHeader(required = false) HttpHeaders headers) {
+        String currencyHeader = headers != null ? headers.getFirst(CURRENCY_HEADER_KEY) : null;
         String preferredCurrency = (currencyParam != null && !currencyParam.isBlank())
                 ? currencyParam : currencyHeader;
         ResponseEntity<byte[]> response = rangeReportController.pdf(userId, null, null,

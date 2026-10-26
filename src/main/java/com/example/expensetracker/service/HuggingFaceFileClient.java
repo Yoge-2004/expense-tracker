@@ -144,7 +144,7 @@ public final class HuggingFaceFileClient {
                         .PUT(HttpRequest.BodyPublishers.ofByteArray(fileBytes));
                 JsonNode headers = uploadAction.path("header");
                 if (headers.isObject()) {
-                    headers.fields().forEachRemaining(entry -> putBuilder.header(entry.getKey(), entry.getValue().asText()));
+                    headers.properties().forEach(entry -> putBuilder.header(entry.getKey(), entry.getValue().asText()));
                 }
                 HttpResponse<Void> putResponse = HTTP.send(putBuilder.build(), HttpResponse.BodyHandlers.discarding());
                 if (putResponse.statusCode() < 200 || putResponse.statusCode() >= 300) {

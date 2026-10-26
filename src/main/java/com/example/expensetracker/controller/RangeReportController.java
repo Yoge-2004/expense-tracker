@@ -499,15 +499,16 @@ public class RangeReportController {
             }
             int timeEndRow = timeStartRow + numTimeRows - 1;
             int tableEndRow = Math.max(cfEndRow, timeEndRow);
+            int chartRow1 = tableEndRow + 2;
+            int chartRow1Height = 16;
+            int chartRow2 = chartRow1 + chartRow1Height + 1;
+            int chartRow2Height = 16;
 
             // ═════════════════════════════════════════════════════════════════════════
             // EMBEDDED VISUAL VECTOR XDDF CHARTS (Rows below summary tables)
             // ═════════════════════════════════════════════════════════════════════════
             try {
                 XSSFDrawing drawing = dashboard.createDrawingPatriarch();
-
-                int chartRow1 = tableEndRow + 2;
-                int chartRow1Height = 16;
 
                 // Chart 1: Cash Flow Column Chart (Cols 0-3 / A-D)
                 XSSFClientAnchor anchor1 = drawing.createAnchor(0, 0, 0, 0, 0, chartRow1, 4, chartRow1 + chartRow1Height);
@@ -565,8 +566,6 @@ public class RangeReportController {
                 chart2.plot(donutChart);
 
                 // Chart 3: Chronological Disbursement Velocity Line Chart (Cols 0-7 / A-H)
-                int chartRow2 = chartRow1 + chartRow1Height + 1;
-                int chartRow2Height = 16;
                 XSSFClientAnchor anchor3 = drawing.createAnchor(0, 0, 0, 0, 0, chartRow2, 8, chartRow2 + chartRow2Height);
                 XSSFChart chart3 = drawing.createChart(anchor3);
                 chart3.setTitleText("CHRONOLOGICAL DISBURSEMENT VELOCITY & RUN-RATE (" + symbol + ")");
@@ -607,7 +606,7 @@ public class RangeReportController {
             for (int c = 1; c < 8; c++) put(dashboard, sensHeadRow, c, "", tblHeader);
 
             int sensSubRow = sensHeadRow + 1;
-            put(dashboard, sensSubRow, 0, "SPEND CUT \ INFLOW SHOCK", tblHeader);
+            put(dashboard, sensSubRow, 0, "SPEND CUT / INFLOW SHOCK", tblHeader);
             put(dashboard, sensSubRow, 1, "-10% REVENUE SHOCK", tblHeaderRight);
             put(dashboard, sensSubRow, 2, "BASELINE REVENUE (0%)", tblHeaderRight);
             put(dashboard, sensSubRow, 3, "+10% REVENUE EXPANSION", tblHeaderRight);
@@ -635,12 +634,19 @@ public class RangeReportController {
                 boolean z = (i % 2 == 1);
                 double cut = cutFractions[i];
                 double spendFactor = 1.0 - cut;
+                double adjSpend = spend.doubleValue() * spendFactor;
+                double incVal = income.doubleValue();
+                double revMinus10 = (incVal * 0.9) - adjSpend;
+                double revBase = incVal - adjSpend;
+                double revPlus10 = (incVal * 1.1) - adjSpend;
+                double revPlus20 = (incVal * 1.2) - adjSpend;
+
                 put(dashboard, rIdx, 0, cutLabels[i], z ? dataLeftZebra : dataLeft);
-                put(dashboard, rIdx, 1, "=*0.9 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
-                put(dashboard, rIdx, 2, "=*1.0 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
-                put(dashboard, rIdx, 3, "=*1.1 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
-                put(dashboard, rIdx, 4, "=*1.2 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
-                put(dashboard, rIdx, 5, "=IF(C" + (rIdx + 1) + ">=0, "SURPLUS", "DEFICIT")", z ? dataCenterZebra : dataCenter);
+                put(dashboard, rIdx, 1, BigDecimal.valueOf(revMinus10).setScale(2, RoundingMode.HALF_UP), z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 2, BigDecimal.valueOf(revBase).setScale(2, RoundingMode.HALF_UP), z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 3, BigDecimal.valueOf(revPlus10).setScale(2, RoundingMode.HALF_UP), z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 4, BigDecimal.valueOf(revPlus20).setScale(2, RoundingMode.HALF_UP), z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 5, revBase >= 0 ? "SURPLUS" : "DEFICIT", z ? dataCenterZebra : dataCenter);
                 put(dashboard, rIdx, 6, runwayMonths > 0 ? String.format(Locale.US, "%.1f Mo", runwayMonths / spendFactor) : "0.0 Mo", z ? dataCenterZebra : dataCenter);
                 put(dashboard, rIdx, 7, postures[i], z ? dataCenterZebra : dataCenter);
             }
@@ -693,6 +699,23 @@ public class RangeReportController {
             }
             row = 1;
             int totalExpCount = d.expenses.size();
+            double meanExp = 0.0;
+            double stdDevExp = 0.0;
+            if (totalExpCount >= 3) {
+                double sum = 0.0;
+                for (Expense ex : d.expenses) {
+                    sum += nz(ex.getAmount()).doubleValue();
+                }
+                meanExp = sum / totalExpCount;
+                double sumSq = 0.0;
+                for (Expense ex : d.expenses) {
+                    double diff = nz(ex.getAmount()).doubleValue() - meanExp;
+                    sumSq += diff * diff;
+                }
+                stdDevExp = Math.sqrt(sumSq / (totalExpCount - 1));
+            }
+            double outlierThreshold = meanExp + (2.0 * stdDevExp);
+
             for (Expense x : d.expenses) {
                 Row r = expenseSheet.createRow(row);
                 r.setHeightInPoints(20);
@@ -702,8 +725,8 @@ public class RangeReportController {
                 put(expenseSheet, row, 2, safe(x.getDescription()), z ? dataLeftZebra : dataLeft);
                 put(expenseSheet, row, 3, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
                 put(expenseSheet, row, 4, x.isRecurring() ? "Yes" : "No", z ? dataCenterZebra : dataCenter);
-                if (totalExpCount >= 3) {
-                    put(expenseSheet, row, 5, "=IF(D" + (row + 1) + ">AVERAGE(:$" + (totalExpCount + 1) + ")+2*STDEV.S(:$" + (totalExpCount + 1) + "), "⚠️ STATISTICAL SURGE (Z > 2.0)", "✅ NOMINAL")", z ? dataCenterZebra : dataCenter);
+                if (totalExpCount >= 3 && stdDevExp > 0.0001 && nz(x.getAmount()).doubleValue() > outlierThreshold) {
+                    put(expenseSheet, row, 5, "⚠️ STATISTICAL SURGE (Z > 2.0)", z ? dataCenterZebra : dataCenter);
                 } else {
                     put(expenseSheet, row, 5, "✅ NOMINAL", z ? dataCenterZebra : dataCenter);
                 }

@@ -94,9 +94,13 @@ public class ExpenseValidator {
      * @throws AccessDeniedException if the expense does not belong to the user
      */
     public void validateOwnership(Expense existing, Long userId) {
+        if (existing == null) {
+            log.warn("Rejected null existing expense ownership verification for userId={}", userId);
+            throw new IllegalArgumentException("Expense cannot be null");
+        }
         if (existing.getUser() == null || !existing.getUser().getId().equals(userId)) {
             log.warn("Ownership mismatch: expense id={} does not belong to userId={}",
-                    existing != null ? existing.getId() : null, userId);
+                    existing.getId(), userId);
             throw new AccessDeniedException("Expense does not belong to this user");
         }
     }

@@ -40,7 +40,6 @@ import java.util.*;
 public class ExpenseServiceImpl implements ExpenseService {
 
     private final ExpenseRepository expenseRepository;
-    private final CategoryRepository categoryRepository;
     private final ExpenseValidator expenseValidator;
 
     /**
@@ -51,7 +50,6 @@ public class ExpenseServiceImpl implements ExpenseService {
                               CategoryRepository categoryRepository,
                               @Autowired(required = false) ExpenseValidator expenseValidator) {
         this.expenseRepository = expenseRepository;
-        this.categoryRepository = categoryRepository;
         this.expenseValidator = (expenseValidator != null)
                 ? expenseValidator
                 : new ExpenseValidator(categoryRepository);
