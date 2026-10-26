@@ -150,32 +150,23 @@
 /* 2. MULTI-DIMENSIONAL SLICER CONTROLS ROW */
 .bi-slicers-row {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 14px;
+    flex-direction: column;
+    gap: 10px;
     padding-top: 0;
     border-top: none;
+    width: 100%;
 }
 
 .bi-slicer-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
     background: rgba(0, 0, 0, 0.2);
-    padding: 3px;
-    border-radius: 10px;
+    padding: 6px 12px;
+    border-radius: 12px;
     border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
-    max-width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
-}
-
-.bi-slicer-group::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 [data-theme="light"] .bi-slicer-group {
@@ -184,29 +175,39 @@
 }
 
 .bi-slicer-label {
-    font-size: 10.5px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted, #9E988A);
-    padding: 0 8px;
-    white-space: nowrap;
-    flex: 0 0 auto;
+    letter-spacing: 0.06em;
+    color: var(--primary, #C79A3E);
+    min-width: 90px;
     flex-shrink: 0;
+    white-space: nowrap;
+}
+
+[data-theme="light"] .bi-slicer-label {
+    color: #966C1E;
+}
+
+.bi-slicer-pills-wrap {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
 }
 
 .bi-slicer-pill {
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     color: var(--text-muted, #9E988A);
     font-size: 12px;
     font-weight: 600;
-    padding: 5px 11px;
-    border-radius: 7px;
+    padding: 6px 12px;
+    border-radius: 8px;
     cursor: pointer;
     white-space: nowrap;
     flex: 0 0 auto;
-    flex-shrink: 0;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -220,7 +221,7 @@
     color: var(--primary, #C79A3E);
     font-weight: 700;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(199, 154, 62, 0.3);
+    border: 1px solid rgba(199, 154, 62, 0.35);
 }
 
 [data-theme="light"] .bi-slicer-pill.active {
@@ -409,7 +410,7 @@
         padding: 10px 12px;
         gap: 8px;
         border-radius: 14px;
-        border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+        border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
     }
     .bi-slicers-row {
         gap: 8px;
@@ -417,33 +418,47 @@
         border-top: none !important;
     }
     .bi-slicer-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 12px;
         width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        padding: 4px;
-        gap: 4px;
-    }
-    .bi-slicer-group::-webkit-scrollbar {
-        display: none !important;
-        width: 0 !important;
-        height: 0 !important;
+        box-sizing: border-box;
     }
     .bi-slicer-label {
-        font-size: 9.5px;
-        padding: 0 6px;
-        letter-spacing: 0.04em;
-        flex: 0 0 auto;
-        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: var(--primary, #C79A3E);
+        min-width: 0;
+        padding: 0;
+    }
+    .bi-slicer-pills-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
     }
     .bi-slicer-pill {
-        flex: 0 0 auto;
-        flex-shrink: 0;
+        flex: 1 1 calc(33.333% - 6px);
+        min-width: calc(33.333% - 6px);
+        text-align: center;
         white-space: nowrap;
-        font-size: 11px;
-        padding: 5px 10px;
-        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 8px 6px;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 480px) {
+    .bi-slicer-pill {
+        flex: 1 1 calc(50% - 6px);
+        min-width: calc(50% - 6px);
+        font-size: 11.5px;
+        padding: 8px 6px;
     }
 }
 

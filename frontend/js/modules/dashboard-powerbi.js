@@ -74,31 +74,38 @@
             <!-- Dedicated Slicers Filter Container Housing the 3 Interactive Filters -->
             <div class="bi-slicers-filter-container" id="biSlicersFilterContainer">
                 <div class="bi-slicers-row">
-                <!-- Horizon Slicer -->
-                <div class="bi-slicer-group" id="biHorizonSlicer" role="group" aria-label="Time Horizon Slicer">
-                    <span class="bi-slicer-label">Horizon</span>
-                    <button type="button" class="bi-slicer-pill active" data-horizon="all">All Time</button>
-                    <button type="button" class="bi-slicer-pill" data-horizon="mtd">This Month (MTD)</button>
-                    <button type="button" class="bi-slicer-pill" data-horizon="last30">Last 30D</button>
-                    <button type="button" class="bi-slicer-pill" data-horizon="qtd">QTD</button>
-                    <button type="button" class="bi-slicer-pill" data-horizon="ytd">YTD</button>
-                    <button type="button" class="bi-slicer-pill" data-horizon="last7">Last 7D</button>
-                </div>
+                    <!-- Horizon Slicer -->
+                    <div class="bi-slicer-group" id="biHorizonSlicer" role="group" aria-label="Time Horizon Slicer">
+                        <span class="bi-slicer-label">Horizon</span>
+                        <div class="bi-slicer-pills-wrap">
+                            <button type="button" class="bi-slicer-pill active" data-horizon="all">All Time</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="mtd">This Month</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="last30">Last 30 Days</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="qtd">This Quarter</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="ytd">Year to Date</button>
+                            <button type="button" class="bi-slicer-pill" data-horizon="last7">Last 7 Days</button>
+                        </div>
+                    </div>
 
-                <!-- Commitment Slicer -->
-                <div class="bi-slicer-group" id="biCommitmentSlicer" role="group" aria-label="Commitment Type Slicer">
-                    <span class="bi-slicer-label">Commitment</span>
-                    <button type="button" class="bi-slicer-pill active" data-commitment="all">All</button>
-                    <button type="button" class="bi-slicer-pill" data-commitment="onetime">One-Off</button>
-                    <button type="button" class="bi-slicer-pill" data-commitment="recurring">Subscriptions</button>
-                </div>
+                    <!-- Commitment Slicer -->
+                    <div class="bi-slicer-group" id="biCommitmentSlicer" role="group" aria-label="Commitment Type Slicer">
+                        <span class="bi-slicer-label">Commitment</span>
+                        <div class="bi-slicer-pills-wrap">
+                            <button type="button" class="bi-slicer-pill active" data-commitment="all">All Types</button>
+                            <button type="button" class="bi-slicer-pill" data-commitment="onetime">One-Time</button>
+                            <button type="button" class="bi-slicer-pill" data-commitment="recurring">Subscriptions</button>
+                        </div>
+                    </div>
 
-                <!-- Cashflow Direction Slicer -->
-                <div class="bi-slicer-group" id="biStreamSlicer" role="group" aria-label="Cashflow Stream Slicer">
-                    <span class="bi-slicer-label">Flow</span>
-                    <button type="button" class="bi-slicer-pill active" data-stream="all">All Cashflow</button>
-                    <button type="button" class="bi-slicer-pill" data-stream="expenses">Outflow Only</button>
-                    <button type="button" class="bi-slicer-pill" data-stream="incomes">Inflow Only</button>
+                    <!-- Cashflow Direction Slicer -->
+                    <div class="bi-slicer-group" id="biStreamSlicer" role="group" aria-label="Cashflow Stream Slicer">
+                        <span class="bi-slicer-label">Flow</span>
+                        <div class="bi-slicer-pills-wrap">
+                            <button type="button" class="bi-slicer-pill active" data-stream="all">All Cash</button>
+                            <button type="button" class="bi-slicer-pill" data-stream="expenses">Outflow Only</button>
+                            <button type="button" class="bi-slicer-pill" data-stream="incomes">Inflow Only</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
