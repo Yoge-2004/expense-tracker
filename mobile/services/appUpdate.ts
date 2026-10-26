@@ -46,7 +46,7 @@ export const DISPLAY_VERSION = `v${CURRENT_APP_VERSION}`;
  */
 export function isNewerVersion(current: string, candidate: string): boolean {
   const parse = (v: string) =>
-    v.replace(/^v/i, '').split('.').map((n) => parseInt(n, 10) || 0);
+    v.replace(/^v/i, '').split('.').map((n) => Number.parseInt(n, 10) || 0);
   const [cMaj = 0, cMin = 0, cPatch = 0] = parse(current);
   const [tMaj = 0, tMin = 0, tPatch = 0] = parse(candidate);
 

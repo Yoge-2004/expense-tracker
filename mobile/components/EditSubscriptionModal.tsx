@@ -100,8 +100,8 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
       showAlert('Missing Info', 'Please enter a description for the subscription.');
       return;
     }
-    const numAmt = parseFloat(amount);
-    if (isNaN(numAmt) || numAmt <= 0) {
+    const numAmt = Number.parseFloat(amount);
+    if (Number.isNaN(numAmt) || numAmt <= 0) {
       showAlert('Invalid Amount', 'Please enter a valid positive amount.');
       return;
     }
@@ -119,8 +119,8 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     };
 
     if (frequency === 'CUSTOM') {
-      const days = parseInt(intervalDays, 10);
-      if (isNaN(days) || days < 1) {
+      const days = Number.parseInt(intervalDays, 10);
+      if (Number.isNaN(days) || days < 1) {
         showAlert('Invalid Interval', 'Custom interval must be at least 1 day.');
         return;
       }

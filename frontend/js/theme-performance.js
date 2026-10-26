@@ -4,26 +4,21 @@
  * The dashboard can contain a large expense ledger. A theme toggle changes
  * shared CSS variables, so animating every matching node at the same time
  * creates a large paint/compositing burst. We make the theme swap atomic:
- * transitions are suppressed for the two frames around the actual toggle,
- * then normal hover/focus motion resumes.
- *
- * Font cache-busting lives directly on each page's Google Fonts <link href>
- * (?v=...) rather than here: rewriting the href from JS after the browser
- * had already started fetching the original URL forced a second, redundant
- * fetch of the whole font stylesheet on every page load.
+ * transitions are suppressed during the switch frame window, then normal
+ * hover/focus motion resumes.
  */
 (function () {
     "use strict";
 
     const THEME_SWITCH_CLASS = "theme-switching";
+    let switchTimer = null;
 
     function beginThemeSwitch() {
         document.documentElement.classList.add(THEME_SWITCH_CLASS);
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                document.documentElement.classList.remove(THEME_SWITCH_CLASS);
-            });
-        });
+        clearTimeout(switchTimer);
+        switchTimer = setTimeout(() => {
+            document.documentElement.classList.remove(THEME_SWITCH_CLASS);
+        }, 120);
     }
 
     if (typeof window !== "undefined") {
@@ -40,11 +35,7 @@
 
         // Programmatic theme changes also get the same guard.
         document.addEventListener("themechange", () => {
-            if (!document.documentElement.classList.contains(THEME_SWITCH_CLASS)) {
-                requestAnimationFrame(() => {
-                    document.documentElement.classList.remove(THEME_SWITCH_CLASS);
-                });
-            }
+            beginThemeSwitch();
         });
     }
 })();

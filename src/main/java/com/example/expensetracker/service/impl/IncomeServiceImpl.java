@@ -188,6 +188,44 @@ public class IncomeServiceImpl implements IncomeService {
             throw new IllegalArgumentException("Income does not belong to this user");
         }
 
+        if (request.amount() != null) {
+            existing.setAmount(request.amount());
+        }
+        if (request.source() != null) {
+            existing.setSource(request.source());
+        }
+        if (request.description() != null) {
+            existing.setDescription(request.description());
+        }
+        if (request.incomeDate() != null) {
+            existing.setIncomeDate(request.incomeDate());
+        }
+        if (request.isRecurring() != null) {
+            existing.setIsRecurring(request.isRecurring());
+            if (request.isRecurring()) {
+                existing.setFrequency(request.frequency() != null
+                        ? request.frequency()
+                        : (existing.getFrequency() != null ? existing.getFrequency() : FREQUENCY_MONTHLY));
+                existing.setIntervalDays(request.intervalDays() != null
+                        ? request.intervalDays()
+                        : (existing.getIntervalDays() != null ? existing.getIntervalDays() : 1));
+                if (existing.getNextDueDate() == null && existing.getIncomeDate() != null) {
+                    existing.setNextDueDate(calculateNextOccurrence(
+                            existing.getIncomeDate(), existing.getFrequency(), existing.getIntervalDays()));
+                }
+            } else {
+                existing.setFrequency(null);
+                existing.setIntervalDays(null);
+                existing.setNextDueDate(null);
+            }
+        }
+        if (request.frequency() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
+            existing.setFrequency(request.frequency());
+        }
+        if (request.intervalDays() != null && Boolean.TRUE.equals(existing.getIsRecurring())) {
+            existing.setIntervalDays(request.intervalDays());
+        }
+
         IncomeRules.apply(existing, request);
 
         Income saved = incomeRepository.save(existing);

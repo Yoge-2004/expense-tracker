@@ -33,7 +33,7 @@ import { getCurrencySymbol } from '../services/currency';
  */
 function formatCompact(num: number, symbol: string): string {
   try {
-    if (isNaN(num)) return `${symbol}0`;
+    if (Number.isNaN(num)) return `${symbol}0`;
     if (num >= 1000000) return `${symbol}${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${symbol}${(num / 1000).toFixed(1)}k`;
     return `${symbol}${Math.round(num)}`;
@@ -422,16 +422,16 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
       let day = -1;
       const parts = e.expenseDate.split('T')[0].split('-');
       if (parts.length === 3) {
-        const y = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10) - 1;
-        const d = parseInt(parts[2], 10);
-        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        const y = Number.parseInt(parts[0], 10);
+        const m = Number.parseInt(parts[1], 10) - 1;
+        const d = Number.parseInt(parts[2], 10);
+        if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
           day = new Date(y, m, d).getDay();
         }
       }
       if (day === -1) {
         const dt = new Date(e.expenseDate);
-        day = isNaN(dt.getTime()) ? -1 : dt.getDay();
+        day = Number.isNaN(dt.getTime()) ? -1 : dt.getDay();
       }
       if (day >= 0 && day <= 6) {
         totals[day] += Math.max(0, Number(e.amount || 0));

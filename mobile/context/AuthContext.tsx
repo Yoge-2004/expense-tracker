@@ -4,26 +4,23 @@
  * global currency preference, UI theme switching (Dark / Light), and Biometrics (Face ID / Fingerprint).
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react';
-import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet, safeStorageDelete, readSavedTheme, persistSavedTheme } from '../services/api';
-import * as SecureStore from 'expo-secure-store';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { getSession, saveSession, clearSession, apiRequest, safeStorageGet, safeStorageSet, safeStorageDelete } from '../services/api';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useColorScheme } from 'react-native';
 import { registerPushToken, unregisterPushToken } from '../services/notifications';
+import { PreferencesProvider, usePreferences } from './PreferencesContext';
 
-interface AuthContextType {
+export { usePreferences } from './PreferencesContext';
+
+interface AuthStateContextType {
   isLoading: boolean;
   token: string | null;
   userId: string | null;
   userName: string | null;
   profilePicture: string | null;
-  currency: string;
-  theme: 'dark' | 'light';
-  toggleTheme: () => Promise<void>;
   updateUserName: (name: string) => Promise<void>;
   updateUserProfile: (params: { name?: string; profilePictureUrl?: string }) => Promise<void>;
   refreshUserProfile: (targetUserId?: string) => Promise<void>;
-  updateCurrency: (currency: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   sendSignupOtp: (email: string, name: string) => Promise<void>;
@@ -33,39 +30,33 @@ interface AuthContextType {
   isBiometricEnabled: boolean;
   loginWithBiometrics: () => Promise<boolean>;
   toggleBiometrics: (enabled: boolean) => Promise<boolean>;
+}
+
+export interface AuthContextType extends AuthStateContextType {
+  currency: string;
+  theme: 'dark' | 'light';
+  toggleTheme: () => Promise<void>;
+  updateCurrency: (currency: string) => Promise<void>;
   isStealthMode: boolean;
   toggleStealthMode: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthStateContextType | undefined>(undefined);
 
-export function AuthProvider({
+function AuthInnerProvider({
   children,
-  initialTheme,
 }: {
   children: React.ReactNode;
-  initialTheme?: 'dark' | 'light';
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
-  const systemScheme = useColorScheme();
-  const [currency, setCurrency] = useState<string>('INR');
-  const [theme, setTheme] = useState<'dark' | 'light'>(
-    initialTheme ?? (systemScheme === 'light' ? 'light' : 'dark')
-  );
   const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
-  const [isStealthMode, setIsStealthMode] = useState(false);
-  const userToggledThemeRef = useRef(false);
 
-  useEffect(() => {
-    if (initialTheme && !userToggledThemeRef.current && initialTheme !== theme) {
-      setTheme(initialTheme);
-    }
-  }, [initialTheme]);
+  const { setCurrencyState } = usePreferences();
 
   const checkBiometricsSupport = async () => {
     try {
@@ -81,29 +72,41 @@ export function AuthProvider({
     }
   };
 
+  const refreshUserProfile = useCallback(async (targetUserId?: string): Promise<void> => {
+    const uid = targetUserId || userId;
+    if (!uid) return;
+    try {
+      const profile = await apiRequest(`/users/${uid}`, { skipCache: true });
+      if (profile) {
+        if (profile.profilePictureUrl !== undefined) {
+          const photo = profile.profilePictureUrl || null;
+          setProfilePicture(photo);
+          if (photo) {
+            await safeStorageSet('user_photo', photo);
+          } else {
+            await safeStorageDelete('user_photo');
+          }
+        }
+        if (profile.name) {
+          setUserName(profile.name);
+          await safeStorageSet('user_name', profile.name);
+        }
+        if (profile.currency) {
+          setCurrencyState(profile.currency);
+          await safeStorageSet('user_currency', profile.currency);
+        }
+      }
+    } catch (e) {
+      console.warn('[AuthContext] Could not refresh user profile:', e);
+    }
+  }, [userId, setCurrencyState]);
+
   useEffect(() => {
     async function loadSession() {
       try {
-        // Fast-path theme load first so UI state aligns before heavyweight crypto/network
-        readSavedTheme()
-          .then((savedTheme) => {
-            if (!userToggledThemeRef.current && (savedTheme === 'light' || savedTheme === 'dark')) {
-              setTheme(savedTheme);
-            }
-          })
-          .catch(() => {});
+        const session = await getSession();
 
-        const [session, savedCurrency, savedStealth] = await Promise.all([
-          getSession(),
-          safeStorageGet('user_currency'),
-          safeStorageGet('app_stealth_mode'),
-        ]);
-
-        if (savedStealth === 'true') {
-          setIsStealthMode(true);
-        }
-
-        if (session.token && session.userId) {
+        if (session && session.token && session.userId) {
           setToken(session.token);
           setUserId(session.userId);
           setUserName(session.name);
@@ -111,10 +114,6 @@ export function AuthProvider({
 
           // Proactively sync latest profile picture and profile info from server (matches website behavior)
           refreshUserProfile(session.userId).catch(() => {});
-        }
-
-        if (savedCurrency) {
-          setCurrency(savedCurrency);
         }
 
         // Biometrics check runs non-blockingly
@@ -126,7 +125,7 @@ export function AuthProvider({
       }
     }
     void loadSession();
-  }, []);
+  }, [refreshUserProfile]);
 
   /**
    * Stores a separate credential for biometric unlock.
@@ -158,7 +157,7 @@ export function AuthProvider({
     setIsBiometricEnabled(false);
   };
 
-  const loginWithGoogle = async (idToken: string): Promise<void> => {
+  const loginWithGoogle = useCallback(async (idToken: string): Promise<void> => {
     setIsLoading(true);
     try {
       const data = await apiRequest('/auth/oauth/google', {
@@ -175,7 +174,7 @@ export function AuthProvider({
         setProfilePicture(photo);
 
         if (data.currency) {
-          setCurrency(data.currency);
+          setCurrencyState(data.currency);
           try {
             await safeStorageSet('user_currency', data.currency);
           } catch (e) {
@@ -188,9 +187,9 @@ export function AuthProvider({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setCurrencyState]);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = useCallback(async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
       const data = await apiRequest('/auth/login', {
@@ -207,7 +206,7 @@ export function AuthProvider({
         setProfilePicture(photo);
 
         if (data.currency) {
-          setCurrency(data.currency);
+          setCurrencyState(data.currency);
           try {
             await safeStorageSet('user_currency', data.currency);
           } catch (e) {
@@ -220,9 +219,9 @@ export function AuthProvider({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setCurrencyState]);
 
-  const loginWithBiometrics = async (): Promise<boolean> => {
+  const loginWithBiometrics = useCallback(async (): Promise<boolean> => {
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -254,9 +253,9 @@ export function AuthProvider({
       console.warn('[AuthContext] Biometric login error:', e);
       return false;
     }
-  };
+  }, []);
 
-  const toggleBiometrics = async (enabled: boolean): Promise<boolean> => {
+  const toggleBiometrics = useCallback(async (enabled: boolean): Promise<boolean> => {
     try {
       if (enabled) {
         if (!token || !userId) return false;
@@ -280,16 +279,16 @@ export function AuthProvider({
       console.warn('[AuthContext] Error toggling biometrics:', e);
       return false;
     }
-  };
+  }, [token, userId, userName]);
 
-  const sendSignupOtp = async (email: string, name: string): Promise<void> => {
+  const sendSignupOtp = useCallback(async (email: string, name: string): Promise<void> => {
     await apiRequest('/auth/signup/send-otp', {
       method: 'POST',
       body: JSON.stringify({ email: email.trim(), name: name.trim() }),
     });
-  };
+  }, []);
 
-  const register = async (
+  const register = useCallback(async (
     name: string,
     username: string,
     email: string,
@@ -317,7 +316,7 @@ export function AuthProvider({
         body: JSON.stringify(payload),
       });
 
-      setCurrency(userCurrency);
+      setCurrencyState(userCurrency);
       try {
         await safeStorageSet('user_currency', userCurrency);
       } catch (e) {
@@ -326,18 +325,14 @@ export function AuthProvider({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setCurrencyState]);
 
-  /**
-   * Logs out the active session. Biometric unlock remains enabled so the user
-   * can unlock the saved credential again without re-entering the password.
-   */
   // Register this phone for push once signed in. It never prompts: permission is asked at sign-up.
   useEffect(() => {
     if (userId) void registerPushToken(userId);
   }, [userId]);
 
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
       // Needs the session, so it must run before the session is cleared.
@@ -351,56 +346,6 @@ export function AuthProvider({
       console.error('[AuthContext] Error during logout:', e);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const toggleStealthMode = useCallback(async (): Promise<void> => {
-    setIsStealthMode((prev) => {
-      const next = !prev;
-      safeStorageSet('app_stealth_mode', next ? 'true' : 'false').catch(() => {});
-      return next;
-    });
-  }, []);
-
-  const toggleTheme = useCallback(async (): Promise<void> => {
-    userToggledThemeRef.current = true;
-    startTransition(() => {
-      setTheme((prevTheme) => {
-        const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-        persistSavedTheme(nextTheme).catch((e) => {
-          console.warn('[AuthContext] Failed to persist theme preference:', e);
-        });
-        return nextTheme;
-      });
-    });
-  }, []);
-
-  const refreshUserProfile = useCallback(async (targetUserId?: string): Promise<void> => {
-    const uid = targetUserId || userId;
-    if (!uid) return;
-    try {
-      const profile = await apiRequest(`/users/${uid}`, { skipCache: true });
-      if (profile) {
-        if (profile.profilePictureUrl !== undefined) {
-          const photo = profile.profilePictureUrl || null;
-          setProfilePicture(photo);
-          if (photo) {
-            await safeStorageSet('user_photo', photo);
-          } else {
-            await safeStorageDelete('user_photo');
-          }
-        }
-        if (profile.name) {
-          setUserName(profile.name);
-          await safeStorageSet('user_name', profile.name);
-        }
-        if (profile.currency) {
-          setCurrency(profile.currency);
-          await safeStorageSet('user_currency', profile.currency);
-        }
-      }
-    } catch (e) {
-      console.warn('[AuthContext] Could not refresh user profile:', e);
     }
   }, [userId]);
 
@@ -433,7 +378,7 @@ export function AuthProvider({
     }
   }, [userId, userName]);
 
-  const updateUserName = async (newName: string): Promise<void> => {
+  const updateUserName = useCallback(async (newName: string): Promise<void> => {
     const cleanName = newName.trim();
     if (!cleanName) return;
 
@@ -450,28 +395,7 @@ export function AuthProvider({
     } catch (e) {
       console.warn('[AuthContext] Failed to save display name:', e);
     }
-  };
-
-  const updateCurrency = async (newCurrency: string): Promise<void> => {
-    const code = newCurrency.trim().toUpperCase();
-    if (!code) return;
-
-    // When authenticated, commit the change remotely before changing local state.
-    // This prevents the mobile UI from showing a currency the backend rejected.
-    if (userId) {
-      await apiRequest(`/users/${userId}/currency`, {
-        method: 'PUT',
-        body: JSON.stringify({ currency: code }),
-      });
-    }
-
-    setCurrency(code);
-    try {
-      await safeStorageSet('user_currency', code);
-    } catch (e) {
-      console.warn('[AuthContext] Failed to persist currency code:', e);
-    }
-  };
+  }, [userId]);
 
   const authContextValue = useMemo(() => ({
     isLoading,
@@ -479,13 +403,9 @@ export function AuthProvider({
     userId,
     userName,
     profilePicture,
-    currency,
-    theme,
-    toggleTheme,
     updateUserName,
     updateUserProfile,
     refreshUserProfile,
-    updateCurrency,
     login,
     loginWithGoogle,
     sendSignupOtp,
@@ -495,21 +415,15 @@ export function AuthProvider({
     isBiometricEnabled,
     loginWithBiometrics,
     toggleBiometrics,
-    isStealthMode,
-    toggleStealthMode,
   }), [
     isLoading,
     token,
     userId,
     userName,
     profilePicture,
-    currency,
-    theme,
-    toggleTheme,
     updateUserName,
     updateUserProfile,
     refreshUserProfile,
-    updateCurrency,
     login,
     loginWithGoogle,
     sendSignupOtp,
@@ -519,8 +433,6 @@ export function AuthProvider({
     isBiometricEnabled,
     loginWithBiometrics,
     toggleBiometrics,
-    isStealthMode,
-    toggleStealthMode,
   ]);
 
   return (
@@ -530,10 +442,41 @@ export function AuthProvider({
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
+export function AuthProvider({
+  children,
+  initialTheme,
+}: {
+  children: React.ReactNode;
+  initialTheme?: 'dark' | 'light';
+}) {
+  return (
+    <PreferencesProvider initialTheme={initialTheme}>
+      <AuthInnerProvider>{children}</AuthInnerProvider>
+    </PreferencesProvider>
+  );
+}
+
+export function useAuth(): AuthContextType {
+  const auth = useContext(AuthContext);
+  const prefs = usePreferences();
+  if (!auth) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+
+  const updateCurrency = useCallback(
+    async (code: string) => {
+      await prefs.updateCurrency(code, auth.userId);
+    },
+    [prefs, auth.userId]
+  );
+
+  return {
+    ...auth,
+    theme: prefs.theme,
+    toggleTheme: prefs.toggleTheme,
+    currency: prefs.currency,
+    updateCurrency,
+    isStealthMode: prefs.isStealthMode,
+    toggleStealthMode: prefs.toggleStealthMode,
+  };
 }

@@ -93,7 +93,15 @@ export class ApiError extends Error {
 
 const apiCache = new Map<string, { data: any; timestamp: number }>();
 
+let storageLockChain: Promise<unknown> = Promise.resolve();
+function serializedStorageOp<T>(op: () => Promise<T>): Promise<T> {
+  const next = storageLockChain.then(op, op);
+  storageLockChain = next.then(() => {}, () => {});
+  return next;
+}
+
 export async function safeStorageSet(key: string, value: string): Promise<void> {
+  return serializedStorageOp(async () => {
   try {
     await SecureStore.setItemAsync(key, value);
     return;
@@ -111,6 +119,7 @@ export async function safeStorageSet(key: string, value: string): Promise<void> 
     console.error(`[API] Critical: Both SecureStore and AsyncStorage failed for ${key}:`, asyncError);
     throw asyncError;
   }
+  });
 }
 
 export async function safeStorageGet(key: string): Promise<string | null> {
@@ -190,14 +199,23 @@ export async function saveSession(token: string, userId: string, name: string, p
   }
 }
 
+let clearSessionInFlight: Promise<void> | null = null;
 export async function clearSession(): Promise<void> {
-  apiCache.clear();
-  await Promise.all([
-    safeStorageDelete(TOKEN_KEY),
-    safeStorageDelete(USER_ID_KEY),
-    safeStorageDelete(NAME_KEY),
-    safeStorageDelete(PHOTO_KEY),
-  ]);
+  if (clearSessionInFlight) return clearSessionInFlight;
+  clearSessionInFlight = serializedStorageOp(async () => {
+    try {
+      apiCache.clear();
+      await Promise.all([
+        safeStorageDelete(TOKEN_KEY),
+        safeStorageDelete(USER_ID_KEY),
+        safeStorageDelete(NAME_KEY),
+        safeStorageDelete(PHOTO_KEY),
+      ]);
+    } finally {
+      clearSessionInFlight = null;
+    }
+  });
+  return clearSessionInFlight;
 }
 
 export async function getSession(): Promise<{

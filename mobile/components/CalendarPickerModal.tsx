@@ -59,9 +59,9 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   useEffect(() => {
     if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
       const parts = initialDate.split('-');
-      const y = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10) - 1;
-      if (!isNaN(y) && !isNaN(m)) {
+      const y = Number.parseInt(parts[0], 10);
+      const m = Number.parseInt(parts[1], 10) - 1;
+      if (!Number.isNaN(y) && !Number.isNaN(m)) {
         setViewYear(y);
         setViewMonth(m);
         setDecadeBase(Math.floor(y / 12) * 12);

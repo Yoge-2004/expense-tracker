@@ -44,6 +44,12 @@ import { ThemedScrollView } from '../../components/ThemedScrollbar';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Clipboard from 'expo-clipboard';
 import { parseReceiptText, scanReceiptWithOcr, SAMPLE_RECEIPTS, ParsedReceipt } from '../../services/receiptOcr';
+import { SampleReceiptsPicker } from '../../components/SampleReceiptsPicker';
+import { IncomeFormTab } from '../../components/forms/IncomeFormTab';
+import { SavingsGoalFormTab } from '../../components/forms/SavingsGoalFormTab';
+import { BudgetFormTab } from '../../components/forms/BudgetFormTab';
+import { ExpenseFormTab } from '../../components/forms/ExpenseFormTab';
+import { screenStyles as styles } from '../../components/forms/screenStyles';
 
 interface Category {
   id: number;
@@ -56,9 +62,9 @@ interface Category {
 function isValidDateString(dateStr: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
   const [yearStr, monthStr, dayStr] = dateStr.split('-');
-  const y = parseInt(yearStr, 10);
-  const m = parseInt(monthStr, 10);
-  const d = parseInt(dayStr, 10);
+  const y = Number.parseInt(yearStr, 10);
+  const m = Number.parseInt(monthStr, 10);
+  const d = Number.parseInt(dayStr, 10);
 
   if (m < 1 || m > 12) return false;
   if (d < 1 || d > 31) return false;
@@ -607,8 +613,8 @@ export default function AddExpenseScreen() {
     if (!cleanAmount) {
       fieldErrors.amount = 'Amount is required.';
     } else {
-      const numAmount = parseFloat(cleanAmount);
-      if (isNaN(numAmount) || numAmount <= 0) {
+      const numAmount = Number.parseFloat(cleanAmount);
+      if (Number.isNaN(numAmount) || numAmount <= 0) {
         fieldErrors.amount = 'Please enter a valid positive amount.';
       } else if (numAmount > 100000000) {
         fieldErrors.amount = 'Amount cannot exceed 100,000,000.';
@@ -624,8 +630,8 @@ export default function AddExpenseScreen() {
     }
 
     if (isRecurring && frequency === 'CUSTOM') {
-      const days = parseInt(intervalDays.trim(), 10);
-      if (isNaN(days) || days < 1 || days > 365) {
+      const days = Number.parseInt(intervalDays.trim(), 10);
+      if (Number.isNaN(days) || days < 1 || days > 365) {
         fieldErrors.intervalDays = 'Custom interval must be between 1 and 365 days.';
       }
     }
@@ -641,7 +647,7 @@ export default function AddExpenseScreen() {
     setIsSubmitting(true);
 
     try {
-      const numAmount = parseFloat(cleanAmount);
+      const numAmount = Number.parseFloat(cleanAmount);
 
       if (isEditMode && params.editId) {
         await apiRequest(`/expenses/${params.editId}/user/${userId}`, {
@@ -669,7 +675,7 @@ export default function AddExpenseScreen() {
         if (isRecurring) {
           payload.frequency = frequency;
           if (frequency === 'CUSTOM') {
-            payload.intervalDays = parseInt(intervalDays.trim(), 10);
+            payload.intervalDays = Number.parseInt(intervalDays.trim(), 10);
           }
         }
 
@@ -716,8 +722,8 @@ export default function AddExpenseScreen() {
       showAlert('Validation Error', 'Please provide the income source or payor name.');
       return;
     }
-    const numAmt = parseFloat(incomeAmount);
-    if (isNaN(numAmt) || numAmt <= 0) {
+    const numAmt = Number.parseFloat(incomeAmount);
+    if (Number.isNaN(numAmt) || numAmt <= 0) {
       showAlert('Validation Error', 'Please enter a valid positive income amount.');
       return;
     }
@@ -730,7 +736,7 @@ export default function AddExpenseScreen() {
         description: incomeDesc.trim(),
         isRecurring: incomeKind === 'REIMBURSEMENT' ? false : incomeIsRecurring,
         frequency: incomeIsRecurring ? incomeFrequency : null,
-        intervalDays: incomeIsRecurring && incomeFrequency === "CUSTOM" ? (parseInt(incomeIntervalDays, 10) || 1) : null,
+        intervalDays: incomeIsRecurring && incomeFrequency === "CUSTOM" ? (Number.parseInt(incomeIntervalDays, 10) || 1) : null,
         kind: incomeKind,
         countsTowardMonth: incomeCountsToward,
         reimbursedCategoryId: incomeKind === 'REIMBURSEMENT' ? (incomeReimbursedCategoryId ?? 0) : 0,
@@ -789,13 +795,13 @@ export default function AddExpenseScreen() {
       showAlert('Validation Error', 'Please provide a name for this savings milestone.');
       return;
     }
-    const numTarget = parseFloat(goalTargetAmount);
-    if (isNaN(numTarget) || numTarget <= 0) {
+    const numTarget = Number.parseFloat(goalTargetAmount);
+    if (Number.isNaN(numTarget) || numTarget <= 0) {
       showAlert('Validation Error', 'Please enter a valid positive target amount.');
       return;
     }
-    const numCurrent = parseFloat(goalInitialAmount || '0') || 0;
-    const numRecurring = goalIsRecurring ? parseFloat(goalRecurringAmount || '0') || 0 : 0;
+    const numCurrent = Number.parseFloat(goalInitialAmount || '0') || 0;
+    const numRecurring = goalIsRecurring ? Number.parseFloat(goalRecurringAmount || '0') || 0 : 0;
     if (goalIsRecurring && numRecurring <= 0) {
       showAlert('Validation Error', 'Please specify a valid positive installment amount for your Chit/RD.');
       return;
@@ -811,7 +817,7 @@ export default function AddExpenseScreen() {
         isRecurring: goalIsRecurring,
         recurringAmount: goalIsRecurring ? numRecurring : null,
         frequency: goalIsRecurring ? goalFrequency : null,
-        intervalDays: goalIsRecurring && goalFrequency === "CUSTOM" ? parseInt(goalIntervalDays, 10) || 30 : null,
+        intervalDays: goalIsRecurring && goalFrequency === "CUSTOM" ? Number.parseInt(goalIntervalDays, 10) || 30 : null,
         nextDueDate: goalIsRecurring ? new Date().toISOString().split("T")[0] : null,
       };
 
@@ -890,8 +896,8 @@ export default function AddExpenseScreen() {
     if (!cleanLimit) {
       fieldErrors.budgetLimit = 'Budget limit amount is required.';
     } else {
-      const numLimit = parseFloat(cleanLimit);
-      if (isNaN(numLimit) || numLimit <= 0) {
+      const numLimit = Number.parseFloat(cleanLimit);
+      if (Number.isNaN(numLimit) || numLimit <= 0) {
         fieldErrors.budgetLimit = 'Please enter a valid positive budget amount.';
       } else if (numLimit > 100000000) {
         fieldErrors.budgetLimit = 'Budget cap cannot exceed 100,000,000.';
@@ -899,8 +905,8 @@ export default function AddExpenseScreen() {
     }
 
     if (budgetPeriod === 'CUSTOM') {
-      const days = parseInt(budgetIntervalDays.trim(), 10);
-      if (isNaN(days) || days <= 0) {
+      const days = Number.parseInt(budgetIntervalDays.trim(), 10);
+      if (Number.isNaN(days) || days <= 0) {
         fieldErrors.budgetIntervalDays = 'Please enter a valid number of days.';
       }
     }
@@ -916,8 +922,8 @@ export default function AddExpenseScreen() {
     setIsSubmitting(true);
 
     try {
-      const numLimit = parseFloat(cleanLimit);
-      const customDays = budgetPeriod === 'CUSTOM' ? (parseInt(budgetIntervalDays.trim(), 10) || 30) : null;
+      const numLimit = Number.parseFloat(cleanLimit);
+      const customDays = budgetPeriod === 'CUSTOM' ? (Number.parseInt(budgetIntervalDays.trim(), 10) || 30) : null;
       await apiRequest(`/expenses/budget/user/${userId}`, {
         method: 'POST',
         body: JSON.stringify({
@@ -1164,1292 +1170,156 @@ export default function AddExpenseScreen() {
         )}
 
         {activeTab === 'income' ? (
-          /* =========================================
-              CASE: LOG INCOME FORM
-             ========================================= */
-          <StaggeredView delay={100} direction="up">
-            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Source / Payor</Text>
-                <View
-                  style={[
-                    styles.inputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: focusedField === 'incomeSource' ? '#10B981' : c.border,
-                      borderWidth: focusedField === 'incomeSource' ? 2 : 1.5,
-                    },
-                  ]}
-                >
-                  <Ionicons name="cash-outline" size={18} color="#10B981" style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.textInput, { color: c.text }]}
-                    placeholder="e.g. Primary Tech Salary, Consulting"
-                    placeholderTextColor={c.textMuted}
-                    value={incomeSource}
-                    onChangeText={setIncomeSource}
-                    onFocus={() => setFocusedField('incomeSource')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Amount ({currSymbol})</Text>
-                <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                  <Text style={[styles.currencyPrefix, { color: "#10B981" }]}>{currSymbol}</Text>
-                  <TextInput
-                    style={[styles.amountInput, { color: c.text }]}
-                    placeholder="0.00"
-                    placeholderTextColor={c.textMuted}
-                    keyboardType="decimal-pad"
-                    value={incomeAmount}
-                    onChangeText={setIncomeAmount}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Date Received (Tap to Pick)</Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    setCalendarTarget("income");
-                    setShowCalendarModal(true);
-                  }}
-                  style={[
-                    styles.inputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: c.border,
-                      justifyContent: "space-between",
-                    },
-                  ]}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
-                    <Ionicons name="calendar" size={18} color="#10B981" style={styles.inputIcon} />
-                    <Text style={[{ fontSize: 14, fontWeight: "700", color: c.text }]}>
-                      {incomeDate || "Select Date"}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Description (Optional)</Text>
-                <View
-                  style={[
-                    styles.inputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: focusedField === 'incomeDesc' ? '#10B981' : c.border,
-                      borderWidth: focusedField === 'incomeDesc' ? 2 : 1,
-                    },
-                  ]}
-                >
-                  <Ionicons name="document-text-outline" size={18} color={c.textMuted} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.textInput, { color: c.text }]}
-                    placeholder="e.g. Direct deposit from employer"
-                    placeholderTextColor={c.textMuted}
-                    value={incomeDesc}
-                    onChangeText={setIncomeDesc}
-                    onFocus={() => setFocusedField('incomeDesc')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Type</Text>
-                <ChoiceChips
-                  options={[
-                    { value: '', label: 'Automatic' },
-                    { value: 'SALARY', label: 'Salary' },
-                    { value: 'OTHER', label: 'Other income' },
-                    { value: 'REIMBURSEMENT', label: 'Money back' },
-                  ]}
-                  value={incomeKind}
-                  onChange={(next) => {
-                    setIncomeKind(next as '' | IncomeKind);
-                    if (next === 'REIMBURSEMENT') setIncomeIsRecurring(false);
-                  }}
-                  colors={c}
-                />
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Counts toward</Text>
-                <ChoiceChips
-                  options={incomeMonthOptions}
-                  value={incomeCountsToward}
-                  onChange={setIncomeCountsToward}
-                  colors={c}
-                />
-              </View>
-
-              {incomeKind === 'REIMBURSEMENT' && categories.length > 0 && (
-                <View style={styles.fieldGroup}>
-                  <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Pays back spending on</Text>
-                  <ChoiceChips
-                    options={[
-                      { value: 0, label: 'The month as a whole' },
-                      ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
-                    ]}
-                    value={incomeReimbursedCategoryId ?? 0}
-                    onChange={(next) => setIncomeReimbursedCategoryId(next === 0 ? null : next)}
-                    colors={c}
-                  />
-                </View>
-              )}
-
-              <View style={[styles.fieldGroup, incomeKind === 'REIMBURSEMENT' && styles.hiddenGroup]}>
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setIncomeIsRecurring(!incomeIsRecurring)}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-                >
-                  <Ionicons
-                    name={incomeIsRecurring ? "checkbox" : "square-outline"}
-                    size={22}
-                    color={incomeIsRecurring ? "#10B981" : c.textMuted}
-                  />
-                  <Text style={{ color: c.text, fontWeight: "600", fontSize: 13.5 }}>
-                    Recurring Stream (e.g. Wages / Retainer)
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {incomeIsRecurring && incomeKind !== 'REIMBURSEMENT' && (
-                <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: "rgba(16, 185, 129, 0.3)" }]}>
-                  <Text style={[styles.recurringBoxLabel, { color: "#10B981" }]}>PAYMENT CADENCE</Text>
-                  <View style={styles.freqRow}>
-                    {(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'] as const).map((freq) => {
-                      const isSelected = incomeFrequency === freq;
-                      return (
-                        <TouchableOpacity
-                          key={freq}
-                          activeOpacity={0.8}
-                          onPress={() => setIncomeFrequency(freq)}
-                          style={[
-                            styles.freqChip,
-                            {
-                              backgroundColor: isSelected ? "#10B981" : c.card,
-                              borderColor: isSelected ? "#10B981" : c.border,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.freqChipText,
-                              {
-                                color: isSelected ? "#FFFFFF" : c.textMuted,
-                                fontWeight: isSelected ? '800' : '600',
-                              },
-                            ]}
-                          >
-                            {freq}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-
-                  {incomeFrequency === 'CUSTOM' && (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Custom Interval (Days)</Text>
-                      <TextInput
-                        style={[
-                          styles.textInput,
-                          styles.customDaysInput,
-                          {
-                            backgroundColor: c.card,
-                            borderColor: c.border,
-                            color: c.text,
-                          },
-                        ]}
-                        keyboardType="number-pad"
-                        placeholder="e.g. 14, 30, 45"
-                        placeholderTextColor={c.textMuted}
-                        value={incomeIntervalDays}
-                        onChangeText={setIncomeIntervalDays}
-                      />
-                    </View>
-                  )}
-                </View>
-              )}
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleSaveIncome}
-                disabled={isSubmitting}
-                style={[styles.submitBtn, { backgroundColor: "#10B981", opacity: isSubmitting ? 0.7 : 1 }]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <View style={styles.submitBtnInner}>
-                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>{isEditMode && params.editType === "income" ? "Update Inflow" : "Record Inflow"}</Text>
-                    <Ionicons name="arrow-down-circle" size={20} color="#FFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </StaggeredView>
+          <IncomeFormTab
+            colors={c}
+            currSymbol={currSymbol}
+            incomeSource={incomeSource}
+            setIncomeSource={setIncomeSource}
+            incomeAmount={incomeAmount}
+            setIncomeAmount={setIncomeAmount}
+            incomeDate={incomeDate}
+            onPickDate={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              setCalendarTarget("income");
+              setShowCalendarModal(true);
+            }}
+            incomeDesc={incomeDesc}
+            setIncomeDesc={setIncomeDesc}
+            incomeKind={incomeKind}
+            setIncomeKind={setIncomeKind}
+            incomeCountsToward={incomeCountsToward}
+            setIncomeCountsToward={setIncomeCountsToward}
+            incomeMonthOptions={incomeMonthOptions}
+            categories={categories}
+            incomeReimbursedCategoryId={incomeReimbursedCategoryId}
+            setIncomeReimbursedCategoryId={setIncomeReimbursedCategoryId}
+            incomeIsRecurring={incomeIsRecurring}
+            setIncomeIsRecurring={setIncomeIsRecurring}
+            incomeFrequency={incomeFrequency}
+            setIncomeFrequency={setIncomeFrequency}
+            incomeIntervalDays={incomeIntervalDays}
+            setIncomeIntervalDays={setIncomeIntervalDays}
+            focusedField={focusedField}
+            setFocusedField={setFocusedField}
+            handleSaveIncome={handleSaveIncome}
+            isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
+            editType={params.editType}
+          />
         ) : activeTab === 'savings' ? (
-          /* =========================================
-              CASE: SAVINGS GOAL FORM
-             ========================================= */
-          <StaggeredView delay={100} direction="up">
-            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Milestone Name</Text>
-                <View
-                  style={[
-                    styles.inputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: focusedField === 'goalName' ? '#F59E0B' : c.border,
-                      borderWidth: focusedField === 'goalName' ? 2 : 1.5,
-                    },
-                  ]}
-                >
-                  <Ionicons name="flag-outline" size={18} color="#F59E0B" style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.textInput, { color: c.text }]}
-                    placeholder="e.g. Emergency Fund, Tesla Model Y"
-                    placeholderTextColor={c.textMuted}
-                    value={goalName}
-                    onChangeText={setGoalName}
-                    onFocus={() => setFocusedField('goalName')}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Target Cap ({currSymbol})</Text>
-                <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                  <Text style={[styles.currencyPrefix, { color: "#F59E0B" }]}>{currSymbol}</Text>
-                  <TextInput
-                    style={[styles.amountInput, { color: c.text }]}
-                    placeholder="10000.00"
-                    placeholderTextColor={c.textMuted}
-                    keyboardType="decimal-pad"
-                    value={goalTargetAmount}
-                    onChangeText={setGoalTargetAmount}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Initial Balance Saved ({currSymbol})</Text>
-                <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                  <Text style={[styles.currencyPrefix, { color: c.textMuted }]}>{currSymbol}</Text>
-                  <TextInput
-                    style={[styles.amountInput, { color: c.text }]}
-                    placeholder="0.00"
-                    placeholderTextColor={c.textMuted}
-                    keyboardType="decimal-pad"
-                    value={goalInitialAmount}
-                    onChangeText={setGoalInitialAmount}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Target Due Date (Tap to Pick)</Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    setCalendarTarget("savings");
-                    setShowCalendarModal(true);
-                  }}
-                  style={[
-                    styles.inputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: c.border,
-                      justifyContent: "space-between",
-                    },
-                  ]}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
-                    <Ionicons name="calendar" size={18} color="#F59E0B" style={styles.inputIcon} />
-                    <Text style={[{ fontSize: 14, fontWeight: "700", color: c.text }]}>
-                      {goalTargetDate || "Select Date"}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-                </TouchableOpacity>
-              </View>
-
-              {/* Recurring Chit / RD Switch */}
-              <View style={[styles.recurringToggleRow, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                <View style={styles.recurringToggleLeft}>
-                  <Ionicons name="shield-checkmark" size={20} color={goalIsRecurring ? '#F59E0B' : c.textMuted} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.recurringTitle, { color: c.text }]}>Recurring Chit / Deposit</Text>
-                    <Text style={[styles.recurringSub, { color: c.textMuted }]}>
-                      Automate installment tracking for chits, RDs, or SIPs
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    const nextVal = !goalIsRecurring;
-                    setGoalIsRecurring(nextVal);
-                    if (nextVal && !goalRecurringAmount && goalTargetAmount) {
-                      setGoalRecurringAmount(String(Math.round(parseFloat(goalTargetAmount) / 12) || ''));
-                    }
-                  }}
-                  style={[
-                    styles.togglePill,
-                    {
-                      backgroundColor: goalIsRecurring ? '#F59E0B' : c.card,
-                      borderColor: goalIsRecurring ? '#F59E0B' : c.border,
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.toggleKnob,
-                      {
-                        backgroundColor: goalIsRecurring ? '#FFF' : c.textMuted,
-                        transform: [{ translateX: goalIsRecurring ? 18 : 2 }],
-                      },
-                    ]}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              {/* Recurring Installment Configuration Panel */}
-              {goalIsRecurring && (
-                <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: '#F59E0B40' }]}>
-                  <View style={styles.fieldGroup}>
-                    <Text style={[styles.fieldLabel, { color: '#F59E0B' }]}>Installment Amount ({currSymbol})</Text>
-                    <View style={[styles.amountInputWrap, { backgroundColor: c.card, borderColor: c.border }]}>
-                      <Text style={[styles.currencyPrefix, { color: '#F59E0B' }]}>{currSymbol}</Text>
-                      <TextInput
-                        style={[styles.amountInput, { color: c.text }]}
-                        placeholder="1000.00"
-                        placeholderTextColor={c.textMuted}
-                        keyboardType="decimal-pad"
-                        value={goalRecurringAmount}
-                        onChangeText={setGoalRecurringAmount}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.fieldGroup}>
-                    <Text style={[styles.recurringBoxLabel, { color: c.textMuted }]}>DEPOSIT FREQUENCY</Text>
-                    <View style={styles.freqRow}>
-                      {['MONTHLY', 'WEEKLY', 'BI_WEEKLY', 'YEARLY', 'CUSTOM'].map((freq) => {
-                        const isSel = goalFrequency === freq;
-                        return (
-                          <TouchableOpacity
-                            key={freq}
-                            activeOpacity={0.8}
-                            onPress={() => {
-                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                              setGoalFrequency(freq);
-                            }}
-                            style={[
-                              styles.freqChip,
-                              {
-                                backgroundColor: isSel ? '#F59E0B' : c.card,
-                                borderColor: isSel ? '#F59E0B' : c.border,
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.freqChipText,
-                                {
-                                  color: isSel ? '#FFF' : c.textMuted,
-                                  fontWeight: isSel ? '800' : '600',
-                                  fontSize: 11,
-                                },
-                              ]}
-                            >
-                              {freq.replace('_', ' ')}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-
-                  {goalFrequency === 'CUSTOM' && (
-                    <View style={[styles.fieldGroup, { marginTop: 12 }]}>
-                      <Text style={[styles.recurringBoxLabel, { color: c.textMuted }]}>CUSTOM INTERVAL (DAYS)</Text>
-                      <TextInput
-                        style={[
-                          styles.textInput,
-                          styles.customDaysInput,
-                          {
-                            backgroundColor: c.card,
-                            borderColor: c.border,
-                            color: c.text,
-                          },
-                        ]}
-                        placeholder="e.g. 30"
-                        placeholderTextColor={c.textMuted}
-                        keyboardType="number-pad"
-                        value={goalIntervalDays}
-                        onChangeText={setGoalIntervalDays}
-                      />
-                    </View>
-                  )}
-                </View>
-              )}
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleSaveSavingsGoal}
-                disabled={isSubmitting}
-                style={[styles.submitBtn, { backgroundColor: "#F59E0B", opacity: isSubmitting ? 0.7 : 1 }]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : (
-                  <View style={styles.submitBtnInner}>
-                    <Text style={[styles.submitBtnText, { color: "#FFF" }]}>{isEditMode && params.editType === "savings" ? "Update Milestone" : (goalIsRecurring ? "Activate Recurring Plan" : "Configure Milestone")}</Text>
-                    <Ionicons name="flag" size={20} color="#FFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </StaggeredView>
+          <SavingsGoalFormTab
+            colors={c}
+            currSymbol={currSymbol}
+            goalName={goalName}
+            setGoalName={setGoalName}
+            goalTargetAmount={goalTargetAmount}
+            setGoalTargetAmount={setGoalTargetAmount}
+            goalInitialAmount={goalInitialAmount}
+            setGoalInitialAmount={setGoalInitialAmount}
+            goalTargetDate={goalTargetDate}
+            onPickDate={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              setCalendarTarget("savings");
+              setShowCalendarModal(true);
+            }}
+            goalIsRecurring={goalIsRecurring}
+            setGoalIsRecurring={setGoalIsRecurring}
+            goalRecurringAmount={goalRecurringAmount}
+            setGoalRecurringAmount={setGoalRecurringAmount}
+            goalFrequency={goalFrequency}
+            setGoalFrequency={setGoalFrequency}
+            goalIntervalDays={goalIntervalDays}
+            setGoalIntervalDays={setGoalIntervalDays}
+            focusedField={focusedField}
+            setFocusedField={setFocusedField}
+            handleSaveSavingsGoal={handleSaveSavingsGoal}
+            isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
+            editType={params.editType}
+          />
         ) : activeTab === 'expense' ? (
-          /* =========================================
-              CASE 1: LOG EXPENSE FORM
-             ========================================= */
-          <StaggeredView delay={100} direction="up">
-            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              {/* Receipt OCR Scanner Banner */}
-              <View
-                style={{
-                  backgroundColor: isLight ? 'rgba(212, 175, 55, 0.08)' : 'rgba(212, 175, 55, 0.12)',
-                  borderColor: isLight ? 'rgba(212, 175, 55, 0.3)' : 'rgba(212, 175, 55, 0.25)',
-                  borderWidth: 1.5,
-                  borderRadius: 14,
-                  padding: 12,
-                  marginBottom: 16,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 8 }}>
-                    <View
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 10,
-                        backgroundColor: isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(212, 175, 55, 0.22)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Ionicons name="scan-outline" size={20} color={c.primary} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>
-                        Receipt OCR Scanner
-                      </Text>
-                      <Text style={{ fontSize: 11, color: c.textMuted }}>
-                        Scan bill photo or choose sample receipt to auto-fill
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => setShowSampleReceipts(!showSampleReceipts)}
-                      style={{
-                        paddingHorizontal: 9,
-                        paddingVertical: 7,
-                        borderRadius: 8,
-                        backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
-                        borderWidth: 1,
-                        borderColor: c.border,
-                      }}
-                    >
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: c.primary }}>Sample</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      activeOpacity={0.85}
-                      onPress={handlePasteBankSms}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 5,
-                        paddingHorizontal: 11,
-                        paddingVertical: 7,
-                        borderRadius: 8,
-                        backgroundColor: isLight ? "rgba(212, 175, 55, 0.15)" : "rgba(245, 200, 66, 0.15)",
-                        borderWidth: 1,
-                        borderColor: isLight ? "rgba(212, 175, 55, 0.35)" : "rgba(245, 200, 66, 0.3)",
-                      }}
-                    >
-                      <Ionicons name="flash-outline" size={14} color={c.primary} />
-                      <Text style={{ fontSize: 11.5, fontWeight: "800", color: c.primary }}>
-                        Paste SMS
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      activeOpacity={0.85}
-                      onPress={handlePickReceipt}
-                      disabled={isScanningOcr}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 5,
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                        borderRadius: 8,
-                        backgroundColor: c.primary,
-                        opacity: isScanningOcr ? 0.7 : 1,
-                      }}
-                    >
-                      {isScanningOcr ? (
-                        <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
-                      ) : (
-                        <>
-                          <Ionicons name="camera-outline" size={14} color={isLight ? '#FFF' : '#10120E'} />
-                          <Text style={{ fontSize: 11.5, fontWeight: '800', color: isLight ? '#FFF' : '#10120E' }}>
-                            Scan Bill
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Sample Receipts Quick Selector */}
-                {showSampleReceipts && (
-                  <View
-                    style={{
-                      marginTop: 10,
-                      paddingTop: 10,
-                      borderTopWidth: 1,
-                      borderTopColor: c.border,
-                      gap: 6,
-                    }}
-                  >
-                    <Text style={{ fontSize: 11, fontWeight: '600', color: c.textMuted }}>
-                      SELECT SAMPLE RECEIPT TO TEST OCR:
-                    </Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                      {SAMPLE_RECEIPTS.map((s, idx) => (
-                        <TouchableOpacity
-                          key={s.name}
-                          activeOpacity={0.75}
-                          onPress={() => handleTestSampleReceipt(idx)}
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 5,
-                            backgroundColor: c.inputBg,
-                            borderColor: c.border,
-                            borderWidth: 1,
-                            paddingHorizontal: 10,
-                            paddingVertical: 6,
-                            borderRadius: 8,
-                          }}
-                        >
-                          <Ionicons name={s.icon as any} size={13} color={c.primary} />
-                          <Text style={{ fontSize: 11, fontWeight: '600', color: c.text }}>{s.name}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {/* Extracted Details & Interactive Breakdown Chips */}
-                {ocrSuccessData && (
-                  <View
-                    style={{
-                      marginTop: 10,
-                      paddingTop: 10,
-                      borderTopWidth: 1,
-                      borderTopColor: c.border,
-                      gap: 6,
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#10B981' }}>
-                        ✨ {ocrSuccessData.merchant} · {currSymbol}{ocrSuccessData.amount} ({ocrSuccessData.confidence}% confidence)
-                      </Text>
-                      <TouchableOpacity onPress={() => setOcrSuccessData(null)}>
-                        <Ionicons name="close" size={14} color={c.textMuted} />
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Breakdown Pills */}
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                      {ocrSuccessData.breakdown.grandTotal ? (
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={() => setAmount(String(ocrSuccessData.breakdown.grandTotal))}
-                          style={{
-                            backgroundColor: amount === String(ocrSuccessData.breakdown.grandTotal) ? c.primary : c.inputBg,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 6,
-                            borderWidth: 1,
-                            borderColor: c.border,
-                          }}
-                        >
-                          <Text style={{ fontSize: 10.5, fontWeight: '700', color: amount === String(ocrSuccessData.breakdown.grandTotal) ? (isLight ? '#FFF' : '#000') : c.text }}>
-                            Total: {currSymbol}{ocrSuccessData.breakdown.grandTotal}
-                          </Text>
-                        </TouchableOpacity>
-                      ) : null}
-
-                      {ocrSuccessData.breakdown.subtotal ? (
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={() => setAmount(String(ocrSuccessData.breakdown.subtotal))}
-                          style={{
-                            backgroundColor: amount === String(ocrSuccessData.breakdown.subtotal) ? c.primary : c.inputBg,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 6,
-                            borderWidth: 1,
-                            borderColor: c.border,
-                          }}
-                        >
-                          <Text style={{ fontSize: 10.5, fontWeight: '700', color: amount === String(ocrSuccessData.breakdown.subtotal) ? (isLight ? '#FFF' : '#000') : c.text }}>
-                            Subtotal: {currSymbol}{ocrSuccessData.breakdown.subtotal}
-                          </Text>
-                        </TouchableOpacity>
-                      ) : null}
-
-                      {ocrSuccessData.breakdown.totalTax ? (
-                        <View
-                          style={{
-                            backgroundColor: c.inputBg,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 6,
-                            borderWidth: 1,
-                            borderColor: c.border,
-                          }}
-                        >
-                          <Text style={{ fontSize: 10.5, color: c.textMuted }}>
-                            Tax/GST: {currSymbol}{ocrSuccessData.breakdown.totalTax}
-                          </Text>
-                        </View>
-                      ) : null}
-
-                      {ocrSuccessData.breakdown.discount ? (
-                        <View
-                          style={{
-                            backgroundColor: c.inputBg,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 6,
-                            borderWidth: 1,
-                            borderColor: c.border,
-                          }}
-                        >
-                          <Text style={{ fontSize: 10.5, color: '#10B981' }}>
-                            Discount: -{currSymbol}{ocrSuccessData.breakdown.discount}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-              {/* Description Input */}
-              <View style={styles.fieldGroup}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <Text style={[styles.fieldLabel, { color: c.textMuted, marginBottom: 0 }]}>Description / Merchant</Text>
-                  {isAiClassifying ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <ActivityIndicator size="small" color={c.primary} />
-                      <Text style={{ fontSize: 10.5, color: c.textMuted, fontWeight: '600' }}>AI Classifying...</Text>
-                    </View>
-                  ) : (
-                    <Text style={{ fontSize: 10.5, color: c.primary, fontWeight: '700' }}>⚡ AI Categorizer</Text>
-                  )}
-                </View>
-                <View
-                  style={[
-                    styles.inputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: errors.description ? c.accent : c.primary,
-                      borderWidth: focusedField === "expenseDesc" ? 2 : 1.5,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="pencil-outline"
-                    size={18}
-                    color={errors.description ? c.accent : c.primary}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={[styles.textInput, { color: c.text }]}
-                    placeholder="e.g. Blue Tokai Coffee, Figma Plan"
-                    placeholderTextColor={c.textMuted}
-                    value={description}
-                    maxLength={255}
-                    onChangeText={(v) => {
-                      if (v.length > 25 && (v.toLowerCase().includes('debited') || v.toLowerCase().includes('spent') || v.toLowerCase().includes('paid') || v.toLowerCase().includes('inr') || v.toLowerCase().includes('rs'))) {
-                        const parsed = parseFinancialMessage(v);
-                        if (parsed && parsed.amount != null && parsed.amount > 0) {
-                          setDescription(parsed.merchant || 'Expense');
-                          setAmount(String(parsed.amount));
-                          if (parsed.timestamp) {
-                            setExpenseDate(new Date(parsed.timestamp).toISOString().split('T')[0]);
-                          }
-                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-                          showAlert('SMS Auto-Detected!', `Extracted ${currSymbol}${parsed.amount} for ${parsed.merchant || "Expense"}.`, undefined, 'success');
-                          return;
-                        }
-                      }
-                      setDescription(v);
-                      if (errors.description) setErrors((prev) => ({ ...prev, description: "" }));
-                    }}
-                    onFocus={() => setFocusedField("expenseDesc")}
-                    onBlur={() => setFocusedField(null)}
-                  />
-                </View>
-                {!!errors.description && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.description}</Text>}
-
-                {aiSuggestion && (
-                  <View style={[styles.aiSuggestionBox, { backgroundColor: isLight ? 'rgba(199, 154, 62, 0.1)' : 'rgba(212, 175, 55, 0.08)', borderColor: isLight ? 'rgba(199, 154, 62, 0.3)' : 'rgba(212, 175, 55, 0.25)' }]}>
-                    <View style={styles.aiSuggestionHeader}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
-                        <Text style={{ fontSize: 13 }}>⚡</Text>
-                        <Text style={[styles.aiSuggestionLabel, { color: c.textMuted }]}>AI Suggestion:</Text>
-                        <Text style={[styles.aiSuggestionCategory, { color: c.primary }]}>
-                          {getCategoryEmoji(aiSuggestion.matchedCatName || aiSuggestion.category)} {aiSuggestion.matchedCatName || aiSuggestion.category.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())}
-                        </Text>
-                        <View style={[styles.aiConfidenceBadge, { backgroundColor: isLight ? '#E0EDDC' : 'rgba(91, 140, 90, 0.2)' }]}>
-                          <Text style={[styles.aiConfidenceText, { color: '#5B8C5A' }]}>
-                            {Math.round(aiSuggestion.confidence * 100)}% match
-                          </Text>
-                        </View>
-                      </View>
-                      {aiSuggestion.matchedCatId && categoryId !== aiSuggestion.matchedCatId && (
-                        <TouchableOpacity
-                          onPress={() => {
-                            if (aiSuggestion.matchedCatId) {
-                              setCategoryId(aiSuggestion.matchedCatId);
-                              userOverrodeCategory.current = false;
-                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                            }
-                          }}
-                          style={[styles.aiApplyBtn, { backgroundColor: c.primary }]}
-                        >
-                          <Text style={[styles.aiApplyBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>Apply</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              {/* Amount Input */}
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Amount ({currSymbol})</Text>
-                <View
-                  style={[
-                    styles.amountInputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: errors.amount ? c.accent : c.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.currencyPrefix, { color: c.primary }]}>{currSymbol}</Text>
-                  <TextInput
-                    style={[styles.amountInput, { color: c.text }]}
-                    placeholder="0.00"
-                    placeholderTextColor={c.textMuted}
-                    keyboardType="decimal-pad"
-                    value={amount}
-                    onChangeText={(v) => {
-                      setAmount(v);
-                      if (errors.amount) setErrors((prev) => ({ ...prev, amount: '' }));
-                    }}
-                  />
-                </View>
-                {!!errors.amount && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.amount}</Text>}
-              </View>
-
-              {/* Category Selector */}
-              <View style={styles.fieldGroup}>
-                <View style={styles.catLabelRow}>
-                  <Text style={[styles.fieldLabel, { color: c.textMuted, marginBottom: 0 }]}>Category</Text>
-                  <TouchableOpacity
-                    onPress={() => setShowCategoryModal(true)}
-                    style={styles.manageCatBtn}
-                  >
-                    <Ionicons name="settings-outline" size={13} color={c.primary} />
-                    <Text style={[styles.manageCatBtnText, { color: c.primary }]}>Manage</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChipsScroll}>
-                  {categories.map((cat) => {
-                    const isSelected = categoryId === cat.id;
-                    return (
-                      <TouchableOpacity
-                        key={cat.id}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          userOverrodeCategory.current = true;
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                          setCategoryId(cat.id);
-                          if (errors.category) setErrors((prev) => ({ ...prev, category: '' }));
-                        }}
-                        style={[
-                          styles.catChip,
-                          {
-                            backgroundColor: isSelected ? c.primary : c.inputBg,
-                            borderColor: isSelected ? c.primary : c.border,
-                          },
-                        ]}
-                      >
-                        <Text style={styles.catChipEmoji}>{getCategoryEmoji(cat.name)}</Text>
-                        <Text
-                          style={[
-                            styles.catChipText,
-                            {
-                              color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
-                              fontWeight: isSelected ? '800' : '600',
-                            },
-                          ]}
-                        >
-                          {cat.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-
-              {/* Date Input (Opens Calendar Modal) */}
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Date (Tap to Pick)</Text>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                    setCalendarTarget("expense");
-                    setShowCalendarModal(true);
-                  }}
-                  style={[
-                    styles.inputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: errors.date ? c.accent : c.border,
-                      justifyContent: 'space-between',
-                    },
-                  ]}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                    <Ionicons name="calendar" size={18} color={c.primary} style={styles.inputIcon} />
-                    <Text style={[{ fontSize: 14, fontWeight: '700', color: c.text }]}>
-                      {expenseDate || 'Select Date'}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-                </TouchableOpacity>
-                {!!errors.date && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.date}</Text>}
-              </View>
-
-              {/* Recurring Switch (Disabled in edit mode) */}
-              {!isEditMode && (
-                <View style={[styles.recurringToggleRow, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                  <View style={styles.recurringToggleLeft}>
-                    <Ionicons name="repeat" size={20} color={isRecurring ? c.primary : c.textMuted} />
-                    <View>
-                      <Text style={[styles.recurringTitle, { color: c.text }]}>Recurring Commitment</Text>
-                      <Text style={[styles.recurringSub, { color: c.textMuted }]}>
-                        Auto-generate subscription run-rate
-                      </Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      toggleRecurring(!isRecurring);
-                    }}
-                    style={[
-                      styles.togglePill,
-                      {
-                        backgroundColor: isRecurring ? c.primary : c.card,
-                        borderColor: isRecurring ? c.primary : c.border,
-                      },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.toggleKnob,
-                        {
-                          backgroundColor: isRecurring ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
-                          transform: [{ translateX: isRecurring ? 18 : 2 }],
-                        },
-                      ]}
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Recurring Interval Configuration Panel */}
-              {isRecurring && !isEditMode && (
-                <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-                  <Text style={[styles.recurringBoxLabel, { color: c.textMuted }]}>BILLING FREQUENCY</Text>
-                  <View style={styles.freqRow}>
-                    {['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'].map((freq) => {
-                      const isSelected = frequency === freq;
-                      return (
-                        <TouchableOpacity
-                          key={freq}
-                          activeOpacity={0.8}
-                          onPress={() => setFrequency(freq)}
-                          style={[
-                            styles.freqChip,
-                            {
-                              backgroundColor: isSelected ? c.primary : c.card,
-                              borderColor: isSelected ? c.primary : c.border,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.freqChipText,
-                              {
-                                color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
-                                fontWeight: isSelected ? '800' : '600',
-                              },
-                            ]}
-                          >
-                            {freq}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-
-                  {frequency === 'CUSTOM' && (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Custom Cycle (in Days)</Text>
-                      <TextInput
-                        style={[
-                          styles.customDaysInput,
-                          {
-                            backgroundColor: c.card,
-                            borderColor: errors.intervalDays ? c.accent : c.border,
-                            color: c.text,
-                          },
-                        ]}
-                        keyboardType="number-pad"
-                        placeholder="e.g. 14, 45, 90"
-                        placeholderTextColor={c.textMuted}
-                        value={intervalDays}
-                        onChangeText={(v) => {
-                          setIntervalDays(v);
-                          if (errors.intervalDays) setErrors((prev) => ({ ...prev, intervalDays: '' }));
-                        }}
-                      />
-                      {!!errors.intervalDays && (
-                        <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.intervalDays}</Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* Submit Button */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleSaveExpense}
-                disabled={isSubmitting}
-                style={[
-                  styles.submitBtn,
-                  { backgroundColor: c.primary, opacity: isSubmitting ? 0.7 : 1 },
-                ]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#10120E" />
-                ) : (
-                  <View style={styles.submitBtnInner}>
-                    <Text style={[styles.submitBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
-                      {isEditMode ? 'Update Expense' : 'Log Transaction'}
-                    </Text>
-                    <Ionicons
-                      name={isEditMode ? 'checkmark-circle' : 'add-circle'}
-                      size={20}
-                      color={isLight ? '#FFF' : '#10120E'}
-                    />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </StaggeredView>
+          <ExpenseFormTab
+            colors={c}
+            theme={theme}
+            currSymbol={currSymbol}
+            categories={categories}
+            onOpenManageCategories={() => setShowCategoryModal(true)}
+            onPickDate={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+              setCalendarTarget("expense");
+              setShowCalendarModal(true);
+            }}
+            description={description}
+            setDescription={setDescription}
+            amount={amount}
+            setAmount={setAmount}
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
+            expenseDate={expenseDate}
+            isRecurring={isRecurring}
+            toggleRecurring={toggleRecurring}
+            frequency={frequency}
+            setFrequency={setFrequency}
+            intervalDays={intervalDays}
+            setIntervalDays={setIntervalDays}
+            aiSuggestion={aiSuggestion}
+            isAiClassifying={isAiClassifying}
+            userOverrodeCategory={userOverrodeCategory}
+            isScanningOcr={isScanningOcr}
+            ocrSuccessData={ocrSuccessData}
+            setOcrSuccessData={setOcrSuccessData}
+            showSampleReceipts={showSampleReceipts}
+            setShowSampleReceipts={setShowSampleReceipts}
+            handlePickReceipt={handlePickReceipt}
+            handlePasteBankSms={handlePasteBankSms}
+            handleTestSampleReceipt={handleTestSampleReceipt}
+            handleSmsDetectionInDesc={(v) => {
+              if (v.length > 25 && (v.toLowerCase().includes('debited') || v.toLowerCase().includes('spent') || v.toLowerCase().includes('paid') || v.toLowerCase().includes('inr') || v.toLowerCase().includes('rs'))) {
+                const parsed = parseFinancialMessage(v);
+                if (parsed && parsed.amount != null && parsed.amount > 0) {
+                  setDescription(parsed.merchant || 'Expense');
+                  setAmount(String(parsed.amount));
+                  if (parsed.timestamp) {
+                    setExpenseDate(new Date(parsed.timestamp).toISOString().split('T')[0]);
+                  }
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+                  showAlert('SMS Auto-Detected!', `Extracted ${currSymbol}${parsed.amount} for ${parsed.merchant || "Expense"}.`, undefined, 'success');
+                  return;
+                }
+              }
+              setDescription(v);
+              if (errors.description) setErrors((prev) => ({ ...prev, description: "" }));
+            }}
+            focusedField={focusedField}
+            setFocusedField={setFocusedField}
+            errors={errors}
+            setErrors={setErrors}
+            handleSaveExpense={handleSaveExpense}
+            isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
+          />
         ) : (
-          /* =========================================
-              CASE 2: BUDGET SETTING FORM
-             ========================================= */
-          <StaggeredView delay={100} direction="up">
-            <View style={[styles.formCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              {/* Category Selector */}
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Target Category</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChipsScroll}>
-                  {categories.map((cat) => {
-                    const isSelected = budgetCategoryId === cat.id;
-                    return (
-                      <TouchableOpacity
-                        key={cat.id}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                          setBudgetCategoryId(cat.id);
-                          if (errors.budgetCategory) setErrors((prev) => ({ ...prev, budgetCategory: '' }));
-                        }}
-                        style={[
-                          styles.catChip,
-                          {
-                            backgroundColor: isSelected ? c.primary : c.inputBg,
-                            borderColor: isSelected ? c.primary : c.border,
-                          },
-                        ]}
-                      >
-                        <Text style={styles.catChipEmoji}>{getCategoryEmoji(cat.name)}</Text>
-                        <Text
-                          style={[
-                            styles.catChipText,
-                            {
-                              color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
-                              fontWeight: isSelected ? '800' : '600',
-                            },
-                          ]}
-                        >
-                          {cat.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-                {!!errors.budgetCategory && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.budgetCategory}</Text>}
-              </View>
-
-              {/* Limit Input */}
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Monthly Spending Cap ({currSymbol})</Text>
-                <View
-                  style={[
-                    styles.amountInputWrap,
-                    {
-                      backgroundColor: c.inputBg,
-                      borderColor: errors.budgetLimit ? c.accent : c.border,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.currencyPrefix, { color: c.primary }]}>{currSymbol}</Text>
-                  <TextInput
-                    style={[styles.amountInput, { color: c.text }]}
-                    placeholder="0.00"
-                    placeholderTextColor={c.textMuted}
-                    keyboardType="decimal-pad"
-                    value={budgetLimit}
-                    onChangeText={(v) => {
-                      setBudgetLimit(v);
-                      if (errors.budgetLimit) setErrors((prev) => ({ ...prev, budgetLimit: '' }));
-                    }}
-                  />
-                </View>
-                {!!errors.budgetLimit && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.budgetLimit}</Text>}
-              </View>
-
-              {/* Budget Period Selector */}
-              <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Budget Period</Text>
-                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                  {[
-                    { id: 'MONTHLY', label: 'Monthly' },
-                    { id: 'WEEKLY', label: 'Weekly' },
-                    { id: 'YEARLY', label: 'Yearly' },
-                    { id: 'CUSTOM', label: 'Custom Interval' },
-                  ].map((p) => {
-                    const isSelected = budgetPeriod === p.id;
-                    return (
-                      <TouchableOpacity
-                        key={p.id}
-                        activeOpacity={0.8}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                          setBudgetPeriod(p.id);
-                        }}
-                        style={[
-                          styles.catChip,
-                          {
-                            backgroundColor: isSelected ? c.primary : c.inputBg,
-                            borderColor: isSelected ? c.primary : c.border,
-                            paddingHorizontal: 12,
-                            paddingVertical: 8,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.catChipText,
-                            {
-                              color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
-                              fontWeight: isSelected ? '800' : '600',
-                            },
-                          ]}
-                        >
-                          {p.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Custom Number of Days */}
-              {budgetPeriod === 'CUSTOM' && (
-                <View style={styles.fieldGroup}>
-                  <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Number of Days</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      {
-                        backgroundColor: c.inputBg,
-                        borderColor: errors.budgetIntervalDays ? c.accent : c.border,
-                        color: c.text,
-                      },
-                    ]}
-                    placeholder="e.g. 30"
-                    placeholderTextColor={c.textMuted}
-                    keyboardType="number-pad"
-                    value={budgetIntervalDays}
-                    onChangeText={(v) => {
-                      setBudgetIntervalDays(v);
-                      if (errors.budgetIntervalDays) setErrors((prev) => ({ ...prev, budgetIntervalDays: '' }));
-                    }}
-                  />
-                  {!!errors.budgetIntervalDays && <Text style={[styles.errorMsg, { color: c.accent }]}>{errors.budgetIntervalDays}</Text>}
-                </View>
-              )}
-
-              {/* Submit Budget */}
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleSaveBudget}
-                disabled={isSubmitting}
-                style={[
-                  styles.submitBtn,
-                  { backgroundColor: c.primary, opacity: isSubmitting ? 0.7 : 1 },
-                ]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#10120E" />
-                ) : (
-                  <View style={styles.submitBtnInner}>
-                    <Text style={[styles.submitBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
-                      {isEditMode ? 'Update Budget Cap' : 'Establish Budget Cap'}
-                    </Text>
-                    <Ionicons name="shield-checkmark" size={20} color={isLight ? '#FFF' : '#10120E'} />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Existing Active Budgets List */}
-            {existingBudgets.length > 0 && (
-              <View style={{ marginTop: 20 }}>
-                <Text style={{ color: c.text, marginBottom: 12, fontSize: 16, fontWeight: '700' }}>
-                  Configured Category Budgets
-                </Text>
-                <View style={{ gap: 10 }}>
-                  {existingBudgets.map((b: any, idx: number) => {
-                    const limitVal = Number(b.limit || 0);
-                    const spentVal = Number(b.spent || 0);
-                    const pct = limitVal > 0 ? Math.min(Math.round((spentVal / limitVal) * 100), 100) : 0;
-                    return (
-                      <View
-                        key={b.budgetId || b.categoryId || idx}
-                        style={[
-                          styles.formCard,
-                          {
-                            backgroundColor: c.card,
-                            borderColor: c.border,
-                            padding: 14,
-                            marginBottom: 0,
-                          },
-                        ]}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-                            <Text style={{ fontSize: 18 }}>{getCategoryEmoji(b.categoryName)}</Text>
-                            <View>
-                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>{b.categoryName}</Text>
-                              <Text style={{ fontSize: 12, color: c.textMuted }}>
-                                {b.period === 'CUSTOM' ? `${b.intervalDays || 30} Days` : b.period || 'Monthly'}
-                              </Text>
-                            </View>
-                          </View>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                            <TouchableOpacity
-                              onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                                setBudgetCategoryId(b.categoryId);
-                                setBudgetLimit(String(b.limit || ''));
-                                setBudgetPeriod(b.period || 'MONTHLY');
-                                if (b.intervalDays) setBudgetIntervalDays(String(b.intervalDays));
-                              }}
-                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                              style={{ padding: 4 }}
-                            >
-                              <Ionicons name="pencil" size={16} color={c.textMuted} />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              onPress={() => handleDeleteBudgetFromList(b)}
-                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                              style={{ padding: 4 }}
-                            >
-                              <Ionicons name="trash-outline" size={16} color={c.accent} />
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <Text style={{ fontSize: 12, color: c.textMuted }}>
-                            {currSymbol}{Math.round(spentVal).toLocaleString()} spent
-                          </Text>
-                          <Text style={{ fontSize: 12, fontWeight: '700', color: c.text }}>
-                            {currSymbol}{Math.round(limitVal).toLocaleString()} limit ({pct}%)
-                          </Text>
-                        </View>
-                        <View style={{ height: 6, backgroundColor: c.inputBg, borderRadius: 3, overflow: 'hidden' }}>
-                          <View style={{ width: `${pct}%`, height: '100%', backgroundColor: pct >= 100 ? c.accent : pct >= 80 ? c.warning : c.primary }} />
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
-          </StaggeredView>
+          <BudgetFormTab
+            colors={c}
+            theme={theme}
+            currSymbol={currSymbol}
+            categories={categories}
+            budgetCategoryId={budgetCategoryId}
+            setBudgetCategoryId={setBudgetCategoryId}
+            budgetLimit={budgetLimit}
+            setBudgetLimit={setBudgetLimit}
+            budgetPeriod={budgetPeriod}
+            setBudgetPeriod={setBudgetPeriod}
+            budgetIntervalDays={budgetIntervalDays}
+            setBudgetIntervalDays={setBudgetIntervalDays}
+            errors={errors}
+            setErrors={setErrors}
+            handleSaveBudget={handleSaveBudget}
+            handleDeleteBudgetFromList={handleDeleteBudgetFromList}
+            existingBudgets={existingBudgets}
+            isSubmitting={isSubmitting}
+            isEditMode={isEditMode}
+          />
         )}
       </ThemedScrollView>
 
@@ -2493,278 +1363,3 @@ export default function AddExpenseScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screenWrapper: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-  loadingBox: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    marginBottom: 20,
-  },
-  pageTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    letterSpacing: -0.6,
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  tabsWrap: {
-    flexDirection: 'row',
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 4,
-    marginBottom: 20,
-  },
-  tabBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  tabBtnText: {
-    fontSize: 13.5,
-    fontWeight: '800',
-  },
-  formCard: {
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  fieldGroup: {
-    marginBottom: 16,
-  },
-  fieldLabel: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-  },
-  catLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  manageCatBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  manageCatBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    height: 48,
-    paddingHorizontal: 14,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 14.5,
-    height: '100%',
-    fontWeight: '600',
-  },
-  amountInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    height: 54,
-    paddingHorizontal: 16,
-  },
-  currencyPrefix: {
-    fontSize: 22,
-    fontWeight: '900',
-    marginRight: 8,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 24,
-    fontWeight: '900',
-    height: '100%',
-  },
-  catChipsScroll: {
-    gap: 8,
-    paddingVertical: 2,
-  },
-  catChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  catChipEmoji: {
-    fontSize: 15,
-  },
-  catChipText: {
-    fontSize: 12.5,
-  },
-  recurringToggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
-  },
-  recurringToggleLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  recurringTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  recurringSub: {
-    fontSize: 11.5,
-    marginTop: 1,
-  },
-  togglePill: {
-    width: 44,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1,
-    justifyContent: 'center',
-  },
-  toggleKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-  },
-  recurringBox: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 12,
-    marginBottom: 16,
-  },
-  recurringBoxLabel: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-  },
-  hiddenGroup: {
-    display: 'none',
-  },
-  freqRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  freqChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  freqChipText: {
-    fontSize: 11,
-  },
-  customDaysInput: {
-    height: 42,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  submitBtn: {
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  submitBtnInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  submitBtnText: {
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: -0.2,
-  },
-  errorMsg: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    marginTop: 5,
-    marginLeft: 2,
-  },
-  aiSuggestionBox: {
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  aiSuggestionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  aiSuggestionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  aiSuggestionCategory: {
-    fontSize: 12.5,
-    fontWeight: '800',
-  },
-  aiConfidenceBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  aiConfidenceText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  aiApplyBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 7,
-  },
-  aiApplyBtnText: {
-    fontSize: 11.5,
-    fontWeight: '800',
-  },
-});

@@ -66,6 +66,9 @@ import {
 import { CategoryPillsBar, DatePresetType } from '../../components/CategoryPillsBar';
 import { ExportImportModal } from '../../components/ExportImportModal';
 import { ThemeToggleBtn } from '../../components/ThemeToggleBtn';
+import { TransactionRow } from '../../components/dashboard/TransactionRow';
+import { SearchField } from '../../components/dashboard/SearchField';
+import { UnifiedTxItem } from '../../components/dashboard/dashboardTypes';
 import { earnedTotal, effectiveMonth, monthKey, netSpent } from '../../utils/moneyFlow';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { ImmersiveLoader } from '../../components/ImmersiveLoader';
@@ -151,18 +154,7 @@ interface Subscription {
  * Main dashboard screen component.
  */
 
-interface UnifiedTxItem {
-  id: number;
-  uniqueKey: string;
-  type: "expense" | "income";
-  title: string;
-  categoryOrSource: string;
-  amount: number;
-  date: string;
-  isRecurring: boolean;
-  expenseRaw?: Expense;
-  incomeRaw?: Income;
-}
+
 
 // The ledger FlatList sits in the page's ScrollView, but it has a fixed height and scrolls on its own, so its
 // windowing works as intended. React Native still prints its generic nesting warning in development builds.
@@ -173,290 +165,6 @@ const ledgerKeyExtractor = (tx: UnifiedTxItem) => tx.uniqueKey;
 
 /** The 8px gap between ledger rows (a FlatList has no `gap`). */
 const LedgerSeparator = () => <View style={styles.ledgerSeparator} />;
-
-interface TransactionRowProps {
-  tx: UnifiedTxItem;
-  colors: ThemeColors;
-  currSymbol: string;
-  isStealth?: boolean;
-  onPress: (tx: UnifiedTxItem) => void;
-  onEdit: (tx: UnifiedTxItem) => void;
-  onDelete: (tx: UnifiedTxItem) => void;
-}
-
-/**
- * One ledger row. Memoised: it redraws only when its own transaction, the theme or the currency
- * changes, so typing in search, scrolling or unrelated state changes on the screen do not repaint
- * every row.
- */
-function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) {
-  return (
-    prev.tx.uniqueKey === next.tx.uniqueKey &&
-    prev.tx.amount === next.tx.amount &&
-    prev.tx.title === next.tx.title &&
-    prev.tx.date === next.tx.date &&
-    prev.tx.categoryOrSource === next.tx.categoryOrSource &&
-    prev.tx.isRecurring === next.tx.isRecurring &&
-    prev.currSymbol === next.currSymbol &&
-    prev.isStealth === next.isStealth &&
-    prev.colors === next.colors &&
-    prev.onPress === next.onPress &&
-    prev.onEdit === next.onEdit &&
-    prev.onDelete === next.onDelete
-  );
-}
-
-const rowThemeStyles = {
-  dark: StyleSheet.create({
-    trough: { backgroundColor: "rgba(18, 20, 16, 0.95)", borderColor: Colors.dark.border },
-    editAction: { backgroundColor: "#C79A3E" },
-    deleteAction: { backgroundColor: "#991B1B" },
-    card: { backgroundColor: Colors.dark.inputBg, borderColor: Colors.dark.border },
-    descText: { color: Colors.dark.text },
-    mutedText: { color: Colors.dark.textMuted },
-    miniBtn: { backgroundColor: Colors.dark.card },
-    amountText: { color: Colors.dark.text },
-  }),
-  light: StyleSheet.create({
-    trough: { backgroundColor: "#EAEFF5", borderColor: Colors.light.border },
-    editAction: { backgroundColor: "#D4AF37" },
-    deleteAction: { backgroundColor: "#BE123C" },
-    card: { backgroundColor: Colors.light.inputBg, borderColor: Colors.light.border },
-    descText: { color: Colors.light.text },
-    mutedText: { color: Colors.light.textMuted },
-    miniBtn: { backgroundColor: Colors.light.card },
-    amountText: { color: Colors.light.text },
-  }),
-};
-
-const TransactionRow = React.memo(function TransactionRow({ tx, colors, currSymbol, isStealth, onPress, onEdit, onDelete }: TransactionRowProps) {
-  const isIncome = tx.type === "income";
-  const catColor = isIncome ? "#10B981" : getCategoryColor(tx.categoryOrSource || "General").color;
-  // useRef(new X()) builds a throwaway X on every render; the lazy initialisers below build each one once.
-  const [pan] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
-  const isSwiping = useRef(false);
-
-  const actionRefs = useRef({ tx, onEdit, onDelete });
-  actionRefs.current = { tx, onEdit, onDelete };
-
-  const panResponder = useMemo(() =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gesture) => {
-        return Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5;
-      },
-      onPanResponderGrant: () => {
-        isSwiping.current = true;
-      },
-      onPanResponderMove: (_, gesture) => {
-        const clampedX = Math.max(-110, Math.min(110, gesture.dx));
-        pan.setValue({ x: clampedX, y: 0 });
-      },
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dx < -70) {
-          // Swiped left: Delete
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
-            isSwiping.current = false;
-            actionRefs.current.onDelete(actionRefs.current.tx);
-          });
-        } else if (gesture.dx > 70) {
-          // Swiped right: Edit
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 50, useNativeDriver: true }).start(() => {
-            isSwiping.current = false;
-            actionRefs.current.onEdit(actionRefs.current.tx);
-          });
-        } else {
-          // Snap back
-          Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start(() => {
-            isSwiping.current = false;
-          });
-        }
-      },
-      onPanResponderTerminate: () => {
-        Animated.spring(pan, { toValue: { x: 0, y: 0 }, friction: 7, tension: 60, useNativeDriver: true }).start(() => {
-          isSwiping.current = false;
-        });
-      },
-    }),
-  [pan]);
-
-  const animatedNodes = useMemo(() => ({
-    bgOpacity: pan.x.interpolate({
-      inputRange: [-50, -10, 0, 10, 50],
-      outputRange: [1, 0.2, 0, 0.2, 1],
-      extrapolate: "clamp",
-    }),
-    deleteOpacity: pan.x.interpolate({
-      inputRange: [-80, -25, 0],
-      outputRange: [1, 0.4, 0],
-      extrapolate: "clamp",
-    }),
-    deleteScale: pan.x.interpolate({
-      inputRange: [-80, 0],
-      outputRange: [1, 0.85],
-      extrapolate: "clamp",
-    }),
-    editOpacity: pan.x.interpolate({
-      inputRange: [0, 25, 80],
-      outputRange: [0, 0.4, 1],
-      extrapolate: "clamp",
-    }),
-    editScale: pan.x.interpolate({
-      inputRange: [0, 80],
-      outputRange: [0.85, 1],
-      extrapolate: "clamp",
-    }),
-  }), [pan]);
-  const { bgOpacity, deleteOpacity, deleteScale, editOpacity, editScale } = animatedNodes;
-
-  const isLight = colors.bg === '#F8F9FA';
-  const tStyles = isLight ? rowThemeStyles.light : rowThemeStyles.dark;
-  const editColorHex = isLight ? '#0F172A' : '#10120E';
-  const deleteColorHex = '#FFFFFF';
-
-  return (
-    <View style={styles.swipeRowWrapper}>
-      <Animated.View style={[styles.swipeRowBg, tStyles.trough, { opacity: bgOpacity }]}>
-        <Animated.View style={[styles.swipeActionLeft, tStyles.editAction, { opacity: editOpacity, transform: [{ scale: editScale }] }]}>
-          <Ionicons name="pencil" size={14} color={editColorHex} />
-          <Text style={[styles.swipeActionText, { color: editColorHex }]}>Edit</Text>
-        </Animated.View>
-        <Animated.View style={[styles.swipeActionRight, tStyles.deleteAction, { opacity: deleteOpacity, transform: [{ scale: deleteScale }] }]}>
-          <Text style={[styles.swipeActionText, { color: deleteColorHex }]}>Delete</Text>
-          <Ionicons name="trash" size={14} color={deleteColorHex} />
-        </Animated.View>
-      </Animated.View>
-
-      <Animated.View style={{ transform: [{ translateX: pan.x }] }} {...panResponder.panHandlers}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => {
-            if (!isSwiping.current) onPress(tx);
-          }}
-          onLongPress={() => onPress(tx)}
-          style={[styles.txCard, tStyles.card]}
-        >
-          <View style={styles.txLeft}>
-            <View style={[styles.catIconWrap, { backgroundColor: catColor + "18" }]}>
-              {isIncome ? (
-                <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
-              ) : (
-                <Text style={styles.catEmojiText}>{getCategoryEmoji(tx.categoryOrSource || "General")}</Text>
-              )}
-            </View>
-            <View style={styles.txMeta}>
-              <Text style={[styles.txDesc, tStyles.descText]} numberOfLines={1}>
-                {tx.title}
-              </Text>
-              <View style={styles.txSubRow}>
-                <Text style={[styles.txCatName, { color: catColor }]}>
-                  {isIncome ? `Inflow: ${tx.categoryOrSource}` : tx.categoryOrSource}
-                </Text>
-                <Text style={[styles.txDot, tStyles.mutedText]}>•</Text>
-                <Text style={[styles.txDate, tStyles.mutedText]}>{tx.date}</Text>
-                {tx.isRecurring && (
-                  <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? "#10B981" : colors.primary) + "18" }]}>
-                    <Ionicons name="repeat" size={10} color={isIncome ? "#10B981" : colors.primary} />
-                    <Text style={[styles.recurringBadgeText, { color: isIncome ? "#10B981" : colors.primary }]}>
-                      {isIncome ? "Recurring Inflow" : "Sub"}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.txRight}>
-            <Text style={[styles.txAmount, isIncome ? { color: "#10B981", fontWeight: "800" } : tStyles.amountText, { fontWeight: "800" }]}>
-              {isStealth
-                ? `${isIncome ? "+" : "-"}${currSymbol}••••••`
-                : `${isIncome ? "+" : "-"}${currSymbol}${Number(tx.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
-            </Text>
-            <View style={styles.txRowActions}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  onEdit(tx);
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.txMiniActionBtn, tStyles.miniBtn]}
-                accessibilityLabel="Edit transaction"
-              >
-                <Ionicons name="pencil" size={12} color={isIncome ? "#10B981" : colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                  onDelete(tx);
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.txMiniActionBtn, tStyles.miniBtn]}
-                accessibilityLabel="Delete transaction"
-              >
-                <Ionicons name="trash-outline" size={12} color={colors.accent} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
-  );
-}, areRowPropsEqual);
-
-/**
- * The ledger search box. It owns the text being typed, so typing and the clear button update at once;
- * the filtering of the list follows shortly after (and immediately on clear), without holding the
- * input back.
- */
-const SearchField = React.memo(function SearchField({ onSearch, colors }: { onSearch: (query: string) => void; colors: ThemeColors }) {
-  const [text, setText] = useState('');
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
-
-  const change = (value: string) => {
-    setText(value);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => onSearch(value), 200);
-  };
-
-  const clear = () => {
-    if (timer.current) clearTimeout(timer.current);
-    setText('');
-    onSearch('');
-  };
-
-  return (
-    <View style={[styles.searchBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-      <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
-      <TextInput
-        style={[styles.searchInput, { color: colors.text }]}
-        placeholder="Search description or category..."
-        placeholderTextColor={colors.textMuted}
-        value={text}
-        onChangeText={change}
-        returnKeyType="search"
-      />
-      {text.length > 0 && (
-        <TouchableOpacity
-          onPress={clear}
-          onPressIn={clear}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityLabel="Clear search"
-          accessibilityRole="button"
-        >
-          <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-});
 
 export default function DashboardScreen() {
   const { userId, userName, theme, toggleTheme, currency, profilePicture, isStealthMode, toggleStealthMode, refreshUserProfile } = useAuth();
@@ -1224,6 +932,22 @@ export default function DashboardScreen() {
     (e: NativeSyntheticEvent<NativeScrollEvent>) => ledgerScrollY.setValue(e.nativeEvent.contentOffset.y),
     [ledgerScrollY]
   );
+  const matrixCardStyles = useMemo(() => ({
+    cardPrimary: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.primary}40` }],
+    badgePrimary: [styles.matrixBadge, { backgroundColor: `${c.primary}18` }],
+    cardTeal: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.teal}40` }],
+    badgeTeal: [styles.matrixBadge, { backgroundColor: `${c.teal}18` }],
+    cardAccent: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.accent}40` }],
+    badgeAccent: [styles.matrixBadge, { backgroundColor: `${c.accent}18` }],
+    cardWarning: [styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: `${c.warning}40` }],
+    badgeWarning: [styles.matrixBadge, { backgroundColor: `${c.warning}18` }],
+  }), [matrixCardWidth, c.card, c.primary, c.teal, c.accent, c.warning]);
+
+  const displayedTransactions = useMemo(
+    () => unifiedTransactions.slice(0, ledgerDisplayLimit),
+    [unifiedTransactions, ledgerDisplayLimit]
+  );
+
   const onLedgerContentSize = useCallback((_w: number, h: number) => setLedgerContentHeight(h), []);
   const onLedgerLayout = useCallback((e: LayoutChangeEvent) => setLedgerViewHeight(e.nativeEvent.layout.height), []);
   const renderLedgerItem = useCallback(
@@ -1490,7 +1214,7 @@ export default function DashboardScreen() {
               <View style={styles.cashFlowCol}>
                 <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Savings Rate</Text>
                 <NumberTicker
-                  value={parseFloat(savingsRate) || 0}
+                  value={Number.parseFloat(savingsRate) || 0}
                   suffix="%"
                   decimals={1}
                   style={[styles.cashFlowAmount, { color: c.primary }]}
@@ -1537,10 +1261,10 @@ export default function DashboardScreen() {
         <StaggeredView delay={100} direction="up">
           <View style={[styles.matrixGrid, { gap: isLargeScreen ? 12 : 10 }]}>
             {/* Total Ledger Outflow */}
-            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.primary + '40' }]} scaleTo={0.96}>
+            <AnimatedCard style={matrixCardStyles.cardPrimary} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Total Outflow</Text>
-                <View style={[styles.matrixBadge, { backgroundColor: c.primary + '18' }]}>
+                <View style={matrixCardStyles.badgePrimary}>
                   <Ionicons name="wallet-outline" size={13} color={c.primary} />
                 </View>
               </View>
@@ -1555,10 +1279,10 @@ export default function DashboardScreen() {
             </AnimatedCard>
 
             {/* Current Month Burn */}
-            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.teal + '40' }]} scaleTo={0.96}>
+            <AnimatedCard style={matrixCardStyles.cardTeal} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>This Month</Text>
-                <View style={[styles.matrixBadge, { backgroundColor: c.teal + '18' }]}>
+                <View style={matrixCardStyles.badgeTeal}>
                   <Ionicons name="calendar-outline" size={13} color={c.teal} />
                 </View>
               </View>
@@ -1575,10 +1299,10 @@ export default function DashboardScreen() {
             </AnimatedCard>
 
             {/* Daily Velocity / Burn Rate */}
-            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.accent + '40' }]} scaleTo={0.96}>
+            <AnimatedCard style={matrixCardStyles.cardAccent} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Daily Velocity</Text>
-                <View style={[styles.matrixBadge, { backgroundColor: c.accent + '18' }]}>
+                <View style={matrixCardStyles.badgeAccent}>
                   <Ionicons name="speedometer-outline" size={13} color={c.accent} />
                 </View>
               </View>
@@ -1596,10 +1320,10 @@ export default function DashboardScreen() {
             </AnimatedCard>
 
             {/* Top Cost Driver */}
-            <AnimatedCard style={[styles.matrixCard, { width: matrixCardWidth, backgroundColor: c.card, borderColor: c.warning + '40' }]} scaleTo={0.96}>
+            <AnimatedCard style={matrixCardStyles.cardWarning} scaleTo={0.96}>
               <View style={styles.matrixTop}>
                 <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Top Category</Text>
-                <View style={[styles.matrixBadge, { backgroundColor: c.warning + '18' }]}>
+                <View style={matrixCardStyles.badgeWarning}>
                   <Ionicons name="pie-chart-outline" size={13} color={c.warning} />
                 </View>
               </View>
@@ -1912,7 +1636,7 @@ export default function DashboardScreen() {
                     onContentSizeChange={onLedgerContentSize}
                     onLayout={onLedgerLayout}
                   >
-                    {unifiedTransactions.slice(0, ledgerDisplayLimit).map((item, idx) => (
+                    {displayedTransactions.map((item, idx) => (
                       <React.Fragment key={item.uniqueKey}>
                         {idx > 0 && <LedgerSeparator />}
                         <TransactionRow

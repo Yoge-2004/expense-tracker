@@ -319,6 +319,7 @@ class ExpenseServiceImplTest {
         updates.setCategory(replacement);
         when(expenseRepository.findById(83L)).thenReturn(Optional.of(existing));
         when(expenseRepository.save(existing)).thenReturn(existing);
+        when(categoryRepository.findById(30L)).thenReturn(Optional.of(replacement));
 
         service.updateExpense(83L, updates, owner);
 

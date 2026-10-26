@@ -31,9 +31,9 @@ const STORAGE_CALC_POS = '@expense_tracker_calc_pos';
 const BUTTON_SIZE = 54;
 
 function safeMath(a: string, b: string, op: string): string {
-  const numA = parseFloat(a);
-  const numB = parseFloat(b);
-  if (isNaN(numA) || isNaN(numB)) return String(numA || 0);
+  const numA = Number.parseFloat(a);
+  const numB = Number.parseFloat(b);
+  if (Number.isNaN(numA) || Number.isNaN(numB)) return String(numA || 0);
 
   let result = 0;
   switch (op) {
@@ -265,8 +265,8 @@ export const FloatingCalculator: React.FC = () => {
 
   const handlePercent = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const num = parseFloat(currentVal);
-    if (!isNaN(num)) {
+    const num = Number.parseFloat(currentVal);
+    if (!Number.isNaN(num)) {
       setCurrentVal(String(num / 100));
       setIsNewNum(true);
     }
@@ -282,8 +282,8 @@ export const FloatingCalculator: React.FC = () => {
 
   const handleConvertCurrency = useCallback(
     async (fromCode: string, toCode?: string) => {
-      const num = parseFloat(currentVal);
-      if (isNaN(num) || num === 0) return;
+      const num = Number.parseFloat(currentVal);
+      if (Number.isNaN(num) || num === 0) return;
 
       const targetCurr = toCode || fxTo || currency || 'INR';
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -335,9 +335,9 @@ export const FloatingCalculator: React.FC = () => {
   const handleInsertAmount = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     let finalAmount = currentVal;
-    if (splitCount > 1 && !isNaN(parseFloat(currentVal))) {
+    if (splitCount > 1 && !Number.isNaN(Number.parseFloat(currentVal))) {
       finalAmount = String(
-        Math.round(((parseFloat(currentVal) / splitCount) + Number.EPSILON) * 100) / 100
+        Math.round(((Number.parseFloat(currentVal) / splitCount) + Number.EPSILON) * 100) / 100
       );
     }
 
@@ -351,8 +351,8 @@ export const FloatingCalculator: React.FC = () => {
 
   // Display computation
   const displayVal =
-    splitCount > 1 && !isNaN(parseFloat(currentVal))
-      ? String(Math.round(((parseFloat(currentVal) / splitCount) + Number.EPSILON) * 100) / 100)
+    splitCount > 1 && !Number.isNaN(Number.parseFloat(currentVal))
+      ? String(Math.round(((Number.parseFloat(currentVal) / splitCount) + Number.EPSILON) * 100) / 100)
       : currentVal;
 
   const displayExpr =

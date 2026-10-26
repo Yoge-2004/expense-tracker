@@ -71,10 +71,10 @@ class RangeReportControllerTest {
         User user = user(7L, "Test User");
         Category food = category("Food");
         when(users.findById(7L)).thenReturn(Optional.of(user));
-        when(expenses.findByUser(user)).thenReturn(List.of(expense(100, LocalDate.of(2026, 9, 1), "Lunch", food),
-                expense(900, LocalDate.of(2026, 8, 31), "Outside", food)));
-        when(incomes.findByUser(user)).thenReturn(List.of(income(3000, LocalDate.of(2026, 9, 5), "Salary"),
-                income(5000, LocalDate.of(2026, 10, 1), "Outside")));
+        when(expenses.findByUserAndExpenseDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                .thenReturn(List.of(expense(100, LocalDate.of(2026, 9, 1), "Lunch", food)));
+        when(incomes.findByUserAndIncomeDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                .thenReturn(List.of(income(3000, LocalDate.of(2026, 9, 5), "Salary")));
         // Stub the additional repository mocks so the controller's export path doesn't NPE.
         when(savingsGoals.findByUser(user)).thenReturn(List.of());
         when(recurringExpenses.findByUser(user)).thenReturn(List.of());
@@ -90,8 +90,8 @@ class RangeReportControllerTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 1000);
         verify(security).validateUserAccess(7L);
-        verify(expenses).findByUser(user);
-        verify(incomes).findByUser(user);
+        verify(expenses).findByUserAndExpenseDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
+        verify(incomes).findByUserAndIncomeDateBetween(user, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30));
     }
 
     @Test

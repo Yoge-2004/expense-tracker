@@ -113,7 +113,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
             const earliest = new Date(dates[0]);
             const eYear = earliest.getFullYear();
             const eMonth = earliest.getMonth() + 1;
-            if (!isNaN(eYear) && eYear >= 2020 && eYear <= currentYear) {
+            if (!Number.isNaN(eYear) && eYear >= 2020 && eYear <= currentYear) {
               setStartYear(eYear);
               setStartMonth(eMonth);
 

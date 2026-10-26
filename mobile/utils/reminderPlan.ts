@@ -61,8 +61,10 @@ function dayLabel(day: Date): string {
   return day.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
-function money(currency: string, amount?: number): string {
-  return `${currency}${Math.round(Number(amount) || 0).toLocaleString()}`;
+export function formatReminderMoney(currency: string, amount?: number): string {
+  const c = (currency || '₹').trim();
+  const isAlpha = /^[A-Z]{3}$/.test(c);
+  return `${c}${isAlpha ? ' ' : ''}${Math.round(Number(amount) || 0).toLocaleString()}`;
 }
 
 function whenLabel(offset: number): string {
@@ -124,7 +126,7 @@ export function planDueReminders(
       add({
         id: `${REMINDER_ID_PREFIX}bill_${bill.id}_${dayKey(due)}_${offset}`,
         title: `💳 ${name} is due ${whenLabel(offset)}`,
-        body: `${money(currency, bill.amount)} is due on ${dayLabel(due)}. Make sure your balance can cover it.`,
+        body: `${formatReminderMoney(currency, bill.amount)} is due on ${dayLabel(due)}. Make sure your balance can cover it.`,
         date: atHour(due, -offset, hour),
         screen: '/(tabs)/subscriptions',
       });
@@ -139,7 +141,7 @@ export function planDueReminders(
     add({
       id: `${REMINDER_ID_PREFIX}income_${income.id}_${dayKey(due)}`,
       title: `💰 ${name} is expected today`,
-      body: `${money(currency, income.amount)} is due today. Open the app to check that it arrived.`,
+      body: `${formatReminderMoney(currency, income.amount)} is due today. Open the app to check that it arrived.`,
       date: atHour(due, 0, hour),
       screen: '/(tabs)',
     });
@@ -154,7 +156,7 @@ export function planDueReminders(
       add({
         id: `${REMINDER_ID_PREFIX}goal_${goal.id}_${dayKey(due)}_${offset}`,
         title: `🎯 Savings top-up due ${whenLabel(offset)}`,
-        body: `Put ${money(currency, goal.recurringAmount)} toward ${name}.`,
+        body: `Put ${formatReminderMoney(currency, goal.recurringAmount)} toward ${name}.`,
         date: atHour(due, -offset, hour),
         screen: '/(tabs)',
       });

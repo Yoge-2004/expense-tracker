@@ -153,8 +153,8 @@ function extractNumber(line: string, regex: RegExp): number | null {
   const match = line.match(regex);
   if (!match) return null;
   const numStr = match[1].replace(/[\s,]/g, '');
-  const val = parseFloat(numStr);
-  return !isNaN(val) && val > 0 ? val : null;
+  const val = Number.parseFloat(numStr);
+  return !Number.isNaN(val) && val > 0 ? val : null;
 }
 
 /**
@@ -217,8 +217,8 @@ export function parseReceiptText(text: string): ParsedReceipt {
     const currencyMatches = text.match(/(?:[₹$€£]|\brs\.?|\binr)\s*([0-9]{1,3}(?:[,\s][0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/gi);
     if (currencyMatches && currencyMatches.length > 0) {
       const nums = currencyMatches
-        .map(s => parseFloat(s.replace(/[^0-9.]/g, '')))
-        .filter(n => !isNaN(n));
+        .map(s => Number.parseFloat(s.replace(/[^0-9.]/g, '')))
+        .filter(n => !Number.isNaN(n));
       if (nums.length > 0) {
         amount = Math.max(...nums);
         breakdown.grandTotal = amount;

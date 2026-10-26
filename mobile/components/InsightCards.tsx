@@ -134,7 +134,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
 
   const formatAmt = (n: number) => {
     if (isStealthMode) return `${currSym}••••••`;
-    const val = isNaN(n) ? 0 : Math.round(n);
+    const val = Number.isNaN(n) ? 0 : Math.round(n);
     return `${currSym}${val.toLocaleString('en-IN')}`;
   };
 
@@ -186,10 +186,10 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
     const parts = e.expenseDate.split('T')[0].split('-');
     let day = -1;
     if (parts.length === 3) {
-      const y = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10) - 1;
-      const d = parseInt(parts[2], 10);
-      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      const y = Number.parseInt(parts[0], 10);
+      const m = Number.parseInt(parts[1], 10) - 1;
+      const d = Number.parseInt(parts[2], 10);
+      if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
         day = new Date(y, m, d).getDay();
       }
     }

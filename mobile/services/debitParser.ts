@@ -144,8 +144,8 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
   if (chosen) {
     const rawAmt = chosen[1] || chosen[2];
     if (rawAmt) {
-      const parsedVal = parseFloat(rawAmt.replace(/,/g, ""));
-      if (!isNaN(parsedVal) && parsedVal > 0) {
+      const parsedVal = Number.parseFloat(rawAmt.replace(/,/g, ""));
+      if (!Number.isNaN(parsedVal) && parsedVal > 0) {
         result.amount = parsedVal;
       }
     }
@@ -163,8 +163,8 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
       bareCandidates.sort(
         (a, b) => Math.abs((a.index ?? 0) - keywordIndex) - Math.abs((b.index ?? 0) - keywordIndex)
       );
-      const parsedVal = parseFloat(bareCandidates[0][0].replace(/,/g, ""));
-      if (!isNaN(parsedVal) && parsedVal > 0) {
+      const parsedVal = Number.parseFloat(bareCandidates[0][0].replace(/,/g, ""));
+      if (!Number.isNaN(parsedVal) && parsedVal > 0) {
         result.amount = parsedVal;
       }
     }
@@ -173,8 +173,8 @@ export function parseFinancialMessage(text: string): ParsedTransaction {
   if (result.amount === null) {
     const fallbackMatch = cleanText.match(FALLBACK_AMOUNT_REGEX);
     if (fallbackMatch && fallbackMatch[1]) {
-      const parsedVal = parseFloat(fallbackMatch[1].replace(/,/g, ""));
-      if (!isNaN(parsedVal) && parsedVal > 0) {
+      const parsedVal = Number.parseFloat(fallbackMatch[1].replace(/,/g, ""));
+      if (!Number.isNaN(parsedVal) && parsedVal > 0) {
         result.amount = parsedVal;
       }
     }

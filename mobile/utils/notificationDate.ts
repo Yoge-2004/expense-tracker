@@ -9,7 +9,7 @@
  * so JavaScript parses as UTC and displays in the user device's local timezone.
  */
 export function parseNotificationDate(value: string | number | Date | null | undefined): Date {
-  if (!value) return new Date(NaN);
+  if (!value) return new Date(Number.NaN);
   if (value instanceof Date) return value;
   if (typeof value === 'number') return new Date(value);
   const str = String(value).trim();

@@ -52,8 +52,8 @@ export function formatNotificationAmount(
   currency: string = "₹",
   fixedDecimals?: number
 ): string {
-  const num = typeof amount === "number" ? amount : parseFloat(String(amount || 0));
-  const safeNum = isNaN(num) ? 0 : num;
+  const num = typeof amount === "number" ? amount : Number.parseFloat(String(amount || 0));
+  const safeNum = Number.isNaN(num) ? 0 : num;
   const rawCurr = (currency || "₹").trim();
   const symbol = getCurrencySymbol(rawCurr);
   const isAlphaCode = /^[A-Z]{3}$/.test(symbol);
@@ -418,7 +418,7 @@ export async function detectAndAddExpenseFromMessage(
   }
 
   const parsed = parseFinancialMessage(rawText);
-  if (!parsed.isFinancial || parsed.direction !== 'DEBIT' || !parsed.amount || parsed.amount <= 0 || !isFinite(parsed.amount) || parsed.amount > 10_000_000) {
+  if (!parsed.isFinancial || parsed.direction !== 'DEBIT' || !parsed.amount || parsed.amount <= 0 || !Number.isFinite(parsed.amount) || parsed.amount > 10_000_000) {
     return null;
   }
 
@@ -529,7 +529,7 @@ export async function detectAndAddCreditFromMessage(
   }
 
   const parsed = parseFinancialMessage(rawText);
-  if (!parsed.isFinancial || parsed.direction !== 'CREDIT' || !parsed.amount || parsed.amount <= 0 || !isFinite(parsed.amount) || parsed.amount > 10_000_000) {
+  if (!parsed.isFinancial || parsed.direction !== 'CREDIT' || !parsed.amount || parsed.amount <= 0 || !Number.isFinite(parsed.amount) || parsed.amount > 10_000_000) {
     return null;
   }
 
@@ -1099,8 +1099,8 @@ export async function scheduleLoanReminders(loans: any[], currSymbol: string = '
       let minute = 0;
       if (loan.reminderTime && loan.reminderTime.includes(':')) {
         const parts = loan.reminderTime.split(':');
-        hour = parseInt(parts[0], 10) || 10;
-        minute = parseInt(parts[1], 10) || 0;
+        hour = Number.parseInt(parts[0], 10) || 10;
+        minute = Number.parseInt(parts[1], 10) || 0;
       }
 
       const freq = (loan.reminderFrequency || 'ONCE').toUpperCase();

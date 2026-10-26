@@ -353,8 +353,8 @@ export default function SubscriptionsScreen() {
    */
   const handleQuickDeposit = async () => {
     if (!depositModalGoal || !depositAmount.trim()) return;
-    const amt = parseFloat(depositAmount);
-    if (isNaN(amt) || amt <= 0) {
+    const amt = Number.parseFloat(depositAmount);
+    if (Number.isNaN(amt) || amt <= 0) {
       showAlert('Invalid Amount', 'Please enter a valid positive installment amount.');
       return;
     }

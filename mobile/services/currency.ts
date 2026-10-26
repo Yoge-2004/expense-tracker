@@ -125,8 +125,8 @@ export function formatCurrencyAmount(
   decimals = 0
 ): string {
   try {
-    const numericValue = typeof amount === 'number' ? amount : parseFloat(String(amount || 0));
-    const safeNum = isNaN(numericValue) ? 0 : numericValue;
+    const numericValue = typeof amount === 'number' ? amount : Number.parseFloat(String(amount || 0));
+    const safeNum = Number.isNaN(numericValue) ? 0 : numericValue;
     const symbol = getCurrencySymbol(currencyCode);
     const locale = currencyCode && currencyCode.trim().toUpperCase() === 'INR' ? 'en-IN' : 'en-US';
     const formattedNum = safeNum.toLocaleString(locale, {

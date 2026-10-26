@@ -10,6 +10,8 @@ const ASSETS_TO_CACHE = [
     "/index.html",
     "/dashboard.html",
     "/css/style.css",
+    "/css/motion-extended.css",
+    "/css/dashboard-powerbi.css",
     "/css/ai-intelligence.css",
     "/js/api.js",
     "/js/modules/dashboard-ml.js",

@@ -277,8 +277,8 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
       let reqYear = year;
       let reqMonth = month + 1;
       if (mode === 'custom' && from) {
-        reqYear = parseInt(from.slice(0, 4), 10) || year;
-        reqMonth = parseInt(from.slice(5, 7), 10) || month + 1;
+        reqYear = Number.parseInt(from.slice(0, 4), 10) || year;
+        reqMonth = Number.parseInt(from.slice(5, 7), 10) || month + 1;
       }
 
       updateProgress({

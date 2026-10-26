@@ -821,6 +821,7 @@
     }
 
     function openWithExpense(expenseId, desc, amount, date) {
+        if (window.event) window.event.__handled = true;
         const modal = document.getElementById("loanModal");
         const form = document.getElementById("loanAdjustmentForm");
         if (!modal) return;

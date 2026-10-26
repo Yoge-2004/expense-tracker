@@ -246,13 +246,13 @@ export const LoansSection: React.FC<LoansSectionProps> = ({
   const handleSave = async () => {
     if (!userId) return;
     const name = formCounterparty.trim();
-    const amt = parseFloat(formAmount);
+    const amt = Number.parseFloat(formAmount);
 
     if (!name) {
       showAlert('Validation Error', 'Please enter a friend or contact name.', undefined, 'error');
       return;
     }
-    if (isNaN(amt) || amt <= 0) {
+    if (Number.isNaN(amt) || amt <= 0) {
       showAlert('Validation Error', 'Please enter a valid amount greater than 0.', undefined, 'error');
       return;
     }

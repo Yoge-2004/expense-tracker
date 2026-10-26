@@ -82,7 +82,7 @@ class ImportServiceImplTest {
         assertNotNull(result);
         assertEquals(2, result.get("imported"));
         assertEquals(0, result.get("failedRows"));
-        verify(expenseService, times(2)).createExpense(any(Expense.class), eq(testUser));
+        verify(expenseService).createExpenses(argThat(l -> l.size() == 2), eq(testUser));
     }
 
     @Test
@@ -124,7 +124,7 @@ class ImportServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.get("imported"));
         assertEquals(1, result.get("failedRows"));
-        verify(expenseService, times(1)).createExpense(any(Expense.class), eq(testUser));
+        verify(expenseService).createExpenses(argThat(l -> l.size() == 1), eq(testUser));
     }
 
     @Test
@@ -145,7 +145,7 @@ class ImportServiceImplTest {
 
         assertNotNull(result);
         assertEquals(2, result.get("imported"));
-        verify(expenseService, times(2)).createExpense(any(Expense.class), eq(testUser));
+        verify(expenseService).createExpenses(argThat(l -> l.size() == 2), eq(testUser));
     }
 
     @Test
@@ -162,7 +162,7 @@ class ImportServiceImplTest {
         assertNotNull(result);
         assertEquals(2, result.get("imported"));
         assertEquals(0, result.get("failedRows"));
-        verify(incomeService, times(2)).createIncome(any(), eq(testUser));
+        verify(incomeService).createIncomes(argThat(l -> l.size() == 2), eq(testUser));
     }
 
     @Test
@@ -180,7 +180,7 @@ class ImportServiceImplTest {
 
         assertNotNull(result);
         assertEquals(1, result.get("imported"));
-        verify(incomeService, times(1)).createIncome(any(), eq(testUser));
+        verify(incomeService).createIncomes(argThat(l -> l.size() == 1), eq(testUser));
     }
 
     @Test
@@ -266,8 +266,8 @@ class ImportServiceImplTest {
         assertEquals(1, result.get("newExpensesCount"));
         assertEquals(1, result.get("newIncomesCount"));
 
-        verify(expenseService, times(1)).createExpense(any(Expense.class), eq(testUser));
-        verify(incomeService, times(1)).createIncome(any(IncomeRequest.class), eq(testUser));
+        verify(expenseService).createExpenses(argThat(l -> l.size() == 1), eq(testUser));
+        verify(incomeService).createIncomes(argThat(l -> l.size() == 1), eq(testUser));
     }
 
     @Test

@@ -372,14 +372,14 @@ function renderList(expenses) {
             </div>
             <div class="expense-actions-col" style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                 <div class="expense-amount" style="font-family:var(--font-mono); font-variant-numeric:tabular-nums; color:var(--text-main); font-size:15px; font-weight:600;">${formatCurrency(exp.amount)}</div>
-                <button class="btn-text-icon btn-split-loan" onclick="window.LoansManager && window.LoansManager.openWithExpense(${exp.id}, '${jsAttrEscape(exp.description || '')}', ${exp.amount}, '${exp.expenseDate}')" title="Split / Link to Peer Loan" style="padding:4px 7px; border-radius:6px; color:#8B5CF6; border:1px solid rgba(139,92,246,0.35); background:rgba(139,92,246,0.08); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                <button class="btn-text-icon btn-split-loan" data-action="split" data-id="${exp.id}" data-desc="${escapeHtml(exp.description || '')}" data-amount="${exp.amount}" data-date="${exp.expenseDate}" onclick="window.LoansManager && window.LoansManager.openWithExpense(${exp.id}, '${jsAttrEscape(exp.description || '')}', ${exp.amount}, '${exp.expenseDate}')" title="Split / Link to Peer Loan" style="padding:4px 7px; border-radius:6px; color:#8B5CF6; border:1px solid rgba(139,92,246,0.35); background:rgba(139,92,246,0.08); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                     <span>Split</span>
                 </button>
-                <button class="btn-edit" onclick="editExpense(${exp.id})" title="Edit">
+                <button class="btn-edit" data-action="edit" data-id="${exp.id}" onclick="editExpense(${exp.id})" title="Edit">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 </button>
-                <button class="btn-delete" onclick="deleteExpense(${exp.id}, event)" title="Delete">
+                <button class="btn-delete" data-action="delete" data-id="${exp.id}" onclick="deleteExpense(${exp.id}, event)" title="Delete">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
             </div>
@@ -545,6 +545,7 @@ elements.addForm.addEventListener("submit", async (e) => {
 });
 
 window.editExpense = (id) => {
+    if (window.event) window.event.__handled = true;
     if (window.DashboardML && typeof window.DashboardML.resetActiveSession === "function") {
         window.DashboardML.resetActiveSession();
     }
@@ -565,6 +566,8 @@ window.editExpense = (id) => {
 };
 
 window.deleteExpense = async (id, event) => {
+    if (event) event.__handled = true;
+    if (window.event) window.event.__handled = true;
     if (!(await window.appConfirm("Delete this expense?"))) return;
     try {
         await apiRequest(`/expenses/${id}/user/${userId}`, { method: 'DELETE' });
@@ -579,6 +582,36 @@ window.deleteExpense = async (id, event) => {
         }
     }
 };
+
+// Container-level event delegation for expense ledger action buttons
+if (elements.expenseList && !elements.expenseList.__ledgerDelegated) {
+    elements.expenseList.__ledgerDelegated = true;
+    elements.expenseList.addEventListener("click", (e) => {
+        if (e.__handled || e.defaultPrevented) return;
+        const btn = e.target.closest("button[data-action]");
+        if (!btn || !elements.expenseList.contains(btn)) return;
+        const action = btn.getAttribute("data-action");
+        const id = Number(btn.getAttribute("data-id"));
+        if (!id) return;
+
+        if (action === "split") {
+            const desc = btn.getAttribute("data-desc") || "";
+            const amount = Number(btn.getAttribute("data-amount")) || 0;
+            const date = btn.getAttribute("data-date") || "";
+            if (window.LoansManager && typeof window.LoansManager.openWithExpense === "function") {
+                window.LoansManager.openWithExpense(id, desc, amount, date);
+            }
+        } else if (action === "edit") {
+            if (typeof window.editExpense === "function") {
+                window.editExpense(id);
+            }
+        } else if (action === "delete") {
+            if (typeof window.deleteExpense === "function") {
+                window.deleteExpense(id, e);
+            }
+        }
+    });
+}
 
 function syncRecurringIntervalVisibility() {
     if (elements.customIntervalWrap && elements.recurringFrequency) {
@@ -2184,6 +2217,36 @@ window.cancelSubscription = async (id, event) => {
         }
     }
 };
+
+// Container-level event delegation for expense ledger action buttons
+if (elements.expenseList && !elements.expenseList.__ledgerDelegated) {
+    elements.expenseList.__ledgerDelegated = true;
+    elements.expenseList.addEventListener("click", (e) => {
+        if (e.__handled || e.defaultPrevented) return;
+        const btn = e.target.closest("button[data-action]");
+        if (!btn || !elements.expenseList.contains(btn)) return;
+        const action = btn.getAttribute("data-action");
+        const id = Number(btn.getAttribute("data-id"));
+        if (!id) return;
+
+        if (action === "split") {
+            const desc = btn.getAttribute("data-desc") || "";
+            const amount = Number(btn.getAttribute("data-amount")) || 0;
+            const date = btn.getAttribute("data-date") || "";
+            if (window.LoansManager && typeof window.LoansManager.openWithExpense === "function") {
+                window.LoansManager.openWithExpense(id, desc, amount, date);
+            }
+        } else if (action === "edit") {
+            if (typeof window.editExpense === "function") {
+                window.editExpense(id);
+            }
+        } else if (action === "delete") {
+            if (typeof window.deleteExpense === "function") {
+                window.deleteExpense(id, e);
+            }
+        }
+    });
+}
 
 // --- 8. DELETE ACCOUNT ---
 
