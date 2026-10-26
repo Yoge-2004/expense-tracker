@@ -30,7 +30,23 @@
     </script>
     <meta name="description" content="ExpenseTracker Pro Executive Admin Command Center. High-governance financial telemetry, live application logs, and multi-cloud database administration.">
     <meta name="robots" content="noindex, nofollow">
-    <link rel="manifest" href="manifest.json">
+    <script>
+        (function () {
+            try {
+                var l = document.createElement("link");
+                l.rel = "manifest";
+                l.crossOrigin = "use-credentials";
+                l.href = "manifest.json" + (window.location.search || "");
+                document.head.appendChild(l);
+            } catch (_) {
+                var d = document.createElement("link");
+                d.rel = "manifest";
+                d.href = "manifest.json";
+                document.head.appendChild(d);
+            }
+        })();
+    </script>
+    <noscript><link rel="manifest" href="manifest.json"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
