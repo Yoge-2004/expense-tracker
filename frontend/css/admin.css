@@ -1268,3 +1268,32 @@ select.custom-select-native {
         text-align: center !important;
     }
 }
+
+/* ── Clean Professional Surface: Eliminate Canvas Particles, Halos & Specular Highlights ── */
+.animated-mesh-canvas,
+.executive-reticle,
+.reticle-click-shockwave {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+.card,
+.metric-card {
+    background: var(--card-bg, #161A14) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+[data-theme="light"] .card,
+[data-theme="light"] .metric-card {
+    background: #FFFFFF !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.card::before,
+.metric-card::before {
+    display: none !important;
+}
