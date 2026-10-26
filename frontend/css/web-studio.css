@@ -497,3 +497,44 @@
     50% { opacity: 1; }
     100% { opacity: 0.4; }
 }
+
+
+/* Custom Wallpaper Input Row */
+.studio-wallpaper-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.studio-wallpaper-input-row .studio-wallpaper-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 0 16px;
+    background: var(--input-bg, rgba(255, 255, 255, 0.04));
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+.studio-wallpaper-input-row .studio-wallpaper-field:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.studio-wallpaper-input-row #studioBrowseWallpaperBtn {
+    width: auto !important;
+    min-width: 120px;
+    flex: 0 0 auto;
+    height: 44px;
+    margin: 0;
+    white-space: nowrap !important;
+}

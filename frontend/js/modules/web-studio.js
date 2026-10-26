@@ -512,9 +512,9 @@
 
                         <div id="studioCustomWallpaperGroup" style="display:none; margin-bottom:20px;">
                             <label class="studio-section-label" for="studioWallpaperUrlInput">Wallpaper Image URL or File</label>
-                            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                                <input type="url" id="studioWallpaperUrlInput" class="field-input" placeholder="https://images.unsplash.com/photo-..." style="flex:1;">
-                                <button type="button" class="btn-secondary" id="studioBrowseWallpaperBtn" style="white-space:nowrap;">Browse File</button>
+                            <div class="studio-wallpaper-input-row">
+                                <input type="url" id="studioWallpaperUrlInput" class="studio-wallpaper-field" placeholder="Paste image URL (https://...) or choose Browse">
+                                <button type="button" class="btn-secondary" id="studioBrowseWallpaperBtn">Browse File</button>
                                 <input type="file" id="studioWallpaperFileInput" accept="image/*" style="display:none;">
                             </div>
                         </div>
