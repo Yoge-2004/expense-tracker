@@ -51,9 +51,21 @@
                 </div>
                 <div class="bi-slicers-actions">
                     <div id="biCrossFilterContainer" style="display:none;"></div>
+                    <button type="button" class="bi-action-btn" id="biWhatIfBtn" title="Interactive What-If Scenario Simulator">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <span>What-If Simulator</span>
+                    </button>
+                    <button type="button" class="bi-action-btn" id="biAnomalyBtn" title="Filter Statistical Surges (> 2σ)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span id="biAnomalyBtnText">Anomalies</span>
+                    </button>
+                    <button type="button" class="bi-action-btn" id="biDecompBtn" title="Explain Period Variance (Waterfall Decomposition)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        <span>Explain Variance</span>
+                    </button>
                     <button type="button" class="bi-reset-slicers-btn" id="biResetSlicersBtn" title="Reset all slicers and active cross-filters">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                        <span>Reset Slicers</span>
+                        <span>Reset</span>
                     </button>
                 </div>
             </div>
@@ -86,10 +98,88 @@
                     <button type="button" class="bi-slicer-pill" data-stream="incomes">Inflow Only</button>
                 </div>
             </div>
+
+            <!-- What-If Scenario Simulator Drawer -->
+            <div class="bi-whatif-drawer" id="biWhatIfDrawer">
+                <div class="bi-whatif-header">
+                    <h4 class="bi-whatif-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        Interactive Financial Sensitivity &amp; What-If Parameters
+                    </h4>
+                    <button type="button" class="bi-reset-slicers-btn" id="biResetWhatIfBtn">Reset Sliders</button>
+                </div>
+                <div class="bi-whatif-sliders-grid">
+                    <div class="bi-slider-control">
+                        <div class="bi-slider-label-row">
+                            <span>Discretionary Spend Reduction</span>
+                            <span class="bi-slider-val" id="valSpendCut">0%</span>
+                        </div>
+                        <input type="range" class="bi-range-input" id="sliderSpendCut" min="-30" max="30" value="0" step="5">
+                    </div>
+                    <div class="bi-slider-control">
+                        <div class="bi-slider-label-row">
+                            <span>Operating Inflow Shock</span>
+                            <span class="bi-slider-val" id="valRevShock">0%</span>
+                        </div>
+                        <input type="range" class="bi-range-input" id="sliderRevShock" min="-20" max="30" value="0" step="5">
+                    </div>
+                    <div class="bi-slider-control">
+                        <div class="bi-slider-label-row">
+                            <span>Inflation / Fixed Cost Delta</span>
+                            <span class="bi-slider-val" id="valInflation">0%</span>
+                        </div>
+                        <input type="range" class="bi-range-input" id="sliderInflation" min="0" max="15" value="0" step="1">
+                    </div>
+                </div>
+                <div class="bi-whatif-results-grid">
+                    <div class="bi-whatif-kpi-card">
+                        <span class="bi-whatif-kpi-lbl">Simulated Net Flow</span>
+                        <span class="bi-whatif-kpi-val" id="simNetFlow">$0</span>
+                    </div>
+                    <div class="bi-whatif-kpi-card">
+                        <span class="bi-whatif-kpi-lbl">Monthly Retained Delta</span>
+                        <span class="bi-whatif-kpi-val" id="simDeltaFlow">±$0</span>
+                    </div>
+                    <div class="bi-whatif-kpi-card">
+                        <span class="bi-whatif-kpi-lbl">Emergency Reserves Runway</span>
+                        <span class="bi-whatif-kpi-val" id="simRunway">0.0 Mo</span>
+                    </div>
+                    <div class="bi-whatif-kpi-card">
+                        <span class="bi-whatif-kpi-lbl">50/30/20 Health Score</span>
+                        <span class="bi-whatif-kpi-val" id="simHealthScore">75 / 100</span>
+                    </div>
+                </div>
+            </div>
         `;
 
         metricsMatrix.parentNode.insertBefore(ribbon, metricsMatrix);
+
+        // Inject Variance Decomposition Modal if not present
+        if (!document.getElementById("biDecompModal")) {
+            const modal = document.createElement("div");
+            modal.id = "biDecompModal";
+            modal.className = "bi-decomp-modal";
+            modal.innerHTML = `
+                <div class="bi-decomp-box">
+                    <div class="bi-decomp-top">
+                        <h3 class="bi-decomp-title">🔍 Variance Decomposition &amp; Cost Driver Tree</h3>
+                        <button type="button" class="bi-crossfilter-close" id="biCloseDecompBtn">&times;</button>
+                    </div>
+                    <p style="font-size:12px;color:var(--text-muted,#9E988A);margin:0;">
+                        Decomposes period-over-period spend variance across categories to isolate primary cost drivers.
+                    </p>
+                    <div class="bi-decomp-waterfall" id="biWaterfallContainer"></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById("biCloseDecompBtn")?.addEventListener("click", () => modal.classList.remove("open"));
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) modal.classList.remove("open");
+            });
+        }
+
         wireSlicerControls();
+        wireWhatIfControls();
     }
 
     // 2. WIRE SLICER CONTROLS
@@ -250,6 +340,10 @@
                 });
             } else if (activeCrossFilter.type === "recurring") {
                 list = list.filter(e => (!!(e.recurring || e.isRecurring)) === activeCrossFilter.value);
+            } else if (activeCrossFilter.type === "anomaly") {
+                const anomalies = computeAnomalies(expenses);
+                const anomalyIds = new Set(anomalies.map(a => a.id));
+                list = list.filter(e => anomalyIds.has(e.id));
             }
         }
 
@@ -257,6 +351,7 @@
     }
 
     function triggerFilterRefresh() {
+        updatePieVisualBrushing();
         const filterCtrl = window.dashboardFiltersController || window.DashboardFilters;
         if (filterCtrl && typeof filterCtrl.applyFilters === "function") {
             filterCtrl.applyFilters();
@@ -322,6 +417,246 @@
         }
     }
 
+    // 4.5. ENTERPRISE WHAT-IF SIMULATOR & ANOMALY ENGINE
+    let anomalyFilterActive = false;
+
+    function wireWhatIfControls() {
+        const whatIfBtn = document.getElementById("biWhatIfBtn");
+        const drawer = document.getElementById("biWhatIfDrawer");
+        whatIfBtn?.addEventListener("click", () => {
+            drawer?.classList.toggle("open");
+            if (drawer?.classList.contains("open")) updateWhatIfSimulation();
+        });
+
+        ["sliderSpendCut", "sliderRevShock", "sliderInflation"].forEach(id => {
+            document.getElementById(id)?.addEventListener("input", updateWhatIfSimulation);
+        });
+
+        document.getElementById("biResetWhatIfBtn")?.addEventListener("click", () => {
+            const s1 = document.getElementById("sliderSpendCut");
+            const s2 = document.getElementById("sliderRevShock");
+            const s3 = document.getElementById("sliderInflation");
+            if (s1) s1.value = 0;
+            if (s2) s2.value = 0;
+            if (s3) s3.value = 0;
+            updateWhatIfSimulation();
+        });
+
+        // Anomaly Button
+        document.getElementById("biAnomalyBtn")?.addEventListener("click", () => {
+            anomalyFilterActive = !anomalyFilterActive;
+            if (anomalyFilterActive) {
+                applyCrossFilter("anomaly", true, "Statistical Surges (Z > 2.0)");
+            } else {
+                clearCrossFilter();
+            }
+        });
+
+        // Decomp Button
+        document.getElementById("biDecompBtn")?.addEventListener("click", showDecompositionTree);
+    }
+
+    function updateWhatIfSimulation() {
+        const rawExpenses = (window.allExpenses && Array.isArray(window.allExpenses)) ? window.allExpenses : [];
+        const rawIncomes = (window.allIncomes && Array.isArray(window.allIncomes)) ? window.allIncomes : [];
+
+        const spendCut = parseFloat(document.getElementById("sliderSpendCut")?.value || 0) / 100;
+        const revShock = parseFloat(document.getElementById("sliderRevShock")?.value || 0) / 100;
+        const inflation = parseFloat(document.getElementById("sliderInflation")?.value || 0) / 100;
+
+        const valSpendEl = document.getElementById("valSpendCut");
+        if (valSpendEl) valSpendEl.textContent = `${spendCut >= 0 ? '+' : ''}${Math.round(spendCut * 100)}%`;
+        const valRevEl = document.getElementById("valRevShock");
+        if (valRevEl) valRevEl.textContent = `${revShock >= 0 ? '+' : ''}${Math.round(revShock * 100)}%`;
+        const valInfEl = document.getElementById("valInflation");
+        if (valInfEl) valInfEl.textContent = `+${Math.round(inflation * 100)}%`;
+
+        const now = new Date();
+        const curM = now.getMonth();
+        const curY = now.getFullYear();
+
+        const baseExp = rawExpenses.filter(e => {
+            const d = new Date(e.expenseDate || e.date);
+            return d.getMonth() === curM && d.getFullYear() === curY;
+        }).reduce((acc, e) => acc + Number(e.amount || 0), 0) || 1200;
+
+        const baseInc = rawIncomes.filter(i => {
+            const d = new Date(i.incomeDate || i.date);
+            return d.getMonth() === curM && d.getFullYear() === curY;
+        }).reduce((acc, i) => acc + Number(i.amount || 0), 0) || (baseExp * 1.35);
+
+        const baseNet = baseInc - baseExp;
+        const simInc = baseInc * (1 + revShock);
+        const simExp = baseExp * (1 - spendCut) * (1 + inflation);
+        const simNet = simInc - simExp;
+        const delta = simNet - baseNet;
+
+        const goals = window.cachedSavingsGoals || [];
+        const totalSaved = goals.reduce((acc, g) => acc + Number(g.currentAmount || 0), 0) || (baseExp * 2.5);
+        const dailyBurn = simExp / 30.4;
+        const simRunwayMonths = dailyBurn > 0 ? (totalSaved / dailyBurn / 30.4).toFixed(1) : "0.0";
+
+        let score = 70;
+        const savRate = simInc > 0 ? (simNet / simInc) : 0;
+        if (savRate >= 0.20) score += 20;
+        else if (savRate >= 0.10) score += 10;
+        else if (savRate < 0) score -= 25;
+        score = Math.max(10, Math.min(99, Math.round(score)));
+
+        const simNetEl = document.getElementById("simNetFlow");
+        if (simNetEl) {
+            simNetEl.textContent = fmt(simNet);
+            simNetEl.className = `bi-whatif-kpi-val ${simNet >= 0 ? 'positive' : 'negative'}`;
+        }
+        const deltaEl = document.getElementById("simDeltaFlow");
+        if (deltaEl) {
+            deltaEl.textContent = `${delta >= 0 ? '+' : ''}${fmt(delta)}`;
+            deltaEl.className = `bi-whatif-kpi-val ${delta >= 0 ? 'positive' : 'negative'}`;
+        }
+        const runwayEl = document.getElementById("simRunway");
+        if (runwayEl) runwayEl.textContent = `${simRunwayMonths} Mo`;
+        const scoreEl = document.getElementById("simHealthScore");
+        if (scoreEl) scoreEl.textContent = `${score} / 100`;
+    }
+
+    function computeAnomalies(expenses) {
+        if (!Array.isArray(expenses) || expenses.length < 3) return [];
+        const amounts = expenses.map(e => Number(e.amount || 0));
+        const n = amounts.length;
+        const mean = amounts.reduce((a, b) => a + b, 0) / n;
+        const variance = amounts.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / (n - 1);
+        const stdev = Math.sqrt(variance);
+        const threshold = mean + 2 * stdev;
+
+        return expenses.filter(e => Number(e.amount || 0) > threshold).map(e => ({
+            ...e,
+            zScore: stdev > 0 ? ((Number(e.amount || 0) - mean) / stdev).toFixed(2) : '2.0'
+        }));
+    }
+
+    function updateAnomalyBadge(expenses) {
+        const anomalies = computeAnomalies(expenses);
+        const txt = document.getElementById("biAnomalyBtnText");
+        const btn = document.getElementById("biAnomalyBtn");
+        if (!txt || !btn) return;
+
+        if (anomalies.length > 0) {
+            txt.textContent = `⚠️ ${anomalies.length} Surges (>2σ)`;
+            btn.style.borderColor = "rgba(239, 68, 68, 0.45)";
+            btn.style.color = "#EF4444";
+        } else {
+            txt.textContent = `✅ 0 Surges`;
+            btn.style.borderColor = "rgba(16, 185, 129, 0.45)";
+            btn.style.color = "#10B981";
+        }
+    }
+
+    function showDecompositionTree() {
+        const rawExpenses = (window.allExpenses && Array.isArray(window.allExpenses)) ? window.allExpenses : [];
+        const modal = document.getElementById("biDecompModal");
+        const container = document.getElementById("biWaterfallContainer");
+        if (!modal || !container) return;
+
+        const now = new Date();
+        const curM = now.getMonth();
+        const curY = now.getFullYear();
+        const prevDate = new Date(curY, curM - 1, 1);
+        const prevM = prevDate.getMonth();
+        const prevY = prevDate.getFullYear();
+
+        const curCat = {};
+        const prevCat = {};
+
+        rawExpenses.forEach(e => {
+            const d = new Date(e.expenseDate || e.date);
+            const cat = e.categoryName || "Uncategorized";
+            const amt = Number(e.amount || 0);
+            if (d.getMonth() === curM && d.getFullYear() === curY) {
+                curCat[cat] = (curCat[cat] || 0) + amt;
+            } else if (d.getMonth() === prevM && d.getFullYear() === prevY) {
+                prevCat[cat] = (prevCat[cat] || 0) + amt;
+            }
+        });
+
+        const allCats = new Set([...Object.keys(curCat), ...Object.keys(prevCat)]);
+        const deltas = [];
+        allCats.forEach(cat => {
+            const cur = curCat[cat] || 0;
+            const prev = prevCat[cat] || 0;
+            deltas.push({ category: cat, delta: cur - prev, cur, prev });
+        });
+
+        deltas.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+        const maxAbsDelta = Math.max(...deltas.map(d => Math.abs(d.delta)), 100);
+
+        let rowsHtml = `
+            <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.08);font-size:11px;font-weight:700;color:var(--text-muted,#9E988A);">
+                <span>CATEGORY COST DRIVER</span>
+                <span>VARIANCE DELTA (MOM)</span>
+            </div>
+        `;
+
+        deltas.slice(0, 8).forEach(d => {
+            const pctBar = Math.min(100, Math.round((Math.abs(d.delta) / maxAbsDelta) * 100));
+            const isSurge = d.delta > 0;
+            rowsHtml += `
+                <div class="bi-waterfall-row">
+                    <span class="bi-waterfall-label" title="${escapeHtml(d.category)}">${escapeHtml(d.category)}</span>
+                    <div class="bi-waterfall-bar-track">
+                        <div class="bi-waterfall-bar-fill ${isSurge ? 'surge' : 'savings'}" style="width:${pctBar}%;"></div>
+                    </div>
+                    <span class="bi-waterfall-val" style="color:${isSurge ? '#EF4444' : '#10B981'};">
+                        ${isSurge ? '+' : ''}${fmt(d.delta)}
+                    </span>
+                </div>
+            `;
+        });
+
+        if (deltas.length === 0) {
+            rowsHtml += `<p style="text-align:center;color:var(--text-muted);font-size:12px;padding:12px;">No historical transactions available to decompose.</p>`;
+        }
+
+        container.innerHTML = rowsHtml;
+        modal.classList.add("open");
+    }
+
+    function updatePieVisualBrushing() {
+        const chartState = window.DashboardChartState;
+        if (!chartState || !chartState.pieChart) return;
+        const chart = chartState.pieChart;
+        if (!chart.data || !chart.data.datasets || !chart.data.datasets[0]) return;
+
+        const dataset = chart.data.datasets[0];
+        if (!dataset._origBg) {
+            dataset._origBg = [...(dataset.backgroundColor || [])];
+        }
+
+        if (!activeCrossFilter || activeCrossFilter.type !== "category") {
+            dataset.backgroundColor = [...dataset._origBg];
+        } else {
+            const selectedCat = activeCrossFilter.value;
+            dataset.backgroundColor = chart.data.labels.map((lbl, idx) => {
+                const orig = dataset._origBg[idx] || '#C79A3E';
+                return lbl === selectedCat ? orig : hexOrRgbToDim(orig, 0.20);
+            });
+        }
+        chart.update('none');
+    }
+
+    function hexOrRgbToDim(color, alpha) {
+        if (!color) return `rgba(150, 150, 150, ${alpha})`;
+        if (color.startsWith('#')) {
+            let r = parseInt(color.slice(1, 3), 16) || 120;
+            let g = parseInt(color.slice(3, 5), 16) || 120;
+            let b = parseInt(color.slice(5, 7), 16) || 120;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        if (color.startsWith('rgb')) {
+            return color.replace(/rgb\(([^)]+)\)/, `rgba($1, ${alpha})`).replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, `rgba($1,$2,$3,${alpha})`);
+        }
+        return `rgba(150, 150, 150, ${alpha})`;
+    }
+
     // 5. SVG MICRO-SPARKLINES & VARIANCE METRICS
     function renderSparklines(expenses, incomes) {
         renderCardSparkline("metricCardOutflow", expenses, "expenseDate", "#EF4444", "#C79A3E");
@@ -329,6 +664,10 @@
         renderNetFlowSparkline("metricCardNetflow", expenses, incomes);
         renderPacingGauge(expenses);
         renderPeriodVariances(expenses, incomes);
+        updateAnomalyBadge(expenses);
+        if (document.getElementById("biWhatIfDrawer")?.classList.contains("open")) {
+            updateWhatIfSimulation();
+        }
     }
 
     function renderCardSparkline(cardId, items, dateField, strokeColor, fillColor) {
@@ -754,6 +1093,9 @@
         filterByPowerBI,
         renderSparklines,
         renderActiveTrendChart,
+        updateWhatIfSimulation,
+        showDecompositionTree,
+        computeAnomalies,
         getCrossFilter: () => activeCrossFilter
     });
 
