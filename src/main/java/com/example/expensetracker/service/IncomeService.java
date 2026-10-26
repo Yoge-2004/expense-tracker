@@ -27,6 +27,15 @@ public interface IncomeService {
     IncomeDto createIncome(IncomeRequest request, User user);
 
     /**
+     * Persists a collection of income records in a single transactional batch.
+     *
+     * @param requests list of income requests
+     * @param user     the owning user
+     * @return list of created income DTOs
+     */
+    List<IncomeDto> createIncomes(List<IncomeRequest> requests, User user);
+
+    /**
      * Retrieves all income records belonging to the specified user.
      *
      * @param user the owning user

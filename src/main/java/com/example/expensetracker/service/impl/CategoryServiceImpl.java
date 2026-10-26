@@ -2,6 +2,7 @@ package com.example.expensetracker.service.impl;
 
 import com.example.expensetracker.model.Category;
 import com.example.expensetracker.model.User;
+import com.example.expensetracker.repository.BudgetRepository;
 import com.example.expensetracker.repository.CategoryRepository;
 import com.example.expensetracker.repository.ExpenseRepository;
 import com.example.expensetracker.repository.RecurringExpenseRepository;
@@ -47,14 +48,14 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final ExpenseRepository expenseRepository;
     private final RecurringExpenseRepository recurringExpenseRepository;
+    private final BudgetRepository budgetRepository;
 
     /**
      * {@inheritDoc}
      *
      * <p>Before creating the category, checks whether a category with the same name
      * already exists for the specified user using
-     * {@link CategoryRepository#existsByNameAndUser(String, User)}.
-     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
+     * {@link CategoryRepository#existsByNameAndUser(String, User)}.\n     * If a duplicate is found, an {@link IllegalArgumentException} is thrown
      * to enforce per-user uniqueness of category names.</p>
      *
      * <p>After a successful save, both the per-user cache and the global categories
@@ -149,9 +150,9 @@ public class CategoryServiceImpl implements CategoryService {
      * <p>Ownership and the global-category guard are checked before the usage
      * check, so a user attempting to delete someone else's category (or a
      * global one) gets a clear "not found/not yours" error rather than a
-     * confusing "in use" message. Both {@link ExpenseRepository} and
-     * {@link RecurringExpenseRepository} are checked, since a category can be
-     * referenced by either a one-off expense or a recurring subscription.</p>
+     * confusing "in use" message. Both {@link ExpenseRepository},
+     * {@link RecurringExpenseRepository}, and {@link BudgetRepository} are checked,
+     * since a category can be referenced by one-off expenses, recurring subscriptions, or budgets.</p>
      */
     @Override
     @Transactional
@@ -179,11 +180,12 @@ public class CategoryServiceImpl implements CategoryService {
             throw new IllegalArgumentException("Category not found");
         }
         if (expenseRepository.existsByCategory_Id(categoryId)
-                || recurringExpenseRepository.existsByCategory_Id(categoryId)) {
+                || recurringExpenseRepository.existsByCategory_Id(categoryId)
+                || budgetRepository.existsByCategory_Id(categoryId)) {
             log.warn("Category id={} cannot be deleted because it is still referenced "
-                    + "by expenses or recurring expenses", categoryId);
+                    + "by expenses, recurring expenses, or budgets", categoryId);
             throw new IllegalStateException(
-                    "Category '" + category.getName() + "' is still used by one or more expenses and can't be deleted");
+                    "Category '" + category.getName() + "' is still used by expenses, subscriptions, or budgets and can't be deleted");
         }
 
         categoryRepository.delete(category);

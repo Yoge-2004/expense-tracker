@@ -55,6 +55,8 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     @Query("SELECT b FROM Budget b LEFT JOIN FETCH b.category WHERE b.user = :user AND b.category.id = :categoryId")
     Optional<Budget> findByUserAndCategoryId(@Param("user") User user, @Param("categoryId") Long categoryId);
 
+    boolean existsByCategory_Id(Long categoryId);
+
     void deleteByUserAndCategoryId(User user, Long categoryId);
 
     void deleteByIdAndUser(Long id, User user);

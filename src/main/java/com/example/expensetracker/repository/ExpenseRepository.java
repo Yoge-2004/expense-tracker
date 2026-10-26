@@ -31,6 +31,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user AND e.expenseDate BETWEEN :startDate AND :endDate ORDER BY e.expenseDate DESC, e.id DESC")
     List<Expense> findByUserAndExpenseDateBetween(@Param("user") User user, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user AND e.expenseDate >= :startDate ORDER BY e.expenseDate DESC, e.id DESC")
+    List<Expense> findByUserAndExpenseDateGreaterThanEqual(@Param("user") User user, @Param("startDate") LocalDate startDate);
+
+    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user AND e.expenseDate <= :endDate ORDER BY e.expenseDate DESC, e.id DESC")
+    List<Expense> findByUserAndExpenseDateLessThanEqual(@Param("user") User user, @Param("endDate") LocalDate endDate);
+
     boolean existsByCategory_Id(Long categoryId);
 
     @Modifying
@@ -45,9 +51,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user = :user")
     BigDecimal sumTotalExpensesAmountByUser(@Param("user") User user);
 
-    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category ORDER BY e.expenseDate DESC, e.id DESC")
+    @Query(value = "SELECT e FROM Expense e LEFT JOIN FETCH e.category ORDER BY e.expenseDate DESC, e.id DESC",
+           countQuery = "SELECT COUNT(e) FROM Expense e")
     org.springframework.data.domain.Page<Expense> findAllWithCategory(org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user ORDER BY e.expenseDate DESC, e.id DESC")
+    @Query(value = "SELECT e FROM Expense e LEFT JOIN FETCH e.category WHERE e.user = :user ORDER BY e.expenseDate DESC, e.id DESC",
+           countQuery = "SELECT COUNT(e) FROM Expense e WHERE e.user = :user")
     org.springframework.data.domain.Page<Expense> findByUserWithCategory(@Param("user") User user, org.springframework.data.domain.Pageable pageable);
 }

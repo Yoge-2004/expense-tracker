@@ -39,6 +39,19 @@ public interface ExpenseService {
     Expense createExpense(Expense expense, User user);
 
     /**
+     * Persists a collection of expense records in a single transactional batch.
+     *
+     * <p>Optimized for batch operations (CSV/JSON/Excel import). Pre-validates
+     * inputs, links ownership, persists via batch insert, and executes a single
+     * cache eviction.</p>
+     *
+     * @param expenses the list of expenses to save
+     * @param user     the user context
+     * @return list of saved expenses
+     */
+    List<Expense> createExpenses(List<Expense> expenses, User user);
+
+    /**
      * Retrieves all expense records belonging to the specified user.
      *
      * @param user the {@link User} whose expenses are to be retrieved

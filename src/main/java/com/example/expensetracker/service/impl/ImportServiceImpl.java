@@ -52,6 +52,9 @@ import java.util.regex.Pattern;
  *   <li><b>Automated Bank Statement Reconciliation:</b> dynamically parses statements across
  *       all major retail banks (HDFC, SBI, ICICI, Axis, Kotak, etc.) and auto-matches
  *       existing entries while capturing 100% of missed debits and credits.</li>
+ *   <li><b>Batch Persistence & Cache Performance:</b> accumulates valid parsed entities and
+ *       delegates to batch persistence methods to avoid per-row transaction overhead and
+ *       repeated cache evictions.</li>
  * </ul>
  *
  * @author Yogeshwaran
@@ -86,7 +89,7 @@ public class ImportServiceImpl implements ImportService {
 
         List<String> rowErrors = new ArrayList<>();
         Map<String, Category> categoryCache = new HashMap<>();
-        int count = 0;
+        List<Expense> expensesToSave = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
@@ -143,8 +146,7 @@ public class ImportServiceImpl implements ImportService {
                     exp.setCategory(category);
                     exp.setAmount(new BigDecimal(amtStr));
                     exp.setDescription(desc.isEmpty() ? catStr : desc);
-                    expenseService.createExpense(exp, user);
-                    count++;
+                    expensesToSave.add(exp);
 
                 } catch (Exception rowEx) {
                     rowErrors.add("Row " + rowNum + ": " + rowEx.getMessage());
@@ -156,6 +158,11 @@ public class ImportServiceImpl implements ImportService {
             log.error("Failed to read expense CSV file for user {}", user.getId(), e);
             throw new RuntimeException("Failed to read CSV file: " + e.getMessage(), e);
         }
+
+        if (!expensesToSave.isEmpty()) {
+            expenseService.createExpenses(expensesToSave, user);
+        }
+        int count = expensesToSave.size();
 
         if (count == 0) {
             if (rowErrors.isEmpty()) {
@@ -190,7 +197,8 @@ public class ImportServiceImpl implements ImportService {
                 throw new IllegalArgumentException("JSON file contains no expenses to import");
             }
             Map<String, Category> categoryCache = new HashMap<>();
-            int count = 0;
+            List<Expense> expensesToSave = new ArrayList<>(dtos.size());
+
             for (ExpenseDto dto : dtos) {
                 if (dto == null) {
                     throw new IllegalArgumentException("Expense record in JSON cannot be null");
@@ -214,9 +222,13 @@ public class ImportServiceImpl implements ImportService {
                 expense.setCategory(category);
                 expense.setUser(user);
 
-                expenseService.createExpense(expense, user);
-                count++;
+                expensesToSave.add(expense);
             }
+
+            if (!expensesToSave.isEmpty()) {
+                expenseService.createExpenses(expensesToSave, user);
+            }
+            int count = expensesToSave.size();
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("imported", count);
@@ -242,9 +254,9 @@ public class ImportServiceImpl implements ImportService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
-        int count = 0;
         List<String> errors = new ArrayList<>();
         Map<String, Category> categoryCache = new HashMap<>();
+        List<Expense> expensesToSave = new ArrayList<>();
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheet("Expenses");
@@ -312,8 +324,7 @@ public class ImportServiceImpl implements ImportService {
                     expense.setCategory(category);
                     expense.setUser(user);
 
-                    expenseService.createExpense(expense, user);
-                    count++;
+                    expensesToSave.add(expense);
                 } catch (Exception ex) {
                     errors.add("Row " + (r + 1) + ": " + ex.getMessage());
                 }
@@ -324,6 +335,11 @@ public class ImportServiceImpl implements ImportService {
             log.error("Failed to parse Excel file for expenses", e);
             throw new RuntimeException("Failed to read Excel workbook: " + e.getMessage(), e);
         }
+
+        if (!expensesToSave.isEmpty()) {
+            expenseService.createExpenses(expensesToSave, user);
+        }
+        int count = expensesToSave.size();
 
         if (count == 0) {
             if (errors.isEmpty()) {
@@ -357,7 +373,7 @@ public class ImportServiceImpl implements ImportService {
         }
 
         List<String> rowErrors = new ArrayList<>();
-        int count = 0;
+        List<IncomeRequest> requestsToSave = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
@@ -415,8 +431,7 @@ public class ImportServiceImpl implements ImportService {
                             LocalDate.parse(dateStr),
                             false
                     );
-                    incomeService.createIncome(req, user);
-                    count++;
+                    requestsToSave.add(req);
 
                 } catch (Exception rowEx) {
                     rowErrors.add("Row " + rowNum + ": " + rowEx.getMessage());
@@ -428,6 +443,11 @@ public class ImportServiceImpl implements ImportService {
             log.error("Failed to read income CSV file for user {}", user.getId(), e);
             throw new RuntimeException("Failed to read CSV file: " + e.getMessage(), e);
         }
+
+        if (!requestsToSave.isEmpty()) {
+            incomeService.createIncomes(requestsToSave, user);
+        }
+        int count = requestsToSave.size();
 
         if (count == 0) {
             if (rowErrors.isEmpty()) {
@@ -461,7 +481,8 @@ public class ImportServiceImpl implements ImportService {
             if (dtos == null || dtos.isEmpty()) {
                 throw new IllegalArgumentException("JSON file contains no incomes to import");
             }
-            int count = 0;
+            List<IncomeRequest> requestsToSave = new ArrayList<>(dtos.size());
+
             for (IncomeDto dto : dtos) {
                 if (dto == null) {
                     throw new IllegalArgumentException("Income record in JSON cannot be null");
@@ -479,9 +500,13 @@ public class ImportServiceImpl implements ImportService {
                         dto.incomeDate() != null ? dto.incomeDate() : LocalDate.now(),
                         Boolean.TRUE.equals(dto.isRecurring())
                 );
-                incomeService.createIncome(req, user);
-                count++;
+                requestsToSave.add(req);
             }
+
+            if (!requestsToSave.isEmpty()) {
+                incomeService.createIncomes(requestsToSave, user);
+            }
+            int count = requestsToSave.size();
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("imported", count);
@@ -507,8 +532,8 @@ public class ImportServiceImpl implements ImportService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
-        int count = 0;
         List<String> errors = new ArrayList<>();
+        List<IncomeRequest> requestsToSave = new ArrayList<>();
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheet("Incomes");
@@ -580,8 +605,7 @@ public class ImportServiceImpl implements ImportService {
                             date,
                             isRecurring
                     );
-                    incomeService.createIncome(req, user);
-                    count++;
+                    requestsToSave.add(req);
                 } catch (Exception ex) {
                     errors.add("Row " + (r + 1) + ": " + ex.getMessage());
                 }
@@ -592,6 +616,11 @@ public class ImportServiceImpl implements ImportService {
             log.error("Failed to parse Excel file for incomes", e);
             throw new RuntimeException("Failed to read Excel workbook: " + e.getMessage(), e);
         }
+
+        if (!requestsToSave.isEmpty()) {
+            incomeService.createIncomes(requestsToSave, user);
+        }
+        int count = requestsToSave.size();
 
         if (count == 0) {
             if (errors.isEmpty()) {
@@ -657,6 +686,9 @@ public class ImportServiceImpl implements ImportService {
         List<String> reconciliationLogs = new ArrayList<>();
         Map<String, Category> categoryCache = new HashMap<>();
 
+        List<Expense> missedDebits = new ArrayList<>();
+        List<IncomeRequest> missedCredits = new ArrayList<>();
+
         for (StatementRow row : rows) {
             // Check debit (expense outflow)
             if (row.debit() != null && row.debit().compareTo(BigDecimal.ZERO) > 0) {
@@ -680,7 +712,7 @@ public class ImportServiceImpl implements ImportService {
                     expense.setDescription(desc);
                     expense.setCategory(category);
                     expense.setUser(user);
-                    expenseService.createExpense(expense, user);
+                    missedDebits.add(expense);
                     newExpensesCount++;
                     reconciliationLogs.add("Row " + row.rowNum() + " [Debit " + row.debit() + "]: Missed debit auto-recorded -> " + merchant);
                 }
@@ -706,11 +738,18 @@ public class ImportServiceImpl implements ImportService {
                             row.date(),
                             false
                     );
-                    incomeService.createIncome(req, user);
+                    missedCredits.add(req);
                     newIncomesCount++;
                     reconciliationLogs.add("Row " + row.rowNum() + " [Credit " + row.credit() + "]: Missed credit auto-recorded -> " + source);
                 }
             }
+        }
+
+        if (!missedDebits.isEmpty()) {
+            expenseService.createExpenses(missedDebits, user);
+        }
+        if (!missedCredits.isEmpty()) {
+            incomeService.createIncomes(missedCredits, user);
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -923,7 +962,7 @@ public class ImportServiceImpl implements ImportService {
     }
 
     private static final Pattern UPI_PATTERN = Pattern.compile("(?i)UPI(?:/[^/]+)?/([^/]+)/.*");
-    private static final Pattern POS_PATTERN = Pattern.compile("(?i)POS(?:\s+[0-9X*]+)?\s+([A-Za-z0-9\s&.'-]+)");
+    private static final Pattern POS_PATTERN = Pattern.compile("(?i)POS(?:\\s+[0-9X*]+)?\\s+([A-Za-z0-9\\s&.'-]+)");
     private static final Pattern NEFT_PATTERN = Pattern.compile("(?i)(?:NEFT|RTGS|IMPS)(?:\\s*CR|\\s*DR)?(?:[-/:]\\s*|\\s+)([A-Za-z0-9\\s&.'-]+)");
 
     /**
@@ -949,7 +988,7 @@ public class ImportServiceImpl implements ImportService {
         if (neftMatcher.find() && !neftMatcher.group(1).isBlank()) {
             String m = neftMatcher.group(1).trim();
             m = m.replaceFirst("(?i)^[A-Z0-9]{8,15}[-/:]?\\s*", ""); // strip any ref ID prefix
-            m = m.replace('-', ' ').replace('_', ' ').replaceAll("\s{2,}", " ").trim();
+            m = m.replace('-', ' ').replace('_', ' ').replaceAll("\\s{2,}", " ").trim();
             if (!m.isBlank()) return m;
         }
 
@@ -1182,7 +1221,7 @@ public class ImportServiceImpl implements ImportService {
             throw new IllegalArgumentException("User context required for category resolution");
         }
         String trimmed = name.trim();
-        String cacheKey = trimmed.toLowerCase();
+        String cacheKey = trimmed.toLowerCase(Locale.ROOT);
         if (categoryCache != null && categoryCache.containsKey(cacheKey)) {
             return categoryCache.get(cacheKey);
         }

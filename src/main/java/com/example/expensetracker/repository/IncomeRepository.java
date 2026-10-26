@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for {@link Income} entities.
@@ -18,9 +19,17 @@ import java.util.List;
  */
 public interface IncomeRepository extends JpaRepository<Income, Long> {
 
-    List<Income> findByUser(User user);
+    @Query("SELECT i FROM Income i WHERE i.user = :user ORDER BY i.incomeDate DESC, i.id DESC")
+    List<Income> findByUser(@Param("user") User user);
 
-    List<Income> findByUserAndIncomeDateBetween(User user, LocalDate startDate, LocalDate endDate);
+    @Query("SELECT i FROM Income i WHERE i.user = :user AND i.incomeDate BETWEEN :startDate AND :endDate ORDER BY i.incomeDate DESC, i.id DESC")
+    List<Income> findByUserAndIncomeDateBetween(@Param("user") User user, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT i FROM Income i WHERE i.user = :user AND i.incomeDate >= :startDate ORDER BY i.incomeDate DESC, i.id DESC")
+    List<Income> findByUserAndIncomeDateGreaterThanEqual(@Param("user") User user, @Param("startDate") LocalDate startDate);
+
+    @Query("SELECT i FROM Income i WHERE i.user = :user AND i.incomeDate <= :endDate ORDER BY i.incomeDate DESC, i.id DESC")
+    List<Income> findByUserAndIncomeDateLessThanEqual(@Param("user") User user, @Param("endDate") LocalDate endDate);
 
     List<Income> findByIsRecurringTrueAndNextDueDateLessThanEqual(LocalDate date);
 
@@ -33,12 +42,16 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     long countByUser(User user);
 
+    Optional<Income> findByIdAndUser(Long id, User user);
+
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM Income i WHERE i.user = :user")
     BigDecimal sumTotalIncomesAmountByUser(@Param("user") User user);
 
-    @Query("SELECT i FROM Income i ORDER BY i.incomeDate DESC, i.id DESC")
+    @Query(value = "SELECT i FROM Income i ORDER BY i.incomeDate DESC, i.id DESC",
+           countQuery = "SELECT COUNT(i) FROM Income i")
     org.springframework.data.domain.Page<Income> findAllIncomes(org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT i FROM Income i WHERE i.user = :user ORDER BY i.incomeDate DESC, i.id DESC")
+    @Query(value = "SELECT i FROM Income i WHERE i.user = :user ORDER BY i.incomeDate DESC, i.id DESC",
+           countQuery = "SELECT COUNT(i) FROM Income i WHERE i.user = :user")
     org.springframework.data.domain.Page<Income> findByUserIncomes(@Param("user") User user, org.springframework.data.domain.Pageable pageable);
 }

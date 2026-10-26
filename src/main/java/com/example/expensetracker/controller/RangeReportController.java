@@ -120,17 +120,27 @@ public class RangeReportController {
     }
 
     private Data data(User user, Range range) {
-        List<Expense> e = expenses.findByUser(user).stream()
-                .filter(x -> range.contains(x.getExpenseDate()))
-                .sorted(Comparator.comparing(Expense::getExpenseDate,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
+        List<Expense> e;
+        if (range.from() != null && range.to() != null) {
+            e = expenses.findByUserAndExpenseDateBetween(user, range.from(), range.to());
+        } else if (range.from() != null) {
+            e = expenses.findByUserAndExpenseDateGreaterThanEqual(user, range.from());
+        } else if (range.to() != null) {
+            e = expenses.findByUserAndExpenseDateLessThanEqual(user, range.to());
+        } else {
+            e = expenses.findByUser(user);
+        }
 
-        List<Income> i = incomes.findByUser(user).stream()
-                .filter(x -> range.contains(x.getIncomeDate()))
-                .sorted(Comparator.comparing(Income::getIncomeDate,
-                        Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
+        List<Income> i;
+        if (range.from() != null && range.to() != null) {
+            i = incomes.findByUserAndIncomeDateBetween(user, range.from(), range.to());
+        } else if (range.from() != null) {
+            i = incomes.findByUserAndIncomeDateGreaterThanEqual(user, range.from());
+        } else if (range.to() != null) {
+            i = incomes.findByUserAndIncomeDateLessThanEqual(user, range.to());
+        } else {
+            i = incomes.findByUser(user);
+        }
 
         // Savings goals and subscriptions are configurations, so they are exported
         // when active for the user rather than discarded by the date filter.

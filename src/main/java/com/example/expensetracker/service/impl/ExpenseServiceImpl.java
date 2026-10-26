@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.*;
 
 /**
  * Concrete implementation of {@link ExpenseService} providing business logic
@@ -112,6 +112,49 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    @CacheEvict(value = "userExpenses", key = "#user.id")
+    public List<Expense> createExpenses(List<Expense> expenses, User user) {
+        if (user == null || user.getId() == null) {
+            log.warn("Rejected batch expense creation with null user context");
+            throw new IllegalArgumentException("User must be specified");
+        }
+        if (expenses == null || expenses.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, Category> categoryCache = new HashMap<>();
+
+        for (Expense exp : expenses) {
+            if (exp.getAmount() == null || exp.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Expense amount must be greater than zero");
+            }
+            if (exp.getExpenseDate() == null) {
+                throw new IllegalArgumentException("Expense date cannot be null");
+            }
+            if (exp.getCategory() != null && exp.getCategory().getId() != null) {
+                Long catId = exp.getCategory().getId();
+                Category category = categoryCache.computeIfAbsent(catId, id ->
+                        categoryRepository.findById(id).orElseThrow(() ->
+                                new IllegalArgumentException("Category not found with id: " + id))
+                );
+                if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
+                    throw new IllegalArgumentException("Category does not belong to this user");
+                }
+                exp.setCategory(category);
+            }
+            exp.setUser(user);
+        }
+
+        List<Expense> saved = expenseRepository.saveAll(expenses);
+        log.info("Batch saved {} expenses for userId={}", saved.size(), user.getId());
+        return saved;
+    }
+
+    /**
+     * {@inheritDoc}
      *
      * <p>Result is cached in {@code userExpenses} keyed by {@code user.id}.
      * This avoids repeated SQL round-trips to Neon on every dashboard reload.</p>
@@ -134,8 +177,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     /**
      * {@inheritDoc}
      *
-     * <p>Loads the expense by ID, verifies that it belongs to the given user,
-     * and deletes it. Throws an {@link IllegalArgumentException} if the expense
+     * <p>Loads the expense by ID, verifies that it belongs to the given user,\n     * and deletes it. Throws an {@link IllegalArgumentException} if the expense
      * is not found or ownership does not match.</p>
      *
      * <p>Evicts the user's cached expense list on successful deletion.</p>
@@ -208,8 +250,6 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         if (!existing.getUser().getId().equals(user.getId())) {
             log.warn("Ownership mismatch: expense id={} does not belong to userId={}", expenseId, user.getId());
-            // Use AccessDeniedException (403) instead of RuntimeException (500) for ownership violations.
-            // GlobalExceptionHandler maps AccessDeniedException to 403 Forbidden.
             throw new AccessDeniedException("Expense does not belong to this user");
         }
 
@@ -223,14 +263,28 @@ public class ExpenseServiceImpl implements ExpenseService {
             existing.setExpenseDate(expenseUpdates.getExpenseDate());
         }
         if (expenseUpdates.getCategory() != null) {
-            existing.setCategory(expenseUpdates.getCategory());
-        }
-        if (expenseUpdates.isRecurring() != existing.isRecurring()) {
-            existing.setRecurring(expenseUpdates.isRecurring());
+            if (expenseUpdates.getCategory().getId() != null) {
+                Category category = categoryRepository
+                        .findById(expenseUpdates.getCategory().getId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("Category not found"));
+
+                if (category.getUser() != null
+                        && !category.getUser().getId().equals(user.getId())) {
+                    log.warn("Category ownership mismatch on update: categoryId={} does not belong to userId={}",
+                            category.getId(), user.getId());
+                    throw new IllegalArgumentException(
+                            "Category does not belong to this user");
+                }
+
+                existing.setCategory(category);
+            } else {
+                existing.setCategory(null);
+            }
         }
 
-        Expense saved = expenseRepository.save(existing);
-        log.info("Updated expense id={} successfully for userId={}", saved.getId(), user.getId());
-        return saved;
+        Expense updated = expenseRepository.save(existing);
+        log.info("Expense id={} updated successfully for userId={}", updated.getId(), user.getId());
+        return updated;
     }
 }
