@@ -5,6 +5,7 @@
  * - Stealth mode toggle for privacy in public spaces
  * - Currency preference (e.g. INR, USD, EUR)
  * - Dynamic Theming & Appearance Studio (Fonts, Background Assets & Auto-Extracted Palettes)
+ * - Bidirectional Cross-Device Cloud Synchronization with Spring Boot backend
  *
  * Decoupled from AuthContext so UI cosmetic toggles do not trigger cascading
  * re-renders of authentication-dependent components.
@@ -12,7 +13,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useColorScheme } from 'react-native';
-import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest } from '../services/api';
+import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest, getSession } from '../services/api';
 import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets } from '../constants/theme';
 import { ExtractedPalette, PRESET_BACKGROUNDS, PresetBackground } from '../services/paletteExtractor';
 
@@ -55,6 +56,9 @@ export interface PreferencesContextType {
 
   themeColors: ThemeColors;
   resetAppearance: () => Promise<void>;
+
+  // Cloud sync
+  syncAppearanceFromCloud: (explicitUserId?: string | null) => Promise<void>;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -85,6 +89,115 @@ export function PreferencesProvider({
       setTheme(initialTheme);
     }
   }, [initialTheme, theme]);
+
+  const activePreset: PresetBackground = useMemo(() => {
+    return (
+      PRESET_BACKGROUNDS.find((p) => p.id === backgroundAsset.presetId) ||
+      PRESET_BACKGROUNDS[0]
+    );
+  }, [backgroundAsset.presetId]);
+
+  // Push appearance to cloud backend (non-blocking)
+  const pushAppearanceToCloud = useCallback(
+    async (overrides?: {
+      font?: FontChoice;
+      customFont?: string | null;
+      bg?: BackgroundAssetConfig;
+      palette?: ExtractedPalette | null;
+    }) => {
+      try {
+        const session = await getSession();
+        if (!session || !session.userId) return;
+
+        const f = overrides && 'font' in overrides ? overrides.font : fontChoice;
+        const cf = overrides && 'customFont' in overrides ? overrides.customFont : customFontFamily;
+        const bg = overrides && 'bg' in overrides ? overrides.bg : backgroundAsset;
+        const pal = overrides && 'palette' in overrides ? overrides.palette : customPalette;
+
+        const activePal =
+          pal ?? (theme === 'light' ? activePreset.lightPalette : activePreset.darkPalette);
+
+        const payload = {
+          fontChoice: f,
+          customFontFamily: cf,
+          presetId: bg?.presetId || 'default',
+          primaryColor: activePal?.primary,
+          primaryGradientEnd: activePal?.primaryGradientEnd,
+          accentColor: activePal?.accent,
+          highlightColor: activePal?.highlight,
+          cardSurface: activePal?.card,
+          surface: activePal?.surface,
+          borderAccent: activePal?.borderAccent,
+          wallpaperType: bg?.type || 'preset',
+          wallpaperUri: bg?.uri || null,
+          overlayOpacity: bg?.overlayOpacity ?? 0.35,
+          blurIntensity: bg?.blurIntensity ?? 0,
+        };
+
+        await apiRequest(`/users/${session.userId}/appearance`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+      } catch (e) {
+        console.warn('[PreferencesContext] Cloud appearance push skipped/failed:', e);
+      }
+    },
+    [fontChoice, customFontFamily, backgroundAsset, customPalette, theme, activePreset]
+  );
+
+  // Pull appearance from cloud backend
+  const syncAppearanceFromCloud = useCallback(
+    async (explicitUserId?: string | null) => {
+      try {
+        const uid = explicitUserId || (await getSession()).userId;
+        if (!uid) return;
+
+        const remote = await apiRequest(`/users/${uid}/appearance`);
+        if (!remote) return;
+
+        if (
+          remote.fontChoice &&
+          ['grotesk', 'fraunces', 'mono', 'system', 'custom'].includes(remote.fontChoice)
+        ) {
+          setFontChoiceState(remote.fontChoice as FontChoice);
+          safeStorageSet('app_font_choice', remote.fontChoice).catch(() => {});
+        }
+        if (remote.customFontFamily) {
+          setCustomFontFamilyState(remote.customFontFamily);
+          safeStorageSet('app_custom_font_family', remote.customFontFamily).catch(() => {});
+        }
+        if (remote.primaryColor) {
+          const pal: ExtractedPalette = {
+            primary: remote.primaryColor,
+            primaryGradientEnd: remote.primaryGradientEnd || remote.primaryColor,
+            accent: remote.accentColor || '#A23E32',
+            highlight: remote.highlightColor || '#4C7A78',
+            card: remote.cardSurface || 'rgba(23, 26, 20, 0.88)',
+            surface: remote.surface || '#171A14',
+            borderAccent: remote.borderAccent || 'rgba(199, 154, 62, 0.35)',
+          };
+          setCustomPaletteState(pal);
+          safeStorageSet('app_custom_palette', JSON.stringify(pal)).catch(() => {});
+        }
+        if (remote.wallpaperType) {
+          const bg: BackgroundAssetConfig = {
+            type: (remote.wallpaperType as 'preset' | 'custom' | 'none') || 'preset',
+            presetId: remote.presetId || 'default',
+            uri: remote.wallpaperUri || undefined,
+            overlayOpacity:
+              typeof remote.overlayOpacity === 'number' ? remote.overlayOpacity : 0.35,
+            blurIntensity:
+              typeof remote.blurIntensity === 'number' ? remote.blurIntensity : 0,
+          };
+          setBackgroundAssetState(bg);
+          safeStorageSet('app_bg_asset', JSON.stringify(bg)).catch(() => {});
+        }
+      } catch (e) {
+        console.warn('[PreferencesContext] Cloud appearance pull skipped/failed:', e);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -141,6 +254,15 @@ export function PreferencesProvider({
             // Ignore parse errors
           }
         }
+
+        // Check if authenticated session can pull remote appearance
+        getSession()
+          .then((session) => {
+            if (mounted && session?.userId) {
+              syncAppearanceFromCloud(session.userId).catch(() => {});
+            }
+          })
+          .catch(() => {});
       })
       .catch((e) => {
         console.warn('[PreferencesContext] Error hydrating preferences:', e);
@@ -149,7 +271,7 @@ export function PreferencesProvider({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [syncAppearanceFromCloud]);
 
   const toggleTheme = useCallback(async (): Promise<void> => {
     userToggledThemeRef.current = true;
@@ -200,7 +322,8 @@ export function PreferencesProvider({
     } catch (e) {
       console.warn('[PreferencesContext] Failed to save font choice:', e);
     }
-  }, []);
+    void pushAppearanceToCloud({ font });
+  }, [pushAppearanceToCloud]);
 
   const setCustomFont = useCallback(async (fontFamily: string) => {
     setCustomFontFamilyState(fontFamily);
@@ -211,7 +334,8 @@ export function PreferencesProvider({
     } catch (e) {
       console.warn('[PreferencesContext] Failed to save custom font:', e);
     }
-  }, []);
+    void pushAppearanceToCloud({ font: 'custom', customFont: fontFamily });
+  }, [pushAppearanceToCloud]);
 
   const setBackgroundAsset = useCallback(async (config: BackgroundAssetConfig) => {
     setBackgroundAssetState(config);
@@ -220,7 +344,8 @@ export function PreferencesProvider({
     } catch (e) {
       console.warn('[PreferencesContext] Failed to save background asset:', e);
     }
-  }, []);
+    void pushAppearanceToCloud({ bg: config });
+  }, [pushAppearanceToCloud]);
 
   const setCustomPalette = useCallback(async (palette: ExtractedPalette | null) => {
     setCustomPaletteState(palette);
@@ -233,7 +358,8 @@ export function PreferencesProvider({
     } catch (e) {
       console.warn('[PreferencesContext] Failed to save custom palette:', e);
     }
-  }, []);
+    void pushAppearanceToCloud({ palette });
+  }, [pushAppearanceToCloud]);
 
   const resetAppearance = useCallback(async () => {
     setFontChoiceState('grotesk');
@@ -248,7 +374,13 @@ export function PreferencesProvider({
     } catch (e) {
       console.warn('[PreferencesContext] Failed to reset appearance:', e);
     }
-  }, []);
+    void pushAppearanceToCloud({
+      font: 'grotesk',
+      customFont: null,
+      bg: DEFAULT_BG_ASSET,
+      palette: null,
+    });
+  }, [pushAppearanceToCloud]);
 
   const activeFonts = useMemo(() => {
     if (fontChoice === 'custom' && customFontFamily) {
@@ -266,13 +398,6 @@ export function PreferencesProvider({
     }
     return FontPresets[fontChoice] || FontPresets.grotesk;
   }, [fontChoice, customFontFamily]);
-
-  const activePreset: PresetBackground = useMemo(() => {
-    return (
-      PRESET_BACKGROUNDS.find((p) => p.id === backgroundAsset.presetId) ||
-      PRESET_BACKGROUNDS[0]
-    );
-  }, [backgroundAsset.presetId]);
 
   const themeColors = useMemo<ThemeColors>(() => {
     const baseColors = Colors[theme];
@@ -319,6 +444,7 @@ export function PreferencesProvider({
       setCustomPalette,
       themeColors,
       resetAppearance,
+      syncAppearanceFromCloud,
     }),
     [
       theme,
@@ -330,6 +456,8 @@ export function PreferencesProvider({
       setCurrencyState,
       fontChoice,
       setFontChoice,
+      customFontFamily,
+      setCustomFont,
       activeFonts,
       backgroundAsset,
       setBackgroundAsset,
@@ -337,6 +465,7 @@ export function PreferencesProvider({
       setCustomPalette,
       themeColors,
       resetAppearance,
+      syncAppearanceFromCloud,
     ]
   );
 

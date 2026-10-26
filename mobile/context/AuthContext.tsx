@@ -56,7 +56,7 @@ function AuthInnerProvider({
   const [isBiometricsAvailable, setIsBiometricsAvailable] = useState(false);
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
 
-  const { setCurrencyState } = usePreferences();
+  const { setCurrencyState, syncAppearanceFromCloud } = usePreferences();
 
   const checkBiometricsSupport = async () => {
     try {
@@ -114,6 +114,7 @@ function AuthInnerProvider({
 
           // Proactively sync latest profile picture and profile info from server (matches website behavior)
           refreshUserProfile(session.userId).catch(() => {});
+          syncAppearanceFromCloud(session.userId).catch(() => {});
         }
 
         // Biometrics check runs non-blockingly
@@ -125,7 +126,7 @@ function AuthInnerProvider({
       }
     }
     void loadSession();
-  }, [refreshUserProfile]);
+  }, [refreshUserProfile, syncAppearanceFromCloud]);
 
   /**
    * Stores a separate credential for biometric unlock.
@@ -181,13 +182,14 @@ function AuthInnerProvider({
             console.warn('[AuthContext] Failed saving currency preference:', e);
           }
         }
+        syncAppearanceFromCloud(data.userId.toString()).catch(() => {});
       } else {
         throw new Error('Google OAuth failed: Incomplete response credentials.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [setCurrencyState]);
+  }, [setCurrencyState, syncAppearanceFromCloud]);
 
   const login = useCallback(async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
@@ -213,13 +215,14 @@ function AuthInnerProvider({
             console.warn('[AuthContext] Failed saving currency preference:', e);
           }
         }
+        syncAppearanceFromCloud(data.userId.toString()).catch(() => {});
       } else {
         throw new Error('Authentication response was missing security credentials.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [setCurrencyState]);
+  }, [setCurrencyState, syncAppearanceFromCloud]);
 
   const loginWithBiometrics = useCallback(async (): Promise<boolean> => {
     try {
@@ -246,6 +249,7 @@ function AuthInnerProvider({
         setToken(savedToken);
         setUserId(savedUserId);
         setUserName(savedName || 'User');
+        syncAppearanceFromCloud(savedUserId).catch(() => {});
         return true;
       }
       return false;
@@ -253,7 +257,7 @@ function AuthInnerProvider({
       console.warn('[AuthContext] Biometric login error:', e);
       return false;
     }
-  }, []);
+  }, [syncAppearanceFromCloud]);
 
   const toggleBiometrics = useCallback(async (enabled: boolean): Promise<boolean> => {
     try {

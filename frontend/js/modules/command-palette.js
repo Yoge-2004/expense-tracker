@@ -149,6 +149,18 @@
             }
         },
         {
+            id: "studio-appearance",
+            title: "Studio & Appearance (Themes, Fonts & Custom Hex)",
+            icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9z"/></svg>',
+            category: "Preferences",
+            badge: "Studio",
+            keywords: "studio appearance font typography color hex palette wallpaper theme custom",
+            run: () => {
+                const btn = document.getElementById("themeStudioBtn") || document.getElementById("themeStudioMenuBtn");
+                if (btn) btn.click();
+            }
+        },
+        {
             id: "toggle-theme",
             title: "Toggle Theme (Dark / Light)",
             icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',

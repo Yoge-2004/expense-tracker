@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/motion-extended.css">
     <link rel="stylesheet" href="css/ai-intelligence.css">
     <link rel="stylesheet" href="css/dashboard-powerbi.css">
+    <link rel="stylesheet" href="css/web-studio.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#10120E">
     <script>
@@ -74,6 +75,15 @@
                 </button>
 
                 <div class="top-bar-utility-group">
+                    <button id="themeStudioBtn" class="header-action-btn studio-toggle-btn" title="Studio & Appearance (Alt+T)" aria-label="Open Studio and Appearance Customizer">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+                            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+                            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+                            <path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9z"></path>
+                        </svg>
+                    </button>
                     <button id="themeToggle" class="btn-icon theme-toggle-btn" title="Switch Theme" aria-label="Switch Theme">
                         <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="5"></circle>
@@ -162,6 +172,7 @@
                             </div>
                         </div>
                         <a href="admin.html" id="adminConsoleMenuLink" style="display:none; color: #facc15; font-weight: 600; border-bottom: 1px solid rgba(234, 179, 8, 0.2);"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span>Admin Command Center</span></a>
+                        <a href="#" id="themeStudioMenuBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9z"/></svg> <span>Studio & Appearance</span></a>
                         <a href="#" id="editProfileBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> <span>Edit Profile & Avatar</span></a>
                         <a href="#" id="viewMonthlyReportBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> <span>View Monthly Report</span></a>
                         <a href="#" id="exportMonthlySummaryBtn"><svg class="menu-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span>Export Monthly Summary</span></a>
@@ -1847,6 +1858,7 @@
         <span class="reticle-center-accent"></span>
     </div>
 
+    <script src="js/modules/web-studio.js"></script>
     <script src="js/modules/executive-cursor.js"></script>
 </body>
 </html>

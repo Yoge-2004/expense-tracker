@@ -36,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final LoanAdjustmentRepository loanAdjustmentRepository;
     private final MlFeedbackRepository mlFeedbackRepository;
     private final NotificationPreferenceRepository notificationPreferenceRepository;
+    private final UserAppearanceRepository userAppearanceRepository;
 
     @org.springframework.beans.factory.annotation.Autowired
     public UserServiceImpl(
@@ -53,7 +54,8 @@ public class UserServiceImpl implements UserService {
             @org.springframework.beans.factory.annotation.Autowired(required = false) DeviceTokenRepository deviceTokenRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) LoanAdjustmentRepository loanAdjustmentRepository,
             @org.springframework.beans.factory.annotation.Autowired(required = false) MlFeedbackRepository mlFeedbackRepository,
-            @org.springframework.beans.factory.annotation.Autowired(required = false) NotificationPreferenceRepository notificationPreferenceRepository) {
+            @org.springframework.beans.factory.annotation.Autowired(required = false) NotificationPreferenceRepository notificationPreferenceRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) UserAppearanceRepository userAppearanceRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.expenseRepository = expenseRepository;
@@ -69,6 +71,7 @@ public class UserServiceImpl implements UserService {
         this.loanAdjustmentRepository = loanAdjustmentRepository;
         this.mlFeedbackRepository = mlFeedbackRepository;
         this.notificationPreferenceRepository = notificationPreferenceRepository;
+        this.userAppearanceRepository = userAppearanceRepository;
     }
 
     /**
@@ -87,7 +90,7 @@ public class UserServiceImpl implements UserService {
             WebAuthnCredentialRepository webAuthnCredentialRepository) {
         this(userRepository, passwordEncoder, expenseRepository, categoryRepository,
                 budgetRepository, recurringRepository, incomeRepository, savingsGoalRepository,
-                reportLogRepository, webAuthnCredentialRepository, null, null, null, null, null);
+                reportLogRepository, webAuthnCredentialRepository, null, null, null, null, null, null);
     }
 
     @Override
@@ -292,6 +295,9 @@ public class UserServiceImpl implements UserService {
         }
         if (notificationPreferenceRepository != null) {
             notificationPreferenceRepository.deleteByUser(user);
+        }
+        if (userAppearanceRepository != null) {
+            userAppearanceRepository.deleteByUser(user);
         }
         reportLogRepository.deleteByUserId(userId);
         webAuthnCredentialRepository.deleteByUserId(userId);

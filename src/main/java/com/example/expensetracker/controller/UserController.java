@@ -2,13 +2,14 @@ package com.example.expensetracker.controller;
 
 import com.example.expensetracker.dto.DeleteAccountRequest;
 import com.example.expensetracker.dto.UpdateProfileRequest;
-import jakarta.validation.Valid;
+import com.example.expensetracker.dto.UserAppearanceDto;
 import com.example.expensetracker.dto.ErrorResponse;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.security.GoogleIdTokenVerifier;
 import com.example.expensetracker.security.RateLimited;
 import com.example.expensetracker.security.UserSecurity;
+import com.example.expensetracker.service.UserAppearanceService;
 import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -49,6 +51,7 @@ public class UserController {
     private final UserSecurity userSecurity;
     private final PasswordEncoder passwordEncoder;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final UserAppearanceService userAppearanceService;
 
     private java.nio.file.Path getAvatarDir() {
         String dataDir = System.getenv("DATA_DIR");
@@ -382,6 +385,37 @@ public class UserController {
         log.info("Currency successfully updated to '{}' for userId={}", currency.toUpperCase(Locale.ROOT), userId);
         return ResponseEntity.ok(Map.of("message", "Currency preference updated successfully",
                 "currency", currency.trim().toUpperCase(Locale.ROOT)));
+    }
+
+    // ─── GET /api/users/{userId}/appearance ───────────────────────────────────
+
+    @Operation(
+        summary = "Get user appearance preferences",
+        description = "Returns font, theme palette, and studio personalization preferences for cross-device cloud sync."
+    )
+    @GetMapping("/{userId}/appearance")
+    public ResponseEntity<UserAppearanceDto> getUserAppearance(
+            @Parameter(description = "Database ID of the user whose appearance to fetch.", required = true, example = "1")
+            @PathVariable Long userId) {
+        log.info("Received request for user appearance: userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+        return ResponseEntity.ok(userAppearanceService.getAppearance(userId));
+    }
+
+    // ─── PUT /api/users/{userId}/appearance ───────────────────────────────────
+
+    @Operation(
+        summary = "Update user appearance preferences",
+        description = "Updates typography, custom hex palette, wallpaper, and dynamic theming preferences."
+    )
+    @PutMapping("/{userId}/appearance")
+    public ResponseEntity<UserAppearanceDto> updateUserAppearance(
+            @Parameter(description = "Database ID of the user whose appearance to update.", required = true, example = "1")
+            @PathVariable Long userId,
+            @RequestBody UserAppearanceDto dto) {
+        log.info("Received request to update user appearance: userId={}", userId);
+        userSecurity.validateUserAccess(userId);
+        return ResponseEntity.ok(userAppearanceService.updateAppearance(userId, dto));
     }
 
     // ─── POST /api/users/{userId}/avatar ─────────────────────────────────────
