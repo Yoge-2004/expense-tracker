@@ -4,22 +4,21 @@
    debit transaction alerts.
    ========================================================================== */
 
-const CACHE_NAME = "expense-tracker-cache-v1";
+const CACHE_NAME = "expense-tracker-cache-v2";
 const ASSETS_TO_CACHE = [
-    "/",
-    "/index.html",
-    "/dashboard.html",
-    "/css/style.css",
-    "/css/motion-extended.css",
-    "/css/dashboard-powerbi.css",
-    "/css/ai-intelligence.css",
-    "/js/api.js",
-    "/js/modules/dashboard-ml.js",
-    "/js/modules/dashboard-notifications.js",
-    "/favicon.ico",
-    "/assets/icon-192.png",
-    "/assets/badge-72.png",
-    "/assets/custom_chime.wav"
+    "index.html",
+    "dashboard.html",
+    "css/style.css",
+    "css/motion-extended.css",
+    "css/dashboard-powerbi.css",
+    "css/ai-intelligence.css",
+    "js/api.js",
+    "js/modules/dashboard-ml.js",
+    "js/modules/dashboard-notifications.js",
+    "favicon.ico",
+    "assets/icon-192.png",
+    "assets/badge-72.png",
+    "assets/custom_chime.wav"
 ];
 
 // Helper to guarantee fully-qualified absolute URLs for notification icons and badges
@@ -33,11 +32,21 @@ function toAbsoluteUrl(path) {
     }
 }
 
-// Install event - Pre-cache core shell
+// Install event - Pre-cache core shell resiliently (safe across root, subpaths, and IDE preview servers)
 self.addEventListener("install", (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE).catch(() => {});
+        caches.open(CACHE_NAME).then(async (cache) => {
+            const cachePromises = ASSETS_TO_CACHE.map(async (asset) => {
+                try {
+                    const response = await fetch(asset, { cache: "reload" });
+                    if (response && response.ok) {
+                        await cache.put(asset, response);
+                    }
+                } catch (_) {
+                    // Non-blocking: safe fallback for IDE preview servers like localhost:63342
+                }
+            });
+            await Promise.allSettled(cachePromises);
         })
     );
     self.skipWaiting();

@@ -19,20 +19,19 @@
 .bi-slicers-filter-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    background: var(--card-bg, rgba(255, 255, 255, 0.03));
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-    border-radius: 16px;
-    padding: 14px 18px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    gap: 10px;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
 }
 
 .bi-slicers-filter-container:hover {
-    border-color: rgba(199, 154, 62, 0.35);
-    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.18);
+    border-color: transparent !important;
+    box-shadow: none !important;
 }
 
 .bi-slicers-top {
@@ -161,17 +160,18 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 8px 12px;
-    border-radius: 14px;
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+    background: transparent !important;
+    padding: 2px 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
     width: 100%;
     box-sizing: border-box;
 }
 
 [data-theme="light"] .bi-slicer-group {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.08);
+    background: transparent !important;
+    border: none !important;
 }
 
 .bi-slicer-label {
@@ -179,23 +179,22 @@
     align-items: center;
     gap: 6px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: var(--primary, #C79A3E);
-    background: rgba(var(--primary-rgb, 199, 154, 62), 0.1);
-    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.25);
-    padding: 5px 10px;
-    border-radius: 8px;
-    min-width: 96px;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 4px 0 0 !important;
+    min-width: 90px;
     flex-shrink: 0;
     white-space: nowrap;
 }
 
 [data-theme="light"] .bi-slicer-label {
     color: #966C1E;
-    background: rgba(150, 108, 30, 0.08);
-    border-color: rgba(150, 108, 30, 0.2);
+    background: transparent !important;
+    border: none !important;
 }
 
 .bi-slicer-pills-wrap {
@@ -467,10 +466,11 @@
         margin-bottom: 8px !important;
     }
     .bi-slicers-filter-container {
-        padding: 10px 12px;
-        gap: 8px;
-        border-radius: 14px;
-        border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+        padding: 0 !important;
+        gap: 10px;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
     .bi-slicers-row {
         gap: 8px;
@@ -480,19 +480,23 @@
     .bi-slicer-group {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
-        padding: 8px 10px;
-        border-radius: 12px;
+        gap: 6px;
+        padding: 2px 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
         width: 100%;
         box-sizing: border-box;
     }
     .bi-slicer-label {
         font-size: 11px;
         font-weight: 800;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.08em;
         color: var(--primary, #C79A3E);
         min-width: 0;
-        padding: 3px 8px;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
     }
     .bi-slicer-pills-wrap {
         display: flex;
