@@ -16,9 +16,9 @@ import com.example.expensetracker.repository.SavingsGoalRepository;
 import com.example.expensetracker.security.UserSecurity;
 import com.example.expensetracker.service.UserService;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xddf.usermodel.chart.*;
+import org.apache.poi.xssf.usermodel.*;
 import org.openpdf.text.Document;
 import org.openpdf.text.DocumentException;
 import org.openpdf.text.Font;
@@ -411,7 +411,195 @@ public class RangeReportController {
                 for (int c = 5; c < 8; c++) put(dashboard, targetRow, c, "", z ? dataLeftZebra : dataLeft);
             }
 
+            int sec1End = Math.max(catRow, 13 + insights.size());
+
+            // Section 2: Portfolio Liquidity Flows (Cols 0-3) & Chronological Outflow Run-Rate (Cols 4-7)
+            dashboard.createRow(sec1End).setHeightInPoints(10); // Spacer
+            int sec2HeadRow = sec1End + 1;
+            put(dashboard, sec2HeadRow, 0, "PORTFOLIO LIQUIDITY FLOWS", tblHeader);
+            put(dashboard, sec2HeadRow, 1, "AMOUNT (" + symbol + ")", tblHeaderRight);
+            put(dashboard, sec2HeadRow, 2, "SHARE %", tblHeaderRight);
+            put(dashboard, sec2HeadRow, 3, "FLOW VECTOR", tblHeaderCenter);
+
+            put(dashboard, sec2HeadRow, 4, "CHRONOLOGICAL TIMELINE", tblHeaderCenter);
+            put(dashboard, sec2HeadRow, 5, "DISBURSEMENT (" + symbol + ")", tblHeaderRight);
+            put(dashboard, sec2HeadRow, 6, "VELOCITY RUN-RATE", tblHeaderCenter);
+            put(dashboard, sec2HeadRow, 7, "STATUS TAG", tblHeaderCenter);
+
+            int cfStartRow = sec2HeadRow + 1;
+            String[] cfLabels = {
+                    "Total Operating Revenue",
+                    "Total Operating Spend",
+                    "Net Retained Cash Flow",
+                    "Active Liquid Reserves"
+            };
+            BigDecimal[] cfAmounts = {
+                    income,
+                    spend,
+                    net,
+                    totalSaved
+            };
+            double[] cfShares = {
+                    income.compareTo(BigDecimal.ZERO) > 0 ? 1.0 : 0.0,
+                    income.compareTo(BigDecimal.ZERO) > 0 ? spend.divide(income, 4, RoundingMode.HALF_UP).doubleValue() : 0.0,
+                    savingsRate,
+                    0.0
+            };
+            String[] cfVectors = {
+                    "INFLOW (+)",
+                    "OUTFLOW (-)",
+                    net.signum() >= 0 ? "SURPLUS (+)" : "DEFICIT (-)",
+                    "RESERVE (+)"
+            };
+
+            for (int i = 0; i < 4; i++) {
+                int rIdx = cfStartRow + i;
+                boolean z = (i % 2 == 1);
+                put(dashboard, rIdx, 0, cfLabels[i], z ? dataLeftZebra : dataLeft);
+                put(dashboard, rIdx, 1, cfAmounts[i], z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 2, cfShares[i], z ? dataPctZebra : dataPct);
+                put(dashboard, rIdx, 3, cfVectors[i], z ? dataCenterZebra : dataCenter);
+            }
+            int cfEndRow = cfStartRow + 3;
+
+            // Chronological Timeline Data (Cols 4-7)
+            Map<String, BigDecimal> dailySpendMap = d.expenses.stream()
+                    .filter(x -> x.getExpenseDate() != null)
+                    .collect(Collectors.groupingBy(
+                            x -> x.getExpenseDate().toString(),
+                            TreeMap::new,
+                            Collectors.mapping(x -> nz(x.getAmount()), Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
+
+            List<Map.Entry<String, BigDecimal>> timeEntries = new ArrayList<>(dailySpendMap.entrySet());
+            if (timeEntries.isEmpty()) {
+                timeEntries.add(Map.entry(LocalDate.now().minusDays(1).toString(), BigDecimal.ZERO));
+                timeEntries.add(Map.entry(LocalDate.now().toString(), BigDecimal.ZERO));
+            }
+            if (timeEntries.size() > 6) {
+                timeEntries = timeEntries.subList(timeEntries.size() - 6, timeEntries.size());
+            }
+
+            int timeStartRow = sec2HeadRow + 1;
+            int numTimeRows = Math.max(4, timeEntries.size());
+            for (int i = 0; i < numTimeRows; i++) {
+                int rIdx = timeStartRow + i;
+                boolean z = (i % 2 == 1);
+                if (i < timeEntries.size()) {
+                    Map.Entry<String, BigDecimal> te = timeEntries.get(i);
+                    put(dashboard, rIdx, 4, te.getKey(), z ? dataCenterZebra : dataCenter);
+                    put(dashboard, rIdx, 5, te.getValue(), z ? dataMoneyZebra : dataMoney);
+                    put(dashboard, rIdx, 6, "Recorded Run-Rate", z ? dataCenterZebra : dataCenter);
+                    put(dashboard, rIdx, 7, "Nominal", z ? dataCenterZebra : dataCenter);
+                } else {
+                    put(dashboard, rIdx, 4, "", z ? dataCenterZebra : dataCenter);
+                    put(dashboard, rIdx, 5, BigDecimal.ZERO, z ? dataMoneyZebra : dataMoney);
+                    put(dashboard, rIdx, 6, "", z ? dataCenterZebra : dataCenter);
+                    put(dashboard, rIdx, 7, "", z ? dataCenterZebra : dataCenter);
+                }
+            }
+            int timeEndRow = timeStartRow + numTimeRows - 1;
+            int tableEndRow = Math.max(cfEndRow, timeEndRow);
+
+            // ═════════════════════════════════════════════════════════════════════════
+            // EMBEDDED VISUAL VECTOR XDDF CHARTS (Rows below summary tables)
+            // ═════════════════════════════════════════════════════════════════════════
+            try {
+                XSSFDrawing drawing = dashboard.createDrawingPatriarch();
+
+                int chartRow1 = tableEndRow + 2;
+                int chartRow1Height = 16;
+
+                // Chart 1: Cash Flow Column Chart (Cols 0-3 / A-D)
+                XSSFClientAnchor anchor1 = drawing.createAnchor(0, 0, 0, 0, 0, chartRow1, 4, chartRow1 + chartRow1Height);
+                XSSFChart chart1 = drawing.createChart(anchor1);
+                chart1.setTitleText("CASH FLOW DYNAMICS & LIQUIDITY (" + symbol + ")");
+                chart1.setTitleOverlay(false);
+
+                XDDFChartLegend legend1 = chart1.getOrAddLegend();
+                legend1.setPosition(LegendPosition.TOP_RIGHT);
+                legend1.setOverlay(false);
+
+                XDDFCategoryAxis bAxis1 = chart1.createCategoryAxis(AxisPosition.BOTTOM);
+                XDDFValueAxis lAxis1 = chart1.createValueAxis(AxisPosition.LEFT);
+                lAxis1.setCrosses(AxisCrosses.AUTO_ZERO);
+
+                XDDFBarChartData barChart = (XDDFBarChartData) chart1.createData(ChartTypes.BAR, bAxis1, lAxis1);
+                barChart.setBarDirection(BarDirection.COL);
+
+                XDDFDataSource<String> cfCategories =
+                        XDDFDataSourcesFactory.fromStringCellRange(
+                                dashboard, new CellRangeAddress(cfStartRow, cfEndRow, 0, 0));
+                XDDFNumericalDataSource<Double> cfValues =
+                        XDDFDataSourcesFactory.fromNumericCellRange(
+                                dashboard, new CellRangeAddress(cfStartRow, cfEndRow, 1, 1));
+
+                XDDFChartData.Series cfSeries = barChart.addSeries(cfCategories, cfValues);
+                cfSeries.setTitle("Portfolio Dynamics (" + symbol + ")", null);
+                chart1.plot(barChart);
+
+                // Chart 2: Expenditure Allocation Donut Chart (Cols 4-7 / E-H)
+                XSSFClientAnchor anchor2 = drawing.createAnchor(0, 0, 0, 0, 4, chartRow1, 8, chartRow1 + chartRow1Height);
+                XSSFChart chart2 = drawing.createChart(anchor2);
+                chart2.setTitleText("EXPENDITURE ALLOCATION & COST DRIVERS");
+                chart2.setTitleOverlay(false);
+
+                XDDFChartLegend legend2 = chart2.getOrAddLegend();
+                legend2.setPosition(LegendPosition.RIGHT);
+                legend2.setOverlay(false);
+
+                XDDFDoughnutChartData donutChart = (XDDFDoughnutChartData)
+                        chart2.createData(ChartTypes.DOUGHNUT, null, null);
+                donutChart.setHoleSize(55);
+                donutChart.setVaryColors(true);
+
+                int catEndPlotRow = Math.max(13, catRow - 1);
+                XDDFDataSource<String> catCategories =
+                        XDDFDataSourcesFactory.fromStringCellRange(
+                                dashboard, new CellRangeAddress(13, catEndPlotRow, 0, 0));
+                XDDFNumericalDataSource<Double> catValues =
+                        XDDFDataSourcesFactory.fromNumericCellRange(
+                                dashboard, new CellRangeAddress(13, catEndPlotRow, 2, 2));
+
+                XDDFChartData.Series donutSeries = donutChart.addSeries(catCategories, catValues);
+                donutSeries.setTitle("Expenditure Breakdown", null);
+                chart2.plot(donutChart);
+
+                // Chart 3: Chronological Disbursement Velocity Line Chart (Cols 0-7 / A-H)
+                int chartRow2 = chartRow1 + chartRow1Height + 1;
+                int chartRow2Height = 16;
+                XSSFClientAnchor anchor3 = drawing.createAnchor(0, 0, 0, 0, 0, chartRow2, 8, chartRow2 + chartRow2Height);
+                XSSFChart chart3 = drawing.createChart(anchor3);
+                chart3.setTitleText("CHRONOLOGICAL DISBURSEMENT VELOCITY & RUN-RATE (" + symbol + ")");
+                chart3.setTitleOverlay(false);
+
+                XDDFChartLegend legend3 = chart3.getOrAddLegend();
+                legend3.setPosition(LegendPosition.TOP_RIGHT);
+                legend3.setOverlay(false);
+
+                XDDFCategoryAxis bAxis3 = chart3.createCategoryAxis(AxisPosition.BOTTOM);
+                XDDFValueAxis lAxis3 = chart3.createValueAxis(AxisPosition.LEFT);
+                lAxis3.setCrosses(AxisCrosses.AUTO_ZERO);
+
+                XDDFLineChartData lineChart = (XDDFLineChartData) chart3.createData(ChartTypes.LINE, bAxis3, lAxis3);
+                lineChart.setVaryColors(false);
+
+                XDDFDataSource<String> timeCategories =
+                        XDDFDataSourcesFactory.fromStringCellRange(
+                                dashboard, new CellRangeAddress(timeStartRow, timeEndRow, 4, 4));
+                XDDFNumericalDataSource<Double> timeValues =
+                        XDDFDataSourcesFactory.fromNumericCellRange(
+                                dashboard, new CellRangeAddress(timeStartRow, timeEndRow, 5, 5));
+
+                XDDFChartData.Series lineSeries = lineChart.addSeries(timeCategories, timeValues);
+                lineSeries.setTitle("Daily Outflow (" + symbol + ")", null);
+                chart3.plot(lineChart);
+
+            } catch (Exception chartEx) {
+                log.warn("Executive Dashboard XDDF chart rendering note: {}", chartEx.getMessage(), chartEx);
+            }
+
             for (int c = 0; c < 8; c++) dashboard.setColumnWidth(c, 22 * 256);
+            dashboard.setForceFormulaRecalculation(true);
 
             // 2. INCOME LEDGER SHEET
             XSSFSheet incomeSheet = wb.createSheet("Income Ledger");
@@ -614,6 +802,7 @@ public class RangeReportController {
             } catch (Exception evalEx) {
                 log.debug("Formula pre-evaluation skipped: {}", evalEx.getMessage());
             }
+            wb.setSelectedTab(0);
             wb.write(out);
             return out.toByteArray();
         } catch (Exception ex) {
