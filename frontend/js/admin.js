@@ -696,7 +696,7 @@
                     <td style="color:var(--text-muted);">${dClean}</td>
                     <td><span class="status-badge badge-netflow">${cat}</span></td>
                     <td style="font-family:var(--font-mono); font-weight:700; color:${type === 'incomes' ? 'var(--metric-inflow)' : 'var(--metric-outflow)'};">
-                        ${type === 'incomes' ? + : -}${amt}
+                        ${type === 'incomes' ? '+' : '-'}${amt}
                     </td>
                     <td style="color:var(--text-main); max-width:140px; overflow:hidden; text-overflow:ellipsis;">${desc}</td>
                 `;
