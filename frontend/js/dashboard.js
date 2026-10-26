@@ -77,6 +77,7 @@ let userOnlyCategories = []; // subset of allCategories actually deletable (excl
 let allIncomes = [];
 let allSavingsGoals = [];
 let cachedBudgets = [];
+let currentIncomeFilter = 'all'; // 'all', 'recurring', 'one-time'
 Object.defineProperty(window, 'cachedBudgets', {
     configurable: true,
     get: () => cachedBudgets,
@@ -2673,8 +2674,7 @@ function formatIncomeFrequency(freq, interval) {
     }
 }
 
-let currentIncomeFilter = 'all'; // 'all', 'recurring', 'one-time'
-
+// currentIncomeFilter is declared in top-level state
 function applyIncomeFilters() {
     const listEl = document.getElementById("incomeList");
     if (!listEl) return;

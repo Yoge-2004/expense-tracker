@@ -62,3 +62,4 @@ playwright-report/
 blob-report/
 e2e/playwright.local.config.ts
 artifacts/
+/expensetracker
