@@ -28,7 +28,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
 import { usePreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
-import { FontChoice, FontPresets } from '../constants/theme';
+import * as Font from 'expo-font';
+import { FontChoice, FontPresets, CategoryPalette } from '../constants/theme';
 import {
   PRESET_BACKGROUNDS,
   PresetBackground,
@@ -51,6 +52,8 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     toggleTheme,
     fontChoice,
     setFontChoice,
+    customFontFamily,
+    setCustomFont,
     backgroundAsset,
     setBackgroundAsset,
     customPalette,
@@ -67,6 +70,14 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
   const [customUrl, setCustomUrl] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractSuccess, setExtractSuccess] = useState<string | null>(null);
+
+  // Custom Color Picker & Target States
+  const [customHexInput, setCustomHexInput] = useState(c.primary);
+  const [colorTarget, setColorTarget] = useState<'primary' | 'accent' | 'highlight'>('primary');
+
+  // Custom Font Import States
+  const [isFontLoading, setIsFontLoading] = useState(false);
+  const [fontStatusMsg, setFontStatusMsg] = useState<string | null>(null);
 
   const isWide = width >= 640;
 
@@ -157,6 +168,91 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     await setBackgroundAsset(newConfig);
     // Clearing custom palette allows preset-calibrated palette to shine
     await setCustomPalette(null);
+  };
+
+  const handleImportCustomFont = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['*/*'],
+        copyToCacheDirectory: true,
+      });
+
+      if (res.canceled || !res.assets || res.assets.length === 0) return;
+      const picked = res.assets[0];
+      const fileName = picked.name || 'custom-font.ttf';
+      const ext = fileName.toLowerCase().split('.').pop();
+      if (ext !== 'ttf' && ext !== 'otf') {
+        setFontStatusMsg('Please select a valid .ttf or .otf font file');
+        setTimeout(() => setFontStatusMsg(null), 3500);
+        return;
+      }
+
+      setIsFontLoading(true);
+      setFontStatusMsg(`Loading ${fileName}...`);
+
+      const baseName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const customFamilyKey = `UserCustom_${baseName}`;
+
+      await Font.loadAsync({
+        [customFamilyKey]: picked.uri,
+      });
+
+      await setCustomFont(customFamilyKey);
+      setFontStatusMsg(`Imported & applied font: ${baseName}`);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (err: any) {
+      console.warn('[ThemeStudio] Font load error:', err);
+      setFontStatusMsg(`Failed to import font: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsFontLoading(false);
+      setTimeout(() => setFontStatusMsg(null), 4000);
+    }
+  };
+
+  const handleApplyCustomHex = async (hexOverride?: string) => {
+    let hex = (hexOverride || customHexInput).trim();
+    if (!hex.startsWith('#')) hex = '#' + hex;
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      setExtractSuccess('Invalid Hex color (must be 6 hex characters, e.g. #C79A3E)');
+      setTimeout(() => setExtractSuccess(null), 3000);
+      return;
+    }
+
+    setCustomHexInput(hex);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const basePalette = customPalette || {
+      primary: c.primary,
+      primaryGradientEnd: c.primaryGradientEnd,
+      accent: c.accent,
+      highlight: c.highlight,
+      card: c.card,
+      surface: c.surface,
+      borderAccent: c.borderAccent,
+    };
+
+    if (colorTarget === 'primary') {
+      await setCustomPalette({
+        ...basePalette,
+        primary: hex,
+        primaryGradientEnd: adjustBrightness(hex, 0.85),
+        borderAccent: hex + '55',
+      });
+      setExtractSuccess(`Primary Brand color applied: ${hex.toUpperCase()}`);
+    } else if (colorTarget === 'accent') {
+      await setCustomPalette({
+        ...basePalette,
+        accent: hex,
+      });
+      setExtractSuccess(`Dynamic Accent color applied: ${hex.toUpperCase()}`);
+    } else {
+      await setCustomPalette({
+        ...basePalette,
+        highlight: hex,
+      });
+      setExtractSuccess(`Highlight Glow color applied: ${hex.toUpperCase()}`);
+    }
+    setTimeout(() => setExtractSuccess(null), 3000);
   };
 
   const handleSelectFont = async (font: FontChoice) => {
@@ -388,6 +484,76 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                     );
                   })}
                 </View>
+
+                {/* Outsourced Custom Font Import */}
+                <Text style={[styles.subSectionTitle, { color: c.textMuted, marginTop: 18 }]}>
+                  OUTSOURCED / CUSTOM FONT IMPORT (.TTF / .OTF)
+                </Text>
+                <View style={[styles.customBgCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                  <Text style={[styles.fontCardSub, { color: c.textMuted }]}>
+                    Exported fonts from Google Fonts, Adobe, or your design agency can be imported directly into the mobile app runtime.
+                  </Text>
+
+                  {customFontFamily && (
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => handleSelectFont('custom')}
+                      style={[
+                        styles.fontCard,
+                        {
+                          backgroundColor: c.inputBg,
+                          borderColor: fontChoice === 'custom' ? c.primary : c.border,
+                          borderWidth: fontChoice === 'custom' ? 2 : 1,
+                        },
+                      ]}
+                    >
+                      <View style={styles.fontCardHeader}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.fontCardTitle, { color: c.text }]}>
+                            {customFontFamily.replace('UserCustom_', '')} (Imported)
+                          </Text>
+                          <Text style={[styles.fontCardSub, { color: c.textMuted }]}>
+                            Active outsourced font family loaded into memory
+                          </Text>
+                        </View>
+                        {fontChoice === 'custom' && (
+                          <View style={[styles.checkBadge, { backgroundColor: c.primary }]}>
+                            <Ionicons name="checkmark" size={14} color={isLight ? '#FFF' : '#10120E'} />
+                          </View>
+                        )}
+                      </View>
+                      <View style={[styles.sampleBox, { backgroundColor: c.card }]}>
+                        <Text style={[styles.sampleText, { color: c.text, fontFamily: customFontFamily as any }]}>
+                          ₹142,850.00 · Custom outsourced font rendered live
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleImportCustomFont}
+                    disabled={isFontLoading}
+                    style={[styles.uploadButton, { backgroundColor: c.primary }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Import Custom Font File from Device"
+                  >
+                    {isFontLoading ? (
+                      <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                    ) : (
+                      <Ionicons name="folder-open-outline" size={16} color={isLight ? '#FFF' : '#10120E'} />
+                    )}
+                    <Text style={[styles.uploadButtonText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                      {isFontLoading ? 'Loading Font...' : 'Import Font File from Device (.ttf / .otf)'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {fontStatusMsg && (
+                    <Text style={[styles.successBanner, { color: fontStatusMsg.includes('Failed') || fontStatusMsg.includes('valid') ? c.accent : c.success }]}>
+                      {fontStatusMsg}
+                    </Text>
+                  )}
+                </View>
               </View>
             )}
 
@@ -600,74 +766,161 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                   Harmonized element colors extracted from the background and active theme:
                 </Text>
 
-                {/* Swatches Grid */}
+                {/* Swatches Grid (Tap to Select Target & Inspect) */}
                 <View style={styles.swatchesCard}>
                   {[
-                    { label: 'Primary Brand', hex: c.primary, role: 'Buttons, totals, active navigation' },
-                    { label: 'Primary Gradient', hex: c.primaryGradientEnd, role: 'Shaded surfaces & card gradients' },
-                    { label: 'Dynamic Accent', hex: c.accent, role: 'Outflows, warnings, negative cash flow' },
-                    { label: 'Highlight Glow', hex: c.highlight, role: 'Tags, streaks, ambient aura orbs' },
-                  ].map((swatch, idx) => (
+                    { label: 'Primary Brand', hex: c.primary, role: 'Buttons, totals, active navigation', targetKey: 'primary' as const },
+                    { label: 'Primary Gradient', hex: c.primaryGradientEnd, role: 'Shaded surfaces & card gradients', targetKey: 'primary' as const },
+                    { label: 'Dynamic Accent', hex: c.accent, role: 'Outflows, warnings, negative cash flow', targetKey: 'accent' as const },
+                    { label: 'Highlight Glow', hex: c.highlight, role: 'Tags, streaks, ambient aura orbs', targetKey: 'highlight' as const },
+                  ].map((swatch, idx) => {
+                    const isTarget = colorTarget === swatch.targetKey;
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setColorTarget(swatch.targetKey);
+                          setCustomHexInput(swatch.hex);
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                        }}
+                        style={[
+                          styles.swatchRow,
+                          {
+                            backgroundColor: c.card,
+                            borderColor: isTarget ? c.primary : c.border,
+                            borderWidth: isTarget ? 1.5 : 1,
+                          },
+                        ]}
+                      >
+                        <View style={[styles.swatchColorBox, { backgroundColor: swatch.hex }]} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.swatchTitle, { color: c.text }]}>{swatch.label}</Text>
+                          <Text style={[styles.swatchRole, { color: c.textMuted }]}>{swatch.role}</Text>
+                        </View>
+                        <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                          <Text style={[styles.swatchHex, { color: isTarget ? c.primary : c.textMuted }]}>
+                            {swatch.hex.toUpperCase()}
+                          </Text>
+                          {isTarget && (
+                            <Text style={{ fontSize: 9, fontWeight: '800', color: c.primary }}>SELECTED TARGET</Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* ── CUSTOM COLOR PICKER & HEX INPUT ── */}
+                <Text style={[styles.subSectionTitle, { color: c.textMuted, marginTop: 18 }]}>
+                  CUSTOM COLOR PICKER & HEX INPUT
+                </Text>
+                <View style={[styles.customBgCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                  {/* Target Selector Chips */}
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {(
+                      [
+                        { id: 'primary', label: 'Primary Brand' },
+                        { id: 'accent', label: 'Outflow Accent' },
+                        { id: 'highlight', label: 'Highlight Glow' },
+                      ] as const
+                    ).map((t) => {
+                      const isSelected = colorTarget === t.id;
+                      return (
+                        <TouchableOpacity
+                          key={t.id}
+                          onPress={() => {
+                            setColorTarget(t.id);
+                            if (t.id === 'primary') setCustomHexInput(c.primary);
+                            else if (t.id === 'accent') setCustomHexInput(c.accent);
+                            else setCustomHexInput(c.highlight);
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                          }}
+                          style={[
+                            styles.dimmerChip,
+                            {
+                              backgroundColor: isSelected ? c.primary : c.inputBg,
+                              borderColor: isSelected ? c.primary : c.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.dimmerChipText,
+                              { color: isSelected ? (isLight ? '#FFF' : '#10120E') : c.textMuted },
+                            ]}
+                          >
+                            {t.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {/* Hex Input & Live Color Preview */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <View
-                      key={idx}
-                      style={[styles.swatchRow, { backgroundColor: c.card, borderColor: c.border }]}
+                      style={[
+                        styles.colorPreviewOrb,
+                        { backgroundColor: customHexInput.startsWith('#') && customHexInput.length === 7 ? customHexInput : c.primary },
+                      ]}
+                    />
+                    <TextInput
+                      value={customHexInput}
+                      onChangeText={(val) => setCustomHexInput(val.toUpperCase())}
+                      placeholder="#C79A3E"
+                      placeholderTextColor={c.textMuted}
+                      maxLength={7}
+                      style={[
+                        styles.urlInput,
+                        { backgroundColor: c.inputBg, color: c.text, borderColor: c.inputBorder, fontFamily: 'IBMPlexMono_600SemiBold' as any },
+                      ]}
+                      autoCapitalize="characters"
+                      autoCorrect={false}
+                    />
+                    <TouchableOpacity
+                      onPress={() => handleApplyCustomHex()}
+                      style={[styles.applyHexBtn, { backgroundColor: c.primary }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Apply Hex Color"
                     >
-                      <View style={[styles.swatchColorBox, { backgroundColor: swatch.hex }]} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.swatchTitle, { color: c.text }]}>{swatch.label}</Text>
-                        <Text style={[styles.swatchRole, { color: c.textMuted }]}>{swatch.role}</Text>
-                      </View>
-                      <Text style={[styles.swatchHex, { color: c.textMuted }]}>{swatch.hex.toUpperCase()}</Text>
-                    </View>
-                  ))}
-                </View>
+                      <Ionicons name="checkmark" size={16} color={isLight ? '#FFF' : '#10120E'} />
+                      <Text style={[styles.applyHexBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>Apply</Text>
+                    </TouchableOpacity>
+                  </View>
 
-                {/* Quick Primary Accent Picker */}
-                <Text style={[styles.subSectionTitle, { color: c.textMuted, marginTop: 16 }]}>
-                  QUICK PRIMARY ACCENT
-                </Text>
-                <View style={styles.quickColorsRow}>
-                  {QUICK_ACCENTS.map((item) => (
-                    <TouchableOpacity
-                      key={item.hex}
-                      onPress={() => handleSelectQuickPrimary(item.hex)}
-                      style={[
-                        styles.quickColorDot,
-                        { backgroundColor: item.hex },
-                        c.primary.toLowerCase() === item.hex.toLowerCase() && {
-                          borderColor: isLight ? '#0F172A' : '#FFFFFF',
-                          borderWidth: 2.5,
-                          transform: [{ scale: 1.15 }],
-                        },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Set primary: ${item.name}`}
-                    />
-                  ))}
-                </View>
+                  {/* 24-Color Luxury Palette Grid */}
+                  <Text style={[styles.dimmerLabel, { color: c.textMuted, marginTop: 4 }]}>
+                    OR TAP TO APPLY LUXURY PALETTE SWATCH
+                  </Text>
+                  <View style={styles.quickColorsRow}>
+                    {CategoryPalette.map((item, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => {
+                          setCustomHexInput(item.color);
+                          handleApplyCustomHex(item.color);
+                        }}
+                        style={[
+                          styles.quickColorDot,
+                          { backgroundColor: item.color },
+                          customHexInput.toLowerCase() === item.color.toLowerCase() && {
+                            borderColor: isLight ? '#0F172A' : '#FFFFFF',
+                            borderWidth: 2.5,
+                            transform: [{ scale: 1.15 }],
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Apply color swatch ${idx + 1}`}
+                      />
+                    ))}
+                  </View>
 
-                {/* Quick Secondary Accent Picker */}
-                <Text style={[styles.subSectionTitle, { color: c.textMuted, marginTop: 14 }]}>
-                  QUICK SECONDARY / OUTFLOW ACCENT
-                </Text>
-                <View style={styles.quickColorsRow}>
-                  {QUICK_ACCENTS.map((item) => (
-                    <TouchableOpacity
-                      key={item.hex}
-                      onPress={() => handleSelectQuickAccent(item.hex)}
-                      style={[
-                        styles.quickColorDot,
-                        { backgroundColor: item.hex },
-                        c.accent.toLowerCase() === item.hex.toLowerCase() && {
-                          borderColor: isLight ? '#0F172A' : '#FFFFFF',
-                          borderWidth: 2.5,
-                          transform: [{ scale: 1.15 }],
-                        },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Set accent: ${item.name}`}
-                    />
-                  ))}
+                  {extractSuccess && (
+                    <Text style={[styles.successBanner, { color: extractSuccess.includes('Invalid') ? c.accent : c.success }]}>
+                      {extractSuccess}
+                    </Text>
+                  )}
                 </View>
 
                 {/* Appearance Theme Toggle Card */}
@@ -948,6 +1201,26 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  applyHexBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    height: 42,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  applyHexBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  colorPreviewOrb: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   dimmerLabel: {
     fontSize: 10,

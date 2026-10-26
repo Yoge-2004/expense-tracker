@@ -43,6 +43,8 @@ export interface PreferencesContextType {
   // Appearance & Studio properties
   fontChoice: FontChoice;
   setFontChoice: (font: FontChoice) => Promise<void>;
+  customFontFamily: string | null;
+  setCustomFont: (fontFamily: string) => Promise<void>;
   activeFonts: FontTokens;
 
   backgroundAsset: BackgroundAssetConfig;
@@ -74,6 +76,7 @@ export function PreferencesProvider({
 
   // Appearance Studio states
   const [fontChoice, setFontChoiceState] = useState<FontChoice>('grotesk');
+  const [customFontFamily, setCustomFontFamilyState] = useState<string | null>(null);
   const [backgroundAsset, setBackgroundAssetState] = useState<BackgroundAssetConfig>(DEFAULT_BG_ASSET);
   const [customPalette, setCustomPaletteState] = useState<ExtractedPalette | null>(null);
 
@@ -100,10 +103,11 @@ export function PreferencesProvider({
       safeStorageGet('user_currency'),
       safeStorageGet('app_stealth_mode'),
       safeStorageGet('app_font_choice'),
+      safeStorageGet('app_custom_font_family'),
       safeStorageGet('app_bg_asset'),
       safeStorageGet('app_custom_palette'),
     ])
-      .then(([savedCurrency, savedStealth, savedFont, savedBg, savedPalette]) => {
+      .then(([savedCurrency, savedStealth, savedFont, savedCustomFont, savedBg, savedPalette]) => {
         if (!mounted) return;
         if (savedStealth === 'true') {
           setIsStealthMode(true);
@@ -111,7 +115,10 @@ export function PreferencesProvider({
         if (savedCurrency) {
           setCurrency(savedCurrency);
         }
-        if (savedFont && ['grotesk', 'fraunces', 'mono', 'system'].includes(savedFont)) {
+        if (savedCustomFont) {
+          setCustomFontFamilyState(savedCustomFont);
+        }
+        if (savedFont && ['grotesk', 'fraunces', 'mono', 'system', 'custom'].includes(savedFont)) {
           setFontChoiceState(savedFont as FontChoice);
         }
         if (savedBg) {
@@ -195,6 +202,17 @@ export function PreferencesProvider({
     }
   }, []);
 
+  const setCustomFont = useCallback(async (fontFamily: string) => {
+    setCustomFontFamilyState(fontFamily);
+    setFontChoiceState('custom');
+    try {
+      await safeStorageSet('app_custom_font_family', fontFamily);
+      await safeStorageSet('app_font_choice', 'custom');
+    } catch (e) {
+      console.warn('[PreferencesContext] Failed to save custom font:', e);
+    }
+  }, []);
+
   const setBackgroundAsset = useCallback(async (config: BackgroundAssetConfig) => {
     setBackgroundAssetState(config);
     try {
@@ -219,10 +237,12 @@ export function PreferencesProvider({
 
   const resetAppearance = useCallback(async () => {
     setFontChoiceState('grotesk');
+    setCustomFontFamilyState(null);
     setBackgroundAssetState(DEFAULT_BG_ASSET);
     setCustomPaletteState(null);
     try {
       await safeStorageSet('app_font_choice', 'grotesk');
+      await safeStorageSet('app_custom_font_family', '');
       await safeStorageSet('app_bg_asset', JSON.stringify(DEFAULT_BG_ASSET));
       await safeStorageSet('app_custom_palette', '');
     } catch (e) {
@@ -231,8 +251,21 @@ export function PreferencesProvider({
   }, []);
 
   const activeFonts = useMemo(() => {
+    if (fontChoice === 'custom' && customFontFamily) {
+      return {
+        display: customFontFamily,
+        displaySemiBold: customFontFamily,
+        body: customFontFamily,
+        bodyMedium: customFontFamily,
+        bodySemiBold: customFontFamily,
+        bodyBold: customFontFamily,
+        mono: 'IBMPlexMono_400Regular',
+        monoMedium: 'IBMPlexMono_500Medium',
+        monoSemiBold: 'IBMPlexMono_600SemiBold',
+      };
+    }
     return FontPresets[fontChoice] || FontPresets.grotesk;
-  }, [fontChoice]);
+  }, [fontChoice, customFontFamily]);
 
   const activePreset: PresetBackground = useMemo(() => {
     return (
@@ -277,6 +310,8 @@ export function PreferencesProvider({
       setCurrencyState,
       fontChoice,
       setFontChoice,
+      customFontFamily,
+      setCustomFont,
       activeFonts,
       backgroundAsset,
       setBackgroundAsset,

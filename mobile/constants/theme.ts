@@ -194,7 +194,7 @@ export function getCategoryEmoji(_name: string | undefined | null): string {
   return '';
 }
 
-export type FontChoice = 'grotesk' | 'fraunces' | 'mono' | 'system';
+export type FontChoice = 'grotesk' | 'fraunces' | 'mono' | 'system' | 'custom';
 
 export interface FontTokens {
   display: string;
@@ -252,6 +252,17 @@ export const FontPresets: Record<FontChoice, FontTokens> = {
     mono: 'System',
     monoMedium: 'System',
     monoSemiBold: 'System',
+  },
+  custom: {
+    display: 'System',
+    displaySemiBold: 'System',
+    body: 'System',
+    bodyMedium: 'System',
+    bodySemiBold: 'System',
+    bodyBold: 'System',
+    mono: 'IBMPlexMono_400Regular',
+    monoMedium: 'IBMPlexMono_500Medium',
+    monoSemiBold: 'IBMPlexMono_600SemiBold',
   },
 };
 
