@@ -617,16 +617,21 @@
                 <!-- Retraining Runs History Table -->
                 <div style="margin-bottom:16px;">
                     <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">Retraining Execution History</div>
-                    <div style="overflow-x:auto;">
-                        <table class="admin-table" style="width:100%; border-collapse:collapse; font-size:12px;">
+                    <div class="table-scroll-hint-mobile">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
+                        <span>Swipe horizontally to view all columns</span>
+                        <span class="scroll-arrow">⇄</span>
+                    </div>
+                    <div class="table-wrapper admin-table-scroll-wrapper">
+                        <table class="admin-table data-table" style="min-width:820px; width:100%; border-collapse:collapse; font-size:12px;">
                             <thead>
                                 <tr>
-                                    <th style="padding:8px 10px; text-align:left;">Run ID</th>
-                                    <th style="padding:8px 10px; text-align:left;">Timestamp</th>
-                                    <th style="padding:8px 10px; text-align:left;">Trigger</th>
-                                    <th style="padding:8px 10px; text-align:left;">Status</th>
-                                    <th style="padding:8px 10px; text-align:left;">Feedback Consumed</th>
-                                    <th style="padding:8px 10px; text-align:left;">Details / Metrics</th>
+                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:170px;">Run ID</th>
+                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:150px;">Timestamp</th>
+                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:170px;">Trigger</th>
+                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:200px;">Status</th>
+                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; width:140px;">Feedback Consumed</th>
+                                    <th style="padding:10px 12px; text-align:left; white-space:nowrap; min-width:240px;">Details / Metrics</th>
                                 </tr>
                             </thead>
                             <tbody id="retrainingRunsTbody">

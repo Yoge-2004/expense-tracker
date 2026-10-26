@@ -1237,8 +1237,21 @@ select.custom-select-native {
 }
 
 .retrain-actions-wrapper button {
-    white-space: nowrap;
+    white-space: nowrap !important;
     flex-shrink: 0;
+    box-sizing: border-box !important;
+    padding: 9px 18px !important;
+    line-height: 1.4 !important;
+    overflow: visible !important;
+}
+
+/* Ensure status-badge pills in tables never wrap or distort pill geometry */
+.admin-table .status-badge,
+.data-table .status-badge {
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
 }
 
 @media (max-width: 640px) {

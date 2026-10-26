@@ -1070,20 +1070,40 @@
                         const isWarning = (r.status || "").includes("SKIPPED") || (r.status || "").includes("RUNNING");
                         const badgeClass = isSuccess ? "badge-success" : (isWarning ? "badge-warning" : "badge-subs");
 
-                        const metricsStr = r.metrics
-                            ? `Macro F1: ${(r.metrics.macroF1 ?? 0).toFixed(3)} | Acc: ${(r.metrics.accuracy ?? 0).toFixed(3)} (${r.metrics.samples || 0} samples)`
-                            : escapeHtml(r.message || "—");
+                        let samplesCount = "0";
+                        if (r.feedbackConsumed !== undefined && r.feedbackConsumed !== null) {
+                            samplesCount = Number(r.feedbackConsumed).toLocaleString();
+                        } else if (r.feedbackCount !== undefined && r.feedbackCount !== null) {
+                            samplesCount = Number(r.feedbackCount).toLocaleString();
+                        } else if (r.metrics && r.metrics.samples !== undefined && r.metrics.samples !== null) {
+                            samplesCount = Number(r.metrics.samples).toLocaleString();
+                        }
+
+                        let metricsStr = "";
+                        if (r.metrics && typeof r.metrics === "object") {
+                            const f1 = Number(r.metrics.macroF1 ?? r.metrics.test_macro_f1 ?? 0).toFixed(3);
+                            const acc = Number(r.metrics.accuracy ?? r.metrics.test_accuracy ?? 0).toFixed(3);
+                            const samples = Number(r.metrics.samples ?? r.feedbackConsumed ?? r.feedbackCount ?? 0).toLocaleString();
+                            metricsStr = `Macro F1: ${f1} | Acc: ${acc} (${samples} samples)`;
+                        } else if (r.details) {
+                            metricsStr = escapeHtml(r.details);
+                        } else if (r.message) {
+                            metricsStr = escapeHtml(r.message);
+                        } else if (r.status && r.status.includes("SKIPPED")) {
+                            metricsStr = `Feedback count (${samplesCount}) below 500-sample threshold. Baseline maintained.`;
+                        } else {
+                            metricsStr = "Baseline maintained (no drift detected)";
+                        }
 
                         const timeClean = r.timestamp ? new Date(r.timestamp).toLocaleString() : "—";
-                        const samplesCount = r.metrics?.samples || r.feedbackConsumed || "—";
 
                         tr.innerHTML = `
-                            <td style="font-family:var(--font-mono); color:var(--primary); font-weight:600;">${escapeHtml(r.runId || "—")}</td>
-                            <td style="font-size:11px; color:var(--text-muted);">${timeClean}</td>
-                            <td style="font-size:11px;"><span class="status-badge badge-netflow">${escapeHtml(r.trigger || "CRON")}</span></td>
-                            <td><span class="status-badge ${badgeClass}">● ${escapeHtml(r.status || "UNKNOWN")}</span></td>
-                            <td style="font-family:var(--font-mono);">${samplesCount}</td>
-                            <td style="font-size:11px; color:var(--text-muted); max-width:280px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.message || "")}">${metricsStr}</td>
+                            <td style="padding:10px 12px; font-family:var(--font-mono); color:var(--primary); font-weight:600; white-space:nowrap;">${escapeHtml(r.runId || "—")}</td>
+                            <td style="padding:10px 12px; font-size:11px; color:var(--text-muted); white-space:nowrap;">${timeClean}</td>
+                            <td style="padding:10px 12px; font-size:11px; white-space:nowrap;"><span class="status-badge badge-netflow" style="display:inline-flex; align-items:center; white-space:nowrap;">${escapeHtml(r.trigger || "CRON")}</span></td>
+                            <td style="padding:10px 12px; white-space:nowrap;"><span class="status-badge ${badgeClass}" style="display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">● ${escapeHtml(r.status || "UNKNOWN")}</span></td>
+                            <td style="padding:10px 12px; font-family:var(--font-mono); white-space:nowrap;">${samplesCount}</td>
+                            <td style="padding:10px 12px; font-size:11px; color:var(--text-muted); line-height:1.4;" title="${escapeHtml(r.message || r.details || "")}">${metricsStr}</td>
                         `;
                         tbody.appendChild(tr);
                     });
