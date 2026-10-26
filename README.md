@@ -21,7 +21,7 @@
     <img src="https://img.shields.io/badge/Hugging%20Face-Spaces%20Live-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black&labelColor=141812" alt="Hugging Face Space" />
   </a>
   <a href="https://github.com/Yoge-2004/expense-tracker/releases/latest">
-    <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Latest%20Release&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
+    <img src="https://img.shields.io/github/v/release/Yoge-2004/expense-tracker?label=Release%20v1.0.9&style=for-the-badge&color=C79A3E&labelColor=141812" alt="Release" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-A78BFA?style=for-the-badge&labelColor=141812" alt="License" />
@@ -31,31 +31,59 @@
 <p align="center">
   <b>Enterprise-Grade Personal Finance Workspace • Synchronized Cross-Platform Engine</b>
   <br/>
-  <a href="#-enterprise-architecture--system-topology">Architecture</a> •
-  <a href="#-product-at-a-glance">Features</a> •
+  <a href="#-table-of-contents">Table of Contents</a> •
+  <a href="#-enterprise-architecture--system-topology">System Architecture</a> •
+  <a href="#-comprehensive-feature-portfolio">Feature Portfolio</a> •
   <a href="#-machine-learning--continuous-intelligence-fleet">ML Fleet</a> •
-  <a href="#-multi-tax-receipt-ocr-scanner">Receipt OCR</a> •
-  <a href="#-run-the-web--backend-locally">Quickstart</a> •
-  <a href="#-testing-ecosystem">Testing</a>
+  <a href="#-technology-stack-architecture">Tech Stack</a> •
+  <a href="#-testing-ecosystem-557-tests">Testing Suite</a>
 </p>
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
 </div>
 
+## 📑 Table of Contents
+
+- [🌟 Executive Overview](#-executive-overview)
+- [🏗️ Enterprise Architecture & System Topology](#️-enterprise-architecture--system-topology)
+  - [1. High-Level Distributed Infrastructure (C4 Model)](#1-high-level-distributed-infrastructure-c4-model)
+  - [2. Spring Boot Backend Layered Architecture](#2-spring-boot-backend-layered-architecture)
+  - [3. Continuous ML Fleet Retraining & Feedback Loop](#3-continuous-ml-fleet-retraining--feedback-loop)
+  - [4. Client-Side Dual-Mode OCR & Multi-Tax Decomposition Pipeline](#4-client-side-dual-mode-ocr--multi-tax-decomposition-pipeline)
+- [💎 Comprehensive Feature Portfolio](#-comprehensive-feature-portfolio)
+  - [1. Unified Cash Flow Ledger & Dual-Stream Audit Trail](#1-unified-cash-flow-ledger--dual-stream-audit-trail)
+  - [2. Multi-Tax Receipt OCR Scanner](#2-multi-tax-receipt-ocr-scanner-client-side-privacy-first)
+  - [3. Continuous Intelligence Machine Learning Fleet](#3-continuous-intelligence-machine-learning-fleet)
+  - [4. Power BI-Grade Excel Analytics & Interactive Data Hub](#4-power-bi-grade-excel-analytics--interactive-data-hub)
+  - [5. Web Studio & Universal Appearance Engine](#5-web-studio--universal-appearance-engine)
+  - [6. Executive Command Palette & Fluid Ambient HUD Pointer](#6-executive-command-palette-ctrlcmd--k--fluid-ambient-hud-pointer)
+  - [7. Draggable Quick Calculator & Multi-Currency FX Converter](#7-draggable-quick-calculator--multi-currency-fx-converter)
+  - [8. Stealth Privacy Mode & Visual Obfuscation](#8-stealth-privacy-mode--visual-obfuscation)
+  - [9. Safe-to-Spend Daily Allowance & No-Spend Habit Streaks](#9-safe-to-spend-daily-allowance--no-spend-habit-streaks)
+  - [10. Active Subscriptions & Recurring Financial Commitment Engine](#10-active-subscriptions--recurring-financial-commitment-engine)
+  - [11. Savings Goals Milestones & Contribution Vault](#11-savings-goals-milestones--contribution-vault)
+  - [12. Zero-Trust Security, WebAuthn Passkeys & Step-Up Admin PIN](#12-zero-trust-security-webauthn-passkeys--step-up-admin-pin)
+- [📱 Mobile Native Companion (React Native & Expo Router)](#-mobile-native-companion-react-native--expo-router)
+- [🎮 Gestures & Keyboard Shortcuts Guide](#-gestures--keyboard-shortcuts-guide)
+- [🛠️ Technology Stack Architecture](#️-technology-stack-architecture)
+- [📂 Repository Layout](#-repository-layout)
+- [🚀 Quick Start Guide](#-quick-start-guide)
+- [⚙️ Environment Variables Reference](#️-environment-variables-reference)
+- [🧪 Testing Ecosystem (557+ Tests)](#-testing-ecosystem-557-tests)
+- [📦 Releases & Installation](#-releases--installation)
+
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
+
 ## 🌟 Executive Overview
 
-**ExpenseTracker PRO** is a full-stack, enterprise-grade financial intelligence ecosystem engineered with performance-first principles. Built on **Java 27** using Generational ZGC, **Spring Boot 4.1.1**, **Python 3.14**, and **Expo React Native**, the platform unifies real-time cash flow recording, multi-tax receipt OCR, dual-engine machine learning categorization, and executive telemetry governance into an atomic, coherent workspace.
+**ExpenseTracker PRO** is an enterprise-grade financial command center designed around one immutable principle: **financial recording, intelligence, and reconciliation should be instantaneous, zero-latency, and architecturally resilient.**
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│  🌐 Web Studio (HTML5 / ES6+ Custom Atmosphere & Theme Performance Engine)        │
-│  📱 Mobile Suite (Expo 58 / React Native 0.88 / Native Haptics & Biometrics)     │
-│  ⚙️ Core API (Spring Boot 4.1.1 / Java 27 / JJWT 0.13.0 / WebAuthn Passkeys)      │
-│  🧠 ML Microservice (Python 3.14 / FastAPI / TF-IDF + Transformer Retraining)    │
-│  💾 Hybrid Persistence (PostgreSQL / Neon / Encrypted SQLite DR Snapshots / H2)  │
-└──────────────────────────────────────────────────────────────────────────────────┘
-```
+Operating on **Java 27** using Generational ZGC, **Spring Boot 4.1.1**, **Python 3.14**, and **Expo React Native**, the platform combines three cooperating surfaces:
+1. **🌐 Web Studio** — High-velocity browser command center with customizable appearance atmosphere, diffused golden aura elevation, and sub-millisecond filtering.
+2. **📱 Mobile Native Suite** — Expo React Native client supporting offline caching, native haptic feedback, SMS bank debit parsing, and biometric authentication.
+3. **⚙️ Enterprise Core API** — Spring Boot microservices managing JWT/OAuth2/WebAuthn identity, business rule validation, audit trails, and Apache POI Excel analytics.
+4. **🧠 AI Machine Learning Microservice** — Dedicated Python 3.14 FastAPI engine powering dual-model categorization, merchant index vectorization, transaction anomaly scoring, and automated retraining pipelines.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/hero-dashboard.png">
@@ -65,118 +93,108 @@
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-## 🧭 Product at a Glance
-
-| Domain | Capabilities & Engineering Innovations |
-|---|---|
-| **💰 Unified Cash Flow Ledger** | Chronological dual-stream ledger combining expense outflows and income inflows with sub-millisecond filtering, multi-column sorting, and inline editing. |
-| **🧾 Multi-Tax Receipt OCR** | Dual-mode Tesseract.js scanner operating 100% client-side. Automatically identifies and decomposes Subtotal, CGST, SGST, IGST, VAT, Tips, and Discounts into interactive prefill pills. |
-| **🧠 Continuous ML Fleet** | Dual-engine categorization (TF-IDF SAGA + DistilBERT Transformer), SMS bank debit notification listener, interactive prediction playground, and Hugging Face automated retraining loop. |
-| **📊 Power BI Excel Hub** | Executive POI-generated Excel workbooks styled after Microsoft Power BI, featuring KPI cards, distribution matrices, formatted tables, and PDF statement generation. |
-| **🎨 Web Studio & Atmosphere** | Live customizable UI engine supporting dynamic palettes, custom font uploads via FontFace API, background image wallpapers with configurable blur and opacity, and atomic theme switching. |
-| **🛡️ Zero-Trust Security** | Stateless JWT authentication, Google OAuth 2.0 verification, WebAuthn/FIDO2 passkey biometric sign-in, Step-Up Admin PIN protection, and shoulder-surfing Stealth Privacy Mode (`Alt+S`). |
-| **📈 Dynamic Budget Guardrails** | Category spending caps with velocity burn metrics, Safe-to-Spend daily allowances, and visual habit-building No-Spend Day streak milestones. |
-| **🧮 Draggable Quick Calculator** | Floating dockable calculator (`Alt+C`) with precision math, 1-tap bill splitting (`÷2` to `÷5`), and live daily FX conversions across USD, EUR, GBP, AED, and INR. |
-| **💾 Multi-Tier Resilience** | PostgreSQL / Neon primary, client-side encrypted SQLite snapshot failover (`expense_tracker.sqlite.enc`), 50MB chunked memory streaming, and zero-downtime offline caching. |
-
-<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
-
 ## 🏗️ Enterprise Architecture & System Topology
 
-The platform implements a distributed, decoupled multi-service architecture designed for high throughput, sub-10ms response times, and automated failure recovery.
-
-### 1. High-Level Distributed Infrastructure
+### 1. High-Level Distributed Infrastructure (C4 Model)
 
 ```mermaid
 flowchart TD
-    subgraph Clients ["Client Applications Surface"]
-        Web["🌐 Web Client<br/>(HTML5 / ES6+ Modular / Web Studio)"]
+    subgraph Clients ["Client Layer (Web & Mobile)"]
+        Web["🌐 Web Client Studio<br/>(HTML5 / ES6+ / Modular Architecture)"]
         Mobile["📱 Mobile Native App<br/>(React Native 0.88 / Expo Router 58)"]
     end
 
-    subgraph Edge ["Gateway & Ingress Layer"]
-        Nginx["🛡️ Nginx Reverse Proxy<br/>(Port 7860 Public Entrypoint)"]
+    subgraph Ingress ["Edge Gateway & Ingress"]
+        Nginx["🛡️ Nginx Reverse Proxy<br/>(Gateway Port 7860)"]
     end
 
-    subgraph Core ["Enterprise Core Backend (Eclipse Temurin JRE 27)"]
+    subgraph CoreBackend ["Core Enterprise Backend (Eclipse Temurin Java 27)"]
         direction TB
-        SB["🌱 Spring Boot 4.1.1 Engine<br/>(:8080 Virtual Thread Ready)"]
-        Security["🔐 Spring Security & JWT 0.13.0<br/>+ WebAuthn Passkeys"]
-        Governance["⚡ Admin Fleet Governance<br/>& Step-Up PIN Gate"]
-        Sync["🔄 FileDbSyncService<br/>& DR Snapshot Sync"]
-        Reports["📑 Apache POI 5.5.1<br/>& OpenPDF Engine"]
+        Boot["🌱 Spring Boot 4.1.1 Microservices<br/>(:8080 Virtual Thread Engine)"]
+        Security["🔐 Security & Auth Pipeline<br/>(JJWT 0.13.0 & WebAuthn Passkeys)"]
+        AdminFleet["⚡ Admin Fleet Governance<br/>& Retraining Orchestration"]
+        DataSync["🔄 FileDbSyncService<br/>& DR Snapshot Manager"]
+        ExcelEngine["📑 Apache POI 5.5.1<br/>& OpenPDF Statement Generator"]
     end
 
-    subgraph ML ["AI Intelligence & Continuous Learning"]
+    subgraph MLEngine ["AI & Machine Learning Subsystem"]
         FastAPI["🧠 FastAPI Microservice<br/>(Python 3.14 @ 127.0.0.1:8000)"]
-        TFIDF["⚡ Dual-Gram TF-IDF Classifier"]
-        Transformer["🤖 DistilBERT Transformer"]
-        Aux["🔍 Merchant & Anomaly Detectors"]
+        TFIDF["⚡ Dual-Gram TF-IDF SAGA"]
+        Transformer["🤖 DistilBERT Sequence Classifier"]
+        AuxModels["🔍 Merchant, Anomaly & Forecast Engines"]
     end
 
-    subgraph Persistence ["Hybrid Data Persistence Tier"]
+    subgraph PersistenceTier ["Hybrid Multi-Tier Persistence"]
         Postgres[("🐘 PostgreSQL / Neon<br/>(Primary Production Cluster)")]
-        SQLite[("🔒 Encrypted SQLite<br/>(Offline / DR Snapshot)")]
-        H2[("⚡ In-Memory H2<br/>(Dev & Automated Tests)")]
-        HFHub[("🤗 Hugging Face Model Hub<br/>& Snapshot Backup")]
+        SQLite[("🔒 Encrypted SQLite Snapshot<br/>(Offline / Disaster Recovery)")]
+        H2[("⚡ In-Memory H2 Database<br/>(Local Dev & CI Automation)")]
+        HFHub[("🤗 Hugging Face Hub<br/>(Model Registry & Cloud Sync)")]
     end
 
     Web -->|HTTP / REST| Nginx
     Mobile -->|HTTPS / REST| Nginx
 
-    Nginx -->|Proxy /api| SB
+    Nginx -->|Proxy /api| Boot
     Nginx -->|Proxy /ml-api| FastAPI
 
-    SB --> Security
-    SB --> Governance
-    SB --> Reports
-    SB --> Sync
+    Boot --> Security
+    Boot --> AdminFleet
+    Boot --> ExcelEngine
+    Boot --> DataSync
 
-    Governance -->|Hot-Inference & Audit| FastAPI
+    AdminFleet -->|Hot Inference & Telemetry| FastAPI
     FastAPI --> TFIDF
     FastAPI --> Transformer
-    FastAPI --> Aux
+    FastAPI --> AuxModels
 
-    SB -->|HikariCP 7.0.2 Pool| Postgres
-    SB -.->|Fallback Failover| SQLite
-    SB -.->|Dev / Test Isolation| H2
-    Sync <-->|Snapshot Commit / Pull| HFHub
+    Boot -->|HikariCP 7.0.2 Connection Pool| Postgres
+    Boot -.->|Disaster Recovery Failover| SQLite
+    Boot -.->|Isolated Test Environment| H2
+    DataSync <-->|Snapshot Backup & Pull| HFHub
 ```
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture/system-architecture.png">
+  <img src="docs/images/architecture/system-architecture.png" alt="System Architecture Overview" width="100%" />
+</picture>
 
 ---
 
-### 2. Spring Boot Layered Architecture (IntelliJ Component Decomposition)
-
-The backend code is organized into strict architectural boundaries ensuring single-responsibility decoupling and unit testability:
+### 2. Spring Boot Backend Layered Architecture
 
 ```mermaid
 flowchart LR
-    subgraph Presentation ["Presentation Layer"]
-        C_Auth["AuthController"]
-        C_Exp["ExpenseController"]
-        C_Inc["IncomeController"]
-        C_Bud["BudgetController"]
-        C_Gov["AdminController"]
-        C_Rep["ReportController"]
+    subgraph Presentation ["1. Presentation Layer (Controllers)"]
+        direction TB
+        C_Auth["AuthController<br/>(/api/auth)"]
+        C_Exp["ExpenseController<br/>(/api/expenses)"]
+        C_Inc["IncomeController<br/>(/api/incomes)"]
+        C_Bud["BudgetController<br/>(/api/budgets)"]
+        C_Gov["AdminController<br/>(/api/admin)"]
+        C_Rep["ReportController<br/>(/api/reports)"]
     end
 
-    subgraph Security ["Security & Filter Chain"]
-        Sec_Cfg["SecurityConfig"]
+    subgraph SecurityChain ["2. Security & Filter Pipeline"]
+        direction TB
+        Sec_Cfg["SecurityConfiguration"]
         Jwt_Filt["JwtAuthenticationFilter"]
-        Cors_Filt["CorsFilter"]
-        Rate_Lim["RateLimitFilter"]
+        Cors_Filt["CorsConfigurationSource"]
+        Rate_Lim["RateLimitingFilter"]
+        WebAuthn_Filt["WebAuthnPasskeyFilter"]
     end
 
-    subgraph ServiceLayer ["Business Logic & Services"]
-        S_Exp["ExpenseService"]
-        S_Inc["IncomeService"]
-        S_Bud["BudgetService"]
+    subgraph ServiceLayer ["3. Business Domain Services"]
+        direction TB
+        S_Exp["ExpenseService & Category Logic"]
+        S_Inc["IncomeService & Inflow Rules"]
+        S_Bud["BudgetService & Velocity Math"]
         S_Gov["AdminMlGovernanceService"]
-        S_Rep["ReportService"]
-        S_Sync["FileDbSyncService"]
+        S_Rep["ReportService (POI / PDF)"]
+        S_Sync["FileDbSyncService (DR Snapshots)"]
     end
 
-    subgraph DataAccess ["Data Access Layer"]
+    subgraph Repositories ["4. Data Access Layer (Spring Data JPA)"]
+        direction TB
         R_Exp["ExpenseRepository"]
         R_Inc["IncomeRepository"]
         R_Bud["BudgetRepository"]
@@ -184,68 +202,68 @@ flowchart LR
         R_Audit["CategoryAuditRepository"]
     end
 
-    subgraph Database ["JPA Entities & Tables"]
+    subgraph Entities ["5. JPA Entities & Relational Tables"]
+        direction TB
         E_Exp[("Expense Entity")]
         E_Inc[("Income Entity")]
         E_Bud[("Budget Entity")]
         E_User[("User Entity")]
+        E_Audit[("Audit Feedback Entity")]
     end
 
-    Security --> Presentation
+    SecurityChain --> Presentation
     Presentation --> ServiceLayer
-    ServiceLayer --> DataAccess
-    DataAccess --> Database
+    ServiceLayer --> Repositories
+    Repositories --> Entities
 ```
 
 ---
 
 ### 3. Continuous ML Fleet Retraining & Feedback Loop
 
-ExpenseTracker PRO continuously trains its categorization models on ground-truth user corrections through an immutable, gated pipeline:
-
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as User / Admin
-    participant Client as Web / Mobile Client
-    participant SB as Spring Boot Backend
+    participant Client as Web / Mobile Surface
+    participant Boot as Spring Boot 4.1.1 (:8080)
     participant AuditDB as Category Audit Table
-    participant HFJob as Hugging Face Retrain Job
+    participant HFJob as Scheduled Retraining Job
     participant PyML as FastAPI ML Engine (:8000)
-    participant Registry as HF Model Hub Registry
+    participant HFHub as Hugging Face Model Registry
 
     User->>Client: Edit Category / Inflow Classification
-    Client->>SB: POST /api/expenses/feedback
-    SB->>AuditDB: Record ground-truth labeled correction
+    Client->>Boot: POST /api/expenses/feedback
+    Boot->>AuditDB: Insert ground-truth labeled correction
     Note over AuditDB,HFJob: Triggered via Scheduled Cron or Step-Up PIN
-    HFJob->>AuditDB: Ingest eligible approved feedback records
+    HFJob->>AuditDB: Ingest approved feedback records
     HFJob->>HFJob: Train Candidate TF-IDF & Transformer models
     HFJob->>HFJob: Evaluate Candidate vs Production Baseline Gate
     alt Candidate Outperforms Baseline Gate
-        HFJob->>Registry: Commit immutable version v<run_id>
-        HFJob->>Registry: Promote alias to production
+        HFJob->>HFHub: Push immutable release tag v<run_id>
+        HFJob->>HFHub: Promote production alias pointer
         HFJob->>PyML: Hot Reload /api/v1/reload
-        PyML->>Registry: Pull new weights into runtime memory
-        PyML-->>SB: Return Fleet Health Status 200 OK
-        SB-->>Client: Live Telemetry Pulse & Refreshed Metrics
+        PyML->>HFHub: Download updated weights into memory
+        PyML-->>Boot: Return Model Health 200 OK
+        Boot-->>Client: Live Telemetry Pulse & Refreshed Metrics
     else Candidate Underperforms Gate
-        HFJob->>HFJob: Abort deployment & retain active baseline
-        HFJob->>SB: Record audit telemetry with rejection cause
+        HFJob->>HFJob: Reject promotion & maintain baseline
+        HFJob->>Boot: Record audit telemetry with rejection cause
     end
 ```
 
 ---
 
-### 4. Client-Side Dual-Mode OCR & Multi-Tax Decomposition
+### 4. Client-Side Dual-Mode OCR & Multi-Tax Decomposition Pipeline
 
 ```mermaid
 flowchart TD
-    Scan["📸 Receipt Image Ingestion<br/>(Camera Capture or Gallery Browse)"]
-    Canvas["🖼️ Canvas Adaptive Preprocessor<br/>(Grayscale, Dynamic Contrast, Sharpen)"]
+    Scan["📸 Receipt Image Ingestion<br/>(Camera Capture or Storage Browse)"]
+    Canvas["🖼️ Canvas Adaptive Preprocessor<br/>(Grayscale, Contrast Adjustment, Adaptive Threshold)"]
     WASM["⚡ Tesseract.js WebAssembly Core<br/>(100% Client-Side Private OCR)"]
     Parser["🧩 Multi-Tax Regex Tokenizer<br/>(Pattern Recognition & Decomposition)"]
 
-    subgraph Taxes ["Identified Bill Tax Breakdown"]
+    subgraph TaxBreakdown ["Decomposed Financial Breakdown"]
         Base["Base Subtotal / Net Amount"]
         CGST["CGST (Central Goods & Services Tax)"]
         SGST["SGST (State Goods & Services Tax)"]
@@ -265,90 +283,198 @@ flowchart TD
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-## 🔬 Core System Features
+## 💎 Comprehensive Feature Portfolio
 
-<details open>
-<summary><b>🧾 1. Multi-Tax Receipt OCR Scanner (Client-Side Privacy)</b></summary>
-<br/>
+### 1. Unified Cash Flow Ledger & Dual-Stream Audit Trail
 
-The receipt scanner operates entirely inside the client’s browser using WebAssembly-powered Tesseract.js. No receipt photographs or sensitive merchant invoices are ever transmitted to third-party cloud APIs.
+The **Unified Ledger** combines expense outflows and income inflows into a single, high-density chronological timeline:
+- **Instant Multi-Column Search**: Filter by merchant, note, tags, category, or payment mode with debounced sub-millisecond DOM updates.
+- **Bi-Directional Sorting**: Sort instantly by date, magnitude, category, or cadence (one-time vs recurring).
+- **Inline Action System**: Rapid-edit and safety-confirmed delete workflows without losing scroll position.
+- **Custom Category Tokens**: Tag expenses with custom luxury color badges and vector glyphs.
 
-- **Dual Ingestion**: Drag-and-drop receipt image files or activate real-time device camera scanning.
-- **Granular Tax Extraction**: Intelligently identifies individual line items:
-  - Base Subtotal / Net Amount
-  - CGST, SGST, IGST (Indian GST Structure)
-  - VAT & Hospitality Service Taxes
-  - Service Charges, Gratuities & Delivery Fees
-  - Negative deductions and coupon discounts (`-10%`, `-₹120.00`)
-- **1-Click Modal Prefill**: Visual pills appear below the scanner. Clicking any pill pre-populates the expense amount, merchant name, and categorization modal instantly.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/expenses.png">
+  <img src="docs/images/website/expenses.png" alt="Unified Expense & Income Cash Flow Ledger" width="100%" />
+</picture>
+
+---
+
+### 2. Multi-Tax Receipt OCR Scanner (Client-Side Privacy-First)
+
+Powered by client-side WebAssembly, the scanner processes invoices locally on the user's device without transmitting receipt photos to external servers:
+- **Dual Ingestion**: Real-time live camera capture or drag-and-drop file browse from gallery/desktop.
+- **Adaptive Image Processing**: Canvas filters apply binarization, adaptive contrast, and edge sharpening to decipher faded thermal paper receipts.
+- **Comprehensive Tax Parsing**: Automatically tokenizes and isolates:
+  - Base Subtotal / Pre-Tax Net Amount
+  - CGST (Central Goods & Services Tax) & SGST (State GST)
+  - IGST (Integrated Interstate GST)
+  - VAT (Value Added Tax) & Hospitality Service Charges
+  - Gratuity / Courier Delivery Fees
+  - Deductions and Promotional Discounts (e.g. `-10%`, `-₹150.00`)
+- **Interactive Breakdown Matrix**: Renders visual tax pills below the scan viewport. Clicking any pill auto-fills the expense creation form in 1 click.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/add-expense.png">
-  <img src="docs/images/website/add-expense.png" alt="Multi-Tax Receipt OCR Scanner" width="100%" />
+  <img src="docs/images/website/add-expense.png" alt="Multi-Tax Receipt OCR Scanner Interface" width="100%" />
 </picture>
-</details>
 
-<details>
-<summary><b>🧠 2. AI Machine Learning Continuous Intelligence Fleet</b></summary>
-<br/>
+---
 
-- **Dual-Model Categorization Architecture**:
-  - **TF-IDF + Logistic Regression (SAGA)**: Microsecond baseline inference for known merchants and recurring descriptions.
-  - **DistilBERT Transformer**: Deep contextual text understanding on ambiguous, informal, or complex merchant statements.
-- **Automated SMS Debit Parsing**: Mobile listener captures bank SMS alerts (UPI, NEFT, IMPS, Visa, Mastercard) and auto-populates financial entries without manual typing.
-- **Executive Retraining Governance**: Platform administrators can inspect model accuracy, drift telemetry, sample sizes, and manually trigger retraining with 6-digit Step-Up PIN authentication.
+### 3. Continuous Intelligence Machine Learning Fleet
+
+The ML subsystem operates as an asynchronous, thread-safe microservice running alongside Spring Boot:
+- **Dual-Engine Architecture**:
+  - `TF-IDF + Logistic Regression (SAGA)`: Sub-millisecond inference for instant categorization of standard transactions.
+  - `DistilBERT Sequence Classifier`: Fine-tuned contextual transformer for ambiguous or composite descriptions.
+- **Auxiliary Intelligence Models**:
+  - `Merchant Similarity Index`: Fuzzy vector similarity for merchant deduplication.
+  - `Duplicate Transaction Detector`: Flags accidental double-swipes based on temporal and financial proximity.
+  - `Transaction Anomaly Scorer`: Isolates outlier spending using unsupervised Isolation Forests.
+  - `Spending Forecaster`: Generates 7-to-30 day predictive cash flow estimates based on historical spending cadence.
+- **Automated Continuous Learning Loop**:
+  - Collects user category reclassifications in a secure audit log.
+  - Retraining pipeline triggers via Hugging Face scheduled jobs or manual Admin Step-Up PIN.
+  - Strict evaluation gates reject candidate models unless they outperform the production baseline.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/dashboard.png">
-  <img src="docs/images/website/dashboard.png" alt="AI Categorizer and Machine Learning Intelligence" width="100%" />
+  <img src="docs/images/website/dashboard.png" alt="Machine Learning Fleet Telemetry & Insights" width="100%" />
 </picture>
-</details>
 
-<details>
-<summary><b>📊 3. Power BI-Grade Excel Analytics & Data Hub</b></summary>
-<br/>
+---
 
-- **Executive Excel Reports**: Generates multi-sheet workbooks styled to modern Microsoft Power BI standards using Apache POI:
-  - Executive KPI Summary Cards (Total Inflows, Outflows, Net Balance, Savings Velocity)
-  - Categorized breakdown distributions with formatted percentage metrics
-  - High-density tabular ledgers with currency formatting and status tags
-- **Bidirectional Data Hub**: High-throughput Excel and CSV import/export pipeline supporting up to 50MB and 500,000+ rows with streaming memory safety.
+### 4. Power BI-Grade Excel Analytics & Interactive Data Hub
+
+- **Executive Excel Workbooks**: Generates formatted `.xlsx` workbooks styled to modern Power BI dashboards using Apache POI:
+  - KPI Executive Cards (Total Spend, Inflow Velocity, Net Reserves, Savings Rate)
+  - Category breakdown distribution matrices with formatted percentages
+  - Formatted chronological ledgers with currency symbols and status indicators
+- **High-Throughput Data Hub**: Bidirectional CSV and Excel import/export engine supporting up to 50MB and 500,000+ records with streaming memory safety.
+- **OpenPDF Statement Export**: Download formatted PDF account statements for tax preparation and auditing.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/reports.png">
-  <img src="docs/images/website/reports.png" alt="Power BI-Grade Financial Reports" width="100%" />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/report-exports.png">
+  <img src="docs/images/website/report-exports.png" alt="Power BI-Grade Excel Workbook Exports" width="100%" />
 </picture>
-</details>
 
-<details>
-<summary><b>🎨 4. Web Studio & Appearance Customization Engine</b></summary>
-<br/>
+---
 
-- **Custom Wallpaper Atmosphere**: Upload personalized background images or select from 6 curated luxury presets with adjustable blur (0–20px) and opacity (0.0–0.9).
-- **Dynamic Color Palettes**: Extract dominant palettes automatically or customize `--primary`, `--accent`, and `--highlight` tokens with real-time CSS variable cascading.
-- **Typography Engine**: Choose between **Hanken Grotesk**, **Fraunces**, **IBM Plex Mono**, or upload custom `.woff2`/`.ttf` font files dynamically via the FontFace API.
-- **Atomic Theme Guard**: Suppresses multi-node transition bursts during theme swaps, ensuring 60fps frame rates across huge financial ledgers.
-</details>
+### 5. Web Studio & Universal Appearance Engine
 
-<details>
-<summary><b>🎮 5. High-Velocity Gestures & Keyboard Shortcuts Guide</b></summary>
-<br/>
+- **Wallpaper Atmosphere**: Upload custom wallpaper imagery or choose from curated luxury presets with real-time blur (0–20px) and opacity (0.0–0.9) sliders.
+- **Dynamic Palette Token Generator**: Automatically extracts vibrant dominant colors or allows fine-tuned customization of `--primary`, `--accent`, and `--highlight` tokens.
+- **Dynamic Font Engine**: Select from curated typefaces (**Hanken Grotesk**, **Fraunces**, **IBM Plex Mono**, or System Sans) or dynamically upload custom `.woff2`/`.ttf` fonts via the FontFace API.
+- **Atomic Theme Switch Guard**: Suppresses multi-node transition bursts during theme swaps, ensuring 60fps frame rates across huge financial ledgers.
 
-### 📱 Mobile Touch Gestures (iOS & Android)
+---
 
-| Gesture | Context / Target | Action Triggered | Haptic Feedback |
+### 6. Executive Command Palette (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>K</kbd>) & Fluid Ambient HUD Pointer
+
+- **Keyboard-First Command Hub**: Press <kbd>Ctrl + K</kbd> (Windows/Linux) or <kbd>Cmd + K</kbd> (macOS) anywhere on the web dashboard to open an instant modal command center.
+- **Fluid Ambient HUD Cursor**: Custom ambient dot-ring pointer provides smooth hover elevation and proximity feedback on interactive elements.
+- **Integrated Onboarding & Help Guide**: Contextual in-app documentation modal guiding new operators through keyboard accelerators and system topology.
+
+---
+
+### 7. Draggable Quick Calculator & Multi-Currency FX Converter
+
+- **Floating Accessibility**: Press <kbd>Alt + C</kbd> or tap the floating gold bubble to launch a dockable, draggable on-screen calculator.
+- **1-Tap Bill Splitting**: Quick division chips (`1x`, `÷2`, `÷3`, `÷4`, `÷5`) for dining and shared group expenses.
+- **Instant Modal Injection**: Click **Use Amount** to prefill the calculated figure directly into the active expense or income form.
+- **Daily Multi-Currency FX Engine**: Real-time exchange rate conversions (USD, EUR, GBP, AED ➔ INR) via `open.er-api.com` with 24-hour device caching.
+
+---
+
+### 8. Stealth Privacy Mode & Visual Obfuscation
+
+- **Instant Privacy Shield**: Press <kbd>Alt + S</kbd> or click the top bar eye icon (`👁️`) in public spaces, airports, or cafes.
+- **Full Value Masking**: Instantly blurs and masks all balances, inflows, outflows, and transaction values with bullets (`••••••`) to protect against shoulder-surfing.
+
+---
+
+### 9. Safe-to-Spend Daily Allowance & No-Spend Habit Streaks
+
+- **Safe-to-Spend Metric**: Dynamic real-time calculation representing your safe daily discretionary allowance:
+  $$	ext{Safe-to-Spend} = rac{	ext{Monthly Budget Remaining} - 	ext{Scheduled Subscriptions Remaining}}{	ext{Days Remaining in Month}}$$
+- **No-Spend Day Streak Tracker**: Habit-building streak counter celebrating consecutive zero-discretionary outflow days with animated fire milestone badges.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/budget-progress.png">
+  <img src="docs/images/website/budget-progress.png" alt="Safe-to-Spend and Budget Progress Tracking" width="100%" />
+</picture>
+
+---
+
+### 10. Active Subscriptions & Recurring Financial Commitment Engine
+
+- Tracks monthly, quarterly, and annual subscriptions with renewal countdown indicators.
+- Automatically projects upcoming commitment deductions to protect against overdrafts.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/recurring.png">
+  <img src="docs/images/website/recurring.png" alt="Recurring Subscriptions and Commitments" width="100%" />
+</picture>
+
+---
+
+### 11. Savings Goals Milestones & Contribution Vault
+
+- Set milestone targets, monitor calculated completion percentages, and execute incremental deposit contributions.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/savings-goals.png">
+  <img src="docs/images/website/savings-goals.png" alt="Savings Goals Vault" width="100%" />
+</picture>
+
+---
+
+### 12. Zero-Trust Security, WebAuthn Passkeys & Step-Up Admin PIN
+
+- **Stateless JJWT 0.13.0 Tokens**: High-entropy HMAC-SHA256 authenticated sessions.
+- **WebAuthn / FIDO2 Passkeys**: Cryptographic hardware-backed biometric sign-in (Touch ID, Face ID, Windows Hello).
+- **6-Digit Security PIN Vault**: Instant account recovery without third-party email dependencies.
+- **Step-Up Admin Authorization**: Administrative operations (such as ML model retraining triggers and privilege adjustments) require 6-digit non-repudiation PIN verification.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/website/auth-login.png">
+  <img src="docs/images/website/auth-login.png" alt="Zero-Trust Authentication Surface" width="100%" />
+</picture>
+
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
+
+## 📱 Mobile Native Companion (React Native & Expo Router)
+
+The mobile companion application in `mobile/` is built on **React Native 0.88, React 19.3, and Expo Router 58**:
+- **Native Gesture Navigation**: Swipe right on ledger rows to edit, swipe left to delete with custom haptic feedback.
+- **SMS Debit Listener**: Automatically captures incoming banking SMS notifications (UPI, NEFT, IMPS, Cards) and extracts transaction details.
+- **Biometric Unlock**: Integrated `expo-local-authentication` for fingerprint and Face ID authentication.
+- **Adaptive Screen Orientations**: Seamless portrait and landscape layout transitions across smartphones, foldables, and tablets.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/mobile/app-collage.png">
+  <img src="docs/images/mobile/app-collage.png" alt="Mobile Application Experience Collage" width="100%" />
+</picture>
+
+<img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
+
+## 🎮 Gestures & Keyboard Shortcuts Guide
+
+### 📱 Mobile Native Touch Gestures
+
+| Gesture | Target Surface | Action Triggered | Haptic Profile |
 |---|---|---|---|
-| **Swipe Right** (`dx > +70px`) | Ledger Row | **Quick Edit**: Opens edit modal pre-populated | `Light` impact |
-| **Swipe Left** (`dx < -70px`) | Ledger Row | **Quick Delete**: Prompts delete confirmation | `Warning` notification |
-| **Single Tap** | Ledger Row | **4-Way Action Sheet**: Split, Link Loan, Edit, Delete | `Light` impact |
-| **Horizontal Pan** | Stream Tabs | **Cycle Stream**: All Activity ↔ Outflows ↔ Inflows | Fluid swipe |
-| **Press & Drag** | Floating Calculator | **Reposition Bubble**: Move calculator anywhere on screen | Smooth pan |
+| **Swipe Right** (`dx > +70px`) | Ledger Row | **Quick Edit**: Opens edit form with transaction pre-populated | `Light` impact |
+| **Swipe Left** (`dx < -70px`) | Ledger Row | **Quick Delete**: Prompts delete confirmation modal | `Warning` notification |
+| **Single Tap** | Ledger Row | **4-Way Action Sheet**: Split / Link Loan / Edit / Delete | `Light` impact |
+| **Horizontal Pan** | Stream Tabs | **Cycle Stream**: All Activity ↔ Outflows ↔ Inflows | Smooth glide |
+| **Press & Drag** | Floating Calculator | **Reposition Bubble**: Move calculator anywhere on screen | Continuous pan |
 | **Header Eye Tap** (`👁️`) | Top Bar | **Stealth Privacy Mode**: Masks numbers with `••••••` | `Light` impact |
-| **Pull Down** | Any Screen | **Pull-to-Refresh**: Bypasses cache and synchronizes | System trigger |
+| **Pull Down** | Any Screen View | **Pull-to-Refresh**: Bypasses local cache and synchronizes | System trigger |
 
-### 🌐 Web & Desktop Shortcuts
+### 🌐 Web & Desktop Keyboard Shortcuts
 
-| Shortcut | Scope | Functionality |
+| Shortcut | Context / Scope | Functionality |
 |---|---|---|
 | <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> | Global | **Executive Command Palette**: Jump between tabs, trigger modals, search |
 | <kbd>Alt</kbd> + <kbd>C</kbd> | Global | **Floating Calculator**: Toggle quick calculator & bill splitter |
@@ -356,7 +482,6 @@ The receipt scanner operates entirely inside the client’s browser using WebAss
 | <kbd>Alt</kbd> + <kbd>T</kbd> | Global | **Web Studio**: Open Appearance, Palette, and Wallpaper editor |
 | <kbd>/</kbd> (Forward Slash) | Dashboard | **Quick Search**: Focus transaction & inflow filter input |
 | <kbd>Escape</kbd> | Global | **Dismiss**: Close active modals, menus, and command palette |
-</details>
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
@@ -364,19 +489,19 @@ The receipt scanner operates entirely inside the client’s browser using WebAss
 
 <div align="center">
 
-| Domain | Technology | Version | Purpose / Architectural Responsibility |
+| Tier | Component / Library | Version | Purpose & Architectural Responsibility |
 |---|---|---|---|
-| **Runtime & JDK** | Eclipse Temurin | `Java 27` | Generational ZGC, Virtual Threads, high-throughput bytecode execution |
-| **Backend Framework** | Spring Boot | `4.1.1` | REST APIs, IoC container, auto-configuration, production metrics |
+| **Language & Runtime** | Eclipse Temurin JDK | `Java 27` | Generational ZGC, Virtual Threads, high-throughput bytecode execution |
+| **Core Framework** | Spring Boot | `4.1.1` | REST APIs, IoC container, auto-configuration, production actuator metrics |
 | **Security & Auth** | Spring Security / JJWT | `0.13.0` | Stateless token authentication, Google OAuth 2.0, WebAuthn Passkeys |
-| **Persistence** | Hibernate / Spring Data | `7.4.5` | JPA Entity relational mapping, HikariCP 7.0.2 connection pooling |
-| **Databases** | PostgreSQL / Neon | `42.7.13` | Primary cloud database with client-encrypted SQLite disaster fallback |
-| **Reporting & Docs** | Apache POI / OpenPDF | `5.5.1` / `3.0.5` | Power BI-grade Excel dashboards, PDF statements, 50MB multipart limit |
+| **Persistence Engine** | Hibernate / Spring Data | `7.4.5` | JPA Entity relational mapping, HikariCP 7.0.2 connection pooling |
+| **Relational Database** | PostgreSQL / Neon | `42.7.13` | Primary cloud database with client-encrypted SQLite disaster fallback |
+| **Reporting & Export** | Apache POI / OpenPDF | `5.5.1` / `3.0.5` | Power BI-grade Excel dashboards, PDF statements, 50MB multipart limit |
 | **Client OCR Engine** | Tesseract.js | WebAssembly | Client-side privacy-first optical character recognition & multi-tax parser |
 | **API Contract** | SpringDoc OpenAPI | `3.1.0` | Swagger UI 5.32, OpenAPI 3.1.0 interactive documentation |
 | **Web Frontend** | Modular HTML5 / ES6+ | Modern | Theme Performance Engine, Web Studio, custom HUD cursor, Chart.js |
 | **Mobile Core** | React Native / Expo | `0.88` / `58` | Cross-platform native mobile app, Expo Router 58, React 19.3 |
-| **Mobile Optimization** | React Native Worklets | `0.13.0` | Native 60fps gesture transitions, memoized context re-render guards |
+| **Mobile Gestures** | React Native Worklets | `0.13.0` | Native 60fps gesture transitions, memoized context re-render guards |
 | **Machine Learning** | Python / FastAPI / Scikit | `3.14` / `0.3.0` | Dual-engine ML categorization, merchant similarity, anomaly detection |
 | **Package Manager** | Astral UV | `0.11.21` | Deterministic ultra-fast Python environment resolution & syncing |
 | **Testing Harness** | JUnit 6, Playwright, Jest | Latest | 136 Unit tests, 19 Cucumber BDD, 191 Playwright E2E, 60+ Jest tests |
@@ -390,10 +515,10 @@ The receipt scanner operates entirely inside the client’s browser using WebAss
 
 ```text
 expense-tracker/
-├── frontend/                    # Web application client
+├── frontend/                    # Web client application
 │   ├── css/                     # UI stylesheets (admin, web-studio, responsive)
 │   ├── js/                      # Browser logic & modules (web-studio, custom-controls)
-│   ├── index.html               # Web authentication entry point
+│   ├── index.html               # Authentication portal
 │   ├── dashboard.html           # Personal financial command center
 │   └── admin.html               # Platform administration & ML fleet governance
 │
@@ -506,20 +631,20 @@ docker run --rm -p 7860:7860   -e SPRING_DATASOURCE_URL="jdbc:h2:mem:expensetrac
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-## 🧪 Testing Ecosystem
+## 🧪 Testing Ecosystem (557+ Tests)
 
 ExpenseTracker PRO enforces end-to-end quality assurance across unit, integration, BDD, and browser layers.
 
 <div align="center">
 
-| Suite | Technology | Tests | Execution Command | Scope |
+| Suite | Tooling | Tests | Command | Coverage Area |
 |---|---|---|---|---|
-| **Backend Unit & API** | JUnit 6 + Mockito | `136` | `./mvnw test` | Service logic, controllers, security filters |
-| **Backend BDD** | Cucumber BDD | `19` | `./mvnw test -Dtest=CucumberTestRunner` | Human-readable user stories & scenarios |
-| **Web E2E (TypeScript)** | Playwright Test | `162` | `cd e2e && npm test` | Cross-browser flows (login, dashboard, modals) |
-| **Web E2E (Java)** | Playwright Java | `29` | `./mvnw test -Dplaywright=true` | Full-stack server + browser integration |
-| **Mobile App Unit** | Jest + React Native | `160` | `cd mobile && npm test` | Currency math, OCR, context hooks, themes |
-| **Python ML Fleet** | Pytest + Ruff | `55` | `cd ml && uv run pytest` | Model registry, API endpoints, retraining gate |
+| **Backend Unit & Controller** | JUnit 6 + Mockito | `136` | `./mvnw test` | Service business logic, HTTP contracts, security filters |
+| **Backend BDD Scenarios** | Cucumber BDD | `19` | `./mvnw test -Dtest=CucumberTestRunner` | User journeys (Auth, Expenses, Export) |
+| **Web Browser E2E (TypeScript)** | Playwright Test | `162` | `cd e2e && npm test` | Cross-browser flows (login, dashboard, modals) |
+| **Web Browser E2E (Java)** | Playwright Java | `29` | `./mvnw test -Dplaywright=true` | Full-stack server + browser integration |
+| **Mobile App Unit Tests** | Jest + React Native | `160` | `cd mobile && npm test` | Currency math, OCR, context hooks, themes |
+| **Python ML Fleet Tests** | Pytest + Ruff | `55` | `cd ml && uv run pytest` | Model registry, API endpoints, retraining gate |
 
 </div>
 
@@ -535,7 +660,7 @@ ExpenseTracker PRO enforces end-to-end quality assurance across unit, integratio
 
 <img src="docs/images/animated-divider.svg" alt="Animated Divider" width="100%" />
 
-## 📦 Releases & Downloads
+## 📦 Releases & Installation
 
 - **Latest Android APK**: [**Download v1.0.9 (Build 11)**](https://github.com/Yoge-2004/expense-tracker/releases/latest)
 - **Detailed Release Notes**: Read [RELEASE_NOTES.md](RELEASE_NOTES.md) for full change logs, security enhancements, and migration notes.
