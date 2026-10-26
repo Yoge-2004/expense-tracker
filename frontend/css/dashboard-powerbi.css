@@ -153,8 +153,8 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 14px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.05));
+    padding-top: 0;
+    border-top: none;
 }
 
 .bi-slicer-group {
@@ -167,6 +167,15 @@
     border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
     max-width: 100%;
     overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.bi-slicer-group::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 [data-theme="light"] .bi-slicer-group {
@@ -182,6 +191,8 @@
     color: var(--text-muted, #9E988A);
     padding: 0 8px;
     white-space: nowrap;
+    flex: 0 0 auto;
+    flex-shrink: 0;
 }
 
 .bi-slicer-pill {
@@ -194,6 +205,8 @@
     border-radius: 7px;
     cursor: pointer;
     white-space: nowrap;
+    flex: 0 0 auto;
+    flex-shrink: 0;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -385,16 +398,52 @@
 
 @media (max-width: 768px) {
     .bi-slicers-ribbon {
-        padding: 12px;
+        padding: 0;
+        margin-bottom: 16px;
         gap: 10px;
+    }
+    .bi-slicers-external-top {
+        margin-bottom: 8px !important;
+    }
+    .bi-slicers-filter-container {
+        padding: 10px 12px;
+        gap: 8px;
+        border-radius: 14px;
+        border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
     }
     .bi-slicers-row {
         gap: 8px;
+        padding-top: 0 !important;
+        border-top: none !important;
     }
     .bi-slicer-group {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 4px;
+        gap: 4px;
+    }
+    .bi-slicer-group::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    .bi-slicer-label {
+        font-size: 9.5px;
+        padding: 0 6px;
+        letter-spacing: 0.04em;
+        flex: 0 0 auto;
+        flex-shrink: 0;
+    }
+    .bi-slicer-pill {
+        flex: 0 0 auto;
+        flex-shrink: 0;
+        white-space: nowrap;
+        font-size: 11px;
+        padding: 5px 10px;
+        border-radius: 6px;
     }
 }
 

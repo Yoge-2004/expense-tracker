@@ -218,6 +218,16 @@
             });
         });
 
+        // Smooth horizontal mouse wheel scroll on slicer groups
+        document.querySelectorAll(".bi-slicer-group").forEach(group => {
+            group.addEventListener("wheel", (e) => {
+                if (e.deltaY !== 0 && group.scrollWidth > group.clientWidth) {
+                    e.preventDefault();
+                    group.scrollLeft += e.deltaY;
+                }
+            }, { passive: false });
+        });
+
         // Reset Slicers Button
         document.getElementById("biResetSlicersBtn")?.addEventListener("click", resetAllSlicers);
     }

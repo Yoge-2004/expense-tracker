@@ -9,25 +9,42 @@
     // font config that doesn't set `family` explicitly (axis ticks, tooltips,
     // most legends below never did). Setting this once here makes every chart
     // element inherit the project's body typeface without touching each config.
-    if (typeof Chart !== "undefined") {
-        if (Chart.defaults) {
+    function initChartDefaults() {
+        if (typeof Chart !== "undefined" && Chart.defaults) {
             if (Chart.defaults.font) {
                 Chart.defaults.font.family = "'Hanken Grotesk', sans-serif";
             }
-
-            // Chart.js's own default animation (easeOutQuart, no stagger, no
-            // per-property tuning) is flat next to the rest of the site's
-            // spring-based motion system. 'easeOutBack' is Chart.js's built-in
-            // easing with a small overshoot — the closest built-in match to the
-            // CSS --ease-spring token used everywhere else, since Chart.js
-            // easings are fixed named functions rather than arbitrary curves.
-            // Configure global Chart.js animation easing and duration.
-            // Direct property mutation preserves internal animation schema functions.
             if (Chart.defaults.animation) {
                 Chart.defaults.animation.duration = 900;
                 Chart.defaults.animation.easing = 'easeOutBack';
             }
         }
+    }
+    initChartDefaults();
+
+    function ensureChartLoaded(callback) {
+        if (typeof Chart !== "undefined") {
+            initChartDefaults();
+            return true;
+        }
+        console.warn("[dashboard-charts] Chart.js not yet loaded; queuing render callback.");
+        if (callback) {
+            const check = () => {
+                if (typeof Chart !== "undefined") {
+                    initChartDefaults();
+                    callback();
+                    return true;
+                }
+                return false;
+            };
+            if (!check()) {
+                const interval = setInterval(() => {
+                    if (check()) clearInterval(interval);
+                }, 50);
+                setTimeout(() => clearInterval(interval), 8000);
+            }
+        }
+        return false;
     }
 
     function buildTrendSeries(dailyTotals) {
@@ -102,6 +119,7 @@
     }
 
     function renderPieChart(expenses) {
+        if (!ensureChartLoaded(() => renderPieChart(expenses))) return;
         const canvas = document.getElementById('expenseChart');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -151,6 +169,7 @@
     }
 
     function renderTrendChart(expenses) {
+        if (!ensureChartLoaded(() => renderTrendChart(expenses))) return;
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;
         const hasData = Array.isArray(expenses) && expenses.length > 0;
@@ -209,6 +228,7 @@
     }
 
     function renderRecurringSplitChart(expenses) {
+        if (!ensureChartLoaded(() => renderRecurringSplitChart(expenses))) return;
         const canvas = document.getElementById('recurringSplitChart');
         if (!canvas) return;
         const hasData = Array.isArray(expenses) && expenses.length > 0;
@@ -256,6 +276,7 @@
     }
 
     function renderDayOfWeekChart(expenses) {
+        if (!ensureChartLoaded(() => renderDayOfWeekChart(expenses))) return;
         const canvas = document.getElementById('dayOfWeekChart');
         if (!canvas) return;
         const hasData = Array.isArray(expenses) && expenses.length > 0;
@@ -302,6 +323,7 @@
     }
 
     function renderBudgetVsActualChart(budgets) {
+        if (!ensureChartLoaded(() => renderBudgetVsActualChart(budgets))) return;
         const canvas = document.getElementById('budgetVsActualChart');
         if (!canvas) return;
         const hasData = Array.isArray(budgets) && budgets.length > 0;
@@ -354,6 +376,7 @@
     }
 
     function updateChartsTheme() {
+        if (typeof Chart === "undefined") return;
         const isLight = document.body.getAttribute("data-theme") === "light";
         const gridColor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
         const textColor = isLight ? '#6B6558' : '#A8A395';

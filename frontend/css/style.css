@@ -3242,10 +3242,17 @@ button[type="submit"]:active {
 /* Responsive adjustments for narrow screens */
 @media (max-width: 600px) {
     .floating-calc-trigger {
-        bottom: 74px;
-        right: 18px;
-        width: 48px;
-        height: 48px;
+        bottom: 68px;
+        right: 14px;
+        width: 44px;
+        height: 44px;
+        opacity: 0.88;
+        transition: opacity 0.2s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+    }
+    .floating-calc-trigger:hover,
+    .floating-calc-trigger:active,
+    .floating-calc-trigger.is-dragging {
+        opacity: 1;
     }
 
     .floating-calc-panel {
@@ -12497,7 +12504,7 @@ body {
 /* ── Extra small screens (phones < 480px) ── */
 @media (max-width: 480px) {
     .dashboard-container {
-        padding: 10px 10px 32px !important;
+        padding: 10px 10px 96px !important;
         gap: 12px !important;
     }
 
