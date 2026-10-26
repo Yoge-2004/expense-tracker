@@ -4056,7 +4056,14 @@ async function downloadMonthlyPdf(year = selectedReportYear, month = selectedRep
         const lastDay = new Date(targetYear, targetMonth, 0).getDate();
         const from = `${targetYear}-${padMonth}-01`;
         const to = `${targetYear}-${padMonth}-${String(lastDay).padStart(2, "0")}`;
-        const curr = (typeof userCurrency !== "undefined" && userCurrency) ? userCurrency : (localStorage.getItem("preferredCurrency") || "INR");
+        let curr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : null)
+            || (typeof userCurrency !== "undefined" && userCurrency ? userCurrency : null)
+            || localStorage.getItem("userCurrency")
+            || localStorage.getItem("preferredCurrency")
+            || "INR";
+        if (typeof curr === "string" && curr.includes(",")) {
+            curr = curr.split(",")[0].trim();
+        }
         const url = `${API_BASE_URL}/reports/user/${userId}/export/range/pdf?from=${from}&to=${to}&currency=${encodeURIComponent(curr)}`;
         const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
             ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
@@ -4083,7 +4090,14 @@ async function downloadMonthlyExcel(year = selectedReportYear, month = selectedR
         const lastDay = new Date(targetYear, targetMonth, 0).getDate();
         const from = `${targetYear}-${padMonth}-01`;
         const to = `${targetYear}-${padMonth}-${String(lastDay).padStart(2, "0")}`;
-        const curr = (typeof userCurrency !== "undefined" && userCurrency) ? userCurrency : (localStorage.getItem("preferredCurrency") || "INR");
+        let curr = (typeof getSelectedCurrency === "function" ? getSelectedCurrency() : null)
+            || (typeof userCurrency !== "undefined" && userCurrency ? userCurrency : null)
+            || localStorage.getItem("userCurrency")
+            || localStorage.getItem("preferredCurrency")
+            || "INR";
+        if (typeof curr === "string" && curr.includes(",")) {
+            curr = curr.split(",")[0].trim();
+        }
         const url = `${API_BASE_URL}/reports/user/${userId}/export/range/excel?from=${from}&to=${to}&currency=${encodeURIComponent(curr)}`;
         const monthObj = (typeof ALL_REPORT_MONTHS !== "undefined" && Array.isArray(ALL_REPORT_MONTHS))
             ? (ALL_REPORT_MONTHS.find(m => m.num === targetMonth) || { name: `Month_${padMonth}` })
