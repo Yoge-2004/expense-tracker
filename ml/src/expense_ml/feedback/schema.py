@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
 
 
 @dataclass(frozen=True)
@@ -20,7 +20,7 @@ class FeedbackRecord:
     source: str = "spring-boot"
 
     @classmethod
-    def from_mapping(cls, payload: Mapping[str, object]) -> "FeedbackRecord":
+    def from_mapping(cls, payload: Mapping[str, object]) -> FeedbackRecord:
         required = {
             "feedback_id",
             "transaction_id",

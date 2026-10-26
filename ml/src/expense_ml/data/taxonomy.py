@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-
 CANONICAL_CATEGORIES: tuple[str, ...] = (
     "food_dining",
     "transportation",

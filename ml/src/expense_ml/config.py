@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from pathlib import Path
 import os
 import random
+from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
 
@@ -88,7 +88,7 @@ class TrainingConfig:
                 raise ValueError(f"{name} must be >= 1")
 
     @classmethod
-    def from_mapping(cls, values: dict) -> "TrainingConfig":
+    def from_mapping(cls, values: dict) -> TrainingConfig:
         values = dict(values)
         for key in ("data_dir", "artifacts_dir", "model_dir", "kaggle_input_dir"):
             if key in values:
@@ -96,7 +96,7 @@ class TrainingConfig:
         return cls(**values)
 
     @classmethod
-    def from_env(cls, base: "TrainingConfig" | None = None) -> "TrainingConfig":
+    def from_env(cls, base: TrainingConfig | None = None) -> TrainingConfig:
         current = base or cls()
         updates = {}
         path_keys = {

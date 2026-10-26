@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import platform
+from pathlib import Path
 
 
 def _default_cpu_threads() -> int:

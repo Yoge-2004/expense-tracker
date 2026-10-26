@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
+from dataclasses import dataclass
 
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit

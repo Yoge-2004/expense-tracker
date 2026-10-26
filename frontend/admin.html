@@ -43,31 +43,34 @@
         <!-- TOP COMMAND HEADER -->
         <header class="top-bar animate-cascade delay-1 admin-topbar-root">
             <div class="dashboard-heading admin-heading-root">
-                <div class="brand-badge">
-                    <h1 class="brand-title">ExpenseTracker <span class="pro-tag">PRO</span> <span class="admin-badge-indicator">ADMIN</span> <span class="live-pulse" title="System Connected" aria-label="System Connected"></span></h1>
+                <div class="brand-badge admin-brand-badge">
+                    <h1 class="brand-title admin-brand-title">ExpenseTracker <span class="pro-tag">PRO</span> <span class="admin-badge-indicator">ADMIN</span> <span class="live-pulse" title="System Connected" aria-label="System Connected"></span></h1>
                 </div>
-                <p class="text-muted admin-welcome-subtitle" id="userWelcomeText">Admin Command Center &bull; Executive Governance</p>
+                <span class="admin-topbar-separator" aria-hidden="true">&bull;</span>
+                <span class="text-muted admin-welcome-subtitle" id="userWelcomeText">Admin Command Center &bull; Executive Governance</span>
             </div>
 
             <div class="top-bar-actions admin-top-actions">
-                <!-- Live Auto-Refresh Interval Selector -->
-                <div class="admin-top-select-wrapper" style="display:inline-flex; align-items:center;">
-                    <select id="autoRefreshSelector" class="form-select" aria-label="Telemetry polling frequency" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:6px 10px; font-size:12px; font-weight:600; height:34px; box-sizing:border-box; cursor:pointer;" title="Telemetry polling frequency">
-                        <option value="15000">Poll: 15s</option>
-                        <option value="30000" selected>Poll: 30s</option>
-                        <option value="60000">Poll: 60s</option>
-                        <option value="0">Poll: Off</option>
-                    </select>
-                </div>
+                <div class="admin-top-controls">
+                    <!-- Live Auto-Refresh Interval Selector -->
+                    <div class="admin-top-select-wrapper">
+                        <select id="autoRefreshSelector" class="form-select admin-poll-select" aria-label="Telemetry polling frequency" title="Telemetry polling frequency">
+                            <option value="15000">Poll: 15s</option>
+                            <option value="30000" selected>Poll: 30s</option>
+                            <option value="60000">Poll: 60s</option>
+                            <option value="0">Poll: Off</option>
+                        </select>
+                    </div>
 
-                <!-- Direct Link back to User Dashboard (placed compactly beside Poll on larger displays) -->
-                <a href="dashboard.html" class="btn-secondary admin-workspace-btn" id="adminUserWorkspaceBtn" style="display:inline-flex; align-items:center; gap:6px; text-decoration:none; padding:0 12px; border-radius:10px; font-weight:600; font-size:12px; height:34px; box-sizing:border-box; white-space:nowrap;" title="Switch to Personal Financial Workspace">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    <span>User Workspace</span>
-                </a>
+                    <!-- Direct Link back to User Dashboard (placed compactly beside Poll on larger displays) -->
+                    <a href="dashboard.html" class="btn-secondary admin-workspace-btn" id="adminUserWorkspaceBtn" title="Switch to Personal Financial Workspace">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>User Workspace</span>
+                    </a>
+                </div>
 
                 <div class="top-bar-utility-group">
                     <!-- Web Studio & Appearance Trigger -->

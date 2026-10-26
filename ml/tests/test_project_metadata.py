@@ -1,5 +1,5 @@
-from pathlib import Path
 import tomllib
+from pathlib import Path
 
 
 def test_ml_project_declares_python_314_and_separate_dependency_groups():

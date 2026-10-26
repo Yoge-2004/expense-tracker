@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -12,8 +14,11 @@ from ..models.auxiliary import (
 )
 from .model_registry import ModelRegistry
 
+logger = logging.getLogger(__name__)
+
 
 class InferenceService:
+    _lock = threading.Lock()
     _merchant_index: MerchantSimilarityIndex | None = None
     _duplicate_model: DuplicateSimilarityModel | None = None
     _anomaly_model: TransactionAnomalyModel | None = None
@@ -25,61 +30,73 @@ class InferenceService:
     @classmethod
     def get_merchant_index(cls) -> MerchantSimilarityIndex:
         if cls._merchant_index is None:
-            candidates = [
-                Path("models/merchant-similarity/model.joblib"),
-                Path(__file__).resolve().parents[3] / "models" / "merchant-similarity" / "model.joblib",
-            ]
-            for p in candidates:
-                if p.exists():
-                    cls._merchant_index = MerchantSimilarityIndex.load(p)
-                    break
-            if cls._merchant_index is None:
-                cls._merchant_index = MerchantSimilarityIndex.fit(["amazon", "swiggy", "uber", "netflix", "walmart"])
+            with cls._lock:
+                if cls._merchant_index is None:
+                    candidates = [
+                        Path("models/merchant-similarity/model.joblib"),
+                        Path(__file__).resolve().parents[3] / "models" / "merchant-similarity" / "model.joblib",
+                    ]
+                    for p in candidates:
+                        if p.exists():
+                            cls._merchant_index = MerchantSimilarityIndex.load(p)
+                            break
+                    if cls._merchant_index is None:
+                        cls._merchant_index = MerchantSimilarityIndex.fit(
+                            ["amazon", "swiggy", "uber", "netflix", "walmart"]
+                        )
         return cls._merchant_index
 
     @classmethod
     def get_duplicate_model(cls) -> DuplicateSimilarityModel:
         if cls._duplicate_model is None:
-            candidates = [
-                Path("models/duplicate-similarity/model.joblib"),
-                Path(__file__).resolve().parents[3] / "models" / "duplicate-similarity" / "model.joblib",
-            ]
-            for p in candidates:
-                if p.exists():
-                    cls._duplicate_model = DuplicateSimilarityModel.load(p)
-                    break
-            if cls._duplicate_model is None:
-                cls._duplicate_model = DuplicateSimilarityModel.fit(["payment", "transfer", "purchase"])
+            with cls._lock:
+                if cls._duplicate_model is None:
+                    candidates = [
+                        Path("models/duplicate-similarity/model.joblib"),
+                        Path(__file__).resolve().parents[3] / "models" / "duplicate-similarity" / "model.joblib",
+                    ]
+                    for p in candidates:
+                        if p.exists():
+                            cls._duplicate_model = DuplicateSimilarityModel.load(p)
+                            break
+                    if cls._duplicate_model is None:
+                        cls._duplicate_model = DuplicateSimilarityModel.fit(
+                            ["payment", "transfer", "purchase"]
+                        )
         return cls._duplicate_model
 
     @classmethod
     def get_anomaly_model(cls) -> TransactionAnomalyModel:
         if cls._anomaly_model is None:
-            candidates = [
-                Path("models/transaction-anomaly/model.joblib"),
-                Path(__file__).resolve().parents[3] / "models" / "transaction-anomaly" / "model.joblib",
-            ]
-            for p in candidates:
-                if p.exists():
-                    cls._anomaly_model = TransactionAnomalyModel.load(p)
-                    break
-            if cls._anomaly_model is None:
-                cls._anomaly_model = TransactionAnomalyModel.default_baseline()
+            with cls._lock:
+                if cls._anomaly_model is None:
+                    candidates = [
+                        Path("models/transaction-anomaly/model.joblib"),
+                        Path(__file__).resolve().parents[3] / "models" / "transaction-anomaly" / "model.joblib",
+                    ]
+                    for p in candidates:
+                        if p.exists():
+                            cls._anomaly_model = TransactionAnomalyModel.load(p)
+                            break
+                    if cls._anomaly_model is None:
+                        cls._anomaly_model = TransactionAnomalyModel.default_baseline()
         return cls._anomaly_model
 
     @classmethod
     def get_forecast_model(cls) -> SpendingForecastModel:
         if cls._forecast_model is None:
-            candidates = [
-                Path("models/spending-forecast/model.joblib"),
-                Path(__file__).resolve().parents[3] / "models" / "spending-forecast" / "model.joblib",
-            ]
-            for p in candidates:
-                if p.exists():
-                    cls._forecast_model = SpendingForecastModel.load(p)
-                    break
-            if cls._forecast_model is None:
-                cls._forecast_model = SpendingForecastModel.default_baseline()
+            with cls._lock:
+                if cls._forecast_model is None:
+                    candidates = [
+                        Path("models/spending-forecast/model.joblib"),
+                        Path(__file__).resolve().parents[3] / "models" / "spending-forecast" / "model.joblib",
+                    ]
+                    for p in candidates:
+                        if p.exists():
+                            cls._forecast_model = SpendingForecastModel.load(p)
+                            break
+                    if cls._forecast_model is None:
+                        cls._forecast_model = SpendingForecastModel.default_baseline()
         return cls._forecast_model
 
     def classify(self, description: str, top_n: int = 3) -> dict:

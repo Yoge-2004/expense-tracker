@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
 import os
 import shutil
+from pathlib import Path
 
 from expense_ml.feedback.client import (
     count_training_feedback,

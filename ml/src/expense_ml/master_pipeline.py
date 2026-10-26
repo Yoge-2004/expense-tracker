@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict, replace
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import platform
 import sys
+from dataclasses import asdict, replace
+from datetime import UTC, datetime
+from pathlib import Path
 
 import pandas as pd
 from tqdm.auto import tqdm
@@ -17,9 +17,29 @@ from .data.prepare import load_configured_datasets, save_prepared
 from .data.sampling import balanced_training_sample
 from .data.split import split_dataset
 from .data.taxonomy import CANONICAL_CATEGORIES
-from .evaluate import compare_models, evaluate_by_country, evaluate_model, save_result, validate_quality
-from .models.auxiliary import DuplicateSimilarityModel, MerchantSimilarityIndex, SpendingForecastModel, TransactionAnomalyModel
-from .reporting import save_anomaly_figure, save_classification_figures, save_data_quality, save_dataset_figures, save_model_comparison, save_spending_forecast, write_json, write_master_report  # noqa: F401
+from .evaluate import (
+    compare_models,
+    evaluate_by_country,
+    evaluate_model,
+    save_result,
+    validate_quality,
+)
+from .models.auxiliary import (
+    DuplicateSimilarityModel,
+    MerchantSimilarityIndex,
+    SpendingForecastModel,
+    TransactionAnomalyModel,
+)
+from .reporting import (  # noqa: F401
+    save_anomaly_figure,
+    save_classification_figures,
+    save_data_quality,
+    save_dataset_figures,
+    save_model_comparison,
+    save_spending_forecast,
+    write_json,
+    write_master_report,
+)
 from .resources import configure_resources
 from .train_baseline import train_tfidf
 
@@ -27,7 +47,7 @@ PIPELINE_VERSION = "2.0.0"
 
 
 def _run_id() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
 
 def _text_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -77,7 +97,7 @@ def _read_fetch_manifest(prepared_path: Path) -> list[dict]:
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid dataset fetch manifest: {path}") from exc
     if not isinstance(value, list):
-        raise ValueError(f"Dataset fetch manifest must be a list: {path}")
+        raise TypeError(f"Dataset fetch manifest must be a list: {path}")
     return value
 
 
@@ -120,7 +140,7 @@ def train_all(
         "status": "running",
         "run_id": run_dir.name,
         "pipeline_version": PIPELINE_VERSION,
-        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "created_at_utc": datetime.now(UTC).isoformat(),
         "python": sys.version,
         "platform": platform.platform(),
         "seed": cfg.seed,

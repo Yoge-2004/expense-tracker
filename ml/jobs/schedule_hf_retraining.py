@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 
-
 SCRIPT_URL = (
     "https://raw.githubusercontent.com/Yoge-2004/expense-tracker/"
     "main/ml/jobs/hf_retrain.py"

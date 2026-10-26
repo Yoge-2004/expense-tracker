@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
 
 import pandas as pd
 from tqdm.auto import tqdm
 
 from .normalize import prepare_dataframe
 from .taxonomy import SOURCE_LABEL_MAP
-
 
 NORMALIZATION_VERSION = "2.2"
 
@@ -40,7 +39,7 @@ def _extract_label(row: dict, label_column: str):
 def _extract_finee_chatml(row: dict) -> tuple[str, str | None]:
     messages = row.get("messages")
     if not isinstance(messages, list):
-        raise ValueError("FinEE ChatML row must contain a list-valued 'messages' field.")
+        raise TypeError("FinEE ChatML row must contain a list-valued 'messages' field.")
 
     user_content = None
     assistant_content = None
@@ -82,7 +81,7 @@ def _extract_finee_chatml(row: dict) -> tuple[str, str | None]:
         raise ValueError("FinEE assistant content is not valid JSON.") from exc
 
     if not isinstance(payload, dict):
-        raise ValueError("FinEE assistant JSON must be an object.")
+        raise TypeError("FinEE assistant JSON must be an object.")
     category = payload.get("category")
     if category is None or not str(category).strip():
         return transaction_text, None

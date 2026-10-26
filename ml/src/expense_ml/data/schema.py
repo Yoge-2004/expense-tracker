@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 REQUIRED_COLUMNS = ("text", "label", "source")
 OPTIONAL_COLUMNS = ("source_label", "country", "currency", "language", "record_id")
 ALL_COLUMNS = REQUIRED_COLUMNS + OPTIONAL_COLUMNS

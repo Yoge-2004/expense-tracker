@@ -1,20 +1,21 @@
-ARG UV_VERSION=0.13.5
+ARG UV_VERSION=0.11.21
 
 FROM eclipse-temurin:27-jre
 
-ARG UV_VERSION=0.13.5
+ARG UV_VERSION=0.11.21
 
 ENV DEBIAN_FRONTEND=noninteractive \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
     UV_PYTHON_BIN_DIR=/opt/uv/bin \
     PATH=/opt/uv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
+    PYTHONWARNINGS="ignore::SyntaxWarning" \
     MODEL_ID=Yoge-2004/expense-intelligence-model \
     MODEL_REVISION=production \
     MODEL_TYPE=tfidf \
     HF_HOME=/data/cache/huggingface
 
-COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.11.21 /uv /uvx /usr/local/bin/
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends nginx supervisor ca-certificates curl tesseract-ocr tesseract-ocr-eng \
@@ -48,7 +49,7 @@ COPY docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh \
     && cd /app/ml \
     && uv sync --frozen --no-dev --extra serve \
-    && .venv/bin/python -m compileall -q /app/ml \
+    && .venv/bin/python -m compileall -q src \
     && (HF_HOME=/data/cache/huggingface .venv/bin/python -c "from expense_ml.inference.model_registry import ModelRegistry; ModelRegistry.from_environment()" 2>/dev/null || true) \
     && chown -R app:app /app /opt/uv /data
 

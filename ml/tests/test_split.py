@@ -1,6 +1,6 @@
 import pandas as pd
 
-from expense_ml.data.split import split_dataset, remove_conflicting_text_groups
+from expense_ml.data.split import remove_conflicting_text_groups, split_dataset
 
 
 def test_split_is_deterministic_and_has_no_exact_text_leakage():

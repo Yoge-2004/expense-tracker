@@ -1,13 +1,18 @@
 from __future__ import annotations
-import sys
-from datetime import datetime, timezone
 
+import logging
+import sys
+import threading
+from datetime import UTC, datetime
 from typing import Any
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from ..inference.model_registry import ModelRegistry
 from ..inference.service import InferenceService
+
+logger = logging.getLogger(__name__)
 
 
 class ClassificationRequest(BaseModel):
@@ -93,6 +98,7 @@ class SpendingForecastResponse(BaseModel):
 
 
 app = FastAPI(title="Expense Tracker ML API", version="0.3.0")
+_registry_lock = threading.Lock()
 _registry: ModelRegistry | None = None
 _load_error: str | None = None
 
@@ -100,11 +106,14 @@ _load_error: str | None = None
 def _service() -> InferenceService:
     global _registry, _load_error
     if _registry is None:
-        try:
-            _registry = ModelRegistry.from_environment()
-            _load_error = None
-        except Exception as exc:
-            _load_error = f"{type(exc).__name__}: {exc}"
+        with _registry_lock:
+            if _registry is None:
+                try:
+                    _registry = ModelRegistry.from_environment()
+                    _load_error = None
+                except Exception as exc:  # noqa: BLE001
+                    _load_error = f"{type(exc).__name__}: {exc}"
+                    logger.error("Failed to load model registry from environment: %s", exc)
     if _registry is None:
         raise HTTPException(status_code=503, detail="ML model is unavailable")
     return InferenceService(_registry)
@@ -125,7 +134,8 @@ def health() -> dict:
             "indexed_count": len(getattr(merchant_idx, "merchants", [])),
             "vocab_size": len(getattr(getattr(merchant_idx, "vectorizer", None), "vocabulary_", {})),
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Merchant similarity health check failed: %s", exc)
         aux_status["merchant_similarity"] = {"status": "error", "error": str(exc)}
 
     try:
@@ -134,7 +144,8 @@ def health() -> dict:
             "status": "ready",
             "vocab_size": len(getattr(getattr(dup_model, "vectorizer", None), "vocabulary_", {})),
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Duplicate similarity health check failed: %s", exc)
         aux_status["duplicate_similarity"] = {"status": "error", "error": str(exc)}
 
     try:
@@ -144,7 +155,8 @@ def health() -> dict:
             "model_class": type(getattr(anomaly_model, "model", None)).__name__,
             "features": list(getattr(anomaly_model, "feature_columns", [])),
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Transaction anomaly health check failed: %s", exc)
         aux_status["transaction_anomaly"] = {"status": "error", "error": str(exc)}
 
     try:
@@ -154,7 +166,8 @@ def health() -> dict:
             "model_class": type(getattr(forecast_model, "model", None)).__name__,
             "features": list(getattr(forecast_model, "feature_columns", [])),
         }
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Spending forecast health check failed: %s", exc)
         aux_status["spending_forecast"] = {"status": "error", "error": str(exc)}
 
     return {
@@ -164,7 +177,7 @@ def health() -> dict:
         "runtime": {
             "python_version": sys.version.split()[0],
             "framework": "FastAPI + scikit-learn",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
     }
 
@@ -206,4 +219,4 @@ def forecast_spending(request: SpendingForecastRequest) -> dict:
         forecast = _service().forecast_spending(request.history, horizon_days=request.horizon_days)
         return {"horizon_days": request.horizon_days, "forecast": forecast}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e

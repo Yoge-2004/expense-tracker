@@ -2,7 +2,6 @@ from fastapi.testclient import TestClient
 
 from expense_ml.api.main import app
 
-
 client = TestClient(app)
 
 

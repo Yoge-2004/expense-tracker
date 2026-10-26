@@ -1,8 +1,8 @@
 import os
 
+from expense_ml.config import TrainingConfig
 from expense_ml.resources import configure_resources
 from expense_ml.train_transformer import _workers
-from expense_ml.config import TrainingConfig
 
 
 def test_configure_resources_uses_explicit_cpu_thread_limit(monkeypatch):

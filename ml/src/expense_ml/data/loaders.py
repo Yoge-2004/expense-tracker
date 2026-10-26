@@ -10,7 +10,7 @@ def _column(frame: pd.DataFrame, name: str) -> pd.Series:
         return frame[name]
     current = frame[name.split(".")[0]]
     for part in name.split(".")[1:]:
-        current = current.map(lambda value: value.get(part) if isinstance(value, dict) else None)
+        current = current.map(lambda value, p=part: value.get(p) if isinstance(value, dict) else None)
     return current
 
 

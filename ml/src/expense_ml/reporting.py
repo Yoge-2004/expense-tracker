@@ -87,7 +87,7 @@ def save_spending_forecast(actual: pd.Series, predicted: pd.Series, out_dir: Pat
 
 def save_data_quality(frame: pd.DataFrame, out_dir: Path) -> dict:
     summary = {
-        "rows": int(len(frame)),
+        "rows": len(frame),
         "columns": list(frame.columns),
         "missing_by_column": {c: int(frame[c].isna().sum()) for c in frame.columns},
         "duplicate_text_rows": int(frame["text"].duplicated().sum()) if "text" in frame else None,

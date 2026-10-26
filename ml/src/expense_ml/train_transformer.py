@@ -44,7 +44,12 @@ def train_transformer(
     config: TrainingConfig,
 ) -> TransformerCategoryModel:
     from datasets import Dataset
-    from transformers import DataCollatorWithPadding, EarlyStoppingCallback, Trainer, TrainingArguments
+    from transformers import (
+        DataCollatorWithPadding,
+        EarlyStoppingCallback,
+        Trainer,
+        TrainingArguments,
+    )
 
     if train_frame.empty:
         raise ValueError("Transformer training requires a non-empty train frame.")
@@ -162,5 +167,5 @@ def tf32_available() -> bool:
     try:
         import torch
         return torch.cuda.is_available() and torch.cuda.get_device_capability(0)[0] >= 8
-    except Exception:
+    except (ImportError, RuntimeError, IndexError):
         return False

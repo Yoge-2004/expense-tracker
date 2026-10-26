@@ -14,14 +14,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import os
 import shutil
 import subprocess
 import tempfile
 import urllib.request
 import zipfile
-
+from pathlib import Path
 
 REPOSITORY = "Yoge-2004/expense-tracker"
 BRANCH = "main"

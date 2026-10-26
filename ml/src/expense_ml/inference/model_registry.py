@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import json
+import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
-import json
-import os
 
 from ..models.tfidf import TfidfCategoryModel
 from ..models.transformer import TransformerCategoryModel
 
+logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL_ID = "Yoge-2004/expense-intelligence-model"
 DEFAULT_MODEL_REVISION = "production"
@@ -28,7 +30,7 @@ class ModelRegistry:
         self.loaded = loaded
 
     @classmethod
-    def from_environment(cls) -> "ModelRegistry":
+    def from_environment(cls) -> ModelRegistry:
         model_id = os.getenv("MODEL_ID", "").strip() or DEFAULT_MODEL_ID
         model_revision = os.getenv("MODEL_REVISION", "").strip() or DEFAULT_MODEL_REVISION
         configured_type = os.getenv("MODEL_TYPE", "").strip().lower()
@@ -59,8 +61,8 @@ class ModelRegistry:
                     return "tfidf"
                 if "transformer" in m_type:
                     return "transformer"
-            except Exception:
-                pass
+            except (json.JSONDecodeError, OSError) as exc:
+                logger.debug("Failed to parse metadata.json in %s: %s", path, exc)
         if (path / "model.joblib").exists():
             return "tfidf"
         if (path / "config.json").exists() or (path / "model.safetensors").exists():
@@ -87,8 +89,8 @@ class ModelRegistry:
                 try:
                     local_path = snapshot_download(repo_id=model_id, revision="main", token=token)
                     return Path(local_path), f"hf://{model_id}@main"
-                except Exception:
-                    pass
+                except Exception as fallback_exc:  # noqa: BLE001
+                    logger.debug("Fallback to main revision failed: %s", fallback_exc)
             raise RuntimeError(
                 f"Unable to load model repository '{model_id}' at revision '{revision}'"
             ) from primary_exc
