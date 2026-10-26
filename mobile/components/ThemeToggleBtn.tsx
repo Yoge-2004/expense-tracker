@@ -46,15 +46,8 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
     ]).start(() => {
       rotateAnim.setValue(0);
     });
-    // Run theme transition when main thread becomes idle (using requestIdleCallback for 2026 React Native)
-    // so frame rate remains silky smooth even with thousands of transaction items
-    const scheduleIdle = typeof (globalThis as any).requestIdleCallback === "function"
-      ? (globalThis as any).requestIdleCallback
-      : (cb: () => void) => setTimeout(cb, 16);
-
-    scheduleIdle(() => {
-      void toggleTheme();
-    });
+    // Toggle theme instantly without queue delay
+    void toggleTheme();
   };
 
   const spin = rotateAnim.interpolate({

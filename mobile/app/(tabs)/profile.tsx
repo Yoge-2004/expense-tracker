@@ -759,7 +759,9 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-              <ThemeToggleBtn />
+              <View pointerEvents="none">
+                <ThemeToggleBtn />
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity

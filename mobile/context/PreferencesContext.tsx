@@ -83,14 +83,12 @@ export function PreferencesProvider({
 
   const toggleTheme = useCallback(async (): Promise<void> => {
     userToggledThemeRef.current = true;
-    startTransition(() => {
-      setTheme((prevTheme) => {
-        const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
-        persistSavedTheme(nextTheme).catch((e) => {
-          console.warn('[PreferencesContext] Failed to persist theme preference:', e);
-        });
-        return nextTheme;
+    setTheme((prevTheme) => {
+      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
+      persistSavedTheme(nextTheme).catch((e) => {
+        console.warn('[PreferencesContext] Failed to persist theme preference:', e);
       });
+      return nextTheme;
     });
   }, []);
 

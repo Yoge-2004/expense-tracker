@@ -1,8 +1,8 @@
 package com.example.expensetracker.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import java.util.Map;
 
 /**
  * Diagnostic payload reporting the operational topology of the data plane:
@@ -13,14 +13,35 @@ import java.util.Map;
 @Schema(description = "Diagnostic state of platform database tiers (Server, Neon, Hugging Face)")
 public record AdminDatabaseTopologyDto(
         @Schema(description = "Server engine state")
+        @JsonProperty("server")
+        @JsonAlias({"serverDatabase"})
         ServerDatabaseState server,
 
         @Schema(description = "Neon serverless cloud database state")
+        @JsonProperty("neon")
+        @JsonAlias({"neonCloudDatabase"})
         NeonDatabaseState neon,
 
         @Schema(description = "Hugging Face Space backup and failover snapshot state")
+        @JsonProperty("huggingFace")
+        @JsonAlias({"huggingFaceSpaces"})
         HuggingFaceSpaceState huggingFace
 ) {
+    @JsonProperty("serverDatabase")
+    public ServerDatabaseState serverDatabase() {
+        return server;
+    }
+
+    @JsonProperty("neonCloudDatabase")
+    public NeonDatabaseState neonCloudDatabase() {
+        return neon;
+    }
+
+    @JsonProperty("huggingFaceSpaces")
+    public HuggingFaceSpaceState huggingFaceSpaces() {
+        return huggingFace;
+    }
+
     public record ServerDatabaseState(
             String engine,
             String url,
@@ -30,7 +51,11 @@ public record AdminDatabaseTopologyDto(
             long heapUsedMb,
             long heapMaxMb,
             int activeThreads,
-            boolean virtualThreadsEnabled
+            boolean virtualThreadsEnabled,
+            long latencyMs,
+            int activeConnections,
+            int maxConnections,
+            String databaseName
     ) {}
 
     public record NeonDatabaseState(

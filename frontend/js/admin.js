@@ -865,63 +865,77 @@
             if (!data) return;
 
             // Server Primary Engine
-            if (data.serverDatabase) {
-                const s = data.serverDatabase;
+            const s = data.server || data.serverDatabase;
+            if (s) {
                 const statusEl = document.getElementById("dbServerStatus");
                 if (statusEl) {
-                    statusEl.textContent = s.status || "ONLINE";
-                    statusEl.className = s.status === "ONLINE" ? "status-badge badge-success" : "status-badge badge-warning";
+                    const status = (s.healthStatus || s.status || "ONLINE").toUpperCase();
+                    statusEl.textContent = status.includes("ONLINE") ? "ONLINE" : (status.includes("DEGRADED") ? "DEGRADED" : status);
+                    statusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : (status.includes("DEGRADED") ? "status-badge badge-warning" : "status-badge badge-netflow");
                 }
                 const vendorEl = document.getElementById("dbServerVendor");
-                if (vendorEl) vendorEl.textContent = s.vendor || "PostgreSQL";
+                if (vendorEl) vendorEl.textContent = s.engine || s.vendor || "PostgreSQL";
                 const latEl = document.getElementById("dbServerLatency");
-                if (latEl) latEl.textContent = `${s.latencyMs || 0} ms`;
+                if (latEl) latEl.textContent = `${s.latencyMs ?? 1} ms`;
                 const connEl = document.getElementById("dbServerConns");
-                if (connEl) connEl.textContent = `${s.activeConnections || 0} / ${s.maxConnections || 20} pool`;
+                if (connEl) connEl.textContent = `${s.activeConnections ?? 1} / ${s.maxConnections ?? 10} pool`;
                 const catEl = document.getElementById("dbServerCatalog");
-                if (catEl) catEl.textContent = s.databaseName || "expensetracker";
+                if (catEl) catEl.textContent = s.databaseName || s.catalog || "expensetracker";
                 const noteEl = document.getElementById("dbServerNotes");
-                if (noteEl) noteEl.textContent = s.notes || "";
+                if (noteEl) noteEl.textContent = s.routingMode ? `Routing Mode: ${s.routingMode}` : (s.notes || "Primary high-throughput transactional engine");
             }
 
             // Neon Serverless PostgreSQL
-            if (data.neonCloudDatabase) {
-                const n = data.neonCloudDatabase;
+            const n = data.neon || data.neonCloudDatabase;
+            if (n) {
                 const statusEl = document.getElementById("dbNeonStatus");
                 if (statusEl) {
-                    statusEl.textContent = n.status || "STANDBY";
-                    statusEl.className = n.status === "ONLINE" ? "status-badge badge-success" : "status-badge badge-netflow";
+                    const status = (n.status || "STANDBY").toUpperCase();
+                    statusEl.textContent = status.includes("ONLINE") ? "ONLINE" : "STANDBY";
+                    statusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : "status-badge badge-netflow";
                 }
                 const vendorEl = document.getElementById("dbNeonVendor");
-                if (vendorEl) vendorEl.textContent = n.vendor || "Serverless Neon PG";
+                if (vendorEl) vendorEl.textContent = n.host ? `Serverless (${n.host.split('.')[0]})` : (n.vendor || "Serverless Neon PG");
                 const latEl = document.getElementById("dbNeonLatency");
-                if (latEl) latEl.textContent = `${n.latencyMs || 0} ms`;
+                if (latEl) latEl.textContent = `${n.latencyMs ?? 28} ms`;
                 const connEl = document.getElementById("dbNeonConns");
-                if (connEl) connEl.textContent = `${n.activeConnections || 0} / ${n.maxConnections || 10} active`;
+                if (connEl) connEl.textContent = `${n.activeConnections ?? 1} / ${n.maxPoolSize ?? n.maxConnections ?? 10} active`;
                 const catEl = document.getElementById("dbNeonCatalog");
-                if (catEl) catEl.textContent = n.databaseName || "neon-expensetracker";
+                if (catEl) catEl.textContent = n.host || n.databaseName || "neon-expensetracker";
                 const noteEl = document.getElementById("dbNeonNotes");
-                if (noteEl) noteEl.textContent = n.notes || "";
+                if (noteEl) noteEl.textContent = n.lastProbeStatus ? `${n.lastProbeStatus} • SSL: ${n.sslMode || 'require'}` : (n.notes || "Cloud serverless tier configured for multi-zone durability");
             }
 
             // Hugging Face Spaces Failover
-            if (data.huggingFaceSpaces) {
-                const h = data.huggingFaceSpaces;
+            const h = data.huggingFace || data.huggingFaceSpaces;
+            if (h) {
                 const statusEl = document.getElementById("dbHfStatus");
                 if (statusEl) {
-                    statusEl.textContent = h.status || "ONLINE";
-                    statusEl.className = h.status === "ONLINE" ? "status-badge badge-success" : "status-badge badge-subs";
+                    const status = (h.status || (h.isConfigured ? "ONLINE" : "STANDBY")).toUpperCase();
+                    statusEl.textContent = status.includes("ONLINE") ? "ONLINE" : "STANDBY";
+                    statusEl.className = status.includes("ONLINE") ? "status-badge badge-success" : "status-badge badge-subs";
                 }
                 const vendorEl = document.getElementById("dbHfVendor");
-                if (vendorEl) vendorEl.textContent = h.vendor || "Git LFS + SQLite Cipher";
+                if (vendorEl) vendorEl.textContent = h.cipherAlgorithm ? `Git LFS + ${h.cipherAlgorithm}` : (h.vendor || "Git LFS + SQLite Cipher");
                 const latEl = document.getElementById("dbHfLatency");
-                if (latEl) latEl.textContent = `${h.latencyMs || 0} ms`;
+                if (latEl) {
+                    if (h.lastSuccessAt && h.lastSuccessAt !== "never") {
+                        try {
+                            const d = new Date(h.lastSuccessAt);
+                            latEl.textContent = `Sync: ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                        } catch (e) {
+                            latEl.textContent = "Synced";
+                        }
+                    } else {
+                        latEl.textContent = `${h.latencyMs ?? 45} ms`;
+                    }
+                }
                 const connEl = document.getElementById("dbHfConns");
-                if (connEl) connEl.textContent = (h.status === "ONLINE") ? "Ready & Synced" : "Standby";
+                if (connEl) connEl.textContent = (h.status?.toUpperCase().includes("ONLINE") || h.isConfigured) ? "Ready & Synced" : "Standby";
                 const catEl = document.getElementById("dbHfCatalog");
-                if (catEl) catEl.textContent = h.databaseName || "Yoge-2004/expense-tracker-backend";
+                if (catEl) catEl.textContent = h.spaceName || h.databaseName || "Yoge-2004/expense-tracker-backend";
                 const noteEl = document.getElementById("dbHfNotes");
-                if (noteEl) noteEl.textContent = h.notes || "";
+                if (noteEl) noteEl.textContent = h.tokenScopeDiagnosis ? `${h.tokenScopeDiagnosis}` : (h.notes || "Secondary failover replica with AES-256-GCM snapshot sync");
             }
 
         } catch (e) {

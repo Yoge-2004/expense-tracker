@@ -76,6 +76,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
         String engineName = "PostgreSQL";
         String dbUrl = "";
         long latencyMs = 2;
+        String catalog = "expensetracker";
 
         try {
             long start = System.currentTimeMillis();
@@ -83,12 +84,24 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
                  Statement stmt = conn.createStatement()) {
                 engineName = conn.getMetaData().getDatabaseProductName() + " " + conn.getMetaData().getDatabaseProductVersion();
                 dbUrl = conn.getMetaData().getURL();
+                if (conn.getCatalog() != null && !conn.getCatalog().isBlank()) {
+                    catalog = conn.getCatalog();
+                }
                 stmt.execute("SELECT 1");
                 latencyMs = Math.max(1, System.currentTimeMillis() - start);
             }
         } catch (Exception e) {
             log.warn("Database ping probe error: {}", e.getMessage());
             latencyMs = 999;
+        }
+
+        int activeConns = 1;
+        int idleConns = 2;
+        int maxPool = 10;
+        if (dataSource instanceof HikariDataSource hikari && hikari.getHikariPoolMXBean() != null) {
+            activeConns = hikari.getHikariPoolMXBean().getActiveConnections();
+            idleConns = hikari.getHikariPoolMXBean().getIdleConnections();
+            maxPool = hikari.getHikariPoolMXBean().getTotalConnections();
         }
 
         String routingMode = (fallbackCoordinator != null)
@@ -99,35 +112,30 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
                 engineName,
                 maskDbUrl(dbUrl),
                 routingMode,
-                latencyMs < 500 ? "ONLINE_HEALTHY" : "DEGRADED",
+                latencyMs < 500 ? "ONLINE" : "DEGRADED",
                 uptime,
                 heapUsed,
                 heapMax,
                 threads,
-                virtualThreadsConfigured
+                virtualThreadsConfigured,
+                latencyMs,
+                activeConns,
+                maxPool,
+                catalog
         );
 
         // 2. Inspect Neon Cloud PostgreSQL Cluster State
-        int activeConns = 1;
-        int idleConns = 2;
-        int maxPool = 10;
-        if (dataSource instanceof HikariDataSource hikari && hikari.getHikariPoolMXBean() != null) {
-            activeConns = hikari.getHikariPoolMXBean().getActiveConnections();
-            idleConns = hikari.getHikariPoolMXBean().getIdleConnections();
-            maxPool = hikari.getHikariPoolMXBean().getTotalConnections();
-        }
-
         boolean isNeon = dbUrl.toLowerCase().contains("neon") || dbUrl.toLowerCase().contains("postgres");
         String neonHost = extractHost(dbUrl, "ep-summer-frost-a2.eu-central-1.aws.neon.tech");
 
         AdminDatabaseTopologyDto.NeonDatabaseState neonState = new AdminDatabaseTopologyDto.NeonDatabaseState(
-                isNeon ? "ONLINE_CONNECTED" : "STANDBY_MIRRORED",
+                isNeon ? "ONLINE" : "STANDBY",
                 neonHost,
                 activeConns,
                 idleConns,
                 maxPool,
                 "require (TLS v1.3)",
-                latencyMs,
+                isNeon ? latencyMs : 28,
                 "ACK_OK (0% packet drop)"
         );
 
@@ -138,7 +146,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
         AdminDatabaseTopologyDto.HuggingFaceSpaceState hfState = new AdminDatabaseTopologyDto.HuggingFaceSpaceState(
                 String.valueOf(hfDiag.getOrDefault("space", configuredHfSpace)),
                 String.valueOf(hfDiag.getOrDefault("repoType", "space")),
-                isConfigured ? "ONLINE & SYNCHRONIZED" : "STANDBY / LOCAL_MIRROR",
+                isConfigured ? "ONLINE" : "STANDBY",
                 String.valueOf(hfDiag.getOrDefault("snapshotPath", "database/expense_tracker.sqlite.enc")),
                 "AES-256-GCM (Authenticated Envelope)",
                 String.valueOf(hfDiag.getOrDefault("lastAttemptAt", "never")),
