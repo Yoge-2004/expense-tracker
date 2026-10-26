@@ -488,7 +488,10 @@ export const dashboardStyles = StyleSheet.create({
   },
   innerListScroll: {
     flex: 1,
-    padding: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 8,
+    paddingRight: 14,
   },
   emptyLedgerInside: {
     flex: 1,

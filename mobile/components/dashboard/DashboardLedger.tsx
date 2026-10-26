@@ -175,7 +175,9 @@ export const DashboardLedger = memo(function DashboardLedger({
         initialNumToRender={12}
         maxToRenderPerBatch={10}
         windowSize={5}
-        removeClippedSubviews={Platform.OS === 'android'}
+        removeClippedSubviews={Platform.OS !== 'web'}
+        bounces={false}
+        overScrollMode="never"
       />
       <ThemedScrollbar
         scrollY={ledgerScrollY}

@@ -6,7 +6,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View, Animated, useWindowDimensions } from 'react-native';
-import { useAuth } from '../context/AuthContext';
+import { usePreferences } from '../context/PreferencesContext';
 
 interface AmbientAuraProps {
   /** Optional touch pass-through configuration (defaults to 'none'). */
@@ -16,8 +16,8 @@ interface AmbientAuraProps {
 /**
  * Atmospheric ambient aura background mesh.
  */
-export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none' }) => {
-  const { theme } = useAuth();
+export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEvents = 'none' }) => {
+  const { theme } = usePreferences();
   const { width, height } = useWindowDimensions();
   const isLight = theme === 'light';
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -195,7 +195,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = ({ pointerEvents = 'none'
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   orb: {

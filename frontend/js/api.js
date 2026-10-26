@@ -740,8 +740,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!e.target || !(e.target instanceof Element)) return;
         const ribbon = e.target.closest(".ledger-stream-tabs, .admin-nav-stream, .bi-slicers-row, .stream-tabs, #adminStreamTabs");
         if (ribbon && e.deltaY !== 0 && ribbon.scrollWidth > ribbon.clientWidth) {
-            e.preventDefault();
-            ribbon.scrollLeft += (e.deltaY * 1.25);
+            const canScrollRight = e.deltaY > 0 && (ribbon.scrollLeft + ribbon.clientWidth < ribbon.scrollWidth - 2);
+            const canScrollLeft = e.deltaY < 0 && (ribbon.scrollLeft > 2);
+            if (canScrollRight || canScrollLeft) {
+                e.preventDefault();
+                ribbon.scrollLeft += (e.deltaY * 1.25);
+            }
         }
     }, { passive: false });
 });

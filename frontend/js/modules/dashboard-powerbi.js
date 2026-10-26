@@ -229,8 +229,12 @@
         document.querySelectorAll(".bi-slicer-group").forEach(group => {
             group.addEventListener("wheel", (e) => {
                 if (e.deltaY !== 0 && group.scrollWidth > group.clientWidth) {
-                    e.preventDefault();
-                    group.scrollLeft += e.deltaY;
+                    const canScrollRight = e.deltaY > 0 && (group.scrollLeft + group.clientWidth < group.scrollWidth - 2);
+                    const canScrollLeft = e.deltaY < 0 && (group.scrollLeft > 2);
+                    if (canScrollRight || canScrollLeft) {
+                        e.preventDefault();
+                        group.scrollLeft += e.deltaY;
+                    }
                 }
             }, { passive: false });
         });

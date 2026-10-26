@@ -169,7 +169,7 @@ export default function TabLayout() {
           alignItems: "center",
         },
         headerShown: false,
-        animation: "shift",
+        animation: "none",
         tabBarHideOnKeyboard: true,
       }}
     >

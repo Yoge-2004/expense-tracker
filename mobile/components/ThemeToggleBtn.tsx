@@ -4,8 +4,8 @@
  * Adapts seamlessly across all screens and headers in the mobile app.
  */
 
-import React, { useRef, useCallback } from 'react';
-import { Animated, Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import React, { useCallback } from 'react';
+import { Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { usePreferences } from '../context/PreferencesContext';
@@ -19,26 +19,13 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
   const { theme, toggleTheme } = usePreferences();
   const isLight = theme === 'light';
   const c = Colors[theme];
-  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   const handlePressIn = useCallback(() => {
-    // 1. Immediately toggle theme state with zero touch-up or gesture delay
+    // 1. Immediately toggle theme state on direct touch-down frame
     void toggleTheme();
     // 2. Fire physical tactile feedback at the exact millisecond of contact
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    // 3. Crisp, hardware-accelerated icon micro-spin
-    rotateAnim.setValue(0);
-    Animated.timing(rotateAnim, {
-      toValue: 1,
-      duration: 180,
-      useNativeDriver: true,
-    }).start();
-  }, [toggleTheme, rotateAnim]);
-
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  }, [toggleTheme]);
 
   return (
     <Pressable
@@ -56,19 +43,11 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
         style,
       ]}
     >
-      <Animated.View
-        style={{
-          transform: [{ rotate: spin }],
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Ionicons
-          name={isLight ? 'sunny' : 'moon'}
-          size={19}
-          color={c.primary}
-        />
-      </Animated.View>
+      <Ionicons
+        name={isLight ? 'sunny' : 'moon'}
+        size={19}
+        color={c.primary}
+      />
     </Pressable>
   );
 });

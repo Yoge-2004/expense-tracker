@@ -39,6 +39,17 @@
         modalEl.setAttribute("aria-hidden", "false");
         modalEl.classList.add("active");
         document.body.classList.add("modal-open");
+        document.documentElement.classList.add("modal-open");
+
+        // Universal backdrop click to close
+        if (!modalEl._backdropClickHandler) {
+            modalEl._backdropClickHandler = (e) => {
+                if (e.target === modalEl) {
+                    closeModal(modalEl);
+                }
+            };
+            modalEl.addEventListener("click", modalEl._backdropClickHandler);
+        }
 
         // Attach focus trap handler
         if (!modalEl._focusTrapHandler) {
@@ -68,8 +79,9 @@
             modalEl._focusTrapHandler = null;
         }
 
-        if (!document.querySelector(".modal-overlay.active")) {
+        if (!document.querySelector(".modal-overlay.active, .command-palette-overlay.open")) {
             document.body.classList.remove("modal-open");
+            document.documentElement.classList.remove("modal-open");
         }
 
         // Restore keyboard focus to element that triggered the modal
@@ -80,6 +92,29 @@
             modalEl._previousActiveElement = null;
         }
     }
+
+
+    // Defensive global scroll recovery listeners
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            const activeModals = document.querySelectorAll(".modal-overlay.active");
+            if (activeModals.length > 0) {
+                activeModals.forEach(m => closeModal(m));
+            } else {
+                document.body.classList.remove("modal-open");
+                document.documentElement.classList.remove("modal-open");
+            }
+        }
+    });
+
+    document.addEventListener("pointerdown", () => {
+        if (!document.querySelector(".modal-overlay.active, .command-palette-overlay.open")) {
+            if (document.body.classList.contains("modal-open") || document.documentElement.classList.contains("modal-open")) {
+                document.body.classList.remove("modal-open");
+                document.documentElement.classList.remove("modal-open");
+            }
+        }
+    });
 
     global.openModal = openModal;
     global.closeModal = closeModal;

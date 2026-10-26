@@ -481,8 +481,7 @@ function RootLayoutNav() {
               screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: Colors[theme].bg },
-                animation: 'fade_from_bottom',
-                animationDuration: 180,
+                animation: 'none',
               }}
             >
               <Stack.Screen name="login" options={{ animation: 'fade' }} />
@@ -490,7 +489,7 @@ function RootLayoutNav() {
               <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="expo-auth-session" options={{ animation: 'none' }} />
-              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'none' }} />
             </Stack>
           </View>
         </SafeAreaInsetsContext.Provider>
