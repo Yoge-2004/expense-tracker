@@ -538,8 +538,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 }
 
 /* ==========================================================================
-   Full Responsive Layout Architecture (Mobile, Tablet, Desktop)
-   Sleek, low-profile admin topbar utilizing center space
+   Admin Top Command Bar — Spacious, Balanced & Responsive
    ========================================================================== */
 .admin-topbar-root {
     display: flex !important;
@@ -547,19 +546,20 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     align-items: center !important;
     justify-content: space-between !important;
     gap: 16px !important;
-    padding: 8px 20px !important;
-    min-height: 52px !important;
+    padding: 12px 22px !important;
+    min-height: 58px !important;
+    margin-bottom: 16px !important;
+    border-radius: 16px !important;
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
-    overflow: visible !important;
 }
 
 .admin-heading-root {
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
-    gap: 2px !important;
+    gap: 3px !important;
     flex: 0 0 auto !important;
     min-width: 0 !important;
     margin: 0 !important;
@@ -574,7 +574,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 }
 
 .admin-brand-title {
-    font-size: 18px !important;
+    font-size: 19px !important;
     font-weight: 800 !important;
     letter-spacing: -0.02em !important;
     display: inline-flex !important;
@@ -587,7 +587,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 
 .admin-welcome-subtitle,
 #userWelcomeText {
-    font-size: 11.5px !important;
+    font-size: 12px !important;
     color: var(--text-muted) !important;
     white-space: nowrap !important;
     line-height: 1.3 !important;
@@ -595,26 +595,29 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     padding: 0 !important;
 }
 
-/* Center area utilizing the wide open space of the bar */
-.admin-topbar-center {
-    display: flex !important;
+.admin-top-actions {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
-    justify-content: center !important;
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    margin: 0 !important;
 }
 
 .admin-workspace-btn {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 7px !important;
     text-decoration: none !important;
-    padding: 7px 16px !important;
+    padding: 0 14px !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
     font-size: 12.5px !important;
-    height: 34px !important;
-    line-height: 32px !important;
+    height: 36px !important;
+    line-height: 34px !important;
     box-sizing: border-box !important;
     white-space: nowrap !important;
     background: var(--surface) !important;
@@ -622,6 +625,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     color: var(--text-main) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
     transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
 }
 
 .admin-workspace-btn:hover {
@@ -631,35 +635,23 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     transform: translateY(-1px) !important;
 }
 
-.admin-top-actions {
-    display: inline-flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    gap: 10px !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    margin: 0 !important;
-}
-
 .admin-top-select-wrapper {
     display: inline-flex !important;
     align-items: center !important;
-    min-width: 120px !important;
     width: auto !important;
+    min-width: 115px !important;
     flex-shrink: 0 !important;
 }
 
 .admin-top-select-wrapper .custom-select-wrapper {
-    min-width: 120px !important;
     width: auto !important;
+    min-width: 115px !important;
     flex-shrink: 0 !important;
 }
 
 .admin-top-select-wrapper .custom-select-trigger,
 .admin-poll-select {
-    height: 34px !important;
+    height: 36px !important;
     padding: 0 10px !important;
     font-size: 12px !important;
     font-weight: 600 !important;
@@ -672,6 +664,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     outline: none !important;
     display: inline-flex !important;
     align-items: center !important;
+    white-space: nowrap !important;
 }
 
 .top-bar-utility-group {
@@ -679,16 +672,16 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 8px !important;
     flex-shrink: 0 !important;
 }
 
 .top-bar-utility-group .btn-icon,
 .top-bar-utility-group #themeStudioBtn,
 .top-bar-utility-group #themeToggle {
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
     border-radius: 10px !important;
     padding: 0 !important;
     display: inline-flex !important;
@@ -697,16 +690,16 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 }
 
 .admin-topbar-root .user-profile {
-    height: 34px !important;
+    height: 36px !important;
     display: inline-flex !important;
     align-items: center !important;
 }
 
 .admin-topbar-root .user-profile .avatar {
-    width: 30px !important;
-    height: 30px !important;
-    font-size: 12px !important;
-    line-height: 30px !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 13px !important;
+    line-height: 32px !important;
 }
 
 .dashboard-container {
@@ -917,25 +910,31 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
         position: relative !important;
         top: auto !important;
         z-index: 50 !important;
-        padding: 6px 12px !important;
-        gap: 8px !important;
-        margin-bottom: 8px !important;
-        border-radius: 12px !important;
-        min-height: 42px !important;
-        max-height: 46px !important;
-        flex-wrap: nowrap !important;
-        justify-content: space-between !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 12px 14px !important;
+        margin-bottom: 16px !important;
+        border-radius: 14px !important;
+        min-height: auto !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
     }
 
     .admin-heading-root {
-        flex: 0 1 auto !important;
-        width: auto !important;
-        margin-bottom: 0 !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        margin: 0 !important;
     }
 
     .admin-brand-title {
-        font-size: 15px !important;
-        gap: 4px !important;
+        font-size: 16px !important;
+        gap: 6px !important;
     }
 
     .admin-welcome-subtitle,
@@ -943,40 +942,62 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
         display: none !important;
     }
 
-    .admin-topbar-center {
-        flex: 0 0 auto !important;
-    }
-
-    .admin-workspace-btn span {
-        display: none !important;
+    .admin-top-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 115px) auto !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
     }
 
     .admin-workspace-btn {
-        height: 32px !important;
-        padding: 0 8px !important;
-        font-size: 11px !important;
+        width: 100% !important;
+        height: 36px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+        justify-content: center !important;
     }
 
-    .admin-top-actions {
-        display: inline-flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: center !important;
-        justify-content: flex-end !important;
-        gap: 6px !important;
-        width: auto !important;
+    .admin-workspace-btn span {
+        display: inline !important;
     }
 
-    .admin-top-select-wrapper,
+    .admin-top-select-wrapper {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
     .admin-top-select-wrapper .custom-select-wrapper {
-        min-width: 90px !important;
+        width: 100% !important;
+        min-width: 0 !important;
     }
 
     .admin-top-select-wrapper .custom-select-trigger,
     .admin-poll-select {
-        height: 32px !important;
-        padding: 0 6px !important;
-        font-size: 11px !important;
+        width: 100% !important;
+        height: 36px !important;
+        padding: 0 8px !important;
+        font-size: 11.5px !important;
+    }
+
+    .top-bar-utility-group {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .top-bar-utility-group .btn-icon,
+    .top-bar-utility-group #themeStudioBtn,
+    .top-bar-utility-group #themeToggle {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+    }
+
+    .admin-topbar-root .user-profile .avatar {
+        width: 30px !important;
+        height: 30px !important;
     }
 
     .top-bar-utility-group {
