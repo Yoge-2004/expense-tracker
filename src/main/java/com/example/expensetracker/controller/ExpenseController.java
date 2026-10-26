@@ -5,9 +5,7 @@ import com.example.expensetracker.mapper.ExpenseMapper;
 import com.example.expensetracker.model.*;
 import com.example.expensetracker.repository.*;
 import com.example.expensetracker.service.ExpenseService;
-import com.example.expensetracker.service.BudgetService;
 import com.example.expensetracker.service.ExportService;
-import com.example.expensetracker.service.RecurringExpenseService;
 import com.example.expensetracker.service.ImportService;
 import com.example.expensetracker.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -69,9 +67,10 @@ public class ExpenseController {
     private final ExpenseService expenseService;
     private final UserService userService;
     private final CategoryRepository categoryRepository;
-    private final BudgetService budgetService;
-    private final RecurringExpenseService recurringExpenseService;
+    private final BudgetRepository budgetRepository;
+    private final RecurringExpenseRepository recurringRepository;
     private final ExpenseRepository expenseRepository;
+    private final com.example.expensetracker.repository.IncomeRepository incomeRepository;
     private final ExportService exportService;
     private final ImportService importService;
     private final com.example.expensetracker.security.UserSecurity userSecurity;
@@ -468,7 +467,35 @@ public class ExpenseController {
             @Parameter(description = "ID of the user setting the budget.", required = true, example = "1")
             @PathVariable Long userId,
             @org.springframework.web.bind.annotation.RequestBody BudgetDto dto) {
-        budgetService.setBudget(userId, dto);
+        userSecurity.validateUserAccess(userId);
+        log.info("Setting budget for userId={}, categoryId={}: limitAmount={}, period={}",
+                userId, dto.categoryId(), dto.limitAmount(), dto.period());
+        if (dto.limitAmount() == null || dto.limitAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            log.warn("Rejected budget for userId={}: limitAmount must be greater than zero", userId);
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("error", "Budget limit must be a positive number"));
+        }
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Category category = categoryRepository.findById(dto.categoryId())
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        // Ownership check: prevent IDOR — user must not be able to set a budget against
+        // another user's private category. Global categories (user == null) are shared.
+        if (category.getUser() != null && !category.getUser().getId().equals(user.getId())) {
+            log.warn("IDOR attempt: user {} tried to set budget against foreign category {}", userId, dto.categoryId());
+            throw new AccessDeniedException("Category does not belong to this user");
+        }
+        Budget budget = budgetRepository.findByUserAndCategoryId(user, dto.categoryId())
+                .orElse(new Budget());
+        budget.setUser(user);
+        budget.setCategory(category);
+        budget.setLimitAmount(dto.limitAmount());
+        budget.setPeriod(dto.period() != null ? dto.period() : "MONTHLY");
+        budget.setIntervalDays("CUSTOM".equalsIgnoreCase(budget.getPeriod()) ? dto.intervalDays() : null);
+        budget.setStartDate(dto.startDate());
+        budget.setEndDate(dto.endDate());
+        budgetRepository.save(budget);
+        log.info("Budget saved successfully for userId={}, categoryId={}", userId, dto.categoryId());
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget set successfully"));
     }
 
@@ -490,7 +517,12 @@ public class ExpenseController {
     public ResponseEntity<?> deleteBudgetById(
             @Parameter(description = "Database ID of the budget to delete.", required = true, example = "3")
             @PathVariable Long budgetId) {
-        budgetService.deleteBudgetById(budgetId);
+        log.info("Deleting budget by budgetId={}", budgetId);
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Budget not found with id=" + budgetId));
+        userSecurity.validateUserAccess(budget.getUser().getId());
+        budgetRepository.delete(budget);
+        log.info("Budget id={} deleted successfully", budgetId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget limit deleted successfully"));
     }
 
@@ -504,13 +536,19 @@ public class ExpenseController {
         @ApiResponse(responseCode = "400", description = "No user found with the given userId")
     })
     @DeleteMapping("/budget/user/{userId}/category/{categoryId}")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<?> deleteBudgetByCategory(
             @Parameter(description = "ID of the user who owns the budget.", required = true, example = "1")
             @PathVariable Long userId,
             @Parameter(description = "ID of category whose budget limit should be removed.",
                     required = true, example = "3")
             @PathVariable Long categoryId) {
-        budgetService.deleteBudgetByCategory(userId, categoryId);
+        userSecurity.validateUserAccess(userId);
+        log.info("Deleting budget for userId={}, categoryId={}", userId, categoryId);
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        budgetRepository.deleteByUserAndCategoryId(user, categoryId);
+        log.info("Budget for userId={}, categoryId={} deleted successfully", userId, categoryId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Budget limit deleted successfully"));
     }
 
@@ -522,7 +560,105 @@ public class ExpenseController {
     public ResponseEntity<List<BudgetStatusDto>> getBudgetStatus(
             @Parameter(description = "ID of the user whose budget status to retrieve.", required = true, example = "1")
             @PathVariable Long userId) {
-        return ResponseEntity.ok(budgetService.getBudgetStatus(userId));
+        userSecurity.validateUserAccess(userId);
+        log.debug("Calculating budget status for userId={}", userId);
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        List<Budget> budgets = budgetRepository.findByUser(user);
+        LocalDate now = LocalDate.now();
+
+        // Memoize expense and income queries by date range to eliminate N+1 database queries
+        record DateRange(LocalDate start, LocalDate end) {}
+        Map<DateRange, List<Expense>> expenseCache = new HashMap<>();
+        Map<DateRange, List<com.example.expensetracker.model.Income>> incomeCache = new HashMap<>();
+
+        List<BudgetStatusDto> statusList = budgets.stream().map(b -> {
+            LocalDate start;
+            LocalDate end;
+            String period = b.getPeriod() != null ? b.getPeriod() : "MONTHLY";
+
+            switch (period.toUpperCase()) {
+                case "WEEKLY" -> {
+                    start = now.with(java.time.DayOfWeek.MONDAY);
+                    end = now.with(java.time.DayOfWeek.SUNDAY);
+                }
+                case "YEARLY" -> {
+                    start = now.withDayOfYear(1);
+                    end = now.withDayOfYear(now.lengthOfYear());
+                }
+                case "CUSTOM" -> {
+                    if (b.getStartDate() != null && b.getEndDate() != null) {
+                        start = b.getStartDate();
+                        end = b.getEndDate();
+                    } else if (b.getStartDate() != null && b.getIntervalDays() != null && b.getIntervalDays() > 0) {
+                        start = b.getStartDate();
+                        end = b.getStartDate().plusDays(b.getIntervalDays());
+                    } else if (b.getIntervalDays() != null && b.getIntervalDays() > 0) {
+                        start = now;
+                        end = now.plusDays(b.getIntervalDays());
+                    } else {
+                        start = b.getStartDate() != null ? b.getStartDate() : now.withDayOfMonth(1);
+                        end = b.getEndDate() != null ? b.getEndDate() : now;
+                    }
+                }
+                default -> { // MONTHLY
+                    start = now.withDayOfMonth(1);
+                    end = now.plusMonths(1).withDayOfMonth(1).minusDays(1);
+                }
+            }
+
+            final LocalDate periodStart = start;
+            final LocalDate periodEnd = end;
+
+            List<Expense> periodExpenses = expenseCache.computeIfAbsent(
+                    new DateRange(start, end),
+                    r -> expenseRepository.findByUserAndExpenseDateBetween(user, r.start(), r.end())
+            );
+
+            BigDecimal grossSpent = periodExpenses.stream()
+                    .filter(e -> e.getCategory() != null && e.getCategory().getId().equals(b.getCategory().getId()))
+                    .map(Expense::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Money handed back for this category (a friend repaying a bill, a refund) reduces what counts
+            // against the budget. It is placed by the month it counts toward, like everywhere else.
+            DateRange reimbursementRange = new DateRange(
+                    start.minusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT),
+                    end.plusMonths(com.example.expensetracker.mapper.IncomeRules.MAX_MONTH_SHIFT)
+            );
+            List<com.example.expensetracker.model.Income> periodIncomes = incomeCache.computeIfAbsent(
+                    reimbursementRange,
+                    r -> incomeRepository.findByUserAndIncomeDateBetween(user, r.start(), r.end())
+            );
+
+            BigDecimal reimbursed = periodIncomes.stream()
+                    .filter(i -> com.example.expensetracker.mapper.IncomeRules.effectiveKind(i)
+                            == com.example.expensetracker.model.IncomeKind.REIMBURSEMENT)
+                    .filter(i -> b.getCategory().getId().equals(i.getReimbursedCategoryId()))
+                    .filter(i -> {
+                        LocalDate counted = com.example.expensetracker.mapper.IncomeRules.effectiveDate(i);
+                        return counted != null && !counted.isBefore(periodStart) && !counted.isAfter(periodEnd);
+                    })
+                    .map(com.example.expensetracker.model.Income::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal spent = grossSpent.subtract(reimbursed).max(BigDecimal.ZERO);
+            double pct = b.getLimitAmount().doubleValue() > 0
+                    ? spent.doubleValue() / b.getLimitAmount().doubleValue() * 100 : 0;
+
+            return new BudgetStatusDto(
+                    b.getId(),
+                    b.getCategory().getId(),
+                    b.getCategory().getName(),
+                    b.getLimitAmount(),
+                    spent,
+                    pct,
+                    period,
+                    b.getIntervalDays(),
+                    start,
+                    end
+            );
+        }).toList();
+        log.info("Generated budget status for {} budgets for userId={}", statusList.size(), userId);
+        return ResponseEntity.ok(statusList);
     }
 
     // ═════════════════════════════════════════════════════════════════════
@@ -597,7 +733,40 @@ public class ExpenseController {
                     required = true, example = "1")
             @PathVariable Long userId,
             @org.springframework.web.bind.annotation.RequestBody ExpenseDto dto) {
-        recurringExpenseService.createRecurringExpense(userId, dto);
+        userSecurity.validateUserAccess(userId);
+        log.info("Received request to setup recurring expense for userId={}: "
+                        + "amount={}, frequency={}, intervalDays={}, categoryId={}",
+                userId, dto.amount(), dto.frequency(), dto.intervalDays(), dto.categoryId());
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Category category = categoryRepository.findById(dto.categoryId())
+                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        RecurringExpense rec = new RecurringExpense();
+        rec.setAmount(dto.amount());
+        rec.setDescription(dto.description());
+        String frequency = normalizeFrequency(dto.frequency());
+        Integer intervalDays = "CUSTOM".equals(frequency) ? dto.intervalDays() : null;
+        if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
+            log.warn("Invalid intervalDays={} for custom recurring expense userId={}", intervalDays, userId);
+            throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
+        }
+        rec.setFrequency(frequency);
+        rec.setIntervalDays(intervalDays);
+        rec.setNextDueDate(nextOccurrence(dto.expenseDate(), frequency, intervalDays));
+        rec.setCategory(category);
+        rec.setUser(user);
+        recurringRepository.save(rec);
+        Expense firstExp = new Expense();
+        firstExp.setAmount(dto.amount());
+        firstExp.setDescription(dto.description());
+        firstExp.setExpenseDate(dto.expenseDate());
+        firstExp.setCategory(category);
+        // Mark the seed expense as recurring so MonthlyReportServiceImpl's recurringTotal
+        // calculation (which filters by Expense::isRecurring) actually includes it.
+        // Without this flag the first occurrence was silently excluded from the report.
+        firstExp.setRecurring(true);
+        expenseService.createExpense(firstExp, user);
+        log.info("Recurring expense setup successfully with id={} for userId={}", rec.getId(), userId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Recurring Expense Setup Successfully"));
     }
 
@@ -605,21 +774,136 @@ public class ExpenseController {
         summary = "Get subscriptions",
         description = """
             Returns all active recurring expense subscriptions for the specified user.
+
+            **Returned fields per subscription:**
+            - `id` — the `RecurringExpense` ID used for update and cancel operations.
+            - `description` — the subscription name (e.g. "Netflix Premium").
+            - `amount` — the monthly charge amount.
+            - `nextDueDate` — the next scheduled billing date (ISO-8601).
+            - `frequency` — always `"MONTHLY"` in the current version.
+            - `categoryName` — name of the linked category.
+
+            **Cancelled subscriptions** are not returned — they are permanently deleted
+            and will not appear in this list.
+
+            **Empty list:** if the user has no active subscriptions, an empty array `[]`
+            is returned.
             """
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "List of active subscriptions (empty array if none)",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(name = "recurring-list-200", summary = "Two active subscriptions",
+                    value = """
+                        [ { "id": 3, "description": "Netflix Premium", "amount": 649.00,
+                            "nextDueDate": "2025-07-01", "frequency": "MONTHLY", "categoryName": "Entertainment" },
+                          { "id": 4, "description": "Spotify", "amount": 119.00,
+                            "nextDueDate": "2025-07-05", "frequency": "MONTHLY", "categoryName": "Entertainment" } ]
+                        """
+                ))
+        ),
+        @ApiResponse(responseCode = "400", description = "No user found with the given ID",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(name = "recurring-list-400",
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "User not found", "path": "/api/expenses/recurring/user/99" }
+                        """
+                ))
+        ),
+        @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(name = "recurring-list-401",
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/recurring/user/1" }
+                        """
+                ))
+        )
+    })
     @GetMapping("/recurring/user/{userId}")
     public ResponseEntity<List<Map<String, Object>>> getUserSubscriptions(
             @Parameter(description = "ID of the user whose subscriptions to retrieve.", required = true, example = "1")
             @PathVariable Long userId) {
-        return ResponseEntity.ok(recurringExpenseService.getUserSubscriptions(userId));
+        userSecurity.validateUserAccess(userId);
+        log.debug("Fetching recurring subscriptions for userId={}", userId);
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        List<RecurringExpense> subs = recurringRepository.findByUser(user);
+        List<Map<String, Object>> response = subs.stream().map(sub -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id",          sub.getId());
+            map.put("description", sub.getDescription());
+            map.put("amount",      sub.getAmount());
+            map.put("nextDueDate", sub.getNextDueDate());
+            map.put("frequency",   sub.getFrequency());
+            map.put("intervalDays", sub.getIntervalDays());
+            map.put("categoryId", sub.getCategory() != null ? sub.getCategory().getId() : null);
+            map.put("categoryName", sub.getCategory() != null ? sub.getCategory().getName() : "Uncategorized");
+            return map;
+        }).toList();
+        log.info("Retrieved {} recurring subscriptions for userId={}", response.size(), userId);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
         summary = "Update subscription",
         description = """
             Partially updates a recurring expense subscription.
+
+            **Supported keys in the request body (all optional):**
+
+            | Key           | Type   | Description                                           |
+            |---------------|--------|-------------------------------------------------------|
+            | `amount`      | number | New monthly charge amount (e.g. `799.00`).            |
+            | `description` | string | New subscription label (e.g. `"Netflix 4K Plan"`).   |
+            | `nextDueDate` | string | Reschedule the next billing date (ISO-8601 date).     |
+
+            Only keys that are present in the request body are updated.
+            Omitted keys are left unchanged. At least one key should be provided.
+
+            **Example use cases:**
+            - Upgrading a plan: update `amount` and `description`.
+            - Skipping a month: update `nextDueDate` to a later date.
             """
     )
+    @RequestBody(required = true, content = @Content(
+        mediaType = MediaType.APPLICATION_JSON_VALUE,
+        examples = @ExampleObject(
+            name = "recurring-update-request", summary = "Upgrade to premium plan and reschedule",
+            value = "{ \"amount\": 799.00, \"description\": \"Netflix Premium (4K)\", \"nextDueDate\": \"2025-08-01\" }"
+        )
+    ))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Subscription updated successfully",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(name = "recurring-update-200",
+                    value = "{ \"message\": \"Subscription updated successfully\" }"
+                ))
+        ),
+        @ApiResponse(responseCode = "400", description = "Subscription not found",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(name = "recurring-update-400",
+                    value = """
+                        { "status": 400, "error": "Bad Request",
+                          "message": "Subscription not found", "path": "/api/expenses/recurring/99" }
+                        """
+                ))
+        ),
+        @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(name = "recurring-update-401",
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/recurring/3" }
+                        """
+                ))
+        )
+    })
     @PutMapping({"/recurring/{recId}", "/recurring/{recId}/user/{userId}"})
     public ResponseEntity<?> updateSubscription(
             @Parameter(description = "ID of recurring expense subscription to update.",
@@ -627,7 +911,68 @@ public class ExpenseController {
             @PathVariable Long recId,
             @PathVariable(value = "userId", required = false) Long userId,
             @org.springframework.web.bind.annotation.RequestBody Map<String, Object> updates) {
-        recurringExpenseService.updateSubscription(recId, updates);
+        log.info("Received request to update subscription id={}, userId={}: fields={}",
+                recId, userId, updates.keySet());
+        RecurringExpense rec = recurringRepository.findById(recId)
+                .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
+        userSecurity.validateUserAccess(rec.getUser().getId());
+        // Defensive per-field handling: previously used blind casts that produced
+        //   NPE  for null JSON values  -> 500 instead of 400
+        //   CCE  for type mismatches    -> 500 instead of 400
+        //   DateTimeParseException      -> 500 instead of 400
+        // Wrap each cast in a try/catch and rethrow as IllegalArgumentException so
+        // GlobalExceptionHandler maps to 400 Bad Request with a clear message.
+        try {
+            if (updates.containsKey("amount") && updates.get("amount") != null) {
+                rec.setAmount(new BigDecimal(String.valueOf(updates.get("amount"))));
+            }
+            if (updates.containsKey("description") && updates.get("description") != null) {
+                rec.setDescription(String.valueOf(updates.get("description")));
+            }
+            if (updates.containsKey("nextDueDate") && updates.get("nextDueDate") != null) {
+                rec.setNextDueDate(LocalDate.parse(String.valueOf(updates.get("nextDueDate"))));
+            }
+            if (updates.containsKey("categoryId") || updates.containsKey("category")) {
+                Object catVal = updates.containsKey("categoryId") ? updates.get("categoryId") : updates.get("category");
+                if (catVal == null || "".equals(catVal)) {
+                    rec.setCategory(null);
+                } else {
+                    Long catId = Long.valueOf(String.valueOf(catVal));
+                    Category category = categoryRepository.findById(catId)
+                            .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                    if (category.getUser() != null && !category.getUser().getId().equals(rec.getUser().getId())) {
+                        throw new IllegalArgumentException("Category does not belong to this user");
+                    }
+                    rec.setCategory(category);
+                }
+            }
+            if (updates.containsKey("frequency")) {
+                String frequency = normalizeFrequency((String) updates.get("frequency"));
+                Integer intervalDays = "CUSTOM".equals(frequency)
+                        ? numberValue(updates.get("intervalDays")) : null;
+                if ("CUSTOM".equals(frequency) && (intervalDays == null || intervalDays < 1)) {
+                    log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
+                    throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
+                }
+                rec.setFrequency(frequency);
+                rec.setIntervalDays(intervalDays);
+            } else if (updates.containsKey("intervalDays") && "CUSTOM".equals(rec.getFrequency())) {
+                Integer intervalDays = numberValue(updates.get("intervalDays"));
+                if (intervalDays == null || intervalDays < 1) {
+                    log.warn("Invalid intervalDays for custom frequency on subscription id={}", recId);
+                    throw new IllegalArgumentException("Custom frequency requires a positive interval in days");
+                }
+                rec.setIntervalDays(intervalDays);
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            // NumberFormatException, DateTimeParseException, ClassCastException all subclass RuntimeException
+            log.warn("Invalid field value while updating subscription id={}: {}", recId, e.getMessage());
+            throw new IllegalArgumentException("Invalid field value: " + e.getMessage(), e);
+        }
+        recurringRepository.save(rec);
+        log.info("Subscription id={} updated successfully", recId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Subscription updated successfully"));
     }
 
@@ -635,15 +980,51 @@ public class ExpenseController {
         summary = "Cancel subscription",
         description = """
             Permanently cancels (deletes) a recurring expense subscription.
+
+            **What is deleted:**
+            The `RecurringExpense` record identified by `recId`. The subscription will
+            no longer appear in `GET /api/expenses/recurring/user/{userId}`.
+
+            **What is NOT deleted:**
+            All `Expense` records that were previously created by this subscription
+            (including the first-payment record created at registration) are **preserved**.
+            These represent historical charges and remain visible in the expense list.
+
+            **After cancellation:**
+            The subscription cannot be re-activated. To resume the same subscription,
+            create a new one via `POST /api/expenses/recurring/user/{userId}`.
             """
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Subscription cancelled — historical expenses preserved",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(name = "recurring-delete-200",
+                    value = "{ \"message\": \"Subscription cancelled successfully\" }"
+                ))
+        ),
+        @ApiResponse(responseCode = "401", description = "JWT token missing or invalid",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples = @ExampleObject(name = "recurring-delete-401",
+                    value = """
+                        { "status": 401, "error": "Unauthorized",
+                          "message": "JWT token is missing or invalid", "path": "/api/expenses/recurring/3" }
+                        """
+                ))
+        )
+    })
     @DeleteMapping({"/recurring/{recId}", "/recurring/{recId}/user/{userId}"})
     public ResponseEntity<?> deleteSubscription(
             @Parameter(description = "ID of recurring expense subscription to cancel.",
                     required = true, example = "3")
             @PathVariable Long recId,
             @PathVariable(value = "userId", required = false) Long userId) {
-        recurringExpenseService.deleteSubscription(recId);
+        log.info("Received request to cancel recurring subscription id={}, userId={}", recId, userId);
+        RecurringExpense rec = recurringRepository.findById(recId)
+                .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
+        userSecurity.validateUserAccess(rec.getUser().getId());
+        recurringRepository.delete(rec);
+        log.info("Subscription id={} cancelled successfully", recId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Subscription cancelled successfully"));
     }
 
@@ -657,6 +1038,17 @@ public class ExpenseController {
         );
     }
 
+    private String normalizeFrequency(String frequency) {
+        String value = frequency == null || frequency.isBlank() ? "MONTHLY" : frequency.trim().toUpperCase(Locale.ROOT);
+        if (!List.of("DAILY", "WEEKLY", "MONTHLY", "YEARLY", "CUSTOM").contains(value)) {
+            throw new IllegalArgumentException("Frequency must be DAILY, WEEKLY, MONTHLY, YEARLY, or CUSTOM");
+        }
+        return value;
+    }
+
+    private Integer numberValue(Object value) {
+        return value == null ? null : Integer.valueOf(value.toString());
+    }
 
     // ═════════════════════════════════════════════════════════════════════
     //  EXPORT & IMPORT (CSV, JSON, PDF, EXCEL)
@@ -836,4 +1228,13 @@ public class ExpenseController {
         return ResponseEntity.ok(result);
     }
 
+    private LocalDate nextOccurrence(LocalDate date, String frequency, Integer intervalDays) {
+        return switch (frequency) {
+            case "DAILY" -> date.plusDays(1);
+            case "WEEKLY" -> date.plusWeeks(1);
+            case "YEARLY" -> date.plusYears(1);
+            case "CUSTOM" -> date.plusDays(intervalDays);
+            default -> date.plusMonths(1);
+        };
+    }
 }

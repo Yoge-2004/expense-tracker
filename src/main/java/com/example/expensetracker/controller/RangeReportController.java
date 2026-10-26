@@ -598,6 +598,53 @@ public class RangeReportController {
                 log.warn("Executive Dashboard XDDF chart rendering note: {}", chartEx.getMessage(), chartEx);
             }
 
+            // Section 4: What-If Sensitivity & Stress Test Matrix (Power BI Parameter Simulation)
+            int sensStartRow = chartRow2 + chartRow2Height + 2;
+            dashboard.createRow(sensStartRow).setHeightInPoints(10); // Spacer
+            int sensHeadRow = sensStartRow + 1;
+            dashboard.addMergedRegion(new CellRangeAddress(sensHeadRow, sensHeadRow, 0, 7));
+            put(dashboard, sensHeadRow, 0, "4. WHAT-IF SCENARIO & FINANCIAL SENSITIVITY MATRIX (POWER BI WHAT-IF PARAMETERS)", tblHeader);
+            for (int c = 1; c < 8; c++) put(dashboard, sensHeadRow, c, "", tblHeader);
+
+            int sensSubRow = sensHeadRow + 1;
+            put(dashboard, sensSubRow, 0, "SPEND CUT \ INFLOW SHOCK", tblHeader);
+            put(dashboard, sensSubRow, 1, "-10% REVENUE SHOCK", tblHeaderRight);
+            put(dashboard, sensSubRow, 2, "BASELINE REVENUE (0%)", tblHeaderRight);
+            put(dashboard, sensSubRow, 3, "+10% REVENUE EXPANSION", tblHeaderRight);
+            put(dashboard, sensSubRow, 4, "+20% REVENUE EXPANSION", tblHeaderRight);
+            put(dashboard, sensSubRow, 5, "SURPLUS / DEFICIT", tblHeaderCenter);
+            put(dashboard, sensSubRow, 6, "LIQUIDITY RUNWAY", tblHeaderCenter);
+            put(dashboard, sensSubRow, 7, "STRATEGIC POSTURE", tblHeaderCenter);
+
+            String[] cutLabels = {
+                    "Baseline Spend (0% Cut)",
+                    "Moderate Spend Cut (-10%)",
+                    "Aggressive Spend Cut (-20%)",
+                    "Austerity Spend Cut (-30%)"
+            };
+            double[] cutFractions = {0.0, 0.10, 0.20, 0.30};
+            String[] postures = {
+                    "Status Quo",
+                    "Defensive Cushion",
+                    "Active Optimization",
+                    "Aggressive Wealth Building"
+            };
+
+            for (int i = 0; i < 4; i++) {
+                int rIdx = sensSubRow + 1 + i;
+                boolean z = (i % 2 == 1);
+                double cut = cutFractions[i];
+                double spendFactor = 1.0 - cut;
+                put(dashboard, rIdx, 0, cutLabels[i], z ? dataLeftZebra : dataLeft);
+                put(dashboard, rIdx, 1, "=*0.9 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 2, "=*1.0 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 3, "=*1.1 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 4, "=*1.2 - *" + spendFactor, z ? dataMoneyZebra : dataMoney);
+                put(dashboard, rIdx, 5, "=IF(C" + (rIdx + 1) + ">=0, "SURPLUS", "DEFICIT")", z ? dataCenterZebra : dataCenter);
+                put(dashboard, rIdx, 6, runwayMonths > 0 ? String.format(Locale.US, "%.1f Mo", runwayMonths / spendFactor) : "0.0 Mo", z ? dataCenterZebra : dataCenter);
+                put(dashboard, rIdx, 7, postures[i], z ? dataCenterZebra : dataCenter);
+            }
+
             for (int c = 0; c < 8; c++) dashboard.setColumnWidth(c, 22 * 256);
             dashboard.setForceFormulaRecalculation(true);
 
@@ -638,13 +685,14 @@ public class RangeReportController {
             setTab(expenseSheet, "E11D48");
             expenseSheet.setDisplayGridlines(true);
             expenseSheet.createFreezePane(0, 1);
-            String[] eh = {"Date", "Category", "Description", "Amount (" + symbol + ")", "Recurring"};
+            String[] eh = {"Date", "Category", "Description", "Amount (" + symbol + ")", "Recurring", "Z-Score Outlier Tag"};
             Row ehRow = expenseSheet.createRow(0);
             ehRow.setHeightInPoints(24);
             for (int c = 0; c < eh.length; c++) {
                 put(expenseSheet, 0, c, eh[c], c == 3 ? tblHeaderRight : tblHeader);
             }
             row = 1;
+            int totalExpCount = d.expenses.size();
             for (Expense x : d.expenses) {
                 Row r = expenseSheet.createRow(row);
                 r.setHeightInPoints(20);
@@ -654,6 +702,11 @@ public class RangeReportController {
                 put(expenseSheet, row, 2, safe(x.getDescription()), z ? dataLeftZebra : dataLeft);
                 put(expenseSheet, row, 3, nz(x.getAmount()), z ? dataMoneyZebra : dataMoney);
                 put(expenseSheet, row, 4, x.isRecurring() ? "Yes" : "No", z ? dataCenterZebra : dataCenter);
+                if (totalExpCount >= 3) {
+                    put(expenseSheet, row, 5, "=IF(D" + (row + 1) + ">AVERAGE(:$" + (totalExpCount + 1) + ")+2*STDEV.S(:$" + (totalExpCount + 1) + "), "⚠️ STATISTICAL SURGE (Z > 2.0)", "✅ NOMINAL")", z ? dataCenterZebra : dataCenter);
+                } else {
+                    put(expenseSheet, row, 5, "✅ NOMINAL", z ? dataCenterZebra : dataCenter);
+                }
                 row++;
             }
             if (row > 1) {
@@ -663,7 +716,7 @@ public class RangeReportController {
                 put(expenseSheet, row, 2, "TOTAL OUTFLOW (" + symbol + "):", totalLabelStyle);
                 put(expenseSheet, row, 3, "=SUM(D2:D" + row + ")", totalMoneyStyle);
             }
-            widths(expenseSheet, new int[]{16, 24, 46, 18, 14});
+            widths(expenseSheet, new int[]{16, 24, 46, 18, 14, 30});
 
             // 4. SAVINGS GOALS SHEET
             XSSFSheet savingsSheet = wb.createSheet("Savings Goals");
@@ -797,6 +850,95 @@ public class RangeReportController {
                 cash.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, row - 1, 0, fh.length - 1));
             }
             widths(cash, new int[]{20, 20, 20, 20});
+
+            // 8. DIM_DATE (RELATIONAL STAR SCHEMA CALENDAR DIMENSION FOR POWER BI & TABLEAU)
+            XSSFSheet dimDateSheet = wb.createSheet("Dim_Date");
+            setTab(dimDateSheet, "475569");
+            dimDateSheet.setDisplayGridlines(true);
+            dimDateSheet.createFreezePane(0, 1);
+            String[] ddh = {"DateKey", "FullDate", "Year", "Quarter", "Month", "MonthName", "DayOfWeek", "IsWeekend", "FiscalPeriod"};
+            Row ddhRow = dimDateSheet.createRow(0);
+            ddhRow.setHeightInPoints(24);
+            for (int c = 0; c < ddh.length; c++) {
+                put(dimDateSheet, 0, c, ddh[c], tblHeader);
+            }
+            Set<LocalDate> distinctDates = new TreeSet<>();
+            d.expenses.forEach(x -> { if (x.getExpenseDate() != null) distinctDates.add(x.getExpenseDate()); });
+            d.incomes.forEach(x -> { if (x.getIncomeDate() != null) distinctDates.add(x.getIncomeDate()); });
+            if (distinctDates.isEmpty()) {
+                distinctDates.add(LocalDate.now());
+            }
+            int dRow = 1;
+            for (LocalDate dt : distinctDates) {
+                Row r = dimDateSheet.createRow(dRow);
+                r.setHeightInPoints(20);
+                boolean z = (dRow % 2 == 0);
+                int dateKey = dt.getYear() * 10000 + dt.getMonthValue() * 100 + dt.getDayOfMonth();
+                int qtr = (dt.getMonthValue() - 1) / 3 + 1;
+                boolean isWknd = dt.getDayOfWeek().getValue() >= 6;
+                put(dimDateSheet, dRow, 0, dateKey, z ? dataCenterZebra : dataCenter);
+                put(dimDateSheet, dRow, 1, dt.toString(), z ? dataCenterZebra : dataCenter);
+                put(dimDateSheet, dRow, 2, dt.getYear(), z ? dataCenterZebra : dataCenter);
+                put(dimDateSheet, dRow, 3, "Q" + qtr, z ? dataCenterZebra : dataCenter);
+                put(dimDateSheet, dRow, 4, dt.getMonthValue(), z ? dataCenterZebra : dataCenter);
+                put(dimDateSheet, dRow, 5, dt.getMonth().name(), z ? dataLeftZebra : dataLeft);
+                put(dimDateSheet, dRow, 6, dt.getDayOfWeek().name(), z ? dataLeftZebra : dataLeft);
+                put(dimDateSheet, dRow, 7, isWknd ? "Yes" : "No", z ? dataCenterZebra : dataCenter);
+                put(dimDateSheet, dRow, 8, "FY" + dt.getYear() + "-P" + dt.getMonthValue(), z ? dataCenterZebra : dataCenter);
+                dRow++;
+            }
+            dimDateSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, dRow - 1, 0, ddh.length - 1));
+            widths(dimDateSheet, new int[]{14, 16, 12, 12, 12, 18, 18, 14, 16});
+
+            // 9. DIM_CATEGORY (RELATIONAL STAR SCHEMA TAXONOMY DIMENSION)
+            XSSFSheet dimCatSheet = wb.createSheet("Dim_Category");
+            setTab(dimCatSheet, "64748B");
+            dimCatSheet.setDisplayGridlines(true);
+            dimCatSheet.createFreezePane(0, 1);
+            String[] dch = {"CategoryKey", "CategoryName", "MacroClassification", "BudgetLimit (" + symbol + ")", "TargetBenchmark"};
+            Row dchRow = dimCatSheet.createRow(0);
+            dchRow.setHeightInPoints(24);
+            for (int c = 0; c < dch.length; c++) {
+                put(dimCatSheet, 0, c, dch[c], c == 3 ? tblHeaderRight : tblHeader);
+            }
+            Map<String, BigDecimal> catBudgetMap = new HashMap<>();
+            d.budgets.forEach(b -> {
+                String cName = categoryName(b.getCategory());
+                catBudgetMap.put(cName, nz(b.getLimitAmount()));
+            });
+            Set<String> allCategoryNames = new TreeSet<>();
+            d.expenses.forEach(x -> allCategoryNames.add(categoryName(x.getCategory())));
+            allCategoryNames.addAll(catBudgetMap.keySet());
+            if (allCategoryNames.isEmpty()) allCategoryNames.add("General Expenses");
+
+            int cRow = 1;
+            for (String cName : allCategoryNames) {
+                Row r = dimCatSheet.createRow(cRow);
+                r.setHeightInPoints(20);
+                boolean z = (cRow % 2 == 0);
+                String lower = cName.toLowerCase(Locale.ROOT);
+                String macro;
+                String target;
+                if (lower.contains("grocer") || lower.contains("rent") || lower.contains("util") || lower.contains("bill") || lower.contains("health") || lower.contains("transport")) {
+                    macro = "ESSENTIAL NEED (50%)";
+                    target = "50% Income Ceiling";
+                } else if (lower.contains("saving") || lower.contains("invest") || lower.contains("retire") || lower.contains("emergency")) {
+                    macro = "CAPITAL RETENTION (20%)";
+                    target = ">= 20% Income Floor";
+                } else {
+                    macro = "DISCRETIONARY WANT (30%)";
+                    target = "30% Income Ceiling";
+                }
+                BigDecimal bLimit = catBudgetMap.getOrDefault(cName, BigDecimal.ZERO);
+                put(dimCatSheet, cRow, 0, cRow, z ? dataCenterZebra : dataCenter);
+                put(dimCatSheet, cRow, 1, cName, z ? dataLeftZebra : dataLeft);
+                put(dimCatSheet, cRow, 2, macro, z ? dataLeftZebra : dataLeft);
+                put(dimCatSheet, cRow, 3, bLimit, z ? dataMoneyZebra : dataMoney);
+                put(dimCatSheet, cRow, 4, target, z ? dataCenterZebra : dataCenter);
+                cRow++;
+            }
+            dimCatSheet.setAutoFilter(new org.apache.poi.ss.util.CellRangeAddress(0, cRow - 1, 0, dch.length - 1));
+            widths(dimCatSheet, new int[]{16, 26, 28, 22, 24});
             try {
                 org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator.evaluateAllFormulaCells(wb);
             } catch (Exception evalEx) {
