@@ -717,7 +717,7 @@
         const sel = document.getElementById("dbUserFilterSelect");
         if (!sel || !Array.isArray(users)) return;
         const currentVal = sel.value;
-        sel.innerHTML = `<option value="">All Users (Multi-Tenant Platform Database)</option>`;
+        sel.innerHTML = `<option value="">All Platform Users</option>`;
         users.forEach(u => {
             const opt = document.createElement("option");
             opt.value = u.id;

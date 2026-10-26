@@ -4,18 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <!-- Unified Theme-Adaptive Brand Favicons -->
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=20261026-gem1">
-    <link rel="icon" type="image/x-icon" href="favicon.ico?v=20261026-gem1">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
     <title>Admin Command Center | Expense Tracker Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap&v=20260914-font1">
-    <link rel="stylesheet" href="css/style.css?v=20261022">
-    <link rel="stylesheet" href="css/motion-extended.css?v=20261022">
-    <link rel="stylesheet" href="css/ai-intelligence.css?v=20261022">
-    <link rel="stylesheet" href="css/admin.css?v=20261022">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/motion-extended.css">
+    <link rel="stylesheet" href="css/ai-intelligence.css">
+    <link rel="stylesheet" href="css/admin.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="theme-color" content="#10120E">
     <script>
@@ -30,23 +30,7 @@
     </script>
     <meta name="description" content="ExpenseTracker Pro Executive Admin Command Center. High-governance financial telemetry, live application logs, and multi-cloud database administration.">
     <meta name="robots" content="noindex, nofollow">
-    <script>
-        (function () {
-            try {
-                var l = document.createElement("link");
-                l.rel = "manifest";
-                l.crossOrigin = "use-credentials";
-                l.href = "manifest.json" + (window.location.search || "");
-                document.head.appendChild(l);
-            } catch (_) {
-                var d = document.createElement("link");
-                d.rel = "manifest";
-                d.href = "manifest.json";
-                document.head.appendChild(d);
-            }
-        })();
-    </script>
-    <noscript><link rel="manifest" href="manifest.json"></noscript>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -865,30 +849,30 @@
         <section id="databaseTab" class="admin-content-view" role="tabpanel" style="display:none;">
             <div class="card animate-cascade delay-2">
                 <!-- Filters & Controls Toolbar -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; flex:1;">
-                        <select id="dbStreamTypeSelect" class="form-select" aria-label="Database stream type" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
+                <div class="admin-db-toolbar">
+                    <div class="admin-db-filters">
+                        <select id="dbStreamTypeSelect" class="form-select admin-db-select" aria-label="Database stream type">
                             <option value="expenses" selected>Platform Expenses (Debits)</option>
                             <option value="incomes">Platform Incomes (Credits)</option>
                         </select>
 
-                        <select id="dbUserFilterSelect" class="form-select" aria-label="Filter database by user" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer;">
-                            <option value="">All Users (Multi-Tenant Platform Database)</option>
+                        <select id="dbUserFilterSelect" class="form-select admin-db-select" aria-label="Filter database by user">
+                            <option value="">All Platform Users</option>
                         </select>
 
-                        <button id="refreshDatabaseBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Refresh Database Table">
+                        <button id="refreshDatabaseBtn" class="btn-secondary admin-db-btn" title="Refresh Database Table">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                             <span>Refresh</span>
                         </button>
                     </div>
 
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <button id="exportLedgerJsonBtn" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600;" title="Export entire multi-tenant ledger as JSON">
+                    <div class="admin-db-actions">
+                        <button id="exportLedgerJsonBtn" class="btn-secondary admin-db-btn" title="Export entire multi-tenant ledger as JSON">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                             <span>Export Full Ledger (JSON)</span>
                         </button>
 
-                        <a id="downloadSnapshotSqliteBtn" href="/api/admin/database/snapshot/download" download="expense_tracker_snapshot.sqlite" class="btn-primary" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:600; text-decoration:none;" title="Download complete SQLite database snapshot">
+                        <a id="downloadSnapshotSqliteBtn" href="/api/admin/database/snapshot/download" download="expense_tracker_snapshot.sqlite" class="btn-primary admin-db-btn" title="Download complete SQLite database snapshot">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 4.02 2 6.5v11C2 19.98 6.48 22 12 22s10-2.02 10-4.5v-11C22 4.02 17.52 2 12 2z"></path><ellipse cx="12" cy="6.5" rx="10" ry="4.5"></ellipse><path d="M2 12c0 2.48 4.48 4.5 10 4.5s10-2.02 10-4.5"></path></svg>
                             <span>Download SQLite (.db)</span>
                         </a>
@@ -1226,12 +1210,12 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/api.js?v=20261022"></script>
+    <script src="js/api.js"></script>
     <script src="js/theme-performance.js"></script>
     <script src="js/animated-bg.js"></script>
     <script src="js/modules/executive-cursor.js"></script>
-    <script src="js/custom-controls.js?v=20261022"></script>
-    <script src="js/admin.js?v=20261022"></script>
+    <script src="js/custom-controls.js"></script>
+    <script src="js/admin.js"></script>
 </body>
 
 </html>

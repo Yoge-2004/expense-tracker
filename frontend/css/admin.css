@@ -353,7 +353,12 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 14px;
-    padding-right: 28px !important;
+    padding-right: 32px !important;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 [data-theme="light"] .form-select {
@@ -909,5 +914,267 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 
     .card {
         padding: 12px !important;
+    }
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS & OVERFLOW REMEDIATION (ADMIN COMMAND CENTER)
+   ========================================================================== */
+
+/* Universal Horizontally-Scrollable Table Containers for Administrative Grids */
+.admin-table-scroll-wrapper,
+.table-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    border-radius: 12px;
+    box-sizing: border-box !important;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--primary-rgb, 199, 154, 62), 0.45) rgba(var(--ink-rgb, 236, 231, 216), 0.04);
+}
+
+.admin-table-scroll-wrapper::-webkit-scrollbar,
+.table-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+
+.admin-table-scroll-wrapper::-webkit-scrollbar-track,
+.table-wrapper::-webkit-scrollbar-track {
+    background: rgba(var(--ink-rgb, 236, 231, 216), 0.04);
+    border-radius: 99px;
+}
+
+.admin-table-scroll-wrapper::-webkit-scrollbar-thumb,
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.45);
+    border-radius: 99px;
+}
+
+/* Ensure data tables maintain sufficient minimum width to avoid text crowding */
+.data-table {
+    min-width: 820px;
+    width: 100%;
+}
+
+/* Horizontal swipe cue pill for touch users */
+.table-scroll-hint-mobile {
+    display: none;
+}
+
+/* Responsive Grid Helpers */
+.admin-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-grid-topology {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Platform Database Toolbar & Filters Layout */
+.admin-db-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-db-filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1 1 540px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-db-select {
+    background: var(--input-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 30px 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#dbStreamTypeSelect {
+    flex: 0 1 230px;
+    min-width: 160px;
+    max-width: 100%;
+}
+
+#dbUserFilterSelect {
+    flex: 1 1 280px;
+    min-width: 180px;
+    max-width: 100%;
+}
+
+.admin-db-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    box-sizing: border-box;
+}
+
+.admin-db-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+/* High-readability responsive log stream */
+@media (max-width: 900px) {
+    .table-scroll-hint-mobile {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--primary, #C79A3E);
+        background: rgba(var(--primary-rgb, 199, 154, 62), 0.08);
+        border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.22);
+        border-radius: 8px;
+        padding: 5px 10px;
+        margin-bottom: 8px;
+        width: fit-content;
+        user-select: none;
+    }
+
+    .table-scroll-hint-mobile .scroll-arrow {
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .admin-grid-2col,
+    .admin-grid-topology,
+    [style*="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr))"],
+    [style*="grid-template-columns:repeat(auto-fit, minmax(320px, 1fr))"],
+    [style*="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))"],
+    [style*="grid-template-columns:repeat(auto-fit, minmax(280px, 1fr))"] {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .admin-phone-mockup {
+        max-width: 100% !important;
+        width: 280px !important;
+        margin: 0 auto !important;
+    }
+
+    #sendBroadcastBtn {
+        width: 100% !important;
+        justify-content: center !important;
+        white-space: normal !important;
+        text-align: center !important;
+    }
+
+    .log-line {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 6px 10px !important;
+        padding: 6px 8px !important;
+    }
+
+    .log-ts, .log-badge, .log-thread, .log-logger {
+        flex-shrink: 0 !important;
+    }
+
+    .log-msg {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin-top: 3px !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .command-search-wrapper {
+        max-width: 100% !important;
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .admin-db-toolbar {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100% !important;
+        gap: 12px !important;
+    }
+
+    .admin-db-filters {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+
+    .admin-db-select,
+    #dbStreamTypeSelect,
+    #dbUserFilterSelect {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 1 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .admin-db-filters #refreshDatabaseBtn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .admin-db-actions {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+
+    .admin-db-actions .admin-db-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        white-space: normal !important;
+        text-align: center !important;
+    }
+
+    #userRoleFilterSelect {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: 1 1 100% !important;
     }
 }
