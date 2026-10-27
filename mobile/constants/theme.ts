@@ -26,9 +26,12 @@ export interface ThemeColors {
   inputBorder: string;
   primary: string;
   primaryGradientEnd: string;
+  onPrimary: string;
   accent: string;
   highlight: string;
   success: string;
+  danger: string;
+  paletteColors: string[];
   warning: string;
   gold: string;
   oxblood: string;
@@ -60,9 +63,12 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     inputBorder: 'rgba(236, 231, 216, 0.09)',
     primary: '#C79A3E',
     primaryGradientEnd: '#A97F2E',
+    onPrimary: '#10120E',
     accent: '#A23E32',
     highlight: '#4C7A78',
     success: '#5B8C5A',
+    danger: '#EF4444',
+    paletteColors: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C', '#3B82F6', '#8B5CF6'],
     warning: '#C9932E',
     gold: '#C79A3E',
     oxblood: '#A23E32',
@@ -92,9 +98,12 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     inputBorder: 'rgba(15, 23, 42, 0.12)',
     primary: '#D4AF37',
     primaryGradientEnd: '#B38F22',
+    onPrimary: '#0F172A',
     accent: '#E74C3C',
     highlight: '#0EA5E9',
     success: '#10B981',
+    danger: '#B91C1C',
+    paletteColors: ['#D4AF37', '#E74C3C', '#0EA5E9', '#10B981', '#8B5CF6', '#DB2777', '#059669', '#D97706'],
     warning: '#F59E0B',
     gold: '#D4AF37',
     oxblood: '#E74C3C',
@@ -107,6 +116,41 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     cardCountBorder: 'rgba(231, 76, 60, 0.25)',
   },
 };
+
+function rgbFromColor(color: string): [number, number, number] {
+  const hex = color.match(/^#([0-9a-f]{6})$/i)?.[1];
+  if (hex) return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+  const rgb = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : [23, 26, 20];
+}
+
+function luminance(color: string): number {
+  const channels = rgbFromColor(color).map((value) => {
+    const c = value / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+export function readableTextColor(color: string): string {
+  const l = luminance(color);
+  return (1.05 / (l + 0.05)) >= ((l + 0.05) / 0.05) ? '#FFFFFF' : '#0F172A';
+}
+
+export function ensureColorContrast(color: string, background: string, minimum = 4.5): string {
+  const fg = rgbFromColor(color);
+  const contrast = (a: string, b: string) => {
+    const l1 = luminance(a), l2 = luminance(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  };
+  if (contrast(color, background) >= minimum) return color;
+  const toward = luminance(background) < 0.45 ? 255 : 0;
+  for (let amount = 0.05; amount <= 1; amount += 0.05) {
+    const adjusted = '#' + fg.map((channel) => Math.round(channel + (toward - channel) * amount).toString(16).padStart(2, '0')).join('');
+    if (contrast(adjusted, background) >= minimum) return adjusted;
+  }
+  return readableTextColor(background);
+}
 
 /**
  * 24 Curated luxury ink/stamp category palette + deterministic golden-ratio HSL generator.
@@ -139,11 +183,26 @@ export const CategoryPalette = [
   { bg: 'rgba(100, 116, 139, 0.14)', color: '#64748B' },// 24. Mineral Steel
 ];
 
-export function getCategoryColor(name: string | undefined | null, index?: number): { bg: string; color: string } {
+export function getCategoryColor(
+  name: string | undefined | null,
+  index?: number,
+  paletteColors?: string[]
+): { bg: string; color: string } {
+  const clean = (name || '').trim().toLowerCase();
+  const palette = paletteColors?.filter((color) => /^#[0-9a-f]{6}$/i.test(color)) || [];
+  if (palette.length > 0) {
+    let paletteIndex = index;
+    if (paletteIndex === undefined) {
+      let hash = 0;
+      for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) & 0xffffffff;
+      paletteIndex = Math.abs(hash) % palette.length;
+    }
+    const color = palette[((paletteIndex % palette.length) + palette.length) % palette.length];
+    return { bg: color + '24', color };
+  }
   if (index !== undefined && index >= 0 && index < CategoryPalette.length) {
     return CategoryPalette[index];
   }
-  const clean = (name || "").trim().toLowerCase();
   if (!clean) return CategoryPalette[0];
 
   let hash = 0;

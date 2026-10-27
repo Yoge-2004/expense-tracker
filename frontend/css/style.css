@@ -543,9 +543,9 @@ html.theme-switching *::after {
 /* Default / Expense modal golden toggle (checked) */
 .switch-label input[type="checkbox"]:checked,
 #isRecurring:checked {
-    background: linear-gradient(135deg, #E0B45C 0%, #C79A3E 50%, #9E7422 100%);
-    border-color: #C79A3E;
-    box-shadow: 0 2px 14px rgba(199, 154, 62, 0.5);
+    background: var(--primary-gradient);
+    border-color: var(--primary);
+    box-shadow: 0 2px 14px var(--primary-glow);
     outline: none;
     animation: none;
 }
@@ -1039,6 +1039,16 @@ button[type="submit"] {
     align-items: center;
     justify-content: center;
     gap: 8px;
+}
+
+.btn-primary,
+button[type="submit"],
+#addCategoryBtn,
+.preset-btn.active,
+.pill-chip.active,
+.subs-tab-btn.active,
+.app-dialog-btn.primary {
+    color: var(--on-primary, #10120E) !important;
 }
 
 .btn-primary:hover,
@@ -3016,8 +3026,8 @@ button[type="submit"]:active {
 }
 
 .floating-calc-fx-select option {
-    background: #171A14;
-    color: #ECE7D8;
+    background: var(--card-bg, #171A14);
+    color: var(--text-main, #ECE7D8);
     padding: 6px;
     font-size: 11px;
     font-weight: 600;
@@ -3032,9 +3042,9 @@ button[type="submit"]:active {
 }
 
 [data-theme="light"] .floating-calc-fx-select:hover {
-    border-color: #D4AF37;
+    border-color: var(--primary);
     background-color: #FAFAFA;
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.24);
+    box-shadow: 0 2px 8px var(--primary-glow);
 }
 
 [data-theme="light"] .floating-calc-fx-select option {
@@ -3652,7 +3662,7 @@ button[type="submit"]:active {
     align-items: center;
     gap: 14px;
     padding: 14px 18px;
-    background: rgba(23, 26, 20, 0.52);
+    background: var(--card-bg, rgba(23, 26, 20, 0.78));
     border: 1px solid rgba(236, 231, 216, 0.12);
     border-radius: 16px;
     backdrop-filter: blur(20px) saturate(160%);
@@ -4579,7 +4589,7 @@ button[type="submit"]:active {
     .perk-item {
         padding: 10px 14px;
         border-radius: 14px;
-        background: rgba(23, 26, 20, 0.52);
+        background: var(--card-bg, rgba(23, 26, 20, 0.78));
         border: 1px solid rgba(236, 231, 216, 0.12);
         display: flex;
         align-items: center;
@@ -4777,7 +4787,7 @@ button[type="submit"]:active {
     }
 
     .hero-visual-card {
-        background: rgba(23, 26, 20, 0.58);
+        background: var(--card-bg, rgba(23, 26, 20, 0.78));
         border: 1px solid rgba(236, 231, 216, 0.12);
         border-radius: 16px;
         padding: 15px 18px;
@@ -4989,7 +4999,7 @@ button[type="submit"]:active {
     }
 
     .hero-quote-card {
-        background: rgba(23, 26, 20, 0.52);
+        background: var(--card-bg, rgba(23, 26, 20, 0.78));
         border: 1px solid rgba(236, 231, 216, 0.1);
         border-radius: 14px;
         padding: 13px 16px;
@@ -5513,7 +5523,7 @@ button[type="submit"]:active {
     min-width: 260px;
     max-width: 320px;
     width: max-content;
-    background: rgba(23, 26, 20, 0.95);
+    background: var(--card-bg, rgba(23, 26, 20, 0.95));
     backdrop-filter: var(--glass);
     -webkit-backdrop-filter: var(--glass);
     border: 1px solid rgba(var(--ink-rgb), 0.08);
@@ -6564,7 +6574,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 }
 .float-card,
 .perk-item {
-    background: rgba(23, 26, 20, 0.52);
+    background: var(--card-bg, rgba(23, 26, 20, 0.78));
     border-radius: 18px;
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
@@ -7072,7 +7082,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 :is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-inflow:hover,
 #metricCardInflow:hover {
     border-left: 4px solid var(--metric-inflow) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-inflow-glow), 0 0 24px rgba(16, 185, 129, 0.15);
+    box-shadow: 0 14px 34px -6px var(--metric-inflow-glow), 0 0 24px rgba(var(--metric-inflow-rgb), 0.15);
 }
 
 .metric-card.metric-card-inflow .card-label,
@@ -7092,7 +7102,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 :is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-outflow:hover,
 #metricCardOutflow:hover {
     border-left: 4px solid var(--metric-outflow) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-outflow-glow), 0 0 24px rgba(239, 68, 68, 0.15);
+    box-shadow: 0 14px 34px -6px var(--metric-outflow-glow), 0 0 24px rgba(var(--metric-outflow-rgb), 0.15);
 }
 
 .metric-card.metric-card-outflow .card-label,
@@ -7112,7 +7122,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 :is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-netflow:hover,
 #metricCardNetflow:hover {
     border-left: 4px solid var(--metric-netflow) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-netflow-glow), 0 0 24px rgba(59, 130, 246, 0.18);
+    box-shadow: 0 14px 34px -6px var(--metric-netflow-glow), 0 0 24px rgba(var(--metric-netflow-rgb), 0.18);
 }
 
 .metric-card.metric-card-netflow .card-label,
@@ -7132,7 +7142,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 :is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-savings:hover,
 #metricCardSavings:hover {
     border-left: 4px solid var(--metric-savings) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-savings-glow), 0 0 24px rgba(245, 158, 11, 0.15);
+    box-shadow: 0 14px 34px -6px var(--metric-savings-glow), 0 0 24px rgba(var(--metric-savings-rgb), 0.15);
 }
 
 .metric-card.metric-card-savings .card-label,
@@ -7152,7 +7162,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
 :is(.metric-card, [data-theme="light"] .metric-card, [data-theme="dark"] .metric-card).metric-card-subs:hover,
 #metricCardSubs:hover {
     border-left: 4px solid var(--metric-subs) !important;
-    box-shadow: 0 14px 34px -6px var(--metric-subs-glow), 0 0 24px rgba(192, 86, 94, 0.15);
+    box-shadow: 0 14px 34px -6px var(--metric-subs-glow), 0 0 24px rgba(var(--metric-subs-rgb), 0.15);
 }
 
 .metric-card.metric-card-subs .card-label {
@@ -8166,7 +8176,7 @@ body.modal-open {
     align-items: center;
     gap: 6px;
     padding: 6px 13px 6px 10px;
-    background: rgba(23, 26, 20, 0.92);
+    background: var(--card-bg, rgba(23, 26, 20, 0.92));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-accent);
@@ -8610,7 +8620,7 @@ body.modal-open {
 
 /* Keep effective modal values in one base rule; entrance motion is handled by the active overlay. */
 .modal {
-    background: rgba(23, 26, 20, 0.96);
+    background: var(--card-bg, rgba(23, 26, 20, 0.96));
     padding: 28px 24px;
     border-radius: 24px;
     width: 100%;
@@ -13716,8 +13726,8 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: rgba(199, 154, 62, 0.16);
-    color: #C79A3E;
+    background: rgba(var(--primary-rgb), 0.16);
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -13753,8 +13763,8 @@ body {
     letter-spacing: 0.5px;
 }
 .transfer-dock-badge.export {
-    background: rgba(199, 154, 62, 0.16);
-    color: #C79A3E;
+    background: rgba(var(--primary-rgb), 0.16);
+    color: var(--primary);
 }
 .transfer-dock-badge.import {
     background: rgba(59, 130, 246, 0.16);
@@ -13774,7 +13784,7 @@ body {
 }
 .transfer-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #C79A3E, #E5B552);
+    background: var(--primary-gradient);
     border-radius: 99px;
     width: 0%;
     transition: width 0.18s ease-out;
@@ -13871,7 +13881,7 @@ body {
 }
 .receipt-ocr-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #C79A3E, #E5B552);
+    background: var(--primary-gradient);
     border-radius: 99px;
     width: 0%;
     transition: width 0.18s ease-out;
@@ -14354,10 +14364,10 @@ body {
     color: #475569;
 }
 [data-theme="light"] .header-action-btn:hover {
-    color: #B8860B;
-    border-color: #D4AF37;
-    background: rgba(212, 175, 55, 0.12);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.12);
+    box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 /* Universal Soft Floating Luxury Golden Aura Hover:
@@ -14416,9 +14426,9 @@ body {
 }
 .stealth-toggle-btn:hover,
 .stealth-toggle-btn.is-active {
-    color: #D4AF37 !important;
-    border-color: #D4AF37 !important;
-    background: rgba(212, 175, 55, 0.14) !important;
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    background: rgba(var(--primary-rgb), 0.14) !important;
     box-shadow: 0 4px 14px rgba(212, 175, 55, 0.28) !important;
 }
 
@@ -14762,7 +14772,7 @@ body {
     position: absolute;
     width: 5px;
     height: 5px;
-    border-color: #D4AF37;
+    border-color: var(--primary);
     border-style: solid;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0.85;
@@ -14778,7 +14788,7 @@ body {
     left: 50%;
     width: 3px;
     height: 3px;
-    background: #D4AF37;
+    background: var(--primary);
     border-radius: 1px;
     transform: translate(-50%, -50%) rotate(45deg);
     opacity: 0.7;
@@ -14801,10 +14811,10 @@ body {
 .executive-reticle.is-hovering .reticle-center-accent {
     width: 4px;
     height: 4px;
-    background: #D4AF37;
+    background: var(--primary);
     border-radius: 50%;
     opacity: 0.95;
-    box-shadow: 0 0 8px #D4AF37;
+    box-shadow: 0 0 8px var(--primary);
     transform: translate(-50%, -50%);
 }
 
@@ -14826,7 +14836,7 @@ body {
 }
 
 .executive-reticle.is-down {
-    filter: drop-shadow(0 0 8px #D4AF37);
+    filter: drop-shadow(0 0 8px var(--primary));
 }
 .executive-reticle.is-down .reticle-corner {
     border-color: #FFFFFF;
@@ -14844,7 +14854,7 @@ body {
 .executive-reticle.is-text .reticle-center-accent {
     width: 1.5px;
     height: 18px;
-    background: #D4AF37;
+    background: var(--primary);
     border-radius: 0;
     transform: translate(-50%, -50%);
 }
@@ -15666,7 +15676,7 @@ body {
 .insight-card-item,
 .savings-goal-card,
 .budget-item {
-    background: rgba(23, 26, 20, 0.78);
+    background: var(--card-bg, rgba(23, 26, 20, 0.78));
     backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
     border: 1px solid rgba(236, 231, 216, 0.10);
@@ -15681,7 +15691,7 @@ body {
 [data-theme="light"] .insight-card-item,
 [data-theme="light"] .savings-goal-card,
 [data-theme="light"] .budget-item {
-    background: rgba(255, 255, 255, 0.82);
+    background: var(--card-bg, rgba(255, 255, 255, 0.82));
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid rgba(212, 175, 55, 0.22);
@@ -15771,52 +15781,52 @@ body {
 /* REFINED METRIC CARD ACCENT UNDERGLOWS: Soft diffused glow without rectangular harsh lines */
 .metric-card.metric-card-inflow:hover {
     transform: translateY(-3px);
-    border-color: rgba(16, 185, 129, 0.28);
+    border-color: color-mix(in srgb, var(--metric-inflow) 28%, transparent);
     border-left: 4px solid var(--metric-inflow) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-inflow-glow),
-        0 0 32px 3px rgba(16, 185, 129, 0.22),
-        0 0 55px 8px rgba(16, 185, 129, 0.12);
+        0 0 32px 3px rgba(var(--metric-inflow-rgb), 0.22),
+        0 0 55px 8px rgba(var(--metric-inflow-rgb), 0.12);
 }
 
 .metric-card.metric-card-outflow:hover {
     transform: translateY(-3px);
-    border-color: rgba(239, 68, 68, 0.28);
+    border-color: color-mix(in srgb, var(--metric-outflow) 28%, transparent);
     border-left: 4px solid var(--metric-outflow) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-outflow-glow),
-        0 0 32px 3px rgba(239, 68, 68, 0.22),
-        0 0 55px 8px rgba(239, 68, 68, 0.12);
+        0 0 32px 3px rgba(var(--metric-outflow-rgb), 0.22),
+        0 0 55px 8px rgba(var(--metric-outflow-rgb), 0.12);
 }
 
 .metric-card.metric-card-netflow:hover {
     transform: translateY(-3px);
-    border-color: rgba(59, 130, 246, 0.28);
+    border-color: color-mix(in srgb, var(--metric-netflow) 28%, transparent);
     border-left: 4px solid var(--metric-netflow) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-netflow-glow),
-        0 0 32px 3px rgba(59, 130, 246, 0.25),
-        0 0 58px 8px rgba(59, 130, 246, 0.14);
+        0 0 32px 3px rgba(var(--metric-netflow-rgb), 0.25),
+        0 0 58px 8px rgba(var(--metric-netflow-rgb), 0.14);
 }
 
 .metric-card.metric-card-savings:hover {
     transform: translateY(-3px);
-    border-color: rgba(245, 158, 11, 0.28);
+    border-color: color-mix(in srgb, var(--metric-savings) 28%, transparent);
     border-left: 4px solid var(--metric-savings) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-savings-glow),
-        0 0 32px 3px rgba(245, 158, 11, 0.22),
-        0 0 55px 8px rgba(245, 158, 11, 0.12);
+        0 0 32px 3px rgba(var(--metric-savings-rgb), 0.22),
+        0 0 55px 8px rgba(var(--metric-savings-rgb), 0.12);
 }
 
 .metric-card.metric-card-subs:hover {
     transform: translateY(-3px);
-    border-color: rgba(192, 86, 94, 0.28);
+    border-color: color-mix(in srgb, var(--metric-subs) 28%, transparent);
     border-left: 4px solid var(--metric-subs) !important;
     box-shadow:
         0 18px 42px -10px var(--metric-subs-glow),
-        0 0 32px 3px rgba(192, 86, 94, 0.22),
-        0 0 55px 8px rgba(192, 86, 94, 0.12);
+        0 0 32px 3px rgba(var(--metric-subs-rgb), 0.22),
+        0 0 55px 8px rgba(var(--metric-subs-rgb), 0.12);
 }
 
 /* DYNAMIC SHIMMERING PROGRESS BARS */

@@ -124,6 +124,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
   const orb2Color = themeColors.accent + (isLight ? '22' : '22');
   const orb3Color = themeColors.highlight + (isLight ? '22' : '20');
   const hasCustomBg = backgroundAsset.type === 'custom' && !!backgroundAsset.uri;
+  const showAmbientOrbs = backgroundAsset.type === 'preset';
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={pointerEvents}>
@@ -147,6 +148,8 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
         </>
       )}
 
+      {/* Keep the selected wallpaper clear; use palette orbs for ambient presets. */}
+      {showAmbientOrbs && <>
       {/* Orb 1 - Primary / Luxury Highlight Glow */}
       <Animated.View
         style={[
@@ -202,6 +205,7 @@ export const AmbientAura: React.FC<AmbientAuraProps> = React.memo(({ pointerEven
           },
         ]}
       />
+      </>}
     </View>
   );
 });

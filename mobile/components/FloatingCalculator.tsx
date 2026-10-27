@@ -7,7 +7,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Animated,
@@ -17,6 +16,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -588,7 +588,7 @@ export const FloatingCalculator: React.FC = () => {
               <TouchableOpacity onPress={handlePercent} style={[styles.key, styles.funcKey, { backgroundColor: isLight ? '#E2E8F0' : 'rgba(255,255,255,0.08)', borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: isLight ? '#0F172A' : '#ECE7D8' }]}>%</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleOperator('÷')} style={[styles.key, styles.opKey, { backgroundColor: 'rgba(199, 154, 62, 0.16)', borderColor: 'rgba(199, 154, 62, 0.32)' }]}>
+              <TouchableOpacity onPress={() => handleOperator('÷')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
                 <Text style={[styles.opKeyText, { color: c.primary }]}>÷</Text>
               </TouchableOpacity>
 
@@ -602,7 +602,7 @@ export const FloatingCalculator: React.FC = () => {
               <TouchableOpacity onPress={() => handleDigit('9')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>9</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleOperator('×')} style={[styles.key, styles.opKey, { backgroundColor: 'rgba(199, 154, 62, 0.16)', borderColor: 'rgba(199, 154, 62, 0.32)' }]}>
+              <TouchableOpacity onPress={() => handleOperator('×')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
                 <Text style={[styles.opKeyText, { color: c.primary }]}>×</Text>
               </TouchableOpacity>
 
@@ -616,7 +616,7 @@ export const FloatingCalculator: React.FC = () => {
               <TouchableOpacity onPress={() => handleDigit('6')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>6</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleOperator('−')} style={[styles.key, styles.opKey, { backgroundColor: 'rgba(199, 154, 62, 0.16)', borderColor: 'rgba(199, 154, 62, 0.32)' }]}>
+              <TouchableOpacity onPress={() => handleOperator('−')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
                 <Text style={[styles.opKeyText, { color: c.primary }]}>−</Text>
               </TouchableOpacity>
 
@@ -630,7 +630,7 @@ export const FloatingCalculator: React.FC = () => {
               <TouchableOpacity onPress={() => handleDigit('3')} style={[styles.key, { backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.04)', borderColor: c.border }]}>
                 <Text style={[styles.keyText, { color: c.text }]}>3</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleOperator('+')} style={[styles.key, styles.opKey, { backgroundColor: 'rgba(199, 154, 62, 0.16)', borderColor: 'rgba(199, 154, 62, 0.32)' }]}>
+              <TouchableOpacity onPress={() => handleOperator('+')} style={[styles.key, styles.opKey, { backgroundColor: c.primary + '29', borderColor: c.primary + '52' }]}>
                 <Text style={[styles.opKeyText, { color: c.primary }]}>+</Text>
               </TouchableOpacity>
 

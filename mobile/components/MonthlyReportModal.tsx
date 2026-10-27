@@ -9,7 +9,6 @@ import { saveFileToDevice } from "../utils/fileDownloader";
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Modal,
   TouchableOpacity,
@@ -20,6 +19,7 @@ import {
   Animated,
   useWindowDimensions,
 } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -569,7 +569,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                       style={[
                         styles.yearChipText,
                         {
-                          color: isSelected ? (isLight ? '#FFF' : '#10120E') : c.text,
+                          color: isSelected ? (c.onPrimary) : c.text,
                           fontWeight: isSelected ? '800' : '600',
                         },
                       ]}
@@ -612,7 +612,7 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                         styles.monthChipText,
                         {
                           color: isSelected
-                            ? (isLight ? '#FFF' : '#10120E')
+                            ? (c.onPrimary)
                             : (isValid ? c.text : c.textMuted),
                           fontWeight: isSelected ? '800' : '600',
                         },
@@ -643,11 +643,11 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                 style={[styles.primaryActionBtn, { backgroundColor: c.primary }]}
               >
                 {loading ? (
-                  <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                  <ActivityIndicator size="small" color={c.onPrimary} />
                 ) : (
                   <>
-                    <Ionicons name="document-text-outline" size={18} color={isLight ? '#FFF' : '#10120E'} />
-                    <Text style={[styles.primaryActionText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                    <Ionicons name="document-text-outline" size={18} color={c.onPrimary} />
+                    <Text style={[styles.primaryActionText, { color: c.onPrimary }]}>
                       View Financial Statement
                     </Text>
                   </>
@@ -820,8 +820,8 @@ export const MonthlyReportModal: React.FC<MonthlyReportModalProps> = ({ visible,
                 onPress={handleShareHtml}
                 style={[styles.shareBtn, { backgroundColor: c.primary }]}
               >
-                <Ionicons name="share-social" size={18} color={isLight ? '#FFF' : '#10120E'} />
-                <Text style={[styles.shareBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                <Ionicons name="share-social" size={18} color={c.onPrimary} />
+                <Text style={[styles.shareBtnText, { color: c.onPrimary }]}>
                   Share / Export HTML Statement
                 </Text>
               </TouchableOpacity>

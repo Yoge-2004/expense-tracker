@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, Pressable, Image } from 'react-native';
+import { View, TouchableOpacity, Pressable, Image, useWindowDimensions } from 'react-native';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { ThemeColors } from '../../constants/theme';
@@ -33,11 +34,13 @@ export const DashboardHeader = memo(function DashboardHeader({
   theme,
 }: DashboardHeaderProps) {
   const isLight = theme === 'light';
+  const { width } = useWindowDimensions();
+  const isCompact = width < 520;
   const now = new Date();
 
   return (
-    <View style={styles.topBar}>
-      <View style={styles.userCol}>
+    <View style={[styles.topBar, isCompact && styles.topBarCompact]}>
+      <View style={[styles.userCol, isCompact && styles.userColCompact]}>
         <View style={[styles.avatarCircle, { backgroundColor: c.primary, borderColor: c.primary + '60' }]}>
           {profilePicture ? (
             <Image source={{ uri: resolveAvatarUrl(profilePicture) || undefined }} style={styles.avatarImg} />
@@ -51,8 +54,6 @@ export const DashboardHeader = memo(function DashboardHeader({
           </Text>
           <Text
             style={[styles.greetingTitle, { color: c.text }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
           >
             {userName || 'User'}
           </Text>
@@ -62,7 +63,7 @@ export const DashboardHeader = memo(function DashboardHeader({
         </View>
       </View>
 
-      <View style={styles.topBarRight}>
+      <View style={[styles.topBarRight, isCompact && styles.topBarRightCompact]}>
         {/* Help Guide & Gestures Button */}
         {onPressHelp && (
           <TouchableOpacity
@@ -72,7 +73,7 @@ export const DashboardHeader = memo(function DashboardHeader({
               styles.topActionBtn,
               {
                 backgroundColor: isLight ? '#FFFFFF' : c.card,
-                borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
+                borderColor: c.borderAccent,
                 shadowColor: isLight ? 'transparent' : '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: isLight ? 0 : 0.08,
@@ -94,7 +95,7 @@ export const DashboardHeader = memo(function DashboardHeader({
             styles.topActionBtn,
             {
               backgroundColor: isLight ? '#FFFFFF' : c.card,
-              borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
+              borderColor: c.borderAccent,
               shadowColor: isLight ? 'transparent' : '#000',
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: isLight ? 0 : 0.08,
@@ -116,7 +117,7 @@ export const DashboardHeader = memo(function DashboardHeader({
               styles.topActionBtn,
               {
                 backgroundColor: isLight ? '#FFFFFF' : c.card,
-                borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : c.border,
+                borderColor: c.borderAccent,
                 shadowColor: isLight ? 'transparent' : '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: isLight ? 0 : 0.08,
@@ -153,11 +154,11 @@ export const DashboardHeader = memo(function DashboardHeader({
             styles.topActionBtn,
             {
               backgroundColor: isStealthMode
-                ? (isLight ? (pressed ? 'rgba(212, 175, 55, 0.28)' : 'rgba(212, 175, 55, 0.18)') : 'rgba(199, 154, 62, 0.22)')
+                ? (pressed ? c.primary + '38' : c.primary + '2E')
                 : (isLight ? (pressed ? '#F1F5F9' : '#FFFFFF') : (pressed ? c.cardHover : c.card)),
               borderColor: isStealthMode
-                ? (isLight ? '#B8860B' : c.primary)
-                : (isLight ? 'rgba(212, 175, 55, 0.45)' : c.border),
+                ? c.primary
+                : c.border,
               transform: [{ scale: pressed ? 0.94 : 1 }],
             },
           ]}
@@ -167,11 +168,7 @@ export const DashboardHeader = memo(function DashboardHeader({
           <Ionicons
             name={isStealthMode ? 'eye-off' : 'eye-outline'}
             size={19}
-            color={
-              isStealthMode
-                ? (isLight ? '#B8860B' : c.primary)
-                : (isLight ? '#D4AF37' : c.primary)
-            }
+            color={c.primary}
           />
         </Pressable>
 

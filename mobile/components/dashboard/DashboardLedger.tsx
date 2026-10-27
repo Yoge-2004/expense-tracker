@@ -1,7 +1,6 @@
 import React, { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   FlatList,
@@ -13,6 +12,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { ThemeColors } from '../../constants/theme';
@@ -327,9 +327,9 @@ export const DashboardLedger = memo(function DashboardLedger({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
             setLedgerTab('incomes');
           }}
-          style={[styles.streamTabBtn, ledgerTab === 'incomes' && { backgroundColor: c.card, borderColor: '#10B981', borderWidth: 1 }]}
+          style={[styles.streamTabBtn, ledgerTab === 'incomes' && { backgroundColor: c.card, borderColor: c.success, borderWidth: 1 }]}
         >
-          <Text style={[styles.streamTabText, { color: ledgerTab === 'incomes' ? '#10B981' : c.textMuted, fontWeight: ledgerTab === 'incomes' ? '800' : '600' }]}>
+          <Text style={[styles.streamTabText, { color: ledgerTab === 'incomes' ? c.success : c.textMuted, fontWeight: ledgerTab === 'incomes' ? '800' : '600' }]}>
             Inflows ({filteredIncomesCount})
           </Text>
         </TouchableOpacity>
@@ -340,8 +340,8 @@ export const DashboardLedger = memo(function DashboardLedger({
         <View style={styles.gestureCueLeft}>
           <Ionicons name="swap-horizontal" size={13} color={c.primary} />
           <Text style={[styles.gestureCueText, { color: c.textMuted }]}>
-            Swipe row: <Text style={{ color: '#D4AF37', fontWeight: '700' }}>Right</Text> (Edit) ·{' '}
-            <Text style={{ color: '#EF4444', fontWeight: '700' }}>Left</Text> (Delete)
+            Swipe row: <Text style={{ color: c.primary, fontWeight: '700' }}>Right</Text> (Edit) ·{' '}
+            <Text style={{ color: c.danger, fontWeight: '700' }}>Left</Text> (Delete)
           </Text>
         </View>
         <Text style={[styles.gestureCueDot, { color: c.border }]}>•</Text>
@@ -397,7 +397,7 @@ export const DashboardLedger = memo(function DashboardLedger({
                     style={[
                       styles.sortChipText,
                       {
-                        color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                        color: isSelected ? (c.onPrimary) : c.textMuted,
                         fontWeight: isSelected ? '800' : '600',
                       },
                     ]}

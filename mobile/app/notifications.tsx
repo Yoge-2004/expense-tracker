@@ -11,10 +11,10 @@ import {
   RefreshControl,
   StyleSheet,
   Switch,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { ThemedText as Text } from '../components/ThemedText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -24,6 +24,7 @@ import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError } from '../services/api';
 import { Colors } from '../constants/theme';
 import { ImmersiveLoader } from '../components/ImmersiveLoader';
+import { AmbientAura } from '../components/AmbientAura';
 import { getNotificationSoundEnabled, setNotificationSoundEnabled } from '../services/notifications';
 import { APP_UPDATE_ROUTE } from '../services/appUpdate';
 import { useUpdate } from '../context/UpdateContext';
@@ -338,8 +339,8 @@ export default function NotificationsScreen() {
         <Switch
           value={soundEnabled}
           onValueChange={handleToggleSound}
-          trackColor={{ false: c.border, true: '#93C5FD' }}
-          thumbColor={soundEnabled ? '#2563EB' : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
+          trackColor={{ false: c.border, true: c.primary }}
+          thumbColor={soundEnabled ? c.onPrimary : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
         />
       </View>
       {prefs.map((pref) => (
@@ -363,8 +364,8 @@ export default function NotificationsScreen() {
               }
               void togglePreference(pref.type, value);
             }}
-            trackColor={{ false: c.border, true: '#93C5FD' }}
-            thumbColor={pref.enabled ? '#2563EB' : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
+            trackColor={{ false: c.border, true: c.primary }}
+            thumbColor={pref.enabled ? c.onPrimary : (Platform.OS === 'android' ? '#F4F3F4' : undefined)}
           />
         </View>
       ))}
@@ -377,6 +378,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg, paddingTop: insets.top + 8 }]}>
+      <AmbientAura />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={[styles.iconBtn, { borderColor: c.border, backgroundColor: c.card }]} accessibilityLabel="Back">
           <Ionicons name="arrow-back" size={18} color={c.primary} />

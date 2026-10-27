@@ -69,11 +69,11 @@ function AnimatedTabIcon({
 function AnimatedAddTabIcon({
   focused,
   activeColor,
-  isLight,
+  onPrimary,
 }: {
   focused: boolean;
   activeColor: string;
-  isLight: boolean;
+  onPrimary: string;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const prevFocused = useRef(focused);
@@ -106,7 +106,7 @@ function AnimatedAddTabIcon({
         },
       ]}
     >
-      <Ionicons name="add" size={22} color={isLight ? "#FFFFFF" : "#10120E"} />
+      <Ionicons name="add" size={22} color={onPrimary} />
     </Animated.View>
   );
 }
@@ -119,9 +119,9 @@ export default function TabLayout() {
   const isLight = theme === "light";
 
   // High-contrast, WCAG AA/AAA-compliant colors for crisp visibility across light and dark themes
-  const activeColor = isLight ? "#92400E" : "#F5C842";
-  const inactiveColor = isLight ? "#64748B" : "#9CA3AF";
-  const activePillBg = isLight ? "rgba(146, 64, 14, 0.12)" : "rgba(245, 200, 66, 0.16)";
+  const activeColor = c.primary;
+  const inactiveColor = c.textMuted;
+  const activePillBg = c.primary + '22';
 
   const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === "ios" ? 16 : 8);
   const tabHeight = 60 + bottomInset;
@@ -143,7 +143,7 @@ export default function TabLayout() {
           textAlign: "center",
         },
         tabBarStyle: {
-          backgroundColor: isLight ? "#FFFFFF" : "rgba(23, 26, 20, 0.98)",
+          backgroundColor: c.card,
           borderTopColor: c.border,
           borderTopWidth: 1,
           height: tabHeight,
@@ -227,7 +227,7 @@ export default function TabLayout() {
             <AnimatedAddTabIcon
               focused={focused}
               activeColor={activeColor}
-              isLight={isLight}
+              onPrimary={c.onPrimary}
             />
           ),
         }}

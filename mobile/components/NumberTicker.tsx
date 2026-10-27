@@ -4,7 +4,8 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Text, TextStyle, StyleProp } from 'react-native';
+import { TextStyle, StyleProp } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface NumberTickerProps {

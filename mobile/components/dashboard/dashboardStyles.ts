@@ -69,15 +69,27 @@ export const dashboardStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  topBarCompact: {
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    rowGap: 8,
+  },
   userCol: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     flex: 1,
     marginRight: 10,
+    minWidth: 0,
+  },
+  userColCompact: {
+    width: '100%',
+    flexBasis: '100%',
+    marginRight: 0,
   },
   userGreetingCol: {
     flex: 1,
+    minWidth: 0,
   },
   avatarCircle: {
     width: 44,
@@ -110,6 +122,7 @@ export const dashboardStyles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.4,
     lineHeight: 22,
+    flexShrink: 1,
   },
   todayDate: {
     fontSize: 12,
@@ -120,6 +133,10 @@ export const dashboardStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
+  },
+  topBarRightCompact: {
+    width: '100%',
+    justifyContent: 'flex-end',
   },
   bellBtnWrapper: {
     position: 'relative',

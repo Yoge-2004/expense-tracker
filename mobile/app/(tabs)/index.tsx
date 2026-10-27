@@ -16,12 +16,12 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react';
 import {
-  Text,
   View,
   TouchableOpacity,
   RefreshControl,
   useWindowDimensions,
 } from 'react-native';
+import { ThemedText as Text } from '../../components/ThemedText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedScrollView } from '../../components/ThemedScrollbar';

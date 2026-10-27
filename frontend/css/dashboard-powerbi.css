@@ -20,18 +20,18 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
+    background: var(--card-bg, rgba(23, 26, 20, 0.88));
+    backdrop-filter: var(--glass, none);
+    -webkit-backdrop-filter: var(--glass, none);
+    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.35));
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: var(--shadow-premium, 0 12px 32px rgba(0, 0, 0, 0.25));
 }
 
 .bi-slicers-filter-container:hover {
-    border-color: transparent !important;
-    box-shadow: none !important;
+    border-color: var(--primary, #C79A3E);
+    box-shadow: var(--shadow-premium, 0 12px 32px rgba(0, 0, 0, 0.25)), 0 0 18px var(--primary-glow, rgba(199, 154, 62, 0.16));
 }
 
 .bi-slicers-top {
@@ -58,8 +58,8 @@
     text-transform: uppercase;
     padding: 4px 10px;
     border-radius: 6px;
-    background: linear-gradient(135deg, rgba(199, 154, 62, 0.2), rgba(199, 154, 62, 0.05));
-    border: 1px solid rgba(199, 154, 62, 0.4);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb, 199, 154, 62), 0.2), rgba(var(--primary-rgb, 199, 154, 62), 0.05));
+    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.4);
     color: var(--primary, #C79A3E);
 }
 
@@ -67,14 +67,14 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #C79A3E;
-    box-shadow: 0 0 8px #C79A3E;
+    background: var(--primary, #C79A3E);
+    box-shadow: 0 0 8px var(--primary-glow, rgba(199, 154, 62, 0.45));
     animation: bi-pulse 2s infinite ease-in-out;
 }
 
 @keyframes bi-pulse {
     0%, 100% { opacity: 0.6; transform: scale(0.9); }
-    50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 12px #C79A3E; }
+    50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 12px var(--primary-glow, rgba(199, 154, 62, 0.55)); }
 }
 
 .bi-slicers-title {
@@ -95,8 +95,8 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(199, 154, 62, 0.15);
-    border: 1px solid rgba(199, 154, 62, 0.5);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.15);
+    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.5);
     color: var(--text-main, #EAE6DF);
     font-size: 12px;
     font-weight: 600;
@@ -160,18 +160,18 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: transparent !important;
-    padding: 2px 0 !important;
-    border-radius: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
+    background: var(--input-bg, rgba(255, 255, 255, 0.035));
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     width: 100%;
     box-sizing: border-box;
 }
 
 [data-theme="light"] .bi-slicer-group {
-    background: transparent !important;
-    border: none !important;
+    background: var(--input-bg, #F1F5F9);
+    border-color: var(--border, rgba(15, 23, 42, 0.08));
 }
 
 .bi-slicer-label {
@@ -183,18 +183,16 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--primary, #C79A3E);
-    background: transparent !important;
-    border: none !important;
-    padding: 0 4px 0 0 !important;
+    background: transparent;
+    border: none;
+    padding: 0 4px 0 0;
     min-width: 90px;
     flex-shrink: 0;
     white-space: nowrap;
 }
 
 [data-theme="light"] .bi-slicer-label {
-    color: #966C1E;
-    background: transparent !important;
-    border: none !important;
+    color: var(--primary, #966C1E);
 }
 
 .bi-slicer-pills-wrap {
@@ -232,7 +230,7 @@
     padding: 0 16px;
     border-radius: 100px;
     background: var(--input-bg, rgba(255, 255, 255, 0.05));
-    border: none !important;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
     outline: none !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
     color: var(--text-muted, #9E988A);
@@ -252,7 +250,7 @@
 .bi-slicer-pill:hover {
     z-index: 5;
     color: var(--text-main, #EAE6DF);
-    border: none !important;
+    border-color: var(--primary, #C79A3E);
     background: rgba(var(--primary-rgb, 199, 154, 62), 0.12);
     transform: translateY(-2px) scale(1.03);
     box-shadow: 0 4px 14px rgba(var(--primary-rgb, 199, 154, 62), 0.25);
@@ -260,8 +258,8 @@
 
 .bi-slicer-pill.active {
     background: var(--primary-gradient, linear-gradient(135deg, #C79A3E, #A26B25));
-    color: #fff !important;
-    border: none !important;
+    color: var(--on-primary, #10120E) !important;
+    border: 1px solid var(--primary, #C79A3E) !important;
     box-shadow: 0 4px 14px var(--primary-glow, rgba(199, 154, 62, 0.45));
     transform: translateY(-2px) scale(1.03);
     font-weight: 700;
@@ -274,21 +272,21 @@
 
 [data-theme="light"] .bi-slicer-pill {
     background: var(--input-bg, #f3efe6);
-    border: none !important;
+    border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
     color: var(--text-muted, #736b5e);
 }
 
 [data-theme="light"] .bi-slicer-pill:hover {
     color: var(--text-main, #1c1917);
-    border: none !important;
+    border-color: var(--primary, #C79A3E) !important;
     background: rgba(var(--primary-rgb, 199, 154, 62), 0.14);
 }
 
 [data-theme="light"] .bi-slicer-pill.active {
     background: var(--primary-gradient, linear-gradient(135deg, #966C1E, #6B4910));
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 4px 12px rgba(150, 108, 30, 0.35);
+    color: var(--on-primary, #FFFFFF) !important;
+    border: 1px solid var(--primary, #966C1E) !important;
+    box-shadow: 0 4px 12px var(--primary-glow, rgba(150, 108, 30, 0.25));
 }
 
 /* 3. KPI MICRO-SPARKLINES & VARIANCE DELTA INDICATORS */
@@ -462,12 +460,12 @@
     background: var(--card-bg, #1A1C16);
     color: var(--primary, #C79A3E);
     font-weight: 700;
-    border: 1px solid rgba(199, 154, 62, 0.3);
+    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.3);
 }
 
 [data-theme="light"] .bi-segmented-btn.active {
     background: #FFFFFF;
-    color: #966C1E;
+    color: var(--primary, #966C1E);
 }
 
 /* Chart Canvas Cursor States when Cross-Filtering is enabled */
@@ -571,17 +569,17 @@
     font-size: 11.5px;
     font-weight: 600;
     color: var(--primary, #C79A3E);
-    background: rgba(199, 154, 62, 0.08);
-    border: 1px solid rgba(199, 154, 62, 0.25);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.08);
+    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.25);
     padding: 5px 12px;
     border-radius: 8px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .bi-action-btn:hover {
-    background: rgba(199, 154, 62, 0.18);
-    border-color: rgba(199, 154, 62, 0.45);
+    background: rgba(var(--primary-rgb, 199, 154, 62), 0.18);
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.45);
     transform: translateY(-1px);
 }
 
@@ -590,7 +588,7 @@
     flex-direction: column;
     gap: 16px;
     background: rgba(0, 0, 0, 0.28);
-    border: 1px solid rgba(199, 154, 62, 0.25);
+    border: 1px solid rgba(var(--primary-rgb, 199, 154, 62), 0.25);
     border-radius: 14px;
     padding: 16px 20px;
     margin-top: 10px;
@@ -599,7 +597,7 @@
 
 [data-theme="light"] .bi-whatif-drawer {
     background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(199, 154, 62, 0.3);
+    border-color: rgba(var(--primary-rgb, 199, 154, 62), 0.3);
 }
 
 .bi-whatif-drawer.open {
@@ -667,7 +665,7 @@
     height: 16px;
     border-radius: 50%;
     background: var(--primary, #C79A3E);
-    box-shadow: 0 0 8px rgba(199, 154, 62, 0.6);
+    box-shadow: 0 0 8px var(--primary-glow, rgba(199, 154, 62, 0.6));
     cursor: pointer;
     transition: transform 0.15s ease;
 }
@@ -734,7 +732,7 @@
 
 .bi-decomp-box {
     background: var(--card-bg, #1A1C16);
-    border: 1px solid rgba(199, 154, 62, 0.35);
+    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.35));
     border-radius: 18px;
     width: 100%;
     max-width: 640px;

@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { SAMPLE_RECEIPTS } from '../services/receiptOcr';
 

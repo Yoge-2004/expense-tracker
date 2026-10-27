@@ -7,7 +7,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Modal,
   TouchableOpacity,
@@ -18,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '../constants/theme';
 import { useAuth } from './AuthContext';
+import { ThemedText as Text } from '../components/ThemedText';
 
 export type AlertType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'destructive';
 
@@ -47,8 +47,8 @@ interface AlertContextType {
 const AlertContext = createContext<AlertContextType | undefined>(undefined);
 
 export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { theme } = useAuth();
-  const c = Colors[theme || 'dark'];
+  const { theme, themeColors } = useAuth();
+  const c = themeColors || Colors[theme || 'dark'];
 
   const [visible, setVisible] = useState(false);
   const [config, setConfig] = useState<AlertConfig>({ title: '' });
@@ -161,6 +161,7 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   {
                     backgroundColor: c.card,
                     borderColor: c.border,
+                    shadowColor: c.primary,
                     transform: [{ scale: scaleAnim }],
                   },
                 ]}
@@ -215,7 +216,7 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                       textColor = c.text;
                     } else if (!isCancel) {
                       btnBg = c.primary;
-                      textColor = theme === 'light' ? '#FFFFFF' : '#10120E';
+                      textColor = c.onPrimary;
                     } else {
                       btnBg = c.inputBg;
                       borderColor = c.border;

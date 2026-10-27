@@ -11,8 +11,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
-  TextInput,
   View,
   TouchableOpacity,
   ActivityIndicator,
@@ -21,6 +19,8 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../components/ThemedText';
+import { ThemedText as Text } from '../components/ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { ApiError } from '../services/api';
@@ -347,10 +347,10 @@ export default function LoginScreen() {
               onPress={handleLogin}
               loading={isLoading}
               disabled={isLoading}
-              icon={<Ionicons name="arrow-forward" size={18} color={isLight ? '#FFF' : '#10120E'} />}
+              icon={<Ionicons name="arrow-forward" size={18} color={c.onPrimary} />}
               iconPosition="right"
               style={[styles.signInBtn, { backgroundColor: c.primary }]}
-              textStyle={[styles.signInBtnText, { color: isLight ? '#FFF' : '#10120E' }]}
+              textStyle={[styles.signInBtnText, { color: c.onPrimary }]}
             />
 
             {/* Divider */}

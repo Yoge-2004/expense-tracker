@@ -16,12 +16,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { apiRequest } from '../services/api';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ScrollView,
   Modal,
 } from 'react-native';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
+import { ThemedText as Text } from './ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
 import { getCurrencySymbol } from '../services/currency';
@@ -115,14 +116,34 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
   incomes = EMPTY_INCOMES,
   savingsGoals = EMPTY_GOALS,
 }) => {
-  const { theme, currency, isStealthMode } = useAuth();
-  const c = Colors[theme];
+  const {theme, currency, isStealthMode, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
   const [activeTab, setActiveTab] = useState<'all' | 'habits' | 'forecasts'>('all');
   const [selectedInsight, setSelectedInsight] = useState<DetailedInsightModalData | null>(null);
 
-  const [mlForecast, setMlForecast] = useState<{ total: number; days: number } | null>(null);
+  const [mlForecast, setMlForecast] = useState<{
+    total: number;
+    days: number;
+    points: { date: string; amount: number }[];
+  } | null>(null);
+  const forecastChart = useMemo(() => {
+    if (!mlForecast?.points.length) return null;
+    const width = 160;
+    const baseline = 42;
+    const amounts = mlForecast.points.map((point) => point.amount);
+    const min = Math.min(...amounts);
+    const max = Math.max(...amounts);
+    const span = max - min || Math.max(max, 1);
+    const coords = mlForecast.points.map((point, index) => ({
+      x: mlForecast.points.length === 1 ? width / 2 : 6 + (index / (mlForecast.points.length - 1)) * (width - 12),
+      y: baseline - ((point.amount - min) / span) * 28,
+    }));
+    const line = coords.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ');
+    const area = `${line} L ${coords[coords.length - 1].x.toFixed(1)} ${baseline} L ${coords[0].x.toFixed(1)} ${baseline} Z`;
+    return { coords, line, area };
+  }, [mlForecast]);
   const [mlAnomaly, setMlAnomaly] = useState<{ count: number; topOutlier?: { desc: string; amount: number; score: number } } | null>(null);
 
   useEffect(() => {
@@ -159,11 +180,20 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
         });
 
         if (active && fRes && Array.isArray(fRes.forecast)) {
-          const sum = fRes.forecast.reduce((acc: number, f: any) => acc + (Number(f.predicted_amount) || 0), 0);
-          setMlForecast({
-            total: sum,
-            days: fRes.horizon_days || 7,
-          });
+          const points = fRes.forecast
+            .map((point: any) => ({
+              date: String(point.date || ''),
+              amount: Number(point.predicted_amount),
+            }))
+            .filter((point: { date: string; amount: number }) => point.date && Number.isFinite(point.amount));
+          if (points.length) {
+            const sum = points.reduce((acc: number, point: { amount: number }) => acc + point.amount, 0);
+            setMlForecast({
+              total: sum,
+              days: Number(fRes.horizon_days) || points.length || 7,
+              points,
+            });
+          }
         }
       } catch (_) {}
 
@@ -551,7 +581,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
           <Text
             style={[
               styles.filterTabText,
-              { color: activeTab === 'all' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+              { color: activeTab === 'all' ? (c.onPrimary) : c.textMuted },
             ]}
           >
             All Insights
@@ -568,7 +598,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
           <Text
             style={[
               styles.filterTabText,
-              { color: activeTab === 'habits' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+              { color: activeTab === 'habits' ? (c.onPrimary) : c.textMuted },
             ]}
           >
             Habits & Savings
@@ -585,7 +615,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
           <Text
             style={[
               styles.filterTabText,
-              { color: activeTab === 'forecasts' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+              { color: activeTab === 'forecasts' ? (c.onPrimary) : c.textMuted },
             ]}
           >
             Alerts & Forecast
@@ -603,7 +633,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: "ML Forward Spending Forecast",
                 icon: "trending-up-outline",
-                color: "#D4AF37",
+                color: c.primary,
                 headline: `Machine learning time-series model projects ${formatAmt(mlForecast.total)} in spend over the next ${mlForecast.days} days.`,
                 metrics: [
                   { label: "Projected Outflow", value: formatAmt(mlForecast.total) },
@@ -614,10 +644,10 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 advice: "Dynamic time-series projection generated from your spending velocity by the backend ML service.",
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: "rgba(212, 175, 55, 0.15)" }]}>
+              <View style={[styles.iconBox, { backgroundColor: c.primary + '26' }]}>
                 <Ionicons name="trending-up-outline" size={18} color={c.primary} />
               </View>
               <Text style={[styles.cardTag, { color: c.primary }]}>ML Forecast</Text>
@@ -629,6 +659,22 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
               Next {mlForecast.days} days projected outflow
             </Text>
+            {forecastChart && (
+              <View style={styles.forecastChartWrap} accessibilityLabel={`Daily spend forecast for ${mlForecast.days} days`}>
+                <Svg width="100%" height={48} viewBox="0 0 160 48" preserveAspectRatio="none">
+                  <Line x1={0} y1={42} x2={160} y2={42} stroke={c.border} strokeWidth={1} />
+                  <Path d={forecastChart.area} fill={c.primary} fillOpacity={0.14} />
+                  <Path d={forecastChart.line} fill="none" stroke={c.primary} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                  {forecastChart.coords.map((point, index) => (
+                    <Circle key={`${mlForecast.points[index].date}-${index}`} cx={point.x} cy={point.y} r={2.4} fill={c.primary} />
+                  ))}
+                </Svg>
+                <View style={styles.forecastAxisLabels}>
+                  <Text style={[styles.cardSubText, { color: c.textMuted }]}>{mlForecast.points[0]?.date.slice(5)}</Text>
+                  <Text style={[styles.cardSubText, { color: c.textMuted }]}>{mlForecast.points[mlForecast.points.length - 1]?.date.slice(5)}</Text>
+                </View>
+              </View>
+            )}
           </TouchableOpacity>
         )}
 
@@ -640,7 +686,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: "ML Anomaly Detection",
                 icon: mlAnomaly.count > 0 ? "warning-outline" : "shield-checkmark-outline",
-                color: mlAnomaly.count > 0 ? "#EF4444" : "#10B981",
+                color: mlAnomaly.count > 0 ? c.danger : c.success,
                 headline: mlAnomaly.count > 0
                   ? `Isolation Forest flagged ${mlAnomaly.count} transaction(s) with unusual spending amounts or category deviations.`
                   : "Isolation Forest scanned recent transactions. All transactions fall within normal patterns.",
@@ -655,18 +701,18 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                   : "Your spending patterns conform neatly to your behavioral baseline.",
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (mlAnomaly.count > 0 ? "#EF4444" : "#10B981") + "18" }]}>
-                <Ionicons name={mlAnomaly.count > 0 ? "warning-outline" : "shield-checkmark-outline"} size={18} color={mlAnomaly.count > 0 ? "#EF4444" : "#10B981"} />
+              <View style={[styles.iconBox, { backgroundColor: (mlAnomaly.count > 0 ? c.danger : c.success) + "18" }]}>
+                <Ionicons name={mlAnomaly.count > 0 ? "warning-outline" : "shield-checkmark-outline"} size={18} color={mlAnomaly.count > 0 ? c.danger : c.success} />
               </View>
-              <Text style={[styles.cardTag, { color: mlAnomaly.count > 0 ? "#EF4444" : "#10B981" }]}>
+              <Text style={[styles.cardTag, { color: mlAnomaly.count > 0 ? c.danger : c.success }]}>
                 {mlAnomaly.count > 0 ? "Outlier Watch" : "Verified Normal"}
               </Text>
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>ML Anomaly Scorer</Text>
-            <Text style={[styles.cardPrimaryVal, { color: mlAnomaly.count > 0 ? "#EF4444" : "#10B981" }]}>
+            <Text style={[styles.cardPrimaryVal, { color: mlAnomaly.count > 0 ? c.danger : c.success }]}>
               {mlAnomaly.count > 0 ? `${mlAnomaly.count} Flagged` : "0 Anomalies"}
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
@@ -682,7 +728,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: "Monthly Cash Flow Summary",
                 icon: "swap-horizontal-outline",
-                color: netCashFlow >= 0 ? "#10B981" : "#EF4444",
+                color: netCashFlow >= 0 ? c.success : c.danger,
                 headline:
                   activeInflow > 0
                     ? `Monthly Inflow is ${formatAmt(activeInflow)} against ${formatAmt(currentMonthSpent)} total outflow (${netCashFlow >= 0 ? "+" : ""}${formatAmt(netCashFlow)} net balance).`
@@ -703,18 +749,18 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : "Positive cash flow! Aim to increase your retention rate to 20% or higher.",
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? "#10B981" : "#EF4444") + "18" }]}>
-                <Ionicons name="swap-horizontal-outline" size={18} color={netCashFlow >= 0 ? "#10B981" : "#EF4444"} />
+              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? c.success : c.danger) + "18" }]}>
+                <Ionicons name="swap-horizontal-outline" size={18} color={netCashFlow >= 0 ? c.success : c.danger} />
               </View>
-              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? "#10B981" : "#EF4444" }]}>
+              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
                 {netCashFlow >= 0 ? "Surplus" : "Deficit"}
               </Text>
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>Monthly Cash Flow</Text>
-            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? "#10B981" : "#EF4444" }]}>
+            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
               {netCashFlow >= 0 ? "+" : ""}{formatAmt(netCashFlow)}
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
@@ -750,11 +796,11 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Healthy wealth loop: Cash flows smoothly from revenue into protected savings and essential living.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: '#3B82F618' }]}>
-                <Ionicons name="pie-chart-outline" size={18} color="#3B82F6" />
+                <Ionicons name="pie-chart-outline" size={18} color={c.highlight} />
               </View>
               <Text style={[styles.cardTag, { color: '#3B82F6' }]}>Wealth Loop</Text>
             </View>
@@ -778,7 +824,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: 'Commitment Autonomy Drag',
                 icon: 'lock-closed-outline',
-                color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6',
+                color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight,
                 headline:
                   activeInflow > 0
                     ? `Fixed recurring commitments (subscriptions + chits/RDs) lock up ${commitmentAutonomyRatio}% of your monthly inflow (${formatAmt(totalCommittedOverhead)}/mo).`
@@ -795,20 +841,20 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Excellent: Your recurring commitments leave ample flexibility for discretionary choices and emergency buffers.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6') + '18' }]}>
-                <Ionicons name="lock-closed-outline" size={18} color={commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6'} />
+              <View style={[styles.iconBox, { backgroundColor: (commitmentAutonomyRatio > 50 ? c.danger : c.highlight) + '18' }]}>
+                <Ionicons name="lock-closed-outline" size={18} color={commitmentAutonomyRatio > 50 ? c.danger : c.highlight} />
               </View>
-              <Text style={[styles.cardTag, { color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6' }]}>Autonomy</Text>
+              <Text style={[styles.cardTag, { color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight }]}>Autonomy</Text>
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>Commitment Drag</Text>
-            <Text style={[styles.cardPrimaryVal, { color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6' }]}>
+            <Text style={[styles.cardPrimaryVal, { color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight }]}>
               {commitmentAutonomyRatio}%
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Locked: <Text style={{ color: commitmentAutonomyRatio > 50 ? '#EF4444' : '#8B5CF6', fontWeight: '700' }}>{formatAmt(totalCommittedOverhead)}</Text>/mo
+              Locked: <Text style={{ color: commitmentAutonomyRatio > 50 ? c.danger : c.highlight, fontWeight: '700' }}>{formatAmt(totalCommittedOverhead)}</Text>/mo
             </Text>
           </TouchableOpacity>
         )}
@@ -821,7 +867,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: 'Income Streams & Salary Coverage',
                 icon: 'cash-outline',
-                color: salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B',
+                color: salaryCoverageRatio >= 100 ? c.success : c.warning,
                 headline:
                   activeInflow > 0
                     ? `Base salary provides ${salarySharePct}% of total inflows (${formatAmt(salaryInflow)}), covering ${salaryCoverageRatio}% of your monthly living expenses.`
@@ -840,16 +886,16 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Your monthly expenses currently exceed base salary. You depend on irregular or secondary inflows to balance the budget.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B') + '18' }]}>
-                <Ionicons name="cash-outline" size={18} color={salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B'} />
+              <View style={[styles.iconBox, { backgroundColor: (salaryCoverageRatio >= 100 ? c.success : c.warning) + '18' }]}>
+                <Ionicons name="cash-outline" size={18} color={salaryCoverageRatio >= 100 ? c.success : c.warning} />
               </View>
-              <Text style={[styles.cardTag, { color: salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B' }]}>Income Intel</Text>
+              <Text style={[styles.cardTag, { color: salaryCoverageRatio >= 100 ? c.success : c.warning }]}>Income Intel</Text>
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>Salary Coverage</Text>
-            <Text style={[styles.cardPrimaryVal, { color: salaryCoverageRatio >= 100 ? '#10B981' : '#F59E0B' }]}>
+            <Text style={[styles.cardPrimaryVal, { color: salaryCoverageRatio >= 100 ? c.success : c.warning }]}>
               {activeInflow > 0 ? `${salaryCoverageRatio}%` : 'N/A'}
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
@@ -866,7 +912,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: 'Emergency Savings Runway',
                 icon: 'shield-checkmark-outline',
-                color: Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B',
+                color: Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning,
                 headline:
                   totalGoalsCurrent > 0
                     ? `Current accumulated reserves (${formatAmt(totalGoalsCurrent)}) can sustain your living expenses for ${emergencyRunwayMonths} months without any new income.`
@@ -887,16 +933,16 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Runway is below the recommended 3 months. Prioritize building reserves before increasing discretionary spending.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B') + '18' }]}>
-                <Ionicons name="shield-checkmark-outline" size={18} color={Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B'} />
+              <View style={[styles.iconBox, { backgroundColor: (Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning) + '18' }]}>
+                <Ionicons name="shield-checkmark-outline" size={18} color={Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning} />
               </View>
-              <Text style={[styles.cardTag, { color: Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B' }]}>Resilience</Text>
+              <Text style={[styles.cardTag, { color: Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning }]}>Resilience</Text>
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>Emergency Runway</Text>
-            <Text style={[styles.cardPrimaryVal, { color: Number(emergencyRunwayMonths) >= 3 ? '#10B981' : '#F59E0B' }]}>
+            <Text style={[styles.cardPrimaryVal, { color: Number(emergencyRunwayMonths) >= 3 ? c.success : c.warning }]}>
               {emergencyRunwayMonths} Mo
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
@@ -912,7 +958,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: 'Cash Flow & Savings Rate',
                 icon: 'trending-up-outline',
-                color: netCashFlow >= 0 ? '#10B981' : c.accent,
+                color: netCashFlow >= 0 ? c.success : c.danger,
                 headline:
                   activeInflow > 0
                     ? `Retaining ${savingsRate}% of total revenue with a net ${netCashFlow >= 0 ? 'surplus' : 'deficit'} of ${netCashFlow >= 0 ? '+' : ''}${formatAmt(netCashFlow)}.`
@@ -933,20 +979,20 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Spending exceeds income this month. Review high-variance categories to eliminate cash drain.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? '#10B981' : c.accent) + '18' }]}>
-                <Ionicons name="trending-up-outline" size={18} color={netCashFlow >= 0 ? '#10B981' : c.accent} />
+              <View style={[styles.iconBox, { backgroundColor: (netCashFlow >= 0 ? c.success : c.danger) + '18' }]}>
+                <Ionicons name="trending-up-outline" size={18} color={netCashFlow >= 0 ? c.success : c.danger} />
               </View>
-              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? '#10B981' : c.accent }]}>Cash Flow</Text>
+              <Text style={[styles.cardTag, { color: netCashFlow >= 0 ? c.success : c.danger }]}>Cash Flow</Text>
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>Savings Retention</Text>
-            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? '#10B981' : c.accent }]}>
+            <Text style={[styles.cardPrimaryVal, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
               {activeInflow > 0 ? `${savingsRate}%` : 'N/A'}
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Net: <Text style={{ color: netCashFlow >= 0 ? '#10B981' : c.accent, fontWeight: '700' }}>
+              Net: <Text style={{ color: netCashFlow >= 0 ? c.success : c.danger, fontWeight: '700' }}>
                 {netCashFlow >= 0 ? `+${formatAmt(netCashFlow)}` : `-${formatAmt(Math.abs(netCashFlow))}`}
               </Text>
             </Text>
@@ -961,7 +1007,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: 'Goal Funding Velocity',
                 icon: 'flag-outline',
-                color: '#F59E0B',
+                color: c.warning,
                 headline:
                   monthsToFundGoals
                     ? `At current monthly surplus (+${formatAmt(netCashFlow)}/mo), remaining goals will be fully funded in ~${monthsToFundGoals} month${monthsToFundGoals === 1 ? '' : 's'}.`
@@ -980,20 +1026,20 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'All savings targets are currently fully funded! Time to set new financial horizons.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.iconBox, { backgroundColor: '#F59E0B18' }]}>
-                <Ionicons name="flag-outline" size={18} color="#F59E0B" />
+              <View style={[styles.iconBox, { backgroundColor: c.warning + '18' }]}>
+                <Ionicons name="flag-outline" size={18} color={c.warning} />
               </View>
-              <Text style={[styles.cardTag, { color: '#F59E0B' }]}>Milestones</Text>
+              <Text style={[styles.cardTag, { color: c.warning }]}>Milestones</Text>
             </View>
             <Text style={[styles.cardTitle, { color: c.text }]}>Goal Velocity</Text>
-            <Text style={[styles.cardPrimaryVal, { color: '#F59E0B' }]}>
+            <Text style={[styles.cardPrimaryVal, { color: c.warning }]}>
               {monthsToFundGoals ? `~${monthsToFundGoals} mo` : `${goalsFundingPct}%`}
             </Text>
             <Text style={[styles.cardSubText, { color: c.textMuted }]}>
-              Saved: <Text style={{ color: '#F59E0B', fontWeight: '700' }}>{goalsFundingPct}%</Text> of goals
+              Saved: <Text style={{ color: c.warning, fontWeight: '700' }}>{goalsFundingPct}%</Text> of goals
             </Text>
           </TouchableOpacity>
         )}
@@ -1020,7 +1066,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Maintain regular tracking to refine projection accuracy.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.primary + '18' }]}>
@@ -1055,7 +1101,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 advice: `Trimming just 15% from non-essential spending could retain ${formatAmt(potentialSavings)} in monthly savings.`,
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.teal + '18' }]}>
@@ -1092,7 +1138,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'Your weekend spending is well-balanced with weekday habits.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.accent + '18' }]}>
@@ -1116,7 +1162,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               openDetail({
                 title: 'Budget Health Score',
                 icon: 'shield-checkmark-outline',
-                color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.accent,
+                color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger,
                 headline: `Financial Governance Index: ${governanceScore}/100`,
                 metrics: [
                   { label: 'Overall Health Index', value: `${governanceScore}%` },
@@ -1130,7 +1176,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                     : 'All budgets are within healthy operational thresholds.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
               <View
@@ -1138,21 +1184,21 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                   styles.iconBox,
                   {
                     backgroundColor:
-                      (governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.accent) + '18',
+                      (governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger) + '18',
                   },
                 ]}
               >
                 <Ionicons
                   name="shield-checkmark-outline"
                   size={18}
-                  color={governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.accent}
+                  color={governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger}
                 />
               </View>
               <Text
                 style={[
                   styles.cardTag,
                   {
-                    color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.accent,
+                    color: governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger,
                   },
                 ]}
               >
@@ -1164,7 +1210,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
               style={[
                 styles.cardPrimaryVal,
                 {
-                  color: safeExpenses.length === 0 && safeBudgets.length === 0 ? c.textMuted : (governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.accent),
+                    color: safeExpenses.length === 0 && safeBudgets.length === 0 ? c.textMuted : (governanceScore >= 80 ? c.success : governanceScore >= 60 ? c.warning : c.danger),
                 },
               ]}
             >
@@ -1201,7 +1247,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                 advice: `At your current velocity, this category will breach its cap before the month ends. Slow down daily transactions in this category to stay under budget.`,
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.accent + '18' }]}>
@@ -1238,7 +1284,7 @@ export const InsightCards: React.FC<InsightCardsProps> = React.memo(({
                   'Consolidating smaller purchases into planned shopping intervals helps reduce impulse spend.',
               })
             }
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: c.primary + '18' }]}>
@@ -1497,6 +1543,15 @@ const styles = StyleSheet.create({
   },
   cardSubText: {
     fontSize: 10.5,
+  },
+  forecastChartWrap: {
+    width: '100%',
+    marginTop: 8,
+  },
+  forecastAxisLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 1,
   },
   modalBackdrop: {
     flex: 1,

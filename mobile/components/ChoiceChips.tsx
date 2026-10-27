@@ -5,7 +5,8 @@
  * (income type, which month an income counts toward, which category a refund pays back).
  */
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 
 export interface ChoiceOption<T extends string | number> {
   value: T;

@@ -7,7 +7,8 @@
  * the button carries an icon, a label and an outline so it reads as a button.
  */
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 
 interface OfflineBannerProps {

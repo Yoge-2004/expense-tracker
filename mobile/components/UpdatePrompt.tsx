@@ -14,10 +14,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
@@ -44,8 +44,8 @@ function formatSize(bytes?: number | null): string {
 }
 
 export default function UpdatePrompt({ visible, info, onClose }: UpdatePromptProps) {
-  const { theme } = useAuth();
-  const c = Colors[theme];
+  const {theme, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const [busy, setBusy] = useState(false);
   const [percent, setPercent] = useState(0);
   const [bytes, setBytes] = useState({ done: 0, total: 0 });

@@ -14,10 +14,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   Modal,
   ActivityIndicator,
   Platform,
@@ -25,6 +23,8 @@ import {
   KeyboardAvoidingView,
   Pressable,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from './ThemedText';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AnimatedCard } from './AnimatedCard';
@@ -316,7 +316,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
   }, [formExpenseId, expenses]);
 
   return (
-    <View style={[styles.container, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.container, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
@@ -336,8 +336,8 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           style={[styles.addBtn, { backgroundColor: c.primary }]}
           accessibilityLabel="Add loan adjustment"
         >
-          <Ionicons name="add" size={16} color={isLight ? '#0F172A' : '#10120E'} />
-          <Text style={[styles.addBtnText, { color: isLight ? '#0F172A' : '#10120E' }]}>New</Text>
+          <Ionicons name="add" size={16} color={c.onPrimary} />
+          <Text style={[styles.addBtnText, { color: c.onPrimary }]}>New</Text>
         </TouchableOpacity>
       </View>
 
@@ -348,19 +348,19 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           style={[
             styles.metricCard,
             {
-              backgroundColor: isLight ? '#F0FDF4' : 'rgba(16, 185, 129, 0.08)',
-              borderColor: isLight ? '#BBF7D0' : 'rgba(16, 185, 129, 0.25)',
+              backgroundColor: c.success + '12',
+              borderColor: c.success + '40',
             },
           ]}
           scaleTo={0.97}
         >
           <View style={styles.metricTop}>
-            <Text style={[styles.metricLabel, { color: isLight ? '#166534' : '#6EE7B7' }]}>
+            <Text style={[styles.metricLabel, { color: c.success }]}>
               Owed to You
             </Text>
-            <Ionicons name="arrow-down-circle" size={16} color="#10B981" />
+            <Ionicons name="arrow-down-circle" size={16} color={c.success} />
           </View>
-          <Text style={[styles.metricValue, { color: '#10B981' }]} numberOfLines={1}>
+          <Text style={[styles.metricValue, { color: c.success }]} numberOfLines={1}>
             {loanMetrics == null && loans.length === 0 ? '--' : formatAmount(lentPending, '+')}
           </Text>
           <Text style={[styles.metricSub, { color: isLight ? '#4B5563' : c.textMuted }]}>
@@ -373,19 +373,19 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           style={[
             styles.metricCard,
             {
-              backgroundColor: isLight ? '#FEF2F2' : 'rgba(239, 68, 68, 0.08)',
-              borderColor: isLight ? '#FECACA' : 'rgba(239, 68, 68, 0.25)',
+              backgroundColor: c.danger + '12',
+              borderColor: c.danger + '40',
             },
           ]}
           scaleTo={0.97}
         >
           <View style={styles.metricTop}>
-            <Text style={[styles.metricLabel, { color: isLight ? '#991B1B' : '#FCA5A5' }]}>
+            <Text style={[styles.metricLabel, { color: c.danger }]}>
               You Owe
             </Text>
-            <Ionicons name="arrow-up-circle" size={16} color="#EF4444" />
+            <Ionicons name="arrow-up-circle" size={16} color={c.danger} />
           </View>
-          <Text style={[styles.metricValue, { color: '#EF4444' }]} numberOfLines={1}>
+          <Text style={[styles.metricValue, { color: c.danger }]} numberOfLines={1}>
             {loanMetrics == null && loans.length === 0 ? '--' : formatAmount(borrowedPending, '-')}
           </Text>
           <Text style={[styles.metricSub, { color: isLight ? '#4B5563' : c.textMuted }]}>
@@ -411,7 +411,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           <Text
             style={[
               styles.metricValue,
-              { color: loanMetrics == null && loans.length === 0 ? c.textMuted : netPosition >= 0 ? '#10B981' : '#EF4444' },
+              { color: loanMetrics == null && loans.length === 0 ? c.textMuted : netPosition >= 0 ? c.success : c.danger },
             ]}
             numberOfLines={1}
           >
@@ -431,8 +431,8 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
           style={[
             styles.loanNoticeCard,
             {
-              backgroundColor: isLight ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.08)',
-              borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : 'rgba(212, 175, 55, 0.35)',
+              backgroundColor: c.primary + '1F',
+              borderColor: c.primary + '66',
             },
           ]}
         >
@@ -448,7 +448,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
             </View>
           </View>
           <View style={[styles.loanNoticeActionBtn, { backgroundColor: c.primary }]}>
-            <Text style={[styles.loanNoticeActionText, { color: isLight ? '#0F172A' : '#10120E' }]}>
+            <Text style={[styles.loanNoticeActionText, { color: c.onPrimary }]}>
               Convert
             </Text>
           </View>
@@ -522,7 +522,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
         ) : (
           filteredLoans.map((loan) => {
             const isLent = loan.type === 'LENT';
-            const typeColor = isLent ? '#10B981' : '#EF4444';
+            const typeColor = isLent ? c.success : c.danger;
             return (
               <View
                 key={loan.id}
@@ -541,7 +541,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                     style={[
                       styles.avatarBadge,
                       {
-                        backgroundColor: (isLent ? '#10B981' : '#EF4444') + '18',
+                        backgroundColor: (isLent ? c.success : c.danger) + '18',
                       },
                     ]}
                   >
@@ -560,7 +560,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                         style={[
                           styles.typeBadge,
                           {
-                            backgroundColor: (isLent ? '#10B981' : '#EF4444') + '18',
+                            backgroundColor: (isLent ? c.success : c.danger) + '18',
                           },
                         ]}
                       >
@@ -637,7 +637,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                             : isLight
                             ? '#D1FAE5'
                             : 'rgba(16, 185, 129, 0.2)',
-                          borderColor: loan.isSettled ? c.border : '#10B981',
+                          borderColor: loan.isSettled ? c.border : c.success,
                         },
                       ]}
                       accessibilityLabel={loan.isSettled ? 'Reopen loan' : 'Mark settled'}
@@ -645,12 +645,12 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                       <Ionicons
                         name={loan.isSettled ? 'reload-outline' : 'checkmark'}
                         size={12}
-                        color={loan.isSettled ? c.textMuted : '#10B981'}
+                        color={loan.isSettled ? c.textMuted : c.success}
                       />
                       <Text
                         style={[
                           styles.settleBtnText,
-                          { color: loan.isSettled ? c.textMuted : '#10B981' },
+                          { color: loan.isSettled ? c.textMuted : c.success },
                         ]}
                       >
                         {loan.isSettled ? 'Settled' : 'Settle'}
@@ -723,7 +723,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   style={[
                     styles.typeToggleOption,
                     formType === 'LENT' && {
-                      backgroundColor: '#10B981',
+                      backgroundColor: c.success,
                     },
                   ]}
                 >
@@ -753,7 +753,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   style={[
                     styles.typeToggleOption,
                     formType === 'BORROWED' && {
-                      backgroundColor: '#EF4444',
+                      backgroundColor: c.danger,
                     },
                   ]}
                 >
@@ -921,7 +921,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                     ]}
                   >
                     {formReminderEnabled && (
-                      <Ionicons name="checkmark" size={14} color={isLight ? '#0F172A' : '#10120E'} />
+                      <Ionicons name="checkmark" size={14} color={c.onPrimary} />
                     )}
                   </View>
                 </TouchableOpacity>
@@ -948,7 +948,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                               styles.freqChipText,
                               {
                                 color: formReminderFrequency === freq
-                                  ? isLight ? '#0F172A' : '#10120E'
+                                  ? c.onPrimary
                                   : c.text,
                               },
                             ]}
@@ -979,7 +979,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                               styles.freqChipText,
                               {
                                 color: formReminderTime === t
-                                  ? isLight ? '#0F172A' : '#10120E'
+                                  ? c.onPrimary
                                   : c.text,
                               },
                             ]}
@@ -1037,12 +1037,12 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   style={[styles.modalSaveBtn, { backgroundColor: c.primary }]}
                 >
                   {isSubmitting ? (
-                    <ActivityIndicator size="small" color={isLight ? '#0F172A' : '#10120E'} />
+                    <ActivityIndicator size="small" color={c.onPrimary} />
                   ) : (
                     <Text
                       style={[
                         styles.modalSaveText,
-                        { color: isLight ? '#0F172A' : '#10120E' },
+                        { color: c.onPrimary },
                       ]}
                     >
                       {editingLoan ? 'Update Record' : 'Save Adjustment'}
@@ -1129,7 +1129,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                 <Text
                   style={[
                     styles.pickerTabBtnText,
-                    { color: expenseFilterTab === 'ALL' ? (isLight ? '#0F172A' : '#10120E') : c.text },
+                    { color: expenseFilterTab === 'ALL' ? (c.onPrimary) : c.text },
                   ]}
                 >
                   All Expenses ({expenses.length})
@@ -1148,12 +1148,12 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   <Ionicons
                     name="star"
                     size={13}
-                    color={expenseFilterTab === 'LOAN' ? (isLight ? '#0F172A' : '#10120E') : c.primary}
+                    color={expenseFilterTab === 'LOAN' ? (c.onPrimary) : c.primary}
                   />
                   <Text
                     style={[
                       styles.pickerTabBtnText,
-                      { color: expenseFilterTab === 'LOAN' ? (isLight ? '#0F172A' : '#10120E') : c.text },
+                      { color: expenseFilterTab === 'LOAN' ? (c.onPrimary) : c.text },
                     ]}
                   >
                     Tagged as "Loan" ({loanCategoryExpenses.length})
@@ -1200,7 +1200,7 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                           styles.avatarBadge,
                           {
                             backgroundColor: isLoanCat
-                              ? 'rgba(212, 175, 55, 0.16)'
+                              ? c.primary + '29'
                               : (isLight ? '#F1F5F9' : 'rgba(255,255,255,0.06)'),
                           },
                         ]}

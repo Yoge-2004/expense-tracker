@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '../../constants/theme';
 import { NumberTicker } from '../NumberTicker';
@@ -75,8 +76,8 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
               <Ionicons name="trending-up" size={16} color={c.primary} />
               <Text style={[styles.cashFlowTitle, { color: c.text }]}>Executive Cash Flow</Text>
             </View>
-            <View style={[styles.statusPill, { backgroundColor: netCashFlow >= 0 ? '#10B98120' : '#EF444420' }]}>
-              <Text style={[styles.statusPillText, { color: netCashFlow >= 0 ? '#10B981' : '#EF4444' }]}>
+            <View style={[styles.statusPill, { backgroundColor: netCashFlow >= 0 ? c.success + '20' : c.danger + '20' }]}>
+              <Text style={[styles.statusPillText, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
                 {netCashFlow >= 0 ? 'Surplus' : 'Deficit'}
               </Text>
             </View>
@@ -86,7 +87,7 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
             {/* Inflow */}
             <View style={styles.cashFlowCol}>
               <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Monthly Inflow</Text>
-              <Text style={[styles.cashFlowAmount, { color: '#10B981' }]} numberOfLines={1}>
+              <Text style={[styles.cashFlowAmount, { color: c.success }]} numberOfLines={1}>
                 {isStealthMode ? `${currSymbol}••••••` : `+${currSymbol}${Math.round(totalIncomeMonth).toLocaleString('en-IN')}`}
               </Text>
             </View>
@@ -109,7 +110,7 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
               <Text
                 style={[
                   styles.cashFlowAmount,
-                  { color: netCashFlow >= 0 ? '#10B981' : '#EF4444' },
+                  { color: netCashFlow >= 0 ? c.success : c.danger },
                 ]}
                 numberOfLines={1}
               >
@@ -126,13 +127,13 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
           {/* Micro Pro Metrics Row */}
           <View style={styles.proMetricsRow}>
             {/* Safe Daily Spend */}
-            <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: safeDailySpend > 0 ? '#10B98150' : '#EF444450' }]}>
-              <View style={[styles.proMetricIconCircle, { backgroundColor: safeDailySpend > 0 ? '#10B98120' : '#EF444420' }]}>
-                <Ionicons name="shield-checkmark" size={13} color={safeDailySpend > 0 ? '#10B981' : '#EF4444'} />
+            <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: safeDailySpend > 0 ? c.success + '50' : c.danger + '50' }]}>
+              <View style={[styles.proMetricIconCircle, { backgroundColor: safeDailySpend > 0 ? c.success + '20' : c.danger + '20' }]}>
+                <Ionicons name="shield-checkmark" size={13} color={safeDailySpend > 0 ? c.success : c.danger} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>Safe to Spend</Text>
-                <Text style={[styles.proMetricVal, { color: safeDailySpend > 0 ? '#10B981' : '#EF4444' }]} numberOfLines={1}>
+                <Text style={[styles.proMetricVal, { color: safeDailySpend > 0 ? c.success : c.danger }]} numberOfLines={1}>
                   {isStealthMode ? currSymbol + '••••••' : currSymbol + Math.round(safeDailySpend).toLocaleString('en-IN')}
                   <Text style={{ fontSize: 10, color: c.textMuted }}> /day</Text>
                 </Text>
@@ -140,13 +141,13 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
             </View>
 
             {/* No-Spend Streak */}
-            <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: '#F59E0B50' }]}>
-              <View style={[styles.proMetricIconCircle, { backgroundColor: '#F59E0B20' }]}>
-                <Ionicons name="flame" size={13} color="#F59E0B" />
+            <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: c.warning + '50' }]}>
+              <View style={[styles.proMetricIconCircle, { backgroundColor: c.warning + '20' }]}>
+                <Ionicons name="flame" size={13} color={c.warning} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>No-Spend Streak</Text>
-                <Text style={[styles.proMetricVal, { color: '#F59E0B' }]} numberOfLines={1}>
+                <Text style={[styles.proMetricVal, { color: c.warning }]} numberOfLines={1}>
                   {noSpendStreak}{' '}
                   <Text style={{ fontSize: 11, fontWeight: '600', color: c.textMuted }}>
                     {'day' + (noSpendStreak === 1 ? '' : 's')}

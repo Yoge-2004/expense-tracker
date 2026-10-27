@@ -4,13 +4,14 @@ import {
   Animated,
   Pressable,
   StyleSheet,
-  Text,
   TextStyle,
   View,
   ViewStyle,
   StyleProp,
 } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { usePreferences } from '../context/PreferencesContext';
 
 interface AnimatedButtonProps {
   title: string;
@@ -37,6 +38,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
 }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const reducedMotion = useReducedMotion();
+  const { themeColors: c } = usePreferences();
   const isDisabled = disabled || loading;
 
   useEffect(() => {
@@ -70,19 +72,19 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
     switch (variant) {
       case 'secondary':
         return {
-          container: { backgroundColor: 'rgba(255, 255, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)' },
-          text: { color: '#DAD4C1' },
+          container: { backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border },
+          text: { color: c.text },
         };
       case 'danger':
         return { container: { backgroundColor: '#A23E32' }, text: { color: '#FFFFFF' } };
       case 'outline':
         return {
-          container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#C79A3E' },
-          text: { color: '#C79A3E' },
+          container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: c.primary },
+          text: { color: c.primary },
         };
       case 'primary':
       default:
-        return { container: { backgroundColor: '#C79A3E' }, text: { color: '#FFFFFF' } };
+        return { container: { backgroundColor: c.primary }, text: { color: c.onPrimary } };
     }
   };
 
@@ -104,6 +106,7 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
           vStyles.container,
           disabled && styles.disabled,
           style,
+          { shadowColor: c.primary },
           { transform: [{ scale: reducedMotion ? 1 : scaleAnim }] },
         ]}
       >

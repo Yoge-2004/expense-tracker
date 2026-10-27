@@ -10,23 +10,25 @@
  * 4. Element Colors Customizer: Fine-tune or override individual UI element colors.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Modal,
   StyleSheet,
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
-  TextInput,
   Image,
   ActivityIndicator,
   useWindowDimensions,
   Platform,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from './ThemedText';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { usePreferences, BackgroundAssetConfig } from '../context/PreferencesContext';
 import * as Font from 'expo-font';
 import { FontChoice, FontPresets, CategoryPalette } from '../constants/theme';
@@ -38,6 +40,7 @@ import {
   adjustBrightness,
 } from '../services/paletteExtractor';
 import { ThemedScrollView } from './ThemedScrollbar';
+import { safeStorageGet, safeStorageSet } from '../services/api';
 
 interface ThemeStudioModalProps {
   visible: boolean;
@@ -45,6 +48,11 @@ interface ThemeStudioModalProps {
 }
 
 type StudioTab = 'typography' | 'atmosphere' | 'colors';
+type ThemeProfile = {
+  id: string; name: string; theme: 'dark' | 'light'; fontChoice: FontChoice;
+  customFontFamily: string | null;
+  backgroundAsset: BackgroundAssetConfig; customPalette: ExtractedPalette | null;
+};
 
 export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onClose }) => {
   const {
@@ -70,16 +78,73 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
   const [customUrl, setCustomUrl] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractSuccess, setExtractSuccess] = useState<string | null>(null);
+  const [themeProfiles, setThemeProfiles] = useState<ThemeProfile[]>([]);
+  const [profileName, setProfileName] = useState('');
+  const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    safeStorageGet('app_theme_profiles').then((stored) => {
+      if (stored) {
+        try { setThemeProfiles(JSON.parse(stored)); } catch { setThemeProfiles([]); }
+      }
+    }).catch(() => {});
+  }, []);
+
+  const persistProfiles = async (profiles: ThemeProfile[]) => {
+    setThemeProfiles(profiles);
+    await safeStorageSet('app_theme_profiles', JSON.stringify(profiles));
+  };
+
+  const saveThemeProfile = async () => {
+    const name = profileName.trim();
+    if (!name) { setExtractSuccess('Enter a name for this theme profile.'); return; }
+    const profile: ThemeProfile = {
+      id: editingProfileId || `${Date.now()}`, name, theme, fontChoice, customFontFamily,
+      backgroundAsset: { ...backgroundAsset }, customPalette: customPalette ? { ...customPalette } : null,
+    };
+    const next = editingProfileId
+      ? themeProfiles.map((item) => item.id === editingProfileId ? profile : item)
+      : [...themeProfiles, profile];
+    await persistProfiles(next);
+    setEditingProfileId(null); setProfileName(''); setExtractSuccess(`Saved “${name}”.`);
+  };
+
+  const editThemeProfile = async (profile: ThemeProfile) => {
+    setEditingProfileId(profile.id); setProfileName(profile.name);
+    await applyThemeProfile(profile);
+  };
+
+  const deleteThemeProfile = async (profile: ThemeProfile) => {
+    await persistProfiles(themeProfiles.filter((item) => item.id !== profile.id));
+    if (editingProfileId === profile.id) {
+      setEditingProfileId(null);
+      setProfileName('');
+    }
+  };
+
+  const applyThemeProfile = async (profile: ThemeProfile) => {
+    if (profile.customFontFamily) await setCustomFont(profile.customFontFamily);
+    await setFontChoice(profile.fontChoice);
+    await setBackgroundAsset(profile.backgroundAsset);
+    await setCustomPalette(profile.customPalette);
+    if (profile.theme !== theme) await toggleTheme();
+  };
 
   // Custom Color Picker & Target States
   const [customHexInput, setCustomHexInput] = useState(c.primary);
-  const [colorTarget, setColorTarget] = useState<'primary' | 'accent' | 'highlight'>('primary');
+  const [colorTarget, setColorTarget] = useState<'primary' | 'accent' | 'highlight' | 'card' | 'surface'>('primary');
 
   // Custom Font Import States
   const [isFontLoading, setIsFontLoading] = useState(false);
   const [fontStatusMsg, setFontStatusMsg] = useState<string | null>(null);
 
   const isWide = width >= 640;
+
+  const toPickerHex = (value: string) => {
+    if (/^#[0-9a-f]{6}$/i.test(value)) return value;
+    const rgb = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    return rgb ? `#${rgb.slice(1, 4).map((part) => Number(part).toString(16).padStart(2, '0')).join('')}` : '#171A14';
+  };
 
   // Curated accent swatch choices for quick customization
   const QUICK_ACCENTS = useMemo(
@@ -101,12 +166,18 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
   const handlePickLocalImage = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      const res = await DocumentPicker.getDocumentAsync({
-        type: ['image/*'],
-        copyToCacheDirectory: true,
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setExtractSuccess('Allow photo access to choose and crop a wallpaper.');
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.9,
       });
 
-      if (res.canceled || !res.assets || res.assets.length === 0) return;
+      if (res.canceled || !res.assets?.length) return;
       const picked = res.assets[0];
 
       const newConfig: BackgroundAssetConfig = {
@@ -136,12 +207,11 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
       blurIntensity: backgroundAsset.blurIntensity ?? 0,
     };
 
-    await setBackgroundAsset(newConfig);
-    await handleExtractFromUri(customUrl.trim());
-    setCustomUrl('');
+    const extracted = await handleExtractFromUri(customUrl.trim());
+    if (extracted) await setBackgroundAsset(newConfig);
   };
 
-  const handleExtractFromUri = async (uri: string) => {
+  const handleExtractFromUri = async (uri: string): Promise<boolean> => {
     try {
       setIsExtracting(true);
       setExtractSuccess(null);
@@ -149,11 +219,14 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
       await setCustomPalette(palette);
       setExtractSuccess('Colors harmonized from wallpaper!');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      return true;
     } catch (err) {
       console.warn('[ThemeStudio] Extraction failed:', err);
+      setExtractSuccess(err instanceof Error ? err.message : 'Could not extract colors from this image.');
+      return false;
     } finally {
       setIsExtracting(false);
-      setTimeout(() => setExtractSuccess(null), 3000);
+      setTimeout(() => setExtractSuccess(null), 5000);
     }
   };
 
@@ -193,12 +266,16 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
 
       const baseName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
       const customFamilyKey = `UserCustom_${baseName}`;
+      if (!FileSystem.documentDirectory) throw new Error('Persistent font storage is unavailable');
+      const fontUri = `${FileSystem.documentDirectory}appearance-font-${baseName}.${ext}`;
+      await FileSystem.deleteAsync(fontUri, { idempotent: true });
+      await FileSystem.copyAsync({ from: picked.uri, to: fontUri });
 
       await Font.loadAsync({
-        [customFamilyKey]: picked.uri,
+        [customFamilyKey]: fontUri,
       });
 
-      await setCustomFont(customFamilyKey);
+      await setCustomFont(customFamilyKey, fontUri);
       setFontStatusMsg(`Imported & applied font: ${baseName}`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (err: any) {
@@ -245,12 +322,15 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
         accent: hex,
       });
       setExtractSuccess(`Dynamic Accent color applied: ${hex.toUpperCase()}`);
-    } else {
+    } else if (colorTarget === 'highlight') {
       await setCustomPalette({
         ...basePalette,
         highlight: hex,
       });
       setExtractSuccess(`Highlight Glow color applied: ${hex.toUpperCase()}`);
+    } else {
+      await setCustomPalette({ ...basePalette, [colorTarget]: hex });
+      setExtractSuccess(`${colorTarget === 'card' ? 'Card' : 'Surface'} color applied: ${hex.toUpperCase()}`);
     }
     setTimeout(() => setExtractSuccess(null), 3000);
   };
@@ -466,7 +546,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                           </View>
                           {isSelected && (
                             <View style={[styles.checkBadge, { backgroundColor: c.primary }]}>
-                              <Ionicons name="checkmark" size={14} color={isLight ? '#FFF' : '#10120E'} />
+                              <Ionicons name="checkmark" size={14} color={c.onPrimary} />
                             </View>
                           )}
                         </View>
@@ -518,7 +598,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                         </View>
                         {fontChoice === 'custom' && (
                           <View style={[styles.checkBadge, { backgroundColor: c.primary }]}>
-                            <Ionicons name="checkmark" size={14} color={isLight ? '#FFF' : '#10120E'} />
+                            <Ionicons name="checkmark" size={14} color={c.onPrimary} />
                           </View>
                         )}
                       </View>
@@ -539,11 +619,11 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                     accessibilityLabel="Import Custom Font File from Device"
                   >
                     {isFontLoading ? (
-                      <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                      <ActivityIndicator size="small" color={c.onPrimary} />
                     ) : (
-                      <Ionicons name="folder-open-outline" size={16} color={isLight ? '#FFF' : '#10120E'} />
+                      <Ionicons name="folder-open-outline" size={16} color={c.onPrimary} />
                     )}
-                    <Text style={[styles.uploadButtonText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                    <Text style={[styles.uploadButtonText, { color: c.onPrimary }]}>
                       {isFontLoading ? 'Loading Font...' : 'Import Font File from Device (.ttf / .otf)'}
                     </Text>
                   </TouchableOpacity>
@@ -610,7 +690,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                           />
                           {isSelected && (
                             <View style={[styles.checkCircle, { backgroundColor: c.primary }]}>
-                              <Ionicons name="checkmark" size={12} color={isLight ? '#FFF' : '#10120E'} />
+                              <Ionicons name="checkmark" size={12} color={c.onPrimary} />
                             </View>
                           )}
                         </View>
@@ -655,6 +735,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                   )}
 
                   <View style={{ gap: 10 }}>
+                    <Text style={[styles.fontCardSub, { color: c.textMuted }]}>Choose an image to open the crop editor, then move and resize the crop area freely.</Text>
                     <TouchableOpacity
                       activeOpacity={0.8}
                       onPress={handlePickLocalImage}
@@ -662,14 +743,14 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                       accessibilityRole="button"
                       accessibilityLabel="Pick Wallpaper from Device"
                     >
-                      <Ionicons name="cloud-upload-outline" size={16} color={isLight ? '#FFF' : '#10120E'} />
-                      <Text style={[styles.uploadButtonText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                      <Ionicons name="cloud-upload-outline" size={16} color={c.onPrimary} />
+                      <Text style={[styles.uploadButtonText, { color: c.onPrimary }]}>
                         Pick Image / Wallpaper from Device
                       </Text>
                     </TouchableOpacity>
 
                     {/* Direct Image/GIF URL Input */}
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                       <TextInput
                         value={customUrl}
                         onChangeText={setCustomUrl}
@@ -718,7 +799,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                             <Text
                               style={[
                                 styles.dimmerChipText,
-                                { color: isCurrent ? (isLight ? '#FFF' : '#10120E') : c.text },
+                                { color: isCurrent ? (c.onPrimary) : c.text },
                               ]}
                             >
                               {Math.round(val * 100)}%
@@ -766,13 +847,45 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                   Harmonized element colors extracted from the background and active theme:
                 </Text>
 
+                <View style={[styles.customBgCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                  <Text style={[styles.subSectionTitle, { color: c.textMuted }]}>MY THEME PROFILES</Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TextInput
+                      value={profileName}
+                      onChangeText={setProfileName}
+                      placeholder="Name this theme profile"
+                      placeholderTextColor={c.textMuted}
+                      maxLength={40}
+                      style={[styles.urlInput, { flex: 1, backgroundColor: c.inputBg, color: c.text, borderColor: c.inputBorder }]}
+                    />
+                    <TouchableOpacity onPress={saveThemeProfile} style={[styles.applyHexBtn, { backgroundColor: c.primary }]}>
+                      <Text style={[styles.applyHexBtnText, { color: c.onPrimary }]}>{editingProfileId ? 'Update' : 'Save'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {themeProfiles.length === 0 ? (
+                    <Text style={[styles.fontCardSub, { color: c.textMuted }]}>Save a combination of wallpaper, colors, font, and light/dark mode for later.</Text>
+                  ) : themeProfiles.map((profile) => (
+                    <View key={profile.id} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, paddingVertical: 4 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.fontCardTitle, { color: c.text }]}>{profile.name}</Text>
+                        <Text style={[styles.fontCardSub, { color: c.textMuted }]}>{profile.theme === 'light' ? 'Light' : 'Dark'} · {profile.fontChoice}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => void editThemeProfile(profile)} style={[styles.dimmerChip, { backgroundColor: c.inputBg, borderColor: c.border }]}><Text style={[styles.dimmerChipText, { color: c.text }]}>Edit</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => void applyThemeProfile(profile)} style={[styles.dimmerChip, { backgroundColor: c.inputBg, borderColor: c.border }]}><Text style={[styles.dimmerChipText, { color: c.primary }]}>Apply</Text></TouchableOpacity>
+                      <TouchableOpacity onPress={() => void deleteThemeProfile(profile)} style={[styles.dimmerChip, { backgroundColor: c.inputBg, borderColor: c.border }]}><Text style={[styles.dimmerChipText, { color: c.accent }]}>Delete</Text></TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+
                 {/* Swatches Grid (Tap to Select Target & Inspect) */}
                 <View style={styles.swatchesCard}>
                   {[
-                    { label: 'Primary Brand', hex: c.primary, role: 'Buttons, totals, active navigation', targetKey: 'primary' as const },
+                      { label: 'Primary Brand', hex: c.primary, role: 'Buttons, totals, active navigation', targetKey: 'primary' as const },
                     { label: 'Primary Gradient', hex: c.primaryGradientEnd, role: 'Shaded surfaces & card gradients', targetKey: 'primary' as const },
                     { label: 'Dynamic Accent', hex: c.accent, role: 'Outflows, warnings, negative cash flow', targetKey: 'accent' as const },
                     { label: 'Highlight Glow', hex: c.highlight, role: 'Tags, streaks, ambient aura orbs', targetKey: 'highlight' as const },
+                      { label: 'Card Surface', hex: customPalette?.card || c.card, role: 'Cards and grouped panels', targetKey: 'card' as const },
+                      { label: 'App Surface', hex: customPalette?.surface || c.surface, role: 'Screen and page surface', targetKey: 'surface' as const },
                   ].map((swatch, idx) => {
                     const isTarget = colorTarget === swatch.targetKey;
                     return (
@@ -781,7 +894,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                         activeOpacity={0.8}
                         onPress={() => {
                           setColorTarget(swatch.targetKey);
-                          setCustomHexInput(swatch.hex);
+                          setCustomHexInput(toPickerHex(swatch.hex));
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                         }}
                         style={[
@@ -811,18 +924,41 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                   })}
                 </View>
 
+                {!!customPalette?.paletteColors?.length && (
+                  <View style={[styles.customBgCard, { backgroundColor: c.card, borderColor: c.border, marginTop: 10 }]}>
+                    <Text style={[styles.subSectionTitle, { color: c.textMuted }]}>COLORS EXTRACTED FROM WALLPAPER</Text>
+                    <Text style={[styles.fontCardSub, { color: c.textMuted }]}>Choose a target above, then tap any color to apply it.</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                      {customPalette.paletteColors.map((hex) => (
+                        <TouchableOpacity
+                          key={hex}
+                          onPress={() => { setCustomHexInput(hex); void handleApplyCustomHex(hex); }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Apply extracted color ${hex} to ${colorTarget}`}
+                          style={{ minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, borderRadius: 10, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border }}
+                        >
+                          <View style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: hex, borderWidth: 1, borderColor: c.border }} />
+                          <Text style={{ color: c.text, fontSize: 9, fontWeight: '800', fontFamily: 'IBMPlexMono_600SemiBold' }}>{hex.toUpperCase()}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
                 {/* ── CUSTOM COLOR PICKER & HEX INPUT ── */}
                 <Text style={[styles.subSectionTitle, { color: c.textMuted, marginTop: 18 }]}>
                   CUSTOM COLOR PICKER & HEX INPUT
                 </Text>
                 <View style={[styles.customBgCard, { backgroundColor: c.card, borderColor: c.border }]}>
                   {/* Target Selector Chips */}
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                     {(
                       [
                         { id: 'primary', label: 'Primary Brand' },
                         { id: 'accent', label: 'Outflow Accent' },
                         { id: 'highlight', label: 'Highlight Glow' },
+                        { id: 'card', label: 'Card Surface' },
+                        { id: 'surface', label: 'App Surface' },
                       ] as const
                     ).map((t) => {
                       const isSelected = colorTarget === t.id;
@@ -833,12 +969,15 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                             setColorTarget(t.id);
                             if (t.id === 'primary') setCustomHexInput(c.primary);
                             else if (t.id === 'accent') setCustomHexInput(c.accent);
-                            else setCustomHexInput(c.highlight);
+                            else if (t.id === 'highlight') setCustomHexInput(c.highlight);
+                            else setCustomHexInput(toPickerHex((customPalette?.[t.id] || c[t.id]) as string));
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
                           }}
                           style={[
                             styles.dimmerChip,
                             {
+                              flex: 0,
+                              paddingHorizontal: 10,
                               backgroundColor: isSelected ? c.primary : c.inputBg,
                               borderColor: isSelected ? c.primary : c.border,
                             },
@@ -847,7 +986,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                           <Text
                             style={[
                               styles.dimmerChipText,
-                              { color: isSelected ? (isLight ? '#FFF' : '#10120E') : c.textMuted },
+                              { color: isSelected ? (c.onPrimary) : c.textMuted },
                             ]}
                           >
                             {t.label}
@@ -873,7 +1012,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                       maxLength={7}
                       style={[
                         styles.urlInput,
-                        { backgroundColor: c.inputBg, color: c.text, borderColor: c.inputBorder, fontFamily: 'IBMPlexMono_600SemiBold' as any },
+                        { backgroundColor: c.inputBg, color: c.text, borderColor: c.inputBorder, paddingHorizontal: 14, minWidth: 0, fontFamily: 'IBMPlexMono_600SemiBold' as any },
                       ]}
                       autoCapitalize="characters"
                       autoCorrect={false}
@@ -884,8 +1023,8 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                       accessibilityRole="button"
                       accessibilityLabel="Apply Hex Color"
                     >
-                      <Ionicons name="checkmark" size={16} color={isLight ? '#FFF' : '#10120E'} />
-                      <Text style={[styles.applyHexBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>Apply</Text>
+                      <Ionicons name="checkmark" size={16} color={c.onPrimary} />
+                      <Text style={[styles.applyHexBtnText, { color: c.onPrimary }]}>Apply</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -968,7 +1107,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
               accessibilityRole="button"
               accessibilityLabel="Done"
             >
-              <Text style={[styles.doneButtonText, { color: isLight ? '#FFF' : '#10120E' }]}>Done</Text>
+              <Text style={[styles.doneButtonText, { color: c.onPrimary }]}>Done</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1235,6 +1374,7 @@ const styles = StyleSheet.create({
   dimmerChip: {
     flex: 1,
     paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',

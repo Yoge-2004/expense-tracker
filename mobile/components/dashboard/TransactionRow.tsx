@@ -1,15 +1,15 @@
 import React, { useState, useRef, useMemo, memo } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Animated,
   PanResponder,
 } from 'react-native';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Colors, getCategoryColor, getCategoryIconName } from '../../constants/theme';
+import { getCategoryColor, getCategoryIconName } from '../../constants/theme';
 import { TransactionRowProps } from './dashboardTypes';
 
 function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) {
@@ -29,29 +29,6 @@ function areRowPropsEqual(prev: TransactionRowProps, next: TransactionRowProps) 
   );
 }
 
-const rowThemeStyles = {
-  dark: StyleSheet.create({
-    trough: { backgroundColor: 'rgba(18, 20, 16, 0.95)', borderColor: Colors.dark.border },
-    editAction: { backgroundColor: '#C79A3E' },
-    deleteAction: { backgroundColor: '#991B1B' },
-    card: { backgroundColor: Colors.dark.inputBg, borderColor: Colors.dark.border },
-    descText: { color: Colors.dark.text },
-    mutedText: { color: Colors.dark.textMuted },
-    miniBtn: { backgroundColor: Colors.dark.card },
-    amountText: { color: Colors.dark.text },
-  }),
-  light: StyleSheet.create({
-    trough: { backgroundColor: '#EAEFF5', borderColor: Colors.light.border },
-    editAction: { backgroundColor: '#D4AF37' },
-    deleteAction: { backgroundColor: '#BE123C' },
-    card: { backgroundColor: Colors.light.inputBg, borderColor: Colors.light.border },
-    descText: { color: Colors.light.text },
-    mutedText: { color: Colors.light.textMuted },
-    miniBtn: { backgroundColor: Colors.light.card },
-    amountText: { color: Colors.light.text },
-  }),
-};
-
 export const TransactionRow = memo(function TransactionRow({
   tx,
   colors,
@@ -62,7 +39,7 @@ export const TransactionRow = memo(function TransactionRow({
   onDelete,
 }: TransactionRowProps) {
   const isIncome = tx.type === 'income';
-  const catColor = isIncome ? '#10B981' : getCategoryColor(tx.categoryOrSource || 'General').color;
+  const catColor = isIncome ? colors.success : getCategoryColor(tx.categoryOrSource || 'General', undefined, colors.paletteColors).color;
   const [pan] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
   const isSwiping = useRef(false);
 
@@ -146,9 +123,18 @@ export const TransactionRow = memo(function TransactionRow({
   );
   const { bgOpacity, deleteOpacity, deleteScale, editOpacity, editScale } = animatedNodes;
 
-  const isLight = colors.bg === '#F8F9FA';
-  const tStyles = isLight ? rowThemeStyles.light : rowThemeStyles.dark;
-  const editColorHex = isLight ? '#0F172A' : '#10120E';
+  const isLight = colors.text === '#0F172A';
+  const tStyles = {
+    trough: { backgroundColor: colors.surface, borderColor: colors.border },
+    editAction: { backgroundColor: colors.primary },
+    deleteAction: { backgroundColor: isLight ? '#BE123C' : '#991B1B' },
+    card: { backgroundColor: colors.card, borderColor: colors.border },
+    descText: { color: colors.text },
+    mutedText: { color: colors.textMuted },
+    miniBtn: { backgroundColor: colors.card },
+    amountText: { color: colors.text },
+  };
+  const editColorHex = colors.onPrimary;
   const deleteColorHex = '#FFFFFF';
 
   return (
@@ -176,7 +162,7 @@ export const TransactionRow = memo(function TransactionRow({
           <View style={styles.txLeft}>
             <View style={[styles.catIconWrap, { backgroundColor: catColor + '18' }]}>
               {isIncome ? (
-                <Ionicons name="arrow-down-circle" size={18} color="#10B981" />
+                <Ionicons name="arrow-down-circle" size={18} color={colors.success} />
               ) : (
                 <Ionicons name={getCategoryIconName(tx.categoryOrSource || 'General')} size={17} color={catColor} />
               )}
@@ -192,9 +178,9 @@ export const TransactionRow = memo(function TransactionRow({
                 <Text style={[styles.txDot, tStyles.mutedText]}>•</Text>
                 <Text style={[styles.txDate, tStyles.mutedText]}>{tx.date}</Text>
                 {tx.isRecurring && (
-                  <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? '#10B981' : colors.primary) + '18' }]}>
-                    <Ionicons name="repeat" size={10} color={isIncome ? '#10B981' : colors.primary} />
-                    <Text style={[styles.recurringBadgeText, { color: isIncome ? '#10B981' : colors.primary }]}>
+                  <View style={[styles.recurringBadge, { backgroundColor: (isIncome ? colors.success : colors.primary) + '18' }]}>
+                    <Ionicons name="repeat" size={10} color={isIncome ? colors.success : colors.primary} />
+                    <Text style={[styles.recurringBadgeText, { color: isIncome ? colors.success : colors.primary }]}>
                       {isIncome ? 'Recurring Inflow' : 'Sub'}
                     </Text>
                   </View>

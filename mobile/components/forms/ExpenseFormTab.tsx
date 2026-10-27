@@ -1,12 +1,12 @@
 import React, { memo } from 'react';
 import {
   View,
-  Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../ThemedText';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
@@ -123,35 +123,35 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
         {/* Receipt OCR Scanner Banner */}
         <View
           style={{
-            backgroundColor: isLight ? 'rgba(212, 175, 55, 0.08)' : 'rgba(212, 175, 55, 0.12)',
-            borderColor: isLight ? 'rgba(212, 175, 55, 0.3)' : 'rgba(212, 175, 55, 0.25)',
+            backgroundColor: c.primary + (isLight ? '14' : '1F'),
+            borderColor: c.primary + '55',
             borderWidth: 1.5,
             borderRadius: 14,
             padding: 12,
             marginBottom: 16,
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 8 }}>
+          <View style={{ gap: 10, alignItems: 'stretch', width: '100%' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'stretch', minWidth: 0 }}>
               <View
                 style={{
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: isLight ? 'rgba(212, 175, 55, 0.18)' : 'rgba(212, 175, 55, 0.22)',
+                  backgroundColor: c.primary + '2E',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
                 <Ionicons name="scan-outline" size={20} color={c.primary} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>Receipt OCR Scanner</Text>
-                <Text style={{ fontSize: 11, color: c.textMuted }}>Scan bill photo or choose sample receipt to auto-fill</Text>
+              <View style={{ flex: 1, flexGrow: 1, flexBasis: 0, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '700', color: c.text }}>Receipt OCR Scanner</Text>
+                <Text style={{ fontSize: 11, color: c.textMuted, flexShrink: 1 }}>Scan bill photo or choose sample receipt to auto-fill</Text>
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 6 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingLeft: 46, alignSelf: 'stretch' }}>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setShowSampleReceipts(!showSampleReceipts)}
@@ -177,9 +177,9 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                   paddingHorizontal: 11,
                   paddingVertical: 7,
                   borderRadius: 8,
-                  backgroundColor: isLight ? 'rgba(212, 175, 55, 0.15)' : 'rgba(245, 200, 66, 0.15)',
+                  backgroundColor: c.primary + '26',
                   borderWidth: 1,
-                  borderColor: isLight ? 'rgba(212, 175, 55, 0.35)' : 'rgba(245, 200, 66, 0.3)',
+                  borderColor: c.primary + '55',
                 }}
               >
                 <Ionicons name="flash-outline" size={14} color={c.primary} />
@@ -202,11 +202,11 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                 }}
               >
                 {isScanningOcr ? (
-                  <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                  <ActivityIndicator size="small" color={c.onPrimary} />
                 ) : (
                   <>
-                    <Ionicons name="camera-outline" size={14} color={isLight ? '#FFF' : '#10120E'} />
-                    <Text style={{ fontSize: 11.5, fontWeight: '800', color: isLight ? '#FFF' : '#10120E' }}>Scan Bill</Text>
+                    <Ionicons name="camera-outline" size={14} color={c.onPrimary} />
+                    <Text style={{ fontSize: 11.5, fontWeight: '800', color: c.onPrimary }}>Scan Bill</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -229,8 +229,8 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Ionicons name="sparkles" size={12} color="#10B981" />
-                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#10B981' }}>{ocrSuccessData.merchant} · {currSymbol}{ocrSuccessData.amount} ({ocrSuccessData.confidence}% confidence)</Text>
+                  <Ionicons name="sparkles" size={12} color={c.success} />
+                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: c.success }}>{ocrSuccessData.merchant} · {currSymbol}{ocrSuccessData.amount} ({ocrSuccessData.confidence}% confidence)</Text>
                 </View>
                 <TouchableOpacity onPress={() => setOcrSuccessData(null)}>
                   <Ionicons name="close" size={14} color={c.textMuted} />
@@ -317,7 +317,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                       borderColor: c.border,
                     }}
                   >
-                    <Text style={{ fontSize: 10.5, color: '#10B981' }}>
+                    <Text style={{ fontSize: 10.5, color: c.success }}>
                       Discount: -{currSymbol}{ocrSuccessData.breakdown.discount}
                     </Text>
                   </View>
@@ -385,8 +385,8 @@ backgroundColor: c.inputBg,
                       flexDirection: 'row',
                       alignItems: 'center',
                       gap: 4,
-                      backgroundColor: isLight ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.18)',
-                      borderColor: isLight ? 'rgba(212, 175, 55, 0.35)' : 'rgba(212, 175, 55, 0.3)',
+                      backgroundColor: c.primary + '1F',
+                      borderColor: c.primary + '55',
                       borderWidth: 1,
                       paddingHorizontal: 8,
                       paddingVertical: 4,
@@ -406,8 +406,8 @@ backgroundColor: c.inputBg,
           {aiSuggestion && (
             <View
               style={{
-                backgroundColor: isLight ? 'rgba(199, 154, 62, 0.1)' : 'rgba(212, 175, 55, 0.08)',
-                borderColor: isLight ? 'rgba(199, 154, 62, 0.3)' : 'rgba(212, 175, 55, 0.25)',
+                backgroundColor: c.primary + '1A',
+                borderColor: c.primary + '4D',
                 borderWidth: 1,
                 borderRadius: 12,
                 padding: 10,
@@ -452,7 +452,7 @@ backgroundColor: c.inputBg,
                       borderRadius: 8,
                     }}
                   >
-                    <Text style={{ fontSize: 11, fontWeight: '800', color: isLight ? '#FFF' : '#10120E' }}>Apply</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: c.onPrimary }}>Apply</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -474,9 +474,9 @@ backgroundColor: c.inputBg,
                 gap: 8,
               }}
             >
-              <Ionicons name="warning-outline" size={18} color="#F59E0B" />
+              <Ionicons name="warning-outline" size={18} color={c.warning} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#F59E0B' }}>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: c.warning }}>
                   Similar Transaction Detected ({Math.round(duplicateMatch.similarity * 100)}% Match)
                 </Text>
                 <Text style={{ fontSize: 11, color: c.textMuted, marginTop: 2 }}>
@@ -546,12 +546,12 @@ backgroundColor: c.inputBg,
                     },
                   ]}
                 >
-                  <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.primary} style={{ marginRight: 4 }} />
+                  <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (c.onPrimary) : c.primary} style={{ marginRight: 4 }} />
                   <Text
                     style={[
                       styles.catChipText,
                       {
-                        color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
+                        color: isSelected ? (c.onPrimary) : c.text,
                         fontWeight: isSelected ? '800' : '600',
                       },
                     ]}
@@ -618,7 +618,7 @@ backgroundColor: c.inputBg,
                 style={[
                   styles.toggleKnob,
                   {
-                    backgroundColor: isRecurring ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                    backgroundColor: isRecurring ? (c.onPrimary) : c.textMuted,
                     transform: [{ translateX: isRecurring ? 18 : 2 }],
                   },
                 ]}
@@ -651,7 +651,7 @@ backgroundColor: c.inputBg,
                       style={[
                         styles.freqChipText,
                         {
-                          color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                          color: isSelected ? (c.onPrimary) : c.textMuted,
                           fontWeight: isSelected ? '800' : '600',
                         },
                       ]}
@@ -701,13 +701,13 @@ backgroundColor: c.inputBg,
             <ActivityIndicator size="small" color="#10120E" />
           ) : (
             <View style={styles.submitBtnInner}>
-              <Text style={[styles.submitBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+              <Text style={[styles.submitBtnText, { color: c.onPrimary }]}>
                 {isEditMode ? 'Update Expense' : 'Log Transaction'}
               </Text>
               <Ionicons
                 name={isEditMode ? 'checkmark-circle' : 'add-circle'}
                 size={20}
-                color={isLight ? '#FFF' : '#10120E'}
+                color={c.onPrimary}
               />
             </View>
           )}

@@ -1,16 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
   useWindowDimensions,
-  TextInput,
   Modal,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../../components/ThemedText';
+import { ThemedText as Text } from '../../components/ThemedText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -484,8 +484,8 @@ export default function SubscriptionsScreen() {
               style={[styles.addBtn, { backgroundColor: c.primary }]}
               accessibilityLabel="Add Commitment"
             >
-              <Ionicons name="add" size={20} color={isLight ? '#FFF' : '#10120E'} />
-              <Text style={[styles.addBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>New</Text>
+              <Ionicons name="add" size={20} color={c.onPrimary} />
+              <Text style={[styles.addBtnText, { color: c.onPrimary }]}>New</Text>
             </TouchableOpacity>
             <ThemeToggleBtn />
           </View>
@@ -495,11 +495,11 @@ export default function SubscriptionsScreen() {
         <StaggeredView delay={80} direction="up">
           <View style={styles.kpiGrid}>
             {/* Recurring Inflow Stream */}
-            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: '#10B98135' }]}>
+            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: c.success + '35' }]}>
               <View style={styles.kpiHeader}>
                 <Text style={[styles.kpiLabel, { color: c.textMuted }]}>Recurring Inflow</Text>
-                <View style={[styles.kpiBadge, { backgroundColor: '#10B98118' }]}>
-                  <Ionicons name="arrow-down-outline" size={13} color="#10B981" />
+                <View style={[styles.kpiBadge, { backgroundColor: c.success + '18' }]}>
+                  <Ionicons name="arrow-down-outline" size={13} color={c.success} />
                 </View>
               </View>
               <NumberTicker
@@ -507,7 +507,7 @@ export default function SubscriptionsScreen() {
                 isStealth={isStealthMode}
                 prefix={'+' + currSym}
                 decimals={0}
-                style={[styles.kpiValue, { color: '#10B981' }]}
+                style={[styles.kpiValue, { color: c.success }]}
               />
               <Text style={[styles.kpiSub, { color: c.textMuted }]}>Guaranteed / mo</Text>
             </View>
@@ -525,17 +525,17 @@ export default function SubscriptionsScreen() {
                 isStealth={isStealthMode}
                 prefix={'-' + currSym}
                 decimals={0}
-                style={[styles.kpiValue, { color: c.accent || '#EF4444' }]}
+                style={[styles.kpiValue, { color: c.danger }]}
               />
               <Text style={[styles.kpiSub, { color: c.textMuted }]}>Fixed Outflow / mo</Text>
             </View>
 
             {/* Chits & Savings Installments */}
-            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: '#F59E0B35' }]}>
+            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: c.warning + '35' }]}>
               <View style={styles.kpiHeader}>
                 <Text style={[styles.kpiLabel, { color: c.textMuted }]}>Chits & RDs</Text>
-                <View style={[styles.kpiBadge, { backgroundColor: '#F59E0B18' }]}>
-                  <Ionicons name="shield-checkmark-outline" size={13} color="#F59E0B" />
+                <View style={[styles.kpiBadge, { backgroundColor: c.warning + '18' }]}>
+                  <Ionicons name="shield-checkmark-outline" size={13} color={c.warning} />
                 </View>
               </View>
               <NumberTicker
@@ -543,17 +543,17 @@ export default function SubscriptionsScreen() {
                 isStealth={isStealthMode}
                 prefix={currSym}
                 decimals={0}
-                style={[styles.kpiValue, { color: '#F59E0B' }]}
+                style={[styles.kpiValue, { color: c.warning }]}
               />
               <Text style={[styles.kpiSub, { color: c.textMuted }]}>Committed Savings / mo</Text>
             </View>
 
             {/* Net Recurring Autonomy */}
-            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: (netRecurringFlow >= 0 ? '#10B981' : '#EF4444') + '35' }]}>
+            <View style={[styles.kpiCard, { backgroundColor: c.card, borderColor: (netRecurringFlow >= 0 ? c.success : c.danger) + '35' }]}>
               <View style={styles.kpiHeader}>
                 <Text style={[styles.kpiLabel, { color: c.textMuted }]}>Net Free Flow</Text>
-                <View style={[styles.kpiBadge, { backgroundColor: (netRecurringFlow >= 0 ? '#10B981' : '#EF4444') + '18' }]}>
-                  <Ionicons name="wallet-outline" size={13} color={netRecurringFlow >= 0 ? '#10B981' : '#EF4444'} />
+                <View style={[styles.kpiBadge, { backgroundColor: (netRecurringFlow >= 0 ? c.success : c.danger) + '18' }]}>
+                  <Ionicons name="wallet-outline" size={13} color={netRecurringFlow >= 0 ? c.success : c.danger} />
                 </View>
               </View>
               <NumberTicker
@@ -561,7 +561,7 @@ export default function SubscriptionsScreen() {
                 isStealth={isStealthMode}
                 prefix={(netRecurringFlow >= 0 ? '+' : '-') + currSym}
                 decimals={0}
-                style={[styles.kpiValue, { color: netRecurringFlow >= 0 ? '#10B981' : '#EF4444' }]}
+                style={[styles.kpiValue, { color: netRecurringFlow >= 0 ? c.success : c.danger }]}
               />
               <Text style={[styles.kpiSub, { color: c.textMuted }]}>Inflows - Outflows - Chits</Text>
             </View>
@@ -580,7 +580,7 @@ export default function SubscriptionsScreen() {
             <Text
               style={[
                 styles.filterTabText,
-                { color: activeTab === 'all' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+                { color: activeTab === 'all' ? (c.onPrimary) : c.textMuted },
               ]}
             >
               All ({totalCommitmentCount})
@@ -597,7 +597,7 @@ export default function SubscriptionsScreen() {
             <Text
               style={[
                 styles.filterTabText,
-                { color: activeTab === 'expenses' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+                { color: activeTab === 'expenses' ? (c.onPrimary) : c.textMuted },
               ]}
             >
               Subscriptions ({subscriptions.length})
@@ -614,7 +614,7 @@ export default function SubscriptionsScreen() {
             <Text
               style={[
                 styles.filterTabText,
-                { color: activeTab === 'incomes' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+                { color: activeTab === 'incomes' ? (c.onPrimary) : c.textMuted },
               ]}
             >
               Inflows ({recurringIncomes.length})
@@ -631,7 +631,7 @@ export default function SubscriptionsScreen() {
             <Text
               style={[
                 styles.filterTabText,
-                { color: activeTab === 'savings' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+                { color: activeTab === 'savings' ? (c.onPrimary) : c.textMuted },
               ]}
             >
               Chits & RDs ({recurringSavings.length})
@@ -654,8 +654,8 @@ export default function SubscriptionsScreen() {
               onPress={() => router.push({ pathname: '/(tabs)/add-expense', params: { editId: '', editType: '' } })}
               style={[styles.emptyActionBtn, { backgroundColor: c.primary }]}
             >
-              <Ionicons name="add" size={18} color={isLight ? '#FFF' : '#10120E'} />
-              <Text style={[styles.emptyActionBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+              <Ionicons name="add" size={18} color={c.onPrimary} />
+              <Text style={[styles.emptyActionBtnText, { color: c.onPrimary }]}>
                 Add New Commitment
               </Text>
             </TouchableOpacity>
@@ -669,10 +669,10 @@ export default function SubscriptionsScreen() {
           <View style={styles.sectionWrap}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionBadgeWrap}>
-                <Ionicons name="arrow-down-circle" size={16} color="#10B981" />
+                <Ionicons name="arrow-down-circle" size={16} color={c.success} />
                 <Text style={[styles.sectionTitle, { color: c.text }]}>Recurring Inflow Streams</Text>
               </View>
-              <Text style={[styles.sectionSubtitle, { color: '#10B981' }]}>
+              <Text style={[styles.sectionSubtitle, { color: c.success }]}>
                 {isStealthMode ? `+${currSym}••••••/mo` : `+${currSym}${monthlyIncomeTotal.toLocaleString()}/mo`}
               </Text>
             </View>
@@ -685,27 +685,27 @@ export default function SubscriptionsScreen() {
                   key={`inc-${inc.id}`}
                   onEdit={() => handleEditIncome(inc)}
                   onDelete={() => handleDeleteIncome(inc)}
-                  editColor="#10B981"
+                  editColor={c.success}
                 >
                   <View
                     style={[
                       styles.subCard,
                       {
                         backgroundColor: c.card,
-                        borderColor: isToday ? '#10B981' : c.border,
+                        borderColor: isToday ? c.success : c.border,
                         marginBottom: 0,
                       },
                     ]}
                   >
                   <View style={styles.subTopRow}>
                     <View style={styles.subLeft}>
-                      <View style={[styles.catIconWrap, { backgroundColor: '#10B98118' }]}>
-                        <Ionicons name="cash-outline" size={18} color="#10B981" />
+                      <View style={[styles.catIconWrap, { backgroundColor: c.success + '18' }]}>
+                        <Ionicons name="cash-outline" size={18} color={c.success} />
                       </View>
                       <View style={styles.subMeta}>
                         <Text style={[styles.subTitle, { color: c.text }]}>{inc.source}</Text>
                         <View style={styles.subSubRow}>
-                          <Text style={[styles.subCatText, { color: '#10B981' }]}>Income Stream</Text>
+                          <Text style={[styles.subCatText, { color: c.success }]}>Income Stream</Text>
                           <Text style={[styles.dotText, { color: c.textMuted }]}>•</Text>
                           <Text style={[styles.subFreqText, { color: c.textMuted }]}>
                             {inc.frequency || 'MONTHLY'}
@@ -716,7 +716,7 @@ export default function SubscriptionsScreen() {
                     </View>
 
                     <View style={styles.subRight}>
-                      <Text style={[styles.subAmtText, { color: '#10B981', fontWeight: '800' }]}>
+                      <Text style={[styles.subAmtText, { color: c.success, fontWeight: '800' }]}>
                         {isStealthMode
                           ? `+${currSym}••••••`
                           : `+${currSym}${Number(inc.amount || 0).toLocaleString('en-IN', {
@@ -728,9 +728,9 @@ export default function SubscriptionsScreen() {
                   </View>
 
                   <View style={[styles.subBottomRow, { borderTopColor: c.border }]}>
-                    <View style={[styles.dueBadge, { backgroundColor: '#10B98115' }]}>
-                      <Ionicons name="calendar-outline" size={12} color="#10B981" />
-                      <Text style={[styles.dueBadgeText, { color: '#10B981' }]}>
+                    <View style={[styles.dueBadge, { backgroundColor: c.success + '15' }]}>
+                      <Ionicons name="calendar-outline" size={12} color={c.success} />
+                      <Text style={[styles.dueBadgeText, { color: c.success }]}>
                         {days === 999
                           ? 'Automated Schedule'
                           : isToday
@@ -747,7 +747,7 @@ export default function SubscriptionsScreen() {
                         style={[styles.iconActionBtn, { backgroundColor: c.inputBg }]}
                         accessibilityLabel="Edit recurring income"
                       >
-                        <Ionicons name="pencil" size={14} color="#10B981" />
+                        <Ionicons name="pencil" size={14} color={c.success} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         activeOpacity={0.7}
@@ -773,10 +773,10 @@ export default function SubscriptionsScreen() {
           <View style={styles.sectionWrap}>
             <View style={styles.sectionHeaderRow}>
               <View style={styles.sectionBadgeWrap}>
-                <Ionicons name="shield-checkmark" size={16} color="#F59E0B" />
+                <Ionicons name="shield-checkmark" size={16} color={c.warning} />
                 <Text style={[styles.sectionTitle, { color: c.text }]}>Chits & Recurring Deposits</Text>
               </View>
-              <Text style={[styles.sectionSubtitle, { color: '#F59E0B' }]}>
+              <Text style={[styles.sectionSubtitle, { color: c.warning }]}>
                 {isStealthMode ? `${currSym}••••••/mo` : `${currSym}${monthlySavingsTotal.toLocaleString()}/mo`}
               </Text>
             </View>
@@ -794,27 +794,27 @@ export default function SubscriptionsScreen() {
                   key={`sav-${goal.id}`}
                   onEdit={() => handleEditSavingsGoal(goal)}
                   onDelete={() => handleDeleteSavingsGoal(goal)}
-                  editColor="#F59E0B"
+                  editColor={c.warning}
                 >
                   <View
                     style={[
                       styles.subCard,
                       {
                         backgroundColor: c.card,
-                        borderColor: isUrgent ? '#F59E0B' : isOverdue ? c.warning : c.border,
+                        borderColor: isUrgent ? c.warning : isOverdue ? c.warning : c.border,
                         marginBottom: 0,
                       },
                     ]}
                   >
                   <View style={styles.subTopRow}>
                     <View style={styles.subLeft}>
-                      <View style={[styles.catIconWrap, { backgroundColor: '#F59E0B18' }]}>
-                        <Ionicons name="file-tray-full-outline" size={18} color="#F59E0B" />
+                      <View style={[styles.catIconWrap, { backgroundColor: c.warning + '18' }]}>
+                        <Ionicons name="file-tray-full-outline" size={18} color={c.warning} />
                       </View>
                       <View style={styles.subMeta}>
                         <Text style={[styles.subTitle, { color: c.text }]}>{goal.name}</Text>
                         <View style={styles.subSubRow}>
-                          <Text style={[styles.subCatText, { color: '#F59E0B' }]}>Chit / RD Plan</Text>
+                          <Text style={[styles.subCatText, { color: c.warning }]}>Chit / RD Plan</Text>
                           <Text style={[styles.dotText, { color: c.textMuted }]}>•</Text>
                           <Text style={[styles.subFreqText, { color: c.textMuted }]}>
                             {goal.frequency === 'CUSTOM' && goal.intervalDays ? `Every ${goal.intervalDays}d` : (goal.frequency || 'MONTHLY')}
@@ -824,7 +824,7 @@ export default function SubscriptionsScreen() {
                     </View>
 
                     <View style={styles.subRight}>
-                      <Text style={[styles.subAmtText, { color: '#F59E0B', fontWeight: '800' }]}>
+                      <Text style={[styles.subAmtText, { color: c.warning, fontWeight: '800' }]}>
                         {isStealthMode
                           ? `${currSym}••••••`
                           : `${currSym}${Number(goal.recurringAmount || 0).toLocaleString('en-IN', {
@@ -842,10 +842,10 @@ export default function SubscriptionsScreen() {
                       <Text style={[styles.progressValText, { color: c.textMuted }]}>
                         {isStealthMode ? `Accumulated: ${currSym}••••••` : `Accumulated: ${currSym}${current.toLocaleString()} of ${currSym}${target.toLocaleString()}`}
                       </Text>
-                      <Text style={[styles.progressPctText, { color: '#F59E0B' }]}>{pct}%</Text>
+                      <Text style={[styles.progressPctText, { color: c.warning }]}>{pct}%</Text>
                     </View>
                     <View style={[styles.progressBarTrack, { backgroundColor: c.inputBg }]}>
-                      <View style={[styles.progressBarFill, { width: `${pct}%`, backgroundColor: '#F59E0B' }]} />
+                      <View style={[styles.progressBarFill, { width: `${pct}%`, backgroundColor: c.warning }]} />
                     </View>
                   </View>
 
@@ -855,7 +855,7 @@ export default function SubscriptionsScreen() {
                         styles.dueBadge,
                         {
                           backgroundColor: isUrgent
-                            ? '#F59E0B20'
+                            ? c.warning + '20'
                             : isOverdue
                             ? c.warning + '20'
                             : c.inputBg,
@@ -865,13 +865,13 @@ export default function SubscriptionsScreen() {
                       <Ionicons
                         name={isUrgent ? 'flame' : 'alarm-outline'}
                         size={12}
-                        color={isUrgent ? '#F59E0B' : isOverdue ? c.warning : c.textMuted}
+                        color={isUrgent ? c.warning : isOverdue ? c.warning : c.textMuted}
                       />
                       <Text
                         style={[
                           styles.dueBadgeText,
                           {
-                            color: isUrgent ? '#F59E0B' : isOverdue ? c.warning : c.textMuted,
+                            color: isUrgent ? c.warning : isOverdue ? c.warning : c.textMuted,
                           },
                         ]}
                       >
@@ -892,7 +892,7 @@ export default function SubscriptionsScreen() {
                         style={[styles.iconActionBtn, { backgroundColor: c.inputBg }]}
                         accessibilityLabel="Edit chit plan"
                       >
-                        <Ionicons name="pencil" size={14} color="#F59E0B" />
+                        <Ionicons name="pencil" size={14} color={c.warning} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         activeOpacity={0.7}
@@ -908,7 +908,7 @@ export default function SubscriptionsScreen() {
                           setDepositModalGoal(goal);
                           setDepositAmount(String(goal.recurringAmount || ''));
                         }}
-                        style={[styles.depositBtn, { backgroundColor: '#F59E0B' }]}
+                        style={[styles.depositBtn, { backgroundColor: c.warning }]}
                       >
                         <Ionicons name="add-circle-outline" size={13} color="#FFF" />
                         <Text style={styles.depositBtnText}>Deposit</Text>
@@ -941,7 +941,7 @@ export default function SubscriptionsScreen() {
               const days = getDaysUntil(sub.nextDueDate);
               const isUrgent = days <= 3 && days >= 0;
               const isOverdue = days < 0;
-              const catColor = getCategoryColor(sub.categoryName || '').color;
+              const catColor = getCategoryColor(sub.categoryName || '', undefined, c.paletteColors).color;
 
               return (
                 <SwipeableCard
@@ -1093,7 +1093,7 @@ export default function SubscriptionsScreen() {
                 <Text style={[styles.modalCancelText, { color: c.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalSaveBtn, { backgroundColor: '#F59E0B' }]}
+                style={[styles.modalSaveBtn, { backgroundColor: c.warning }]}
                 onPress={handleQuickDeposit}
                 disabled={isDepositing}
               >
@@ -1252,6 +1252,7 @@ const styles = StyleSheet.create({
   },
   filterBar: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     borderWidth: 1,
     borderRadius: 12,
     padding: 4,
@@ -1259,8 +1260,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   filterTab: {
-    flex: 1,
-    paddingVertical: 8,
+    flexGrow: 1,
+    flexBasis: '46%',
+    minWidth: 132,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1268,6 +1272,8 @@ const styles = StyleSheet.create({
   filterTabText: {
     fontSize: 12,
     fontWeight: '700',
+    textAlign: 'center',
+    flexShrink: 1,
   },
   sectionWrap: {
     marginBottom: 20,

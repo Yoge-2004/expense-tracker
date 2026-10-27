@@ -3,11 +3,11 @@ import {
   Animated,
   PanResponder,
   StyleSheet,
-  Text,
   View,
   ViewStyle,
   StyleProp,
 } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../context/AuthContext';
@@ -34,8 +34,8 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   editColor,
   deleteColor,
 }) => {
-  const { theme } = useAuth();
-  const c = Colors[theme];
+  const {theme, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const isLight = theme === 'light';
 
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;

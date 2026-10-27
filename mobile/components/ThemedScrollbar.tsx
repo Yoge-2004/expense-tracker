@@ -21,15 +21,16 @@ import {
   NativeScrollEvent,
   LayoutChangeEvent,
 } from 'react-native';
-import { Colors } from '../constants/theme';
+import { Colors, ThemeColors } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
 
-function useSafeTheme(): 'dark' | 'light' {
+function useSafeThemeColors(): ThemeColors {
   try {
     const auth = useAuth();
-    return auth?.theme || 'dark';
+    const theme = auth?.theme || 'dark';
+    return auth?.themeColors || Colors[theme];
   } catch {
-    return 'dark';
+    return Colors.dark;
   }
 }
 
@@ -139,8 +140,7 @@ export interface UseThemedScrollbarOptions {
  * Reusable hook to effortlessly bind ThemedScrollbar to any ScrollView or FlatList.
  */
 export function useThemedScrollbar(options: UseThemedScrollbarOptions = {}) {
-  const theme = useSafeTheme();
-  const c = Colors[theme];
+  const c = useSafeThemeColors();
   const trackColor = options.trackColor || c.scrollTrack;
   const thumbColor = options.thumbColor || c.scrollThumb;
   const inset = options.inset ?? 8;
@@ -225,8 +225,7 @@ export const ThemedScrollView = React.forwardRef<React.ElementRef<typeof ScrollV
     },
     ref,
   ) {
-    const theme = useSafeTheme();
-    const c = Colors[theme];
+    const c = useSafeThemeColors();
     const resolvedTrack = trackColor || c.scrollTrack;
     const resolvedThumb = thumbColor || c.scrollThumb;
 

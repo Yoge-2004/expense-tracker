@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
 import {
   View,
-  Text,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../ThemedText';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
@@ -74,12 +74,12 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
               styles.inputWrap,
               {
                 backgroundColor: c.inputBg,
-                borderColor: focusedField === 'goalName' ? '#F59E0B' : c.border,
+                borderColor: focusedField === 'goalName' ? c.warning : c.border,
                 borderWidth: focusedField === 'goalName' ? 2 : 1.5,
               },
             ]}
           >
-            <Ionicons name="flag-outline" size={18} color="#F59E0B" style={styles.inputIcon} />
+            <Ionicons name="flag-outline" size={18} color={c.warning} style={styles.inputIcon} />
             <TextInput
               style={[styles.textInput, { color: c.text }]}
               placeholder="e.g. Emergency Fund, Tesla Model Y"
@@ -95,7 +95,7 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
         <View style={styles.fieldGroup}>
           <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Target Cap ({currSymbol})</Text>
           <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-            <Text style={[styles.currencyPrefix, { color: '#F59E0B' }]}>{currSymbol}</Text>
+            <Text style={[styles.currencyPrefix, { color: c.warning }]}>{currSymbol}</Text>
             <TextInput
               style={[styles.amountInput, { color: c.text }]}
               placeholder="10000.00"
@@ -137,7 +137,7 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
             ]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="calendar" size={18} color="#F59E0B" style={styles.inputIcon} />
+              <Ionicons name="calendar" size={18} color={c.warning} style={styles.inputIcon} />
               <Text style={[{ fontSize: 14, fontWeight: '700', color: c.text }]}>
                 {goalTargetDate || 'Select Date'}
               </Text>
@@ -149,7 +149,7 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
         {/* Recurring Chit / RD Switch */}
         <View style={[styles.recurringToggleRow, { backgroundColor: c.inputBg, borderColor: c.border }]}>
           <View style={styles.recurringToggleLeft}>
-            <Ionicons name="shield-checkmark" size={20} color={goalIsRecurring ? '#F59E0B' : c.textMuted} />
+            <Ionicons name="shield-checkmark" size={20} color={goalIsRecurring ? c.warning : c.textMuted} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.recurringTitle, { color: c.text }]}>Recurring Chit / Deposit</Text>
               <Text style={[styles.recurringSub, { color: c.textMuted }]}>
@@ -171,8 +171,8 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
             style={[
               styles.togglePill,
               {
-                backgroundColor: goalIsRecurring ? '#F59E0B' : c.card,
-                borderColor: goalIsRecurring ? '#F59E0B' : c.border,
+                backgroundColor: goalIsRecurring ? c.warning : c.card,
+                borderColor: goalIsRecurring ? c.warning : c.border,
               },
             ]}
           >
@@ -190,11 +190,11 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
 
         {/* Recurring Installment Configuration Panel */}
         {goalIsRecurring && (
-          <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: '#F59E0B40' }]}>
+          <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: c.warning + '40' }]}>
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: '#F59E0B' }]}>Installment Amount ({currSymbol})</Text>
+              <Text style={[styles.fieldLabel, { color: c.warning }]}>Installment Amount ({currSymbol})</Text>
               <View style={[styles.amountInputWrap, { backgroundColor: c.card, borderColor: c.border }]}>
-                <Text style={[styles.currencyPrefix, { color: '#F59E0B' }]}>{currSymbol}</Text>
+                <Text style={[styles.currencyPrefix, { color: c.warning }]}>{currSymbol}</Text>
                 <TextInput
                   style={[styles.amountInput, { color: c.text }]}
                   placeholder="1000.00"
@@ -222,8 +222,8 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
                       style={[
                         styles.freqChip,
                         {
-                          backgroundColor: isSel ? '#F59E0B' : c.card,
-                          borderColor: isSel ? '#F59E0B' : c.border,
+                          backgroundColor: isSel ? c.warning : c.card,
+                          borderColor: isSel ? c.warning : c.border,
                         },
                       ]}
                     >
@@ -273,7 +273,7 @@ export const SavingsGoalFormTab = memo(function SavingsGoalFormTab(props: Saving
           activeOpacity={0.85}
           onPress={handleSaveSavingsGoal}
           disabled={isSubmitting}
-          style={[styles.submitBtn, { backgroundColor: '#F59E0B', opacity: isSubmitting ? 0.7 : 1 }]}
+          style={[styles.submitBtn, { backgroundColor: c.warning, opacity: isSubmitting ? 0.7 : 1 }]}
         >
           {isSubmitting ? (
             <ActivityIndicator size="small" color="#FFF" />

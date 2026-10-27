@@ -7,15 +7,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Modal,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from './ThemedText';
+import { ThemedText as Text } from './ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors, getCategoryIconName } from '../constants/theme';
@@ -64,9 +64,9 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
   onClose,
   onUpdated,
 }) => {
-  const { userId, theme, currency } = useAuth();
+  const {userId, theme, currency, themeColors} = useAuth();
   const { showAlert } = useAlert();
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
   const { width } = useWindowDimensions();
@@ -214,12 +214,12 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
                         },
                       ]}
                     >
-                      <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.primary} style={{ marginRight: 4 }} />
+                      <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (c.onPrimary) : c.primary} style={{ marginRight: 4 }} />
                       <Text
                         style={[
                           styles.catChipText,
                           {
-                            color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
+                            color: isSelected ? (c.onPrimary) : c.text,
                             fontWeight: isSelected ? '800' : '600',
                           },
                         ]}
@@ -254,7 +254,7 @@ export const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
                         style={[
                           styles.freqBtnText,
                           {
-                            color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted,
+                            color: isSelected ? (c.onPrimary) : c.textMuted,
                             fontWeight: isSelected ? '800' : '600',
                           },
                         ]}

@@ -6,7 +6,8 @@
  */
 
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { Colors, getCategoryIconName } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,8 +56,8 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
   endDate = '',
   onEndDateChange,
 }) => {
-  const { theme } = useAuth();
-  const c = Colors[theme];
+  const {theme, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const isLight = theme === 'light';
   const safeCategories = categories || [];
 
@@ -111,7 +112,7 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
                 style={[
                   styles.presetText,
                   {
-                    color: isActive ? (isLight ? '#FFF' : '#10120E') : c.textMuted,
+                    color: isActive ? (c.onPrimary) : c.textMuted,
                     fontWeight: isActive ? '800' : '600',
                   },
                 ]}
@@ -215,13 +216,13 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
           <Ionicons
             name="layers-outline"
             size={14}
-            color={selectedCategory === 'all' ? (isLight ? '#FFF' : '#10120E') : c.primary}
+            color={selectedCategory === 'all' ? (c.onPrimary) : c.primary}
           />
           <Text
             style={[
               styles.catPillText,
               {
-                color: selectedCategory === 'all' ? (isLight ? '#FFF' : '#10120E') : c.text,
+                color: selectedCategory === 'all' ? (c.onPrimary) : c.text,
                 fontWeight: selectedCategory === 'all' ? '800' : '600',
               },
             ]}
@@ -232,7 +233,7 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
 
         {safeCategories.map((cat) => {
           const isActive = selectedCategory.toLowerCase() === (cat.name || '').toLowerCase();
-          const iconColor = isActive ? (isLight ? '#FFF' : '#10120E') : c.primary;
+          const iconColor = isActive ? (c.onPrimary) : c.primary;
           return (
             <TouchableOpacity
               key={cat.id}
@@ -254,7 +255,7 @@ export const CategoryPillsBar: React.FC<CategoryPillsBarProps> = ({
                 style={[
                   styles.catPillText,
                   {
-                    color: isActive ? (isLight ? '#FFF' : '#10120E') : c.text,
+                    color: isActive ? (c.onPrimary) : c.text,
                     fontWeight: isActive ? '800' : '600',
                   },
                 ]}

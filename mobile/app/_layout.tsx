@@ -27,7 +27,8 @@ import {
   IBMPlexMono_500Medium,
   IBMPlexMono_600SemiBold,
 } from '@expo-google-fonts/ibm-plex-mono';
-import { Colors } from '../constants/theme';
+import { Colors, FontTokens, ThemeColors } from '../constants/theme';
+import { ExtractedPalette } from '../services/paletteExtractor';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FloatingCalculator } from '../components/FloatingCalculator';
 import {
@@ -42,15 +43,28 @@ import {
   formatNotificationAmount,
 } from '../services/notifications';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { readSavedTheme } from '../services/api';
+import { readSavedTheme, safeStorageGet } from '../services/api';
+import { createThemeColors, usePreferences } from '../context/PreferencesContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
 interface SplashLoaderProps {
   theme?: 'dark' | 'light';
+  colors?: ThemeColors;
+  fonts?: FontTokens;
 }
 
-function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
+function tintColor(color: string, opacity: number): string {
+  const hex = color.match(/^#([0-9a-f]{6})$/i)?.[1];
+  if (hex) {
+    const [r, g, b] = [0, 2, 4].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  const rgb = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  return rgb ? `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${opacity})` : color;
+}
+
+function SplashLoader({ theme: themeProp, colors, fonts }: SplashLoaderProps = {}) {
   const systemScheme = useColorScheme();
   const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(() => {
     if (themeProp === 'light' || themeProp === 'dark') return themeProp;
@@ -72,7 +86,7 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
   }, [themeProp]);
 
   const isLight = resolvedTheme === 'light';
-  const c = Colors[resolvedTheme];
+  const c = colors || Colors[resolvedTheme];
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -172,7 +186,7 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
           style={[
             splashStyles.auraGlow,
             {
-              backgroundColor: isLight ? 'rgba(212, 175, 55, 0.16)' : 'rgba(245, 200, 66, 0.18)',
+              backgroundColor: tintColor(c.primary, 0.18),
               transform: [{ scale: auraScale }],
               opacity: auraOpacity,
             },
@@ -183,9 +197,9 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
           style={[
             splashStyles.orbitalRing,
             {
-              borderColor: isLight ? 'rgba(212, 175, 55, 0.2)' : 'rgba(245, 200, 66, 0.15)',
-              borderTopColor: isLight ? '#D4AF37' : '#F5C842',
-              borderRightColor: isLight ? '#B8860B' : '#E6A817',
+              borderColor: tintColor(c.primary, 0.2),
+              borderTopColor: c.primary,
+              borderRightColor: c.primaryGradientEnd,
               transform: [{ rotate: spin }],
             },
           ]}
@@ -195,28 +209,28 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
           style={[
             splashStyles.logoBox,
             {
-              backgroundColor: isLight ? '#D4AF37' : '#F5C842',
-              shadowColor: isLight ? '#D4AF37' : '#F5C842',
+              backgroundColor: c.primary,
+              shadowColor: c.primary,
               shadowOpacity: isLight ? 0.35 : 0.45,
               transform: [{ scale: logoScale }],
             },
           ]}
         >
-          <Ionicons name="wallet" size={32} color={isLight ? '#FFFFFF' : '#10120E'} />
+          <Ionicons name="wallet" size={32} color={c.onPrimary} />
         </Animated.View>
       </View>
 
-      <Text style={[splashStyles.brandName, { color: isLight ? '#0F172A' : '#F9F6EF' }]}>ExpenseTracker</Text>
+      <Text style={[splashStyles.brandName, { color: c.text, fontFamily: fonts?.display }]}>ExpenseTracker</Text>
       <View
         style={[
           splashStyles.badge,
           {
-            backgroundColor: isLight ? 'rgba(212, 175, 55, 0.12)' : 'rgba(245, 200, 66, 0.14)',
-            borderColor: isLight ? 'rgba(212, 175, 55, 0.35)' : 'rgba(245, 200, 66, 0.3)',
+            backgroundColor: tintColor(c.primary, 0.12),
+            borderColor: tintColor(c.primary, 0.35),
           },
         ]}
       >
-        <Text style={[splashStyles.badgeText, { color: isLight ? '#996515' : '#F5C842' }]}>
+        <Text style={[splashStyles.badgeText, { color: c.primary, fontFamily: fonts?.bodyBold }]}>
           EXECUTIVE COMMAND CENTER
         </Text>
       </View>
@@ -226,7 +240,7 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
         style={[
           splashStyles.loadingTrack,
           {
-            backgroundColor: isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: tintColor(c.text, 0.1),
           },
         ]}
       >
@@ -234,13 +248,13 @@ function SplashLoader({ theme: themeProp }: SplashLoaderProps = {}) {
           style={[
             splashStyles.shimmerBeam,
             {
-              backgroundColor: isLight ? '#D4AF37' : '#F5C842',
+              backgroundColor: c.primary,
               transform: [{ translateX: shimmerAnim }],
             },
           ]}
         />
       </View>
-      <Text style={[splashStyles.statusText, { color: isLight ? '#475569' : '#8A8E85' }]}>
+      <Text style={[splashStyles.statusText, { color: c.textMuted, fontFamily: fonts?.bodyMedium }]}>
         AUTHENTICATING SECURE LEDGER
       </Text>
     </Animated.View>
@@ -337,7 +351,8 @@ const splashStyles = StyleSheet.create({
 });
 
 function RootLayoutNav() {
-  const { token, userId, isLoading, theme } = useAuth();
+  const { token, userId, isLoading, theme, themeColors, activeFonts } = useAuth();
+  const { appearanceLoaded } = usePreferences();
   const { showAlert } = useAlert();
   const { hasUpdate } = useUpdate();
   const insets = useSafeAreaInsets();
@@ -468,7 +483,7 @@ function RootLayoutNav() {
     };
   }, [isLoading, token, userId, showAlert, router]);
 
-  if (isLoading) return <SplashLoader theme={theme} />;
+  if (isLoading || !appearanceLoaded) return <SplashLoader theme={theme} colors={themeColors} fonts={activeFonts} />;
 
   return (
     <>
@@ -481,7 +496,7 @@ function RootLayoutNav() {
             <Stack
               screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: Colors[theme].bg },
+                contentStyle: { backgroundColor: themeColors.bg },
                 animation: 'none',
               }}
             >
@@ -502,19 +517,45 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const systemScheme = useColorScheme();
-  const [initialTheme, setInitialTheme] = useState<'dark' | 'light'>(
-    systemScheme === 'light' ? 'light' : 'dark'
-  );
+  const [themeLoaded, setThemeLoaded] = useState(false);
+  const [initialTheme, setInitialTheme] = useState<'dark' | 'light'>(systemScheme === 'light' ? 'light' : 'dark');
+  const [initialColors, setInitialColors] = useState<ThemeColors | null>(null);
 
   useEffect(() => {
-    readSavedTheme()
-      .then((saved) => {
-        if (saved === 'light' || saved === 'dark') {
-          setInitialTheme(saved);
-        }
+    let mounted = true;
+    Promise.all([
+      readSavedTheme().catch(() => null),
+      safeStorageGet('app_custom_palette').catch(() => null),
+      safeStorageGet('app_bg_asset').catch(() => null),
+    ])
+      .then(([saved, savedPalette, savedBackground]) => {
+        if (!mounted) return;
+        const resolvedTheme = saved === 'light' || saved === 'dark'
+          ? saved
+          : systemScheme === 'light' ? 'light' : 'dark';
+        let palette: ExtractedPalette | null = null;
+        let presetId = 'default';
+        try {
+          const parsed = savedPalette ? JSON.parse(savedPalette) : null;
+          if (parsed && typeof parsed === 'object') palette = parsed as ExtractedPalette;
+        } catch {}
+        try {
+          const parsed = savedBackground ? JSON.parse(savedBackground) : null;
+          if (typeof parsed?.presetId === 'string') presetId = parsed.presetId;
+        } catch {}
+        setInitialTheme(resolvedTheme);
+        setInitialColors(createThemeColors(resolvedTheme, palette, presetId));
+        setThemeLoaded(true);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {
+        if (!mounted) return;
+        const fallbackTheme = systemScheme === 'light' ? 'light' : 'dark';
+        setInitialTheme(fallbackTheme);
+        setInitialColors(createThemeColors(fallbackTheme, null));
+        setThemeLoaded(true);
+      });
+    return () => { mounted = false; };
+  }, [systemScheme]);
 
   const [fontsLoaded] = useFonts({
     Fraunces_500Medium,
@@ -528,7 +569,7 @@ export default function RootLayout() {
     IBMPlexMono_600SemiBold,
   });
 
-  if (!fontsLoaded) return <SplashLoader theme={initialTheme} />;
+  if (!fontsLoaded || !themeLoaded) return <SplashLoader theme={initialTheme} colors={initialColors || undefined} />;
 
   return (
     <ErrorBoundary>

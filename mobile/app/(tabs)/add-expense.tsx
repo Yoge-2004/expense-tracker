@@ -6,12 +6,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Text,
   View,
   TouchableOpacity,
   RefreshControl,
   useWindowDimensions,
 } from 'react-native';
+import { ThemedText as Text } from '../../components/ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
@@ -303,10 +303,10 @@ export default function AddExpenseScreen() {
                     paddingVertical: 2,
                     borderRadius: 6,
                     borderWidth: 1,
-                    borderColor: '#F59E0B',
+                    borderColor: c.warning,
                   }}
                 >
-                  <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '700' }}>EDITING</Text>
+                  <Text style={{ color: c.warning, fontSize: 11, fontWeight: '700' }}>EDITING</Text>
                 </View>
               )}
             </View>
@@ -358,12 +358,12 @@ export default function AddExpenseScreen() {
               <Ionicons
                 name="receipt-outline"
                 size={15}
-                color={activeTab === 'expense' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted}
+                color={activeTab === 'expense' ? (c.onPrimary) : c.textMuted}
               />
               <Text
                 style={[
                   styles.tabBtnText,
-                  { color: activeTab === 'expense' ? (theme === 'light' ? '#FFF' : '#10120E') : c.textMuted },
+                  { color: activeTab === 'expense' ? (c.onPrimary) : c.textMuted },
                 ]}
               >
                 Expense
@@ -377,7 +377,7 @@ export default function AddExpenseScreen() {
               }}
               style={[
                 styles.tabBtn,
-                activeTab === 'income' && { backgroundColor: '#10B981' },
+                activeTab === 'income' && { backgroundColor: c.success },
               ]}
             >
               <Ionicons
@@ -402,7 +402,7 @@ export default function AddExpenseScreen() {
               }}
               style={[
                 styles.tabBtn,
-                activeTab === 'savings' && { backgroundColor: '#F59E0B' },
+                activeTab === 'savings' && { backgroundColor: c.warning },
               ]}
             >
               <Ionicons

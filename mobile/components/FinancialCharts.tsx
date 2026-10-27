@@ -9,7 +9,8 @@
  */
 
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View, Dimensions, useWindowDimensions, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Dimensions, useWindowDimensions, TouchableOpacity } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, {
   Path,
@@ -60,8 +61,8 @@ interface DonutChartProps {
  * Renders a segmented circular SVG donut chart showing category spend distribution.
  */
 export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expenses }) => {
-  const { theme, currency } = useAuth();
-  const c = Colors[theme];
+  const {theme, currency, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
   const { categories, total } = useMemo(() => {
@@ -82,12 +83,12 @@ export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expen
         name,
         amount,
         pct: tot > 0 ? (amount / tot) * 100 : 0,
-        color: getCategoryColor(name).color,
+        color: getCategoryColor(name, undefined, c.paletteColors).color,
       }))
       .sort((a, b) => b.amount - a.amount);
 
     return { categories: cats, total: tot };
-  }, [expenses]);
+  }, [expenses, c.paletteColors]);
 
   if (categories.length === 0 || total === 0) {
     return (
@@ -105,7 +106,7 @@ export const CategoryDonutChart: React.FC<DonutChartProps> = React.memo(({ expen
   let currentAngle = 0;
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Spend by Category</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Distribution across all transactions</Text>
 
@@ -185,8 +186,8 @@ interface SpendTrendChartProps {
  * Renders a smooth cubic SVG spline chart showing daily spend trends.
  */
 export const SpendTrendChart: React.FC<SpendTrendChartProps> = React.memo(({ expenses }) => {
-  const { theme, currency } = useAuth();
-  const c = Colors[theme];
+  const {theme, currency, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
   const { width: windowWidth } = useWindowDimensions();
 
@@ -244,7 +245,7 @@ export const SpendTrendChart: React.FC<SpendTrendChartProps> = React.memo(({ exp
   }, [expenses, chartInnerWidth]);
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
       <View style={styles.chartHeaderRow}>
         <View>
           <Text style={[styles.chartTitle, { color: c.text }]}>Spending Velocity</Text>
@@ -327,8 +328,8 @@ interface RecurringSplitProps {
  * Renders a horizontal split bar comparing recurring subscription commitments vs discretionary one-off spend.
  */
 export const RecurringSplitChart: React.FC<RecurringSplitProps> = React.memo(({ expenses }) => {
-  const { theme, currency } = useAuth();
-  const c = Colors[theme];
+  const {theme, currency, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
   const { recurring, onetime, recPct, onePct } = useMemo(() => {
@@ -356,7 +357,7 @@ export const RecurringSplitChart: React.FC<RecurringSplitProps> = React.memo(({ 
   }, [expenses]);
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Spend Composition</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Recurring Subscriptions vs Discretionary</Text>
 
@@ -409,8 +410,8 @@ const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  * Renders weekly spending cadence across Sunday through Saturday.
  */
 export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }) => {
-  const { theme, currency } = useAuth();
-  const c = Colors[theme];
+  const {theme, currency, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
   const { dowTotals, maxDayVal } = useMemo(() => {
@@ -445,7 +446,7 @@ export const DayOfWeekChart: React.FC<DayOfWeekProps> = React.memo(({ expenses }
   const barMaxHeight = 80;
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Weekly Spending Cadence</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Total spend distributed by day of the week</Text>
 
@@ -507,8 +508,8 @@ interface BudgetVsActualProps {
  * Renders category-level limit vs actual spend comparisons with over-budget alerts.
  */
 export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ budgets, onEditBudget, onDeleteBudget }) => {
-  const { theme, currency, isStealthMode } = useAuth();
-  const c = Colors[theme];
+  const {theme, currency, isStealthMode, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const currSym = getCurrencySymbol(currency);
 
   const safeBudgets = budgets || EMPTY_BUDGETS;
@@ -524,7 +525,7 @@ export const BudgetVsActualChart: React.FC<BudgetVsActualProps> = React.memo(({ 
   }
 
   return (
-    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.chartCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
       <Text style={[styles.chartTitle, { color: c.text }]}>Budget vs Actual Spend</Text>
       <Text style={[styles.chartSub, { color: c.textMuted }]}>Active category spending caps and utilization</Text>
 

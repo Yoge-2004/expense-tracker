@@ -14,8 +14,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
-  Text,
-  TextInput,
   View,
   TouchableOpacity,
   ActivityIndicator,
@@ -26,6 +24,8 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../components/ThemedText';
+import { ThemedText as Text } from '../components/ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { apiRequest, ApiError } from '../services/api';
@@ -466,13 +466,13 @@ export default function RegisterScreen() {
                   activeOpacity={0.85}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color={isLight ? '#FFF' : '#10120E'} size="small" />
+                    <ActivityIndicator color={c.onPrimary} size="small" />
                   ) : (
                     <View style={styles.btnInner}>
-                      <Text style={[styles.btnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                      <Text style={[styles.btnText, { color: c.onPrimary }]}>
                         Send Verification Code
                       </Text>
-                      <Ionicons name="arrow-forward" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                      <Ionicons name="arrow-forward" size={18} color={c.onPrimary} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -484,11 +484,11 @@ export default function RegisterScreen() {
                   activeOpacity={0.85}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color={isLight ? '#FFF' : '#10120E'} size="small" />
+                    <ActivityIndicator color={c.onPrimary} size="small" />
                   ) : (
                     <View style={styles.btnInner}>
-                      <Text style={[styles.btnText, { color: isLight ? '#FFF' : '#10120E' }]}>Create Account</Text>
-                      <Ionicons name="checkmark-circle" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                      <Text style={[styles.btnText, { color: c.onPrimary }]}>Create Account</Text>
+                      <Ionicons name="checkmark-circle" size={18} color={c.onPrimary} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -533,11 +533,11 @@ export default function RegisterScreen() {
                 activeOpacity={0.85}
               >
                 {isLoading ? (
-                  <ActivityIndicator color={isLight ? '#FFF' : '#10120E'} size="small" />
+                  <ActivityIndicator color={c.onPrimary} size="small" />
                 ) : (
                   <View style={styles.btnInner}>
-                    <Text style={[styles.btnText, { color: isLight ? '#FFF' : '#10120E' }]}>Verify & Sign Up</Text>
-                    <Ionicons name="checkmark-circle" size={18} color={isLight ? '#FFF' : '#10120E'} />
+                    <Text style={[styles.btnText, { color: c.onPrimary }]}>Verify & Sign Up</Text>
+                    <Ionicons name="checkmark-circle" size={18} color={c.onPrimary} />
                   </View>
                 )}
               </TouchableOpacity>

@@ -7,6 +7,7 @@
  */
 
 import { Platform } from 'react-native';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system/legacy';
 
 export interface ExtractedPalette {
@@ -17,6 +18,7 @@ export interface ExtractedPalette {
   card: string;
   surface: string;
   borderAccent: string;
+  paletteColors?: string[];
 }
 
 export interface PresetBackground {
@@ -225,6 +227,35 @@ export function adjustBrightness(hex: string, factor: number): string {
   return rgbToHex(r * factor, g * factor, b * factor);
 }
 
+function colorVariant(color: RGB, hueOffset: number): RGB {
+  const red = color.r / 255, green = color.g / 255, blue = color.b / 255;
+  const max = Math.max(red, green, blue), min = Math.min(red, green, blue);
+  const delta = max - min;
+  let hue = 0;
+  if (delta > 0) {
+    if (max === red) hue = 60 * (((green - blue) / delta) % 6);
+    else if (max === green) hue = 60 * ((blue - red) / delta + 2);
+    else hue = 60 * ((red - green) / delta + 4);
+  }
+  hue = (hue + hueOffset + 360) % 360;
+  const lightness = Math.min(0.64, Math.max(0.42, (max + min) / 2));
+  const saturation = Math.min(0.82, Math.max(0.58, delta / (1 - Math.abs(2 * lightness - 1))));
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const match = lightness - chroma / 2;
+  const sectors: RGB[] = [
+    { r: chroma, g: x, b: 0 }, { r: x, g: chroma, b: 0 },
+    { r: 0, g: chroma, b: x }, { r: 0, g: x, b: chroma },
+    { r: x, g: 0, b: chroma }, { r: chroma, g: 0, b: x },
+  ];
+  const variant = sectors[Math.floor(hue / 60) % 6];
+  return {
+    r: Math.round((variant.r + match) * 255),
+    g: Math.round((variant.g + match) * 255),
+    b: Math.round((variant.b + match) * 255),
+  };
+}
+
 // Fast Base64 lookup table
 const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const B64_LOOKUP = new Uint8Array(256);
@@ -280,10 +311,6 @@ export function quantizePixels(
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const sat = max - min;
-    const lum = getPerceivedLuminance(r, g, b);
-
-    // Filter out extreme pitch blacks and washed-out pure whites for color accents
-    if (lum < 20 || lum > 240) continue;
 
     const qR = Math.floor(r / 16);
     const qG = Math.floor(g / 16);
@@ -295,8 +322,9 @@ export function quantizePixels(
     existing.g += g;
     existing.b += b;
     existing.count++;
-    // Weight heavily by saturation so bold, vivid accents beat murky grays
-    existing.score += 1 + (sat / 255) * 5;
+    // Let saturation break ties without allowing tiny vivid details to dominate
+    // the overall image color.
+    existing.score += 1 + (sat / 255) * 1.5;
     buckets.set(key, existing);
   }
 
@@ -330,21 +358,47 @@ export function quantizePixels(
       break;
     }
   }
+  const colorDistance = (a: RGB, b: RGB) => Math.sqrt(
+    Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2)
+  );
+  if (colorDistance(primaryRgb, accentRgb) <= 70) accentRgb = colorVariant(primaryRgb, 34);
 
   // Find highlight
   let highlightRgb = accentRgb;
-  for (let i = 2; i < sorted.length; i++) {
+  for (let i = 1; i < sorted.length; i++) {
     const candidate = {
       r: Math.round(sorted[i].r / sorted[i].count),
       g: Math.round(sorted[i].g / sorted[i].count),
       b: Math.round(sorted[i].b / sorted[i].count),
     };
-    const dist1 = Math.sqrt(Math.pow(candidate.r - primaryRgb.r, 2) + Math.pow(candidate.g - primaryRgb.g, 2));
-    const dist2 = Math.sqrt(Math.pow(candidate.r - accentRgb.r, 2) + Math.pow(candidate.g - accentRgb.g, 2));
+    const dist1 = Math.sqrt(Math.pow(candidate.r - primaryRgb.r, 2) + Math.pow(candidate.g - primaryRgb.g, 2) + Math.pow(candidate.b - primaryRgb.b, 2));
+    const dist2 = Math.sqrt(Math.pow(candidate.r - accentRgb.r, 2) + Math.pow(candidate.g - accentRgb.g, 2) + Math.pow(candidate.b - accentRgb.b, 2));
     if (dist1 > 50 && dist2 > 50) {
       highlightRgb = candidate;
       break;
     }
+  }
+  if (colorDistance(primaryRgb, highlightRgb) <= 50 || colorDistance(accentRgb, highlightRgb) <= 50) {
+    highlightRgb = colorVariant(primaryRgb, 190);
+  }
+
+  const paletteColors: string[] = [];
+  for (const bucket of sorted) {
+    const candidate = {
+      r: Math.round(bucket.r / bucket.count),
+      g: Math.round(bucket.g / bucket.count),
+      b: Math.round(bucket.b / bucket.count),
+    };
+    if (paletteColors.every((hex) => colorDistance(hexToRgb(hex), candidate) >= 34)) {
+      paletteColors.push(rgbToHex(candidate.r, candidate.g, candidate.b));
+    }
+    if (paletteColors.length === 8) break;
+  }
+  for (const hueOffset of [34, 96, 154, 218, 278]) {
+    if (paletteColors.length >= 8) break;
+    const variant = colorVariant(primaryRgb, hueOffset);
+    const hex = rgbToHex(variant.r, variant.g, variant.b);
+    if (!paletteColors.includes(hex)) paletteColors.push(hex);
   }
 
   const primaryHex = rgbToHex(primaryRgb.r, primaryRgb.g, primaryRgb.b);
@@ -367,6 +421,7 @@ export function quantizePixels(
     card: cardSurface,
     surface: opaqueSurface,
     borderAccent: `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.35)`,
+    paletteColors,
   };
 }
 
@@ -381,7 +436,7 @@ export async function extractPaletteFromImageUri(
   try {
     if (Platform.OS === 'web') {
       // HTML5 offscreen canvas extraction for web
-      return await new Promise<ExtractedPalette>((resolve) => {
+      return await new Promise<ExtractedPalette>((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
@@ -392,23 +447,45 @@ export async function extractPaletteFromImageUri(
             canvas.width = Math.max(1, Math.floor(img.width * scale));
             canvas.height = Math.max(1, Math.floor(img.height * scale));
             const ctx = canvas.getContext('2d');
-            if (!ctx) return resolve(PRESET_BACKGROUNDS[0].darkPalette);
+            if (!ctx) return reject(new Error('Image processing is unavailable.'));
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             resolve(quantizePixels(imgData.data, isLight));
-          } catch {
-            resolve(PRESET_BACKGROUNDS[0].darkPalette);
+          } catch (error) {
+            reject(new Error('This image URL does not allow palette extraction. Try downloading the image first.'));
           }
         };
-        img.onerror = () => resolve(PRESET_BACKGROUNDS[0].darkPalette);
+        img.onerror = () => reject(new Error('Image could not be loaded. Check the URL and access permissions.'));
         img.src = uri;
       });
     }
 
-    // Native environment (iOS / Android): Read file as base64 and decode via jpeg-js
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: 'base64',
-    });
+    // Native image manipulation needs a local URI; download remote images first.
+    let sourceUri = uri;
+    let downloadedUri: string | null = null;
+    if (/^https?:\/\//i.test(uri)) {
+      if (!FileSystem.cacheDirectory) throw new Error('Image cache is unavailable.');
+      const extension = uri.split(/[?#]/)[0].match(/\.(jpe?g|png|webp|gif)$/i)?.[1]?.toLowerCase() || 'img';
+      const destination = `${FileSystem.cacheDirectory}palette-${Date.now()}.${extension}`;
+      const download = await FileSystem.downloadAsync(uri, destination);
+      if (download.status < 200 || download.status >= 300) throw new Error(`Image download failed (HTTP ${download.status}).`);
+      sourceUri = download.uri;
+      downloadedUri = download.uri;
+    }
+
+    // Normalize to a small JPEG before quantizing.
+    let normalized: Awaited<ReturnType<typeof ImageManipulator.manipulateAsync>>;
+    try {
+      normalized = await ImageManipulator.manipulateAsync(
+        sourceUri,
+        [{ resize: { width: 160 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+    } finally {
+      if (downloadedUri) await FileSystem.deleteAsync(downloadedUri, { idempotent: true }).catch(() => {});
+    }
+    const base64 = normalized.base64;
+    if (!base64) throw new Error('Could not decode image pixels.');
 
     const bytes = decodeBase64ToUint8(base64);
     // Dynamic require so bundle size remains ultra-compact
@@ -419,10 +496,9 @@ export async function extractPaletteFromImageUri(
     if (rawImage && rawImage.data) {
       return quantizePixels(rawImage.data, isLight);
     }
+    throw new Error('Could not decode image pixels.');
   } catch (err) {
-    console.warn('[PaletteExtractor] Native decode fallback:', err);
+    console.warn('[PaletteExtractor] Image decode failed:', err);
+    throw err instanceof Error ? err : new Error('Could not extract colors from this image.');
   }
-
-  // Graceful fallback to default preset
-  return isLight ? PRESET_BACKGROUNDS[0].lightPalette : PRESET_BACKGROUNDS[0].darkPalette;
 }

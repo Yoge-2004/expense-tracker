@@ -13,8 +13,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useColorScheme } from 'react-native';
+import * as Font from 'expo-font';
 import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest, getSession } from '../services/api';
-import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets } from '../constants/theme';
+import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets, ensureColorContrast } from '../constants/theme';
 import { ExtractedPalette, PRESET_BACKGROUNDS, PresetBackground } from '../services/paletteExtractor';
 
 export interface BackgroundAssetConfig {
@@ -34,6 +35,7 @@ export const DEFAULT_BG_ASSET: BackgroundAssetConfig = {
 
 export interface PreferencesContextType {
   theme: 'dark' | 'light';
+  appearanceLoaded: boolean;
   toggleTheme: () => Promise<void>;
   isStealthMode: boolean;
   toggleStealthMode: () => Promise<void>;
@@ -45,7 +47,7 @@ export interface PreferencesContextType {
   fontChoice: FontChoice;
   setFontChoice: (font: FontChoice) => Promise<void>;
   customFontFamily: string | null;
-  setCustomFont: (fontFamily: string) => Promise<void>;
+  setCustomFont: (fontFamily: string, fontUri?: string) => Promise<void>;
   activeFonts: FontTokens;
 
   backgroundAsset: BackgroundAssetConfig;
@@ -62,6 +64,107 @@ export interface PreferencesContextType {
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
+
+function blendThemeSurface(base: string, requested: string, amount = 0.18): string {
+  const channels = (value: string) => {
+    const hex = value.match(/^#([0-9a-f]{6})$/i)?.[1];
+    if (hex) return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+    const rgb = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : [23, 26, 20];
+  };
+  const a = channels(base), b = channels(requested);
+  return '#' + a.map((value, index) => Math.round(value + (b[index] - value) * amount).toString(16).padStart(2, '0')).join('');
+}
+
+function readableTextForSurfaces(...surfaces: string[]): string {
+  const luminance = (color: string) => {
+    const hex = color.match(/^#([0-9a-f]{6})$/i)?.[1];
+    const rgb = hex
+      ? [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
+      : (color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i)?.slice(1, 4).map(Number) || [23, 26, 20]);
+    const linear = rgb.map((value) => {
+      const channel = value / 255;
+      return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+    });
+    return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  };
+  const contrast = (foreground: string, background: string) => {
+    const a = luminance(foreground), b = luminance(background);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  };
+  const minimumContrast = (foreground: string) => Math.min(...surfaces.map((surface) => contrast(foreground, surface)));
+  return minimumContrast('#FFFFFF') >= minimumContrast('#0F172A') ? '#FFFFFF' : '#0F172A';
+}
+
+export function createThemeColors(
+  theme: 'dark' | 'light',
+  customPalette: ExtractedPalette | null,
+  presetId = 'default'
+): ThemeColors {
+  const baseColors = Colors[theme];
+  const preset = PRESET_BACKGROUNDS.find((item) => item.id === presetId) || PRESET_BACKGROUNDS[0];
+  const activePalette = customPalette ?? (theme === 'light' ? preset.lightPalette : preset.darkPalette);
+  if (!activePalette) return baseColors;
+
+  const surfaceTint = customPalette ? 0.62 : 0.18;
+  const appSurface = blendThemeSurface(baseColors.bg, activePalette.surface || baseColors.bg, surfaceTint);
+  const cardSurface = blendThemeSurface(baseColors.card, activePalette.card || baseColors.card, surfaceTint);
+  const primary = ensureColorContrast(
+    ensureColorContrast(activePalette.primary || baseColors.primary, appSurface),
+    cardSurface
+  );
+  const accent = ensureColorContrast(
+    ensureColorContrast(activePalette.accent || baseColors.accent, appSurface),
+    cardSurface
+  );
+  const highlight = ensureColorContrast(
+    ensureColorContrast(activePalette.highlight || baseColors.highlight, appSurface),
+    cardSurface
+  );
+  const success = ensureColorContrast(highlight, cardSurface);
+  const warning = ensureColorContrast(activePalette.primaryGradientEnd || baseColors.warning, cardSurface);
+  const danger = ensureColorContrast(baseColors.danger, cardSurface);
+  const onPrimary = readableTextForSurfaces(primary);
+  const textColor = readableTextForSurfaces(appSurface, cardSurface);
+  const mutedText = ensureColorContrast(baseColors.textMuted, appSurface, 4.5);
+  const primaryGradientEnd = ensureColorContrast(activePalette.primaryGradientEnd || baseColors.primaryGradientEnd, onPrimary);
+  const sourcePalette = activePalette.paletteColors?.filter((color) => /^#[0-9a-f]{6}$/i.test(color)) || [];
+  const paletteColors = (sourcePalette.length >= 3 ? sourcePalette : [primary, accent, highlight, primaryGradientEnd])
+    .map((color) => ensureColorContrast(color, cardSurface));
+
+  return {
+    ...baseColors,
+    primary,
+    primaryGradientEnd,
+    onPrimary,
+    accent,
+    highlight,
+    paletteColors,
+    success,
+    warning,
+    danger,
+    gold: primary,
+    oxblood: danger,
+    teal: highlight,
+    sage: success,
+    text: textColor,
+    ink: textColor,
+    textMuted: mutedText,
+    inkDim: mutedText,
+    card: cardSurface,
+    cardHover: blendThemeSurface(baseColors.cardHover, primary, 0.08),
+    surface: appSurface,
+    surfaceHover: blendThemeSurface(baseColors.surfaceHover, primary, 0.08),
+    bg: appSurface,
+    inputBg: blendThemeSurface(baseColors.inputBg, cardSurface, 0.10),
+    borderAccent: primary + '80',
+    scrollThumb: primary + '80',
+    cardTotalBg: primary + '1F',
+    cardTotalBorder: primary + '52',
+    cardCountBg: accent + '1F',
+    cardCountBorder: accent + '52',
+  };
+}
 
 export function PreferencesProvider({
   children,
@@ -83,6 +186,7 @@ export function PreferencesProvider({
   const [customFontFamily, setCustomFontFamilyState] = useState<string | null>(null);
   const [backgroundAsset, setBackgroundAssetState] = useState<BackgroundAssetConfig>(DEFAULT_BG_ASSET);
   const [customPalette, setCustomPaletteState] = useState<ExtractedPalette | null>(null);
+  const [appearanceLoaded, setAppearanceLoaded] = useState(false);
 
   useEffect(() => {
     if (initialTheme && !userToggledThemeRef.current && initialTheme !== theme) {
@@ -202,37 +306,43 @@ export function PreferencesProvider({
   useEffect(() => {
     let mounted = true;
 
-    // Fast-path theme load first so UI state aligns before heavyweight crypto/network
-    readSavedTheme()
-      .then((savedTheme) => {
-        if (mounted && !userToggledThemeRef.current && (savedTheme === 'light' || savedTheme === 'dark')) {
-          setTheme(savedTheme);
-        }
-      })
-      .catch(() => {});
-
     // Hydrate saved currency, stealth, and appearance preferences
     Promise.all([
+      readSavedTheme(),
       safeStorageGet('user_currency'),
       safeStorageGet('app_stealth_mode'),
       safeStorageGet('app_font_choice'),
       safeStorageGet('app_custom_font_family'),
+      safeStorageGet('app_custom_font_uri'),
       safeStorageGet('app_bg_asset'),
       safeStorageGet('app_custom_palette'),
     ])
-      .then(([savedCurrency, savedStealth, savedFont, savedCustomFont, savedBg, savedPalette]) => {
+      .then(async ([savedTheme, savedCurrency, savedStealth, savedFont, savedCustomFont, savedCustomFontUri, savedBg, savedPalette]) => {
         if (!mounted) return;
+        let customFontAvailable = false;
+        if (savedCustomFont && savedCustomFontUri) {
+          try {
+            await Font.loadAsync({ [savedCustomFont]: savedCustomFontUri });
+            customFontAvailable = true;
+          } catch (e) {
+            console.warn('[PreferencesContext] Saved custom font could not be restored:', e);
+            safeStorageSet('app_custom_font_family', '').catch(() => {});
+            safeStorageSet('app_custom_font_uri', '').catch(() => {});
+          }
+        }
+        if (!mounted) return;
+        if (!userToggledThemeRef.current && (savedTheme === 'light' || savedTheme === 'dark')) setTheme(savedTheme);
         if (savedStealth === 'true') {
           setIsStealthMode(true);
         }
         if (savedCurrency) {
           setCurrency(savedCurrency);
         }
-        if (savedCustomFont) {
+        if (savedCustomFont && customFontAvailable) {
           setCustomFontFamilyState(savedCustomFont);
         }
         if (savedFont && ['grotesk', 'fraunces', 'mono', 'system', 'custom'].includes(savedFont)) {
-          setFontChoiceState(savedFont as FontChoice);
+          setFontChoiceState(savedFont === 'custom' && !customFontAvailable ? 'grotesk' : savedFont as FontChoice);
         }
         if (savedBg) {
           try {
@@ -255,6 +365,9 @@ export function PreferencesProvider({
           }
         }
 
+        // Let the app render once local theme, colors and wallpaper are in place.
+        setAppearanceLoaded(true);
+
         // Check if authenticated session can pull remote appearance
         getSession()
           .then((session) => {
@@ -266,6 +379,7 @@ export function PreferencesProvider({
       })
       .catch((e) => {
         console.warn('[PreferencesContext] Error hydrating preferences:', e);
+        if (mounted) setAppearanceLoaded(true);
       });
 
     return () => {
@@ -325,12 +439,13 @@ export function PreferencesProvider({
     void pushAppearanceToCloud({ font });
   }, [pushAppearanceToCloud]);
 
-  const setCustomFont = useCallback(async (fontFamily: string) => {
+  const setCustomFont = useCallback(async (fontFamily: string, fontUri?: string) => {
     setCustomFontFamilyState(fontFamily);
     setFontChoiceState('custom');
     try {
       await safeStorageSet('app_custom_font_family', fontFamily);
       await safeStorageSet('app_font_choice', 'custom');
+      if (fontUri) await safeStorageSet('app_custom_font_uri', fontUri);
     } catch (e) {
       console.warn('[PreferencesContext] Failed to save custom font:', e);
     }
@@ -369,6 +484,7 @@ export function PreferencesProvider({
     try {
       await safeStorageSet('app_font_choice', 'grotesk');
       await safeStorageSet('app_custom_font_family', '');
+      await safeStorageSet('app_custom_font_uri', '');
       await safeStorageSet('app_bg_asset', JSON.stringify(DEFAULT_BG_ASSET));
       await safeStorageSet('app_custom_palette', '');
     } catch (e) {
@@ -383,7 +499,7 @@ export function PreferencesProvider({
   }, [pushAppearanceToCloud]);
 
   const activeFonts = useMemo(() => {
-    if (fontChoice === 'custom' && customFontFamily) {
+    if (fontChoice === 'custom' && customFontFamily && Font.isLoaded(customFontFamily)) {
       return {
         display: customFontFamily,
         displaySemiBold: customFontFamily,
@@ -399,34 +515,15 @@ export function PreferencesProvider({
     return FontPresets[fontChoice] || FontPresets.grotesk;
   }, [fontChoice, customFontFamily]);
 
-  const themeColors = useMemo<ThemeColors>(() => {
-    const baseColors = Colors[theme];
-    const activePalette =
-      customPalette ??
-      (theme === 'light' ? activePreset.lightPalette : activePreset.darkPalette);
-
-    if (!activePalette) return baseColors;
-
-    return {
-      ...baseColors,
-      primary: activePalette.primary || baseColors.primary,
-      primaryGradientEnd: activePalette.primaryGradientEnd || baseColors.primaryGradientEnd,
-      accent: activePalette.accent || baseColors.accent,
-      highlight: activePalette.highlight || baseColors.highlight,
-      card: activePalette.card || baseColors.card,
-      surface: activePalette.surface || baseColors.surface,
-      borderAccent: activePalette.borderAccent || baseColors.borderAccent,
-      scrollThumb: activePalette.primary ? activePalette.primary + '80' : baseColors.scrollThumb,
-      cardTotalBg: activePalette.primary ? activePalette.primary + '1F' : baseColors.cardTotalBg,
-      cardTotalBorder: activePalette.primary ? activePalette.primary + '52' : baseColors.cardTotalBorder,
-      cardCountBg: activePalette.accent ? activePalette.accent + '1F' : baseColors.cardCountBg,
-      cardCountBorder: activePalette.accent ? activePalette.accent + '52' : baseColors.cardCountBorder,
-    };
-  }, [theme, customPalette, activePreset]);
+  const themeColors = useMemo(
+    () => createThemeColors(theme, customPalette, backgroundAsset.presetId),
+    [theme, customPalette, backgroundAsset.presetId]
+  );
 
   const value = useMemo(
     () => ({
       theme,
+      appearanceLoaded,
       toggleTheme,
       isStealthMode,
       toggleStealthMode,
@@ -448,6 +545,7 @@ export function PreferencesProvider({
     }),
     [
       theme,
+      appearanceLoaded,
       toggleTheme,
       isStealthMode,
       toggleStealthMode,
@@ -478,4 +576,9 @@ export function usePreferences() {
     throw new Error('usePreferences must be used within a PreferencesProvider');
   }
   return context;
+}
+
+export function useOptionalActiveFonts(): FontTokens {
+  const context = useContext(PreferencesContext);
+  return context?.activeFonts || FontPresets.grotesk;
 }

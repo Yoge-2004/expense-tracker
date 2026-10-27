@@ -6,7 +6,6 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Modal,
   ScrollView,
@@ -14,6 +13,7 @@ import {
   useWindowDimensions,
   Platform,
 } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
@@ -141,8 +141,8 @@ const SECTIONS: GuideSection[] = [
 ];
 
 export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ visible, onClose }) => {
-  const { theme } = useAuth();
-  const c = Colors[theme];
+  const {theme, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 
@@ -270,7 +270,7 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ visible, onClose
               }}
               style={[styles.gotItBtn, { backgroundColor: c.primary }]}
             >
-              <Text style={[styles.gotItText, { color: theme === 'light' ? '#FFF' : '#10120E' }]}>
+              <Text style={[styles.gotItText, { color: c.onPrimary }]}>
                 Got It!
               </Text>
             </TouchableOpacity>

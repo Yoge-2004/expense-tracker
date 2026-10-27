@@ -1151,8 +1151,27 @@
                 return;
             }
 
-            const totalProjected = response.forecast.reduce((acc, f) => acc + (f.predicted_amount || 0), 0);
+            const forecastPoints = response.forecast
+                .map(f => ({ date: String(f.date || ""), amount: Number(f.predicted_amount) }))
+                .filter(f => Number.isFinite(f.amount));
+            if (!forecastPoints.length) {
+                if (fResult) fResult.innerHTML = '<span style="color:var(--text-muted); font-size:12px;">Forecast output was empty.</span>';
+                return;
+            }
+            const totalProjected = forecastPoints.reduce((acc, f) => acc + f.amount, 0);
             const formattedTotal = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(totalProjected) : `$${totalProjected.toFixed(2)}`;
+            const chartWidth = 320;
+            const chartBaseline = 76;
+            const amounts = forecastPoints.map(f => f.amount);
+            const minAmount = Math.min(...amounts);
+            const maxAmount = Math.max(...amounts);
+            const amountRange = maxAmount - minAmount || Math.max(maxAmount, 1);
+            const chartPoints = forecastPoints.map((f, index) => ({
+                x: forecastPoints.length === 1 ? chartWidth / 2 : 12 + (index / (forecastPoints.length - 1)) * (chartWidth - 24),
+                y: chartBaseline - ((f.amount - minAmount) / amountRange) * 54
+            }));
+            const linePath = chartPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ");
+            const areaPath = `${linePath} L ${chartPoints[chartPoints.length - 1].x.toFixed(1)} ${chartBaseline} L ${chartPoints[0].x.toFixed(1)} ${chartBaseline} Z`;
 
             fResult.innerHTML = `
                 <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:10px 12px;">
@@ -1164,10 +1183,18 @@
                             </div>
                         </div>
                     </div>
+                    <div style="width:100%; height:96px; margin:2px 0 10px; background:var(--input-bg, rgba(255,255,255,0.025)); border:1px solid var(--border); border-radius:8px; padding:8px 10px; box-sizing:border-box;">
+                        <svg viewBox="0 0 ${chartWidth} 88" preserveAspectRatio="none" role="img" aria-label="Daily projected spending for the next ${forecastPoints.length} days" style="display:block; width:100%; height:100%; overflow:visible;">
+                            <line x1="0" y1="${chartBaseline}" x2="${chartWidth}" y2="${chartBaseline}" stroke="var(--border)" stroke-width="1" />
+                            <path d="${areaPath}" fill="var(--primary)" fill-opacity="0.14"></path>
+                            <path d="${linePath}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                            ${chartPoints.map(point => `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3" fill="var(--primary)"></circle>`).join("")}
+                        </svg>
+                    </div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(80px, 1fr)); gap:6px;">
-                        ${response.forecast.map(f => {
+                        ${forecastPoints.map(f => {
                             const dayName = new Date(f.date).toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric' });
-                            const amt = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(f.predicted_amount) : `$${f.predicted_amount.toFixed(2)}`;
+                            const amt = window.DashboardUtils?.formatCurrency ? window.DashboardUtils.formatCurrency(f.amount) : `$${f.amount.toFixed(2)}`;
                             return `<div style="background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; padding:6px 8px; text-align:center;">
                                 <div style="font-size:10px; color:var(--text-muted);">${dayName}</div>
                                 <div style="font-size:12.5px; font-weight:700; color:var(--text-main); margin-top:2px;">${amt}</div>

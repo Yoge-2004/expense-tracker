@@ -1,12 +1,12 @@
 import React, { memo } from 'react';
 import {
   View,
-  Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../ThemedText';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { StaggeredView } from '../StaggeredView';
@@ -83,12 +83,12 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
                     },
                   ]}
                 >
-                  <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.primary} style={{ marginRight: 4 }} />
+                  <Ionicons name={getCategoryIconName(cat.name)} size={14} color={isSelected ? (c.onPrimary) : c.primary} style={{ marginRight: 4 }} />
                   <Text
                     style={[
                       styles.catChipText,
                       {
-                        color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
+                        color: isSelected ? (c.onPrimary) : c.text,
                         fontWeight: isSelected ? '800' : '600',
                       },
                     ]}
@@ -163,7 +163,7 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
                     style={[
                       styles.catChipText,
                       {
-                        color: isSelected ? (theme === 'light' ? '#FFF' : '#10120E') : c.text,
+                        color: isSelected ? (c.onPrimary) : c.text,
                         fontWeight: isSelected ? '800' : '600',
                       },
                     ]}
@@ -216,10 +216,10 @@ export const BudgetFormTab = memo(function BudgetFormTab(props: BudgetFormTabPro
             <ActivityIndicator size="small" color="#10120E" />
           ) : (
             <View style={styles.submitBtnInner}>
-              <Text style={[styles.submitBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+              <Text style={[styles.submitBtnText, { color: c.onPrimary }]}>
                 {isEditMode ? 'Update Budget Cap' : 'Establish Budget Cap'}
               </Text>
-              <Ionicons name="shield-checkmark" size={20} color={isLight ? '#FFF' : '#10120E'} />
+              <Ionicons name="shield-checkmark" size={20} color={c.onPrimary} />
             </View>
           )}
         </TouchableOpacity>

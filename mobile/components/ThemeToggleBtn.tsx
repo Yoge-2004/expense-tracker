@@ -16,9 +16,9 @@ interface ThemeToggleBtnProps {
 }
 
 export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style }) => {
-  const { theme, toggleTheme } = usePreferences();
+  const { theme, toggleTheme, themeColors } = usePreferences();
   const isLight = theme === 'light';
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
 
   const handlePressIn = useCallback(() => {
     // 1. Immediately toggle theme state on direct touch-down frame
@@ -37,7 +37,7 @@ export const ThemeToggleBtn: React.FC<ThemeToggleBtnProps> = React.memo(({ style
         styles.toggleBtn,
         {
           backgroundColor: isLight ? '#FFFFFF' : c.card,
-          borderColor: isLight ? 'rgba(212, 175, 55, 0.45)' : 'rgba(199, 154, 62, 0.35)',
+          borderColor: c.borderAccent,
           opacity: pressed ? 0.75 : 1,
         },
         style,

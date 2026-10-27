@@ -6,12 +6,12 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from './ThemedText';
+import { ThemedText as Text } from './ThemedText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
@@ -60,9 +60,9 @@ const MONTHS = [
 const STORAGE_TRANSFER_JOB_KEY = '@expense_tracker_active_transfer_job';
 
 export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImported }) => {
-  const { userId, token, theme, currency } = useAuth();
+  const {userId, token, theme, currency, themeColors} = useAuth();
   const { showAlert } = useAlert();
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
   const { width } = useWindowDimensions();
   const [mode, setMode] = useState<RangeMode>('month');
   const [month, setMonth] = useState(new Date().getMonth());

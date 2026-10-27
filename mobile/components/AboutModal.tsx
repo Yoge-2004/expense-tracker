@@ -7,7 +7,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Modal,
   ScrollView,
@@ -17,6 +16,7 @@ import {
   Linking,
   Platform,
 } from 'react-native';
+import { ThemedText as Text } from './ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
@@ -36,8 +36,8 @@ interface AboutModalProps {
 }
 
 export const AboutModal: React.FC<AboutModalProps> = ({ visible, onClose }) => {
-  const { theme } = useAuth();
-  const c = Colors[theme];
+  const {theme, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 

@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors } from '../../constants/theme';
 import { AnimatedCard } from '../AnimatedCard';
@@ -77,7 +78,7 @@ export const SavingsGoalsSection = memo(function SavingsGoalsSection({
                 <Text
                   style={[
                     styles.goalPercent,
-                    { color: ratio >= 100 ? '#10B981' : c.primary },
+                    { color: ratio >= 100 ? c.success : c.primary },
                   ]}
                 >
                   {ratio}%
@@ -87,7 +88,7 @@ export const SavingsGoalsSection = memo(function SavingsGoalsSection({
                 progress={ratio}
                 height={7}
                 backgroundColor={c.inputBg}
-                fillColor={ratio >= 100 ? '#10B981' : '#F59E0B'}
+                fillColor={ratio >= 100 ? c.success : c.warning}
                 style={{ borderRadius: 4, marginVertical: 8 }}
               />
               <View style={styles.goalBottomRow}>
@@ -107,7 +108,7 @@ export const SavingsGoalsSection = memo(function SavingsGoalsSection({
                   style={[styles.goalMiniActionBtn, { backgroundColor: c.inputBg }]}
                   accessibilityLabel="Edit savings goal"
                 >
-                  <Ionicons name="pencil" size={12} color="#F59E0B" />
+                  <Ionicons name="pencil" size={12} color={c.warning} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   activeOpacity={0.7}

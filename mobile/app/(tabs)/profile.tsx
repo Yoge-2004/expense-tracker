@@ -14,11 +14,9 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Switch,
-  TextInput,
   Modal,
   FlatList,
   ActivityIndicator,
@@ -27,6 +25,8 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../../components/ThemedText';
+import { ThemedText as Text } from '../../components/ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
@@ -686,7 +686,7 @@ export default function ProfileScreen() {
 
         {/* User Card */}
         <StaggeredView delay={100} direction="up">
-          <View style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.userCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.primary }]}>
             <View style={styles.userCardTop}>
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -723,7 +723,7 @@ export default function ProfileScreen() {
                       onPress={handleSaveNickname}
                       style={[styles.saveNickBtn, { backgroundColor: c.primary }]}
                     >
-                      <Ionicons name="checkmark" size={16} color={isLight ? '#FFF' : '#10120E'} />
+                      <Ionicons name="checkmark" size={16} color={c.onPrimary} />
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -1005,8 +1005,8 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </TouchableOpacity>
 
-            <View style={{ padding: 12, backgroundColor: isLight ? 'rgba(212, 175, 55, 0.08)' : 'rgba(245, 200, 66, 0.08)', borderRadius: 10, margin: 12, borderWidth: 1, borderColor: isLight ? 'rgba(212, 175, 55, 0.25)' : 'rgba(245, 200, 66, 0.2)' }}>
-              <Text style={{ fontSize: 11.5, lineHeight: 17, color: isLight ? '#78350F' : '#F5C842' }}>
+            <View style={{ padding: 12, backgroundColor: c.primary + '14', borderRadius: 10, margin: 12, borderWidth: 1, borderColor: c.primary + '40' }}>
+              <Text style={{ fontSize: 11.5, lineHeight: 17, color: c.text }}>
                 <Text style={{ fontWeight: '700' }}>How Bank SMS capture works:</Text> Whenever you receive a bank debit SMS, copy it. ExpenseTracker automatically parses the amount & merchant the moment you switch to the app or tap "Paste SMS" on the Record screen!
               </Text>
             </View>
@@ -1313,11 +1313,11 @@ export default function ProfileScreen() {
                 ]}
               >
                 {isSavingAvatar ? (
-                  <ActivityIndicator size="small" color={isLight ? '#FFF' : '#10120E'} />
+                  <ActivityIndicator size="small" color={c.onPrimary} />
                 ) : (
                   <>
-                    <Ionicons name="images-outline" size={18} color={isLight ? '#FFF' : '#10120E'} />
-                    <Text style={[styles.savePinBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                    <Ionicons name="images-outline" size={18} color={c.onPrimary} />
+                    <Text style={[styles.savePinBtnText, { color: c.onPrimary }]}>
                       Browse Files & Photos
                     </Text>
                   </>
@@ -1580,7 +1580,7 @@ export default function ProfileScreen() {
                 {isSavingPin ? (
                   <ActivityIndicator size="small" color="#10120E" />
                 ) : (
-                  <Text style={[styles.savePinBtnText, { color: isLight ? '#FFF' : '#10120E' }]}>
+                  <Text style={[styles.savePinBtnText, { color: c.onPrimary }]}>
                     Save Security PIN
                   </Text>
                 )}

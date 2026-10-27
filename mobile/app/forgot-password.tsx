@@ -10,8 +10,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
-  Text,
-  TextInput,
   View,
   TouchableOpacity,
   ActivityIndicator,
@@ -20,6 +18,8 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
+import { ThemedTextInput as TextInput } from '../components/ThemedText';
+import { ThemedText as Text } from '../components/ThemedText';
 import { useAuth } from "../context/AuthContext";
 import { useAlert } from "../context/AlertContext";
 import { apiRequest, ApiError } from "../services/api";

@@ -8,16 +8,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Modal,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   ActivityIndicator,
   Alert,
   useWindowDimensions,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from './ThemedText';
+import { ThemedText as Text } from './ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors, getCategoryIconName } from '../constants/theme';
@@ -49,9 +49,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
   onClose,
   onCategoriesUpdated,
 }) => {
-  const { userId, theme } = useAuth();
+  const {userId, theme, themeColors} = useAuth();
   const { showAlert } = useAlert();
-  const c = Colors[theme];
+  const c = themeColors || Colors[theme];
 
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 600;

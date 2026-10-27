@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
 import {
   View,
-  Text,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { ThemedTextInput as TextInput } from '../ThemedText';
+import { ThemedText as Text } from '../ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { StaggeredView } from '../StaggeredView';
 import { ChoiceChips } from '../ChoiceChips';
@@ -86,12 +86,12 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
               styles.inputWrap,
               {
                 backgroundColor: c.inputBg,
-                borderColor: focusedField === 'incomeSource' ? '#10B981' : c.border,
+                borderColor: focusedField === 'incomeSource' ? c.success : c.border,
                 borderWidth: focusedField === 'incomeSource' ? 2 : 1.5,
               },
             ]}
           >
-            <Ionicons name="cash-outline" size={18} color="#10B981" style={styles.inputIcon} />
+            <Ionicons name="cash-outline" size={18} color={c.success} style={styles.inputIcon} />
             <TextInput
               style={[styles.textInput, { color: c.text }]}
               placeholder="e.g. Primary Tech Salary, Consulting"
@@ -107,7 +107,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
         <View style={styles.fieldGroup}>
           <Text style={[styles.fieldLabel, { color: c.textMuted }]}>Amount ({currSymbol})</Text>
           <View style={[styles.amountInputWrap, { backgroundColor: c.inputBg, borderColor: c.border }]}>
-            <Text style={[styles.currencyPrefix, { color: '#10B981' }]}>{currSymbol}</Text>
+            <Text style={[styles.currencyPrefix, { color: c.success }]}>{currSymbol}</Text>
             <TextInput
               style={[styles.amountInput, { color: c.text }]}
               placeholder="0.00"
@@ -134,7 +134,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
             ]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="calendar" size={18} color="#10B981" style={styles.inputIcon} />
+              <Ionicons name="calendar" size={18} color={c.success} style={styles.inputIcon} />
               <Text style={[{ fontSize: 14, fontWeight: '700', color: c.text }]}>
                 {incomeDate || 'Select Date'}
               </Text>
@@ -150,7 +150,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
               styles.inputWrap,
               {
                 backgroundColor: c.inputBg,
-                borderColor: focusedField === 'incomeDesc' ? '#10B981' : c.border,
+                borderColor: focusedField === 'incomeDesc' ? c.success : c.border,
                 borderWidth: focusedField === 'incomeDesc' ? 2 : 1,
               },
             ]}
@@ -220,7 +220,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
             <Ionicons
               name={incomeIsRecurring ? 'checkbox' : 'square-outline'}
               size={22}
-              color={incomeIsRecurring ? '#10B981' : c.textMuted}
+              color={incomeIsRecurring ? c.success : c.textMuted}
             />
             <Text style={{ color: c.text, fontWeight: '600', fontSize: 13.5 }}>
               Recurring Stream (e.g. Wages / Retainer)
@@ -230,7 +230,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
 
         {incomeIsRecurring && incomeKind !== 'REIMBURSEMENT' && (
           <View style={[styles.recurringBox, { backgroundColor: c.inputBg, borderColor: 'rgba(16, 185, 129, 0.3)' }]}>
-            <Text style={[styles.recurringBoxLabel, { color: '#10B981' }]}>PAYMENT CADENCE</Text>
+            <Text style={[styles.recurringBoxLabel, { color: c.success }]}>PAYMENT CADENCE</Text>
             <View style={styles.freqRow}>
               {(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'CUSTOM'] as const).map((freq) => {
                 const isSelected = incomeFrequency === freq;
@@ -242,8 +242,8 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
                     style={[
                       styles.freqChip,
                       {
-                        backgroundColor: isSelected ? '#10B981' : c.card,
-                        borderColor: isSelected ? '#10B981' : c.border,
+                        backgroundColor: isSelected ? c.success : c.card,
+                        borderColor: isSelected ? c.success : c.border,
                       },
                     ]}
                   >
@@ -291,7 +291,7 @@ export const IncomeFormTab = memo(function IncomeFormTab(props: IncomeFormTabPro
           activeOpacity={0.85}
           onPress={handleSaveIncome}
           disabled={isSubmitting}
-          style={[styles.submitBtn, { backgroundColor: '#10B981', opacity: isSubmitting ? 0.7 : 1 }]}
+          style={[styles.submitBtn, { backgroundColor: c.success, opacity: isSubmitting ? 0.7 : 1 }]}
         >
           {isSubmitting ? (
             <ActivityIndicator size="small" color="#FFF" />

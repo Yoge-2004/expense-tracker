@@ -3,7 +3,6 @@ import {
   Animated,
   Easing,
   StyleSheet,
-  Text,
   View,
   ViewStyle,
   StyleProp,
@@ -13,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/theme';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { AmbientAura } from './AmbientAura';
+import { ThemedText as Text } from './ThemedText';
 
 interface ImmersiveLoaderProps {
   message?: string;
@@ -29,8 +29,8 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
   compact = false,
   style,
 }) => {
-  const { theme } = useAuth();
-  const c = Colors[theme];
+  const {theme, themeColors} = useAuth();
+  const c = themeColors || Colors[theme];
   const reducedMotion = useReducedMotion();
 
   const spinOuter = useRef(new Animated.Value(0)).current;
@@ -204,6 +204,7 @@ export const ImmersiveLoader: React.FC<ImmersiveLoaderProps> = ({
               borderRadius: coreSize / 2,
               backgroundColor: c.card,
               borderColor: c.borderAccent,
+              shadowColor: c.primary,
               transform: [{ scale: pulseCore }],
             },
           ]}
