@@ -508,6 +508,7 @@ public class AdminMlGovernanceServiceImpl implements AdminMlGovernanceService {
                         Instant.ofEpochMilli(summaryFile.lastModified())
                 );
             } catch (Exception ignored) {
+                log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
             }
         }
 

@@ -206,12 +206,16 @@ public class DatabaseSnapshotServiceImpl implements DatabaseSnapshotService {
                         } catch (Exception ignored) {
                             try {
                                 email = rs.getString("EMAIL");
-                            } catch (Exception ignored2) {}
+                            } catch (Exception ignored2) {
+                                log.debug("Ignored {}: {}", ignored2.getClass().getSimpleName(), ignored2.getMessage());
+                            }
                         }
                         if (email != null && adminEmail != null && email.trim().equalsIgnoreCase(adminEmail.trim())) {
                             return "ROLE_SUPER_ADMIN";
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                        log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                    }
                     return "ROLE_USER";
                 }));
             } else if (!tc.nullable && (tc.columnDef == null || tc.columnDef.isBlank())) {

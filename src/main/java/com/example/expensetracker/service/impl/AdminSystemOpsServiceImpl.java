@@ -73,7 +73,9 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
                 totalPhysRam = sunOs.getTotalMemorySize() / (1024 * 1024);
                 freePhysRam = sunOs.getFreeMemorySize() / (1024 * 1024);
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        }
 
         if (totalPhysRam <= 0) totalPhysRam = maxMb * 2;
         long usedPhysRam = Math.max(usedMb, totalPhysRam - freePhysRam);
@@ -84,20 +86,26 @@ public class AdminSystemOpsServiceImpl implements AdminSystemOpsService {
             File root = new File(".");
             diskTotalGb = root.getTotalSpace() / (1024 * 1024 * 1024);
             diskFreeGb = root.getUsableSpace() / (1024 * 1024 * 1024);
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        }
         long diskUsedGb = Math.max(0, diskTotalGb - diskFreeGb);
 
         long nonHeapMb = 0;
         try {
             nonHeapMb = ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage().getUsed() / (1024 * 1024);
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        }
 
         String dbProduct = "PostgreSQL";
         String dbUrl = "";
         try (Connection conn = dataSource.getConnection()) {
             dbProduct = conn.getMetaData().getDatabaseProductName();
             dbUrl = maskJdbcUrl(conn.getMetaData().getURL());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        }
 
         int activeConns = 1;
         int idleConns = 1;

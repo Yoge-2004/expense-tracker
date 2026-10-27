@@ -361,7 +361,9 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                     String rawNum = curMatcher.group(1).replaceAll("[\\s,]", "");
                     double val = Double.parseDouble(rawNum);
                     if (val > maxVal) maxVal = val;
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                }
             }
             if (maxVal > 0) {
                 amount = maxVal;
@@ -384,7 +386,9 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                         parsedDate = String.format("%04d-%02d-%02d", yr, mNum, day);
                         break;
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                }
             }
             Matcher dm = DATE_REGEX.matcher(line);
             if (dm.find()) {
@@ -416,7 +420,9 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
                             }
                         }
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+                }
             }
         }
 
