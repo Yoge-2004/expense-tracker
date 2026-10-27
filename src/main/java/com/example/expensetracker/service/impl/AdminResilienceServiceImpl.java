@@ -1,7 +1,7 @@
 package com.example.expensetracker.service.impl;
 
 import com.example.expensetracker.dto.AdminDatabaseTopologyDto;
-import com.example.expensetracker.exception.BadRequestException;
+import com.example.expensetracker.exception.ForbiddenException;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.resilience.FallbackRecoveryCoordinator;
 import com.example.expensetracker.security.StepUpPinVerifier;
@@ -186,7 +186,7 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
     @Override
     public boolean triggerSnapshotBackup(User actor, String stepUpPin, String ipAddress, String userAgent) {
         if (!actor.isSuperAdmin()) {
-            throw new BadRequestException("Only a Super Admin is authorized to trigger manual failover snapshots");
+            throw new ForbiddenException("Only a Super Admin is authorized to trigger manual failover snapshots");
         }
 
         if (stepUpPin != null && !stepUpPin.isBlank()) {
@@ -229,7 +229,9 @@ public class AdminResilienceServiceImpl implements AdminResilienceService {
                 int end = (colon != -1) ? colon : (endSlash != -1 ? endSlash : sub.length());
                 return sub.substring(0, end);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            log.debug("Ignored {}: {}", ignored.getClass().getSimpleName(), ignored.getMessage());
+        }
         return defaultHost;
     }
 }

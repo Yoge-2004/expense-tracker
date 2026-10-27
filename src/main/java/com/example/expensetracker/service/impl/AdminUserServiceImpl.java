@@ -8,6 +8,7 @@ import com.example.expensetracker.dto.AdminUserRoleUpdateRequest;
 import com.example.expensetracker.dto.AdminUserStatusUpdateRequest;
 import com.example.expensetracker.dto.AdminUserUpdateRequest;
 import com.example.expensetracker.exception.BadRequestException;
+import com.example.expensetracker.exception.ForbiddenException;
 import com.example.expensetracker.exception.ResourceNotFoundException;
 import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
@@ -184,7 +185,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         requireCanManage(actor, target);
         if (request.role() != null && request.role() != target.getRole() && !actor.isSuperAdmin()) {
-            throw new BadRequestException("Only a Super Administrator can change a user's role");
+            throw new ForbiddenException("Only a Super Administrator can change a user's role");
         }
 
         String email = request.email().trim().toLowerCase();
@@ -374,7 +375,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     public AdminUserDto updateUserRole(Long targetUserId, AdminUserRoleUpdateRequest request,
                                        User actor, String ipAddress, String userAgent) {
         if (!actor.isSuperAdmin()) {
-            throw new BadRequestException("Only a Super Administrator is authorized to modify user roles");
+            throw new ForbiddenException("Only a Super Administrator is authorized to modify user roles");
         }
 
         verifyStepUpPin(actor, request.stepUpPin());
@@ -432,7 +433,7 @@ public class AdminUserServiceImpl implements AdminUserService {
             throw new BadRequestException("You cannot reset your own PIN lockout; ask another administrator");
         }
         if (!actor.isSuperAdmin() && rank(actor.getRole()) <= rank(target.getRole())) {
-            throw new BadRequestException("You can only reset the PIN lockout of accounts below your own role");
+            throw new ForbiddenException("You can only reset the PIN lockout of accounts below your own role");
         }
 
         target.setFailedPinAttempts(0);
@@ -517,14 +518,14 @@ public class AdminUserServiceImpl implements AdminUserService {
             return;
         }
         if (rank(actor.getRole()) <= rank(target.getRole())) {
-            throw new BadRequestException("You do not have permission to manage an account with the "
+            throw new ForbiddenException("You do not have permission to manage an account with the "
                     + target.getRole().name().replace("ROLE_", "").toLowerCase().replace('_', ' ') + " role");
         }
     }
 
     private void requireSuperAdminForPrivilegedRole(User actor, Role role) {
         if (rank(role) >= rank(Role.ROLE_ADMIN) && !actor.isSuperAdmin()) {
-            throw new BadRequestException("Only a Super Administrator can create Administrator or Super Administrator accounts");
+            throw new ForbiddenException("Only a Super Administrator can create Administrator or Super Administrator accounts");
         }
     }
 }

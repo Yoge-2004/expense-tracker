@@ -185,6 +185,21 @@ class AdminControllerTest {
     }
 
     @Test
+    void roleChangeByANonSuperAdminIsAnHttp403NotA400() throws Exception {
+        AdminUserRoleUpdateRequest req = new AdminUserRoleUpdateRequest(Role.ROLE_ADMIN, "123456", "Promotion");
+        when(adminUserService.updateUserRole(eq(2L), any(), any(), any(), any()))
+                .thenThrow(new com.example.expensetracker.exception.ForbiddenException(
+                        "Only a Super Administrator is authorized to modify user roles"));
+
+        mockMvc.perform(post("/api/admin/users/2/role")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("Only a Super Administrator is authorized to modify user roles"));
+    }
+
+    @Test
     void getAuditLogsReturnsPaginatedList() throws Exception {
         AdminAuditLogDto logDto = new AdminAuditLogDto(
                 1L, 1L, "superadmin", "UPDATE_USER_STATUS", "USER", "2",

@@ -7,6 +7,7 @@ import com.example.expensetracker.dto.AdminUserRoleUpdateRequest;
 import com.example.expensetracker.dto.AdminUserStatusUpdateRequest;
 import com.example.expensetracker.dto.AdminUserUpdateRequest;
 import com.example.expensetracker.exception.BadRequestException;
+import com.example.expensetracker.exception.ForbiddenException;
 import com.example.expensetracker.model.Role;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.DeviceTokenRepository;
@@ -146,7 +147,7 @@ class AdminUserServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(superAdmin));
 
         AdminUserStatusUpdateRequest req = new AdminUserStatusUpdateRequest(true, null, "Try to lock super admin");
-        assertThrows(BadRequestException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 adminUserService.updateUserStatus(1L, req, normalAdmin, "127.0.0.1", "test-ua"));
     }
 
@@ -165,7 +166,7 @@ class AdminUserServiceImplTest {
     @Test
     void roleUpdateFailsWhenActorIsNotSuperAdmin() {
         AdminUserRoleUpdateRequest req = new AdminUserRoleUpdateRequest(Role.ROLE_ADMIN, "123456", "Elevate");
-        assertThrows(BadRequestException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 adminUserService.updateUserRole(3L, req, normalAdmin, "127.0.0.1", "test-ua"));
     }
 
@@ -209,7 +210,7 @@ class AdminUserServiceImplTest {
 
         AdminUserUpdateRequest req = new AdminUserUpdateRequest(
                 "Regular User", "reguser", "user@test.com", Role.ROLE_SUPER_ADMIN, null, null, null, "123456");
-        assertThrows(BadRequestException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 adminUserService.updateUser(3L, req, normalAdmin, "127.0.0.1", "test-ua"));
 
         assertEquals(Role.ROLE_USER, normalUser.getRole());
@@ -222,7 +223,7 @@ class AdminUserServiceImplTest {
 
         AdminUserUpdateRequest req = new AdminUserUpdateRequest(
                 "Standard Admin", "stdadmin", "admin@test.com", Role.ROLE_SUPER_ADMIN, null, null, null, "123456");
-        assertThrows(BadRequestException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 adminUserService.updateUser(2L, req, normalAdmin, "127.0.0.1", "test-ua"));
 
         assertEquals(Role.ROLE_ADMIN, normalAdmin.getRole());
@@ -235,7 +236,7 @@ class AdminUserServiceImplTest {
 
         AdminUserUpdateRequest req = new AdminUserUpdateRequest(
                 "Super Admin", "superadmin", "super@test.com", null, null, "NewPassw0rd!", null, "123456");
-        assertThrows(BadRequestException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 adminUserService.updateUser(1L, req, normalAdmin, "127.0.0.1", "test-ua"));
 
         verify(userRepository, never()).save(any(User.class));
@@ -247,7 +248,7 @@ class AdminUserServiceImplTest {
         for (Role privileged : new Role[] {Role.ROLE_SUPER_ADMIN, Role.ROLE_ADMIN}) {
             AdminUserCreateRequest req = new AdminUserCreateRequest(
                     "New", "newbie", "new@test.com", "Passw0rd!x", privileged, null, "123456");
-            assertThrows(BadRequestException.class, () ->
+            assertThrows(ForbiddenException.class, () ->
                     adminUserService.createUser(req, normalAdmin, "127.0.0.1", "test-ua"));
         }
         verify(userRepository, never()).save(any(User.class));
@@ -258,7 +259,7 @@ class AdminUserServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(superAdmin));
 
         AdminUserStatusUpdateRequest req = new AdminUserStatusUpdateRequest(null, false, "Disable");
-        assertThrows(BadRequestException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 adminUserService.updateUserStatus(1L, req, normalAdmin, "127.0.0.1", "test-ua"));
 
         assertTrue(superAdmin.isEnabled());
@@ -302,7 +303,7 @@ class AdminUserServiceImplTest {
                 .role(Role.ROLE_SUPPORT).enabled(true).accountLocked(false).build();
         when(userRepository.findById(2L)).thenReturn(Optional.of(normalAdmin));
 
-        assertThrows(BadRequestException.class, () ->
+        assertThrows(ForbiddenException.class, () ->
                 adminUserService.resetPinLockout(2L, support, "127.0.0.1", "test-ua"));
         verify(userRepository, never()).save(any(User.class));
     }
