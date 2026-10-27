@@ -316,7 +316,7 @@ public class UserController {
     public ResponseEntity<Void> deleteAccount(
             @Parameter(description = "Database ID of the user account to delete.", required = true, example = "1")
             @PathVariable Long userId,
-            @RequestBody(required = false) DeleteAccountRequest request) {
+            @Valid @RequestBody(required = false) DeleteAccountRequest request) {
         log.info("Received request to permanently delete account for userId={}", userId);
         userSecurity.validateUserAccess(userId);
 
@@ -412,7 +412,7 @@ public class UserController {
     public ResponseEntity<UserAppearanceDto> updateUserAppearance(
             @Parameter(description = "Database ID of the user whose appearance to update.", required = true, example = "1")
             @PathVariable Long userId,
-            @RequestBody UserAppearanceDto dto) {
+            @Valid @RequestBody UserAppearanceDto dto) {
         log.info("Received request to update user appearance: userId={}", userId);
         userSecurity.validateUserAccess(userId);
         return ResponseEntity.ok(userAppearanceService.updateAppearance(userId, dto));

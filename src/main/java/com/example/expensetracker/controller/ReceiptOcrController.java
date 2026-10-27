@@ -1,9 +1,11 @@
 package com.example.expensetracker.controller;
 
+import com.example.expensetracker.dto.ReceiptTextRequest;
 import com.example.expensetracker.service.ReceiptOcrService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -34,8 +36,9 @@ public class ReceiptOcrController {
 
     @Operation(summary = "Parse receipt text directly to extract financial metadata")
     @PostMapping(value = {"/api/expenses/ocr/parse-text", "/api/receipts/parse-text"})
-    public ResponseEntity<Map<String, Object>> parseText(@RequestBody(required = false) Map<String, String> body) {
-        String text = body != null ? body.get("text") : "";
+    public ResponseEntity<Map<String, Object>> parseText(
+            @Valid @RequestBody(required = false) ReceiptTextRequest body) {
+        String text = body != null && body.text() != null ? body.text() : "";
         Map<String, Object> result = receiptOcrService.parseReceiptText(text);
         return ResponseEntity.ok(result);
     }

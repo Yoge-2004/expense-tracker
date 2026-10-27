@@ -12,11 +12,13 @@ public final class NotificationRequests {
     private NotificationRequests() {}
 
     @Schema(description = "Notifications to mark as read; omit or leave empty to mark everything as read")
-    public record MarkRead(List<Long> ids) {
+    public record MarkRead(@Size(max = 1000, message = "Too many notifications at once") List<Long> ids) {
     }
 
     @Schema(description = "Notification kinds the user wants switched OFF; everything else is on")
-    public record Preferences(List<String> disabledTypes) {
+    public record Preferences(
+            @Size(max = 50, message = "Too many notification types")
+            List<@Size(max = 40, message = "Notification type is too long") String> disabledTypes) {
     }
 
     @Schema(description = "A phone that should receive push notifications")

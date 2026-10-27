@@ -3,6 +3,8 @@ package com.example.expensetracker.controller;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.repository.UserRepository;
 import com.example.expensetracker.service.WebAuthnService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +53,7 @@ public class WebAuthnController {
     @PostMapping("/register/finish")
     public ResponseEntity<Map<String, String>> registrationFinish(
         Authentication authentication,
-        @RequestBody(required = false) WebAuthnFinishRequest request
+        @Valid @RequestBody(required = false) WebAuthnFinishRequest request
     ) {
         User user = currentUser(authentication);
         String txId = request != null ? request.transactionId() : null;
@@ -70,7 +72,7 @@ public class WebAuthnController {
 
     @PostMapping("/login/finish")
     public ResponseEntity<Map<String, Object>> loginFinish(
-            @RequestBody(required = false) WebAuthnFinishRequest request) {
+            @Valid @RequestBody(required = false) WebAuthnFinishRequest request) {
         String txId = request != null ? request.transactionId() : null;
         String cred = request != null ? request.credential() : null;
         log.info("Completing WebAuthn biometric login for transactionId={}", txId);
@@ -106,7 +108,9 @@ public class WebAuthnController {
     }
 
     public record WebAuthnFinishRequest(
+            @Size(max = 100, message = "Transaction id is too long")
             String transactionId,
+            @Size(max = 65_536, message = "Credential payload is too large")
             String credential
     ) {}
 }

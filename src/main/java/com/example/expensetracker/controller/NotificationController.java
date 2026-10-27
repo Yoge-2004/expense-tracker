@@ -42,7 +42,7 @@ public class NotificationController {
             description = "Send {\"ids\": [..]} to mark some, or an empty body / empty list to mark all.")
     @PostMapping("/read")
     public ResponseEntity<Map<String, Integer>> markRead(@PathVariable Long userId,
-                                                         @RequestBody(required = false) NotificationRequests.MarkRead request) {
+                                                         @Valid @RequestBody(required = false) NotificationRequests.MarkRead request) {
         int changed = notificationService.markRead(owner(userId), request == null ? null : request.ids());
         return ResponseEntity.ok(Map.of("updated", changed));
     }
@@ -71,7 +71,7 @@ public class NotificationController {
             description = "Send the kinds to switch OFF; everything else stays on.")
     @PutMapping("/preferences")
     public ResponseEntity<List<NotificationPreferenceDto>> updatePreferences(
-            @PathVariable Long userId, @RequestBody NotificationRequests.Preferences request) {
+            @PathVariable Long userId, @Valid @RequestBody NotificationRequests.Preferences request) {
         return ResponseEntity.ok(notificationService.updatePreferences(owner(userId), request.disabledTypes()));
     }
 
