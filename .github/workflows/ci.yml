@@ -26,6 +26,10 @@ jobs:
         run: |
           set -o pipefail
           mvn -B test 2>&1 | tee backend-test.log
+      - name: Annotate Maven failures
+        if: failure()
+        shell: bash
+        run: python3 .github/scripts/annotate_maven_failures.py backend-test.log
       - name: Upload backend test log and reports
         if: always()
         uses: actions/upload-artifact@v7
