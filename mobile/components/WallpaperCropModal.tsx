@@ -44,7 +44,7 @@ export const WallpaperCropModal: React.FC<WallpaperCropModalProps> = ({
   onApply,
 }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const frameRef = useRef<View>(null);
+  const frameRef = useRef<React.ComponentRef<typeof View>>(null);
   const frameOffset = useRef({ x: 0, y: 0 });
   const frameSize = useRef({ width: 0, height: 0 });
   const selectionRef = useRef<CropRect | null>(null);
