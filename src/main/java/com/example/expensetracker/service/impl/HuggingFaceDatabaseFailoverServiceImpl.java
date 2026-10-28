@@ -144,7 +144,6 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     }
 
     /** Snapshot the currently active database every 10 minutes. */
-    @Override
     /**
      * Stores the snapshot we just restored as an ordinary file under {@code backups/} next to it, named
      * by its checksum (so the same snapshot is never stored twice). The main snapshot is overwritten by
@@ -163,6 +162,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         }
     }
 
+    @Override
     @Scheduled(cron = "0 */10 * * * *")
     public void scheduledBackup() {
         backupCurrentDatabase();
