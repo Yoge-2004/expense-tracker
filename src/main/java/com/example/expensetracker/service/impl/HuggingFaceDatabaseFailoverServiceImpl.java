@@ -57,7 +57,13 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     @Value("${hf.db.encryption-key:${DB_BACKUP_KEY:}}")
     private String encryptionKey;
 
+    /** Largest drop in row count, in percent, a routine backup may cause before it is refused. */
+    @Value("${hf.db.max-shrink-percent:30}")
+    private int maxShrinkPercent = 30;
+
     private final DatabaseSnapshotService snapshotService;
+    /** Rows in the snapshot currently stored on Hugging Face (restored at startup or last pushed); 0 = unknown. */
+    private volatile int knownSnapshotRows = 0;
     private volatile boolean writePermissionWarned = false;
     private volatile boolean notConfiguredWarned = false;
     private volatile boolean repoEnsured = false;
@@ -98,7 +104,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
                     lastPushedChecksum = computeSha256(sqlite);
                     snapshotFound = true;
+                    keepCopyOfRestoredSnapshot(encrypted);
                     int rows = snapshotService.importIntoFallback(sqlite);
+                    knownSnapshotRows = rows;
                     lastMirroredChecksum = lastPushedChecksum;
                     log.info("HF encrypted DB snapshot loaded into local failover store: {} rows (SHA-256: {}).",
                             rows, lastPushedChecksum);
@@ -137,6 +145,24 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
 
     /** Snapshot the currently active database every 10 minutes. */
     @Override
+    /**
+     * Stores the snapshot we just restored as an ordinary file under {@code backups/} next to it, named
+     * by its checksum (so the same snapshot is never stored twice). The main snapshot is overwritten by
+     * every backup and git history is compacted on deploys, so without this copy a bad overwrite would
+     * be unrecoverable. Failure only logs: it must never stop the application from starting.
+     */
+    private void keepCopyOfRestoredSnapshot(Path encrypted) throws InterruptedException {
+        try {
+            int slash = path.lastIndexOf('/');
+            String directory = slash >= 0 ? path.substring(0, slash + 1) : "";
+            String copy = directory + "backups/" + computeSha256(encrypted).substring(0, 16) + ".sqlite.enc";
+            HuggingFaceFileClient.upload(repoType, space, copy, encrypted, token);
+            log.info("Kept a copy of the restored snapshot at {} in HF {} repository {}.", copy, repoType, space);
+        } catch (IOException | NoSuchAlgorithmException | RuntimeException e) {
+            log.warn("Could not keep a copy of the restored snapshot (startup continues): {}", e.getMessage());
+        }
+    }
+
     @Scheduled(cron = "0 */10 * * * *")
     public void scheduledBackup() {
         backupCurrentDatabase();
@@ -182,6 +208,14 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     log.warn("HF database backup skipped: the export contained 0 rows; keeping the existing snapshot.");
                     return false;
                 }
+                if (!force && SnapshotShrinkGuard.isSuspiciousShrink(knownSnapshotRows, rows, maxShrinkPercent)) {
+                    lastError = "Skipped: the export has " + rows + " rows but the stored snapshot has "
+                            + knownSnapshotRows + ", so replacing it could lose data. Run a forced backup if this is intended.";
+                    log.error("HF database backup REFUSED: export has {} rows, stored snapshot has {} (more than {}% smaller). "
+                            + "Keeping the stored snapshot; a forced backup overrides this.",
+                            rows, knownSnapshotRows, maxShrinkPercent);
+                    return false;
+                }
                 String currentChecksum = computeSha256(sqlite);
                 if (fallbackCoordinator != null && !currentChecksum.equals(lastMirroredChecksum)
                         && fallbackCoordinator.refreshFallback(sqlite)) {
@@ -201,6 +235,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 }
                 HuggingFaceFileClient.upload(repoType, space, path, encrypted, token);
                 lastPushedChecksum = currentChecksum;
+                knownSnapshotRows = rows;
                 writePermissionWarned = false;
                 lastUploadAt = Instant.now();
                 lastSuccessAt = lastUploadAt;
