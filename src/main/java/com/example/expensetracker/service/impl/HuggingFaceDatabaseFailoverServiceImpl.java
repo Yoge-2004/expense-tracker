@@ -104,7 +104,6 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
                     lastPushedChecksum = computeSha256(sqlite);
                     snapshotFound = true;
-                    keepCopyOfRestoredSnapshot(encrypted);
                     int rows = snapshotService.importIntoFallback(sqlite);
                     knownSnapshotRows = rows;
                     lastMirroredChecksum = lastPushedChecksum;
@@ -144,24 +143,6 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     }
 
     /** Snapshot the currently active database every 10 minutes. */
-    /**
-     * Stores the snapshot we just restored as an ordinary file under {@code backups/} next to it, named
-     * by its checksum (so the same snapshot is never stored twice). The main snapshot is overwritten by
-     * every backup and git history is compacted on deploys, so without this copy a bad overwrite would
-     * be unrecoverable. Failure only logs: it must never stop the application from starting.
-     */
-    private void keepCopyOfRestoredSnapshot(Path encrypted) throws InterruptedException {
-        try {
-            int slash = path.lastIndexOf('/');
-            String directory = slash >= 0 ? path.substring(0, slash + 1) : "";
-            String copy = directory + "backups/" + computeSha256(encrypted).substring(0, 16) + ".sqlite.enc";
-            HuggingFaceFileClient.upload(repoType, space, copy, encrypted, token);
-            log.info("Kept a copy of the restored snapshot at {} in HF {} repository {}.", copy, repoType, space);
-        } catch (IOException | NoSuchAlgorithmException | RuntimeException e) {
-            log.warn("Could not keep a copy of the restored snapshot (startup continues): {}", e.getMessage());
-        }
-    }
-
     @Override
     @Scheduled(cron = "0 */10 * * * *")
     public void scheduledBackup() {

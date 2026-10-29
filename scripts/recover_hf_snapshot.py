@@ -13,6 +13,7 @@ stays encrypted the whole time.
   python scripts/recover_hf_snapshot.py list
   python scripts/recover_hf_snapshot.py download --oid <sha256> --out recovered.sqlite.enc
   python scripts/recover_hf_snapshot.py restore  --file recovered.sqlite.enc
+  python scripts/recover_hf_snapshot.py cleanup            # delete the database/backups/ folder
 
 IMPORTANT: pause the Space (Settings -> Pause) before `restore`, then start it again afterwards.
 While it runs, the app's own backup job can overwrite the file you just restored.
@@ -93,6 +94,16 @@ def cmd_restore(api: HfApi, file: str) -> None:
     print("Restored. Now start the Space again.")
 
 
+def cmd_cleanup(api: HfApi) -> None:
+    folder = PATH.rsplit("/", 1)[0] + "/backups" if "/" in PATH else "backups"
+    print(f"About to DELETE the folder {folder}/ from {REPO} (extra snapshot copies, not the live snapshot).")
+    if input("Type DELETE to continue: ").strip() != "DELETE":
+        sys.exit("Cancelled.")
+    api.delete_folder(path_in_repo=folder, repo_id=REPO, repo_type=REPO_TYPE,
+                      commit_message="Remove extra snapshot copies")
+    print("Deleted.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -102,12 +113,15 @@ def main() -> None:
     d.add_argument("--out", required=True)
     r = sub.add_parser("restore")
     r.add_argument("--file", required=True)
+    sub.add_parser("cleanup")
     args = parser.parse_args()
     api = HfApi(token=token())
     if args.command == "list":
         cmd_list(api)
     elif args.command == "download":
         cmd_download(api, args.oid, args.out)
+    elif args.command == "cleanup":
+        cmd_cleanup(api)
     else:
         cmd_restore(api, args.file)
 
