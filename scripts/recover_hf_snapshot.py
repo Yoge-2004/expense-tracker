@@ -14,6 +14,11 @@ stays encrypted the whole time.
   python scripts/recover_hf_snapshot.py download --oid <sha256> --out recovered.sqlite.enc
   python scripts/recover_hf_snapshot.py restore  --file recovered.sqlite.enc
   python scripts/recover_hf_snapshot.py cleanup            # delete the database/backups/ folder
+  python scripts/recover_hf_snapshot.py restore-oid --oid <sha256> [--target owner/repo] [--yes]
+  python scripts/recover_hf_snapshot.py pause | resume     # pause / restart the Space itself
+
+--yes skips the typed confirmation (used by the GitHub workflow). HF_TARGET_REPO / --target restore into
+a different repository than the one the snapshot is read from (for example a private dataset repo).
 
 IMPORTANT: pause the Space (Settings -> Pause) before `restore`, then start it again afterwards.
 While it runs, the app's own backup job can overwrite the file you just restored.
@@ -54,7 +59,8 @@ def cmd_list(api: HfApi) -> None:
         print(f"  {c.created_at:%Y-%m-%d %H:%M}  {c.commit_id[:8]}  {c.title[:70]}")
 
 
-def cmd_download(api: HfApi, oid: str, out: str) -> None:
+def fetch_lfs(api: HfApi, oid: str) -> bytes:
+    """Download one stored LFS object by checksum and verify it."""
     match = [f for f in api.list_lfs_files(REPO, repo_type=REPO_TYPE) if f.file_oid == oid]
     if not match:
         sys.exit("That oid is not a stored LFS file of this Space. Run `list` first.")
@@ -77,28 +83,48 @@ def cmd_download(api: HfApi, oid: str, out: str) -> None:
     data.raise_for_status()
     digest = hashlib.sha256(data.content).hexdigest()
     if digest != oid:
-        sys.exit(f"Checksum mismatch (got {digest}); not writing the file.")
+        sys.exit(f"Checksum mismatch (got {digest}); not using the file.")
+    return data.content
+
+
+def cmd_download(api: HfApi, oid: str, out: str) -> None:
+    content = fetch_lfs(api, oid)
     with open(out, "wb") as handle:
-        handle.write(data.content)
-    print(f"Saved {out} ({human(len(data.content))}), checksum verified.")
+        handle.write(content)
+    print(f"Saved {out} ({human(len(content))}), checksum verified.")
 
 
-def cmd_restore(api: HfApi, file: str) -> None:
-    size = os.path.getsize(file)
-    print(f"About to REPLACE {PATH} in {REPO} with {file} ({human(size)}).")
-    print("The Space must be paused so the app does not overwrite it again.")
-    if input("Type RESTORE to continue: ").strip() != "RESTORE":
+def confirm(word: str, yes: bool) -> None:
+    if yes:
+        return
+    if input(f"Type {word} to continue: ").strip() != word:
         sys.exit("Cancelled.")
-    api.upload_file(path_or_fileobj=file, path_in_repo=PATH, repo_id=REPO, repo_type=REPO_TYPE,
+
+
+def cmd_restore(api: HfApi, file: str, yes: bool = False, target: str | None = None) -> None:
+    size = os.path.getsize(file)
+    repo = target or REPO
+    print(f"About to REPLACE {PATH} in {repo} with {file} ({human(size)}).")
+    print("The Space must be paused so the app does not overwrite it again.")
+    confirm("RESTORE", yes)
+    api.upload_file(path_or_fileobj=file, path_in_repo=PATH, repo_id=repo, repo_type=os.environ.get("HF_TARGET_REPO_TYPE") or REPO_TYPE,
                     commit_message="Restore database snapshot from an earlier version")
     print("Restored. Now start the Space again.")
 
 
-def cmd_cleanup(api: HfApi) -> None:
+def cmd_restore_oid(api: HfApi, oid: str, yes: bool, target: str | None) -> None:
+    content = fetch_lfs(api, oid)
+    path = "restored.sqlite.enc"
+    with open(path, "wb") as handle:
+        handle.write(content)
+    print(f"Fetched {human(len(content))}, checksum verified.")
+    cmd_restore(api, path, yes, target)
+
+
+def cmd_cleanup(api: HfApi, yes: bool = False) -> None:
     folder = PATH.rsplit("/", 1)[0] + "/backups" if "/" in PATH else "backups"
     print(f"About to DELETE the folder {folder}/ from {REPO} (extra snapshot copies, not the live snapshot).")
-    if input("Type DELETE to continue: ").strip() != "DELETE":
-        sys.exit("Cancelled.")
+    confirm("DELETE", yes)
     api.delete_folder(path_in_repo=folder, repo_id=REPO, repo_type=REPO_TYPE,
                       commit_message="Remove extra snapshot copies")
     print("Deleted.")
@@ -113,7 +139,16 @@ def main() -> None:
     d.add_argument("--out", required=True)
     r = sub.add_parser("restore")
     r.add_argument("--file", required=True)
-    sub.add_parser("cleanup")
+    r.add_argument("--yes", action="store_true")
+    r.add_argument("--target", default=os.environ.get("HF_TARGET_REPO") or None)
+    ro = sub.add_parser("restore-oid")
+    ro.add_argument("--oid", required=True)
+    ro.add_argument("--yes", action="store_true")
+    ro.add_argument("--target", default=os.environ.get("HF_TARGET_REPO") or None)
+    c = sub.add_parser("cleanup")
+    c.add_argument("--yes", action="store_true")
+    sub.add_parser("pause")
+    sub.add_parser("resume")
     args = parser.parse_args()
     api = HfApi(token=token())
     if args.command == "list":
@@ -121,9 +156,17 @@ def main() -> None:
     elif args.command == "download":
         cmd_download(api, args.oid, args.out)
     elif args.command == "cleanup":
-        cmd_cleanup(api)
+        cmd_cleanup(api, args.yes)
+    elif args.command == "restore-oid":
+        cmd_restore_oid(api, args.oid, args.yes, args.target)
+    elif args.command == "pause":
+        api.pause_space(REPO)
+        print(f"Paused {REPO}.")
+    elif args.command == "resume":
+        api.restart_space(REPO)
+        print(f"Restart requested for {REPO}.")
     else:
-        cmd_restore(api, args.file)
+        cmd_restore(api, args.file, args.yes, args.target)
 
 
 if __name__ == "__main__":

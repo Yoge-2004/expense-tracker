@@ -1,0 +1,70 @@
+name: HF snapshot recovery (manual)
+
+# Runs scripts/recover_hf_snapshot.py against the Hugging Face Space from GitHub's network.
+# Manual only. The token lives in the repository secret HF_RECOVERY_TOKEN (delete it when done).
+# Results are printed as an annotation because job logs cannot be downloaded through the API.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do
+        type: choice
+        required: true
+        options: [list, pause, restore-oid, cleanup, resume]
+      oid:
+        description: Snapshot checksum (sha256) to restore (restore-oid only)
+        required: false
+        default: ''
+      target_repo:
+        description: Restore into this repo instead (owner/name), optional
+        required: false
+        default: ''
+      target_repo_type:
+        description: Type of the target repo (space or dataset), optional
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hf-snapshot-recovery
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install --quiet huggingface_hub requests
+      - name: Run
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HF_RECOVERY_TOKEN }}
+          ACTION: ${{ inputs.action }}
+          OID: ${{ inputs.oid }}
+          HF_TARGET_REPO: ${{ inputs.target_repo }}
+          HF_TARGET_REPO_TYPE: ${{ inputs.target_repo_type }}
+        run: |
+          set -o pipefail
+          . .venv/bin/activate
+          case "$ACTION" in
+            list|pause|resume) python scripts/recover_hf_snapshot.py "$ACTION" 2>&1 | tee out.txt ;;
+            restore-oid)       python scripts/recover_hf_snapshot.py restore-oid --oid "$OID" --yes 2>&1 | tee out.txt ;;
+            cleanup)           python scripts/recover_hf_snapshot.py cleanup --yes 2>&1 | tee out.txt ;;
+            *) echo "unknown action $ACTION" | tee out.txt; exit 1 ;;
+          esac
+      - name: Show the result as an annotation
+        if: always()
+        shell: bash
+        env:
+          ACTION: ${{ inputs.action }}
+        run: python3 scripts/ci_notice.py "hf-recovery $ACTION" < out.txt || true
