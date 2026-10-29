@@ -11,7 +11,7 @@ on:
         description: What to do
         type: choice
         required: true
-        options: [list, pause, restore-oid, cleanup, resume]
+        options: [list, health, pause, restore-oid, cleanup, resume]
       oid:
         description: Snapshot checksum (sha256) to restore (restore-oid only)
         required: false
@@ -58,6 +58,7 @@ jobs:
           . .venv/bin/activate
           case "$ACTION" in
             list|pause|resume) python scripts/recover_hf_snapshot.py "$ACTION" 2>&1 | tee out.txt ;;
+            health)            { curl -sS -m 40 -w '\nHTTP %{http_code} in %{time_total}s\n' "https://yoge-2004-expense-tracker-backend.hf.space/api/health" || echo "request failed"; } 2>&1 | tee out.txt ;;
             restore-oid)       python scripts/recover_hf_snapshot.py restore-oid --oid "$OID" --yes 2>&1 | tee out.txt ;;
             cleanup)           python scripts/recover_hf_snapshot.py cleanup --yes 2>&1 | tee out.txt ;;
             *) echo "unknown action $ACTION" | tee out.txt; exit 1 ;;
