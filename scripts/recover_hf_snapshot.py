@@ -48,15 +48,34 @@ def human(size: int) -> str:
 
 
 def cmd_list(api: HfApi) -> None:
+    """Compact summary: GitHub annotations are cut at 4096 characters."""
     files = [f for f in api.list_lfs_files(REPO, repo_type=REPO_TYPE) if f.filename == PATH]
-    files.sort(key=lambda f: str(f.pushed_at or ''))
+    files.sort(key=lambda f: str(f.pushed_at or ""))
     if not files:
         print(f"No stored LFS versions of {PATH} found.")
-    for f in files:
-        print(f"{str(f.pushed_at)[:19]}  {human(f.size):>10}  oid={f.file_oid}  ref={f.ref or '(no longer referenced)'}")
-    print("\nCommits that still exist:")
-    for c in list(api.list_repo_commits(REPO, repo_type=REPO_TYPE))[:15]:
-        print(f"  {c.created_at:%Y-%m-%d %H:%M}  {c.commit_id[:8]}  {c.title[:70]}")
+    else:
+        sizes = {}
+        for f in files:
+            sizes.setdefault(human(f.size), []).append(f)
+        print(f"{len(files)} stored versions of {PATH}, {str(files[0].pushed_at)[:19]} .. {str(files[-1].pushed_at)[:19]}")
+        for label, group in sorted(sizes.items(), key=lambda kv: -max(x.size for x in kv[1])):
+            first, last = group[0], group[-1]
+            print(f"  {label:>10} x{len(group):<3} {str(first.pushed_at)[:16]} .. {str(last.pushed_at)[:16]}  "
+                  f"oldest oid={first.file_oid}  newest oid={last.file_oid}")
+        unreferenced = [f for f in files if not f.ref]
+        print(f"  not referenced by any commit: {len(unreferenced)}")
+    commits = list(api.list_repo_commits(REPO, repo_type=REPO_TYPE))
+    print(f"\n{len(commits)} commits in the Space; oldest {commits[-1].created_at:%Y-%m-%d %H:%M} "
+          f"'{commits[-1].title[:50]}', newest {commits[0].created_at:%Y-%m-%d %H:%M}")
+    for c in commits[:6]:
+        print(f"  {c.created_at:%m-%d %H:%M}  {c.commit_id[:8]}  {c.title[:60]}")
+    others = {}
+    for f in api.list_lfs_files(REPO, repo_type=REPO_TYPE):
+        if f.filename != PATH:
+            others.setdefault(f.filename.split("/")[0], [0, 0])
+            others[f.filename.split("/")[0]][0] += 1
+            others[f.filename.split("/")[0]][1] += f.size
+    print("\nOther stored LFS files by top folder: " + ", ".join(f"{k}: {v[0]} files {human(v[1])}" for k, v in others.items()))
 
 
 def fetch_lfs(api: HfApi, oid: str) -> bytes:
