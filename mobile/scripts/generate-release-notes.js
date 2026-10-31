@@ -27,8 +27,8 @@ function main() {
   const ipaShaPath = path.join(baseDir, 'expense-tracker.ipa.sha256');
   const outputPath = path.join(baseDir, 'release-notes.md');
 
-  let version = '1.0.9';
-  let versionCode = 11;
+  let version = '1.0.10';
+  let versionCode = 12;
   let packageId = 'com.yoge.expensetracker';
   let bundleId = 'com.yoge.expensetracker';
   if (fs.existsSync(appJsonPath)) {
@@ -65,30 +65,25 @@ function main() {
   const lines = [
     '# Expense Tracker Mobile v' + version,
     '',
-    'A performance and cross-platform release focused on **zero-latency theme switching, scroll context isolation for infinite virtualized transaction ledgers, accurate ledger loading lifecycle states, iOS Retina scrollbar gutter separation, and strict iOS App Store & sandbox compliance**.',
+    'A data-safety release: **your ledger is now kept in a protected copy on the phone, and you can restore anything the server is missing, explicitly and without creating duplicates**.',
     '',
     '---',
     '',
     "## What's New in v" + version,
     '',
-    '### Instant, Zero-Latency Theme Switching',
-    '- Removed React Navigation stack animation delays by disabling route transitions (`animation: "none"`) on the main tab navigator, eliminating the artificial 180ms screen fade delay during theme switching.',
-    '- Upgraded theme toggle button to a high-priority `Pressable` with `onPressIn` and `hitSlop={8}` to trigger theme shifts at t = 0ms upon initial touch contact.',
-    '- Removed synthetic rotation animations and decoupled heavy background blur aura renders (`AmbientAura.tsx` memoization) to eliminate GPU/CPU rasterization contention during theme swaps.',
+    '### Safety copy of your ledger',
+    '- The ledger cached on the phone is copied aside before the first network sync and kept if the server ever returns far less data. It survives sign-out and expired sessions.',
     '',
-    '### Infinite Virtualized Ledger & Accurate Loading States',
-    '- Resolved React Native nested virtualized list warnings using `(ScrollView as any).Context` isolation (`<ScrollContext.Provider value={null}>`).',
-    '- Fixed premature display of final state banner: while transactions are being fetched from backend (`isLoading || refreshing`) or dynamically streaming rows on scroll, an active spinner (`"Loading transactions..."` / `"Loading more transactions..."`) is displayed.',
-    '- The final indicator (`— ✓ ALL {N} TRANSACTIONS LOADED —`) is strictly and exclusively rendered once all records have actually loaded into view and network sync is complete.',
-    '- Progressive streaming auto-reveals batches of 25 records on scroll (`onEndReached`) ensuring zero lag, instant startup, and seamless infinite scrolling.',
-    '- Adjusted bottom padding to prevent transaction card clipping against the ledger container boundary.',
+    '### Restore to server (Export / Import screen)',
+    '- Compare with server shows exactly which expenses, incomes, goals, loans, budgets, recurring items and categories the server is missing, with example lines.',
+    '- Restore to server uploads only what is missing, re-reads the server afterwards and reports a verified result. Running it again sends nothing.',
+    '- Records the server already holds in an edited form are left alone by default; an explicit choice uploads them too.',
+    '- Export device copy writes a file that works offline, and Import device copy file loads one back.',
+    '- A dashboard banner appears when this phone holds more records than the server returned.',
+    '- The sign-in screen can save a copy of the data stored on the phone even when sign-in is unavailable.',
     '',
-    '### iOS Platform Fidelity & Sandbox Safeguards',
-    '- Increased list right padding to provide a dedicated 5px gutter separating cards from the custom gold scrollbar track on high-DPI iOS Retina displays.',
-    '- Disabled bouncing and overscroll on inner nested lists (`bounces={false}`, `overScrollMode="never"`) to prevent nested scroll traps and momentum lock on iOS devices.',
-    '- Configured `NSFaceIDUsageDescription` in `app.json` for Apple biometric compliance.',
-    '- Guarded SMS clipboard reading against iOS 14+ paste privacy banners.',
-    '- Handled platform-specific update installation: Android supports in-app APK sideloading, while iOS safely routes users to Safari/TestFlight in compliance with App Store guidelines.',
+    '### Fixes',
+    '- Narrow phones no longer clip the Record Expense buttons.',
     '',
     '---',
     '',

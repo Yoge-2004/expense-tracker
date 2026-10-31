@@ -25,7 +25,21 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.Duration;
 import java.util.Set;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -61,7 +75,18 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
     @Value("${hf.db.max-shrink-percent:30}")
     private int maxShrinkPercent = 30;
 
+    /** A changed snapshot is committed to the Space (which restarts it) at most this often; shutdown is exempt. */
+    @Value("${hf.db.min-commit-interval-minutes:30}")
+    private int minCommitIntervalMinutes = 30;
+
+    /** Tables whose rows change without user edits; they ride along in a snapshot but never trigger a commit alone. */
+    @Value("${hf.db.volatile-tables:webauthn_challenges,password_reset_otp,platform_daily_metrics,app_notifications,admin_audit_logs,monthly_report_logs,device_tokens}")
+    private String volatileTablesCsv = "webauthn_challenges,password_reset_otp,platform_daily_metrics,app_notifications,admin_audit_logs,monthly_report_logs,device_tokens";
+
     private final DatabaseSnapshotService snapshotService;
+    /** Order-independent hash of the data that matters, of the snapshot stored on HF (null = unknown). */
+    private volatile String lastPushedContentHash = null;
+    private volatile boolean shuttingDown = false;
     /** Rows in the snapshot currently stored on Hugging Face (restored at startup or last pushed); 0 = unknown. */
     private volatile int knownSnapshotRows = 0;
     private volatile boolean writePermissionWarned = false;
@@ -96,13 +121,19 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
         // Mirrors the primary's schema into the local fallback and merges or protects any writes an earlier run left behind.
         boolean keepLocalFallback = fallbackCoordinator != null && fallbackCoordinator.prepareFallback();
         boolean snapshotFound = false;
+        boolean restoreSkipped = false;
         try {
             Path encrypted = createSecureTempFile(".enc");
             Path sqlite = createSecureTempFile(".sqlite");
             try {
-                if (HuggingFaceFileClient.download(repoType, space, path, encrypted, token)) {
+                if (keepLocalFallback) {
+                    // The local fallback holds writes Neon has not accepted yet. Restoring would DELETE them.
+                    restoreSkipped = true;
+                    log.warn("Snapshot restore skipped: the local fallback holds unmerged writes that must not be overwritten.");
+                } else if (HuggingFaceFileClient.download(repoType, space, path, encrypted, token)) {
                     DatabaseSnapshotService.decrypt(encrypted, sqlite, encryptionKey);
                     lastPushedChecksum = computeSha256(sqlite);
+                    lastPushedContentHash = contentHash(sqlite, volatileTables());
                     snapshotFound = true;
                     int rows = snapshotService.importIntoFallback(sqlite);
                     knownSnapshotRows = rows;
@@ -134,7 +165,9 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             }
         }
         // If snapshot does not exist on HF space, immediately replicate the current database first!
-        if (!snapshotFound) {
+        if (restoreSkipped) {
+            log.info("Initial backup skipped because the restore was skipped; scheduled backups continue.");
+        } else if (!snapshotFound) {
             log.info("Snapshot not found on HF spaces; replicating database to HF spaces immediately...");
             backupCurrentDatabase();
         } else {
@@ -202,12 +235,21 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                         && fallbackCoordinator.refreshFallback(sqlite)) {
                     lastMirroredChecksum = currentChecksum;
                 }
-                if (currentChecksum.equals(lastPushedChecksum)) {
-                    log.info("Database snapshot unchanged (SHA-256: {}); skipping redundant Hugging Face backup.",
-                            currentChecksum);
+                String contentHash = contentHash(sqlite, volatileTables());
+                if (currentChecksum.equals(lastPushedChecksum) || contentHash.equals(lastPushedContentHash)) {
+                    log.info("Database snapshot unchanged (content hash {}); skipping redundant Hugging Face backup.",
+                            contentHash);
                     lastSuccessAt = Instant.now();
                     lastError = null;
                     return true;
+                }
+                // Every upload is a Space commit and restarts the app, so a changed snapshot is committed at most
+                // every N minutes. A forced backup and the shutdown backup are exempt (nothing is left to wait for).
+                if (!force && !shuttingDown && lastUploadAt != null && minCommitIntervalMinutes > 0
+                        && Duration.between(lastUploadAt, Instant.now()).toMinutes() < minCommitIntervalMinutes) {
+                    log.info("Database changed but the last commit was under {} min ago; deferring the Hugging Face upload.",
+                            minCommitIntervalMinutes);
+                    return false;
                 }
                 DatabaseSnapshotService.encrypt(sqlite, encrypted, encryptionKey);
                 if (!repoEnsured) {
@@ -216,6 +258,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
                 }
                 HuggingFaceFileClient.upload(repoType, space, path, encrypted, token);
                 lastPushedChecksum = currentChecksum;
+                lastPushedContentHash = contentHash;
                 knownSnapshotRows = rows;
                 writePermissionWarned = false;
                 lastUploadAt = Instant.now();
@@ -280,6 +323,71 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    private Set<String> volatileTables() {
+        Set<String> set = new HashSet<>();
+        for (String t : (volatileTablesCsv == null ? "" : volatileTablesCsv).split(",")) {
+            if (!t.isBlank()) {
+                set.add(t.trim().toLowerCase(Locale.ROOT));
+            }
+        }
+        return set;
+    }
+
+    /**
+     * Hash of what a user would call "the data": every table except the excluded ones and the fallback's own
+     * bookkeeping (fb_*), rows sorted so that export order cannot matter, table names lower-cased so a Neon export
+     * and an H2 export of the same data agree. Unlike the file hash it does not change when only log-like tables did.
+     */
+    static String contentHash(Path sqliteFile, Set<String> excludedTables)
+            throws IOException, SQLException, NoSuchAlgorithmException {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("SQLite JDBC driver not available", e);
+        }
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + sqliteFile.toAbsolutePath())) {
+            List<String> tables = new ArrayList<>();
+            try (Statement s = c.createStatement();
+                 ResultSet rs = s.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")) {
+                while (rs.next()) {
+                    tables.add(rs.getString(1));
+                }
+            }
+            tables.sort(String.CASE_INSENSITIVE_ORDER);
+            for (String table : tables) {
+                String lower = table.toLowerCase(Locale.ROOT);
+                if (excludedTables.contains(lower) || lower.startsWith("fb_") || !table.matches("^[a-zA-Z0-9_]+$")) {
+                    continue;
+                }
+                List<String> rows = new ArrayList<>();
+                try (Statement s = c.createStatement();
+                     ResultSet rs = s.executeQuery("SELECT * FROM \"" + table + "\"")) {
+                    int cols = rs.getMetaData().getColumnCount();
+                    while (rs.next()) {
+                        StringBuilder row = new StringBuilder();
+                        for (int i = 1; i <= cols; i++) {
+                            Object v = rs.getObject(i);
+                            row.append(v instanceof byte[] b ? Base64.getEncoder().encodeToString(b) : String.valueOf(v))
+                                    .append('\u001f');
+                        }
+                        rows.add(row.toString());
+                    }
+                }
+                Collections.sort(rows);
+                digest.update(("T:" + lower + "\n").getBytes(StandardCharsets.UTF_8));
+                for (String row : rows) {
+                    digest.update((row + "\n").getBytes(StandardCharsets.UTF_8));
+                }
+            }
+        }
+        StringBuilder hex = new StringBuilder();
+        for (byte b : digest.digest()) {
+            hex.append(String.format("%02x", b));
+        }
+        return hex.toString();
     }
 
     /** Package-private (not private) so its file/directory permission
@@ -372,6 +480,7 @@ public class HuggingFaceDatabaseFailoverServiceImpl implements HuggingFaceDataba
 
     @PreDestroy
     public void onShutdown() {
+        shuttingDown = true;
         log.info("Application shutting down: attempting graceful database snapshot push to Hugging Face...");
         try {
             backupCurrentDatabase();

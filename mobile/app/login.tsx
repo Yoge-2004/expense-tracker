@@ -23,6 +23,7 @@ import { ThemedTextInput as TextInput } from '../components/ThemedText';
 import { ThemedText as Text } from '../components/ThemedText';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
+import { exportAllDeviceCopies, listDeviceUserIds } from '../services/ledgerVault';
 import { ApiError } from '../services/api';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +50,9 @@ function isValidEmail(email: string): boolean {
 export default function LoginScreen() {
   const { login, loginWithGoogle, loginWithBiometrics, isBiometricsAvailable, theme, themeColors } = useAuth();
   const [isBioLoading, setIsBioLoading] = useState(false);
+  useEffect(() => {
+    void listDeviceUserIds().then((ids) => setDeviceCopies(ids.length));
+  }, []);
   const { showAlert } = useAlert();
   const router = useRouter();
   const c = themeColors || Colors[theme];
@@ -56,6 +60,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
+  const [deviceCopies, setDeviceCopies] = useState(0);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -340,6 +345,28 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Offline safety copy: works even when the server cannot sign anyone in */}
+            {deviceCopies > 0 && (
+              <TouchableOpacity
+                onPress={async () => {
+                  try {
+                    const r = await exportAllDeviceCopies();
+                    showAlert(
+                      r.files ? 'Copy saved' : 'Nothing to save',
+                      r.files
+                        ? `${r.records.toLocaleString()} records from this phone were saved to ${r.files} file(s). Keep them safe; they can be loaded back after you sign in.`
+                        : 'No saved data was found on this phone.'
+                    );
+                  } catch (e: any) {
+                    showAlert('Could not save', e?.message || 'Please try again.');
+                  }
+                }}
+                style={{ alignSelf: 'center', paddingVertical: 10 }}
+              >
+                <Text style={[styles.forgotText, { color: c.primary }]}>Save a copy of the data stored on this phone</Text>
+              </TouchableOpacity>
+            )}
 
             {/* Sign In Button */}
             <AnimatedButton
