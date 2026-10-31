@@ -8,6 +8,28 @@
  */
 const mockCtx = { base: '', token: '' };
 
+/** Real HTTP via Node's http module: the project's Jest setup replaces global fetch with a stub. */
+function mockHttp(method: string, url: string, headers: Record<string, string>, body?: string): Promise<{ ok: boolean; status: number; text: string }> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const http = require('http');
+  const m = /^http:\/\/([^:/]+):?(\d*)(\/.*)?$/.exec(url);
+  if (!m) return Promise.reject(new Error(`bad url ${url}`));
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { hostname: m[1], port: m[2] || 80, path: m[3] || '/', method, headers: body ? { ...headers, 'Content-Length': Buffer.byteLength(body) } : headers },
+      (res: any) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (c: string) => { data += c; });
+        res.on('end', () => resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, text: data }));
+      }
+    );
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
 jest.mock('expo-file-system/legacy', () => ({ cacheDirectory: '/tmp/', documentDirectory: '/tmp/', writeAsStringAsync: jest.fn() }));
 jest.mock('../utils/fileDownloader', () => ({ saveFileToDevice: jest.fn() }));
 jest.mock('../services/api', () => {
@@ -19,14 +41,10 @@ jest.mock('../services/api', () => {
     ApiError,
     invalidateApiCache: jest.fn(),
     apiRequest: async (endpoint: string, opts: any = {}) => {
-      const res = await fetch(`${mockCtx.base}/api${endpoint}`, {
-        method: opts.method || 'GET',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mockCtx.token}` },
-        body: opts.body,
-      });
-      const text = await res.text();
-      if (!res.ok) throw new ApiError(`${res.status} ${endpoint}: ${text.slice(0, 200)}`, res.status);
-      return text ? JSON.parse(text) : null;
+      const res = await mockHttp(opts.method || 'GET', `${mockCtx.base}/api${endpoint}`,
+        { 'Content-Type': 'application/json', Authorization: `Bearer ${mockCtx.token}` }, opts.body);
+      if (!res.ok) throw new ApiError(`${res.status} ${endpoint}: ${res.text.slice(0, 200)}`, res.status);
+      return res.text ? JSON.parse(res.text) : null;
     },
   };
 });
@@ -39,25 +57,22 @@ const BASE = process.env.RESTORE_TEST_BACKEND_URL;
 const suite = BASE ? describe : describe.skip;
 
 async function raw(token: string, method: string, path: string, body?: unknown): Promise<any> {
-  const res = await fetch(`${BASE}/api${path}`, {
-    method,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${text.slice(0, 300)}`);
-  return text ? JSON.parse(text) : null;
+  const res = await mockHttp(method, `${BASE}/api${path}`,
+    { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body === undefined ? undefined : JSON.stringify(body));
+  if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${res.text.slice(0, 300)}`);
+  return res.text ? JSON.parse(res.text) : null;
 }
 
 async function newUser(tag: string): Promise<{ id: number; token: string }> {
   const stamp = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `restore_${tag}_${stamp}@example.com`;
   const body = { name: `Restore ${tag}`, username: `rt${tag}${stamp}`.slice(0, 20), email, password: 'Passw0rd!x' };
-  const reg = await fetch(`${BASE}/api/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  if (!reg.ok) throw new Error(`register failed ${reg.status} ${await reg.text()}`);
-  const login = await fetch(`${BASE}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: body.password }) });
-  if (!login.ok) throw new Error(`login failed ${login.status} ${await login.text()}`);
-  const j: any = await login.json();
+  const json = { 'Content-Type': 'application/json' };
+  const reg = await mockHttp('POST', `${BASE}/api/auth/register`, json, JSON.stringify(body));
+  if (!reg.ok) throw new Error(`register failed ${reg.status} ${reg.text.slice(0, 300)}`);
+  const login = await mockHttp('POST', `${BASE}/api/auth/login`, json, JSON.stringify({ email, password: body.password }));
+  if (!login.ok) throw new Error(`login failed ${login.status} ${login.text.slice(0, 300)}`);
+  const j: any = JSON.parse(login.text);
   return { id: j.userId, token: j.token };
 }
 
