@@ -28,7 +28,11 @@ jest.mock('../services/api', () => {
         const body = JSON.parse(opts.body);
         const id = mockNextId++;
         if (endpoint.includes('/categories/user')) mockServer.user.push({ id, name: body.name });
-        else if (endpoint.includes('/expenses/recurring')) mockServer.subs.push({ ...body, id, categoryName: cat(body.categoryId) });
+        else if (endpoint.includes('/expenses/recurring')) {
+          mockServer.subs.push({ ...body, id, categoryName: cat(body.categoryId) });
+          // the real server also records the first occurrence as an ordinary expense
+          mockServer.expenses.push({ amount: body.amount, description: body.description, expenseDate: body.expenseDate, categoryId: body.categoryId, id: mockNextId++, categoryName: cat(body.categoryId) });
+        }
         else if (endpoint.includes('/expenses/budget')) mockServer.budgets.push({ ...body, id, categoryName: cat(body.categoryId), limit: body.limitAmount });
         else if (endpoint.includes('/expenses/user')) mockServer.expenses.push({ ...body, id, categoryName: cat(body.categoryId) });
         else if (endpoint.includes('/incomes')) mockServer.incomes.push({ ...body, id });
@@ -56,7 +60,7 @@ import {
 
 const e = (i: number, over: any = {}) => ({ id: i, amount: 10 + i, description: `item ${i}`, expenseDate: '2026-05-01', categoryName: 'Food', categoryId: 1, ...over });
 const ledger = (n: number) => ({
-  expenses: Array.from({ length: n }, (_, i) => e(i)),
+  expenses: [...Array.from({ length: n }, (_, i) => e(i)), { id: 999, amount: 99, description: 'Music', expenseDate: '2026-05-01', categoryName: 'Food', categoryId: 1 }],
   incomes: [{ id: 1, amount: 500, source: 'Salary', incomeDate: '2026-05-01', isRecurring: false }],
   savingsGoals: [{ id: 1, name: 'Bike', targetAmount: 900, currentAmount: 100 }],
   loans: [{ id: 1, counterparty: 'Sam', type: 'LENT', amount: 5, adjustmentDate: '2026-04-01', expenseId: 3 }],
@@ -75,13 +79,13 @@ describe('device vault', () => {
   it('captures the cached ledger once and keeps it when the server later returns far less', async () => {
     await captureVaultIfMissing('u1', ledger(30));
     await captureVaultIfMissing('u1', ledger(2)); // must not replace
-    expect((await readVault('u1'))!.data.expenses).toHaveLength(30);
+    expect((await readVault('u1'))!.data.expenses).toHaveLength(31);
     mockStore['expense_cache_v4_u1'] = JSON.stringify(ledger(30));
     const kept = await preserveBeforeOverwrite('u1', ledger(3));
     expect(kept).toBe(false); // vault already holds an equal copy, nothing to move
     delete mockStore['expense_vault_v1_u1'];
     expect(await preserveBeforeOverwrite('u1', ledger(3))).toBe(true);
-    expect((await getDeviceLedger('u1'))!.data.expenses).toHaveLength(30);
+    expect((await getDeviceLedger('u1'))!.data.expenses).toHaveLength(31);
   });
 
   it('does not touch the vault for a normal small change', async () => {
@@ -98,7 +102,7 @@ describe('restore to server', () => {
     expect(r.failures).toEqual([]);
     expect(r.verified).toBe(true);
     expect(r.remainingAfterVerify).toBe(0);
-    expect(mockServer.expenses).toHaveLength(12);
+    expect(mockServer.expenses).toHaveLength(13);
     expect(mockServer.user.map((c: any) => c.name)).toEqual(['Pets']);
     const before = mockPosts.length;
     const again = await applyRestore('u1');
@@ -110,9 +114,9 @@ describe('restore to server', () => {
     mockServer.expenses = ledger(12).expenses.slice(0, 5).map((x, i) => ({ ...x, id: 500 + i }));
     await captureVaultIfMissing('u1', ledger(12));
     const plan = await computeRestorePlan('u1');
-    expect(plan!.plan.expenses).toHaveLength(7);
+    expect(plan!.plan.expenses).toHaveLength(8);
     await applyRestore('u1');
-    expect(mockServer.expenses).toHaveLength(12);
+    expect(mockServer.expenses).toHaveLength(13);
   });
 
   it('fails closed: if any server list cannot be read, nothing is uploaded', async () => {

@@ -112,7 +112,8 @@ suite('restore against a real backend', () => {
     // ---- the "device copy": A's data read back as the dashboard would cache it ----
     mockCtx.token = a.token;
     const deviceCopy: LedgerData = await fetchServerLedger(a.id);
-    expect(deviceCopy.expenses!.length).toBe(24);
+    // 24 plain expenses + the first occurrence the server records for the recurring item
+    expect(deviceCopy.expenses!.length).toBe(25);
     await AsyncStorage.setItem(`expense_cache_v4_${b.id}`, JSON.stringify({ savedAt: Date.now(), ...deviceCopy }));
     await captureVaultIfMissing(String(b.id), deviceCopy);
 

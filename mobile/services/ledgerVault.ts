@@ -120,6 +120,7 @@ export async function fetchServerLedger(userId: string | number): Promise<Ledger
 
 export interface PlanResult {
   plan: RestorePlan;
+  device: LedgerData;
   total: number;
   deviceRecords: number;
   source: 'vault' | 'cache';
@@ -131,7 +132,7 @@ export async function computeRestorePlan(userId: string | number): Promise<PlanR
   if (!device) return null;
   const server = await fetchServerLedger(userId);
   const plan = buildRestorePlan(device.data, server);
-  return { plan, total: planTotal(plan), deviceRecords: ledgerRichness(device.data), source: device.source };
+  return { plan, device: device.data, total: planTotal(plan), deviceRecords: ledgerRichness(device.data), source: device.source };
 }
 
 export interface RestoreFailure {
@@ -183,7 +184,8 @@ export function applyRestore(
       if (!first || first.total === 0) {
         return { attempted: 0, created: 0, failures: [], remainingAfterVerify: 0, verified: !!first };
       }
-      const { plan, total } = first;
+      const { plan: initial, total, device } = first;
+      let plan = initial;
       const failures: RestoreFailure[] = [];
       let done = 0;
       let created = 0;
@@ -203,7 +205,7 @@ export function applyRestore(
       }
       // Category ids are looked up by NAME on the server as it is now; old ids are meaningless after a restore.
       let catIds = new Map<string, number>();
-      if (plan.expenses.length || plan.budgets.length || plan.subscriptions.length) {
+      if (initial.expenses.length || initial.budgets.length || initial.subscriptions.length) {
         invalidateApiCache();
         const [g, u] = await Promise.all([apiRequest(`/categories/global`), apiRequest(`/categories/user/${userId}`)]);
         for (const c of [...(Array.isArray(g) ? g : []), ...(Array.isArray(u) ? u : [])]) {
@@ -215,6 +217,16 @@ export function applyRestore(
         done++;
         onProgress?.(done, total, kind);
       };
+
+      // Creating a recurring item makes the server record its first occurrence as an ordinary expense, and the
+      // device cache holds that expense too. So recurring items go first, then the server is re-read and the
+      // remaining work is planned against what it now holds, which prevents a duplicate of that expense.
+      for (const s of initial.subscriptions) {
+        const body = bodies.subscription(s, catIds);
+        if (!body) { unmapped('subscription', String(s?.description ?? '')); continue; }
+        await step('subscription', String(s?.description ?? ''), () => post(`/expenses/recurring/user/${userId}`, body));
+      }
+      plan = buildRestorePlan(device, await fetchServerLedger(userId));
 
       for (const e of plan.expenses) {
         const body = bodies.expense(e, catIds);
@@ -234,11 +246,6 @@ export function applyRestore(
       }
       for (const l of plan.loans) {
         await step('loan', String(l?.counterparty ?? ''), () => post(`/loans/user/${userId}`, bodies.loan(l)));
-      }
-      for (const s of plan.subscriptions) {
-        const body = bodies.subscription(s, catIds);
-        if (!body) { unmapped('subscription', String(s?.description ?? '')); continue; }
-        await step('subscription', String(s?.description ?? ''), () => post(`/expenses/recurring/user/${userId}`, body));
       }
 
       // Verification: re-read the server and compare again. Only an empty diff counts as "in sync".
