@@ -64,6 +64,7 @@ import {
   getLoans,
   getLoanMetrics,
 } from '../../services/loans';
+import { captureVaultIfMissing, preserveBeforeOverwrite } from '../../services/ledgerVault';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -206,6 +207,8 @@ export default function DashboardScreen() {
    */
   const saveCache = async (data: any) => {
     try {
+      // If the server now returns far less than this device held, keep the earlier copy aside first.
+      await preserveBeforeOverwrite(String(userId), data);
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), ...data }));
     } catch (e) {
       console.warn('[Dashboard] Could not save cache to AsyncStorage:', e);
@@ -320,6 +323,8 @@ export default function DashboardScreen() {
   const loadWithCache = async () => {
     const cached = await loadCache();
     if (cached) {
+      // Protect the device copy before the first network sync can replace it.
+      await captureVaultIfMissing(String(userId), cached);
       if (Array.isArray(cached.expenses)) setExpenses(cached.expenses);
       if (Array.isArray(cached.budgets)) setBudgets(cached.budgets);
       if (Array.isArray(cached.categories)) setCategories(cached.categories);

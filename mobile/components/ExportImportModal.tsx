@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors } from '../constants/theme';
 import { apiRequest, API_BASE_URL, getSession } from '../services/api';
+import { applyRestore, computeRestorePlan, exportDeviceCopy } from '../services/ledgerVault';
 
 interface Props {
   visible: boolean;
@@ -552,6 +553,65 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
     }
   };
 
+  const describePlan = (p: { categories: unknown[]; expenses: unknown[]; incomes: unknown[]; goals: unknown[]; loans: unknown[]; budgets: unknown[]; subscriptions: unknown[] }) =>
+    `${p.expenses.length} expenses, ${p.incomes.length} incomes, ${p.goals.length} goals, ${p.loans.length} loans, ` +
+    `${p.budgets.length} budgets, ${p.subscriptions.length} recurring, ${p.categories.length} categories`;
+
+  const runDeviceAction = async (key: 'export' | 'check' | 'restore') => {
+    if (!userId) return;
+    setBusy(`device-${key}`);
+    try {
+      if (key === 'export') {
+        const r = await exportDeviceCopy(userId);
+        showAlert(r.ok ? 'Device copy saved' : 'Nothing to export', r.ok ? `${r.records.toLocaleString()} records saved to a file.` : 'This device holds no cached data.');
+        return;
+      }
+      const result = await computeRestorePlan(userId);
+      if (!result) {
+        showAlert('Nothing on this device', 'No cached data was found for this account on this phone.');
+        return;
+      }
+      if (key === 'check') {
+        showAlert(
+          result.total === 0 ? 'Server is up to date' : 'Server is missing data',
+          result.total === 0
+            ? `All ${result.deviceRecords.toLocaleString()} records on this device are already on the server.`
+            : `Missing on the server: ${describePlan(result.plan)}.`
+        );
+        return;
+      }
+      if (result.total === 0) {
+        showAlert('Already in sync', 'The server already has everything this device holds.');
+        return;
+      }
+      showAlert('Restore to server?', `This adds only what the server is missing: ${describePlan(result.plan)}. Nothing is edited or deleted.`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Restore',
+          onPress: () => {
+            setBusy('device-restore');
+            applyRestore(userId)
+              .then((r) => {
+                onDataImported();
+                showAlert(
+                  r.verified ? 'Restore verified' : 'Restore finished with gaps',
+                  r.verified
+                    ? `${r.created.toLocaleString()} records added. A fresh comparison shows the server now has everything on this device.`
+                    : `${r.created.toLocaleString()} of ${r.attempted.toLocaleString()} added. Still missing: ${r.remainingAfterVerify}. Failed: ${r.failures.length}. Run Restore again to retry.`
+                );
+              })
+              .catch((e) => showAlert('Restore stopped', e?.message || 'Could not reach the server. Nothing was lost; try again.'))
+              .finally(() => setBusy(null));
+          },
+        },
+      ]);
+    } catch (e: any) {
+      showAlert('Could not complete', e?.message || 'Please try again.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const importJson = async () => {
     try {
       const items = JSON.parse(json);
@@ -904,6 +964,27 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                   <Text style={[styles.actionSub, { color: c.textMuted }]}>
                     Refreshes dashboard after import
                   </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.label, { color: c.textMuted, marginTop: 22 }]}>4. THIS DEVICE'S COPY</Text>
+            <View style={styles.grid}>
+              {([
+                ['export', 'Export device copy', 'Saves a file; works offline', 'download-outline'],
+                ['check', 'Compare with server', 'Shows what is missing', 'git-compare-outline'],
+                ['restore', 'Restore to server', 'Uploads only missing records', 'cloud-upload-outline'],
+              ] as const).map(([key, title, sub, icon]) => (
+                <TouchableOpacity
+                  key={key}
+                  disabled={busy !== null}
+                  onPress={() => runDeviceAction(key)}
+                  style={[styles.action, { backgroundColor: c.inputBg, borderColor: c.border }]}
+                >
+                  <View style={[styles.icon, { backgroundColor: c.primary + '20' }]}>
+                    <Ionicons name={icon} size={20} color={c.primary} />
+                  </View>
+                  <Text style={[styles.actionTitle, { color: c.text }]}>{title}</Text>
+                  <Text style={[styles.actionSub, { color: c.textMuted }]}>{sub}</Text>
                 </TouchableOpacity>
               ))}
             </View>
