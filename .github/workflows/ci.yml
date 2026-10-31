@@ -42,6 +42,50 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  mobile-restore:
+    name: Mobile restore against real backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '27'
+          cache: maven
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Build backend jar
+        shell: bash
+        run: mvn -B -q -DskipTests package
+      - name: Start backend on a throwaway database
+        shell: bash
+        run: |
+          JAR=$(ls target/*.jar | grep -v original | head -1)
+          SPRING_DATASOURCE_URL="jdbc:h2:file:/tmp/restore_it_db;MODE=PostgreSQL" \
+            nohup java -jar "$JAR" > backend-run.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl --silent --fail http://localhost:8080/api/health >/dev/null; then echo "backend up"; exit 0; fi
+            sleep 3
+          done
+          echo "::error::backend did not start"; tail -n 60 backend-run.log | cut -c1-300; exit 1
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund
+      - name: Run restore integration test
+        working-directory: mobile
+        env:
+          RESTORE_TEST_BACKEND_URL: http://localhost:8080
+        run: npx jest --ci __tests__/ledgerRestore.integration.test.ts 2>&1 | tee ../restore-it.log
+      - name: Annotate failures
+        if: failure()
+        shell: bash
+        run: |
+          grep -E "●|Expected|Received|->|Error|failed" restore-it.log | head -12 | cut -c1-400 | while read -r l; do echo "::error::$l"; done
+          tail -n 25 backend-run.log | cut -c1-300 | head -12 | while read -r l; do echo "::warning::backend: $l"; done
+
   frontend:
     name: Web frontend checks
     runs-on: ubuntu-latest
