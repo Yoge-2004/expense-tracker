@@ -130,7 +130,9 @@ suite('restore against a real backend', () => {
     await raw(b.token, 'POST', `/savings/goals/user/${b.id}`, { name: 'New bike', targetAmount: 900, currentAmount: 150, targetDate: '2027-01-01' });
 
     const before = await computeRestorePlan(String(b.id));
-    expect(before!.total).toBeGreaterThan(30);
+    // 17 expenses (25 - 6 exact copies - 2 edited look-alikes) + Gift income + loan + budget + recurring + 'Pets & Vets'
+    expect(before!.total).toBe(22);
+    expect(before!.conflicts).toBe(2);
 
     const result = await applyRestore(String(b.id));
     expect(result.failures).toEqual([]);
