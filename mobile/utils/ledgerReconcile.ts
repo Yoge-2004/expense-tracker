@@ -143,6 +143,46 @@ export function clean<T extends Record<string, unknown>>(obj: T): Partial<T> {
 
 type CategoryIds = Map<string, number>;
 
+const toUtc = (iso: string): number => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return Date.UTC(y, m - 1, d);
+};
+const fromUtc = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+
+/** Same clamping as Java's LocalDate.plusMonths: Jan 31 + 1 month = Feb 28/29. */
+function shiftMonths(iso: string, months: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const total = y * 12 + (m - 1) + months;
+  const ny = Math.floor(total / 12);
+  const nm = ((total % 12) + 12) % 12;
+  const lastDay = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();
+  return fromUtc(Date.UTC(ny, nm, Math.min(d, lastDay)));
+}
+
+/** Moves a date by `direction` (+1/-1) recurrence periods, matching the server's own nextOccurrence rules. */
+export function shiftPeriod(iso: string, frequency: unknown, intervalDays: unknown, direction: 1 | -1): string {
+  const f = String(frequency ?? 'MONTHLY').trim().toUpperCase();
+  const day = 24 * 3600 * 1000;
+  if (f === 'DAILY') return fromUtc(toUtc(iso) + direction * day);
+  if (f === 'WEEKLY') return fromUtc(toUtc(iso) + direction * 7 * day);
+  if (f === 'YEARLY') return shiftMonths(iso, direction * 12);
+  if (f === 'CUSTOM') return fromUtc(toUtc(iso) + direction * Math.max(1, Number(intervalDays) || 1) * day);
+  return shiftMonths(iso, direction);
+}
+
+/**
+ * The server stores a recurring item's next due date as (start date + one period), and the list endpoint only
+ * returns that next due date. To get the same next due date back, the start date to send is one period earlier.
+ */
+export function recurringStartDate(nextDue: string, frequency: unknown, intervalDays: unknown): string {
+  const base = shiftPeriod(nextDue, frequency, intervalDays, -1);
+  for (const delta of [0, 1, -1, 2, -2, 3, -3]) {
+    const candidate = fromUtc(toUtc(base) + delta * 24 * 3600 * 1000);
+    if (shiftPeriod(candidate, frequency, intervalDays, 1) === nextDue) return candidate;
+  }
+  return base;
+}
+
 export const bodies = {
   expense: (e: any, cats: CategoryIds) => {
     const categoryId = cats.get(norm(e?.categoryName));
@@ -185,8 +225,11 @@ export const bodies = {
     return categoryId == null
       ? null
       : clean({
-          amount: Number(s.amount), description: s.description ?? '', expenseDate: isoDate(s.expenseDate),
-          categoryId, frequency: s.frequency, intervalDays: s.intervalDays, isRecurring: true,
+          amount: Number(s.amount), description: s.description ?? '',
+          expenseDate: isoDate(s.nextDueDate)
+            ? recurringStartDate(isoDate(s.nextDueDate), s.frequency, s.intervalDays)
+            : isoDate(s.expenseDate) || new Date().toISOString().slice(0, 10),
+          categoryId, frequency: String(s.frequency ?? 'MONTHLY').toUpperCase(), intervalDays: s.intervalDays,
         });
   },
 };

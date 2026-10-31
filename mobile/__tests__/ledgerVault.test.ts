@@ -65,7 +65,7 @@ const ledger = (n: number) => ({
   savingsGoals: [{ id: 1, name: 'Bike', targetAmount: 900, currentAmount: 100 }],
   loans: [{ id: 1, counterparty: 'Sam', type: 'LENT', amount: 5, adjustmentDate: '2026-04-01', expenseId: 3 }],
   budgets: [{ budgetId: 1, categoryName: 'Food', period: 'MONTHLY', limit: 200, startDate: '2026-05-01' }],
-  subscriptions: [{ id: 1, amount: 99, description: 'Music', frequency: 'MONTHLY', categoryName: 'Food', expenseDate: '2026-05-01' }],
+  subscriptions: [{ id: 1, amount: 99, description: 'Music', frequency: 'MONTHLY', categoryName: 'Food', nextDueDate: '2026-06-01' }],
   categories: [{ id: 1, name: 'Food' }, { id: 77, name: 'Pets' }],
 });
 

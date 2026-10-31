@@ -1,4 +1,5 @@
 import {
+  recurringStartDate, shiftPeriod,
   bodies, buildRestorePlan, isSuspiciousDrop, isoDate, ledgerRichness, multisetMissing, planTotal, signatures,
 } from '../utils/ledgerReconcile';
 
@@ -63,5 +64,26 @@ describe('ledgerReconcile', () => {
 
   it('reads Jackson array dates', () => {
     expect(isoDate([2026, 5, 1])).toBe('2026-05-01');
+  });
+
+  it('derives the start date that makes the server compute the same next due date', () => {
+    expect(recurringStartDate('2026-06-01', 'MONTHLY', null)).toBe('2026-05-01');
+    expect(recurringStartDate('2026-01-01', 'MONTHLY', null)).toBe('2025-12-01');
+    expect(recurringStartDate('2026-06-08', 'WEEKLY', null)).toBe('2026-06-01');
+    expect(recurringStartDate('2027-03-05', 'YEARLY', null)).toBe('2026-03-05');
+    expect(recurringStartDate('2026-06-11', 'CUSTOM', 10)).toBe('2026-06-01');
+    expect(recurringStartDate('2026-03-01', 'DAILY', null)).toBe('2026-02-28');
+    // the server's forward rule applied to the result lands on the original next due date
+    for (const [due, f, n] of [['2026-06-01', 'MONTHLY', null], ['2026-06-08', 'WEEKLY', null], ['2026-06-11', 'CUSTOM', 10]] as const) {
+      expect(shiftPeriod(recurringStartDate(due, f, n), f, n, 1)).toBe(due);
+    }
+  });
+
+  it('builds the recurring body from nextDueDate and omits fields the server does not need', () => {
+    const body: any = bodies.subscription(
+      { amount: 99, description: 'Music', nextDueDate: '2026-06-01', frequency: 'monthly', intervalDays: null, categoryName: 'Food' },
+      new Map([['food', 3]])
+    );
+    expect(body).toEqual({ amount: 99, description: 'Music', expenseDate: '2026-05-01', categoryId: 3, frequency: 'MONTHLY' });
   });
 });
