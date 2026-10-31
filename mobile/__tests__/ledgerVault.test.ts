@@ -5,9 +5,15 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     getItem: jest.fn(async (k: string) => (k in mockStore ? mockStore[k] : null)),
     setItem: jest.fn(async (k: string, v: string) => { mockStore[k] = v; }),
     removeItem: jest.fn(async (k: string) => { delete mockStore[k]; }),
+    getAllKeys: jest.fn(async () => Object.keys(mockStore)),
   },
 }));
-jest.mock('expo-file-system/legacy', () => ({ cacheDirectory: '/tmp/', documentDirectory: '/tmp/', writeAsStringAsync: jest.fn() }));
+const mockFiles: Record<string, string> = {};
+jest.mock('expo-file-system/legacy', () => ({
+  cacheDirectory: '/tmp/', documentDirectory: '/tmp/',
+  writeAsStringAsync: jest.fn(async (uri: string, text: string) => { mockFiles[uri] = text; }),
+  readAsStringAsync: jest.fn(async (uri: string) => mockFiles[uri]),
+}));
 jest.mock('../utils/fileDownloader', () => ({ saveFileToDevice: jest.fn() }));
 
 // A tiny in-memory "mockServer": GET returns lists, POST appends with a fresh id.
@@ -55,7 +61,8 @@ jest.mock('../services/loans', () => ({
 }));
 
 import {
-  applyRestore, captureVaultIfMissing, computeRestorePlan, getDeviceLedger, preserveBeforeOverwrite, readVault,
+  applyRestore, captureVaultIfMissing, computeRestorePlan, deviceCopyGap, exportAllDeviceCopies, getDeviceLedger,
+  importDeviceCopyFile, listDeviceUserIds, preserveBeforeOverwrite, readVault,
 } from '../services/ledgerVault';
 
 const e = (i: number, over: any = {}) => ({ id: i, amount: 10 + i, description: `item ${i}`, expenseDate: '2026-05-01', categoryName: 'Food', categoryId: 1, ...over });
@@ -71,6 +78,7 @@ const ledger = (n: number) => ({
 
 beforeEach(() => {
   for (const k of Object.keys(mockStore)) delete mockStore[k];
+  for (const k of Object.keys(mockFiles)) delete mockFiles[k];
   Object.assign(mockServer, { expenses: [], incomes: [], goals: [], loans: [], subs: [], budgets: [], user: [], global: [{ id: 1, name: 'Food' }] });
   mockFailList = null; mockPosts.length = 0; mockNextId = 1000;
 });
@@ -136,5 +144,51 @@ describe('restore to server', () => {
     const r = await applyRestore('u1');
     expect(r.failures.some((f) => f.kind === 'expense')).toBe(true);
     expect(r.verified).toBe(false);
+  });
+});
+
+describe('safety copy helpers', () => {
+  it('reports how many more records the phone holds than the server returned', async () => {
+    await captureVaultIfMissing('u1', ledger(30));
+    expect(await deviceCopyGap('u1', ledger(10))).toBe(20);
+    expect(await deviceCopyGap('u1', ledger(30))).toBe(0);
+    expect(await deviceCopyGap('nobody', ledger(1))).toBe(0);
+  });
+
+  it('finds every account on the phone and exports each to a file without any login', async () => {
+    mockStore['expense_cache_v4_7'] = JSON.stringify(ledger(5));
+    await captureVaultIfMissing('9', ledger(8));
+    expect((await listDeviceUserIds()).sort()).toEqual(['7', '9']);
+    const r = await exportAllDeviceCopies();
+    expect(r.files).toBe(2);
+    const written = Object.values(mockFiles).map((f) => JSON.parse(f));
+    expect(written.every((w) => w.format === 'expense-tracker-device-copy')).toBe(true);
+  });
+
+  it('imports a device-copy file into the safety copy, merged, and rejects other files', async () => {
+    await captureVaultIfMissing('u1', ledger(3));
+    mockFiles['/f.json'] = JSON.stringify({ format: 'expense-tracker-device-copy', userId: '5', data: ledger(10) });
+    const r = await importDeviceCopyFile('u1', '/f.json');
+    expect(r.fromUserId).toBe('5');
+    expect(r.added).toBeGreaterThan(0);
+    expect((await getDeviceLedger('u1'))!.data.expenses!.length).toBe(11); // 10 + the shared Music expense
+    mockFiles['/bad.json'] = JSON.stringify({ hello: 'world' });
+    await expect(importDeviceCopyFile('u1', '/bad.json')).rejects.toThrow('not an Expense Tracker device copy');
+  });
+
+  it('leaves records the server holds in edited form alone and still verifies', async () => {
+    await captureVaultIfMissing('u1', ledger(4));
+    mockServer.expenses = ledger(4).expenses.slice(0, 2).map((x: any, i: number) => ({ ...x, id: 700 + i, amount: x.amount + 500 }));
+    const r = await applyRestore('u1');
+    expect(r.conflicts).toBeGreaterThanOrEqual(2);
+    expect(r.verified).toBe(true);
+    expect(mockServer.expenses.filter((x: any) => x.description === 'item 0')).toHaveLength(1);
+  });
+
+  it('uploads look-alike records only when the owner explicitly chooses to', async () => {
+    await captureVaultIfMissing('u1', ledger(4));
+    mockServer.expenses = ledger(4).expenses.slice(0, 2).map((x: any, i: number) => ({ ...x, id: 700 + i, amount: x.amount + 500 }));
+    await applyRestore('u1', undefined, { includeConflicts: true });
+    expect(mockServer.expenses.filter((x: any) => x.description === 'item 0')).toHaveLength(2);
   });
 });

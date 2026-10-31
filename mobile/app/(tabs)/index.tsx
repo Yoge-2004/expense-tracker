@@ -64,7 +64,7 @@ import {
   getLoans,
   getLoanMetrics,
 } from '../../services/loans';
-import { captureVaultIfMissing, preserveBeforeOverwrite } from '../../services/ledgerVault';
+import { captureVaultIfMissing, deviceCopyGap, preserveBeforeOverwrite } from '../../services/ledgerVault';
 
 // Responsive dimensions handled dynamically via useWindowDimensions()
 
@@ -197,6 +197,8 @@ export default function DashboardScreen() {
   const [endDate, setEndDate] = useState('');
   const [sortOption, setSortOption] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc');
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  /** How many more records this phone's safety copy holds than the server just returned. */
+  const [deviceGap, setDeviceGap] = useState(0);
   const [helpGuideVisible, setHelpGuideVisible] = useState(false);
   const [ledgerTab, setLedgerTab] = useState<'all' | 'expenses' | 'incomes'>('all');
 
@@ -296,7 +298,7 @@ export default function DashboardScreen() {
       setPartialError(!categoriesLoaded || !Array.isArray(incomesData) || !Array.isArray(savingsData));
       setCachedTime(null);
 
-      void saveCache({
+      const freshLedger = {
         expenses: safeExp,
         budgets: safeBud,
         categories: nextCategories,
@@ -305,7 +307,11 @@ export default function DashboardScreen() {
         savingsGoals: nextSavingsGoals,
         loans: safeLoans,
         loanMetrics: loanMetricsData,
-      });
+      };
+      void saveCache(freshLedger)
+        .then(() => deviceCopyGap(String(userId), freshLedger))
+        .then(setDeviceGap)
+        .catch(() => {});
     } catch (err: any) {
       console.warn('[Dashboard] Error fetching dashboard data:', err);
       const isApiErr = err instanceof ApiError;
@@ -942,6 +948,26 @@ export default function DashboardScreen() {
             onRetry={() => fetchData(true)}
             retrying={refreshing}
           />
+        )}
+
+        {/* This phone holds more than the server returned: offer the explicit restore */}
+        {deviceGap > 0 && (
+          <TouchableOpacity
+            onPress={() => setExportModalVisible(true)}
+            style={{
+              marginHorizontal: 16, marginBottom: 12, padding: 14, borderRadius: 14, borderWidth: 1,
+              borderColor: c.accent, backgroundColor: c.accent + '18', flexDirection: 'row', alignItems: 'center', gap: 10,
+            }}
+          >
+            <Ionicons name="shield-checkmark-outline" size={22} color={c.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: c.text, fontWeight: '700', fontSize: 14 }}>
+                This phone holds {deviceGap.toLocaleString()} more records than the server
+              </Text>
+              <Text style={{ color: c.textMuted, fontSize: 12, marginTop: 2 }}>Tap to review and restore them safely.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+          </TouchableOpacity>
         )}
 
         {/* =========================================

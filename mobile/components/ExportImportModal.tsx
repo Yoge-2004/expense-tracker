@@ -22,7 +22,8 @@ import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { Colors } from '../constants/theme';
 import { apiRequest, API_BASE_URL, getSession } from '../services/api';
-import { applyRestore, computeRestorePlan, exportDeviceCopy } from '../services/ledgerVault';
+import { applyRestore, computeRestorePlan, exportDeviceCopy, importDeviceCopyFile } from '../services/ledgerVault';
+import { planSamples } from '../utils/ledgerReconcile';
 
 interface Props {
   visible: boolean;
@@ -557,13 +558,26 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
     `${p.expenses.length} expenses, ${p.incomes.length} incomes, ${p.goals.length} goals, ${p.loans.length} loans, ` +
     `${p.budgets.length} budgets, ${p.subscriptions.length} recurring, ${p.categories.length} categories`;
 
-  const runDeviceAction = async (key: 'export' | 'check' | 'restore') => {
+  const conflictNote = (n: number) =>
+    n > 0 ? `\n\n${n} more look like records the server already has in an edited form; those are left alone.` : '';
+
+  const runDeviceAction = async (key: 'export' | 'check' | 'restore' | 'import') => {
     if (!userId) return;
     setBusy(`device-${key}`);
     try {
       if (key === 'export') {
         const r = await exportDeviceCopy(userId);
         showAlert(r.ok ? 'Device copy saved' : 'Nothing to export', r.ok ? `${r.records.toLocaleString()} records saved to a file.` : 'This device holds no cached data.');
+        return;
+      }
+      if (key === 'import') {
+        const picked = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'text/plain', '*/*'], copyToCacheDirectory: true });
+        if (picked.canceled || !picked.assets?.[0]) return;
+        const r = await importDeviceCopyFile(userId, picked.assets[0].uri);
+        const foreign = r.fromUserId && r.fromUserId !== String(userId)
+          ? ' The file came from a different account id; records are still matched by content.'
+          : '';
+        showAlert('Device copy loaded', `${r.records.toLocaleString()} records read, ${r.added.toLocaleString()} new to this phone's safety copy. Nothing has been sent to the server yet; use Compare with server, then Restore to server.${foreign}`);
         return;
       }
       const result = await computeRestorePlan(userId);
@@ -576,7 +590,7 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
           result.total === 0 ? 'Server is up to date' : 'Server is missing data',
           result.total === 0
             ? `All ${result.deviceRecords.toLocaleString()} records on this device are already on the server.`
-            : `Missing on the server: ${describePlan(result.plan)}.`
+            : `Missing on the server: ${describePlan(result.plan)}.\n\nExamples:\n${planSamples(result.plan).join('\n')}${conflictNote(result.conflicts)}`
         );
         return;
       }
@@ -584,26 +598,25 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
         showAlert('Already in sync', 'The server already has everything this device holds.');
         return;
       }
-      showAlert('Restore to server?', `This adds only what the server is missing: ${describePlan(result.plan)}. Nothing is edited or deleted.`, [
+      const startRestore = (includeConflicts: boolean) => {
+        setBusy('device-restore');
+        applyRestore(userId, undefined, { includeConflicts })
+          .then((r) => {
+            onDataImported();
+            showAlert(
+              r.verified ? 'Restore verified' : 'Restore finished with gaps',
+              r.verified
+                ? `${r.created.toLocaleString()} records added. A fresh comparison shows the server now has everything on this device.${r.conflicts ? ` ${r.conflicts} look-alike records were left as the server has them.` : ''}`
+                : `${r.created.toLocaleString()} of ${r.attempted.toLocaleString()} added. Still missing: ${r.remainingAfterVerify}. Failed: ${r.failures.length}. Run Restore again to retry.`
+            );
+          })
+          .catch((e) => showAlert('Restore stopped', e?.message || 'Could not reach the server. Nothing was lost; try again.'))
+          .finally(() => setBusy(null));
+      };
+      showAlert('Restore to server?', `This adds only what the server is missing: ${describePlan(result.plan)}. Nothing is edited or deleted.\n\nExamples:\n${planSamples(result.plan).join('\n')}${conflictNote(result.conflicts)}`, [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Restore',
-          onPress: () => {
-            setBusy('device-restore');
-            applyRestore(userId)
-              .then((r) => {
-                onDataImported();
-                showAlert(
-                  r.verified ? 'Restore verified' : 'Restore finished with gaps',
-                  r.verified
-                    ? `${r.created.toLocaleString()} records added. A fresh comparison shows the server now has everything on this device.`
-                    : `${r.created.toLocaleString()} of ${r.attempted.toLocaleString()} added. Still missing: ${r.remainingAfterVerify}. Failed: ${r.failures.length}. Run Restore again to retry.`
-                );
-              })
-              .catch((e) => showAlert('Restore stopped', e?.message || 'Could not reach the server. Nothing was lost; try again.'))
-              .finally(() => setBusy(null));
-          },
-        },
+        { text: 'Restore', onPress: () => startRestore(false) },
+        ...(result.conflicts > 0 ? [{ text: 'Restore incl. look-alikes', onPress: () => startRestore(true) }] : []),
       ]);
     } catch (e: any) {
       showAlert('Could not complete', e?.message || 'Please try again.');
@@ -796,7 +809,30 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                 )}
               </View>
             )}
-            <Text style={[styles.label, { color: c.textMuted }]}>1. SELECT REPORT PERIOD</Text>
+            <Text style={[styles.label, { color: c.textMuted }]}>SAFETY COPY ON THIS PHONE</Text>
+            <View style={styles.grid}>
+              {([
+                ['export', 'Export device copy', 'Saves a file; works offline', 'download-outline'],
+                ['check', 'Compare with server', 'Shows what is missing', 'git-compare-outline'],
+                ['restore', 'Restore to server', 'Uploads only missing records', 'cloud-upload-outline'],
+                ['import', 'Import device copy file', 'Load a saved copy file', 'document-attach-outline'],
+              ] as const).map(([key, title, sub, icon]) => (
+                <TouchableOpacity
+                  key={key}
+                  disabled={busy !== null}
+                  onPress={() => runDeviceAction(key)}
+                  style={[styles.action, { backgroundColor: c.inputBg, borderColor: c.border }]}
+                >
+                  <View style={[styles.icon, { backgroundColor: c.primary + '20' }]}>
+                    <Ionicons name={icon} size={20} color={c.primary} />
+                  </View>
+                  <Text style={[styles.actionTitle, { color: c.text }]}>{title}</Text>
+                  <Text style={[styles.actionSub, { color: c.textMuted }]}>{sub}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.label, { color: c.textMuted, marginTop: 22 }]}>1. SELECT REPORT PERIOD</Text>
             <View style={styles.tabs}>
               {(['month', 'custom', 'all'] as RangeMode[]).map((x) => (
                 <TouchableOpacity
@@ -964,27 +1000,6 @@ export const ExportImportModal: React.FC<Props> = ({ visible, onClose, onDataImp
                   <Text style={[styles.actionSub, { color: c.textMuted }]}>
                     Refreshes dashboard after import
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={[styles.label, { color: c.textMuted, marginTop: 22 }]}>4. THIS DEVICE'S COPY</Text>
-            <View style={styles.grid}>
-              {([
-                ['export', 'Export device copy', 'Saves a file; works offline', 'download-outline'],
-                ['check', 'Compare with server', 'Shows what is missing', 'git-compare-outline'],
-                ['restore', 'Restore to server', 'Uploads only missing records', 'cloud-upload-outline'],
-              ] as const).map(([key, title, sub, icon]) => (
-                <TouchableOpacity
-                  key={key}
-                  disabled={busy !== null}
-                  onPress={() => runDeviceAction(key)}
-                  style={[styles.action, { backgroundColor: c.inputBg, borderColor: c.border }]}
-                >
-                  <View style={[styles.icon, { backgroundColor: c.primary + '20' }]}>
-                    <Ionicons name={icon} size={20} color={c.primary} />
-                  </View>
-                  <Text style={[styles.actionTitle, { color: c.text }]}>{title}</Text>
-                  <Text style={[styles.actionSub, { color: c.textMuted }]}>{sub}</Text>
                 </TouchableOpacity>
               ))}
             </View>

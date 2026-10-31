@@ -13,7 +13,8 @@ import { apiRequest, ApiError, invalidateApiCache } from './api';
 import { getLoans } from './loans';
 import { saveFileToDevice } from '../utils/fileDownloader';
 import {
-  LedgerData, RestorePlan, bodies, buildRestorePlan, isSuspiciousDrop, ledgerRichness, norm, planTotal,
+  LedgerData, RestorePlan, bodies, buildRestorePlan, conflictTotal, isSuspiciousDrop, ledgerRichness, mergeLedgers, norm,
+  planTotal, withConflictsIncluded,
 } from '../utils/ledgerReconcile';
 
 export const cacheKeyFor = (userId: string | number) => `expense_cache_v4_${userId}`;
@@ -84,7 +85,7 @@ export async function getDeviceLedger(
 export async function exportDeviceCopy(userId: string | number): Promise<{ ok: boolean; records: number }> {
   const device = await getDeviceLedger(userId);
   if (!device) return { ok: false, records: 0 };
-  const filename = `expense-tracker-device-copy-${new Date().toISOString().slice(0, 10)}.json`;
+  const filename = `expense-tracker-device-copy-user${userId}-${new Date().toISOString().slice(0, 10)}.json`;
   const uri = `${FileSystem.cacheDirectory || FileSystem.documentDirectory}${filename}`;
   const payload = {
     format: 'expense-tracker-device-copy', version: 1, exportedAt: new Date().toISOString(),
@@ -93,6 +94,63 @@ export async function exportDeviceCopy(userId: string | number): Promise<{ ok: b
   await FileSystem.writeAsStringAsync(uri, JSON.stringify(payload, null, 2));
   await saveFileToDevice(uri, filename, 'application/json');
   return { ok: true, records: ledgerRichness(device.data) };
+}
+
+/** Every account that has a cached or vaulted ledger on this phone (works while logged out). */
+export async function listDeviceUserIds(): Promise<string[]> {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const ids = new Set<string>();
+    for (const key of keys) {
+      for (const prefix of ['expense_cache_v4_', 'expense_vault_v1_']) {
+        if (key.startsWith(prefix)) ids.add(key.slice(prefix.length));
+      }
+    }
+    return [...ids];
+  } catch {
+    return [];
+  }
+}
+
+/** Offline, login-free: writes one file per account found on this phone. */
+export async function exportAllDeviceCopies(): Promise<{ files: number; records: number }> {
+  let files = 0;
+  let records = 0;
+  for (const id of await listDeviceUserIds()) {
+    const r = await exportDeviceCopy(id);
+    if (r.ok) {
+      files++;
+      records += r.records;
+    }
+  }
+  return { files, records };
+}
+
+/** How many more records the safety copy holds than the data the server just returned (0 = nothing to offer). */
+export async function deviceCopyGap(userId: string | number, server: LedgerData): Promise<number> {
+  const vault = await readVault(userId);
+  return vault ? Math.max(0, ledgerRichness(vault.data) - ledgerRichness(server)) : 0;
+}
+
+/** Loads a device-copy file into this account's safety copy (merged, nothing is sent to the server yet). */
+export async function importDeviceCopyFile(
+  userId: string | number,
+  uri: string
+): Promise<{ records: number; added: number; fromUserId: string | null }> {
+  const parsed = JSON.parse(await FileSystem.readAsStringAsync(uri));
+  if (parsed?.format !== 'expense-tracker-device-copy' || !parsed.data || typeof parsed.data !== 'object') {
+    throw new Error('This is not an Expense Tracker device copy file.');
+  }
+  const incoming = ledgerRichness(parsed.data);
+  if (incoming === 0) throw new Error('This device copy file contains no records.');
+  const existing = (await readVault(userId))?.data ?? (await readJson<LedgerData>(cacheKeyFor(userId))) ?? {};
+  const merged = mergeLedgers(existing, parsed.data);
+  await writeVault(userId, merged, 'imported-file');
+  return {
+    records: incoming,
+    added: Math.max(0, ledgerRichness(merged) - ledgerRichness(existing)),
+    fromUserId: parsed.userId != null ? String(parsed.userId) : null,
+  };
 }
 
 /** Reads the whole server ledger. Throws if ANY list fails, because "failed" must never look like "empty". */
@@ -122,6 +180,8 @@ export interface PlanResult {
   plan: RestorePlan;
   device: LedgerData;
   total: number;
+  /** Device records left alone because the server holds an edited version of them. */
+  conflicts: number;
   deviceRecords: number;
   source: 'vault' | 'cache';
 }
@@ -132,7 +192,7 @@ export async function computeRestorePlan(userId: string | number): Promise<PlanR
   if (!device) return null;
   const server = await fetchServerLedger(userId);
   const plan = buildRestorePlan(device.data, server);
-  return { plan, device: device.data, total: planTotal(plan), deviceRecords: ledgerRichness(device.data), source: device.source };
+  return { plan, device: device.data, total: planTotal(plan), conflicts: conflictTotal(plan), deviceRecords: ledgerRichness(device.data), source: device.source };
 }
 
 export interface RestoreFailure {
@@ -147,6 +207,8 @@ export interface RestoreResult {
   failures: RestoreFailure[];
   /** Records the device has that the server still lacks after a fresh re-read. 0 together with no failures = in sync. */
   remainingAfterVerify: number;
+  /** Records left alone because the server's (edited) version was kept. */
+  conflicts: number;
   verified: boolean;
 }
 
@@ -175,14 +237,20 @@ async function post(endpoint: string, body: unknown): Promise<void> {
  */
 export function applyRestore(
   userId: string | number,
-  onProgress?: (done: number, total: number, stage: string) => void
+  onProgress?: (done: number, total: number, stage: string) => void,
+  options: { includeConflicts?: boolean } = {}
 ): Promise<RestoreResult> {
   if (restoreInFlight) return restoreInFlight;
   restoreInFlight = (async () => {
     try {
       const first = await computeRestorePlan(userId);
+      if (first && options.includeConflicts) {
+        first.plan = withConflictsIncluded(first.plan);
+        first.total = planTotal(first.plan);
+        first.conflicts = 0;
+      }
       if (!first || first.total === 0) {
-        return { attempted: 0, created: 0, failures: [], remainingAfterVerify: 0, verified: !!first };
+        return { attempted: 0, created: 0, failures: [], remainingAfterVerify: 0, conflicts: first?.conflicts ?? 0, verified: !!first };
       }
       const { plan: initial, total, device } = first;
       let plan = initial;
@@ -227,6 +295,7 @@ export function applyRestore(
         await step('subscription', String(s?.description ?? ''), () => post(`/expenses/recurring/user/${userId}`, body));
       }
       plan = buildRestorePlan(device, await fetchServerLedger(userId));
+      if (options.includeConflicts) plan = withConflictsIncluded(plan);
 
       for (const e of plan.expenses) {
         const body = bodies.expense(e, catIds);
@@ -250,14 +319,16 @@ export function applyRestore(
 
       // Verification: re-read the server and compare again. Only an empty diff counts as "in sync".
       let remaining = -1;
+      let conflicts = first.conflicts;
       try {
         const after = await computeRestorePlan(userId);
         remaining = after ? after.total : 0;
+        conflicts = after ? after.conflicts : conflicts;
       } catch {
         remaining = -1;
       }
       return {
-        attempted: total, created, failures, remainingAfterVerify: Math.max(remaining, 0),
+        attempted: total, created, failures, remainingAfterVerify: Math.max(remaining, 0), conflicts,
         verified: remaining === 0 && failures.length === 0,
       };
     } finally {

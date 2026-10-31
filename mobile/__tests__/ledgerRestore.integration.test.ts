@@ -117,9 +117,17 @@ suite('restore against a real backend', () => {
     await AsyncStorage.setItem(`expense_cache_v4_${b.id}`, JSON.stringify({ savedAt: Date.now(), ...deviceCopy }));
     await captureVaultIfMissing(String(b.id), deviceCopy);
 
-    // B already holds one record of its own, which must survive and must not be duplicated.
+    // B stands in for a restored Neon: it already holds exact copies of some records, EDITED versions of others,
+    // and a record of its own. None of that may be duplicated or overwritten.
     mockCtx.token = b.token;
+    const plain = deviceCopy.expenses!.filter((e) => e.description !== 'Music plan' && e.description !== 'Duplicate lunch' && e.categoryName !== 'Pets & Vets');
+    const exact = plain.slice(0, 6);
+    const edited = plain.slice(6, 8);
+    for (const e of exact) await raw(b.token, 'POST', `/expenses/user/${b.id}`, { amount: e.amount, description: e.description, expenseDate: e.expenseDate, categoryId: e.categoryId });
+    for (const e of edited) await raw(b.token, 'POST', `/expenses/user/${b.id}`, { amount: Number(e.amount) + 1000, description: e.description, expenseDate: e.expenseDate, categoryId: e.categoryId });
     await raw(b.token, 'POST', `/expenses/user/${b.id}`, { amount: 1.5, description: 'server-only record', expenseDate: '2026-02-02', categoryId: food.id });
+    await raw(b.token, 'POST', `/incomes/user/${b.id}`, { amount: 5000, source: 'Salary', description: 'May pay', incomeDate: '2026-05-01', kind: 'SALARY' });
+    await raw(b.token, 'POST', `/savings/goals/user/${b.id}`, { name: 'New bike', targetAmount: 900, currentAmount: 150, targetDate: '2027-01-01' });
 
     const before = await computeRestorePlan(String(b.id));
     expect(before!.total).toBeGreaterThan(30);
@@ -128,11 +136,21 @@ suite('restore against a real backend', () => {
     expect(result.failures).toEqual([]);
     expect(result.verified).toBe(true);
     expect(result.remainingAfterVerify).toBe(0);
+    expect(result.conflicts).toBe(2);
 
     // ---- independent check: compare B's server data with A's, record by record ----
     const restored = await fetchServerLedger(b.id);
+    const editedIds = new Set(edited.map((e) => e.id));
+    const expected = [
+      ...deviceCopy.expenses!.filter((e) => !editedIds.has(e.id)),
+      ...edited.map((e) => ({ ...e, amount: Number(e.amount) + 1000 })), // the server's edited version is kept
+    ];
     expect(sigSet(restored.expenses!.filter((e) => e.description !== 'server-only record'), signatures.expense))
-      .toEqual(sigSet(deviceCopy.expenses!, signatures.expense));
+      .toEqual(sigSet(expected, signatures.expense));
+    // no duplicates anywhere: exactly the device records + the server-only one
+    expect(restored.expenses!.length).toBe(deviceCopy.expenses!.length + 1);
+    expect(restored.incomes!.filter((i) => i.source === 'Salary')).toHaveLength(1);
+    expect(restored.savingsGoals!.filter((g) => g.name === 'New bike')).toHaveLength(1);
     expect(restored.expenses!.filter((e) => e.description === 'server-only record')).toHaveLength(1);
     expect(sigSet(restored.incomes!, signatures.income)).toEqual(sigSet(deviceCopy.incomes!, signatures.income));
     expect(sigSet(restored.savingsGoals!, signatures.goal)).toEqual(sigSet(deviceCopy.savingsGoals!, signatures.goal));

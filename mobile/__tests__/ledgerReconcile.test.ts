@@ -1,4 +1,5 @@
 import {
+  conflictTotal, mergeLedgers, planSamples,
   recurringStartDate, shiftPeriod,
   bodies, buildRestorePlan, isSuspiciousDrop, isoDate, ledgerRichness, multisetMissing, planTotal, signatures,
 } from '../utils/ledgerReconcile';
@@ -21,9 +22,9 @@ describe('ledgerReconcile', () => {
 
   it('never reports server-only records and a second run after adding finds nothing', () => {
     const device = { expenses: [exp()] };
-    const server = { expenses: [exp({ description: 'Other' })], categories: [] };
+    const server = { expenses: [exp({ description: 'Other', expenseDate: '2026-05-02' })], categories: [] };
     expect(buildRestorePlan(device, server).expenses).toHaveLength(1);
-    const afterRestore = { expenses: [exp({ description: 'Other' }), exp({ id: 50 })], categories: [] };
+    const afterRestore = { expenses: [exp({ description: 'Other', expenseDate: '2026-05-02' }), exp({ id: 50 })], categories: [] };
     expect(planTotal(buildRestorePlan(device, afterRestore))).toBe(0);
   });
 
@@ -85,5 +86,39 @@ describe('ledgerReconcile', () => {
       new Map([['food', 3]])
     );
     expect(body).toEqual({ amount: 99, description: 'Music', expenseDate: '2026-05-01', categoryId: 3, frequency: 'MONTHLY' });
+  });
+
+  it('does not upload a record the server already has with an edited amount or text', () => {
+    const device = { expenses: [exp({ id: 1, amount: 10 }), exp({ id: 2, description: 'Coffee', amount: 4 }), exp({ id: 3, description: 'New one', amount: 7 })] };
+    const server = {
+      expenses: [exp({ id: 11, amount: 99 }), exp({ id: 12, description: 'Coffee beans', amount: 4 })], // amount edited / text edited
+      categories: [],
+    };
+    const plan = buildRestorePlan(device, server);
+    expect(plan.expenses.map((e) => e.description)).toEqual(['New one']);
+    expect(conflictTotal(plan)).toBe(2);
+    expect(planTotal(plan)).toBe(1);
+  });
+
+  it('lets one server record excuse only one device record, and exact matches win first', () => {
+    const device = { expenses: [exp({ id: 1, amount: 10 }), exp({ id: 2, amount: 10 }), exp({ id: 3, amount: 20 })] };
+    const server = { expenses: [exp({ id: 11, amount: 10 }), exp({ id: 12, amount: 55 })], categories: [] };
+    const plan = buildRestorePlan(device, server);
+    // one exact match (10); the second 10 is an edit-conflict with the 55 record; the 20 is genuinely missing
+    expect(plan.conflicts.expenses).toHaveLength(1);
+    expect(plan.expenses.map((e) => e.amount)).toEqual([20]);
+  });
+
+  it('merges a device-copy file into an existing copy without duplicating', () => {
+    const base = { expenses: [exp({ id: 1 })], categories: [{ id: 1, name: 'Food' }] };
+    const extra = { expenses: [exp({ id: 9 }), exp({ id: 10, description: 'Lunch' })], categories: [{ id: 5, name: 'food' }, { id: 6, name: 'Pets' }] };
+    const merged: any = mergeLedgers(base, extra);
+    expect(merged.expenses).toHaveLength(2);
+    expect(merged.categories.map((c: any) => c.name)).toEqual(['Food', 'Pets']);
+  });
+
+  it('shows readable example lines', () => {
+    const plan = buildRestorePlan({ expenses: [exp({ description: 'Tea', amount: 12.5 })] }, { expenses: [], categories: [] });
+    expect(planSamples(plan)).toEqual(['Expense: 2026-05-01 · Tea · 12.50']);
   });
 });

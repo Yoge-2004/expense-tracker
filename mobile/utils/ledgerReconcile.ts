@@ -28,6 +28,12 @@ export interface RestorePlan {
   loans: any[];
   budgets: any[];
   subscriptions: any[];
+  /**
+   * Device records that look like a record the server already has in a changed form (same date and text but a
+   * different amount, or the reverse). They are NOT uploaded: the server's version wins, and uploading would
+   * create a near-duplicate or bring back something that was edited or deleted elsewhere.
+   */
+  conflicts: { expenses: any[]; incomes: any[]; loans: any[]; subscriptions: any[] };
 }
 
 /** Lists that make up "the user's data" when deciding whether one copy is bigger than another. */
@@ -102,6 +108,80 @@ export function multisetMissing<T>(device: T[], server: T[], sig: (t: T) => stri
   return missing;
 }
 
+/** Looser keys, tried in order, that identify "the same record, edited" for each entity. */
+export const looseSignatures = {
+  expense: [
+    (e: any) => [isoDate(e?.expenseDate), norm(e?.description), categoryKey(e)].join('|'), // amount edited
+    (e: any) => [isoDate(e?.expenseDate), money(e?.amount), categoryKey(e)].join('|'), // description edited
+  ],
+  income: [
+    (i: any) => [isoDate(i?.incomeDate), norm(i?.source) || 'other', norm(i?.description), norm(i?.kind)].join('|'),
+    (i: any) => [isoDate(i?.incomeDate), money(i?.amount), norm(i?.source) || 'other'].join('|'),
+  ],
+  loan: [(l: any) => [norm(l?.counterparty), norm(l?.type), isoDate(l?.adjustmentDate)].join('|')],
+  subscription: [(s: any) => [norm(s?.description), norm(s?.frequency), categoryKey(s)].join('|')],
+};
+
+/** Exact multiset diff that also returns the server records no device record matched. */
+export function multisetDiff<T>(device: T[], server: T[], sig: (t: T) => string): { missing: T[]; unmatchedServer: T[] } {
+  const buckets = new Map<string, T[]>();
+  for (const item of server) {
+    const key = sig(item);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(item);
+    else buckets.set(key, [item]);
+  }
+  const missing: T[] = [];
+  for (const item of device) {
+    const bucket = buckets.get(sig(item));
+    if (bucket && bucket.length > 0) bucket.pop();
+    else missing.push(item);
+  }
+  return { missing, unmatchedServer: [...buckets.values()].flat() };
+}
+
+/** Splits `missing` into records that are really absent and records that look like edited server records. */
+function separateConflicts<T>(
+  missing: T[],
+  unmatchedServer: T[],
+  passes: Array<(t: T) => string>
+): { missing: T[]; conflicts: T[] } {
+  let remaining = missing;
+  let leftover = unmatchedServer;
+  const conflicts: T[] = [];
+  for (const key of passes) {
+    const pool = new Map<string, number>();
+    for (const item of leftover) pool.set(key(item), (pool.get(key(item)) ?? 0) + 1);
+    const stillMissing: T[] = [];
+    const used = new Map<string, number>();
+    for (const item of remaining) {
+      const k = key(item);
+      const available = (pool.get(k) ?? 0) - (used.get(k) ?? 0);
+      if (available > 0) {
+        used.set(k, (used.get(k) ?? 0) + 1);
+        conflicts.push(item);
+      } else {
+        stillMissing.push(item);
+      }
+    }
+    // server records consumed by this pass cannot be claimed again by the next one
+    const consumed = new Map(used);
+    leftover = leftover.filter((item) => {
+      const k = key(item);
+      const c = consumed.get(k) ?? 0;
+      if (c > 0) { consumed.set(k, c - 1); return false; }
+      return true;
+    });
+    remaining = stillMissing;
+  }
+  return { missing: remaining, conflicts };
+}
+
+function diffWithConflicts<T>(device: T[], server: T[], sig: (t: T) => string, passes: Array<(t: T) => string>) {
+  const { missing, unmatchedServer } = multisetDiff(device, server, sig);
+  return separateConflicts(missing, unmatchedServer, passes);
+}
+
 export function buildRestorePlan(device: LedgerData, server: LedgerData): RestorePlan {
   const serverCategoryNames = new Set(list(server.categories).map((c) => norm(c?.name)));
   const seen = new Set<string>();
@@ -113,15 +193,76 @@ export function buildRestorePlan(device: LedgerData, server: LedgerData): Restor
       categories.push(String(c.name).trim());
     }
   }
+  const expenses = diffWithConflicts(list(device.expenses), list(server.expenses), signatures.expense, looseSignatures.expense);
+  const incomes = diffWithConflicts(list(device.incomes), list(server.incomes), signatures.income, looseSignatures.income);
+  const loans = diffWithConflicts(list(device.loans), list(server.loans), signatures.loan, looseSignatures.loan);
+  const subscriptions = diffWithConflicts(
+    list(device.subscriptions), list(server.subscriptions), signatures.subscription, looseSignatures.subscription
+  );
   return {
     categories,
-    expenses: multisetMissing(list(device.expenses), list(server.expenses), signatures.expense),
-    incomes: multisetMissing(list(device.incomes), list(server.incomes), signatures.income),
+    expenses: expenses.missing,
+    incomes: incomes.missing,
     goals: multisetMissing(list(device.savingsGoals), list(server.savingsGoals), signatures.goal),
-    loans: multisetMissing(list(device.loans), list(server.loans), signatures.loan),
+    loans: loans.missing,
     budgets: multisetMissing(list(device.budgets), list(server.budgets), signatures.budget),
-    subscriptions: multisetMissing(list(device.subscriptions), list(server.subscriptions), signatures.subscription),
+    subscriptions: subscriptions.missing,
+    conflicts: {
+      expenses: expenses.conflicts, incomes: incomes.conflicts, loans: loans.conflicts, subscriptions: subscriptions.conflicts,
+    },
   };
+}
+
+/** Treats look-alike records as missing too: for when the owner chooses to upload them anyway. */
+export function withConflictsIncluded(plan: RestorePlan): RestorePlan {
+  const c = plan.conflicts;
+  return {
+    ...plan,
+    expenses: [...plan.expenses, ...c.expenses],
+    incomes: [...plan.incomes, ...c.incomes],
+    loans: [...plan.loans, ...c.loans],
+    subscriptions: [...plan.subscriptions, ...c.subscriptions],
+    conflicts: { expenses: [], incomes: [], loans: [], subscriptions: [] },
+  };
+}
+
+export function conflictTotal(plan: RestorePlan): number {
+  const c = plan.conflicts;
+  return c.expenses.length + c.incomes.length + c.loans.length + c.subscriptions.length;
+}
+
+/** Adds to `base` every record of `extra` it does not already contain (used when importing a device-copy file). */
+export function mergeLedgers(base: LedgerData, extra: LedgerData): LedgerData {
+  const merged: LedgerData = { ...base };
+  const sigs: Record<string, (t: any) => string> = {
+    expenses: signatures.expense, incomes: signatures.income, savingsGoals: signatures.goal, loans: signatures.loan,
+    budgets: signatures.budget, subscriptions: signatures.subscription, categories: (c: any) => norm(c?.name),
+  };
+  for (const [key, sig] of Object.entries(sigs)) {
+    const have = list(base[key]);
+    merged[key] = [...have, ...multisetMissing(list(extra[key]), have, sig)];
+  }
+  return merged;
+}
+
+const labelOf = (kind: string, r: any): string => {
+  const text = r?.description || r?.source || r?.name || r?.counterparty || r?.categoryName || kind;
+  const date = isoDate(r?.expenseDate) || isoDate(r?.incomeDate) || isoDate(r?.adjustmentDate) || isoDate(r?.nextDueDate);
+  const amount = r?.amount ?? r?.targetAmount ?? r?.limit;
+  return [date, String(text).slice(0, 28), amount != null ? money(amount) : ''].filter(Boolean).join(' · ');
+};
+
+/** A few example lines per kind so a person can see what is about to be uploaded. */
+export function planSamples(plan: RestorePlan, perKind = 2): string[] {
+  const lines: string[] = [];
+  const add = (kind: string, items: any[]) => items.slice(0, perKind).forEach((r) => lines.push(`${kind}: ${labelOf(kind, r)}`));
+  add('Expense', plan.expenses);
+  add('Income', plan.incomes);
+  add('Goal', plan.goals);
+  add('Loan', plan.loans);
+  add('Budget', plan.budgets);
+  add('Recurring', plan.subscriptions);
+  return lines;
 }
 
 export function planTotal(plan: RestorePlan): number {
