@@ -78,12 +78,16 @@ jobs:
         working-directory: mobile
         env:
           RESTORE_TEST_BACKEND_URL: http://localhost:8080
-        run: npx jest --ci __tests__/ledgerRestore.integration.test.ts 2>&1 | tee ../restore-it.log
+        shell: bash
+        run: |
+          set -o pipefail
+          npx jest --ci __tests__/ledgerRestore.integration.test.ts 2>&1 | tee ../restore-it.log
       - name: Report restore test result
         if: always()
         shell: bash
         run: |
           echo "::notice title=restore-integration::$(grep -E 'Tests:|✓|✕' restore-it.log | tr '\n' ' ' | cut -c1-300)"
+          echo "::notice title=restore-integration-error::$(grep -m1 -A14 '●' restore-it.log | grep -v '^\s*at ' | tr '\n' ' ' | cut -c1-1500)"
           echo "::notice title=restore-integration-users::$(grep -c 'POST /api/expenses' backend-run.log || true) expense posts seen by the backend"
       - name: Annotate failures
         if: failure()
