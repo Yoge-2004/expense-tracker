@@ -1,5 +1,18 @@
 # Expense Tracker Release Notes
 
+## Version 1.0.10 (Android Version Code: 12, iOS Build: 8)
+
+A data-safety release for the mobile app.
+
+- **Safety copy**: the ledger cached on the phone is copied aside before the first network sync and kept if the server later returns far less data. It survives sign-out and expired sessions.
+- **Restore to server**: Compare with server, Restore to server (uploads only what is missing and verifies afterwards), Export device copy (works offline) and Import device copy file, all on the Export / Import screen.
+- **Duplicate protection**: exact matches are skipped; records the server holds in an edited form are left alone unless you choose to include them.
+- **Prompts**: a dashboard banner when the phone holds more than the server, and an offline export link on the sign-in screen.
+- **Backend**: snapshot backups no longer commit when only log-like tables change, and are throttled; a restore no longer overwrites unmerged fallback writes.
+- **Fix**: Record Expense buttons no longer clip on very narrow phones.
+
+---
+
 ## Version 1.0.9 (Android Version Code: 11, iOS Build: 7)
 
 A major performance and cross-platform release focused on **zero-latency theme switching, scroll context isolation for infinite virtualized transaction ledgers, accurate ledger loading lifecycle states, iOS Retina scrollbar gutter separation, and strict iOS App Store & sandbox compliance**.
