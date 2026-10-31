@@ -399,85 +399,133 @@
         }
     }
 
+    // ─── Palette ownership ────────────────────────────────────────────────────
+    // The palette is written as INLINE styles on <html>, which always beat the stylesheet's
+    // [data-theme="light"] / [data-theme="dark"] token blocks. So the studio must only own those
+    // variables while the user has actually customised the palette, and must recompute them whenever
+    // the theme changes (they depend on the theme at the moment they are computed).
+    const DEFAULT_PALETTE = { primary: '#C79A3E', end: '#A97F2E', accent: '#A23E32', highlight: '#4C7A78' };
+    const DEFAULT_CARD_SURFACES = ['#171a14', 'rgba(23, 26, 20, 0.88)'];
+    const DEFAULT_APP_SURFACES = ['#10120e', '#171a14'];
+    const paletteVarNames = new Set();
+
+    function setPaletteVar(name, value) {
+        paletteVarNames.add(name);
+        document.documentElement.style.setProperty(name, value);
+    }
+
+    function clearPaletteVars() {
+        const root = document.documentElement;
+        paletteVarNames.forEach(name => root.style.removeProperty(name));
+        paletteVarNames.clear();
+    }
+
+    function sameColor(a, b) {
+        return String(a || '').replace(/\s+/g, '').toLowerCase() === String(b || '').replace(/\s+/g, '').toLowerCase();
+    }
+
+    /** True while nothing has been changed from the shipped look, so the stylesheet should rule. */
+    function isDefaultPalette() {
+        return sameColor(currentPrimary, DEFAULT_PALETTE.primary)
+            && sameColor(currentPrimaryEnd, DEFAULT_PALETTE.end)
+            && sameColor(currentAccent, DEFAULT_PALETTE.accent)
+            && sameColor(currentHighlight, DEFAULT_PALETTE.highlight)
+            && DEFAULT_CARD_SURFACES.some(v => sameColor(currentCardSurface, v))
+            && DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v));
+    }
+
     function applyPalette(primaryHex, primaryEndHex, accentHex, highlightHex) {
         const root = document.documentElement;
         const isLight = root.getAttribute('data-theme') === 'light';
         const cardBase = isLight ? '#FFFFFF' : '#171A14';
         const surfaceBase = isLight ? '#EEF1F6' : '#10120E';
-        // Hex values are explicitly chosen by the user; let them materially affect
-        // the surface. Preset RGBA values remain subtle tints for each color mode.
-        const safeCard = mixSurface(cardBase, currentCardSurface, isValidHex(currentCardSurface) ? 0.7 : 0.18);
-        const safeSurface = mixSurface(surfaceBase, currentAppSurface, isValidHex(currentAppSurface) ? 0.7 : 0.18);
-        currentPrimary = ensureContrast(primaryHex, safeCard);
-        const onPrimary = contrastRatio('#FFFFFF', currentPrimary) >= contrastRatio('#10120E', currentPrimary) ? '#FFFFFF' : '#10120E';
-        currentPrimaryEnd = ensureContrast(primaryEndHex || adjustBrightness(currentPrimary, 0.85), onPrimary);
-        currentAccent = ensureContrast(accentHex || currentAccent, safeCard);
-        currentHighlight = ensureContrast(highlightHex || currentHighlight, safeCard);
+        // A surface the user actually picked (a non-default hex) shapes the theme's surface. The shipped default
+        // surfaces are dark-mode values, so they must not tint the light theme; presets stay subtle tints.
+        const surfaceAmount = (requested) => {
+            const isDefault = DEFAULT_CARD_SURFACES.concat(DEFAULT_APP_SURFACES).some(v => sameColor(requested, v));
+            if (isDefault) return 0;
+            return isValidHex(requested) ? 0.7 : 0.18;
+        };
+        const safeCard = mixSurface(cardBase, currentCardSurface, surfaceAmount(currentCardSurface));
+        const safeSurface = mixSurface(surfaceBase, currentAppSurface, surfaceAmount(currentAppSurface));
+        // Effective colours are derived for the ACTIVE theme and used only for the CSS variables below. The
+        // chosen colours (currentPrimary...) are never overwritten, or switching themes would drift them and the
+        // adjusted values would then be saved to storage and the cloud.
+        const effPrimary = ensureContrast(primaryHex, safeCard);
+        const onPrimary = contrastRatio('#FFFFFF', effPrimary) >= contrastRatio('#10120E', effPrimary) ? '#FFFFFF' : '#10120E';
+        const effPrimaryEnd = ensureContrast(primaryEndHex || adjustBrightness(effPrimary, 0.85), onPrimary);
+        const effAccent = ensureContrast(accentHex || currentAccent, safeCard);
+        const effHighlight = ensureContrast(highlightHex || currentHighlight, safeCard);
         const readableText = readableTextAcross(safeSurface, safeCard);
         const requestedMuted = ensureContrast(isLight ? '#475569' : '#A8A395', safeSurface);
         const readableMuted = Math.min(contrastRatio(requestedMuted, safeSurface), contrastRatio(requestedMuted, safeCard)) >= 4.5
             ? requestedMuted
             : readableText;
-        const safeRgb = hexToRgb(currentPrimary);
-        const end = currentPrimaryEnd;
+        const safeRgb = hexToRgb(effPrimary);
+        const end = effPrimaryEnd;
 
-        root.style.setProperty('--primary', currentPrimary);
-        root.style.setProperty('--primary-rgb', `${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}`);
-        root.style.setProperty('--primary-gradient', `linear-gradient(135deg, ${currentPrimary} 0%, ${end} 100%)`);
-        root.style.setProperty('--primary-glow', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.22)`);
-        root.style.setProperty('--border-accent', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.55)`);
-        root.style.setProperty('--shadow-glow', `0 12px 35px -8px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.3)`);
-        root.style.setProperty('--shadow-premium', isLight
+        setPaletteVar('--primary', effPrimary);
+        setPaletteVar('--primary-rgb', `${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}`);
+        setPaletteVar('--primary-gradient', `linear-gradient(135deg, ${effPrimary} 0%, ${end} 100%)`);
+        setPaletteVar('--primary-glow', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.22)`);
+        setPaletteVar('--border-accent', `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.55)`);
+        setPaletteVar('--shadow-glow', `0 12px 35px -8px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.3)`);
+        setPaletteVar('--shadow-premium', isLight
             ? `0 20px 45px -12px rgba(15, 23, 42, 0.1), 0 0 20px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.11)`
             : `0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 18px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.12)`);
         if (!window.matchMedia?.('(pointer: coarse)').matches) {
-            const pointer = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${currentPrimary}" stroke="${onPrimary}" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
-            const clicked = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${currentAccent}" stroke="${onPrimary}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="15" r="2" fill="${onPrimary}"/></svg>`;
+            const pointer = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${effPrimary}" stroke="${onPrimary}" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+            const clicked = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${effAccent}" stroke="${onPrimary}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="15" r="2" fill="${onPrimary}"/></svg>`;
             root.style.setProperty('--cursor-pointer', `url("data:image/svg+xml,${encodeURIComponent(pointer)}") 4 3, pointer`);
             root.style.setProperty('--cursor-clicked', `url("data:image/svg+xml,${encodeURIComponent(clicked)}") 4 3, pointer`);
         }
-        root.style.setProperty('--card-bg', safeCard);
-        root.style.setProperty('--card-bg-hover', adjustBrightness(safeCard, isLight ? 0.97 : 1.12));
-        root.style.setProperty('--bg-dark', safeSurface);
-        root.style.setProperty('--input-bg', mixSurface(safeCard, safeSurface, 0.35));
-        root.style.setProperty('--text-main', readableText);
-        root.style.setProperty('--text-muted', readableMuted);
-        root.style.setProperty('--on-primary', onPrimary);
+        setPaletteVar('--card-bg', safeCard);
+        setPaletteVar('--card-bg-hover', adjustBrightness(safeCard, isLight ? 0.97 : 1.12));
+        setPaletteVar('--bg-dark', safeSurface);
+        setPaletteVar('--input-bg', mixSurface(safeCard, safeSurface, 0.35));
+        setPaletteVar('--text-main', readableText);
+        setPaletteVar('--text-muted', readableMuted);
+        setPaletteVar('--on-primary', onPrimary);
 
         // Keep financial status colors distinct while deriving the surrounding
         // metric palette from the wallpaper colors. A green custom accent must
         // not make outflows look positive, so red remains the semantic danger.
         const metricColors = {
-            inflow: ensureContrast(currentHighlight, safeCard),
+            inflow: ensureContrast(effHighlight, safeCard),
             outflow: ensureContrast(isLight ? '#B91C1C' : '#F87171', safeCard),
-            netflow: ensureContrast(currentPrimary, safeCard),
-            savings: ensureContrast(currentPrimaryEnd, safeCard),
-            subs: ensureContrast(currentAccent, safeCard),
+            netflow: ensureContrast(effPrimary, safeCard),
+            savings: ensureContrast(effPrimaryEnd, safeCard),
+            subs: ensureContrast(effAccent, safeCard),
         };
         Object.entries(metricColors).forEach(([name, color]) => {
             const rgb = hexToRgb(color);
-            root.style.setProperty(`--metric-${name}`, color);
-            root.style.setProperty(`--metric-${name}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-            root.style.setProperty(`--metric-${name}-glow`, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`);
+            setPaletteVar(`--metric-${name}`, color);
+            setPaletteVar(`--metric-${name}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            setPaletteVar(`--metric-${name}-glow`, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`);
         });
-        root.style.setProperty('--metric-subs-text', metricColors.subs);
-        root.style.setProperty('--success', metricColors.inflow);
-        root.style.setProperty('--success-rgb', hexToRgb(metricColors.inflow).r + ', ' + hexToRgb(metricColors.inflow).g + ', ' + hexToRgb(metricColors.inflow).b);
-        root.style.setProperty('--warning', metricColors.savings);
-        root.style.setProperty('--danger', metricColors.outflow);
+        setPaletteVar('--metric-subs-text', metricColors.subs);
+        setPaletteVar('--success', metricColors.inflow);
+        setPaletteVar('--success-rgb', hexToRgb(metricColors.inflow).r + ', ' + hexToRgb(metricColors.inflow).g + ', ' + hexToRgb(metricColors.inflow).b);
+        setPaletteVar('--warning', metricColors.savings);
+        setPaletteVar('--danger', metricColors.outflow);
 
         if (accentHex) {
-            const accRgb = hexToRgb(currentAccent);
-            root.style.setProperty('--accent', currentAccent);
-            root.style.setProperty('--accent-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
-            root.style.setProperty('--accent-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.25)`);
-            root.style.setProperty('--accent-text', currentAccent);
+            const accRgb = hexToRgb(effAccent);
+            setPaletteVar('--accent', effAccent);
+            setPaletteVar('--accent-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
+            setPaletteVar('--accent-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.25)`);
+            setPaletteVar('--accent-text', effAccent);
         }
 
         if (highlightHex) {
-            const hlRgb = hexToRgb(currentHighlight);
-            root.style.setProperty('--highlight', currentHighlight);
-            root.style.setProperty('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
+            const hlRgb = hexToRgb(effHighlight);
+            setPaletteVar('--highlight', effHighlight);
+            setPaletteVar('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
+        }
+
+        // Untouched palette: hand every colour back to the stylesheet so each theme uses its own designed tokens.
+        if (isDefaultPalette()) {
+            clearPaletteVars();
         }
     }
 
@@ -511,6 +559,14 @@
     applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
     applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
     applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+
+    // The palette is computed for the theme that is active when it runs, so it must be recomputed whenever
+    // data-theme changes (toggle button, another tab, or the saved theme being applied after this script).
+    // A MutationObserver callback runs before the next paint, so no frame shows the old theme's colours.
+    new MutationObserver(() => {
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     // ─── 5. CLOUD SYNCHRONIZATION ─────────────────────────────────────────────
 

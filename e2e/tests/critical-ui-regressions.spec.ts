@@ -144,4 +144,63 @@ test.describe('Critical UI regressions', () => {
     expect(colors.dark).not.toBe('#8B5CF6');
     expect(colors.light).not.toBe('#7C3AED');
   });
+
+  test('default look leaves every colour to the stylesheet, so each theme uses its own tokens', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const root = document.documentElement;
+      const vars = ['--card-bg', '--bg-dark', '--text-main', '--text-muted', '--primary', '--metric-subs', '--metric-outflow', '--danger', '--success'];
+      const snap = () => ({
+        inline: vars.filter((v) => root.style.getPropertyValue(v) !== ''),
+        card: getComputedStyle(root).getPropertyValue('--card-bg').trim(),
+        text: getComputedStyle(root).getPropertyValue('--text-main').trim(),
+      });
+      const dark = snap();
+      root.setAttribute('data-theme', 'light');
+      const light = snap();
+      root.setAttribute('data-theme', 'dark');
+      return { dark, light };
+    });
+
+    // Nothing is written inline, so the stylesheet's [data-theme] blocks decide, instantly, in both directions.
+    expect(result.dark.inline).toEqual([]);
+    expect(result.light.inline).toEqual([]);
+    expect(result.light.card).not.toBe(result.dark.card);
+    expect(result.light.text).not.toBe(result.dark.text);
+  });
+
+  test('a customised palette is recomputed for the active theme and never drifts', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('app_custom_palette', JSON.stringify({
+        primary: '#8B5CF6', primaryGradientEnd: '#7C3AED', accent: '#EC4899', highlight: '#A855F7',
+      }));
+    });
+    await page.reload();
+    await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
+
+    const run = await page.evaluate(async () => {
+      const root = document.documentElement;
+      const read = () => ({
+        card: root.style.getPropertyValue('--card-bg').toLowerCase(),
+        text: root.style.getPropertyValue('--text-main').toLowerCase(),
+        primary: root.style.getPropertyValue('--primary').toLowerCase(),
+      });
+      const settle = () => new Promise((resolve) => setTimeout(resolve, 80));
+      const dark = read();
+      root.setAttribute('data-theme', 'light');
+      await settle();
+      const light = read();
+      root.setAttribute('data-theme', 'dark');
+      await settle();
+      const darkAgain = read();
+      return { dark, light, darkAgain, stored: localStorage.getItem('app_custom_palette') };
+    });
+
+    expect(run.dark.card).not.toBe('');
+    // The light theme gets a light surface with dark text, not the dark palette left behind by the toggle.
+    expect(run.light.card).toBe('#ffffff');
+    expect(run.light.text).toBe('#0f172a');
+    // Going back restores exactly what the dark theme had: the chosen colours are not rewritten by the toggle.
+    expect(run.darkAgain).toEqual(run.dark);
+    expect(JSON.parse(run.stored as string).primary).toBe('#8B5CF6');
+  });
 });
