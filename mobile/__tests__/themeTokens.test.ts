@@ -70,3 +70,53 @@ describe('components do not bypass the theme with light/dark literals', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+import { buildCategoryPalette, readableTextColor } from '../constants/theme';
+import { hasCustomGradient, derivedGradientEnd } from '../services/paletteExtractor';
+
+describe('category colours', () => {
+  it('never depend on the wallpaper: extracted swatches in the palette do not change them', () => {
+    const wallpaperA = { ...purple, paletteColors: ['#010101', '#020202', '#030303', '#040404'] };
+    const wallpaperB = { ...purple, paletteColors: ['#FEFEFE', '#FDFDFD', '#FCFCFC', '#FBFBFB'] };
+    const a = createThemeColors('dark', wallpaperA, 'default').paletteColors;
+    const b = createThemeColors('dark', wallpaperB, 'default').paletteColors;
+    expect(a).toEqual(b);
+  });
+
+  it('follow the chosen theme colours and stay readable and distinct', () => {
+    for (const theme of ['dark', 'light'] as const) {
+      const c = createThemeColors(theme, purple, 'default');
+      expect(c.paletteColors.length).toBeGreaterThanOrEqual(8);
+      expect(new Set(c.paletteColors.map((x) => x.toLowerCase())).size).toBe(c.paletteColors.length);
+      for (const color of c.paletteColors) expect(contrast(color, c.card)).toBeGreaterThanOrEqual(1.15);
+    }
+    const other = createThemeColors('dark', { ...purple, primary: '#10B981' }, 'default').paletteColors;
+    expect(other).not.toEqual(createThemeColors('dark', purple, 'default').paletteColors);
+  });
+
+  it('buildCategoryPalette skips invalid colours', () => {
+    expect(buildCategoryPalette(['nope', '#ZZZZZZ'], '#171A14').every((x) => /^#[0-9a-f]{6}$/i.test(x))).toBe(true);
+  });
+});
+
+describe('text on semantic colours', () => {
+  it('is readable for every theme and palette', () => {
+    for (const theme of ['dark', 'light'] as const) {
+      for (const palette of [null, purple] as const) {
+        const c = createThemeColors(theme, palette as any, 'default');
+        for (const [bg, fg] of [[c.success, c.onSuccess], [c.warning, c.onWarning], [c.danger, c.onDanger], [c.accent, c.onAccent], [c.highlight, c.onHighlight], [c.primary, c.onPrimary]]) {
+          expect(contrast(bg, fg)).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+    expect(readableTextColor('#FFFF00')).not.toBe(readableTextColor('#000080'));
+  });
+});
+
+describe('primary and gradient are separate choices', () => {
+  it('treats the derived shade as automatic and anything else as the user\'s own pick', () => {
+    expect(hasCustomGradient({ primary: '#8B5CF6', primaryGradientEnd: derivedGradientEnd('#8B5CF6') })).toBe(false);
+    expect(hasCustomGradient({ primary: '#8B5CF6', primaryGradientEnd: '#10B981' })).toBe(true);
+    expect(hasCustomGradient(null)).toBe(false);
+  });
+});

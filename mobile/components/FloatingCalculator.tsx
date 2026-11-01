@@ -484,7 +484,7 @@ export const FloatingCalculator: React.FC = () => {
                       <Text
                         style={[
                           styles.splitChipText,
-                          { color: active ? '#10120E' : c.textMuted, fontWeight: active ? '700' : '600' },
+                          { color: active ? c.onPrimary : c.textMuted, fontWeight: active ? '700' : '600' },
                         ]}
                       >
                         {num === 1 ? '1x' : `÷${num}`}
@@ -499,8 +499,8 @@ export const FloatingCalculator: React.FC = () => {
                 style={[styles.insertBtn, { backgroundColor: c.primary }]}
                 activeOpacity={0.8}
               >
-                <Text style={styles.insertBtnText}>Insert Amount</Text>
-                <Ionicons name="arrow-forward" size={13} color="#10120E" />
+                <Text style={[styles.insertBtnText, { color: c.onPrimary }]}>Insert Amount</Text>
+                <Ionicons name="arrow-forward" size={13} color={c.onPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -538,7 +538,7 @@ export const FloatingCalculator: React.FC = () => {
                   style={[styles.fxConvertBtn, { backgroundColor: c.primary, opacity: isConverting ? 0.6 : 1 }]}
                   accessibilityLabel="Convert current value"
                 >
-                  <Text style={styles.fxConvertBtnText}>Convert</Text>
+                  <Text style={[styles.fxConvertBtnText, { color: c.onPrimary }]}>Convert</Text>
                 </TouchableOpacity>
               </View>
 
@@ -645,7 +645,7 @@ export const FloatingCalculator: React.FC = () => {
                 <Ionicons name="backspace-outline" size={18} color={c.textMuted} />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleEquals} style={[styles.key, { backgroundColor: c.primary, borderColor: c.primary }]}>
-                <Text style={[styles.opKeyText, { color: '#10120E', fontWeight: '800' }]}>=</Text>
+                <Text style={[styles.opKeyText, { color: c.onPrimary, fontWeight: '800' }]}>=</Text>
               </TouchableOpacity>
             </View>
           </View>

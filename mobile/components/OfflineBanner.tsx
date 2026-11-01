@@ -7,6 +7,8 @@
  * the button carries an icon, a label and an outline so it reads as a button.
  */
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Colors, readableTextColor } from '../constants/theme';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,14 +24,18 @@ interface OfflineBannerProps {
   tone?: string;
 }
 
-export function OfflineBanner({ message, onRetry, retrying = false, tone = '#C79A3E' }: OfflineBannerProps) {
+export function OfflineBanner({ message, onRetry, retrying = false, tone }: OfflineBannerProps) {
+  const { theme, themeColors } = useAuth();
+  const c = themeColors || Colors[theme];
+  const bannerTone = tone || c.primary;
+  const onTone = readableTextColor(bannerTone);
   return (
     <View
       accessibilityRole="alert"
-      style={[styles.banner, { backgroundColor: tone + '18', borderColor: tone + '40' }]}
+      style={[styles.banner, { backgroundColor: bannerTone + '18', borderColor: bannerTone + '40' }]}
     >
-      <Ionicons name="cloud-offline" size={16} color={tone} />
-      <Text style={[styles.message, { color: tone }]} numberOfLines={2}>
+      <Ionicons name="cloud-offline" size={16} color={bannerTone} />
+      <Text style={[styles.message, { color: bannerTone }]} numberOfLines={2}>
         {message}
       </Text>
       <TouchableOpacity
@@ -39,14 +45,14 @@ export function OfflineBanner({ message, onRetry, retrying = false, tone = '#C79
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel="Retry loading data"
-        style={[styles.retryButton, { backgroundColor: tone, borderColor: tone }]}
+        style={[styles.retryButton, { backgroundColor: bannerTone, borderColor: bannerTone }]}
       >
         {retrying ? (
-          <ActivityIndicator size="small" color="#10120E" />
+          <ActivityIndicator size="small" color={onTone} />
         ) : (
           <>
-            <Ionicons name="refresh" size={14} color="#10120E" />
-            <Text style={styles.retryText}>Retry</Text>
+            <Ionicons name="refresh" size={14} color={onTone} />
+            <Text style={[styles.retryText, { color: onTone }]}>Retry</Text>
           </>
         )}
       </TouchableOpacity>

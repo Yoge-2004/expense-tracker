@@ -233,9 +233,9 @@ export const ManageCategoriesModal: React.FC<ManageCategoriesModalProps> = ({
               style={[styles.addBtn, { backgroundColor: c.primary }]}
             >
               {creating ? (
-                <ActivityIndicator size="small" color="#10120E" />
+                <ActivityIndicator size="small" color={c.onPrimary} />
               ) : (
-                <Text style={styles.addBtnText}>+ Add</Text>
+                <Text style={[styles.addBtnText, { color: c.onPrimary }]}>+ Add</Text>
               )}
             </TouchableOpacity>
           </View>

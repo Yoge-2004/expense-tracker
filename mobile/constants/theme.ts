@@ -25,6 +25,12 @@ export interface ThemeColors {
   fillStrong: string;
   /** Keypad-style key background. */
   keyBg: string;
+  /** Readable text/icon colour on top of each semantic colour (chosen by contrast, so it follows the palette). */
+  onSuccess: string;
+  onWarning: string;
+  onDanger: string;
+  onAccent: string;
+  onHighlight: string;
   /** Scrollbar track and thumb, matching the website's custom scrollbar (gold thumb, translucent track). */
   scrollTrack: string;
   scrollThumb: string;
@@ -49,7 +55,9 @@ export interface ThemeColors {
   cardCountBorder: string;
 }
 
-export const Colors: Record<ThemeName, ThemeColors> = {
+type OnColorKey = 'onSuccess' | 'onWarning' | 'onDanger' | 'onAccent' | 'onHighlight';
+
+const BaseColors: Record<ThemeName, Omit<ThemeColors, OnColorKey>> = {
   dark: {
     bg: '#10120E',
     card: 'rgba(23, 26, 20, 0.88)',
@@ -126,6 +134,23 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     cardCountBg: 'rgba(231, 76, 60, 0.08)',
     cardCountBorder: 'rgba(231, 76, 60, 0.25)',
   },
+};
+
+/** Adds the readable on-colour tokens, which depend on the final semantic colours. */
+export function withOnColors<T extends Omit<ThemeColors, OnColorKey>>(base: T): T & Record<OnColorKey, string> {
+  return {
+    ...base,
+    onSuccess: readableTextColor(base.success),
+    onWarning: readableTextColor(base.warning),
+    onDanger: readableTextColor(base.danger),
+    onAccent: readableTextColor(base.accent),
+    onHighlight: readableTextColor(base.highlight),
+  };
+}
+
+export const Colors: Record<ThemeName, ThemeColors> = {
+  dark: withOnColors(BaseColors.dark),
+  light: withOnColors(BaseColors.light),
 };
 
 function rgbFromColor(color: string): [number, number, number] {
@@ -223,6 +248,36 @@ export function getCategoryColor(
   const absHash = Math.abs(hash);
   const paletteIndex = absHash % CategoryPalette.length;
   return CategoryPalette[paletteIndex];
+}
+
+/**
+ * Colours for charts and category chips. They come from the user's own theme colours first and then from the
+ * fixed category hues, so they follow palette changes but never depend on the wallpaper image. Each colour is
+ * nudged until it is readable on the card, and near-duplicates are dropped so categories stay distinguishable.
+ */
+export function buildCategoryPalette(seeds: string[], cardSurface: string, size = 16): string[] {
+  const isHex = (v: string) => /^#[0-9a-f]{6}$/i.test(v);
+  const distance = (a: string, b: string) => {
+    const [r1, g1, b1] = rgbFromColor(a);
+    const [r2, g2, b2] = rgbFromColor(b);
+    return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+  };
+  const candidates = [...seeds, ...CategoryPalette.map((p) => p.color)].filter(isHex);
+  // Prefer clearly readable colours, but on a mid-tone card strong contrast pushes every hue towards white and
+  // the colours collapse into each other, so relax the requirement until enough distinct colours survive.
+  const wanted = Math.min(size, 8);
+  let best: string[] = [];
+  for (const minimum of [3, 2.2, 1.6, 1.2]) {
+    const out: string[] = [];
+    for (const raw of candidates) {
+      const color = ensureColorContrast(raw, cardSurface, minimum);
+      if (out.every((existing) => distance(existing, color) >= 48)) out.push(color);
+      if (out.length >= size) break;
+    }
+    if (out.length > best.length) best = out;
+    if (out.length >= wanted) return out;
+  }
+  return best;
 }
 
 export type CategoryIconName =

@@ -45,7 +45,7 @@ export const DashboardHeader = memo(function DashboardHeader({
           {profilePicture ? (
             <Image source={{ uri: resolveAvatarUrl(profilePicture) || undefined }} style={styles.avatarImg} />
           ) : (
-            <Text style={styles.avatarLetter}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
+            <Text style={[styles.avatarLetter, { color: c.onPrimary }]}>{(userName || 'U').charAt(0).toUpperCase()}</Text>
           )}
         </View>
         <View style={styles.userGreetingCol}>

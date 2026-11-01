@@ -222,6 +222,17 @@ export function getPerceivedLuminance(r: number, g: number, b: number): number {
   return (r * 299 + g * 587 + b * 114) / 1000;
 }
 
+/** The gradient end that follows the primary automatically until the user picks their own. */
+export function derivedGradientEnd(primary: string): string {
+  return adjustBrightness(primary, 0.85);
+}
+
+/** True when the palette's gradient was chosen by the user rather than derived from the primary. */
+export function hasCustomGradient(palette: { primary: string; primaryGradientEnd?: string } | null | undefined): boolean {
+  return !!palette && !!palette.primaryGradientEnd
+    && palette.primaryGradientEnd.toLowerCase() !== derivedGradientEnd(palette.primary).toLowerCase();
+}
+
 export function adjustBrightness(hex: string, factor: number): string {
   const { r, g, b } = hexToRgb(hex);
   return rgbToHex(r * factor, g * factor, b * factor);

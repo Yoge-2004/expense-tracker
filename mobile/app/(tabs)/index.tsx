@@ -881,8 +881,8 @@ export default function DashboardScreen() {
             activeOpacity={0.85}
             onPress={() => fetchData(false)}
             style={[styles.retryBtn, { backgroundColor: c.primary }]}>
-            <Ionicons name="refresh" size={18} color="#10120E" />
-            <Text style={styles.retryBtnText}>Retry Connection</Text>
+            <Ionicons name="refresh" size={18} color={c.onPrimary} />
+            <Text style={[styles.retryBtnText, { color: c.onPrimary }]}>Retry Connection</Text>
           </TouchableOpacity>
         </View>
       </View>

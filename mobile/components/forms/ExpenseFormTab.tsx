@@ -698,7 +698,7 @@ backgroundColor: c.inputBg,
           style={[styles.submitBtn, { backgroundColor: c.primary, opacity: isSubmitting ? 0.7 : 1 }]}
         >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color="#10120E" />
+            <ActivityIndicator size="small" color={c.onPrimary} />
           ) : (
             <View style={styles.submitBtnInner}>
               <Text style={[styles.submitBtnText, { color: c.onPrimary }]}>

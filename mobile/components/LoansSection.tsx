@@ -730,13 +730,13 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   <Ionicons
                     name="arrow-down-circle"
                     size={16}
-                    color={formType === 'LENT' ? '#FFFFFF' : c.textMuted}
+                    color={formType === 'LENT' ? c.onSuccess : c.textMuted}
                   />
                   <Text
                     style={[
                       styles.typeToggleText,
                       {
-                        color: formType === 'LENT' ? '#FFFFFF' : c.text,
+                        color: formType === 'LENT' ? c.onSuccess : c.text,
                         fontWeight: formType === 'LENT' ? '800' : '600',
                       },
                     ]}
@@ -760,13 +760,13 @@ export const LoansSection: React.FC<LoansSectionProps> = React.memo(({
                   <Ionicons
                     name="arrow-up-circle"
                     size={16}
-                    color={formType === 'BORROWED' ? '#FFFFFF' : c.textMuted}
+                    color={formType === 'BORROWED' ? c.onDanger : c.textMuted}
                   />
                   <Text
                     style={[
                       styles.typeToggleText,
                       {
-                        color: formType === 'BORROWED' ? '#FFFFFF' : c.text,
+                        color: formType === 'BORROWED' ? c.onDanger : c.text,
                         fontWeight: formType === 'BORROWED' ? '800' : '600',
                       },
                     ]}

@@ -15,7 +15,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useColorScheme } from 'react-native';
 import * as Font from 'expo-font';
 import { safeStorageGet, safeStorageSet, readSavedTheme, persistSavedTheme, apiRequest, getSession } from '../services/api';
-import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets, ensureColorContrast } from '../constants/theme';
+import { Colors, ThemeColors, FontChoice, FontTokens, FontPresets, ensureColorContrast, buildCategoryPalette } from '../constants/theme';
 import { ExtractedPalette, PRESET_BACKGROUNDS, PresetBackground } from '../services/paletteExtractor';
 
 export interface BackgroundAssetConfig {
@@ -128,9 +128,9 @@ export function createThemeColors(
   const textColor = readableTextForSurfaces(appSurface, cardSurface);
   const mutedText = ensureColorContrast(baseColors.textMuted, appSurface, 4.5);
   const primaryGradientEnd = ensureColorContrast(activePalette.primaryGradientEnd || baseColors.primaryGradientEnd, onPrimary);
-  const sourcePalette = activePalette.paletteColors?.filter((color) => /^#[0-9a-f]{6}$/i.test(color)) || [];
-  const paletteColors = (sourcePalette.length >= 3 ? sourcePalette : [primary, accent, highlight, primaryGradientEnd])
-    .map((color) => ensureColorContrast(color, cardSurface));
+  // Category/chart colours follow the user's theme colours plus fixed hues; the wallpaper's extracted swatches
+  // (activePalette.paletteColors) are only a picker for the studio and must not recolour the app's data.
+  const paletteColors = buildCategoryPalette([primary, accent, highlight, primaryGradientEnd], cardSurface);
 
   return {
     ...baseColors,
@@ -160,6 +160,11 @@ export function createThemeColors(
     fillSubtle: blendThemeSurface(cardSurface, textColor, 0.06),
     fillStrong: blendThemeSurface(cardSurface, textColor, 0.12),
     keyBg: theme === 'light' ? cardSurface : blendThemeSurface(cardSurface, textColor, 0.05),
+    onSuccess: readableTextForSurfaces(success),
+    onWarning: readableTextForSurfaces(warning),
+    onDanger: readableTextForSurfaces(danger),
+    onAccent: readableTextForSurfaces(accent),
+    onHighlight: readableTextForSurfaces(highlight),
     borderAccent: primary + '80',
     scrollThumb: primary + '80',
     cardTotalBg: primary + '1F',

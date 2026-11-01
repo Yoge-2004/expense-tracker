@@ -7,6 +7,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
+import { readableTextColor } from '../constants/theme';
 
 export interface ChoiceOption<T extends string | number> {
   value: T;
@@ -49,7 +50,7 @@ export function ChoiceChips<T extends string | number>({
               },
             ]}
           >
-            <Text style={[styles.label, { color: selected ? '#FFFFFF' : colors.textMuted }, selected && styles.labelSelected]}>
+            <Text style={[styles.label, { color: selected ? readableTextColor(accent) : colors.textMuted }, selected && styles.labelSelected]}>
               {option.label}
             </Text>
           </TouchableOpacity>

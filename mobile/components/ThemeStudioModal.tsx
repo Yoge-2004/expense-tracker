@@ -38,6 +38,7 @@ import {
   extractPaletteFromImageUri,
   ExtractedPalette,
   adjustBrightness,
+  hasCustomGradient,
 } from '../services/paletteExtractor';
 import { ThemedScrollView } from './ThemedScrollbar';
 import { safeStorageGet, safeStorageSet } from '../services/api';
@@ -132,7 +133,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
 
   // Custom Color Picker & Target States
   const [customHexInput, setCustomHexInput] = useState(c.primary);
-  const [colorTarget, setColorTarget] = useState<'primary' | 'accent' | 'highlight' | 'card' | 'surface'>('primary');
+  const [colorTarget, setColorTarget] = useState<'primary' | 'gradient' | 'accent' | 'highlight' | 'card' | 'surface'>('primary');
 
   // Custom Font Import States
   const [isFontLoading, setIsFontLoading] = useState(false);
@@ -309,13 +310,22 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
     };
 
     if (colorTarget === 'primary') {
+      // The gradient follows the primary only while it is still the auto-derived shade. Once the user has picked
+      // a gradient colour of their own, changing the primary must not overwrite it.
+      const gradientIsCustom = hasCustomGradient(customPalette);
       await setCustomPalette({
         ...basePalette,
         primary: hex,
-        primaryGradientEnd: adjustBrightness(hex, 0.85),
+        primaryGradientEnd: gradientIsCustom ? basePalette.primaryGradientEnd : adjustBrightness(hex, 0.85),
         borderAccent: hex + '55',
       });
       setExtractSuccess(`Primary Brand color applied: ${hex.toUpperCase()}`);
+    } else if (colorTarget === 'gradient') {
+      await setCustomPalette({
+        ...basePalette,
+        primaryGradientEnd: hex,
+      });
+      setExtractSuccess(`Primary Gradient color applied: ${hex.toUpperCase()}`);
     } else if (colorTarget === 'accent') {
       await setCustomPalette({
         ...basePalette,
@@ -881,7 +891,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                 <View style={styles.swatchesCard}>
                   {[
                       { label: 'Primary Brand', hex: c.primary, role: 'Buttons, totals, active navigation', targetKey: 'primary' as const },
-                    { label: 'Primary Gradient', hex: c.primaryGradientEnd, role: 'Shaded surfaces & card gradients', targetKey: 'primary' as const },
+                    { label: 'Primary Gradient', hex: c.primaryGradientEnd, role: 'Shaded surfaces & card gradients', targetKey: 'gradient' as const },
                     { label: 'Dynamic Accent', hex: c.accent, role: 'Outflows, warnings, negative cash flow', targetKey: 'accent' as const },
                     { label: 'Highlight Glow', hex: c.highlight, role: 'Tags, streaks, ambient aura orbs', targetKey: 'highlight' as const },
                       { label: 'Card Surface', hex: customPalette?.card || c.card, role: 'Cards and grouped panels', targetKey: 'card' as const },
@@ -955,6 +965,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                     {(
                       [
                         { id: 'primary', label: 'Primary Brand' },
+                        { id: 'gradient', label: 'Primary Gradient' },
                         { id: 'accent', label: 'Outflow Accent' },
                         { id: 'highlight', label: 'Highlight Glow' },
                         { id: 'card', label: 'Card Surface' },
@@ -968,6 +979,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                           onPress={() => {
                             setColorTarget(t.id);
                             if (t.id === 'primary') setCustomHexInput(c.primary);
+                            else if (t.id === 'gradient') setCustomHexInput(c.primaryGradientEnd);
                             else if (t.id === 'accent') setCustomHexInput(c.accent);
                             else if (t.id === 'highlight') setCustomHexInput(c.highlight);
                             else setCustomHexInput(toPickerHex((customPalette?.[t.id] || c[t.id]) as string));

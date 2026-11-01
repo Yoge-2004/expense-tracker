@@ -141,12 +141,12 @@ const SwipeableNotificationItem: React.FC<SwipeableItemProps> = ({ item, theme: 
       {/* Background Clear / Trash Action - dynamically reveals ONLY on active swipe */}
       <Animated.View style={[styles.swipeBackground, { backgroundColor: c.accent, opacity: bgOpacity }]}>
         <Animated.View style={[styles.swipeActionLeft, { opacity: leftActionOpacity, transform: [{ scale: leftActionScale }] }]}>
-          <Ionicons name="trash-outline" size={17} color="#FFFFFF" />
-          <Text style={styles.swipeActionText}>Clear</Text>
+          <Ionicons name="trash-outline" size={17} color={c.onAccent} />
+          <Text style={[styles.swipeActionText, { color: c.onAccent }]}>Clear</Text>
         </Animated.View>
         <Animated.View style={[styles.swipeActionRight, { opacity: rightActionOpacity, transform: [{ scale: rightActionScale }] }]}>
-          <Text style={styles.swipeActionText}>Clear</Text>
-          <Ionicons name="trash-outline" size={17} color="#FFFFFF" />
+          <Text style={[styles.swipeActionText, { color: c.onAccent }]}>Clear</Text>
+          <Ionicons name="trash-outline" size={17} color={c.onAccent} />
         </Animated.View>
       </Animated.View>
 
