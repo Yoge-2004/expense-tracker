@@ -3268,6 +3268,13 @@ button[type="submit"]:active {
     color: var(--text-muted);
 }
 
+/* Keys that sit on the primary colour keep the readable on-primary label in the light theme too. Without this the
+   generic light key colour above has equal specificity, comes later, and wins, leaving dark text on a dark primary. */
+[data-theme="light"] .floating-calc-key.is-eq,
+[data-theme="light"] .floating-calc-key.is-op.is-active {
+    color: var(--on-primary, #10120E);
+}
+
 /* Responsive adjustments for narrow screens */
 @media (max-width: 600px) {
     .floating-calc-trigger {
