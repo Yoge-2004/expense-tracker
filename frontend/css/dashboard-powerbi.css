@@ -448,12 +448,13 @@
     font-weight: 600;
     padding: 3px 9px;
     border-radius: 6px;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer) !important;
     transition: all 0.2s ease;
 }
 
 .bi-segmented-btn:hover {
     color: var(--text-main, #EAE6DF);
+    cursor: var(--cursor-pointer, pointer) !important;
 }
 
 .bi-segmented-btn.active {
@@ -469,8 +470,9 @@
 }
 
 /* Chart Canvas Cursor States when Cross-Filtering is enabled */
-#expenseChart, #dayOfWeekChart, #recurringSplitChart {
-    cursor: pointer;
+#expenseChart, #trendChart, #dayOfWeekChart, #recurringSplitChart,
+.chart-wrapper canvas, .trend-chart-wrapper canvas {
+    cursor: var(--cursor-pointer, pointer) !important;
 }
 
 @keyframes bi-fade-in {

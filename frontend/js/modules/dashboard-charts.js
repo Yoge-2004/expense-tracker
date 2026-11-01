@@ -184,6 +184,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 cutout: '72%',
+                onHover: (event) => { if (event && event.native && event.native.target) event.native.target.style.cursor = "var(--cursor-pointer, pointer)"; },
                 plugins: {
                     legend: {
                         position: 'right',

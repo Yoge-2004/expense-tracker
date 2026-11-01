@@ -7,7 +7,7 @@
  * the button carries an icon, a label and an outline so it reads as a button.
  */
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { Colors, readableTextColor } from '../constants/theme';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText as Text } from './ThemedText';
@@ -25,10 +25,10 @@ interface OfflineBannerProps {
 }
 
 export function OfflineBanner({ message, onRetry, retrying = false, tone }: OfflineBannerProps) {
-  const { theme, themeColors } = useAuth();
-  const c = themeColors || Colors[theme];
+  const { theme, themeColors } = usePreferences();
+  const c = themeColors || Colors[theme || 'dark'];
   const bannerTone = tone || c.primary;
-  const onTone = readableTextColor(bannerTone);
+  const onTone = c.onPrimary || readableTextColor(bannerTone);
   return (
     <View
       accessibilityRole="alert"

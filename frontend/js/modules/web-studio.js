@@ -670,10 +670,10 @@
             const pointer = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L18 10L11 13L8 20L4 3Z" fill="${effPrimary}" stroke="${onPrimary}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="11" cy="13" r="2" fill="${onPrimary}"/></svg>`;
             const textSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g stroke="${effPrimary}" stroke-width="2.2" stroke-linecap="round"><line x1="14" y1="4" x2="14" y2="24"/><line x1="9" y1="4" x2="19" y2="4"/><line x1="9" y1="24" x2="19" y2="24"/></g></svg>`;
             const clicked = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L18 10L11 13L8 20L4 3Z" fill="${effAccent}" stroke="${onPrimary}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="11" cy="13" r="2" fill="${onPrimary}"/></svg>`;
-            root.style.setProperty('--cursor-default', `url("data:image/svg+xml,${encodeURIComponent(defSvg)}") 4 3, auto`);
-            root.style.setProperty('--cursor-pointer', `url("data:image/svg+xml,${encodeURIComponent(pointer)}") 4 3, pointer`);
-            root.style.setProperty('--cursor-text', `url("data:image/svg+xml,${encodeURIComponent(textSvg)}") 14 14, text`);
-            root.style.setProperty('--cursor-clicked', `url("data:image/svg+xml,${encodeURIComponent(clicked)}") 4 3, pointer`);
+            setPaletteVar('--cursor-default', `url("data:image/svg+xml,${encodeURIComponent(defSvg)}") 4 3, auto`);
+            setPaletteVar('--cursor-pointer', `url("data:image/svg+xml,${encodeURIComponent(pointer)}") 4 3, pointer`);
+            setPaletteVar('--cursor-text', `url("data:image/svg+xml,${encodeURIComponent(textSvg)}") 14 14, text`);
+            setPaletteVar('--cursor-clicked', `url("data:image/svg+xml,${encodeURIComponent(clicked)}") 4 3, pointer`);
         }
         setPaletteVar('--card-bg', safeCard);
         setPaletteVar('--card-bg-hover', adjustBrightness(safeCard, isLight ? 0.97 : 1.12));
@@ -727,13 +727,23 @@
             setPaletteVar('--accent-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
             setPaletteVar('--accent-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.25)`);
             setPaletteVar('--accent-text', effAccent);
+            setPaletteVar('--accent-gradient', `linear-gradient(135deg, ${effAccent} 0%, ${adjustBrightness(effAccent, 0.82)} 100%)`);
         }
 
         if (highlightHex) {
             const hlRgb = hexToRgb(effHighlight);
             setPaletteVar('--highlight', effHighlight);
             setPaletteVar('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
+            setPaletteVar('--highlight-gradient', `linear-gradient(135deg, ${effHighlight} 0%, ${adjustBrightness(effHighlight, 0.82)} 100%)`);
         }
+
+        // Propagate dynamic border tokens derived from theme primary
+        setPaletteVar('--border', isLight
+            ? `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.24)`
+            : `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.16)`);
+        setPaletteVar('--border-subtle', isLight
+            ? `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.12)`
+            : `rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.08)`);
 
         if (isDefaultPalette()) {
             clearPaletteVars();

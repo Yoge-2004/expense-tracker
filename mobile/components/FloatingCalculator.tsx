@@ -453,6 +453,7 @@ export const FloatingCalculator: React.FC = () => {
               </TouchableOpacity>
             </View>
 
+            <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.calcBodyScroll}>
             {/* Display Screen */}
             <View style={[styles.calcScreen, { backgroundColor: c.inputBg, borderColor: c.border }]}>
               <Text style={[styles.exprText, { color: c.textMuted }]} numberOfLines={1}>
@@ -648,6 +649,7 @@ export const FloatingCalculator: React.FC = () => {
                 <Text style={[styles.opKeyText, { color: c.onPrimary, fontWeight: '800' }]}>=</Text>
               </TouchableOpacity>
             </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -690,11 +692,16 @@ const styles = StyleSheet.create({
   calcCard: {
     width: '100%',
     maxWidth: 420,
+    maxHeight: '88%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
+    overflow: 'hidden',
+  },
+  calcBodyScroll: {
+    paddingBottom: 4,
   },
   calcHeader: {
     flexDirection: 'row',
@@ -855,7 +862,7 @@ const styles = StyleSheet.create({
   },
   key: {
     width: '23%',
-    height: 44,
+    height: 40,
     borderRadius: 10,
     borderWidth: 1,
     justifyContent: 'center',

@@ -280,58 +280,87 @@
     transform: translateY(-1px);
 }
 
-/* Back link */
+/* Back link - Guaranteed high contrast on any background */
 .hero-back-link {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    height: 36px;
-    padding: 0 14px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-main);
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #FFFFFF !important;
+    background: rgba(15, 23, 42, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     text-decoration: none;
     transition: color 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
     width: fit-content;
     white-space: nowrap;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .hero-back-link svg {
     flex-shrink: 0;
-    stroke: currentColor;
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
     transition: transform 0.2s var(--ease);
 }
 
+.hero-back-link span {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
 .hero-back-link:hover {
-    color: var(--primary);
-    border-color: var(--primary);
-    background: rgba(var(--primary-rgb), 0.12);
-    transform: translateX(-2px);
-    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.2);
+    color: #FFFFFF !important;
+    border-color: var(--primary) !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    transform: translateX(-3px);
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.45);
 }
 
 .hero-back-link:hover svg {
-    transform: translateX(-2px);
+    transform: translateX(-3px);
+    stroke: var(--primary) !important;
+}
+
+.hero-back-link:hover span {
+    color: var(--primary) !important;
 }
 
 [data-theme="light"] .hero-back-link {
-    color: var(--text-main);
-    background: #FFFFFF;
-    border-color: rgba(var(--primary-rgb), 0.25);
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+    color: #0F172A !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid rgba(15, 23, 42, 0.16) !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .hero-back-link svg {
+    color: #0F172A !important;
+    stroke: #0F172A !important;
+}
+
+[data-theme="light"] .hero-back-link span {
+    color: #0F172A !important;
 }
 
 [data-theme="light"] .hero-back-link:hover {
-    color: var(--primary);
-    border-color: var(--primary);
-    background: rgba(var(--primary-rgb), 0.08);
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.25);
+}
+
+[data-theme="light"] .hero-back-link:hover svg {
+    stroke: var(--primary) !important;
+}
+
+[data-theme="light"] .hero-back-link:hover span {
+    color: var(--primary) !important;
 }
 
 /* Perk grid */
