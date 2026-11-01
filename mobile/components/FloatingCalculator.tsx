@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   key: {
-    width: '23.4%',
+    width: '23%',
     height: 44,
     borderRadius: 10,
     borderWidth: 1,

@@ -281,7 +281,6 @@ const splashStyles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: 'rgba(245, 200, 66, 0.18)',
   },
   orbitalRing: {
     position: 'absolute',
@@ -289,41 +288,31 @@ const splashStyles = StyleSheet.create({
     height: 86,
     borderRadius: 43,
     borderWidth: 2,
-    borderColor: 'rgba(245, 200, 66, 0.15)',
-    borderTopColor: '#F5C842',
-    borderRightColor: '#E6A817',
   },
   logoBox: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#F5C842',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#F5C842',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
     shadowRadius: 14,
     elevation: 8,
   },
   brandName: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#F9F6EF',
     letterSpacing: -0.5,
     marginBottom: 6,
   },
   badge: {
-    backgroundColor: 'rgba(245, 200, 66, 0.14)',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(245, 200, 66, 0.3)',
     marginBottom: 28,
   },
   badgeText: {
-    color: '#F5C842',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -332,7 +321,6 @@ const splashStyles = StyleSheet.create({
     width: 140,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     overflow: 'hidden',
     marginBottom: 10,
   },
@@ -340,10 +328,8 @@ const splashStyles = StyleSheet.create({
     width: 60,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#F5C842',
   },
   statusText: {
-    color: '#8A8E85',
     fontSize: 9.5,
     fontWeight: '700',
     letterSpacing: 1,
@@ -519,7 +505,7 @@ export default function RootLayout() {
   const systemScheme = useColorScheme();
   const [themeLoaded, setThemeLoaded] = useState(false);
   const [initialTheme, setInitialTheme] = useState<'dark' | 'light'>(systemScheme === 'light' ? 'light' : 'dark');
-  const [initialColors, setInitialColors] = useState<ThemeColors | null>(null);
+  const [initialColors, setInitialColors] = useState<ThemeColors>(() => createThemeColors(systemScheme === 'light' ? 'light' : 'dark', null));
 
   useEffect(() => {
     let mounted = true;

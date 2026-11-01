@@ -15,14 +15,14 @@ export interface DashboardMetricsMatrixProps {
   isStealthMode: boolean;
   isLargeScreen: boolean;
   matrixCardWidth: number | string;
-  netCashFlow: number;
-  totalIncomeMonth: number;
-  totalExpenseMonth: number;
+  monthlyNet: number;
+  monthlyInflow: number;
+  monthlyOutflow: number;
+  allTimeNet: number;
+  totalIncome: number;
+  totalSpent: number;
   safeDailySpend: number;
   noSpendStreak: number;
-  totalSpent: number;
-  currentMonthSpent: number;
-  currentMonthInflow: number;
   currentDay: number;
   daysInMonth: number;
   dailyBurn: number;
@@ -37,14 +37,14 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
   isStealthMode,
   isLargeScreen,
   matrixCardWidth,
-  netCashFlow,
-  totalIncomeMonth,
-  totalExpenseMonth,
+  monthlyNet,
+  monthlyInflow,
+  monthlyOutflow,
+  allTimeNet,
+  totalIncome,
+  totalSpent,
   safeDailySpend,
   noSpendStreak,
-  totalSpent,
-  currentMonthSpent,
-  currentMonthInflow,
   currentDay,
   daysInMonth,
   dailyBurn,
@@ -54,69 +54,69 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
 }: DashboardMetricsMatrixProps) {
   const matrixCardStyles = useMemo(
     () => ({
-      cardPrimary: [styles.matrixCard, { width: matrixCardWidth as any, backgroundColor: c.card, borderColor: `${c.primary}40` }],
-      badgePrimary: [styles.matrixBadge, { backgroundColor: `${c.primary}18` }],
-      cardTeal: [styles.matrixCard, { width: matrixCardWidth as any, backgroundColor: c.card, borderColor: `${c.teal}40` }],
-      badgeTeal: [styles.matrixBadge, { backgroundColor: `${c.teal}18` }],
+      cardSuccess: [styles.matrixCard, { width: matrixCardWidth as any, backgroundColor: c.card, borderColor: `${c.success}40` }],
+      badgeSuccess: [styles.matrixBadge, { backgroundColor: `${c.success}18` }],
       cardAccent: [styles.matrixCard, { width: matrixCardWidth as any, backgroundColor: c.card, borderColor: `${c.accent}40` }],
       badgeAccent: [styles.matrixBadge, { backgroundColor: `${c.accent}18` }],
+      cardPrimary: [styles.matrixCard, { width: matrixCardWidth as any, backgroundColor: c.card, borderColor: `${c.primary}40` }],
+      badgePrimary: [styles.matrixBadge, { backgroundColor: `${c.primary}18` }],
       cardWarning: [styles.matrixCard, { width: matrixCardWidth as any, backgroundColor: c.card, borderColor: `${c.warning}40` }],
       badgeWarning: [styles.matrixBadge, { backgroundColor: `${c.warning}18` }],
     }),
-    [matrixCardWidth, c.card, c.primary, c.teal, c.accent, c.warning]
+    [matrixCardWidth, c.card, c.success, c.accent, c.primary, c.warning]
   );
 
   return (
     <>
-      {/* 1. EXECUTIVE CASH FLOW OVERVIEW */}
+      {/* 1. EXECUTIVE MONTHLY CASH FLOW OVERVIEW */}
       <StaggeredView delay={40} direction="up">
         <AnimatedCard style={[styles.cashFlowCard, { backgroundColor: c.card, borderColor: c.border }]} scaleTo={0.98}>
           <View style={styles.cashFlowHeader}>
             <View style={styles.cashFlowHeaderLeft}>
               <Ionicons name="trending-up" size={16} color={c.primary} />
-              <Text style={[styles.cashFlowTitle, { color: c.text }]}>Executive Cash Flow</Text>
+              <Text style={[styles.cashFlowTitle, { color: c.text }]}>Monthly Cash Flow</Text>
             </View>
-            <View style={[styles.statusPill, { backgroundColor: netCashFlow >= 0 ? c.success + '20' : c.danger + '20' }]}>
-              <Text style={[styles.statusPillText, { color: netCashFlow >= 0 ? c.success : c.danger }]}>
-                {netCashFlow >= 0 ? 'Surplus' : 'Deficit'}
+            <View style={[styles.statusPill, { backgroundColor: monthlyNet >= 0 ? c.success + '20' : c.danger + '20' }]}>
+              <Text style={[styles.statusPillText, { color: monthlyNet >= 0 ? c.success : c.danger }]}>
+                {monthlyNet >= 0 ? 'Surplus' : 'Deficit'}
               </Text>
             </View>
           </View>
 
           <View style={styles.cashFlowMetricsRow}>
-            {/* Inflow */}
+            {/* Monthly Inflow */}
             <View style={styles.cashFlowCol}>
               <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Monthly Inflow</Text>
               <Text style={[styles.cashFlowAmount, { color: c.success }]} numberOfLines={1}>
-                {isStealthMode ? `${currSymbol}••••••` : `+${currSymbol}${Math.round(totalIncomeMonth).toLocaleString('en-IN')}`}
+                {isStealthMode ? `${currSymbol}••••••` : `+${currSymbol}${Math.round(monthlyInflow).toLocaleString('en-IN')}`}
               </Text>
             </View>
 
             <View style={[styles.cashFlowDivider, { backgroundColor: c.border }]} />
 
-            {/* Outflow */}
+            {/* Monthly Outflow */}
             <View style={styles.cashFlowCol}>
               <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Monthly Outflow</Text>
               <Text style={[styles.cashFlowAmount, { color: c.accent }]} numberOfLines={1}>
-                {isStealthMode ? `${currSymbol}••••••` : `-${currSymbol}${Math.round(totalExpenseMonth).toLocaleString('en-IN')}`}
+                {isStealthMode ? `${currSymbol}••••••` : `-${currSymbol}${Math.round(monthlyOutflow).toLocaleString('en-IN')}`}
               </Text>
             </View>
 
             <View style={[styles.cashFlowDivider, { backgroundColor: c.border }]} />
 
-            {/* Net */}
+            {/* Monthly Net */}
             <View style={styles.cashFlowCol}>
               <Text style={[styles.cashFlowLabel, { color: c.textMuted }]}>Net Position</Text>
               <Text
                 style={[
                   styles.cashFlowAmount,
-                  { color: netCashFlow >= 0 ? c.success : c.danger },
+                  { color: monthlyNet >= 0 ? c.success : c.danger },
                 ]}
                 numberOfLines={1}
               >
                 {isStealthMode
                   ? `${currSymbol}••••••`
-                  : `${netCashFlow >= 0 ? '+' : ''}${currSymbol}${Math.round(netCashFlow).toLocaleString('en-IN')}`}
+                  : `${monthlyNet >= 0 ? '+' : ''}${currSymbol}${Math.round(monthlyNet).toLocaleString('en-IN')}`}
               </Text>
             </View>
           </View>
@@ -135,7 +135,21 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
                 <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>Safe to Spend</Text>
                 <Text style={[styles.proMetricVal, { color: safeDailySpend > 0 ? c.success : c.danger }]} numberOfLines={1}>
                   {isStealthMode ? currSymbol + '••••••' : currSymbol + Math.round(safeDailySpend).toLocaleString('en-IN')}
-                  <Text style={{ fontSize: 10, color: c.textMuted }}> /day</Text>
+                  <Text style={{ fontSize: 10, color: c.textMuted }}> /d</Text>
+                </Text>
+              </View>
+            </View>
+
+            {/* Daily Velocity */}
+            <View style={[styles.proMetricBadge, { backgroundColor: c.card, borderColor: c.teal + '50' }]}>
+              <View style={[styles.proMetricIconCircle, { backgroundColor: c.teal + '20' }]}>
+                <Ionicons name="speedometer" size={13} color={c.teal} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>Daily Burn</Text>
+                <Text style={[styles.proMetricVal, { color: c.teal }]} numberOfLines={1}>
+                  {isStealthMode ? currSymbol + '••••••' : currSymbol + Math.round(dailyBurn).toLocaleString('en-IN')}
+                  <Text style={{ fontSize: 10, color: c.textMuted }}> /d</Text>
                 </Text>
               </View>
             </View>
@@ -146,11 +160,11 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
                 <Ionicons name="flame" size={13} color={c.warning} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>No-Spend Streak</Text>
+                <Text style={[styles.proMetricLabel, { color: c.textMuted }]}>Streak</Text>
                 <Text style={[styles.proMetricVal, { color: c.warning }]} numberOfLines={1}>
                   {noSpendStreak}{' '}
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: c.textMuted }}>
-                    {'day' + (noSpendStreak === 1 ? '' : 's')}
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: c.textMuted }}>
+                    {'d' + (noSpendStreak === 1 ? '' : 's')}
                   </Text>
                 </Text>
               </View>
@@ -159,15 +173,33 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
         </AnimatedCard>
       </StaggeredView>
 
-      {/* 2. FOUR-METRIC MATRIX KPI GRID */}
+      {/* 2. BALANCED FOUR-METRIC MATRIX KPI GRID (ALL-TIME STANDING) */}
       <StaggeredView delay={100} direction="up">
         <View style={[styles.matrixGrid, { gap: isLargeScreen ? 12 : 10 }]}>
-          {/* Total Ledger Outflow */}
-          <AnimatedCard style={matrixCardStyles.cardPrimary} scaleTo={0.96}>
+          {/* 1. Total Inflow (All-time) */}
+          <AnimatedCard style={matrixCardStyles.cardSuccess} scaleTo={0.96}>
+            <View style={styles.matrixTop}>
+              <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Total Inflow</Text>
+              <View style={matrixCardStyles.badgeSuccess}>
+                <Ionicons name="arrow-down-circle-outline" size={13} color={c.success} />
+              </View>
+            </View>
+            <NumberTicker
+              value={totalIncome}
+              isStealth={isStealthMode}
+              prefix={currSymbol}
+              decimals={0}
+              style={[styles.matrixValue, { color: c.success }]}
+            />
+            <Text style={[styles.matrixSub, { color: c.textMuted }]}>All-time earnings</Text>
+          </AnimatedCard>
+
+          {/* 2. Total Outflow (All-time) */}
+          <AnimatedCard style={matrixCardStyles.cardAccent} scaleTo={0.96}>
             <View style={styles.matrixTop}>
               <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Total Outflow</Text>
-              <View style={matrixCardStyles.badgePrimary}>
-                <Ionicons name="wallet-outline" size={13} color={c.primary} />
+              <View style={matrixCardStyles.badgeAccent}>
+                <Ionicons name="arrow-up-circle-outline" size={13} color={c.accent} />
               </View>
             </View>
             <NumberTicker
@@ -177,59 +209,30 @@ export const DashboardMetricsMatrix = memo(function DashboardMetricsMatrix({
               decimals={0}
               style={[styles.matrixValue, { color: c.text }]}
             />
-            <Text style={[styles.matrixSub, { color: c.textMuted }]}>All-time cumulative</Text>
+            <Text style={[styles.matrixSub, { color: c.textMuted }]}>All-time expenses</Text>
           </AnimatedCard>
 
-          {/* Current Month Burn */}
-          <AnimatedCard style={matrixCardStyles.cardTeal} scaleTo={0.96}>
+          {/* 3. Net Balance (All-time) */}
+          <AnimatedCard style={matrixCardStyles.cardPrimary} scaleTo={0.96}>
             <View style={styles.matrixTop}>
-              <Text style={[styles.matrixLabel, { color: c.textMuted }]}>This Month</Text>
-              <View style={matrixCardStyles.badgeTeal}>
-                <Ionicons name="calendar-outline" size={13} color={c.teal} />
+              <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Net Balance</Text>
+              <View style={matrixCardStyles.badgePrimary}>
+                <Ionicons name="wallet-outline" size={13} color={c.primary} />
               </View>
             </View>
             <NumberTicker
-              value={currentMonthSpent}
+              value={allTimeNet}
               isStealth={isStealthMode}
               prefix={currSymbol}
               decimals={0}
-              style={[styles.matrixValue, { color: c.teal }]}
+              style={[styles.matrixValue, { color: allTimeNet >= 0 ? c.primary : c.danger }]}
             />
             <Text style={[styles.matrixSub, { color: c.textMuted }]}>
-              {currentMonthInflow > 0
-                ? isStealthMode
-                  ? `In: +${currSymbol}•••••• · `
-                  : `In: +${currSymbol}${Math.round(currentMonthInflow).toLocaleString('en-IN')} · `
-                : ''}
-              Day {currentDay} of {daysInMonth}
+              {allTimeNet >= 0 ? 'Cumulative surplus' : 'Cumulative deficit'}
             </Text>
           </AnimatedCard>
 
-          {/* Daily Velocity / Burn Rate */}
-          <AnimatedCard style={matrixCardStyles.cardAccent} scaleTo={0.96}>
-            <View style={styles.matrixTop}>
-              <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Daily Velocity</Text>
-              <View style={matrixCardStyles.badgeAccent}>
-                <Ionicons name="speedometer-outline" size={13} color={c.accent} />
-              </View>
-            </View>
-            <NumberTicker
-              value={dailyBurn}
-              isStealth={isStealthMode}
-              prefix={currSymbol}
-              suffix="/d"
-              decimals={0}
-              style={[styles.matrixValue, { color: c.accent }]}
-            />
-            <Text style={[styles.matrixSub, { color: c.textMuted }]}>
-              Proj:{' '}
-              {isStealthMode
-                ? `${currSymbol}••••••`
-                : `${currSymbol}${Math.round(monthEndForecast).toLocaleString('en-IN')}`}
-            </Text>
-          </AnimatedCard>
-
-          {/* Top Cost Driver */}
+          {/* 4. Top Category */}
           <AnimatedCard style={matrixCardStyles.cardWarning} scaleTo={0.96}>
             <View style={styles.matrixTop}>
               <Text style={[styles.matrixLabel, { color: c.textMuted }]}>Top Category</Text>

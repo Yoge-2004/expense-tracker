@@ -829,7 +829,7 @@
 }
 [data-theme="light"] .header-action-btn:hover {
     color: #B8860B;
-    border-color: #D4AF37;
+    border-color: var(--primary);
     background: rgba(212, 175, 55, 0.12);
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
 }
@@ -843,38 +843,38 @@
 
 :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
     transform: translateY(-3px);
-    border-color: rgba(212, 175, 55, 0.28) !important;
+    border-color: rgba(var(--primary-rgb), 0.35);
     box-shadow:
         0 18px 46px -10px rgba(0, 0, 0, 0.55),
-        0 0 35px 3px rgba(212, 175, 55, 0.22),
-        0 0 65px 8px rgba(212, 175, 55, 0.12) !important;
+        0 0 35px 3px rgba(var(--primary-rgb), 0.22),
+        0 0 65px 8px rgba(var(--primary-rgb), 0.12);
 }
 
 [data-theme="light"] :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
     transform: translateY(-3px);
-    border-color: rgba(212, 175, 55, 0.32) !important;
+    border-color: rgba(var(--primary-rgb), 0.40);
     box-shadow:
         0 16px 40px -8px rgba(15, 23, 42, 0.10),
-        0 0 32px 3px rgba(212, 175, 55, 0.32),
-        0 0 60px 8px rgba(212, 175, 55, 0.16) !important;
+        0 0 32px 3px rgba(var(--primary-rgb), 0.22),
+        0 0 60px 8px rgba(var(--primary-rgb), 0.12);
 }
 
 /* Primary and CTA Buttons Soft Golden Hover */
 :is(.btn-primary, #openModalBtn, #openIncomeModalBtn, #addLoanBtn, #exportBtn, #importBtn):hover {
-    box-shadow: 0 8px 24px -2px rgba(212, 175, 55, 0.38), 0 0 20px rgba(212, 175, 55, 0.25) !important;
+    box-shadow: 0 8px 24px -2px rgba(var(--primary-rgb), 0.38), 0 0 20px rgba(var(--primary-rgb), 0.25);
 }
 [data-theme="light"] :is(.btn-primary, #openModalBtn, #openIncomeModalBtn, #addLoanBtn, #exportBtn, #importBtn):hover {
-    box-shadow: 0 8px 22px -2px rgba(184, 134, 11, 0.35), 0 0 18px rgba(212, 175, 55, 0.30) !important;
+    box-shadow: 0 8px 22px -2px rgba(var(--primary-rgb), 0.30), 0 0 18px rgba(var(--primary-rgb), 0.20);
 }
 
 /* Chips, Pills & Tabs Soft Golden Hover Glow */
 :is(.pill-chip, .loan-tab-btn, .period-chip, .period-month-chip, .stream-pill-btn, .ai-pill-chip):hover {
-    border-color: rgba(212, 175, 55, 0.40) !important;
-    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.28), 0 0 12px rgba(212, 175, 55, 0.18) !important;
+    border-color: rgba(var(--primary-rgb), 0.40);
+    box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.28), 0 0 12px rgba(var(--primary-rgb), 0.18);
 }
 [data-theme="light"] :is(.pill-chip, .loan-tab-btn, .period-chip, .period-month-chip, .stream-pill-btn, .ai-pill-chip):hover {
-    border-color: rgba(184, 134, 11, 0.45) !important;
-    box-shadow: 0 4px 14px rgba(184, 134, 11, 0.25), 0 0 14px rgba(212, 175, 55, 0.22) !important;
+    border-color: rgba(var(--primary-rgb), 0.45);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25), 0 0 14px rgba(var(--primary-rgb), 0.22);
 }
 
 /* Eye / Stealth Mode Toggle - Gold in both disabled and enabled states */
@@ -885,7 +885,7 @@
 }
 [data-theme="light"] .stealth-toggle-btn {
     color: #B8860B !important;
-    border-color: rgba(212, 175, 55, 0.42) !important;
+    border-color: rgba(var(--primary-rgb), 0.42);
     background: #FFFFFF;
 }
 .stealth-toggle-btn:hover,
@@ -893,7 +893,7 @@
     color: #D4AF37 !important;
     border-color: #D4AF37 !important;
     background: rgba(212, 175, 55, 0.14) !important;
-    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.28) !important;
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.28);
 }
 
 /* Individual Expense & Income Hover: GPU accelerated, silky smooth hover without layout thrashing */
@@ -911,10 +911,10 @@
 .loans-table tbody tr:hover,
 .recent-transactions-table tbody tr:hover {
     transform: translate3d(0, -2px, 0);
-    border-color: rgba(212, 175, 55, 0.28) !important;
+    border-color: rgba(var(--primary-rgb), 0.35);
     box-shadow:
         0 6px 20px -4px rgba(0, 0, 0, 0.35),
-        0 0 18px 2px rgba(212, 175, 55, 0.18) !important;
+        0 0 18px 2px rgba(var(--primary-rgb), 0.18);
 }
 
 [data-theme="light"] .expense-item:hover,
@@ -923,10 +923,10 @@
 [data-theme="light"] .loans-table tbody tr:hover,
 [data-theme="light"] .recent-transactions-table tbody tr:hover {
     transform: translate3d(0, -2px, 0);
-    border-color: rgba(212, 175, 55, 0.32) !important;
+    border-color: rgba(var(--primary-rgb), 0.40);
     box-shadow:
         0 6px 18px -4px rgba(15, 23, 42, 0.08),
-        0 0 16px 2px rgba(212, 175, 55, 0.22) !important;
+        0 0 16px 2px rgba(var(--primary-rgb), 0.22);
 }
 
 #incomeList tbody tr {
@@ -954,10 +954,10 @@
 
 /* Soft golden cursor illumination across card surfaces */
 .glow-follow::before {
-    background: radial-gradient(circle, rgba(212, 175, 55, 0.20) 0%, rgba(212, 175, 55, 0.05) 45%, transparent 70%) !important;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.20) 0%, rgba(var(--primary-rgb), 0.05) 45%, transparent 70%);
 }
 [data-theme="light"] .glow-follow::before {
-    background: radial-gradient(circle, rgba(212, 175, 55, 0.24) 0%, rgba(212, 175, 55, 0.06) 45%, transparent 70%) !important;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.24) 0%, rgba(var(--primary-rgb), 0.06) 45%, transparent 70%);
 }
 
 /* Scrollable Profile Menu */
@@ -1226,7 +1226,7 @@
                 opacity 0.2s ease,
                 border-color 0.2s ease;
     opacity: 0;
-    filter: drop-shadow(0 0 7px rgba(212, 175, 55, 0.50));
+    filter: drop-shadow(0 0 7px rgba(var(--primary-rgb), 0.50));
 }
 .executive-reticle.active {
     opacity: 1;
@@ -1236,7 +1236,7 @@
     position: absolute;
     width: 5px;
     height: 5px;
-    border-color: #D4AF37;
+    border-color: var(--primary);
     border-style: solid;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0.85;
@@ -1252,7 +1252,7 @@
     left: 50%;
     width: 3px;
     height: 3px;
-    background: #D4AF37;
+    background: var(--primary);
     border-radius: 1px;
     transform: translate(-50%, -50%) rotate(45deg);
     opacity: 0.7;
@@ -1264,9 +1264,9 @@
     width: 32px;
     height: 32px;
     border-radius: 50% !important;
-    background: radial-gradient(circle, rgba(212, 175, 55, 0.26) 0%, rgba(212, 175, 55, 0.08) 50%, transparent 72%) !important;
-    box-shadow: 0 0 24px 3px rgba(212, 175, 55, 0.35) !important;
-    border: 1px solid rgba(212, 175, 55, 0.38) !important;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.26) 0%, rgba(var(--primary-rgb), 0.08) 50%, transparent 72%);
+    box-shadow: 0 0 24px 3px rgba(var(--primary-rgb), 0.35);
+    border: 1px solid rgba(var(--primary-rgb), 0.38);
     filter: none !important;
 }
 .executive-reticle.is-hovering .reticle-corner {
@@ -1275,21 +1275,21 @@
 .executive-reticle.is-hovering .reticle-center-accent {
     width: 4px;
     height: 4px;
-    background: #D4AF37;
+    background: var(--primary);
     border-radius: 50%;
     opacity: 0.95;
-    box-shadow: 0 0 8px #D4AF37;
+    box-shadow: 0 0 8px var(--primary);
     transform: translate(-50%, -50%);
 }
 
 [data-theme="light"] .executive-reticle.is-hovering {
-    background: radial-gradient(circle, rgba(212, 175, 55, 0.32) 0%, rgba(212, 175, 55, 0.10) 50%, transparent 72%) !important;
-    box-shadow: 0 0 22px 3px rgba(184, 134, 11, 0.40) !important;
-    border: 1px solid rgba(184, 134, 11, 0.42) !important;
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.32) 0%, rgba(var(--primary-rgb), 0.10) 50%, transparent 72%);
+    box-shadow: 0 0 22px 3px rgba(var(--primary-rgb), 0.35);
+    border: 1px solid rgba(var(--primary-rgb), 0.42);
 }
 [data-theme="light"] .executive-reticle.is-hovering .reticle-center-accent {
-    background: #B8860B;
-    box-shadow: 0 0 8px #B8860B;
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
 }
 
 /* Clicking State */
@@ -1318,7 +1318,7 @@
 .executive-reticle.is-text .reticle-center-accent {
     width: 1.5px;
     height: 18px;
-    background: #D4AF37;
+    background: var(--primary);
     border-radius: 0;
     transform: translate(-50%, -50%);
 }

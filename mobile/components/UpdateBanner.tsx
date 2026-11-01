@@ -10,12 +10,13 @@ import { ThemedText as Text } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUpdate } from '../context/UpdateContext';
-
-const BANNER_BG = '#C79A3E';
-const BANNER_INK = '#14110A';
+import { useAuth } from '../context/AuthContext';
 
 export default function UpdateBanner() {
   const { info, hasUpdate, openPrompt } = useUpdate();
+  const { themeColors } = useAuth();
+  const bannerBg = themeColors?.primary || '#C79A3E';
+  const bannerInk = themeColors?.onPrimary || '#14110A';
   const insets = useSafeAreaInsets();
 
   if (!hasUpdate || !info) {
@@ -30,7 +31,7 @@ export default function UpdateBanner() {
       style={[styles.banner, { paddingTop: insets.top + 8 }]}
     >
       <View style={styles.row}>
-        <Ionicons name="cloud-download-outline" size={18} color={BANNER_INK} />
+        <Ionicons name="cloud-download-outline" size={18} color={bannerInk} />
         <Text style={styles.text} numberOfLines={1}>
           Update available · {info.latestVersion}
         </Text>
@@ -44,7 +45,7 @@ export default function UpdateBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: BANNER_BG,
+    backgroundColor: bannerBg,
     paddingBottom: 8,
     paddingHorizontal: 16,
   },
@@ -55,18 +56,18 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
-    color: BANNER_INK,
+    color: bannerInk,
     fontSize: 13,
     fontWeight: '700',
   },
   cta: {
-    backgroundColor: BANNER_INK,
+    backgroundColor: bannerInk,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
   ctaText: {
-    color: BANNER_BG,
+    color: bannerBg,
     fontSize: 12,
     fontWeight: '800',
   },

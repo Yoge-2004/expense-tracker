@@ -25,6 +25,24 @@
             cardSurface: 'rgba(23, 26, 20, 0.88)',
             surface: '#171A14',
             borderAccent: 'rgba(199, 154, 62, 0.35)',
+            dark: {
+                primary: '#C79A3E',
+                primaryGradientEnd: '#A97F2E',
+                accent: '#A23E32',
+                highlight: '#4C7A78',
+                cardSurface: 'rgba(23, 26, 20, 0.88)',
+                surface: '#171A14',
+                borderAccent: 'rgba(199, 154, 62, 0.35)',
+            },
+            light: {
+                primary: '#D4AF37',
+                primaryGradientEnd: '#B38F22',
+                accent: '#E74C3C',
+                highlight: '#0EA5E9',
+                cardSurface: '#FFFFFF',
+                surface: '#F8F9FA',
+                borderAccent: 'rgba(212, 175, 55, 0.45)',
+            },
         },
         {
             id: 'emerald-aurora',
@@ -37,6 +55,24 @@
             cardSurface: 'rgba(13, 26, 20, 0.90)',
             surface: '#0F2119',
             borderAccent: 'rgba(16, 185, 129, 0.35)',
+            dark: {
+                primary: '#10B981',
+                primaryGradientEnd: '#059669',
+                accent: '#34D399',
+                highlight: '#06B6D4',
+                cardSurface: 'rgba(13, 26, 20, 0.90)',
+                surface: '#0F2119',
+                borderAccent: 'rgba(16, 185, 129, 0.35)',
+            },
+            light: {
+                primary: '#059669',
+                primaryGradientEnd: '#047857',
+                accent: '#10B981',
+                highlight: '#0D9488',
+                cardSurface: '#FFFFFF',
+                surface: '#F0FDF4',
+                borderAccent: 'rgba(5, 150, 105, 0.40)',
+            },
         },
         {
             id: 'royal-amethyst',
@@ -49,6 +85,24 @@
             cardSurface: 'rgba(22, 17, 36, 0.90)',
             surface: '#1A142C',
             borderAccent: 'rgba(139, 92, 246, 0.35)',
+            dark: {
+                primary: '#8B5CF6',
+                primaryGradientEnd: '#7C3AED',
+                accent: '#EC4899',
+                highlight: '#A855F7',
+                cardSurface: 'rgba(22, 17, 36, 0.90)',
+                surface: '#1A142C',
+                borderAccent: 'rgba(139, 92, 246, 0.35)',
+            },
+            light: {
+                primary: '#7C3AED',
+                primaryGradientEnd: '#6D28D9',
+                accent: '#DB2777',
+                highlight: '#9333EA',
+                cardSurface: '#FFFFFF',
+                surface: '#FAF5FF',
+                borderAccent: 'rgba(124, 58, 237, 0.40)',
+            },
         },
         {
             id: 'cyber-cobalt',
@@ -61,6 +115,24 @@
             cardSurface: 'rgba(14, 23, 40, 0.90)',
             surface: '#111B30',
             borderAccent: 'rgba(56, 189, 248, 0.35)',
+            dark: {
+                primary: '#38BDF8',
+                primaryGradientEnd: '#0284C7',
+                accent: '#6366F1',
+                highlight: '#06B6D4',
+                cardSurface: 'rgba(14, 23, 40, 0.90)',
+                surface: '#111B30',
+                borderAccent: 'rgba(56, 189, 248, 0.35)',
+            },
+            light: {
+                primary: '#0284C7',
+                primaryGradientEnd: '#0369A1',
+                accent: '#4F46E5',
+                highlight: '#0891B2',
+                cardSurface: '#FFFFFF',
+                surface: '#F0F9FF',
+                borderAccent: 'rgba(2, 132, 199, 0.40)',
+            },
         },
         {
             id: 'sunset-amber',
@@ -73,6 +145,24 @@
             cardSurface: 'rgba(28, 18, 12, 0.90)',
             surface: '#241710',
             borderAccent: 'rgba(245, 158, 11, 0.35)',
+            dark: {
+                primary: '#F59E0B',
+                primaryGradientEnd: '#D97706',
+                accent: '#EF4444',
+                highlight: '#FB923C',
+                cardSurface: 'rgba(28, 18, 12, 0.90)',
+                surface: '#241710',
+                borderAccent: 'rgba(245, 158, 11, 0.35)',
+            },
+            light: {
+                primary: '#D97706',
+                primaryGradientEnd: '#B45309',
+                accent: '#DC2626',
+                highlight: '#EA580C',
+                cardSurface: '#FFFFFF',
+                surface: '#FFF7ED',
+                borderAccent: 'rgba(217, 119, 6, 0.40)',
+            },
         },
         {
             id: 'golden-champagne',
@@ -85,6 +175,24 @@
             cardSurface: 'rgba(27, 23, 14, 0.90)',
             surface: '#221D12',
             borderAccent: 'rgba(251, 191, 36, 0.35)',
+            dark: {
+                primary: '#FBBF24',
+                primaryGradientEnd: '#EAB308',
+                accent: '#F43F5E',
+                highlight: '#F59E0B',
+                cardSurface: 'rgba(27, 23, 14, 0.90)',
+                surface: '#221D12',
+                borderAccent: 'rgba(251, 191, 36, 0.35)',
+            },
+            light: {
+                primary: '#CA8A04',
+                primaryGradientEnd: '#A16207',
+                accent: '#E11D48',
+                highlight: '#D97706',
+                cardSurface: '#FFFFFF',
+                surface: '#FEFCE8',
+                borderAccent: 'rgba(202, 138, 4, 0.40)',
+            },
         },
     ];
 
@@ -248,51 +356,133 @@
         const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
         if (!sampleCtx) throw new Error('Could not sample image colors.');
         sampleCtx.drawImage(canvas, 0, 0, sample.width, sample.height);
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const pixels = sampleCtx.getImageData(0, 0, sample.width, sample.height);
-        const counts = new Map();
-        for (let i = 0; i < pixels.data.length; i += 16) {
-            const r = pixels.data[i], g = pixels.data[i + 1], b = pixels.data[i + 2];
-            if (pixels.data[i + 3] < 128) continue;
-            const key = [Math.round(r / 32) * 32, Math.round(g / 32) * 32, Math.round(b / 32) * 32];
-            const id = key.join(','); counts.set(id, (counts.get(id) || 0) + 1);
+        const buckets = new Map();
+        const totalPixels = Math.floor(pixels.data.length / 4);
+        const step = Math.max(1, Math.floor(totalPixels / 2500)) * 4;
+
+        for (let i = 0; i < pixels.data.length; i += step) {
+            const r = pixels.data[i], g = pixels.data[i + 1], b = pixels.data[i + 2], a = pixels.data[i + 3];
+            if (a < 128) continue;
+
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            const sat = max - min;
+            const satRatio = max > 0 ? sat / max : 0;
+            const lum = (r * 299 + g * 587 + b * 114) / 255000;
+            const isExtreme = lum < 0.08 || (lum > 0.96 && satRatio < 0.12) || satRatio < 0.06;
+
+            const qR = Math.floor(r / 16);
+            const qG = Math.floor(g / 16);
+            const qB = Math.floor(b / 16);
+            const key = (qR << 8) | (qG << 4) | qB;
+
+            const existing = buckets.get(key) || { r: 0, g: 0, b: 0, count: 0, score: 0 };
+            existing.r += r;
+            existing.g += g;
+            existing.b += b;
+            existing.count++;
+            existing.score += isExtreme ? 0.2 : (1 + Math.pow(satRatio, 1.4) * 3.5);
+            buckets.set(key, existing);
         }
-        const ranked = [...counts.entries()].map(([id, count]) => {
-            const channels = id.split(',').map(Number);
-            const saturation = Math.max(...channels) - Math.min(...channels);
-            const luminance = channels[0] * 0.299 + channels[1] * 0.587 + channels[2] * 0.114;
-            return { channels, count, saturation, luminance, score: count * (0.35 + saturation / 255) };
-        }).filter(color => color.luminance >= 12 && color.luminance <= 245)
-            .sort((a, b) => b.score - a.score);
-        const selected = [];
-        for (const candidate of ranked) {
-            const separated = selected.every(color => Math.sqrt(candidate.channels.reduce((sum, value, index) => sum + Math.pow(value - color.channels[index], 2), 0)) >= 62);
-            if (separated) selected.push(candidate);
-            if (selected.length === 8) break;
+
+        const sorted = Array.from(buckets.values()).sort((a, b) => b.score - a.score);
+        if (sorted.length === 0) {
+            throw new Error('This image contains no readable pixels. Try another image.');
         }
-        const colors = selected.map(color => '#' + color.channels.map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join(''));
-        // Muted and near-monochrome images still get a useful, derived palette.
-        if (!colors.length && counts.size) {
-            const [id] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-            colors.push('#' + id.split(',').map(value => Math.max(0, Math.min(255, Number(value))).toString(16).padStart(2, '0')).join(''));
+
+        let primaryBucket = sorted[0];
+        for (const bucket of sorted) {
+            const r = Math.round(bucket.r / bucket.count);
+            const g = Math.round(bucket.g / bucket.count);
+            const b = Math.round(bucket.b / bucket.count);
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            const satRatio = max > 0 ? (max - min) / max : 0;
+            const lum = (r * 299 + g * 587 + b * 114) / 255000;
+            if (satRatio >= 0.15 && lum >= 0.12 && lum <= 0.88) {
+                primaryBucket = bucket;
+                break;
+            }
         }
-        if (!colors.length) throw new Error('This image contains no readable pixels. Try another image.');
-        if (colors.length === 1) {
-            colors.push(colorVariant(colors[0], 34), colorVariant(colors[0], 190));
-        } else if (colors.length === 2) {
-            colors.push(colorVariant(colors[0], 190));
+
+        const primaryRgb = {
+            r: Math.round(primaryBucket.r / primaryBucket.count),
+            g: Math.round(primaryBucket.g / primaryBucket.count),
+            b: Math.round(primaryBucket.b / primaryBucket.count),
+        };
+
+        const colorDist = (a, b) => Math.sqrt(
+            Math.pow(a.r - b.r, 2) + Math.pow(a.g - b.g, 2) + Math.pow(a.b - b.b, 2)
+        );
+
+        let accentRgb = primaryRgb;
+        for (let i = 0; i < sorted.length; i++) {
+            const cand = {
+                r: Math.round(sorted[i].r / sorted[i].count),
+                g: Math.round(sorted[i].g / sorted[i].count),
+                b: Math.round(sorted[i].b / sorted[i].count),
+            };
+            if (colorDist(cand, primaryRgb) > 70) {
+                accentRgb = cand;
+                break;
+            }
         }
-        const harmonyOffsets = [96, 154, 218, 278, 318];
-        for (const offset of harmonyOffsets) {
+        if (colorDist(primaryRgb, accentRgb) <= 70) {
+            const hexPrimary = '#' + [primaryRgb.r, primaryRgb.g, primaryRgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
+            accentRgb = hexToRgb(colorVariant(hexPrimary, 150));
+        }
+
+        let highlightRgb = accentRgb;
+        for (let i = 0; i < sorted.length; i++) {
+            const cand = {
+                r: Math.round(sorted[i].r / sorted[i].count),
+                g: Math.round(sorted[i].g / sorted[i].count),
+                b: Math.round(sorted[i].b / sorted[i].count),
+            };
+            if (colorDist(cand, primaryRgb) > 55 && colorDist(cand, accentRgb) > 55) {
+                highlightRgb = cand;
+                break;
+            }
+        }
+        if (colorDist(primaryRgb, highlightRgb) <= 55 || colorDist(accentRgb, highlightRgb) <= 55) {
+            const hexPrimary = '#' + [primaryRgb.r, primaryRgb.g, primaryRgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
+            highlightRgb = hexToRgb(colorVariant(hexPrimary, 60));
+        }
+
+        const toHex = (c) => '#' + [c.r, c.g, c.b].map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('');
+        const primaryHex = toHex(primaryRgb);
+        const accentHex = toHex(accentRgb);
+        const highlightHex = toHex(highlightRgb);
+
+        const colors = [primaryHex, accentHex, highlightHex];
+        for (const bucket of sorted) {
+            const cand = {
+                r: Math.round(bucket.r / bucket.count),
+                g: Math.round(bucket.g / bucket.count),
+                b: Math.round(bucket.b / bucket.count),
+            };
+            if (colors.every(hex => colorDist(hexToRgb(hex), cand) >= 34)) {
+                colors.push(toHex(cand));
+            }
             if (colors.length >= 8) break;
-            const variant = colorVariant(colors[0], offset);
+        }
+        for (const hueOffset of [45, 90, 135, 180, 225, 270, 315]) {
+            if (colors.length >= 8) break;
+            const variant = colorVariant(primaryHex, hueOffset);
             if (!colors.includes(variant)) colors.push(variant);
         }
-        while (colors.length < 8) colors.push(adjustBrightness(colors[colors.length % Math.max(1, selected.length)], colors.length % 2 ? 0.72 : 1.2));
+
         currentExtractedPalette = colors;
-        const [primary, accent, highlight] = colors;
-        currentPrimary = primary; currentPrimaryEnd = adjustBrightness(primary, 0.82);
-        currentAccent = accent || adjustBrightness(primary, 1.25); currentHighlight = highlight || adjustBrightness(primary, 1.5);
-        currentWallpaperType = 'custom'; currentWallpaperUri = canvas.toDataURL('image/jpeg', 0.88);
+        currentPrimary = primaryHex;
+        currentPrimaryEnd = adjustBrightness(primaryHex, isLight ? 0.85 : 0.80);
+        currentAccent = accentHex;
+        currentHighlight = highlightHex;
+        currentCardSurface = isLight
+            ? `rgba(${Math.min(255, 248 + Math.floor(primaryRgb.r * 0.02))}, ${Math.min(255, 248 + Math.floor(primaryRgb.g * 0.02))}, ${Math.min(255, 252 + Math.floor(primaryRgb.b * 0.02))}, 0.94)`
+            : `rgba(${Math.max(16, 20 + Math.floor(primaryRgb.r * 0.05))}, ${Math.max(18, 22 + Math.floor(primaryRgb.g * 0.05))}, ${Math.max(22, 24 + Math.floor(primaryRgb.b * 0.05))}, 0.90)`;
+        currentAppSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
+        currentWallpaperType = 'custom';
+        currentWallpaperUri = canvas.toDataURL('image/jpeg', 0.88);
         applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
         applyAtmosphere('custom', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
         syncUiControls();
@@ -438,22 +628,24 @@
         const root = document.documentElement;
         const isLight = root.getAttribute('data-theme') === 'light';
         const cardBase = isLight ? '#FFFFFF' : '#171A14';
-        const surfaceBase = isLight ? '#EEF1F6' : '#10120E';
-        // A surface the user actually picked (a non-default hex) shapes the theme's surface. The shipped default
-        // surfaces are dark-mode values, so they must not tint the light theme; presets stay subtle tints.
+        const surfaceBase = isLight ? '#F8F9FA' : '#10120E';
+
         const surfaceAmount = (requested) => {
             const isDefault = DEFAULT_CARD_SURFACES.concat(DEFAULT_APP_SURFACES).some(v => sameColor(requested, v));
             if (isDefault) return 0;
+            // In light mode, if the requested surface is dark, do not contaminate light mode
+            if (isLight && colorLuminance(requested) < 0.4) return 0;
+            // In dark mode, if the requested surface is bright, do not contaminate dark mode
+            if (!isLight && colorLuminance(requested) > 0.6) return 0;
             return isValidHex(requested) ? 0.7 : 0.18;
         };
+
         const safeCard = mixSurface(cardBase, currentCardSurface, surfaceAmount(currentCardSurface));
         const safeSurface = mixSurface(surfaceBase, currentAppSurface, surfaceAmount(currentAppSurface));
-        // Effective colours are derived for the ACTIVE theme and used only for the CSS variables below. The
-        // chosen colours (currentPrimary...) are never overwritten, or switching themes would drift them and the
-        // adjusted values would then be saved to storage and the cloud.
+
         const effPrimary = ensureContrast(primaryHex, safeCard);
         const onPrimary = contrastRatio('#FFFFFF', effPrimary) >= contrastRatio('#10120E', effPrimary) ? '#FFFFFF' : '#10120E';
-        const effPrimaryEnd = ensureContrast(primaryEndHex || adjustBrightness(effPrimary, 0.85), onPrimary);
+        const effPrimaryEnd = ensureContrast(primaryEndHex || adjustBrightness(effPrimary, 0.85), safeCard);
         const effAccent = ensureContrast(accentHex || currentAccent, safeCard);
         const effHighlight = ensureContrast(highlightHex || currentHighlight, safeCard);
         const readableText = readableTextAcross(safeSurface, safeCard);
@@ -474,9 +666,13 @@
             ? `0 20px 45px -12px rgba(15, 23, 42, 0.1), 0 0 20px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.11)`
             : `0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 18px rgba(${safeRgb.r}, ${safeRgb.g}, ${safeRgb.b}, 0.12)`);
         if (!window.matchMedia?.('(pointer: coarse)').matches) {
-            const pointer = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${effPrimary}" stroke="${onPrimary}" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
-            const clicked = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L20 12L12 15L9 23L4 3Z" fill="${effAccent}" stroke="${onPrimary}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="15" r="2" fill="${onPrimary}"/></svg>`;
+            const defSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 3L20 11L12 14L9 22L4 3Z" fill="${effPrimary}" stroke="${onPrimary}" stroke-width="1.5" stroke-linejoin="round"/><circle cx="4" cy="3" r="1.5" fill="${onPrimary}"/></svg>`;
+            const pointer = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L18 10L11 13L8 20L4 3Z" fill="${effPrimary}" stroke="${onPrimary}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="11" cy="13" r="2" fill="${onPrimary}"/></svg>`;
+            const textSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><g stroke="${effPrimary}" stroke-width="2.2" stroke-linecap="round"><line x1="14" y1="4" x2="14" y2="24"/><line x1="9" y1="4" x2="19" y2="4"/><line x1="9" y1="24" x2="19" y2="24"/></g></svg>`;
+            const clicked = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><path d="M4 3L18 10L11 13L8 20L4 3Z" fill="${effAccent}" stroke="${onPrimary}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="11" cy="13" r="2" fill="${onPrimary}"/></svg>`;
+            root.style.setProperty('--cursor-default', `url("data:image/svg+xml,${encodeURIComponent(defSvg)}") 4 3, auto`);
             root.style.setProperty('--cursor-pointer', `url("data:image/svg+xml,${encodeURIComponent(pointer)}") 4 3, pointer`);
+            root.style.setProperty('--cursor-text', `url("data:image/svg+xml,${encodeURIComponent(textSvg)}") 14 14, text`);
             root.style.setProperty('--cursor-clicked', `url("data:image/svg+xml,${encodeURIComponent(clicked)}") 4 3, pointer`);
         }
         setPaletteVar('--card-bg', safeCard);
@@ -487,15 +683,19 @@
         setPaletteVar('--text-muted', readableMuted);
         setPaletteVar('--on-primary', onPrimary);
 
-        // Keep financial status colors distinct while deriving the surrounding
-        // metric palette from the wallpaper colors. A green custom accent must
-        // not make outflows look positive, so red remains the semantic danger.
+        // Disentangled financial semantics: Inflow = Green, Outflow = Red, Savings = Amber
+        const metricInflow = ensureContrast(isLight ? '#059669' : '#10B981', safeCard);
+        const metricOutflow = ensureContrast(isLight ? '#DC2626' : '#EF4444', safeCard);
+        const metricSavings = ensureContrast(isLight ? '#D97706' : '#F59E0B', safeCard);
+        const metricNetflow = ensureContrast(effPrimary, safeCard);
+        const metricSubs = ensureContrast(effAccent, safeCard);
+
         const metricColors = {
-            inflow: ensureContrast(effHighlight, safeCard),
-            outflow: ensureContrast(isLight ? '#B91C1C' : '#F87171', safeCard),
-            netflow: ensureContrast(effPrimary, safeCard),
-            savings: ensureContrast(effPrimaryEnd, safeCard),
-            subs: ensureContrast(effAccent, safeCard),
+            inflow: metricInflow,
+            outflow: metricOutflow,
+            netflow: metricNetflow,
+            savings: metricSavings,
+            subs: metricSubs,
         };
         Object.entries(metricColors).forEach(([name, color]) => {
             const rgb = hexToRgb(color);
@@ -504,11 +704,13 @@
             setPaletteVar(`--metric-${name}-glow`, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`);
         });
         setPaletteVar('--metric-subs-text', metricColors.subs);
-        setPaletteVar('--success', metricColors.inflow);
-        setPaletteVar('--success-rgb', hexToRgb(metricColors.inflow).r + ', ' + hexToRgb(metricColors.inflow).g + ', ' + hexToRgb(metricColors.inflow).b);
-        setPaletteVar('--warning', metricColors.savings);
-        setPaletteVar('--danger', metricColors.outflow);
-        // Neutral fills (keys, chips, inset panels) and readable text on semantic colours follow the surface.
+        setPaletteVar('--success', metricInflow);
+        setPaletteVar('--success-rgb', `${hexToRgb(metricInflow).r}, ${hexToRgb(metricInflow).g}, ${hexToRgb(metricInflow).b}`);
+        setPaletteVar('--warning', metricSavings);
+        setPaletteVar('--warning-rgb', `${hexToRgb(metricSavings).r}, ${hexToRgb(metricSavings).g}, ${hexToRgb(metricSavings).b}`);
+        setPaletteVar('--danger', metricOutflow);
+        setPaletteVar('--danger-rgb', `${hexToRgb(metricOutflow).r}, ${hexToRgb(metricOutflow).g}, ${hexToRgb(metricOutflow).b}`);
+
         setPaletteVar('--fill-subtle', mixSurface(safeCard, readableText, 0.05));
         setPaletteVar('--fill-medium', mixSurface(safeCard, readableText, 0.09));
         setPaletteVar('--fill-strong', mixSurface(safeCard, readableText, 0.14));
@@ -533,11 +735,9 @@
             setPaletteVar('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
         }
 
-        // Untouched palette: hand every colour back to the stylesheet so each theme uses its own designed tokens.
         if (isDefaultPalette()) {
             clearPaletteVars();
         }
-        // Charts, category chips and anything else that cached colours listen for this and re-read the variables.
         document.dispatchEvent(new CustomEvent('palettechange'));
     }
 
@@ -554,13 +754,27 @@
                 heroBg.style.backgroundImage = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
                 heroBg.style.backgroundSize = 'cover';
                 heroBg.style.backgroundPosition = 'center';
-                // Keep the image fully opaque so the old ambient background does
-                // not show through; opacity controls only the tint layer above it.
                 heroBg.style.opacity = '1';
                 heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
             } else {
-                // Preset / default ambient gradients
-                heroBg.style.backgroundImage = '';
+                // Preset / default ambient gradients constructed from current theme colors
+                const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+                const pRgb = hexToRgb(currentPrimary);
+                const aRgb = hexToRgb(currentAccent);
+                const hRgb = hexToRgb(currentHighlight);
+                if (isLight) {
+                    heroBg.style.backgroundImage = `radial-gradient(circle at 12% 14%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.18) 0%, transparent 48%),
+                        radial-gradient(circle at 88% 18%, rgba(${aRgb.r}, ${aRgb.g}, ${aRgb.b}, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 82%, rgba(${hRgb.r}, ${hRgb.g}, ${hRgb.b}, 0.12) 0%, transparent 54%),
+                        radial-gradient(circle at 78% 76%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.12) 0%, transparent 44%)`;
+                } else {
+                    heroBg.style.backgroundImage = `radial-gradient(circle at 14% 16%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.18) 0%, transparent 48%),
+                        radial-gradient(circle at 86% 20%, rgba(${aRgb.r}, ${aRgb.g}, ${aRgb.b}, 0.14) 0%, transparent 50%),
+                        radial-gradient(circle at 46% 86%, rgba(${hRgb.r}, ${hRgb.g}, ${hRgb.b}, 0.12) 0%, transparent 54%),
+                        radial-gradient(circle at 80% 78%, rgba(${pRgb.r}, ${pRgb.g}, ${pRgb.b}, 0.10) 0%, transparent 42%)`;
+                }
+                heroBg.style.backgroundSize = '';
+                heroBg.style.backgroundPosition = '';
                 heroBg.style.opacity = '1';
                 heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
             }
@@ -576,8 +790,22 @@
     // data-theme changes (toggle button, another tab, or the saved theme being applied after this script).
     // A MutationObserver callback runs before the next paint, so no frame shows the old theme's colours.
     new MutationObserver(() => {
+        if (currentWallpaperType === 'preset' && currentPresetId && currentPresetId !== 'default') {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const preset = STUDIO_PRESETS.find(x => x.id === currentPresetId);
+            if (preset) {
+                const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
+                currentPrimary = sub.primary;
+                currentPrimaryEnd = sub.primaryGradientEnd;
+                currentAccent = sub.accent;
+                currentHighlight = sub.highlight;
+                currentCardSurface = sub.cardSurface;
+                currentAppSurface = sub.surface;
+            }
+        }
         applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
         applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        syncUiControls();
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     // ─── 5. CLOUD SYNCHRONIZATION ─────────────────────────────────────────────
@@ -978,14 +1206,18 @@
                     if (!preset) return;
 
                     currentPresetId = preset.id;
-                    currentPrimary = preset.primary;
-                    currentPrimaryEnd = preset.primaryGradientEnd;
-                    currentAccent = preset.accent;
-                    currentHighlight = preset.highlight;
-                    currentCardSurface = preset.cardSurface;
-                    currentAppSurface = preset.surface;
+                    currentWallpaperType = 'preset';
+                    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+                    const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
+                    currentPrimary = sub.primary;
+                    currentPrimaryEnd = sub.primaryGradientEnd;
+                    currentAccent = sub.accent;
+                    currentHighlight = sub.highlight;
+                    currentCardSurface = sub.cardSurface;
+                    currentAppSurface = sub.surface;
 
                     applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+                    applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
                     syncUiControls();
                 });
             });
@@ -1562,6 +1794,10 @@
     }
 
     // Attach to DOMContentLoaded or execute immediately if already loaded
+    document.addEventListener('themechange', () => {
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+    });
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initStudioController);
     } else {

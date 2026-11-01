@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ExpenseTracker recovery export</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main style="max-width:720px;margin:6rem auto;padding:2rem">
+    <h1>Recover data from this device</h1>
+    <p>
+        This tool reads only this browser's local storage and Cache Storage. It does not
+        contact the server or upload anything. Keep the downloaded file private.
+    </p>
+    <button id="exportRecovery" class="btn-primary" type="button">Download recovery file</button>
+    <p id="recoveryStatus" role="status" aria-live="polite"></p>
+</main>
+<script src="js/recovery-export.js"></script>
+</body>
+</html>
