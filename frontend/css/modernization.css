@@ -1662,14 +1662,14 @@
 /* Loans Skeleton Loading Shimmer */
 .loans-skeleton-loader .skeleton-shimmer,
 .loans-skeleton-loader .skeleton-loading {
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(212, 175, 55, 0.12) 50%, rgba(255, 255, 255, 0.03) 75%);
+    background: linear-gradient(90deg, var(--fill-subtle) 25%, rgba(var(--primary-rgb, 212, 175, 55), 0.12) 50%, rgba(255, 255, 255, 0.03) 75%);
     background-size: 200% 100%;
     animation: skeletonShimmer 1.6s infinite linear;
     border-radius: 8px;
 }
 [data-theme="light"] .loans-skeleton-loader .skeleton-shimmer,
 [data-theme="light"] .loans-skeleton-loader .skeleton-loading {
-    background: linear-gradient(90deg, #F1F5F9 25%, rgba(212, 175, 55, 0.18) 50%, #F1F5F9 75%);
+    background: linear-gradient(90deg, var(--inset-bg) 25%, rgba(var(--primary-rgb, 212, 175, 55), 0.18) 50%, var(--inset-bg) 75%);
     background-size: 200% 100%;
     animation: skeletonShimmer 1.6s infinite linear;
 }

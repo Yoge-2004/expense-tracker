@@ -508,6 +508,16 @@
         setPaletteVar('--success-rgb', hexToRgb(metricColors.inflow).r + ', ' + hexToRgb(metricColors.inflow).g + ', ' + hexToRgb(metricColors.inflow).b);
         setPaletteVar('--warning', metricColors.savings);
         setPaletteVar('--danger', metricColors.outflow);
+        // Neutral fills (keys, chips, inset panels) and readable text on semantic colours follow the surface.
+        setPaletteVar('--fill-subtle', mixSurface(safeCard, readableText, 0.05));
+        setPaletteVar('--fill-medium', mixSurface(safeCard, readableText, 0.09));
+        setPaletteVar('--fill-strong', mixSurface(safeCard, readableText, 0.14));
+        setPaletteVar('--fill-active', mixSurface(safeCard, readableText, 0.2));
+        setPaletteVar('--inset-bg', isLight ? mixSurface(safeCard, readableText, 0.06) : mixSurface(safeCard, '#000000', 0.32));
+        setPaletteVar('--line-soft', mixSurface(safeCard, readableText, 0.12));
+        setPaletteVar('--on-success', readableTextAcross(metricColors.inflow, metricColors.inflow));
+        setPaletteVar('--on-warning', readableTextAcross(metricColors.savings, metricColors.savings));
+        setPaletteVar('--on-danger', readableTextAcross(metricColors.outflow, metricColors.outflow));
 
         if (accentHex) {
             const accRgb = hexToRgb(effAccent);
@@ -527,6 +537,8 @@
         if (isDefaultPalette()) {
             clearPaletteVars();
         }
+        // Charts, category chips and anything else that cached colours listen for this and re-read the variables.
+        document.dispatchEvent(new CustomEvent('palettechange'));
     }
 
     function applyAtmosphere(type, uri, opacity, blur) {

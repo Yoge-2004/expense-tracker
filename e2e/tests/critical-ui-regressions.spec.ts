@@ -203,4 +203,61 @@ test.describe('Critical UI regressions', () => {
     expect(run.darkAgain).toEqual(run.dark);
     expect(JSON.parse(run.stored as string).primary).toBe('#8B5CF6');
   });
+
+  test('calculator, charts and category colours follow a customised palette', async ({ page }) => {
+    // A very dark primary makes the readable on-primary text white, so a hard-coded dark label would fail.
+    await page.evaluate(() => {
+      localStorage.setItem('app_custom_palette', JSON.stringify({
+        primary: '#1E1B4B', primaryGradientEnd: '#312E81', accent: '#BE185D', highlight: '#0F766E',
+      }));
+    });
+    await page.reload();
+    await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
+
+    const result = await page.evaluate(() => {
+      const root = document.documentElement;
+      const resolve = (property: string, value: string) => {
+        const el = document.createElement('i');
+        document.body.appendChild(el);
+        (el.style as any)[property] = value;
+        const out = getComputedStyle(el)[property as any];
+        el.remove();
+        return out;
+      };
+      const probe = (cls: string) => {
+        const el = document.createElement('button');
+        el.className = cls;
+        document.body.appendChild(el);
+        const cs = getComputedStyle(el);
+        const out = { color: cs.color, background: cs.backgroundColor };
+        el.remove();
+        return out;
+      };
+      const w = window as any;
+      return {
+        inlinePrimary: root.style.getPropertyValue('--primary').toLowerCase(),
+        eqKey: probe('floating-calc-key is-eq'),
+        useBtn: probe('floating-calc-use-btn'),
+        plainKey: probe('floating-calc-key'),
+        onPrimary: resolve('color', 'var(--on-primary)'),
+        fillSubtle: resolve('backgroundColor', 'var(--fill-subtle)'),
+        categoryFirst: w.DashboardUtils.getCategoryColor('anything', 0).color.toLowerCase(),
+        chartPrimary: w.DashboardCharts.chartColors().primary.toLowerCase(),
+        chartAccent: w.DashboardCharts.chartColors().accent.toLowerCase(),
+        accentVar: root.style.getPropertyValue('--accent').toLowerCase(),
+      };
+    });
+
+    expect(result.inlinePrimary).not.toBe('');
+    // The calculator labels use the readable on-primary colour, not a fixed dark one.
+    expect(result.eqKey.color).toBe(result.onPrimary);
+    expect(result.useBtn.color).toBe(result.onPrimary);
+    expect(result.onPrimary).not.toBe('rgb(16, 18, 14)');
+    // Neutral keys use the palette-derived fill instead of a fixed white overlay.
+    expect(result.plainKey.background).toBe(result.fillSubtle);
+    // Category and chart colours come from the live theme, never from the wallpaper.
+    expect(result.categoryFirst).toBe(result.inlinePrimary);
+    expect(result.chartPrimary).toBe(result.inlinePrimary);
+    expect(result.chartAccent).toBe(result.accentVar);
+  });
 });

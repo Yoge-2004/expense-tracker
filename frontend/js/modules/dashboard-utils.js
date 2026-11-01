@@ -81,19 +81,38 @@
         { bg: "rgba(100,116,139,0.12)", color: "#64748B" } // 24. Mineral Steel
     ];
 
+    // The first three entries of the shipped palette are the theme's primary, accent and highlight. Those slots
+    // follow the live theme variables so category colours respond when the user changes the palette; the rest are
+    // fixed hues, and nothing here depends on the wallpaper image.
+    let livePaletteCache = null;
+    function liveCategoryPalette() {
+        if (livePaletteCache) return livePaletteCache;
+        const style = getComputedStyle(document.documentElement);
+        const seeds = ['--primary', '--accent', '--highlight'].map(name => style.getPropertyValue(name).trim());
+        livePaletteCache = CATEGORY_PALETTE.map((entry, i) => {
+            const m = i < seeds.length ? /^#([0-9a-f]{6})$/i.exec(seeds[i]) : null;
+            if (!m) return entry;
+            const n = parseInt(m[1], 16);
+            return { bg: `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},0.12)`, color: '#' + m[1] };
+        });
+        return livePaletteCache;
+    }
+    document.addEventListener('palettechange', () => { livePaletteCache = null; });
+
     function getCategoryColor(name, index) {
-        if (index !== undefined && index >= 0 && index < CATEGORY_PALETTE.length) {
-            return CATEGORY_PALETTE[index];
+        const palette = liveCategoryPalette();
+        if (index !== undefined && index >= 0 && index < palette.length) {
+            return palette[index];
         }
-        if (!name) return CATEGORY_PALETTE[0];
+        if (!name) return palette[0];
         const clean = String(name).trim().toLowerCase();
         let hash = 0;
         for (let i = 0; i < clean.length; i++) {
             hash = (hash * 31 + clean.charCodeAt(i)) & 0xffffffff;
         }
         const absHash = Math.abs(hash);
-        const paletteIndex = absHash % CATEGORY_PALETTE.length;
-        return CATEGORY_PALETTE[paletteIndex];
+        const paletteIndex = absHash % palette.length;
+        return palette[paletteIndex];
     }
 
     function getCategorySvg(name, size = 16) {

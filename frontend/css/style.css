@@ -72,6 +72,16 @@
     --shadow-premium: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
     --shadow-glow: 0 10px 30px -5px rgba(199, 154, 62, 0.18);
     --on-primary: #10120E;
+    /* Neutral fills, inset panels and readable text on semantic colours. The studio recomputes these for a custom palette. */
+    --fill-subtle: rgba(255, 255, 255, 0.04);
+    --fill-medium: rgba(255, 255, 255, 0.07);
+    --fill-strong: rgba(255, 255, 255, 0.12);
+    --fill-active: rgba(255, 255, 255, 0.14);
+    --inset-bg: rgba(0, 0, 0, 0.32);
+    --line-soft: rgba(255, 255, 255, 0.05);
+    --on-success: #10120E;
+    --on-warning: #10120E;
+    --on-danger: #FFFFFF;
 
     /* Dashboard metric palette */
     --metric-inflow: #10B981;
@@ -123,6 +133,15 @@
 /* --- Content from variables/theme.css --- */
 /* Theme tokens. Theme switching is intentionally instantaneous on the dashboard;\n   the performance guard suppresses any component-level transitions during the toggle. */
 [data-theme="light"] {
+    --fill-subtle: #F8FAFC;
+    --fill-medium: #EDF2F7;
+    --fill-strong: #E2E8F0;
+    --fill-active: #CBD5E1;
+    --inset-bg: #F1F5F9;
+    --line-soft: rgba(15, 23, 42, 0.08);
+    --on-success: #10120E;
+    --on-warning: #10120E;
+    --on-danger: #10120E;
     color-scheme: light;
     --bg-dark: #EEF1F6;
     --card-bg: #FFFFFF;
@@ -2797,7 +2816,7 @@ button[type="submit"]:active {
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.38));
     border-radius: 20px;
-    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6), 0 0 24px rgba(199, 154, 62, 0.16);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6), 0 0 24px rgba(var(--primary-rgb, 199, 154, 62), 0.16);
     z-index: 10000;
     overflow: hidden;
     user-select: none;
@@ -2822,7 +2841,7 @@ button[type="submit"]:active {
     justify-content: space-between;
     padding: 12px 14px 8px;
     cursor: grab;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--line-soft);
 }
 
 .floating-calc-header:active,
@@ -2864,7 +2883,7 @@ button[type="submit"]:active {
 .floating-calc-screen {
     margin: 10px 12px 8px;
     padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.32);
+    background: var(--inset-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
     display: flex;
@@ -2922,7 +2941,7 @@ button[type="submit"]:active {
     font-family: var(--font-mono, monospace);
     border-radius: 6px;
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-subtle);
     color: var(--text-muted, #A8A395);
     cursor: pointer;
     transition: all 0.12s ease;
@@ -2936,7 +2955,7 @@ button[type="submit"]:active {
 
 .floating-calc-split-chip.is-active {
     background: var(--primary, #C79A3E);
-    color: #10120E;
+    color: var(--on-primary, #10120E);
     border-color: var(--primary, #C79A3E);
     font-weight: 700;
 }
@@ -2951,7 +2970,7 @@ button[type="submit"]:active {
     border-radius: 6px;
     border: none;
     background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
-    color: #10120E;
+    color: var(--on-primary, #10120E);
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -3002,7 +3021,7 @@ button[type="submit"]:active {
     background-repeat: no-repeat;
     background-position: right 6px center;
     background-size: 10px;
-    border: 1.5px solid rgba(212, 175, 55, 0.38);
+    border: 1.5px solid rgba(var(--primary-rgb, 212, 175, 55), 0.38);
     border-radius: 8px;
     color: var(--text-main, #ECE7D8);
     cursor: pointer;
@@ -3015,9 +3034,9 @@ button[type="submit"]:active {
 }
 
 .floating-calc-fx-select:hover {
-    border-color: rgba(212, 175, 55, 0.7);
-    background-color: rgba(32, 36, 28, 0.95);
-    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.22);
+    border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.7);
+    background-color: var(--card-bg-hover);
+    box-shadow: 0 2px 10px rgba(var(--primary-rgb, 212, 175, 55), 0.22);
 }
 
 .floating-calc-fx-select:focus {
@@ -3034,22 +3053,22 @@ button[type="submit"]:active {
 }
 
 [data-theme="light"] .floating-calc-fx-select {
-    background-color: #FFFFFF;
+    background-color: var(--input-bg);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23B8860B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    border-color: rgba(212, 175, 55, 0.45);
-    color: #0F172A;
+    border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.45);
+    color: var(--text-main);
     box-shadow: 0 1px 4px rgba(180, 140, 60, 0.12);
 }
 
 [data-theme="light"] .floating-calc-fx-select:hover {
     border-color: var(--primary);
-    background-color: #FAFAFA;
+    background-color: var(--card-bg-hover);
     box-shadow: 0 2px 8px var(--primary-glow);
 }
 
 [data-theme="light"] .floating-calc-fx-select option {
-    background: #FFFFFF;
-    color: #0F172A;
+    background: var(--card-bg);
+    color: var(--text-main);
 }
 
 .floating-calc-fx-swap {
@@ -3063,7 +3082,7 @@ button[type="submit"]:active {
     font-weight: 700;
     border-radius: 6px;
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--fill-subtle);
     color: var(--primary, #C79A3E);
     cursor: pointer;
     transition: all 0.15s ease;
@@ -3091,7 +3110,7 @@ button[type="submit"]:active {
 
 .floating-calc-fx-convert-btn:hover {
     background: var(--primary, #C79A3E);
-    color: #10120E;
+    color: var(--on-primary, #10120E);
 }
 
 .floating-calc-fx-convert-btn.is-loading {
@@ -3119,7 +3138,7 @@ button[type="submit"]:active {
     font-family: var(--font-mono, monospace);
     border-radius: 6px;
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-subtle);
     color: var(--text-muted, #A8A395);
     cursor: pointer;
     transition: all 0.12s ease;
@@ -3158,23 +3177,23 @@ button[type="submit"]:active {
     justify-content: center;
     outline: none;
     transition: background 0.1s ease, transform 0.08s ease, border-color 0.1s ease;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fill-subtle);
     color: var(--text-main, #ECE7D8);
 }
 
 .floating-calc-key:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--fill-strong);
     border-color: rgba(255, 255, 255, 0.18);
 }
 
 .floating-calc-key:active {
     transform: scale(0.93);
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--fill-active);
 }
 
 /* Function keys (Clear, Sign, Modulo, Backspace) */
 .floating-calc-key.is-func {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--fill-medium);
     color: var(--text-muted, #A8A395);
     font-size: 13.5px;
 }
@@ -3199,13 +3218,13 @@ button[type="submit"]:active {
 
 .floating-calc-key.is-op.is-active {
     background: var(--primary, #C79A3E);
-    color: #10120E;
+    color: var(--on-primary, #10120E);
 }
 
 /* Equal key */
 .floating-calc-key.is-eq {
     background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
-    color: #10120E;
+    color: var(--on-primary, #10120E);
     font-weight: 800;
     font-size: 18px;
     border: none;
@@ -3218,35 +3237,35 @@ button[type="submit"]:active {
 
 /* Light Theme Overrides */
 [data-theme="light"] .floating-calc-trigger {
-    background: #FFFFFF;
-    border-color: rgba(212, 175, 55, 0.45);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 0 18px rgba(212, 175, 55, 0.2);
+    background: var(--card-bg);
+    border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 0 18px rgba(var(--primary-rgb, 212, 175, 55), 0.2);
 }
 
 [data-theme="light"] .floating-calc-panel {
-    background: rgba(255, 255, 255, 0.96);
-    border-color: rgba(212, 175, 55, 0.35);
-    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.18), 0 0 20px rgba(212, 175, 55, 0.15);
+    background: var(--card-bg);
+    border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.35);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.18), 0 0 20px rgba(var(--primary-rgb, 212, 175, 55), 0.15);
 }
 
 [data-theme="light"] .floating-calc-screen {
-    background: #F1F5F9;
+    background: var(--inset-bg);
     border-color: rgba(15, 23, 42, 0.08);
 }
 
 [data-theme="light"] .floating-calc-key {
-    background: #F8FAFC;
+    background: var(--fill-subtle);
     border-color: rgba(15, 23, 42, 0.08);
-    color: #0F172A;
+    color: var(--text-main);
 }
 
 [data-theme="light"] .floating-calc-key:hover {
-    background: #E2E8F0;
+    background: var(--fill-strong);
 }
 
 [data-theme="light"] .floating-calc-key.is-func {
-    background: #EDF2F7;
-    color: #475569;
+    background: var(--fill-medium);
+    color: var(--text-muted);
 }
 
 /* Responsive adjustments for narrow screens */
@@ -15198,14 +15217,14 @@ body {
 /* Loans Skeleton Loading Shimmer */
 .loans-skeleton-loader .skeleton-shimmer,
 .loans-skeleton-loader .skeleton-loading {
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(212, 175, 55, 0.12) 50%, rgba(255, 255, 255, 0.03) 75%);
+    background: linear-gradient(90deg, var(--fill-subtle) 25%, rgba(var(--primary-rgb, 212, 175, 55), 0.12) 50%, rgba(255, 255, 255, 0.03) 75%);
     background-size: 200% 100%;
     animation: skeletonShimmer 1.6s infinite linear;
     border-radius: 8px;
 }
 [data-theme="light"] .loans-skeleton-loader .skeleton-shimmer,
 [data-theme="light"] .loans-skeleton-loader .skeleton-loading {
-    background: linear-gradient(90deg, #F1F5F9 25%, rgba(212, 175, 55, 0.18) 50%, #F1F5F9 75%);
+    background: linear-gradient(90deg, var(--inset-bg) 25%, rgba(var(--primary-rgb, 212, 175, 55), 0.18) 50%, var(--inset-bg) 75%);
     background-size: 200% 100%;
     animation: skeletonShimmer 1.6s infinite linear;
 }
