@@ -326,7 +326,7 @@ export default function AddExpenseScreen() {
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 5,
-                  backgroundColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+                  backgroundColor: c.fillSubtle,
                   paddingHorizontal: 12,
                   paddingVertical: 8,
                   borderRadius: 10,

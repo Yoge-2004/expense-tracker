@@ -159,7 +159,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                   paddingHorizontal: 9,
                   paddingVertical: 7,
                   borderRadius: 8,
-                  backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                  backgroundColor: c.fillSubtle,
                   borderWidth: 1,
                   borderColor: c.border,
                 }}
@@ -256,7 +256,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                       style={{
                         fontSize: 10.5,
                         fontWeight: '700',
-                        color: amount === String(ocrSuccessData.breakdown.grandTotal) ? (isLight ? '#FFF' : '#000') : c.text,
+                        color: amount === String(ocrSuccessData.breakdown.grandTotal) ? c.onPrimary : c.text,
                       }}
                     >
                       Total: {currSymbol}{ocrSuccessData.breakdown.grandTotal}
@@ -281,7 +281,7 @@ export const ExpenseFormTab = memo(function ExpenseFormTab(props: ExpenseFormTab
                       style={{
                         fontSize: 10.5,
                         fontWeight: '700',
-                        color: amount === String(ocrSuccessData.breakdown.subtotal) ? (isLight ? '#FFF' : '#000') : c.text,
+                        color: amount === String(ocrSuccessData.breakdown.subtotal) ? c.onPrimary : c.text,
                       }}
                     >
                       Subtotal: {currSymbol}{ocrSuccessData.breakdown.subtotal}
@@ -425,7 +425,7 @@ backgroundColor: c.inputBg,
                   </Text>
                   <View
                     style={{
-                      backgroundColor: isLight ? '#E0EDDC' : 'rgba(91, 140, 90, 0.2)',
+                      backgroundColor: c.success + '26',
                       paddingHorizontal: 6,
                       paddingVertical: 2,
                       borderRadius: 6,

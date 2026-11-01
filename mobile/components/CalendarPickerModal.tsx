@@ -299,7 +299,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                             style={[
                               styles.selectorChipText,
                               {
-                                color: isCurrent ? (isLight ? '#FFFFFF' : '#10120E') : c.text,
+                                color: isCurrent ? c.onPrimary : c.text,
                                 fontWeight: isCurrent ? '800' : '600',
                               },
                             ]}
@@ -350,7 +350,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                             style={[
                               styles.selectorChipText,
                               {
-                                color: isCurrent ? (isLight ? '#FFFFFF' : '#10120E') : c.text,
+                                color: isCurrent ? c.onPrimary : c.text,
                                 fontWeight: isCurrent ? '800' : '600',
                               },
                             ]}
@@ -413,7 +413,7 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
                                 styles.dayText,
                                 {
                                   color: isSelected
-                                    ? (isLight ? '#FFFFFF' : '#10120E')
+                                    ? c.onPrimary
                                     : (isToday ? c.primary : c.text),
                                   fontWeight: isSelected || isToday ? '800' : '500',
                                 },

@@ -294,11 +294,11 @@ export default function ForgotPasswordScreen() {
                   activeOpacity={0.85}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color={isLight ? "#FFF" : "#10120E"} size="small" />
+                    <ActivityIndicator color={c.onPrimary} size="small" />
                   ) : (
                     <View style={styles.btnInner}>
-                      <Text style={[styles.btnText, { color: isLight ? "#FFF" : "#10120E" }]}>Continue</Text>
-                      <Ionicons name="arrow-forward" size={18} color={isLight ? "#FFF" : "#10120E"} />
+                      <Text style={[styles.btnText, { color: c.onPrimary }]}>Continue</Text>
+                      <Ionicons name="arrow-forward" size={18} color={c.onPrimary} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -411,11 +411,11 @@ export default function ForgotPasswordScreen() {
                   activeOpacity={0.85}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color={isLight ? "#FFF" : "#10120E"} size="small" />
+                    <ActivityIndicator color={c.onPrimary} size="small" />
                   ) : (
                     <View style={styles.btnInner}>
-                      <Text style={[styles.btnText, { color: isLight ? "#FFF" : "#10120E" }]}>Update Password</Text>
-                      <Ionicons name="checkmark-circle" size={18} color={isLight ? "#FFF" : "#10120E"} />
+                      <Text style={[styles.btnText, { color: c.onPrimary }]}>Update Password</Text>
+                      <Ionicons name="checkmark-circle" size={18} color={c.onPrimary} />
                     </View>
                   )}
                 </TouchableOpacity>

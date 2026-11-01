@@ -20,6 +20,11 @@ export interface ThemeColors {
   text: string;
   textMuted: string;
   inputBg: string;
+  /** Neutral fills for chips, keys and inset panels, derived from the text colour for each theme. */
+  fillSubtle: string;
+  fillStrong: string;
+  /** Keypad-style key background. */
+  keyBg: string;
   /** Scrollbar track and thumb, matching the website's custom scrollbar (gold thumb, translucent track). */
   scrollTrack: string;
   scrollThumb: string;
@@ -58,6 +63,9 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     text: '#ECE7D8',
     textMuted: '#A8A395',
     inputBg: 'rgba(23, 26, 20, 0.72)',
+    fillSubtle: 'rgba(255, 255, 255, 0.06)',
+    fillStrong: 'rgba(255, 255, 255, 0.12)',
+    keyBg: 'rgba(255, 255, 255, 0.05)',
     scrollTrack: 'rgba(0, 0, 0, 0.2)',
     scrollThumb: 'rgba(199, 154, 62, 0.45)',
     inputBorder: 'rgba(236, 231, 216, 0.09)',
@@ -93,6 +101,9 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     text: '#0F172A',
     textMuted: '#475569',
     inputBg: '#F1F5F9',
+    fillSubtle: '#F1F5F9',
+    fillStrong: '#E2E8F0',
+    keyBg: '#FFFFFF',
     scrollTrack: 'rgba(0, 0, 0, 0.05)',
     scrollThumb: 'rgba(199, 154, 62, 0.45)',
     inputBorder: 'rgba(15, 23, 42, 0.12)',

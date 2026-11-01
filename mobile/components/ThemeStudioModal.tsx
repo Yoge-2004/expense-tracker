@@ -403,7 +403,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
           style={[
             styles.sheetContainer,
             {
-              backgroundColor: isLight ? '#FFFFFF' : '#141712',
+              backgroundColor: c.card,
               borderColor: c.borderAccent,
               maxWidth: isWide ? 620 : '100%',
               height: isWide ? 680 : '88%',
@@ -815,7 +815,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                         disabled={isExtracting}
                         style={[
                           styles.extractActionBtn,
-                          { backgroundColor: isLight ? '#F1F5F9' : '#1D2117', borderColor: c.primary },
+                          { backgroundColor: c.fillSubtle, borderColor: c.primary },
                         ]}
                       >
                         {isExtracting ? (
@@ -1044,7 +1044,7 @@ export const ThemeStudioModal: React.FC<ThemeStudioModalProps> = ({ visible, onC
                           styles.quickColorDot,
                           { backgroundColor: item.color },
                           customHexInput.toLowerCase() === item.color.toLowerCase() && {
-                            borderColor: isLight ? '#0F172A' : '#FFFFFF',
+                            borderColor: c.text,
                             borderWidth: 2.5,
                             transform: [{ scale: 1.15 }],
                           },
