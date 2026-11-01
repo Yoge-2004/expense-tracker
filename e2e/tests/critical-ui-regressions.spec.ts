@@ -205,7 +205,8 @@ test.describe('Critical UI regressions', () => {
   });
 
   test('calculator, charts and category colours follow a customised palette', async ({ page }) => {
-    // A very dark primary makes the readable on-primary text white, so a hard-coded dark label would fail.
+    // On the light theme a very dark primary stays dark, so its readable label is white and a hard-coded dark
+    // label would fail. (On the dark theme the studio lightens such a primary, so the label correctly stays dark.)
     await page.evaluate(() => {
       localStorage.setItem('app_custom_palette', JSON.stringify({
         primary: '#1E1B4B', primaryGradientEnd: '#312E81', accent: '#BE185D', highlight: '#0F766E',
@@ -214,8 +215,10 @@ test.describe('Critical UI regressions', () => {
     await page.reload();
     await page.waitForSelector('.top-bar', { state: 'visible', timeout: 5000 });
 
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate(async () => {
       const root = document.documentElement;
+      root.setAttribute('data-theme', 'light');
+      await new Promise((done) => setTimeout(done, 120));
       const resolve = (property: string, value: string) => {
         const el = document.createElement('i');
         document.body.appendChild(el);
@@ -253,6 +256,7 @@ test.describe('Critical UI regressions', () => {
     expect(result.eqKey.color).toBe(result.onPrimary);
     expect(result.useBtn.color).toBe(result.onPrimary);
     expect(result.onPrimary).not.toBe('rgb(16, 18, 14)');
+    expect(result.eqKey.color).not.toBe('rgb(16, 18, 14)');
     // Neutral keys use the palette-derived fill instead of a fixed white overlay.
     expect(result.plainKey.background).toBe(result.fillSubtle);
     // Category and chart colours come from the live theme, never from the wallpaper.
