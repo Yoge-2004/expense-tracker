@@ -830,13 +830,18 @@
             if (type === 'none') {
                 heroBg.style.backgroundImage = 'none';
                 heroBg.style.filter = 'none';
-            } else if (type === 'custom' && uri) {
-                const tint = document.documentElement.getAttribute('data-theme') === 'light' ? '255, 255, 255' : '0, 0, 0';
-                heroBg.style.backgroundImage = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
-                heroBg.style.backgroundSize = 'cover';
-                heroBg.style.backgroundPosition = 'center';
-                heroBg.style.opacity = '1';
-                heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+            } else if (type === "custom" && uri) {
+                const isLight = document.documentElement.getAttribute("data-theme") === "light";
+                const tint = isLight ? "255, 255, 255" : "0, 0, 0";
+                const bgRule = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
+                heroBg.style.setProperty("background-image", bgRule, "important");
+                heroBg.style.setProperty("background-size", "cover", "important");
+                heroBg.style.setProperty("background-position", "center", "important");
+                heroBg.style.setProperty("background-repeat", "no-repeat", "important");
+                heroBg.style.setProperty("opacity", "1", "important");
+                heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : "none";
+                document.body?.classList.add("has-custom-wallpaper");
+                document.documentElement.style.setProperty("--custom-wallpaper-bg", bgRule);
             } else {
                 // Preset / default ambient gradients constructed from current theme colors
                 const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -860,6 +865,46 @@
                 heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
             }
         });
+    }
+
+
+    
+
+    function selectPreset(presetId) {
+        const preset = STUDIO_PRESETS.find(x => x.id === presetId);
+        if (!preset) return;
+
+        currentPresetId = preset.id;
+        currentWallpaperType = 'preset';
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
+        currentPrimary = sub.primary;
+        currentPrimaryEnd = sub.primaryGradientEnd;
+        currentAccent = sub.accent;
+        currentHighlight = sub.highlight;
+        currentCardSurface = sub.cardSurface;
+        currentAppSurface = sub.surface;
+        currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
+
+        localStorage.setItem('app_custom_palette', JSON.stringify({
+            primary: currentPrimary,
+            primaryGradientEnd: currentPrimaryEnd,
+            accent: currentAccent,
+            highlight: currentHighlight,
+            cardSurface: currentCardSurface,
+            surface: currentAppSurface,
+            paletteColors: currentExtractedPalette,
+        }));
+        localStorage.setItem('app_bg_asset', JSON.stringify({
+            type: 'preset',
+            presetId: currentPresetId,
+            overlayOpacity: currentOverlayOpacity,
+            blurIntensity: currentBlurIntensity,
+        }));
+
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        syncUiControls();
     }
 
     // Immediate zero-flicker application on script load
@@ -1281,43 +1326,6 @@
                 </div>
             `).join('');
 
-    function selectPreset(presetId) {
-        const preset = STUDIO_PRESETS.find(x => x.id === presetId);
-        if (!preset) return;
-
-        currentPresetId = preset.id;
-        currentWallpaperType = 'preset';
-        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-        const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
-        currentPrimary = sub.primary;
-        currentPrimaryEnd = sub.primaryGradientEnd;
-        currentAccent = sub.accent;
-        currentHighlight = sub.highlight;
-        currentCardSurface = sub.cardSurface;
-        currentAppSurface = sub.surface;
-        currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
-
-        localStorage.setItem('app_custom_palette', JSON.stringify({
-            primary: currentPrimary,
-            primaryGradientEnd: currentPrimaryEnd,
-            accent: currentAccent,
-            highlight: currentHighlight,
-            cardSurface: currentCardSurface,
-            surface: currentAppSurface,
-            paletteColors: currentExtractedPalette,
-        }));
-        localStorage.setItem('app_bg_asset', JSON.stringify({
-            type: 'preset',
-            presetId: currentPresetId,
-            overlayOpacity: currentOverlayOpacity,
-            blurIntensity: currentBlurIntensity,
-        }));
-
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
-        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
-        syncUiControls();
-    }
-
             presetsGrid.querySelectorAll('.studio-preset-card').forEach(card => {
                 card.addEventListener('click', () => {
                     selectPreset(card.getAttribute('data-preset-id'));
@@ -1591,6 +1599,7 @@
         cropFrame?.addEventListener('pointercancel', finishCropPointer);
 
         async function processWallpaper(uri) {
+            if (window.WebStudio) window.WebStudio.processWallpaper = processWallpaper;
             if (!/^https?:\/\//i.test(uri) && !uri.startsWith('data:')) {
                 if (wallpaperStatus) wallpaperStatus.textContent = 'Enter a valid http or https image URL.';
                 return;
@@ -1915,6 +1924,21 @@
         applyTypography,
         applyPalette,
         applyAtmosphere,
+        cropAndExtractWallpaper,
+        open: () => {
+            const m = document.getElementById("themeStudioModal");
+            if (m) {
+                if (typeof window.openModal === "function") window.openModal(m);
+                else m.classList.add("active");
+            }
+        },
+        close: () => {
+            const m = document.getElementById("themeStudioModal");
+            if (m) {
+                if (typeof window.closeModal === "function") window.closeModal(m);
+                else m.classList.remove("active");
+            }
+        }
     };
 
 })();

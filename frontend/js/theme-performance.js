@@ -285,18 +285,28 @@
 
             const applyBg = () => {
                 const bgs = document.querySelectorAll('.hero-bg, .auth-hero-bg');
+                const hasCustom = wpType === 'custom' && Boolean(wpUri);
+                if (hasCustom) {
+                    document.body?.classList.add('has-custom-wallpaper');
+                } else {
+                    document.body?.classList.remove('has-custom-wallpaper');
+                }
                 bgs.forEach(heroBg => {
                     if (wpType === 'none') {
-                        heroBg.style.backgroundImage = 'none';
+                        heroBg.style.setProperty('background-image', 'none', 'important');
                         heroBg.style.filter = 'none';
-                    } else if (wpType === 'custom' && wpUri) {
+                    } else if (hasCustom) {
                         const tint = isLight ? '255, 255, 255' : '0, 0, 0';
-                        heroBg.style.backgroundImage = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${wpUri}")`;
-                        heroBg.style.backgroundSize = 'cover';
-                        heroBg.style.backgroundPosition = 'center';
-                        heroBg.style.opacity = '1';
+                        const bgRule = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${wpUri}")`;
+                        heroBg.style.setProperty('background-image', bgRule, 'important');
+                        heroBg.style.setProperty('background-size', 'cover', 'important');
+                        heroBg.style.setProperty('background-position', 'center', 'important');
+                        heroBg.style.setProperty('background-repeat', 'no-repeat', 'important');
+                        heroBg.style.setProperty('opacity', '1', 'important');
                         heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
+                        root.style.setProperty('--custom-wallpaper-bg', bgRule);
                     } else {
+                        root.style.removeProperty('--custom-wallpaper-bg');
                         heroBg.style.backgroundImage = '';
                         heroBg.style.opacity = `${opacity}`;
                         heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
