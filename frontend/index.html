@@ -68,6 +68,8 @@
                                 root.style.setProperty("--highlight-rgb", hr + ", " + hg + ", " + hb);
                             }
                         }
+                        var lum = (r * 299 + g * 587 + b * 114) / 1000;
+                        root.style.setProperty("--on-primary", lum > 145 ? "#0F172A" : "#FFFFFF");
                         if (Array.isArray(p.paletteColors)) {
                             p.paletteColors.slice(0, 8).forEach(function (col, i) {
                                 root.style.setProperty("--palette-" + (i + 1), col);

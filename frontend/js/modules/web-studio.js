@@ -25,6 +25,7 @@
             cardSurface: 'rgba(23, 26, 20, 0.88)',
             surface: '#171A14',
             borderAccent: 'rgba(199, 154, 62, 0.35)',
+            paletteColors: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C', '#3B82F6', '#8B5CF6'],
             dark: {
                 primary: '#C79A3E',
                 primaryGradientEnd: '#A97F2E',
@@ -33,6 +34,7 @@
                 cardSurface: 'rgba(23, 26, 20, 0.88)',
                 surface: '#171A14',
                 borderAccent: 'rgba(199, 154, 62, 0.35)',
+                paletteColors: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C', '#3B82F6', '#8B5CF6'],
             },
             light: {
                 primary: '#D4AF37',
@@ -42,6 +44,7 @@
                 cardSurface: '#FFFFFF',
                 surface: '#F8F9FA',
                 borderAccent: 'rgba(212, 175, 55, 0.45)',
+                paletteColors: ['#D4AF37', '#E74C3C', '#0EA5E9', '#10B981', '#8B5CF6', '#DB2777', '#059669', '#D97706'],
             },
         },
         {
@@ -55,6 +58,7 @@
             cardSurface: 'rgba(13, 26, 20, 0.90)',
             surface: '#0F2119',
             borderAccent: 'rgba(16, 185, 129, 0.35)',
+            paletteColors: ['#10B981', '#34D399', '#06B6D4', '#059669', '#14B8A6', '#22C55E', '#38BDF8', '#84CC16'],
             dark: {
                 primary: '#10B981',
                 primaryGradientEnd: '#059669',
@@ -63,6 +67,7 @@
                 cardSurface: 'rgba(13, 26, 20, 0.90)',
                 surface: '#0F2119',
                 borderAccent: 'rgba(16, 185, 129, 0.35)',
+                paletteColors: ['#10B981', '#34D399', '#06B6D4', '#059669', '#14B8A6', '#22C55E', '#38BDF8', '#84CC16'],
             },
             light: {
                 primary: '#059669',
@@ -72,6 +77,7 @@
                 cardSurface: '#FFFFFF',
                 surface: '#F0FDF4',
                 borderAccent: 'rgba(5, 150, 105, 0.40)',
+                paletteColors: ['#059669', '#10B981', '#0D9488', '#047857', '#06B6D4', '#15803D', '#65A30D', '#0284C7'],
             },
         },
         {
@@ -85,6 +91,7 @@
             cardSurface: 'rgba(22, 17, 36, 0.90)',
             surface: '#1A142C',
             borderAccent: 'rgba(139, 92, 246, 0.35)',
+            paletteColors: ['#8B5CF6', '#EC4899', '#A855F7', '#7C3AED', '#6366F1', '#D946EF', '#F43F5E', '#3B82F6'],
             dark: {
                 primary: '#8B5CF6',
                 primaryGradientEnd: '#7C3AED',
@@ -93,6 +100,7 @@
                 cardSurface: 'rgba(22, 17, 36, 0.90)',
                 surface: '#1A142C',
                 borderAccent: 'rgba(139, 92, 246, 0.35)',
+                paletteColors: ['#8B5CF6', '#EC4899', '#A855F7', '#7C3AED', '#6366F1', '#D946EF', '#F43F5E', '#3B82F6'],
             },
             light: {
                 primary: '#7C3AED',
@@ -102,6 +110,7 @@
                 cardSurface: '#FFFFFF',
                 surface: '#FAF5FF',
                 borderAccent: 'rgba(124, 58, 237, 0.40)',
+                paletteColors: ['#7C3AED', '#DB2777', '#9333EA', '#6D28D9', '#4F46E5', '#C026D3', '#E11D48', '#2563EB'],
             },
         },
         {
@@ -115,6 +124,7 @@
             cardSurface: 'rgba(14, 23, 40, 0.90)',
             surface: '#111B30',
             borderAccent: 'rgba(56, 189, 248, 0.35)',
+            paletteColors: ['#38BDF8', '#6366F1', '#06B6D4', '#0284C7', '#818CF8', '#0EA5E9', '#A855F7', '#2DD4BF'],
             dark: {
                 primary: '#38BDF8',
                 primaryGradientEnd: '#0284C7',
@@ -123,6 +133,7 @@
                 cardSurface: 'rgba(14, 23, 40, 0.90)',
                 surface: '#111B30',
                 borderAccent: 'rgba(56, 189, 248, 0.35)',
+                paletteColors: ['#38BDF8', '#6366F1', '#06B6D4', '#0284C7', '#818CF8', '#0EA5E9', '#A855F7', '#2DD4BF'],
             },
             light: {
                 primary: '#0284C7',
@@ -132,6 +143,7 @@
                 cardSurface: '#FFFFFF',
                 surface: '#F0F9FF',
                 borderAccent: 'rgba(2, 132, 199, 0.40)',
+                paletteColors: ['#0284C7', '#4F46E5', '#0891B2', '#0369A1', '#6366F1', '#0284C7', '#7C3AED', '#0D9488'],
             },
         },
         {
@@ -145,6 +157,7 @@
             cardSurface: 'rgba(28, 18, 12, 0.90)',
             surface: '#241710',
             borderAccent: 'rgba(245, 158, 11, 0.35)',
+            paletteColors: ['#F59E0B', '#EF4444', '#FB923C', '#D97706', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
             dark: {
                 primary: '#F59E0B',
                 primaryGradientEnd: '#D97706',
@@ -153,6 +166,7 @@
                 cardSurface: 'rgba(28, 18, 12, 0.90)',
                 surface: '#241710',
                 borderAccent: 'rgba(245, 158, 11, 0.35)',
+                paletteColors: ['#F59E0B', '#EF4444', '#FB923C', '#D97706', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
             },
             light: {
                 primary: '#D97706',
@@ -162,6 +176,7 @@
                 cardSurface: '#FFFFFF',
                 surface: '#FFF7ED',
                 borderAccent: 'rgba(217, 119, 6, 0.40)',
+                paletteColors: ['#D97706', '#DC2626', '#EA580C', '#B45309', '#E11D48', '#C2410C', '#CA8A04', '#9A3412'],
             },
         },
         {
@@ -175,6 +190,7 @@
             cardSurface: 'rgba(27, 23, 14, 0.90)',
             surface: '#221D12',
             borderAccent: 'rgba(251, 191, 36, 0.35)',
+            paletteColors: ['#FBBF24', '#F43F5E', '#F59E0B', '#EAB308', '#FB7185', '#F97316', '#FCD34D', '#D97706'],
             dark: {
                 primary: '#FBBF24',
                 primaryGradientEnd: '#EAB308',
@@ -183,6 +199,7 @@
                 cardSurface: 'rgba(27, 23, 14, 0.90)',
                 surface: '#221D12',
                 borderAccent: 'rgba(251, 191, 36, 0.35)',
+                paletteColors: ['#FBBF24', '#F43F5E', '#F59E0B', '#EAB308', '#FB7185', '#F97316', '#FCD34D', '#D97706'],
             },
             light: {
                 primary: '#CA8A04',
@@ -192,6 +209,7 @@
                 cardSurface: '#FFFFFF',
                 surface: '#FEFCE8',
                 borderAccent: 'rgba(202, 138, 4, 0.40)',
+                paletteColors: ['#CA8A04', '#E11D48', '#D97706', '#A16207', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
             },
         },
     ];
@@ -630,6 +648,10 @@
         const root = document.documentElement;
         paletteVarNames.forEach(name => root.style.removeProperty(name));
         paletteVarNames.clear();
+        for (let i = 1; i <= 8; i++) {
+            root.style.removeProperty('--palette-' + i);
+            root.style.removeProperty('--palette-' + i + '-rgb');
+        }
     }
 
     function sameColor(a, b) {
@@ -638,7 +660,9 @@
 
     /** True while nothing has been changed from the shipped look, so the stylesheet should rule. */
     function isDefaultPalette() {
-        return sameColor(currentPrimary, DEFAULT_PALETTE.primary)
+        return (currentPresetId === 'default' || !currentPresetId)
+            && currentWallpaperType === 'preset'
+            && sameColor(currentPrimary, DEFAULT_PALETTE.primary)
             && sameColor(currentPrimaryEnd, DEFAULT_PALETTE.end)
             && sameColor(currentAccent, DEFAULT_PALETTE.accent)
             && sameColor(currentHighlight, DEFAULT_PALETTE.highlight)
@@ -835,7 +859,7 @@
     // data-theme changes (toggle button, another tab, or the saved theme being applied after this script).
     // A MutationObserver callback runs before the next paint, so no frame shows the old theme's colours.
     new MutationObserver(() => {
-        if (currentWallpaperType === 'preset' && currentPresetId && currentPresetId !== 'default') {
+        if (currentWallpaperType === 'preset' && currentPresetId) {
             const isLight = document.documentElement.getAttribute('data-theme') === 'light';
             const preset = STUDIO_PRESETS.find(x => x.id === currentPresetId);
             if (preset) {
@@ -846,6 +870,7 @@
                 currentHighlight = sub.highlight;
                 currentCardSurface = sub.cardSurface;
                 currentAppSurface = sub.surface;
+                currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
             }
         }
         applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
@@ -1260,6 +1285,23 @@
                     currentHighlight = sub.highlight;
                     currentCardSurface = sub.cardSurface;
                     currentAppSurface = sub.surface;
+                    currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
+
+                    localStorage.setItem('app_custom_palette', JSON.stringify({
+                        primary: currentPrimary,
+                        primaryGradientEnd: currentPrimaryEnd,
+                        accent: currentAccent,
+                        highlight: currentHighlight,
+                        cardSurface: currentCardSurface,
+                        surface: currentAppSurface,
+                        paletteColors: currentExtractedPalette,
+                    }));
+                    localStorage.setItem('app_bg_asset', JSON.stringify({
+                        type: 'preset',
+                        presetId: currentPresetId,
+                        overlayOpacity: currentOverlayOpacity,
+                        blurIntensity: currentBlurIntensity,
+                    }));
 
                     applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
                     applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
@@ -1713,7 +1755,8 @@
                 accent: currentAccent,
                 highlight: currentHighlight,
                 cardSurface: currentCardSurface,
-                surface: currentAppSurface
+                surface: currentAppSurface,
+                paletteColors: currentExtractedPalette,
             }));
             localStorage.setItem('app_bg_asset', JSON.stringify({
                 type: currentWallpaperType,

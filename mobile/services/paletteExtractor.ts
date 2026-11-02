@@ -48,6 +48,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(23, 26, 20, 0.88)',
       surface: '#171A14',
       borderAccent: 'rgba(199, 154, 62, 0.35)',
+      paletteColors: ['#C79A3E', '#A23E32', '#4C7A78', '#5B8C5A', '#8B5E34', '#B06B5C', '#3B82F6', '#8B5CF6'],
     },
     lightPalette: {
       primary: '#D4AF37',
@@ -57,6 +58,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(255, 255, 255, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(212, 175, 55, 0.45)',
+      paletteColors: ['#D4AF37', '#E74C3C', '#0EA5E9', '#10B981', '#8B5CF6', '#DB2777', '#059669', '#D97706'],
     },
   },
   {
@@ -74,6 +76,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(13, 26, 20, 0.90)',
       surface: '#0F2119',
       borderAccent: 'rgba(16, 185, 129, 0.35)',
+      paletteColors: ['#10B981', '#34D399', '#06B6D4', '#059669', '#14B8A6', '#22C55E', '#38BDF8', '#84CC16'],
     },
     lightPalette: {
       primary: '#059669',
@@ -83,6 +86,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(240, 253, 244, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(5, 150, 105, 0.40)',
+      paletteColors: ['#059669', '#10B981', '#0D9488', '#047857', '#06B6D4', '#15803D', '#65A30D', '#0284C7'],
     },
   },
   {
@@ -100,6 +104,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(22, 17, 36, 0.90)',
       surface: '#1A142C',
       borderAccent: 'rgba(139, 92, 246, 0.35)',
+      paletteColors: ['#8B5CF6', '#EC4899', '#A855F7', '#7C3AED', '#6366F1', '#D946EF', '#F43F5E', '#3B82F6'],
     },
     lightPalette: {
       primary: '#7C3AED',
@@ -109,6 +114,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(250, 245, 255, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(124, 58, 237, 0.40)',
+      paletteColors: ['#7C3AED', '#DB2777', '#9333EA', '#6D28D9', '#4F46E5', '#C026D3', '#E11D48', '#2563EB'],
     },
   },
   {
@@ -126,6 +132,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(14, 23, 40, 0.90)',
       surface: '#111B30',
       borderAccent: 'rgba(56, 189, 248, 0.35)',
+      paletteColors: ['#38BDF8', '#6366F1', '#06B6D4', '#0284C7', '#818CF8', '#0EA5E9', '#A855F7', '#2DD4BF'],
     },
     lightPalette: {
       primary: '#0284C7',
@@ -135,6 +142,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(240, 249, 255, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(2, 132, 199, 0.40)',
+      paletteColors: ['#0284C7', '#4F46E5', '#0891B2', '#0369A1', '#6366F1', '#0284C7', '#7C3AED', '#0D9488'],
     },
   },
   {
@@ -152,6 +160,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(28, 18, 12, 0.90)',
       surface: '#241710',
       borderAccent: 'rgba(245, 158, 11, 0.35)',
+      paletteColors: ['#F59E0B', '#EF4444', '#FB923C', '#D97706', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
     },
     lightPalette: {
       primary: '#D97706',
@@ -161,6 +170,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(255, 247, 237, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(217, 119, 6, 0.40)',
+      paletteColors: ['#D97706', '#DC2626', '#EA580C', '#B45309', '#E11D48', '#C2410C', '#CA8A04', '#9A3412'],
     },
   },
   {
@@ -178,6 +188,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(27, 23, 14, 0.90)',
       surface: '#221D12',
       borderAccent: 'rgba(251, 191, 36, 0.35)',
+      paletteColors: ['#FBBF24', '#F43F5E', '#F59E0B', '#EAB308', '#FB7185', '#F97316', '#FCD34D', '#D97706'],
     },
     lightPalette: {
       primary: '#CA8A04',
@@ -187,6 +198,7 @@ export const PRESET_BACKGROUNDS: PresetBackground[] = [
       card: 'rgba(254, 252, 232, 0.94)',
       surface: '#FFFFFF',
       borderAccent: 'rgba(202, 138, 4, 0.40)',
+      paletteColors: ['#CA8A04', '#E11D48', '#D97706', '#A16207', '#F43F5E', '#EA580C', '#EAB308', '#B45309'],
     },
   },
 ];

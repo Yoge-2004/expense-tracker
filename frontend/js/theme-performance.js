@@ -32,6 +32,21 @@
         };
     }
 
+    function luminance(hex) {
+        const { r, g, b } = hexToRgb(hex);
+        const a = [r, g, b].map(v => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+    }
+
+    function contrastRatio(hex1, hex2) {
+        const l1 = luminance(hex1);
+        const l2 = luminance(hex2);
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    }
+
     function adjustBrightness(hex, factor) {
         const rgb = hexToRgb(hex);
         const r = Math.min(255, Math.max(0, Math.round(rgb.r * factor)));
@@ -98,7 +113,15 @@
                 '--warning', '--warning-rgb', '--warning-glow', '--warning-gradient',
                 '--success', '--success-rgb', '--success-glow', '--success-gradient',
                 '--fill-subtle', '--fill-medium', '--fill-strong', '--fill-active', '--inset-bg', '--line-soft', '--on-success',
-                '--cursor-default', '--cursor-pointer', '--cursor-text', '--cursor-clicked'
+                '--cursor-default', '--cursor-pointer', '--cursor-text', '--cursor-clicked',
+                '--palette-1', '--palette-1-rgb',
+                '--palette-2', '--palette-2-rgb',
+                '--palette-3', '--palette-3-rgb',
+                '--palette-4', '--palette-4-rgb',
+                '--palette-5', '--palette-5-rgb',
+                '--palette-6', '--palette-6-rgb',
+                '--palette-7', '--palette-7-rgb',
+                '--palette-8', '--palette-8-rgb'
             ];
 
             if (!pal || !pal.primary) {
@@ -110,6 +133,7 @@
                 const highlightColor = pal.highlight || (isLight ? '#0284C7' : '#A855F7');
                 const rgb = hexToRgb(primaryColor);
                 const end = pal.primaryGradientEnd || adjustBrightness(primaryColor, isLight ? 0.88 : 0.82);
+                const onPrimary = contrastRatio('#FFFFFF', primaryColor) >= contrastRatio('#10120E', primaryColor) ? '#FFFFFF' : '#10120E';
 
                 root.style.setProperty('--primary', primaryColor);
                 root.style.setProperty('--primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
@@ -139,7 +163,7 @@
                     root.style.setProperty('--bg-dark', '#F8F9FA');
                     root.style.setProperty('--input-bg', '#FFFFFF');
                     root.style.setProperty('--border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)`);
-                    root.style.setProperty('--on-primary', '#FFFFFF');
+                    root.style.setProperty('--on-primary', onPrimary);
                 } else {
                     root.style.setProperty('--text-main', '#ECE7D8');
                     root.style.setProperty('--text-muted', '#A8A395');
@@ -148,7 +172,7 @@
                     root.style.setProperty('--bg-dark', pal.surface || '#10120E');
                     root.style.setProperty('--input-bg', 'rgba(10, 14, 23, 0.60)');
                     root.style.setProperty('--border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`);
-                    root.style.setProperty('--on-primary', '#10120E');
+                    root.style.setProperty('--on-primary', onPrimary);
                 }
 
                 root.style.setProperty('--metric-inflow', isLight ? '#059669' : '#10B981');
@@ -156,6 +180,14 @@
                 root.style.setProperty('--metric-savings', isLight ? '#D97706' : '#F59E0B');
                 root.style.setProperty('--metric-netflow', primaryColor);
                 root.style.setProperty('--metric-subs', accentColor);
+
+                if (Array.isArray(pal.paletteColors) && pal.paletteColors.length > 0) {
+                    pal.paletteColors.slice(0, 8).forEach((col, i) => {
+                        root.style.setProperty(`--palette-${i + 1}`, col);
+                        const cRgb = hexToRgb(col);
+                        root.style.setProperty(`--palette-${i + 1}-rgb`, `${cRgb.r}, ${cRgb.g}, ${cRgb.b}`);
+                    });
+                }
 
                 updateThemeCursor(primaryColor, accentColor, isLight);
             }
@@ -271,15 +303,15 @@
         document.addEventListener("appearancechange", restoreStoredAppearance);
         document.addEventListener("palettechange", restoreStoredAppearance);
 
-        if (typeof MutationObserver !== undefined) {
+        if (typeof MutationObserver !== "undefined") {
             new MutationObserver((mutations) => {
                 for (const m of mutations) {
-                    if (m.type === attributes && m.attributeName === data-theme) {
+                    if (m.type === "attributes" && m.attributeName === "data-theme") {
                         restoreStoredAppearance();
                         break;
                     }
                 }
-            }).observe(document.documentElement, { attributes: true, attributeFilter: [data-theme] });
+            }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
         }
 
         window.addEventListener("storage", (e) => {
