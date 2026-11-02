@@ -1,5 +1,17 @@
 # Expense Tracker Release Notes
 
+## Version 1.0.11 (Android Version Code: 13, iOS Build: 9)
+
+A theming and polish release for the mobile app.
+
+- **Palette-aware colours**: chart and category colours no longer come from the wallpaper image; they follow your theme colours.
+- **Separate gradient**: Primary Brand and Primary Gradient are independent choices in the theme studio.
+- **Readable on any palette**: buttons, chips, badges, avatar, calculator and spinners pick a readable text colour for the palette in use.
+- **Themed components**: progress bars and the offline banner follow the theme.
+- **Dependencies**: TypeScript 7, updated Expo packages and tooling.
+
+---
+
 ## Version 1.0.10 (Android Version Code: 12, iOS Build: 8)
 
 A data-safety release for the mobile app.
