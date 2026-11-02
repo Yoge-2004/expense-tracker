@@ -20,11 +20,19 @@
     }
 
     function hexToRgb(hex) {
-        if (!hex) return { r: 199, g: 154, b: 62 };
+        if (!hex) return { r: 16, g: 24, b: 20 };
+        const rgbaMatch = String(hex).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+        if (rgbaMatch) {
+            return {
+                r: parseInt(rgbaMatch[1], 10),
+                g: parseInt(rgbaMatch[2], 10),
+                b: parseInt(rgbaMatch[3], 10)
+            };
+        }
         let c = String(hex).replace('#', '').trim();
         if (c.length === 3) c = c.split('').map(x => x + x).join('');
         const num = parseInt(c, 16);
-        if (isNaN(num)) return { r: 199, g: 154, b: 62 };
+        if (isNaN(num) || c.length !== 6) return { r: 16, g: 24, b: 20 };
         return {
             r: (num >> 16) & 255,
             g: (num >> 8) & 255,
@@ -47,11 +55,15 @@
         return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
     }
 
-    function adjustBrightness(hex, factor) {
-        const rgb = hexToRgb(hex);
+    function adjustBrightness(color, factor) {
+        const rgb = hexToRgb(color);
         const r = Math.min(255, Math.max(0, Math.round(rgb.r * factor)));
         const g = Math.min(255, Math.max(0, Math.round(rgb.g * factor)));
         const b = Math.min(255, Math.max(0, Math.round(rgb.b * factor)));
+        const alphaMatch = String(color || '').match(/rgba\(\d+,\s*\d+,\s*\d+,\s*([\d.]+)\)/i);
+        if (alphaMatch) {
+            return `rgba(${r}, ${g}, ${b}, ${alphaMatch[1]})`;
+        }
         return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
     }
 
@@ -59,8 +71,8 @@
         if (typeof window === "undefined" || !document || !document.documentElement) return;
         if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return;
         try {
-            const p = encodeURIComponent(primaryColor || "#C79A3E");
-            const a = encodeURIComponent(accentColor || "#10B981");
+            const p = encodeURIComponent(primaryColor || (isLightMode ? "#0284C7" : "#10B981"));
+            const a = encodeURIComponent(accentColor || (isLightMode ? "#4F46E5" : "#34D399"));
             const strokeColor = encodeURIComponent(isLightMode ? "#0F172A" : "#FFFFFF");
             const dotFill = encodeURIComponent(isLightMode ? "#FFFFFF" : "#FFFFFF");
 
@@ -99,10 +111,10 @@
             const inlineColorVars = [
                 '--primary', '--primary-rgb', '--primary-gradient', '--primary-glow',
                 '--border-accent', '--shadow-glow', '--shadow-premium',
-                '--accent', '--accent-rgb', '--accent-glow', '--accent-text',
-                '--highlight', '--highlight-rgb',
+                '--accent', '--accent-rgb', '--accent-glow', '--accent-text', '--accent-gradient',
+                '--highlight', '--highlight-rgb', '--highlight-glow', '--highlight-gradient',
                 '--text-main', '--text-muted', '--card-bg', '--card-bg-hover',
-                '--bg-dark', '--input-bg', '--border', '--on-primary',
+                '--bg-dark', '--input-bg', '--border', '--border-subtle', '--on-primary',
                 '--metric-inflow', '--metric-outflow', '--metric-savings', '--metric-netflow', '--metric-subs',
                 '--metric-inflow-rgb', '--metric-inflow-glow',
                 '--metric-outflow-rgb', '--metric-outflow-glow',
@@ -112,7 +124,7 @@
                 '--danger', '--danger-rgb', '--danger-glow', '--danger-gradient',
                 '--warning', '--warning-rgb', '--warning-glow', '--warning-gradient',
                 '--success', '--success-rgb', '--success-glow', '--success-gradient',
-                '--fill-subtle', '--fill-medium', '--fill-strong', '--fill-active', '--inset-bg', '--line-soft', '--on-success',
+                '--fill-subtle', '--fill-medium', '--fill-strong', '--fill-active', '--inset-bg', '--line-soft', '--on-success', '--on-warning', '--on-danger',
                 '--cursor-default', '--cursor-pointer', '--cursor-text', '--cursor-clicked',
                 '--palette-1', '--palette-1-rgb',
                 '--palette-2', '--palette-2-rgb',
@@ -127,13 +139,14 @@
             if (!pal || !pal.primary) {
                 // Default theme look: stylesheet [data-theme] rules dictate all tokens.
                 inlineColorVars.forEach(v => root.style.removeProperty(v));
+                updateThemeCursor(isLight ? '#0284C7' : '#10B981', isLight ? '#4F46E5' : '#34D399', isLight);
             } else {
                 const primaryColor = pal.primary;
                 const accentColor = pal.accent || (isLight ? '#E11D48' : '#EC4899');
                 const highlightColor = pal.highlight || (isLight ? '#0284C7' : '#A855F7');
                 const rgb = hexToRgb(primaryColor);
                 const end = pal.primaryGradientEnd || adjustBrightness(primaryColor, isLight ? 0.88 : 0.82);
-                const onPrimary = contrastRatio('#FFFFFF', primaryColor) >= contrastRatio('#10120E', primaryColor) ? '#FFFFFF' : '#10120E';
+                const onPrimary = contrastRatio('#FFFFFF', primaryColor) >= contrastRatio('#0F172A', primaryColor) ? '#FFFFFF' : '#0F172A';
 
                 root.style.setProperty('--primary', primaryColor);
                 root.style.setProperty('--primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
@@ -150,10 +163,13 @@
                 root.style.setProperty('--accent-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
                 root.style.setProperty('--accent-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.25)`);
                 root.style.setProperty('--accent-text', accentColor);
+                root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${accentColor} 0%, ${adjustBrightness(accentColor, 0.82)} 100%)`);
 
                 const hlRgb = hexToRgb(highlightColor);
                 root.style.setProperty('--highlight', highlightColor);
                 root.style.setProperty('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
+                root.style.setProperty('--highlight-glow', `rgba(${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}, 0.22)`);
+                root.style.setProperty('--highlight-gradient', `linear-gradient(135deg, ${highlightColor} 0%, ${adjustBrightness(highlightColor, 0.82)} 100%)`);
 
                 if (isLight) {
                     root.style.setProperty('--text-main', '#0F172A');
@@ -163,23 +179,46 @@
                     root.style.setProperty('--bg-dark', '#F8F9FA');
                     root.style.setProperty('--input-bg', '#FFFFFF');
                     root.style.setProperty('--border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)`);
+                    root.style.setProperty('--border-subtle', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12)`);
                     root.style.setProperty('--on-primary', onPrimary);
                 } else {
                     root.style.setProperty('--text-main', '#ECE7D8');
                     root.style.setProperty('--text-muted', '#A8A395');
-                    root.style.setProperty('--card-bg', pal.cardSurface || '#171A14');
-                    root.style.setProperty('--card-bg-hover', adjustBrightness(pal.cardSurface || '#171A14', 1.12));
+                    const cSurf = (pal.cardSurface && !String(pal.cardSurface).toLowerCase().startsWith('#c7') && !String(pal.cardSurface).toLowerCase().startsWith('#d4'))
+                        ? pal.cardSurface
+                        : 'rgba(23, 26, 20, 0.90)';
+                    root.style.setProperty('--card-bg', cSurf);
+                    root.style.setProperty('--card-bg-hover', adjustBrightness(cSurf, 1.15));
                     root.style.setProperty('--bg-dark', pal.surface || '#10120E');
                     root.style.setProperty('--input-bg', 'rgba(10, 14, 23, 0.60)');
                     root.style.setProperty('--border', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`);
+                    root.style.setProperty('--border-subtle', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.10)`);
                     root.style.setProperty('--on-primary', onPrimary);
                 }
 
                 root.style.setProperty('--metric-inflow', isLight ? '#059669' : '#10B981');
+                root.style.setProperty('--metric-inflow-rgb', isLight ? '5, 150, 105' : '16, 185, 129');
+                root.style.setProperty('--metric-inflow-glow', isLight ? 'rgba(5, 150, 105, 0.15)' : 'rgba(16, 185, 129, 0.20)');
                 root.style.setProperty('--metric-outflow', isLight ? '#DC2626' : '#EF4444');
+                root.style.setProperty('--metric-outflow-rgb', isLight ? '220, 38, 38' : '239, 68, 68');
+                root.style.setProperty('--metric-outflow-glow', isLight ? 'rgba(220, 38, 38, 0.15)' : 'rgba(239, 68, 68, 0.20)');
                 root.style.setProperty('--metric-savings', isLight ? '#D97706' : '#F59E0B');
+                root.style.setProperty('--metric-savings-rgb', isLight ? '217, 119, 6' : '245, 158, 11');
+                root.style.setProperty('--metric-savings-glow', isLight ? 'rgba(217, 119, 6, 0.15)' : 'rgba(245, 158, 11, 0.20)');
                 root.style.setProperty('--metric-netflow', primaryColor);
+                root.style.setProperty('--metric-netflow-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+                root.style.setProperty('--metric-netflow-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.20)`);
                 root.style.setProperty('--metric-subs', accentColor);
+                root.style.setProperty('--metric-subs-rgb', `${accRgb.r}, ${accRgb.g}, ${accRgb.b}`);
+                root.style.setProperty('--metric-subs-glow', `rgba(${accRgb.r}, ${accRgb.g}, ${accRgb.b}, 0.20)`);
+                root.style.setProperty('--metric-subs-text', accentColor);
+
+                root.style.setProperty('--success', isLight ? '#059669' : '#10B981');
+                root.style.setProperty('--success-rgb', isLight ? '5, 150, 105' : '16, 185, 129');
+                root.style.setProperty('--warning', isLight ? '#D97706' : '#F59E0B');
+                root.style.setProperty('--warning-rgb', isLight ? '217, 119, 6' : '245, 158, 11');
+                root.style.setProperty('--danger', isLight ? '#DC2626' : '#EF4444');
+                root.style.setProperty('--danger-rgb', isLight ? '220, 38, 38' : '239, 68, 68');
 
                 if (Array.isArray(pal.paletteColors) && pal.paletteColors.length > 0) {
                     pal.paletteColors.slice(0, 8).forEach((col, i) => {

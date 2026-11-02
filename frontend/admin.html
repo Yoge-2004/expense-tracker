@@ -71,9 +71,26 @@
                         }
                         var lum = (r * 299 + g * 587 + b * 114) / 1000;
                         root.style.setProperty("--on-primary", lum > 145 ? "#0F172A" : "#FFFFFF");
+                        if (theme === "light") {
+                            root.style.setProperty("--card-bg", "#FFFFFF");
+                            root.style.setProperty("--card-bg-hover", "#F8FAFC");
+                            root.style.setProperty("--border", "rgba(" + r + ", " + g + ", " + b + ", 0.22)");
+                            root.style.setProperty("--border-subtle", "rgba(" + r + ", " + g + ", " + b + ", 0.12)");
+                        } else if (p.cardSurface) {
+                            var cs = (!p.cardSurface.startsWith("#c7") && !p.cardSurface.startsWith("#C7")) ? p.cardSurface : "rgba(23, 26, 20, 0.90)";
+                            root.style.setProperty("--card-bg", cs);
+                            root.style.setProperty("--border", "rgba(" + r + ", " + g + ", " + b + ", 0.25)");
+                        }
                         if (Array.isArray(p.paletteColors)) {
                             p.paletteColors.slice(0, 8).forEach(function (col, i) {
                                 root.style.setProperty("--palette-" + (i + 1), col);
+                                var ch = col.replace("#", "");
+                                if (ch.length === 6) {
+                                    var cr = parseInt(ch.substring(0, 2), 16);
+                                    var cg = parseInt(ch.substring(2, 4), 16);
+                                    var cb = parseInt(ch.substring(4, 6), 16);
+                                    root.style.setProperty("--palette-" + (i + 1) + "-rgb", cr + ", " + cg + ", " + cb);
+                                }
                             });
                         }
                     }

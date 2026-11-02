@@ -470,8 +470,12 @@
 }
 
 /* Chart Canvas Cursor States when Cross-Filtering is enabled */
-#expenseChart, #trendChart, #dayOfWeekChart, #recurringSplitChart,
-.chart-wrapper canvas, .trend-chart-wrapper canvas {
+#expenseChart, #trendChart, #dayOfWeekChart, #recurringSplitChart, #budgetVsActualChart,
+.chart-wrapper, .chart-wrapper canvas,
+.trend-chart-wrapper, .trend-chart-wrapper canvas,
+.bi-chart-segmented-control,
+.bi-segmented-btn, .bi-segmented-btn:hover, .bi-segmented-btn.active,
+.bi-segmented-btn * {
     cursor: var(--cursor-pointer, pointer) !important;
 }
 

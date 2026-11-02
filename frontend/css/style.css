@@ -204,10 +204,10 @@
     --metric-subs-rgb: 181, 72, 88;
     --metric-subs-glow: rgba(181, 72, 88, 0.15);
 
-    --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%23B48228' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='4' cy='3' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, auto;
-    --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%23B48228' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
-    --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cg stroke='%23B48228' stroke-width='2.2' stroke-linecap='round'%3E%3Cline x1='14' y1='4' x2='14' y2='24'/%3E%3Cline x1='9' y1='4' x2='19' y2='4'/%3E%3Cline x1='9' y1='24' x2='19' y2='24'/%3E%3C/g%3E%3C/svg%3E") 14 14, text;
-    --cursor-clicked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%23B54858' stroke='%230F172A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
+    --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%2310B981' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='4' cy='3' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, auto;
+    --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%2310B981' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
+    --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cg stroke='%2310B981' stroke-width='2.2' stroke-linecap='round'%3E%3Cline x1='14' y1='4' x2='14' y2='24'/%3E%3Cline x1='9' y1='4' x2='19' y2='4'/%3E%3Cline x1='9' y1='24' x2='19' y2='24'/%3E%3C/g%3E%3C/svg%3E") 14 14, text;
+    --cursor-clicked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%2334D399' stroke='%230F172A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
 }
 
 :root {
@@ -3880,18 +3880,19 @@ button[type="submit"]:active {
 }
 
 [data-theme="light"] .hero-back-link:hover {
-    color: var(--primary) !important;
+    color: #0F172A !important;
     border-color: var(--primary) !important;
     background: #FFFFFF !important;
     box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.25);
 }
 
 [data-theme="light"] .hero-back-link:hover svg {
-    stroke: var(--primary) !important;
+    color: #0F172A !important;
+    stroke: #0F172A !important;
 }
 
 [data-theme="light"] .hero-back-link:hover span {
-    color: var(--primary) !important;
+    color: #0F172A !important;
 }
 
 /* Perk grid */
@@ -6299,7 +6300,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block; visibility: v
     font-weight: 700;
     border-radius: 8px;
     white-space: nowrap !important;
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer) !important;
     flex-shrink: 0 !important;
 }
 
@@ -10768,9 +10769,15 @@ button[type="submit"]:active {
 
 .insight-card-item:hover {
     transform: translateY(-2px);
-    border-color: rgba(var(--primary-rgb), 0.45);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(var(--primary-rgb), 0.16);
-    background: var(--card-bg-hover);
+    border-color: rgba(var(--primary-rgb), 0.38);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.30), 0 0 14px rgba(var(--primary-rgb), 0.12);
+    background: var(--card-bg-hover, rgba(23, 26, 20, 0.92));
+}
+
+[data-theme="light"] .insight-card-item:hover {
+    border-color: rgba(var(--primary-rgb), 0.40);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 0 12px rgba(var(--primary-rgb), 0.10);
+    background: var(--card-bg-hover, #F8FAFC);
 }
 
 .insight-card-item-header {
@@ -14529,18 +14536,16 @@ body {
     transform: translateY(-3px);
     border-color: rgba(var(--primary-rgb), 0.35);
     box-shadow:
-        0 18px 46px -10px rgba(0, 0, 0, 0.55),
-        0 0 35px 3px rgba(var(--primary-rgb), 0.22),
-        0 0 65px 8px rgba(var(--primary-rgb), 0.12);
+        0 14px 34px -10px rgba(0, 0, 0, 0.45),
+        0 0 16px rgba(var(--primary-rgb), 0.12);
 }
 
 [data-theme="light"] :is(.card, .metric-card, .loan-metric-card, .unified-ledger-card, .auth-card, .smart-intelligence-card, .float-card, .budget-item, .savings-goal-card, .insight-card-item, .stat-card, .chart-card, .transactions-card, .budget-card, .loan-card, .loan-adjustment-section, .help-card, .calculator-card, .loan-overview-card, .empty-state-luxury):hover {
     transform: translateY(-3px);
     border-color: rgba(var(--primary-rgb), 0.40);
     box-shadow:
-        0 16px 40px -8px rgba(15, 23, 42, 0.10),
-        0 0 32px 3px rgba(var(--primary-rgb), 0.22),
-        0 0 60px 8px rgba(var(--primary-rgb), 0.12);
+        0 12px 28px -8px rgba(15, 23, 42, 0.08),
+        0 0 14px rgba(var(--primary-rgb), 0.10);
 }
 
 /* Primary and CTA Buttons Soft Golden Hover */
@@ -15607,7 +15612,7 @@ body {
         .dashboard-card:hover,
         .feature-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(var(--primary-rgb, 199, 154, 62), 0.22);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(var(--primary-rgb), 0.22);
         }
 
         /* Table & transaction row hover slide */
@@ -16259,9 +16264,12 @@ body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
 }
 
 /* Ensure Executive Precision Cursor on Charts and Controls */
-#expenseChart, #trendChart, #dayOfWeekChart, #recurringSplitChart,
-.chart-wrapper canvas, .trend-chart-wrapper canvas,
-.bi-segmented-btn, .bi-segmented-btn:hover, .bi-segmented-btn.active {
+#expenseChart, #trendChart, #dayOfWeekChart, #recurringSplitChart, #budgetVsActualChart,
+.chart-wrapper, .chart-wrapper canvas,
+.trend-chart-wrapper, .trend-chart-wrapper canvas,
+.bi-chart-segmented-control,
+.bi-segmented-btn, .bi-segmented-btn:hover, .bi-segmented-btn.active,
+.bi-segmented-btn * {
     cursor: var(--cursor-pointer, pointer) !important;
 }
 

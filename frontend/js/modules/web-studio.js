@@ -233,8 +233,16 @@
     // ─── 2. UTILITY FUNCTIONS ────────────────────────────────────────────────
 
     function hexToRgb(hex) {
-        if (!hex) return { r: 199, g: 154, b: 62 };
-        const clean = hex.replace('#', '').trim();
+        if (!hex) return { r: 16, g: 24, b: 20 };
+        const rgbaMatch = String(hex).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+        if (rgbaMatch) {
+            return {
+                r: parseInt(rgbaMatch[1], 10),
+                g: parseInt(rgbaMatch[2], 10),
+                b: parseInt(rgbaMatch[3], 10)
+            };
+        }
+        const clean = String(hex).replace('#', '').trim();
         if (clean.length === 3) {
             return {
                 r: parseInt(clean[0] + clean[0], 16) || 0,
@@ -249,9 +257,13 @@
         };
     }
 
-    function adjustBrightness(hex, factor) {
-        const { r, g, b } = hexToRgb(hex);
+    function adjustBrightness(color, factor) {
+        const { r, g, b } = hexToRgb(color);
         const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+        const alphaMatch = String(color || '').match(/rgba\(\d+,\s*\d+,\s*\d+,\s*([\d.]+)\)/i);
+        if (alphaMatch) {
+            return `rgba(${clamp(r * factor)}, ${clamp(g * factor)}, ${clamp(b * factor)}, ${alphaMatch[1]})`;
+        }
         return '#' + [clamp(r * factor), clamp(g * factor), clamp(b * factor)]
             .map(x => x.toString(16).padStart(2, '0')).join('');
     }
@@ -722,7 +734,7 @@
             setPaletteVar('--cursor-clicked', `url("data:image/svg+xml,${encodeURIComponent(clicked)}") 4 3, pointer`);
         }
         setPaletteVar('--card-bg', safeCard);
-        setPaletteVar('--card-bg-hover', adjustBrightness(safeCard, isLight ? 0.97 : 1.12));
+        setPaletteVar('--card-bg-hover', isLight ? '#F8FAFC' : adjustBrightness(safeCard, 1.15));
         setPaletteVar('--bg-dark', safeSurface);
         setPaletteVar('--input-bg', mixSurface(safeCard, safeSurface, 0.35));
         setPaletteVar('--text-main', readableText);
@@ -1269,43 +1281,46 @@
                 </div>
             `).join('');
 
+    function selectPreset(presetId) {
+        const preset = STUDIO_PRESETS.find(x => x.id === presetId);
+        if (!preset) return;
+
+        currentPresetId = preset.id;
+        currentWallpaperType = 'preset';
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
+        currentPrimary = sub.primary;
+        currentPrimaryEnd = sub.primaryGradientEnd;
+        currentAccent = sub.accent;
+        currentHighlight = sub.highlight;
+        currentCardSurface = sub.cardSurface;
+        currentAppSurface = sub.surface;
+        currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
+
+        localStorage.setItem('app_custom_palette', JSON.stringify({
+            primary: currentPrimary,
+            primaryGradientEnd: currentPrimaryEnd,
+            accent: currentAccent,
+            highlight: currentHighlight,
+            cardSurface: currentCardSurface,
+            surface: currentAppSurface,
+            paletteColors: currentExtractedPalette,
+        }));
+        localStorage.setItem('app_bg_asset', JSON.stringify({
+            type: 'preset',
+            presetId: currentPresetId,
+            overlayOpacity: currentOverlayOpacity,
+            blurIntensity: currentBlurIntensity,
+        }));
+
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
+        applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
+        syncUiControls();
+    }
+
             presetsGrid.querySelectorAll('.studio-preset-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    const presetId = card.getAttribute('data-preset-id');
-                    const preset = STUDIO_PRESETS.find(x => x.id === presetId);
-                    if (!preset) return;
-
-                    currentPresetId = preset.id;
-                    currentWallpaperType = 'preset';
-                    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-                    const sub = (isLight && preset.light) ? preset.light : (preset.dark || preset);
-                    currentPrimary = sub.primary;
-                    currentPrimaryEnd = sub.primaryGradientEnd;
-                    currentAccent = sub.accent;
-                    currentHighlight = sub.highlight;
-                    currentCardSurface = sub.cardSurface;
-                    currentAppSurface = sub.surface;
-                    currentExtractedPalette = sub.paletteColors || [currentPrimary, currentAccent, currentHighlight];
-
-                    localStorage.setItem('app_custom_palette', JSON.stringify({
-                        primary: currentPrimary,
-                        primaryGradientEnd: currentPrimaryEnd,
-                        accent: currentAccent,
-                        highlight: currentHighlight,
-                        cardSurface: currentCardSurface,
-                        surface: currentAppSurface,
-                        paletteColors: currentExtractedPalette,
-                    }));
-                    localStorage.setItem('app_bg_asset', JSON.stringify({
-                        type: 'preset',
-                        presetId: currentPresetId,
-                        overlayOpacity: currentOverlayOpacity,
-                        blurIntensity: currentBlurIntensity,
-                    }));
-
-                    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
-                    applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
-                    syncUiControls();
+                    selectPreset(card.getAttribute('data-preset-id'));
                 });
             });
         }
@@ -1894,6 +1909,7 @@
 
     // Expose API to window
     window.WebStudio = {
+        selectPreset,
         fetchAppearanceFromCloud,
         saveAppearanceToCloud,
         applyTypography,

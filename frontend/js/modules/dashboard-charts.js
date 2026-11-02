@@ -141,6 +141,22 @@
         }
     }
 
+        function enforceChartCursor() {
+        ["expenseChart", "trendChart", "recurringSplitChart", "dayOfWeekChart", "budgetVsActualChart"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el._hasCursorEnforced) {
+                el._hasCursorEnforced = true;
+                el.style.setProperty("cursor", "var(--cursor-pointer, pointer)", "important");
+                el.addEventListener("mousemove", () => {
+                    el.style.setProperty("cursor", "var(--cursor-pointer, pointer)", "important");
+                }, { passive: true });
+                el.addEventListener("mouseenter", () => {
+                    el.style.setProperty("cursor", "var(--cursor-pointer, pointer)", "important");
+                }, { passive: true });
+            }
+        });
+    }
+
     function renderChartEmptyStates(isOffline = false) {
         const msg = isOffline ? "Chart data unavailable offline" : "No activity recorded for this period";
         ["expenseChart", "trendChart", "recurringSplitChart", "dayOfWeekChart", "budgetVsActualChart"].forEach(id => {
@@ -149,6 +165,7 @@
     }
 
     function renderPieChart(expenses) {
+        enforceChartCursor();
         if (!ensureChartLoaded(() => renderPieChart(expenses))) return;
         const canvas = document.getElementById('expenseChart');
         if (!canvas) return;
@@ -200,6 +217,7 @@
     }
 
     function renderTrendChart(expenses) {
+        enforceChartCursor();
         if (!ensureChartLoaded(() => renderTrendChart(expenses))) return;
         const canvas = document.getElementById('trendChart');
         if (!canvas) return;

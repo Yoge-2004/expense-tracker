@@ -349,18 +349,19 @@
 }
 
 [data-theme="light"] .hero-back-link:hover {
-    color: var(--primary) !important;
+    color: #0F172A !important;
     border-color: var(--primary) !important;
     background: #FFFFFF !important;
     box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.25);
 }
 
 [data-theme="light"] .hero-back-link:hover svg {
-    stroke: var(--primary) !important;
+    color: #0F172A !important;
+    stroke: #0F172A !important;
 }
 
 [data-theme="light"] .hero-back-link:hover span {
-    color: var(--primary) !important;
+    color: #0F172A !important;
 }
 
 /* Perk grid */

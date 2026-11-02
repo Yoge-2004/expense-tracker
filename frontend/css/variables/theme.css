@@ -62,10 +62,10 @@
     --metric-subs-rgb: 181, 72, 88;
     --metric-subs-glow: rgba(181, 72, 88, 0.15);
 
-    --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%23B48228' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='4' cy='3' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, auto;
-    --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%23B48228' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
-    --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cg stroke='%23B48228' stroke-width='2.2' stroke-linecap='round'%3E%3Cline x1='14' y1='4' x2='14' y2='24'/%3E%3Cline x1='9' y1='4' x2='19' y2='4'/%3E%3Cline x1='9' y1='24' x2='19' y2='24'/%3E%3C/g%3E%3C/svg%3E") 14 14, text;
-    --cursor-clicked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%23B54858' stroke='%230F172A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
+    --cursor-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L20 11L12 14L9 22L4 3Z' fill='%230284C7' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='4' cy='3' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, auto;
+    --cursor-pointer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%230284C7' stroke='%230F172A' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
+    --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cg stroke='%230284C7' stroke-width='2.2' stroke-linecap='round'%3E%3Cline x1='14' y1='4' x2='14' y2='24'/%3E%3Cline x1='9' y1='4' x2='19' y2='4'/%3E%3Cline x1='9' y1='24' x2='19' y2='24'/%3E%3C/g%3E%3C/svg%3E") 14 14, text;
+    --cursor-clicked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28' fill='none'%3E%3Cpath d='M4 3L18 10L11 13L8 20L4 3Z' fill='%234F46E5' stroke='%230F172A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='11' cy='13' r='2.5' fill='%23FFFFFF'/%3E%3C/svg%3E") 4 3, pointer;
 }
 
 :root {
