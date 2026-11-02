@@ -161,7 +161,7 @@
 @supports not selector(::-webkit-scrollbar) {
     [data-theme="light"] .monthly-report-modal,
     [data-theme="light"] .monthly-report-frame-container {
-        scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.06);
+        scrollbar-color: rgba(var(--primary-rgb), 0.5) rgba(0, 0, 0, 0.06);
     }
     [data-theme="light"] .modal {
         scrollbar-color: rgba(var(--primary-rgb), 0.5) transparent;
@@ -194,7 +194,7 @@
     border-radius: 999px;
 }
 [data-theme="light"] .monthly-report-frame-container::-webkit-scrollbar-thumb {
-    background: rgba(199, 154, 62, 0.45);
+    background: rgba(var(--primary-rgb), 0.45);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
@@ -525,14 +525,14 @@
 [data-theme="light"] .period-picker-modal {
     background: #FCFBF6;
     border-color: rgba(26, 29, 23, 0.12);
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(199, 154, 62, 0.2);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(var(--primary-rgb), 0.2);
 }
 [data-theme="light"] .period-picker-modal .modal-header {
     background: #FCFBF6;
 }
 @supports not selector(::-webkit-scrollbar) {
     [data-theme="light"] .period-picker-modal {
-        scrollbar-color: rgba(199, 154, 62, 0.5) transparent;
+        scrollbar-color: rgba(var(--primary-rgb), 0.5) transparent;
     }
 }
 [data-theme="light"] .period-picker-modal::-webkit-scrollbar-track {
@@ -542,7 +542,7 @@
     margin-bottom: 18px;
 }
 [data-theme="light"] .period-picker-modal::-webkit-scrollbar-thumb {
-    background: rgba(199, 154, 62, 0.45);
+    background: rgba(var(--primary-rgb), 0.45);
 }
 [data-theme="light"] .period-chip,
 [data-theme="light"] .period-month-chip {
@@ -551,8 +551,8 @@
     color: #10120E;
 }
 [data-theme="light"] .period-summary-banner {
-    background: rgba(199, 154, 62, 0.1);
-    border-color: rgba(199, 154, 62, 0.25);
+    background: rgba(var(--primary-rgb), 0.1);
+    border-color: rgba(var(--primary-rgb), 0.25);
 }
 
 @media (max-width: 640px) {
@@ -608,7 +608,7 @@
 /* Switch Mode Links in Period Picker */
 .btn-switch-mode:hover {
     border-color: var(--primary);
-    background: rgba(199, 154, 62, 0.08);
+    background: rgba(var(--primary-rgb), 0.08);
     color: var(--primary);
 }
 

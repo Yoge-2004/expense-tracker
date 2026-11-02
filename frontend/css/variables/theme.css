@@ -6,8 +6,8 @@
     --card-bg-hover: #FFFFFF;
     --text-main: #0F172A;
     --text-muted: #475569;
-    --border: rgba(212, 175, 55, 0.28);
-    --border-accent: rgba(212, 175, 55, 0.55);
+    --border: rgba(var(--primary-rgb), 0.28);
+    --border-accent: rgba(var(--primary-rgb), 0.55);
     --input-bg: #FFFFFF;
 
     --primary-rgb: 212, 175, 55;
@@ -19,7 +19,7 @@
 
     --primary: #D4AF37;
     --primary-gradient: linear-gradient(135deg, #E6C25B 0%, #D4AF37 50%, #B8860B 100%);
-    --primary-glow: rgba(212, 175, 55, 0.32);
+    --primary-glow: rgba(var(--primary-rgb), 0.32);
 
     --accent: #E74C3C;
     --accent-gradient: linear-gradient(135deg, #FF6B6B 0%, #E74C3C 100%);
@@ -43,8 +43,8 @@
     --danger-gradient: linear-gradient(135deg, #F87171 0%, #DC2626 100%);
 
     --glass: blur(28px);
-    --shadow-premium: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 20px rgba(212, 175, 55, 0.10);
-    --shadow-glow: 0 12px 35px -8px rgba(212, 175, 55, 0.28);
+    --shadow-premium: 0 20px 45px -12px rgba(15, 23, 42, 0.09), 0 0 20px rgba(var(--primary-rgb), 0.10);
+    --shadow-glow: 0 12px 35px -8px rgba(var(--primary-rgb), 0.28);
 
     --metric-inflow: #059669;
     --metric-inflow-rgb: 5, 150, 105;

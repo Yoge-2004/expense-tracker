@@ -74,8 +74,8 @@
 }
 
 [data-theme="light"] .ai-suggestion-box {
-    background: rgba(199, 154, 62, 0.1);
-    border-color: rgba(199, 154, 62, 0.35);
+    background: rgba(var(--primary-rgb), 0.1);
+    border-color: rgba(var(--primary-rgb), 0.35);
 }
 
 .ai-suggestion-header {

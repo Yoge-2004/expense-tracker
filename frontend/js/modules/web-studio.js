@@ -483,7 +483,26 @@
         currentAppSurface = isLight ? '#FFFFFF' : adjustBrightness(primaryHex, 0.12);
         currentWallpaperType = 'custom';
         currentWallpaperUri = canvas.toDataURL('image/jpeg', 0.88);
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+
+        // Immediate persistence so the extracted palette propagates across all pages & reloads
+        localStorage.setItem('app_custom_palette', JSON.stringify({
+            primary: currentPrimary,
+            primaryGradientEnd: currentPrimaryEnd,
+            accent: currentAccent,
+            highlight: currentHighlight,
+            cardSurface: currentCardSurface,
+            surface: currentAppSurface,
+            paletteColors: currentExtractedPalette,
+        }));
+        localStorage.setItem('app_bg_asset', JSON.stringify({
+            type: currentWallpaperType,
+            presetId: currentPresetId,
+            uri: currentWallpaperUri,
+            overlayOpacity: currentOverlayOpacity,
+            blurIntensity: currentBlurIntensity,
+        }));
+
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
         applyAtmosphere('custom', currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
         syncUiControls();
     }
@@ -512,7 +531,7 @@
         localStorage.setItem('app_custom_palette', JSON.stringify({ primary: currentPrimary, primaryGradientEnd: currentPrimaryEnd, accent: currentAccent, highlight: currentHighlight, cardSurface: currentCardSurface, surface: currentAppSurface }));
         localStorage.setItem('app_bg_asset', JSON.stringify({ type: currentWallpaperType, presetId: currentPresetId, uri: currentWallpaperUri, overlayOpacity: currentOverlayOpacity, blurIntensity: currentBlurIntensity }));
         applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
         applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
         syncUiControls(); void saveAppearanceToCloud();
     }
@@ -528,6 +547,9 @@
             if (parsed.highlight) currentHighlight = parsed.highlight;
             if (parsed.cardSurface) currentCardSurface = parsed.cardSurface;
             if (parsed.surface) currentAppSurface = parsed.surface;
+            if (Array.isArray(parsed.paletteColors) && parsed.paletteColors.length > 0) {
+                currentExtractedPalette = parsed.paletteColors;
+            }
         }
     } catch (e) {}
 
@@ -624,7 +646,7 @@
             && DEFAULT_APP_SURFACES.some(v => sameColor(currentAppSurface, v));
     }
 
-    function applyPalette(primaryHex, primaryEndHex, accentHex, highlightHex) {
+    function applyPalette(primaryHex, primaryEndHex, accentHex, highlightHex, paletteColors) {
         const root = document.documentElement;
         const isLight = root.getAttribute('data-theme') === 'light';
         const cardBase = isLight ? '#FFFFFF' : '#171A14';
@@ -734,8 +756,21 @@
             const hlRgb = hexToRgb(effHighlight);
             setPaletteVar('--highlight', effHighlight);
             setPaletteVar('--highlight-rgb', `${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}`);
+            setPaletteVar('--highlight-glow', `rgba(${hlRgb.r}, ${hlRgb.g}, ${hlRgb.b}, 0.22)`);
             setPaletteVar('--highlight-gradient', `linear-gradient(135deg, ${effHighlight} 0%, ${adjustBrightness(effHighlight, 0.82)} 100%)`);
         }
+
+        // Propagate all extracted spectrum tokens (--palette-1 to --palette-8)
+        const fullPalette = Array.isArray(paletteColors) && paletteColors.length > 0
+            ? paletteColors
+            : (Array.isArray(currentExtractedPalette) && currentExtractedPalette.length > 0 ? currentExtractedPalette : [effPrimary, effAccent, effHighlight]);
+        fullPalette.slice(0, 8).forEach((col, idx) => {
+            if (isValidHex(col)) {
+                const rgb = hexToRgb(col);
+                setPaletteVar(`--palette-${idx + 1}`, col);
+                setPaletteVar(`--palette-${idx + 1}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+            }
+        });
 
         // Propagate dynamic border tokens derived from theme primary
         setPaletteVar('--border', isLight
@@ -793,7 +828,7 @@
 
     // Immediate zero-flicker application on script load
     applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
     applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
 
     // The palette is computed for the theme that is active when it runs, so it must be recomputed whenever
@@ -813,7 +848,7 @@
                 currentAppSurface = sub.surface;
             }
         }
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
         applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
         syncUiControls();
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -878,7 +913,7 @@
 
             if (dirty) {
                 applyTypography(currentFontChoice, currentCustomFontFamily, currentCustomFontData);
-                applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+                applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
                 applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
                 syncUiControls();
             }
@@ -1226,7 +1261,7 @@
                     currentCardSurface = sub.cardSurface;
                     currentAppSurface = sub.surface;
 
-                    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+                    applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
                     applyAtmosphere(currentWallpaperType, currentWallpaperUri, currentOverlayOpacity, currentBlurIntensity);
                     syncUiControls();
                 });
@@ -1287,7 +1322,7 @@
                 currentAppSurface = newHex;
             }
 
-            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
             updateColorPickerInputs();
 
             // Highlight active swatch if matches
@@ -1651,7 +1686,7 @@
             localStorage.removeItem('app_bg_asset');
 
             applyTypography('grotesk', null, null);
-            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+            applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
             applyAtmosphere('preset', '', 0.35, 0);
             syncUiControls();
             void saveAppearanceToCloud();
@@ -1805,7 +1840,7 @@
 
     // Attach to DOMContentLoaded or execute immediately if already loaded
     document.addEventListener('themechange', () => {
-        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight);
+        applyPalette(currentPrimary, currentPrimaryEnd, currentAccent, currentHighlight, currentExtractedPalette);
     });
 
     if (document.readyState === 'loading') {

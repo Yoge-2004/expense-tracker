@@ -88,12 +88,24 @@
     function liveCategoryPalette() {
         if (livePaletteCache) return livePaletteCache;
         const style = getComputedStyle(document.documentElement);
-        const seeds = ['--primary', '--accent', '--highlight'].map(name => style.getPropertyValue(name).trim());
+        // Harvest all extracted spectrum tokens (--palette-1 to --palette-8) or core seeds
+        const dynamicSlots = [];
+        for (let idx = 1; idx <= 8; idx++) {
+            const p = style.getPropertyValue(`--palette-${idx}`).trim();
+            if (p) dynamicSlots.push(p);
+        }
+        if (dynamicSlots.length === 0) {
+            ['--primary', '--accent', '--highlight'].forEach(name => {
+                const val = style.getPropertyValue(name).trim();
+                if (val) dynamicSlots.push(val);
+            });
+        }
         livePaletteCache = CATEGORY_PALETTE.map((entry, i) => {
-            const m = i < seeds.length ? /^#([0-9a-f]{6})$/i.exec(seeds[i]) : null;
+            const hex = i < dynamicSlots.length ? dynamicSlots[i] : null;
+            const m = hex ? /^#([0-9a-f]{6})$/i.exec(hex) : null;
             if (!m) return entry;
             const n = parseInt(m[1], 16);
-            return { bg: `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},0.12)`, color: '#' + m[1] };
+            return { bg: `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},0.15)`, color: '#' + m[1] };
         });
         return livePaletteCache;
     }

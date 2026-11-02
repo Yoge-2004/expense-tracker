@@ -134,9 +134,9 @@
 
 [data-theme="light"] .category-pills-scroll-cue {
     background: rgba(252, 251, 246, 0.95);
-    border-color: rgba(199, 154, 62, 0.45);
+    border-color: rgba(var(--primary-rgb), 0.45);
     color: #6B5010;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 10px rgba(199, 154, 62, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 10px rgba(var(--primary-rgb), 0.25);
 }
 
 #incomePillsWrapper .category-pills-scroll-cue {

@@ -125,7 +125,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 .stream-pill-btn.admin-nav-item.active {
     background: var(--card-bg, #171A14) !important;
     color: var(--text-main) !important;
-    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.4)) !important;
+    border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.4)) !important;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18), 0 0 12px var(--primary-glow);
     font-weight: 700 !important;
 }
@@ -136,15 +136,15 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 
 [data-theme="light"] .stream-pill-btn.admin-nav-item:hover {
     color: #111827 !important;
-    background: rgba(212, 175, 55, 0.15) !important;
-    border: 1px solid rgba(212, 175, 55, 0.45) !important;
+    background: rgba(var(--primary-rgb), 0.15) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.45) !important;
 }
 
 [data-theme="light"] .stream-pill-btn.admin-nav-item.active {
     background: #FFFFFF !important;
     color: #111827 !important;
-    border: 1px solid rgba(212, 175, 55, 0.5) !important;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), 0 0 10px rgba(212, 175, 55, 0.2);
+    border: 1px solid rgba(var(--primary-rgb), 0.5) !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), 0 0 10px rgba(var(--primary-rgb), 0.2);
 }
 
 /* Tab Views Container */
@@ -198,7 +198,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 [data-theme="light"] .admin-phone-mockup {
     background: #111827;
     border-color: rgba(15, 23, 42, 0.3);
-    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(212, 175, 55, 0.35);
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(var(--primary-rgb), 0.35);
 }
 
 .admin-phone-notch {
@@ -289,7 +289,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 
 [data-theme="light"] .admin-drawer {
     background: #FFFFFF;
-    border-left-color: rgba(212, 175, 55, 0.28);
+    border-left-color: rgba(var(--primary-rgb), 0.28);
     box-shadow: -15px 0 45px rgba(15, 23, 42, 0.12);
 }
 
@@ -383,7 +383,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 
 [data-theme="light"] .logs-terminal-window {
     background: #0F172A;
-    border-color: rgba(212, 175, 55, 0.4);
+    border-color: rgba(var(--primary-rgb), 0.4);
 }
 
 .logs-terminal-header {
@@ -748,7 +748,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     flex-shrink: 0;
     border-radius: 11px;
     background: var(--card-bg, #171A14);
-    border: 1px solid var(--border-accent, rgba(199, 154, 62, 0.4));
+    border: 1px solid var(--border-accent, rgba(var(--primary-rgb), 0.4));
     color: var(--primary, #C79A3E);
     cursor: pointer;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
@@ -764,7 +764,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
     border-color: var(--primary, #C79A3E);
     color: #F8E8C8;
     transform: translateY(-1px);
-    box-shadow: 0 0 14px var(--primary-glow, rgba(199, 154, 62, 0.35)), 0 4px 12px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 14px var(--primary-glow, rgba(var(--primary-rgb), 0.35)), 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .admin-nav-scroll-btn:active:not(:disabled) {
@@ -783,16 +783,16 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 
 [data-theme="light"] .admin-nav-scroll-btn {
     background: #FFFFFF;
-    border: 1px solid rgba(212, 175, 55, 0.5);
+    border: 1px solid rgba(var(--primary-rgb), 0.5);
     color: #926C15;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(212, 175, 55, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(var(--primary-rgb), 0.15);
 }
 
 [data-theme="light"] .admin-nav-scroll-btn:hover:not(:disabled) {
-    background: rgba(212, 175, 55, 0.15);
+    background: rgba(var(--primary-rgb), 0.15);
     border-color: #B8860B;
     color: #7A5805;
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.25);
 }
 
 [data-theme="light"] .admin-nav-scroll-btn:disabled {
@@ -827,7 +827,7 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 [data-theme="light"] .admin-nav-stream,
 [data-theme="light"] .ledger-stream-tabs {
     background: rgba(245, 243, 238, 0.85) !important;
-    border: 1px solid rgba(212, 175, 55, 0.28) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.28) !important;
 }
 
 .admin-nav-stream::-webkit-scrollbar,
@@ -844,13 +844,13 @@ html[data-theme="light"] #themeToggle .moon-icon { display: block !important; vi
 
 .admin-nav-stream::-webkit-scrollbar-thumb,
 .ledger-stream-tabs::-webkit-scrollbar-thumb {
-    background: rgba(199, 154, 62, 0.45) !important;
+    background: rgba(var(--primary-rgb), 0.45) !important;
     border-radius: 99px !important;
 }
 
 .admin-nav-stream::-webkit-scrollbar-thumb:hover,
 .ledger-stream-tabs::-webkit-scrollbar-thumb:hover {
-    background: rgba(199, 154, 62, 0.8) !important;
+    background: rgba(var(--primary-rgb), 0.8) !important;
 }
 
 .stream-pill-btn {

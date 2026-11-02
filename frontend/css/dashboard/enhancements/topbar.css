@@ -7,7 +7,7 @@
 }
 [data-theme="light"] .top-bar {
     background: rgba(238, 241, 246, 0.9);
-    border-bottom-color: rgba(199, 154, 62, 0.2);
+    border-bottom-color: rgba(var(--primary-rgb), 0.2);
 }
 .command-search-wrapper:focus-within {
     border-color: rgba(var(--primary-rgb), 0.5);

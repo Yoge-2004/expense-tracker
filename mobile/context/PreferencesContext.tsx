@@ -151,7 +151,11 @@ export function createThemeColors(
   const mutedText = ensureColorContrast(baseColors.textMuted, appSurface, 4.5);
   const primaryGradientEnd = ensureColorContrast(activePalette.primaryGradientEnd || baseColors.primaryGradientEnd, onPrimary);
   // Category/chart colours follow the user's theme colours plus fixed hues
-  const paletteColors = buildCategoryPalette([primary, accent, highlight, primaryGradientEnd], cardSurface);
+  // Category/chart colours follow the user's extracted palette spectrum plus theme seeds
+  const paletteSeeds = Array.isArray(activePalette.paletteColors) && activePalette.paletteColors.length > 0
+    ? activePalette.paletteColors
+    : [primary, accent, highlight, primaryGradientEnd];
+  const paletteColors = buildCategoryPalette(paletteSeeds, cardSurface);
 
   return {
     ...baseColors,

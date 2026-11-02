@@ -199,7 +199,7 @@ function SplashLoader({ theme: themeProp, colors, fonts }: SplashLoaderProps = {
             {
               borderColor: tintColor(c.primary, 0.2),
               borderTopColor: c.primary,
-              borderRightColor: c.primaryGradientEnd,
+              borderRightColor: c.accent,
               transform: [{ rotate: spin }],
             },
           ]}

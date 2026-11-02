@@ -190,8 +190,8 @@
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: rgba(199, 154, 62, 0.16);
-    color: #C79A3E;
+    background: rgba(var(--primary-rgb), 0.16);
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -227,8 +227,8 @@
     letter-spacing: 0.5px;
 }
 .transfer-dock-badge.export {
-    background: rgba(199, 154, 62, 0.16);
-    color: #C79A3E;
+    background: rgba(var(--primary-rgb), 0.16);
+    color: var(--primary);
 }
 .transfer-dock-badge.import {
     background: rgba(59, 130, 246, 0.16);
@@ -248,7 +248,7 @@
 }
 .transfer-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #C79A3E, #E5B552);
+    background: var(--primary-gradient);
     border-radius: 99px;
     width: 0%;
     transition: width 0.18s ease-out;
@@ -345,7 +345,7 @@
 }
 .receipt-ocr-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #C79A3E, #E5B552);
+    background: var(--primary-gradient);
     border-radius: 99px;
     width: 0%;
     transition: width 0.18s ease-out;
@@ -645,13 +645,13 @@
     color: #0F172A;
 }
 [data-theme="light"] .command-palette-results {
-    scrollbar-color: rgba(199, 154, 62, 0.5) rgba(0, 0, 0, 0.04);
+    scrollbar-color: rgba(var(--primary-rgb), 0.5) rgba(0, 0, 0, 0.04);
 }
 [data-theme="light"] .command-palette-results::-webkit-scrollbar-thumb {
-    background: rgba(199, 154, 62, 0.45);
+    background: rgba(var(--primary-rgb), 0.45);
 }
 [data-theme="light"] .command-palette-results::-webkit-scrollbar-thumb:hover {
-    background: rgba(199, 154, 62, 0.75);
+    background: rgba(var(--primary-rgb), 0.75);
 }
 [data-theme="light"] .command-palette-results {
     background: #FFFFFF;
@@ -669,7 +669,7 @@
 }
 [data-theme="light"] .command-palette-item:hover,
 [data-theme="light"] .command-palette-item.active {
-    background: rgba(212, 175, 55, 0.15);
+    background: rgba(var(--primary-rgb), 0.15);
 }
 [data-theme="light"] .command-palette-footer {
     background: #F8FAFC;
@@ -830,8 +830,8 @@
 [data-theme="light"] .header-action-btn:hover {
     color: #B8860B;
     border-color: var(--primary);
-    background: rgba(212, 175, 55, 0.12);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+    background: rgba(var(--primary-rgb), 0.12);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.2);
 }
 
 /* Universal Soft Floating Luxury Golden Aura Hover:
@@ -892,7 +892,7 @@
 .stealth-toggle-btn.is-active {
     color: #D4AF37 !important;
     border-color: #D4AF37 !important;
-    background: rgba(212, 175, 55, 0.14) !important;
+    background: rgba(var(--primary-rgb), 0.14) !important;
     box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.28);
 }
 
