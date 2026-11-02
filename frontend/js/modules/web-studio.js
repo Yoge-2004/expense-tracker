@@ -826,12 +826,30 @@
         const bgs = document.querySelectorAll('.hero-bg, .auth-hero-bg');
         if (!bgs.length) return;
 
+        const isLight = document.documentElement.getAttribute("data-theme") === "light";
+        if (type === "custom" && uri) {
+            document.body?.classList.add("has-custom-wallpaper");
+            document.documentElement.style.setProperty('--card-bg', isLight ? 'rgba(255, 255, 255, 0.76)' : 'rgba(23, 26, 20, 0.74)');
+            document.documentElement.style.setProperty('--card-bg-hover', isLight ? 'rgba(255, 255, 255, 0.86)' : 'rgba(32, 36, 28, 0.84)');
+        } else {
+            document.body?.classList.remove("has-custom-wallpaper");
+            document.documentElement.style.removeProperty("--custom-wallpaper-bg");
+            if (isLight) {
+                document.documentElement.style.setProperty('--card-bg', '#FFFFFF');
+                document.documentElement.style.setProperty('--card-bg-hover', '#F8FAFC');
+            } else {
+                const cSurf = (currentCardSurface && !String(currentCardSurface).toLowerCase().startsWith('#c7'))
+                    ? currentCardSurface : 'rgba(23, 26, 20, 0.90)';
+                document.documentElement.style.setProperty('--card-bg', cSurf);
+                document.documentElement.style.setProperty('--card-bg-hover', adjustBrightness(cSurf, 1.15));
+            }
+        }
+
         bgs.forEach(heroBg => {
             if (type === 'none') {
                 heroBg.style.backgroundImage = 'none';
                 heroBg.style.filter = 'none';
             } else if (type === "custom" && uri) {
-                const isLight = document.documentElement.getAttribute("data-theme") === "light";
                 const tint = isLight ? "255, 255, 255" : "0, 0, 0";
                 const bgRule = `linear-gradient(rgba(${tint}, ${opacity}), rgba(${tint}, ${opacity})), url("${uri}")`;
                 heroBg.style.setProperty("background-image", bgRule, "important");
@@ -840,11 +858,9 @@
                 heroBg.style.setProperty("background-repeat", "no-repeat", "important");
                 heroBg.style.setProperty("opacity", "1", "important");
                 heroBg.style.filter = blur > 0 ? `blur(${blur}px)` : "none";
-                document.body?.classList.add("has-custom-wallpaper");
                 document.documentElement.style.setProperty("--custom-wallpaper-bg", bgRule);
             } else {
                 // Preset / default ambient gradients constructed from current theme colors
-                const isLight = document.documentElement.getAttribute('data-theme') === 'light';
                 const pRgb = hexToRgb(currentPrimary);
                 const aRgb = hexToRgb(currentAccent);
                 const hRgb = hexToRgb(currentHighlight);

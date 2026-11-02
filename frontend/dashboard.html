@@ -524,10 +524,10 @@
         <section class="card savings-section animate-cascade delay-5" style="margin-top:24px;">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <div>
-                    <span class="card-label" style="color:#F59E0B; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Wealth Accumulation</span>
+                    <span class="card-label" style="color:var(--metric-savings, #F59E0B); font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Wealth Accumulation</span>
                     <h3 class="section-title" style="margin:4px 0 0; font-size:18px;">Savings Goals & Milestones</h3>
                 </div>
-                <button id="addGoalBtn" class="btn-primary btn-small" title="Create a New Savings Goal" style="background:#F59E0B; border-color:#F59E0B; color:#fff;">
+                <button id="addGoalBtn" class="btn-primary btn-small" title="Create a New Savings Goal" style="background:var(--metric-savings, #F59E0B); border-color:var(--metric-savings, #F59E0B); color:#fff;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -566,11 +566,11 @@
         <section class="card loans-section animate-cascade delay-5" id="loansSection" style="margin-top:24px;">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
                 <div>
-                    <span class="card-label" style="color:#8B5CF6; font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Peer Debt &amp; Friend IOUs</span>
+                    <span class="card-label" style="color:var(--accent, #8B5CF6); font-weight:700; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">Peer Debt &amp; Friend IOUs</span>
                     <h3 class="section-title" style="margin:4px 0 2px; font-size:18px;">Loans &amp; Casual Adjustments</h3>
                     <p style="font-size:12px; color:var(--text-muted); margin:0;">Track money lent, casual bill splits, and loans borrowed separately from personal living expenses.</p>
                 </div>
-                <button id="addLoanBtn" class="btn-primary btn-small" title="Record a Peer Loan or Friend Adjustment" style="background:#8B5CF6; border-color:#8B5CF6; color:#fff; display:inline-flex; align-items:center; gap:6px;">
+                <button id="addLoanBtn" class="btn-primary btn-small" title="Record a Peer Loan or Friend Adjustment" style="background:var(--accent, #8B5CF6); border-color:var(--accent, #8B5CF6); color:#fff; display:inline-flex; align-items:center; gap:6px;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -685,7 +685,7 @@
                         </svg>
                         <span>Inflow Filters</span>
                     </button>
-                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:#10B981; border-color:#10B981; color:#fff;">
+                    <button type="button" id="addIncomeTableBtn" class="btn-primary add-income-button btn-small" onclick="openNewIncomeModal()" title="Record Income Stream" style="background:var(--metric-inflow, #10B981); border-color:var(--metric-inflow, #10B981); color:#fff;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -714,7 +714,7 @@
                 </button>
                 <button type="button" class="stream-pill-btn" data-tab="incomes" id="tabBtnIncomes" style="padding:7px 16px; border-radius:8px; border:none; background:transparent; color:var(--text-muted); font-weight:600; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
                     <span>Inflows</span>
-                    <span class="stream-badge-count" id="badgeIncomesCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(16,185,129,0.15); color:#10B981;">0</span>
+                    <span class="stream-badge-count" id="badgeIncomesCount" style="font-size:11px; padding:2px 7px; border-radius:10px; background:rgba(var(--metric-inflow-rgb, 16, 185, 129), 0.15); color:var(--metric-inflow, #10B981);">0</span>
                 </button>
             </div>
 
@@ -725,7 +725,7 @@
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
                         Gestures &amp; Shortcuts:
                     </span>
-                    <span>Swipe row <strong style="color:#D4AF37;">Right</strong> to Edit &bull; <strong style="color:#EF4444;">Left</strong> to Delete (touchscreens)</span>
+                    <span>Swipe row <strong style="color:var(--primary);">Right</strong> to Edit &bull; <strong style="color:var(--danger, #EF4444);">Left</strong> to Delete (touchscreens)</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span>Press <kbd style="padding:1px 5px; font-size:10px; background:rgba(255,255,255,0.08); border:1px solid var(--border); border-radius:4px;">/</kbd> Search</span>
@@ -878,8 +878,8 @@
                 <!-- Inflows Column -->
                 <div class="ledger-column" id="ledgerColIncomes">
                     <div class="ledger-col-header">
-                        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#10B981;">Inflows (Earnings)</span>
-                        <span id="colIncomeCount" style="font-size:11.5px; font-weight:700; color:#10B981;"></span>
+                        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--metric-inflow, #10B981);">Inflows (Earnings)</span>
+                        <span id="colIncomeCount" style="font-size:11.5px; font-weight:700; color:var(--metric-inflow, #10B981);"></span>
                     </div>
                     <div class="scroll-area" id="incomeList">
                         <div class="skeleton skeleton-row"></div>
@@ -1295,7 +1295,7 @@
                 <div class="form-group flex-row switch-group">
                     <label class="switch-label" for="incomeIsRecurring">
                         <span class="switch-text">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#10B981; flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--metric-inflow, #10B981); flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                             <span>Recurring Income Stream</span>
                         </span>
                         <input type="checkbox" id="incomeIsRecurring">
@@ -1352,7 +1352,7 @@
                 <div class="form-group flex-row switch-group" style="margin-top: 14px;">
                     <label class="switch-label" for="goalIsRecurring">
                         <span class="switch-text">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#F59E0B; flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--metric-savings, #F59E0B); flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                             <span>Recurring Contribution (Chit / RD / SIP)</span>
                         </span>
                         <input type="checkbox" id="goalIsRecurring">
@@ -1382,7 +1382,7 @@
                     <input type="number" id="goalRecurringIntervalDays" min="1" value="30" placeholder="e.g. 30">
                     </div>
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Save Goal</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px; background:var(--metric-savings, #F59E0B); border-color:var(--metric-savings, #F59E0B);">Save Goal</button>
             </form>
         </div>
     </div>
@@ -1400,7 +1400,7 @@
                     <label for="depositAmount">Contribution Amount</label>
                     <input type="number" id="depositAmount" required placeholder="0.00" step="0.01" min="0.01">
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top:16px; background:#F59E0B; border-color:#F59E0B;">Add Deposit</button>
+                <button type="submit" class="btn-primary" style="margin-top:16px; background:var(--metric-savings, #F59E0B); border-color:var(--metric-savings, #F59E0B);">Add Deposit</button>
             </form>
         </div>
     </div>
@@ -1513,7 +1513,7 @@
 
                 <div class="modal-footer" style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
                     <button type="button" class="btn btn-secondary" id="cancelLoanModalBtn" style="padding:8px 16px;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="saveLoanBtn" style="padding:8px 20px; background:#8B5CF6; border-color:#8B5CF6;">Save Record</button>
+                    <button type="submit" class="btn btn-primary" id="saveLoanBtn" style="padding:8px 20px; background:var(--accent, #8B5CF6); border-color:var(--accent, #8B5CF6);">Save Record</button>
                 </div>
             </form>
         </div>
@@ -1653,7 +1653,7 @@
             <form id="editProfileForm">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-top:16px; margin-bottom:16px;">
                     <div style="position:relative; width:80px; height:80px; margin-bottom:10px;">
-                        <div id="modalAvatarPreview" style="width:80px; height:80px; border-radius:50%; background:var(--primary); color:#10120E; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; overflow:hidden; border:2px solid rgba(199, 154, 62, 0.4); text-transform:uppercase;">
+                        <div id="modalAvatarPreview" style="width:80px; height:80px; border-radius:50%; background:var(--primary); color:#10120E; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; overflow:hidden; border:2px solid var(--border-accent); text-transform:uppercase;">
                             U
                         </div>
                         <button type="button" id="modalAvatarBrowseBtn" style="position:absolute; bottom:-2px; right:-2px; width:28px; height:28px; border-radius:50%; background:var(--card-bg, #1a1e17); border:1.5px solid var(--border); color:var(--primary); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3);" title="Browse device files to upload photo">
@@ -1688,7 +1688,7 @@
     <div class="modal-overlay" id="deleteAccountModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 style="color:#A23E32;">Delete Account Permanently</h3>
+                <h3 style="color:var(--danger, #EF4444);">Delete Account Permanently</h3>
             </div>
             <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">
                 This action is destructive and permanent. Enter your password and type <strong>DELETE</strong> below to confirm.
@@ -1807,7 +1807,7 @@
                     <div class="help-card-desc">
                         Navigate effortlessly with keyboard hotkeys and mobile touch gestures:
                         <ul class="help-tips-list">
-                            <li><strong>Touchscreen Swipe Row</strong>: On phones and tablets, swipe any transaction row <strong style="color:#D4AF37;">Right</strong> to edit instantly, or <strong style="color:#EF4444;">Left</strong> to delete.</li>
+                            <li><strong>Touchscreen Swipe Row</strong>: On phones and tablets, swipe any transaction row <strong style="color:var(--primary);">Right</strong> to edit instantly, or <strong style="color:var(--danger, #EF4444);">Left</strong> to delete.</li>
                             <li><strong>Draggable Floating Calculator</strong>: Drag the gold calculator bubble anywhere on your viewport.</li>
                             <li><kbd>Ctrl + K</kbd> or <kbd>Cmd + K</kbd>: Open Spotlight Command Palette to trigger any action instantly.</li>
                             <li><kbd>Alt + C</kbd>: Toggle Floating Quick Calculator & Bill Splitter.</li>

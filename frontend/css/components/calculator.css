@@ -206,7 +206,7 @@
 
 .floating-calc-split-chip.is-active {
     background: var(--primary, #C79A3E);
-    color: #10120E;
+    color: var(--on-primary, #FFFFFF);
     border-color: var(--primary, #C79A3E);
     font-weight: 700;
 }
@@ -220,8 +220,8 @@
     font-weight: 700;
     border-radius: 6px;
     border: none;
-    background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
-    color: #10120E;
+    background: var(--primary-gradient, linear-gradient(135deg, var(--primary, #C79A3E) 0%, var(--primary, #A97F2E) 100%));
+    color: var(--on-primary, #FFFFFF);
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -269,7 +269,7 @@
     font-weight: 700;
     font-family: var(--font-mono, monospace);
     background-color: var(--input-bg, rgba(23, 26, 20, 0.88));
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C79A3E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23A8A395' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 6px center;
     background-size: 10px;
@@ -306,7 +306,7 @@
 
 [data-theme="light"] .floating-calc-fx-select {
     background-color: #FFFFFF;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23B8860B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     border-color: rgba(var(--primary-rgb), 0.45);
     color: #0F172A;
     box-shadow: 0 1px 4px rgba(var(--primary-rgb), 0.12);
@@ -362,7 +362,7 @@
 
 .floating-calc-fx-convert-btn:hover {
     background: var(--primary, #C79A3E);
-    color: #10120E;
+    color: var(--on-primary, #FFFFFF);
 }
 
 .floating-calc-fx-convert-btn.is-loading {
@@ -472,13 +472,13 @@
 
 .floating-calc-key.is-op.is-active {
     background: var(--primary, #C79A3E);
-    color: #10120E;
+    color: var(--on-primary, #FFFFFF);
 }
 
 /* Equal key */
 .floating-calc-key.is-eq {
-    background: var(--primary-gradient, linear-gradient(135deg, #C79A3E 0%, #A97F2E 100%));
-    color: #10120E;
+    background: var(--primary-gradient, linear-gradient(135deg, var(--primary, #C79A3E) 0%, var(--primary, #A97F2E) 100%));
+    color: var(--on-primary, #FFFFFF);
     font-weight: 800;
     font-size: 18px;
     border: none;

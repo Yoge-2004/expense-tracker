@@ -1865,7 +1865,7 @@ button[type="submit"]:active {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C79A3E' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23A8A395' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 7px center;
 }
@@ -3028,7 +3028,7 @@ button[type="submit"]:active {
     font-weight: 700;
     font-family: var(--font-mono, monospace);
     background-color: var(--input-bg, rgba(23, 26, 20, 0.88));
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23C79A3E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23A8A395' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 6px center;
     background-size: 10px;
@@ -3065,7 +3065,7 @@ button[type="submit"]:active {
 
 [data-theme="light"] .floating-calc-fx-select {
     background-color: var(--input-bg);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23B8860B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     border-color: rgba(var(--primary-rgb, 212, 175, 55), 0.45);
     color: var(--text-main);
     box-shadow: 0 1px 4px rgba(var(--primary-rgb), 0.12);
@@ -16300,34 +16300,99 @@ body.stealth-mode .insight-card:hover div[style*="font-size:18px"] {
 
 /* CUSTOM WALLPAPER & FROSTED GLASS SUPPORT */
 body.has-custom-wallpaper .hero-bg,
-[data-theme="light"] body.has-custom-wallpaper .hero-bg {
+body.has-custom-wallpaper .auth-hero-bg,
+[data-theme="light"] body.has-custom-wallpaper .hero-bg,
+[data-theme="light"] body.has-custom-wallpaper .auth-hero-bg {
     background-image: var(--custom-wallpaper-bg) !important;
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
     opacity: 1 !important;
+    z-index: 0 !important;
 }
 
-body.has-custom-wallpaper .card,
-body.has-custom-wallpaper .metric-card,
-body.has-custom-wallpaper .unified-ledger-card,
-body.has-custom-wallpaper .insight-card-item,
-body.has-custom-wallpaper .savings-goal-card,
-body.has-custom-wallpaper .budget-item,
-body.has-custom-wallpaper .insights-intelligence-panel {
-    background: var(--card-bg, rgba(23, 26, 20, 0.78)) !important;
-    backdrop-filter: blur(20px) saturate(140%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+body.has-custom-wallpaper .hero-orb {
+    opacity: 0.15 !important;
 }
 
-[data-theme="light"] body.has-custom-wallpaper .card,
-[data-theme="light"] body.has-custom-wallpaper .metric-card,
-[data-theme="light"] body.has-custom-wallpaper .unified-ledger-card,
-[data-theme="light"] body.has-custom-wallpaper .insight-card-item,
-[data-theme="light"] body.has-custom-wallpaper .savings-goal-card,
-[data-theme="light"] body.has-custom-wallpaper .budget-item,
-[data-theme="light"] body.has-custom-wallpaper .insights-intelligence-panel {
-    background: rgba(255, 255, 255, 0.84) !important;
+body.has-custom-wallpaper .animated-mesh-canvas {
+    opacity: 0.18 !important;
+}
+
+body.has-custom-wallpaper :is(
+    .card,
+    .metric-card,
+    .unified-ledger-card,
+    .insight-card,
+    .trend-card,
+    .insight-card-item,
+    .savings-goal-card,
+    .budget-item,
+    .budget-section,
+    .savings-section,
+    .loans-section,
+    .recent-transactions,
+    .insights-intelligence-panel,
+    .powerbi-slicers-container,
+    .bi-slicers-panel,
+    .bi-slicer-card,
+    .ai-assistant-container,
+    .ai-intelligence-panel,
+    .money-flow,
+    .floating-calc-panel,
+    .modal-content,
+    .modal,
+    .studio-modal,
+    .auth-card
+) {
+    background: rgba(23, 26, 20, 0.74) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+}
+
+[data-theme="light"] body.has-custom-wallpaper :is(
+    .card,
+    .metric-card,
+    .unified-ledger-card,
+    .insight-card,
+    .trend-card,
+    .insight-card-item,
+    .savings-goal-card,
+    .budget-item,
+    .budget-section,
+    .savings-section,
+    .loans-section,
+    .recent-transactions,
+    .insights-intelligence-panel,
+    .powerbi-slicers-container,
+    .bi-slicers-panel,
+    .bi-slicer-card,
+    .ai-assistant-container,
+    .ai-intelligence-panel,
+    .money-flow,
+    .floating-calc-panel,
+    .modal-content,
+    .modal,
+    .studio-modal,
+    .auth-card
+) {
+    background: rgba(255, 255, 255, 0.76) !important;
     backdrop-filter: blur(24px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+    box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+}
+
+body.has-custom-wallpaper .top-bar {
+    background: rgba(23, 26, 20, 0.76) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+}
+
+[data-theme="light"] body.has-custom-wallpaper .top-bar {
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
 }

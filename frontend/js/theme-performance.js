@@ -288,8 +288,17 @@
                 const hasCustom = wpType === 'custom' && Boolean(wpUri);
                 if (hasCustom) {
                     document.body?.classList.add('has-custom-wallpaper');
+                    root.style.setProperty('--card-bg', isLight ? 'rgba(255, 255, 255, 0.76)' : 'rgba(23, 26, 20, 0.74)');
+                    root.style.setProperty('--card-bg-hover', isLight ? 'rgba(255, 255, 255, 0.86)' : 'rgba(32, 36, 28, 0.84)');
                 } else {
                     document.body?.classList.remove('has-custom-wallpaper');
+                    if (isLight) {
+                        root.style.setProperty('--card-bg', '#FFFFFF');
+                        root.style.setProperty('--card-bg-hover', '#F8FAFC');
+                    } else if (pal && pal.cardSurface) {
+                        root.style.setProperty('--card-bg', pal.cardSurface);
+                        root.style.setProperty('--card-bg-hover', adjustBrightness(pal.cardSurface, 1.15));
+                    }
                 }
                 bgs.forEach(heroBg => {
                     if (wpType === 'none') {
