@@ -247,6 +247,8 @@ public class ReceiptOcrServiceImpl implements ReceiptOcrService {
         Process process = null;
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
+            // Tesseract spawns one OpenMP thread per visible core; on a shared container that oversubscribes the CPU.
+            pb.environment().put("OMP_THREAD_LIMIT", "1");
             pb.redirectError(ProcessBuilder.Redirect.DISCARD);
             process = pb.start();
 
